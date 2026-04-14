@@ -1,193 +1,276 @@
-# Kevlar Data → Hockey Data API Platform
-## Pivot Plan: From Property Data to Sports Data
+# Kevlar Data → Unified API Platform
+## Vision: One Platform, Multiple Data Markets
 
 ---
 
-## The Pivot: HockeyData.io (or similar)
+## The Vision
 
-**Vision:** An all-encompassing hockey data API platform — from local rinks to professional stats.
+**KevlarData.com** becomes a **multi-vertical API platform** offering data APIs across:
 
-**Core Value:** Make hockey data accessible, affordable, and easy to use — for coaches, leagues, fantasy platforms, media, and app developers.
+1. **Real Estate** — Property data (Cook County → expand)
+2. **Sports** — Hockey data (RinkStop, Scoresheet, CoachBoard)
+3. **Finance** — Market data (SativaExchange)
+4. **Cannabis** — Industry data (TopShelfToker)
+5. **+ More verticals as we build**
 
----
-
-## Data Sources (What We Offer)
-
-### Tier 1: Facility & League Data (Already Have)
-- RinkStop directory data (2M+ rinks globally)
-- League information
-- Tournament schedules
-- Geographic mapping
-
-### Tier 2: Game Data (From Scoresheet.pro)
-- Real-time game tracking
-- Period scores, penalties, shots, goals, assists
-- Player stats per game
-- PDF export for official records
-
-### Tier 3: Coaching Data (From CoachBoard.pro)
-- Drill library with diagrams
-- Practice plans
-- Skate paths, player movements
-
-### Tier 4: Player & Team Stats (To Build)
-- Youth hockey stats (via Scoresheet data collection)
-- Amateur league standings
-- Tournament results
-- Player profiles
-
-### Tier 5: Pro Data (Partnerships/APIs later)
-- NHL, AHL, CHL, International stats
-- Live game feeds (expensive, long-term)
+**Slogan:** "Data APIs for Emerging Markets"
 
 ---
 
-## Monetization Model
+## Platform Architecture
 
-### Free Tier
-- 100 API calls/month
-- Basic facility search
-- Limited data fields
-
-### Hobby Tier — $19/mo
-- 5,000 API calls/month
-- Facility data + basic stats
-- CoachBoard drill access
-
-### Pro Tier — $79/mo
-- 50,000 API calls/month
-- Full game stats
-- Player profiles
-- Priority support
-
-### Enterprise — $299/mo+
-- Unlimited calls
-- Custom data feeds
-- White-label access
-- Dedicated support
+```
+┌─────────────────────────────────────────┐
+│         KevlarData.com                   │
+│    (Unified API Gateway + Portal)       │
+├─────────────────────────────────────────┤
+│  ┌──────────┐ ┌──────────┐ ┌─────────┐  │
+│  │ Real     │ │ Sports   │ │ Finance │  │
+│  │ Estate   │ │ (Hockey) │ │  Data   │  │
+│  │ API      │ │ API      │ │  API    │  │
+│  └──────────┘ └──────────┘ └─────────┘  │
+│  ┌──────────┐ ┌──────────┐             │
+│  │ Cannabis │ │  More... │             │
+│  │ API      │ │          │             │
+│  └──────────┘ └──────────┘             │
+├─────────────────────────────────────────┤
+│  Shared Infrastructure:                  │
+│  - Auth / API Keys                       │
+│  - Billing / Stripe                      │
+│  - Usage Analytics                        │
+│  - Developer Portal                      │
+│  - Documentation                         │
+└─────────────────────────────────────────┘
+```
 
 ---
 
-## Target Customers
+## Monetization (Per API)
 
-| Customer | Use Case | Willing to Pay |
-|----------|----------|----------------|
-| Youth hockey clubs | Stats tracking, scheduling | $19-79/mo |
-| Fantasy hockey sites | Player data feeds | $79-299/mo |
-| Media companies | Historical stats, records | $79-299/mo |
-| Coaching apps | Drill library, practice plans | $19-79/mo |
-| Sports betting | Live odds, player stats | Enterprise |
-| Team management | Roster, schedule, stats | $19-79/mo |
+### Real Estate API
+| Tier | Calls | Price |
+|------|-------|-------|
+| Free | 100/mo | $0 |
+| Basic | 5K/mo | $29/mo |
+| Pro | 50K/mo | $99/mo |
+| Enterprise | Unlimited | $499/mo+ |
+
+### Sports (Hockey) API
+| Tier | Calls | Price |
+|------|-------|-------|
+| Free | 100/mo | $0 |
+| Basic | 5K/mo | $19/mo |
+| Pro | 50K/mo | $79/mo |
+| Enterprise | Unlimited | $299/mo+ |
+
+### Finance/Market Data API
+| Tier | Calls | Price |
+|------|-------|-------|
+| Free | 100/mo | $0 |
+| Basic | 5K/mo | $49/mo |
+| Pro | 50K/mo | $149/mo |
+| Enterprise | Unlimited | $499/mo+ |
+
+### Cannabis API
+| Tier | Calls | Price |
+|------|-------|-------|
+| Free | 100/mo | $0 |
+| Basic | 5K/mo | $39/mo |
+| Pro | 50K/mo | $129/mo |
+| Enterprise | Unlimited | $399/mo+ |
+
+---
+
+## Target Customers Per Vertical
+
+### Real Estate
+- Real estate investors
+- House flippers
+- Wholesalers
+- Agents & brokers
+- Property management companies
+
+### Sports (Hockey)
+- Youth hockey clubs
+- Fantasy hockey sites
+- Media companies
+- Coaching apps
+- Sports betting platforms
+
+### Finance
+- Crypto traders
+- Financial analysts
+- Fintech apps
+- Investment researchers
+- Trading bots
+
+### Cannabis
+- Dispensaries
+- Cannabis brands
+- Compliance software
+- Market researchers
+- Investment firms
+
+---
+
+## Revenue Projections (Year 1)
+
+| Quarter | Active APIs | Est. Customers | MRR |
+|---------|-------------|---------------|-----|
+| Q1 | 1 (Hockey) | 50 | $500 |
+| Q2 | 2 (Hockey + Property) | 200 | $2,500 |
+| Q3 | 3 (+ Finance) | 500 | $8,000 |
+| Q4 | 4 (+ Cannabis) | 1,000 | $20,000 |
 
 ---
 
 ## Growth Roadmap
 
 ### Phase 1: Foundation (Months 1-3)
-- [ ] Rebuild KevlarData site as HockeyData
-- [ ] Fix API key UX (show, regenerate, copy)
-- [ ] Document all existing APIs (facilities, drills, scoresheets)
-- [ ] Build public API docs/portal
-- [ ] Launch with free tier → capture users
+**Goal:** Build the platform infrastructure
+- [ ] Unified API gateway (authentication, billing, analytics)
+- [ ] Developer portal with docs
+- [ ] API key management (fix UX: show, copy, regenerate)
+- [ ] Landing page redesign
+- [ ] Launch **Hockey API** (from RinkStop/Scoresheet)
 
-### Phase 2: Expand Data (Months 4-6)
-- [ ] Add player profile API
-- [ ] Add league/tournament API
-- [ ] Build webhook system for real-time updates
-- [ ] First 10 paid customers
+### Phase 2: Add Property Data (Months 4-6)
+- [ ] Launch **Real Estate API** (Cook County property data)
+- [ ] Connect to Stripe for payments
+- [ ] First paid customers (50+)
+- [ ] Add usage dashboards
 
-### Phase 3: Scale (Months 7-12)
-- [ ] Add NHL/CHL data partnerships
-- [ ] Expand to figure skating, sled hockey
-- [ ] Build analytics dashboard
-- [ ] 100+ paid customers
+### Phase 3: Add Finance (Months 7-9)
+- [ ] Launch **Finance API** (from SativaExchange)
+- [ ] Market data feeds
+- [ ] Partner with stepdad's risk management
+- [ ] 200+ customers
 
-### Phase 4: Multi-Sport (Year 2+)
-- [ ] Add basketball, baseball, soccer data
-- [ ] Replicate model across sports
-- [ ] Become "sports data API platform"
+### Phase 4: Add Cannabis (Months 10-12)
+- [ ] Launch **Cannabis API** (from TopShelfToker)
+- [ ] Industry data, pricing, compliance
+- [ ] 500+ customers
+- [ ] Begin brand partnerships
 
----
-
-## Competitive Landscape
-
-| Competitor | Strength | Weakness |
-|------------|----------|----------|
-| NHL API | Official, expensive | No youth/amateur data |
-| EliteProspects | Player database | Not an API-first platform |
-| HockeyReference | Historical stats | No modern API |
-| STHS | Game stats software | Desktop only |
-
-**Our Edge:**
-- Youth/amateur focus (underserved)
-- API-first design
-- Affordable pricing
-- All-in-one (facilities + games + drills)
+### Phase 5: Scale (Year 2)
+- [ ] Add more verticals (agriculture, energy, green tech)
+- [ ] White-label options
+- [ ] Enterprise sales team
+- [ ] 5,000+ customers, $100K+ MRR
 
 ---
 
-## Integration with RinkStop
+## Technical Architecture
 
-- RinkStop.com → Traffic → API signups
-- Scoresheet.pro → Game data → API content
-- CoachBoard.pro → Drill data → API content
-- SEO: "hockey API", "hockey stats API", "youth hockey data"
+### Backend
+- **Framework:** Node.js/Express
+- **Database:** PostgreSQL (main), MongoDB (flexible)
+- **Cache:** Redis (for API rate limiting)
+- **Auth:** JWT + API Keys (per-vertical)
+
+### Infrastructure
+- **Host:** Replit → AWS/DigitalOcean (when scaling)
+- **CDN:** Cloudflare (for fast API responses)
+- **Monitoring:** Datadog/Prometheus
+- **Logging:** Centralized (for debugging)
+
+### Developer Experience
+- **Docs:** OpenAPI/Swagger
+- **Sandbox:** Test environment with mock data
+- **SDKs:** Python, JavaScript, Ruby, PHP
+- **Support:** Discord developer community
 
 ---
 
 ## UX Improvements (Required)
 
-### API Key Management
-- [ ] Show key on creation (with warning)
-- [ ] "Copy to clipboard" button
+### API Key Management (ALL Verticals)
+- [ ] Show key on creation with "copy" button
 - [ ] View key anytime (masked: ••••••••)
-- [ ] Regenerate key (with confirmation)
+- [ ] Regenerate key with confirmation
 - [ ] Multiple API keys per account
-- [ ] Usage dashboard (calls remaining, usage graph)
+- [ ] Per-vertical keys (separate keys for separate APIs)
+- [ ] Usage dashboard (calls, errors, latency)
 
-### Developer Experience
-- [ ] Interactive API docs (try it live)
-- [ ] Code examples (Python, JavaScript, cURL)
-- [ ] Webhook configuration UI
-- [ ] Error messages with solutions
+### Developer Portal
+- [ ] Interactive docs (try endpoints live)
+- [ ] Code examples in multiple languages
+- [ ] Status page (API uptime)
+- [ ] Changelog / API versioning
+- [ ] Support ticket system
 
 ---
 
-## Technical Stack
+## Competitive Landscape
 
-- **Host:** Replit (current) → consider moving to VPS later
-- **Backend:** Node.js/Express
-- **Database:** PostgreSQL (for structured data)
-- **Authentication:** JWT + API keys
-- **Documentation:** Swagger/OpenAPI
-- **Payments:** Stripe (for subscriptions)
+| Competitor | What They Do | Our Edge |
+|------------|--------------|----------|
+| RapidAPI | General marketplace | We own the data |
+| APIhuddle | General marketplace | Niche focus |
+| Attom (Real Estate) | Property data | Youth/amateur sports |
+| EliteProspects | Hockey data | Not API-first |
+| Alpha Vantage | Finance data | Cannabis + custom |
+
+**Our Differentiation:**
+- **Multi-vertical** under one roof
+- **Affordable** vs enterprise pricing
+- **Niche focus** (cannabis, hockey) - underserved
+- **Developer-first** experience
+- **One account** for all APIs
+
+---
+
+## Brand Positioning
+
+**Tagline:** "Data APIs for Emerging Markets"
+
+**Mission:** Democratize data access for niche industries that big data companies ignore.
+
+**Vision:** Become the "Bloomberg for Niche Markets" — affordable, accessible, developer-friendly APIs for industries that matter but aren't served by enterprise players.
+
+---
+
+## Integration with Existing Projects
+
+| Project | Data to API | Revenue Share |
+|---------|-------------|---------------|
+| RinkStop.com | Facility directory | 10% of API revenue |
+| Scoresheet.pro | Game stats | 15% of API revenue |
+| CoachBoard.pro | Drill diagrams | 10% of API revenue |
+| SativaExchange | Market data | 20% of API revenue |
+| TopShelfToker | Cannabis data | 15% of API revenue |
+| Property Data | Parcel records | 20% of API revenue |
+
+*Revenue share goes back to project development*
 
 ---
 
 ## Action Items
 
-1. **Rename domain** → HockeyData.io or similar
-2. **Rebuild landing page** → Developer-focused
-3. **Fix API key flow** → Top priority
-4. **Document existing APIs** → OpenAPI spec
-5. **Create free tier signup** → Capture emails
-6. **Reach out to existing RinkStop users** → Cross-sell
+1. **Build unified API platform** (not just one API)
+2. **Fix API key UX** — priority #1
+3. **Launch Hockey API first** (already have data)
+4. **Then add Property API** (existing work)
+5. **Then Finance** (SativaExchange)
+6. **Then Cannabis** (TopShelfToker)
+7. **Create developer marketing** — reach devs where they hang out
 
 ---
 
 ## Long-Term Vision
 
-**HockeyData.io → SportsDataAPI.com**
+**KevlarData.com → The API Platform for Every Industry**
 
-Start with hockey. Prove the model. Then expand to:
-- Figure Skating
-- Sled Hockey
-- Lacrosse
-- Ringette
-- Other niche sports
+Start with 4 verticals. Prove the model. Then expand to:
+- Agricultural data
+- Energy data
+- Green tech data
+- Healthcare data
+- Any emerging market that needs data infrastructure
 
-The platform becomes the "Sports Data API for Everyone" — affordable, accessible, developer-friendly.
+Build once, deploy across verticals. The platform pays for itself as we add more APIs.
 
 ---
 
 *Plan generated: 2026-04-14*
+*Updated: Full multi-vertical vision*
