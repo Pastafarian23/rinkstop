@@ -1,0 +1,747 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User profile operations
+  - name: keys
+    description: API key management
+  - name: data
+    description: Dataset endpoints
+  - name: usage
+    description: Usage metering
+  - name: billing
+    description: Stripe billing and subscription management
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      description: Returns the authenticated user's profile and plan information
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /keys:
+    get:
+      operationId: listKeys
+      tags: [keys]
+      summary: List API keys
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKeyRecord"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createKey
+      tags: [keys]
+      summary: Create API key
+      security:
+        - clerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateKeyRequest"
+      responses:
+        "201":
+          description: Created API key (plaintext returned once)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateKeyResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /keys/{id}:
+    delete:
+      operationId: revokeKey
+      tags: [keys]
+      summary: Revoke API key
+      security:
+        - clerkAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Key revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Key not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /data/properties:
+    get:
+      operationId: getProperties
+      tags: [data]
+      summary: Query property records
+      description: Returns property records from DuPage County, IL with optional filtering
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: county
+          in: query
+          schema:
+            type: string
+            default: dupage
+          description: County name (currently only dupage supported)
+        - name: city
+          in: query
+          schema:
+            type: string
+          description: Filter by city name (case-insensitive, partial match)
+        - name: zip
+          in: query
+          schema:
+            type: string
+          description: Filter by ZIP code
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, foreclosure, tax-lien, sold]
+          description: Filter by property status
+        - name: value_min
+          in: query
+          schema:
+            type: integer
+          description: Minimum assessed value
+        - name: value_max
+          in: query
+          schema:
+            type: integer
+          description: Maximum assessed value
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Property records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PropertyListResponse"
+        "401":
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /data/zipcodes:
+    get:
+      operationId: getZipcodes
+      tags: [data]
+      summary: Query US zip codes
+      description: Returns US zip code records with optional filtering by state and city
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: Filter by 2-letter state abbreviation (e.g. CA)
+        - name: city
+          in: query
+          schema:
+            type: string
+          description: Filter by city name (case-insensitive, partial match)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Zip code records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ZipcodeListResponse"
+        "401":
+          description: Invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /data/properties/scrape:
+    post:
+      operationId: triggerScrape
+      tags: [data]
+      summary: Trigger a new property data scrape
+      description: Initiates a scrape of DuPage County assessor data (admin only)
+      security:
+        - clerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScrapeRequest"
+      responses:
+        "202":
+          description: Scrape initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScrapeResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /usage/summary:
+    get:
+      operationId: getUsageSummary
+      tags: [usage]
+      summary: Get usage summary for current month
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageSummary"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /usage/daily:
+    get:
+      operationId: getUsageDaily
+      tags: [usage]
+      summary: Get daily usage for last 30 days
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: Daily usage breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyUsage"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /billing/subscription:
+    get:
+      operationId: getBillingSubscription
+      tags: [billing]
+      summary: Get current subscription details
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingSubscriptionResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /billing/checkout:
+    post:
+      operationId: createCheckoutSession
+      tags: [billing]
+      summary: Create a Stripe Checkout session
+      security:
+        - clerkAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutRequest"
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedirectUrlResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /billing/portal:
+    post:
+      operationId: createPortalSession
+      tags: [billing]
+      summary: Create a Stripe customer portal session
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: Customer portal session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedirectUrlResponse"
+        "400":
+          description: Bad request (no Stripe customer found)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /billing/prices:
+    get:
+      operationId: getBillingPrices
+      tags: [billing]
+      summary: List available Stripe prices (synced from Stripe)
+      security:
+        - clerkAuth: []
+      responses:
+        "200":
+          description: Price list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingPricesResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    clerkAuth:
+      type: http
+      scheme: bearer
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        clerkId:
+          type: string
+        email:
+          type: string
+        plan:
+          type: string
+          enum: [free, starter, pro]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - clerkId
+        - email
+        - plan
+        - createdAt
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+    ApiKeyRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        prefix:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - name
+        - prefix
+        - createdAt
+    CreateKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - name
+    CreateKeyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        prefix:
+          type: string
+        key:
+          type: string
+          description: Plaintext API key — shown once, store immediately
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - prefix
+        - key
+        - createdAt
+    PropertyRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        pin:
+          type: string
+          description: Property Index Number
+        address:
+          type: string
+        city:
+          type: string
+        zip:
+          type: string
+        county:
+          type: string
+        owner:
+          type: string
+        mailingAddress:
+          type: string
+        assessedValue:
+          type: integer
+        marketValue:
+          type: integer
+        taxAmount:
+          type: integer
+        status:
+          type: string
+          enum: [active, foreclosure, tax-lien, sold]
+        lastUpdated:
+          type: string
+          format: date-time
+      required:
+        - id
+        - pin
+        - address
+        - city
+        - zip
+        - county
+    PropertyListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PropertyRecord"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - data
+        - total
+        - limit
+        - offset
+    ScrapeRequest:
+      type: object
+      properties:
+        county:
+          type: string
+          default: dupage
+      required:
+        - county
+    ScrapeResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, failed]
+        message:
+          type: string
+      required:
+        - jobId
+        - status
+    ZipcodeRecord:
+      type: object
+      properties:
+        zip:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        population:
+          type: integer
+      required:
+        - zip
+        - city
+        - state
+        - lat
+        - lng
+        - population
+    ZipcodeListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ZipcodeRecord"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - data
+        - total
+        - limit
+        - offset
+    UsageSummary:
+      type: object
+      properties:
+        totalThisMonth:
+          type: integer
+        limit:
+          type: integer
+          nullable: true
+        remaining:
+          type: integer
+          nullable: true
+        plan:
+          type: string
+          enum: [free, starter, pro]
+      required:
+        - totalThisMonth
+        - plan
+    DailyUsage:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date in YYYY-MM-DD format
+        count:
+          type: integer
+      required:
+        - date
+        - count
+    BillingSubscriptionResponse:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [free, starter, pro]
+        subscription:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+            current_period_end:
+              type: string
+            cancel_at_period_end:
+              type: boolean
+      required:
+        - plan
+    CheckoutRequest:
+      type: object
+      properties:
+        priceId:
+          type: string
+      required:
+        - priceId
+    RedirectUrlResponse:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+    BillingPriceItem:
+      type: object
+      properties:
+        product_id:
+          type: string
+        product_name:
+          type: string
+        product_metadata:
+          type: object
+          nullable: true
+        price_id:
+          type: string
+        unit_amount:
+          type: integer
+        currency:
+          type: string
+        recurring:
+          type: object
+          nullable: true
+      required:
+        - product_id
+        - product_name
+        - price_id
+        - unit_amount
+        - currency
+    BillingPricesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingPriceItem"
+      required:
+        - data

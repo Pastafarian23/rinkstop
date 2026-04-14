@@ -1,0 +1,8 @@
+# Ignore sensitive files
+INTEGRATIONS.md
+*.json
+openclaw-config-*.json
+
+# Ignore large generated files
+node_modules/
+.git/
