@@ -8,6 +8,16 @@ If `BOOTSTRAP.md` exists, that's your birth certificate. Follow it, figure out w
 
 ## Every Session
 
+### Memory Update Protocol
+When Arnel makes significant changes (pivots, scope changes, new priorities), IMMEDIATELY update:
+1. `MEMORY.md` (long-term memory)
+2. Project-specific memory file (e.g., `memory/kevlar-data.md`)
+3. Any relevant `TODO.md` or `lessons.md`
+
+**Rule:** Approved changes overwrite previous iterations. Never lose a pivot.
+
+---
+
 Before doing anything else:
 
 1. Read `SOUL.md` — this is who you are

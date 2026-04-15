@@ -50,10 +50,11 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 | Content | rinkstop-content | workspace-rinkstop-content | Eddie ✍️🏒 |
 
 ### Kevlar-Data.com (NEW!)
-**Tagline:** Property Data Intelligence — Real estate investor data
-**Focus:** Cook County, IL property records (assessor data)
+**Tagline:** Data Intelligence — Broad data services for investors and businesses
+**Focus:** Cook County, IL property records (assessor data) → expanding to more data sources
 **GitHub:** https://github.com/Pastafarian23/Kevlar-Data
 **Platform:** Replit
+**Pivot Note (2026-04-15):** Expanded from property-only to broader data intelligence — property data is the starting point, but scope includes multiple data verticals (sports data, market data, etc.)
 
 | Role | Agent ID | Workspace | Persona |
 |------|----------|-----------|---------|
@@ -78,6 +79,14 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 - **Step Dad** — Former Chicago Board of Trade corn options pit trader → Risk management services funnel
 
 ## Active Projects
+
+### Dropbox Integration (2026-04-15)
+- Connected via Maton.ai
+- Folder structure created for all 4 projects
+- Script created: `scripts/dropbox-save-post.js`
+- Format: .docx (Word) ✅
+- Tested and working
+- Personal folder: NEVER TOUCH (off-limits)
 
 ### Backup & Recovery System
 - **Goal:** Secure cloud backup of all OpenClaw data

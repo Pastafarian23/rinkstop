@@ -12,6 +12,15 @@
 - Real Estate Data Intelligence idea
 - Moniker: "Kevlar" = protective armor for investments
 
+## Pivot (2026-04-15)
+**EXPANDED SCOPE:** No longer just property data. Kevlar Data is now a broad data intelligence platform:
+- Property data (Cook County) = starting point / MVP
+- Sports data (NHL teams, etc.) = API product line
+- Market data = future expansion
+- Vision: Multi-vertical data API marketplace
+
+**Why:** Property data alone is too narrow. Multiple data verticals = more buyers, more revenue streams.
+
 ## Counties Evaluated
 | County | Status | Notes |
 |--------|--------|-------|
