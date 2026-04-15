@@ -88,6 +88,16 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 - Tested and working
 - Personal folder: NEVER TOUCH (off-limits)
 
+### LinkedIn Integration (2026-04-15)
+- Connected via Maton.ai
+- Connection ID: `6e34a6cc-3ecf-48fd-a0b7-665b21774b63`
+- Company Pages: Awaiting URLs from Arnel
+  - Top Shelf Toker
+  - Sativa Exchange
+  - RinkStop
+  - Kevlar Data
+- Personal profile: Future project (separate team for monetization)
+
 ### Backup & Recovery System
 - **Goal:** Secure cloud backup of all OpenClaw data
 - **Solution:** Google Drive via rclone with encryption
