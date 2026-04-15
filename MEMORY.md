@@ -91,12 +91,14 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 ### LinkedIn Integration (2026-04-15)
 - Connected via Maton.ai
 - Connection ID: `6e34a6cc-3ecf-48fd-a0b7-665b21774b63`
+- API Status: BROKEN - all endpoints returning 404
 - Company Pages (awaiting IDs):
   - Top Shelf Toker: linkedin.com/company/topshelftoker/
   - Sativa Exchange: linkedin.com/company/sativaexchange/
   - RinkStop: linkedin.com/company/rinkstop/
   - Kevlar Data: linkedin.com/company/kevlardata/
-- API Issue: Organization lookup returning 404 — need to test posting to get IDs
+- Issue: Maton/LinkedIn API integration appears broken
+- Options: Check Buffer for LinkedIn, or wait for fix
 - Personal profile: Future project (separate team for monetization)
 
 ### Backup & Recovery System
