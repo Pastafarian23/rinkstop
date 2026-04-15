@@ -7,6 +7,7 @@ Skills define _how_ tools work. This file is for _your_ specifics — the stuff 
 - **RinkStop Ops:** -1003967596187
 - **Top Shelf Toker Ops:** -1003873622522
 - **Kevlar Data Ops:** -1003971951712 ✅ (bidirectional)
+- **Planning:** -4990884833 ✅ (bidirectional)
 
 ## Telegram Channels (One-way broadcast - deprecated)
 - **CEO Channel:** -1003745665491

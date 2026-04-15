@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard - Arnel's Teams</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: #0f0f0f; 
+            color: #e0e0e0; 
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            color: #fff;
+        }
+        h2 {
+            color: #7dd3fc;
+            margin: 30px 0 15px;
+            font-size: 1.3rem;
+        }
+        .project { 
+            margin-bottom: 40px; 
+        }
+        .agents { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 20px; 
+        }
+        .agent { 
+            background: #1a1a1a; 
+            border: 1px solid #333; 
+            border-radius: 12px; 
+            padding: 20px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .agent:hover {
+            transform: translateY(-3px);
+            border-color: #7dd3fc;
+        }
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .agent-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .agent-name { 
+            font-size: 1.1rem; 
+            font-weight: 600;
+            color: #fff;
+        }
+        .agent-role { 
+            font-size: 0.85rem; 
+            color: #888;
+        }
+        .agent-desc {
+            font-size: 0.9rem;
+            color: #aaa;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .agent-actions {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-task {
+            background: #7dd3fc;
+            color: #000;
+        }
+        .btn-task:hover {
+            background: #38bdf8;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .modal textarea {
+            width: 100%;
+            height: 120px;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e0e0e0;
+            padding: 12px;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn-submit {
+            background: #22c55e;
+            color: #fff;
+        }
+        .btn-cancel {
+            background: #444;
+            color: #fff;
+        }
+        
+        /* Request Queue */
+        .request-queue {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .request-queue h3 {
+            color: #fff;
+            margin-bottom: 15px;
+        }
+        .request-item {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .request-item .agent-tag {
+            background: #333;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .request-item .status {
+            color: #fbbf24;
+            font-size: 0.85rem;
+        }
+        .empty-queue {
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Agent Dashboard</h1>
+    
+    <div class="project">
+        <h2>🌿 SativaExchange</h2>
+        <div class="agents" id="sativa-agents"></div>
+    </div>
+    
+    <div class="project">
+        <h2>🏒 RinkStop</h2>
+        <div class="agents" id="rinkstop-agents"></div>
+    </div>
+    
+    <div class="request-queue">
+        <h3>📋 Request Queue</h3>
+        <div id="request-queue"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Assign Task</h3>
+            <textarea id="task-input" placeholder="Describe the task..."></textarea>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-submit" onclick="submitTask()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const agents = {
+            'SativaExchange': [
+                { id: 'sativa-marketing', name: 'Marketing', emoji: '📣', desc: 'Content, campaigns, marketing strategy' },
+                { id: 'sativa-sales', name: 'Sales', emoji: '💰', desc: 'Outreach, partnerships, closing deals' },
+                { id: 'sativa-social', name: 'SocialMedia', emoji: '📱', desc: 'Social media presence, engagement' },
+                { id: 'sativa-research', name: 'Research', emoji: '🔍', desc: 'Market intelligence, analysis' },
+                { id: 'sativa-content', name: 'Content', emoji: '✍️', desc: 'Articles, blog posts, copy' }
+            ],
+            'RinkStop': [
+                { id: 'rinkstop-head', name: 'Coach', emoji: '🏒', desc: 'Coordination, project management' },
+                { id: 'rinkstop-marketing', name: 'Tyla', emoji: '🎯', desc: 'Marketing, campaigns, content strategy' },
+                { id: 'rinkstop-sales', name: 'Marcus', emoji: '🤝', desc: 'Outreach, brand partnerships' },
+                { id: 'rinkstop-research', name: 'Darcy', emoji: '📊', desc: 'Market research, competitor analysis' },
+                { id: 'rinkstop-socialmedia', name: 'Nikki', emoji: '📱', desc: 'Social media, engagement' },
+                { id: 'rinkstop-content', name: 'Eddie', emoji: '✍️', desc: 'Articles, guides, blog content' }
+            ]
+        };
+
+        let currentAgent = null;
+        let requests = [];
+
+        function renderAgents() {
+            // SativaExchange
+            const sativaContainer = document.getElementById('sativa-agents');
+            sativaContainer.innerHTML = agents['SativaExchange'].map(agent => `
+                <div class="agent">
+                    <div class="agent-header">
+                        <div class="agent-avatar">${agent.emoji}</div>
+                        <div>
+                            <div class="agent-name">${agent.name}</div>
+                            <div class="agent-role">SativaExchange</div>
+                        </div>
+                    </div>
+                    <div class="agent-desc">${agent.desc}</div>
+                    <div class="agent-actions">
+                        <button class="btn-task" onclick="openModal('${agent.id}', '${agent.name}')">Assign Task</button>
+                    </div>
+                </div>
+            `).join('');
+
+            // RinkStop
+            const rinkstopContainer = document.getElementById('rinkstop-agents');
+            rinkstopContainer.innerHTML = agents['RinkStop'].map(agent => `
+                <div class="agent">
+                    <div class="agent-header">
+                        <div class="agent-avatar">${agent.emoji}</div>
+                        <div>
+                            <div class="agent-name">${agent.name}</div>
+                            <div class="agent-role">RinkStop</div>
+                        </div>
+                    </div>
+                    <div class="agent-desc">${agent.desc}</div>
+                    <div class="agent-actions">
+                        <button class="btn-task" onclick="openModal('${agent.id}', '${agent.name}')">Assign Task</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(agentId, agentName) {
+            currentAgent = agentId;
+            document.getElementById('modal-title').textContent = `Assign Task to ${agentName}`;
+            document.getElementById('task-modal').classList.add('active');
+            document.getElementById('task-input').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('task-modal').classList.remove('active');
+            document.getElementById('task-input').value = '';
+            currentAgent = null;
+        }
+
+        function submitTask() {
+            const task = document.getElementById('task-input').value.trim();
+            if (!task) return;
+            
+            const agentName = currentAgent.split('-').pop();
+            requests.push({
+                id: Date.now(),
+                agent: currentAgent,
+                task: task,
+                status: 'pending'
+            });
+            
+            renderQueue();
+            closeModal();
+            
+            // Log to console for now - could be sent to OpenClaw
+            console.log('NEW TASK:', { agent: currentAgent, task: task });
+            alert('Task submitted! Check console for webhook payload.');
+        }
+
+        function renderQueue() {
+            const queue = document.getElementById('request-queue');
+            if (requests.length === 0) {
+                queue.innerHTML = '<div class="empty-queue">No pending requests</div>';
+                return;
+            }
+            
+            queue.innerHTML = requests.map(r => `
+                <div class="request-item">
+                    <div>
+                        <span class="agent-tag">${r.agent}</span>
+                        <span style="margin-left: 10px;">${r.task.substring(0, 50)}${r.task.length > 50 ? '...' : ''}</span>
+                    </div>
+                    <span class="status">${r.status}</span>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        renderAgents();
+        renderQueue();
+    </script>
+</body>
+</html>

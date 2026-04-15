@@ -1,5 +1,9 @@
 # HEARTBEAT.md
 
+# Daily Health Check (Ron checks each heartbeat)
+- [ ] Check cron job status (`openclaw cron list`) - verify no errors
+- [ ] Check last delivery status for each project channel
+
 # Daily CEO Checklist (to post in CEO channel each morning)
 
 ## Channel Reference

@@ -36,6 +36,32 @@ Build a secure, automated backup system for OpenClaw workspace that can be easil
 - Must be easy for non-tech user to restore
 - Arnel not tech-savvy - need simple instructions
 
+---
+
+# RinkStop GA4 Setup
+**Status:** Pending (Replit agent paused until payment)
+
+- [ ] Add GA4 tracking code (G-533194109) to RinkStop site
+  ```html
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-533194109"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-533194109');
+  </script>
+  ```
+
+---
+
+# 1000 Monthly Views Goal
+**Target:** 1,000 views/month for Mediavine onboarding
+
+| Site | Baseline | Current | Target |
+|------|----------|---------|--------|
+| SativaExchange (G-454149918) | - | - | 1,000 |
+| RinkStop (G-533194109) | - | - | 1,000 |
+
 ## Related Files
 - `INTEGRATIONS.md` - Contains API keys (sensitive)
 - `MEMORY.md` - Long-term memory
