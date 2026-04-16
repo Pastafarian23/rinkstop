@@ -58,4 +58,10 @@ Things like:
 ## Email
 - **Address:** info@sativaexchange.com
 
+## Pexo Video Workflow (Important!)
+- **ALWAYS confirm prompts with Arnel BEFORE submitting to Pexo**
+- Send the prompt text for review
+- Wait for go-ahead signal (✅ or "yes") before executing
+- This applies to: new videos AND revision requests
+
 ---
