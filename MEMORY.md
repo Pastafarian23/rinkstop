@@ -128,6 +128,18 @@ Locations:
 - Morning briefings saved to /[Project]/Reports/
 - Social/Blog posts: Agent drafts → Project group → Arnel approves → Dropbox
 
+## Business Setup Summary (2026-04-16)
+
+**Full details:** `/workspace/business-setup-summary.md`
+
+### Key Points:
+- 56 agents across 5 projects
+- C-Suite structure: CEO + 4 (Chief of Staff, CFO, CTO, Treasurer)
+- Telegram chats: C-Suite + 5 project ops channels
+- Active systems: Sales pipeline, Support workflow, Financial tracking
+- Email: support@rinkstop.com active via Zoho/Maton
+- GitHub: All backed up
+
 ## Active Projects
 
 ### Dropbox Integration (2026-04-15)
