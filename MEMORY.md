@@ -118,6 +118,16 @@ Locations:
 
 ---
 
+## Workflow Rules (Approved 2026-04-16)
+
+**See:** /root/.openclaw/workspace/workflow-memo.md for full details
+
+### Key Points:
+- C-Suite chat = Strategy & high-level only
+- Project groups = Content approvals & day-to-day
+- Morning briefings saved to /[Project]/Reports/
+- Social/Blog posts: Agent drafts → Project group → Arnel approves → Dropbox
+
 ## Active Projects
 
 ### Dropbox Integration (2026-04-15)
