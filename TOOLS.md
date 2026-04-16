@@ -65,3 +65,40 @@ Things like:
 - This applies to: new videos AND revision requests
 
 ---
+
+## GitHub Repository Structure (CRITICAL)
+
+**RULE: One project = One repo. Never mix projects. Never overwrite.**
+
+| Repo | Contents | Location |
+|------|----------|----------|
+| `openclaw-workspace` | OpenClaw workspace backup (agents, docs, memory, configs) | GitHub |
+| `Confidential` | jobs.sativaexchange.com marketplace (A2A job board) | GitHub |
+| `Kevlar-Data` | Cook County property data scraper/API | Replit → GitHub |
+| `kevlar-hockey-api` | Hockey directory API | Local/Replit |
+
+### Before ANY Git Push - SAFETY CHECKLIST
+
+1. **Show status first:** `git status` and `git diff --stat`
+2. **List files changing:** Show exactly what files will be added/modified/deleted
+3. **Ask confirmation:** "Ready to push X files to [repo]. Approve?"
+4. **NEVER force push** without explicit permission
+5. **Never push to wrong repo** - verify remote URL matches project
+
+### Git Commands (Always run these first):
+```bash
+git remote -v          # Verify correct repo
+git status             # Show what's changing
+git diff --stat        # Summary of changes
+```
+
+---
+
+## Backup Protocol (Non-Negotiable)
+
+1. **Daily backup** - Push workspace changes to openclaw-workspace
+2. **Before any push** - Run safety checklist above
+3. **Never delete remote branches** without approval
+4. **If unsure** - Ask Arnel before proceeding
+
+---
