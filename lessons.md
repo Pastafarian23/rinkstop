@@ -2,6 +2,33 @@
 
 ## 2026-04-16
 
+### Forgetting Integrations - Critical
+**Problem:** Asked about Dropbox, couldn't recall the Maton.ai integration even though it was documented in INTEGRATIONS.md.
+
+**Root Cause:** 
+- Not checking INTEGRATIONS.md when asked about services
+- Not proactively knowing what tools are available
+- Memory not functioning well in context
+
+**What should have happened:** When Arnel asked about Dropbox, immediately check INTEGRATIONS.md and use the available tools/script.
+
+**Fixes Applied:**
+1. Document this mistake in lessons.md
+2. Create checklist for "what tools do I have available"
+
+**Prevention (NON-NEGOTIABLE):**
+- When asked about a service integration, ALWAYS check INTEGRATIONS.md first
+- Maintain awareness of available tools (Maton API gateway, Dropbox, etc.)
+- Say "I need to check" rather than "I don't know" or forgetting
+- Before starting work on any new task, ask "what tools do I have available?"
+
+**Checklist Before Creating Files/Services:**
+- [ ] Check INTEGRATIONS.md for available tools
+- [ ] Check TOOLS.md for configured channels
+- [ ] Check MEMORY.md for recent context
+
+---
+
 ### GitHub Data Loss - Critical
 **Problem:** Workspace backup was lost when Kevlar Data project was pushed to the same repo (Confidential).
 

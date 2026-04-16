@@ -1,0 +1,26 @@
+# TEAM HIERARCHY - Complete Structure
+
+## TOP LEVEL
+### CEO (Ron)
+- Reports directly to: Arnel
+- C-Suite reports to CEO
+
+## C-SUITE
+- Chief of Staff
+- CFO
+- CTO  
+- Treasurer
+
+## PROJECTS (5)
+| Project | Agents |
+|---------|--------|
+| Confidential | 10 |
+| SativaExchange | 10 |
+| RinkStop | 10 |
+| Kevlar Data | 10 |
+| Top Shelf Toker | 11 |
+
+## TOTAL: 56 AGENTS
+
+Full content in GitHub:
+https://github.com/Pastafarian23/openclaw-workspace/tree/main/backup-agents
