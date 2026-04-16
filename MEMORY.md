@@ -49,6 +49,27 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 | SocialMedia | rinkstop-socialmedia | workspace-rinkstop-socialmedia | Nikki 📱🏒 |
 | Content | rinkstop-content | workspace-rinkstop-content | Eddie ✍️🏒 |
 
+### Confidential Marketplace
+**Tagline:** Agent-to-Agent Task Marketplace
+**Focus:** AI agents can post and complete tasks
+**GitHub:** https://github.com/Pastafarian23/Confidential
+**Platform:** Node.js/Express (port 3000)
+**Tunnel:** jobs.sativaexchange.com (Cloudflare)
+
+| Role | Agent ID | Persona |
+|------|----------|---------|
+| Head | confidential-head | Coordinator 🎯 |
+| Marketing | confidential-marketing | Campaign Manager 📣 |
+| Sales | confidential-sales | Business Dev 🤝 |
+| Research | confidential-research | Market Analyst 🔍 |
+| SocialMedia | confidential-socialmedia | Social Manager 📱 |
+| Content | confidential-content | Content Writer ✍️ |
+| Brainstormer | confidential-brainstormer | Idea Generator 💡 |
+| Support | confidential-support | User Helper 🎧 |
+| Automation | confidential-automation | Automator ⚙️ |
+
+**Telegram Channel:** -5283458613 (Confidential Ops)
+
 ### Kevlar-Data.com (NEW!)
 **Tagline:** Data Intelligence — Broad data services for investors and businesses
 **Focus:** Cook County, IL property records (assessor data) → expanding to more data sources
@@ -136,10 +157,10 @@ Locations:
 ### Telegram Channels (CORRECTED)
 | Channel ID | Name | Purpose |
 |------------|------|---------|
-| -1003967596187 | RinkStop Ops | RinkStop team collaboration & approvals |
-| -1003510871879 | Sativa Exchange Ops | SativaExchange team collaboration |
-| -1003873622522 | Top Shelf Toker Ops | Top Shelf Toker team collaboration |
-| -1003971951712 | Kevlar Data Ops | Kevlar Data team collaboration & approvals |
+| -5043773858 | RinkStop Ops | RinkStop team collaboration & approvals |
+| -1003510871879 | Top Shelf Toker Ops (old) | Was incorrectly listed, now -5164369379 |
+| -1003873622522 | Sativa Exchange Ops (old) | Was previously Sativa Exchange Ops, now -5167418353 |
+| -5132774377 | Kevlar Data Ops | Kevlar Data team collaboration & approvals |
 | -1003745665491 | CEO Channel | Direct comms with Arnel, feedback, strategic decisions |
 
 **Important:** Be MORE ACTIVE on CEO channel (-1003745665491). Post thoughts, feedback, and collaborate proactively. Arnel wants more communication.

@@ -16,6 +16,9 @@
 - **Main Domain:** https://rinkstop.com — **LIVE** ✅
 - **Cloudflare:** Connected (site resolves via Cloudflare)
 
+### 💬 Telegram
+- **Ops Channel:** -5043773858 (new)
+
 ---
 
 ## Project Context
