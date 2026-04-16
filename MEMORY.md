@@ -78,6 +78,25 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 - **Arnel Larracas** — Owner, visionary, strong at ideation
 - **Step Dad** — Former Chicago Board of Trade corn options pit trader → Risk management services funnel
 
+## Project Status Files (Living Documents)
+
+**All active projects now have a `status.md` file** that gets updated in real-time with:
+- Current state (running/stopped)
+- Configuration details
+- Session notes with timestamps
+- Action items
+
+Locations:
+- `/root/.openclaw/workspace/confidential/status.md`
+- `/root/.openclaw/workspace/workspace-kevlar-data/status.md`
+- `/root/.openclaw/workspace/workspace-sativaexchange/status.md`
+- `/root/.openclaw/workspace/workspace-rinkstop/status.md`
+- `/root/.openclaw/workspace/workspace-topshelftoker/status.md`
+
+**Rule:** When working on ANY project, check/update the status.md file first.
+
+---
+
 ## Active Projects
 
 ### Dropbox Integration (2026-04-15)
