@@ -120,13 +120,34 @@ Locations:
 
 ## Workflow Rules (Approved 2026-04-16)
 
-**See:** /root/.openclaw/workspace/workflow-memo.md for full details
+### Current Framework (Active)
 
-### Key Points:
-- C-Suite chat = Strategy & high-level only
-- Project groups = Content approvals & day-to-day
-- Morning briefings saved to /[Project]/Reports/
-- Social/Blog posts: Agent drafts → Project group → Arnel approves → Dropbox
+**Morning Activation Protocol:**
+1. CEO (Ron) posts morning activation message in each PROJECT OPS group
+2. Activation includes direction, deadline (24h), and expectations
+3. Agents generate content within 24 hours
+4. Agents submit drafts to PROJECT OPS group for approval
+5. Arnel reviews → approves (✅) or requests changes (❌)
+6. Upon approval → Save as .docx to Dropbox (organized by project)
+
+**Communication Structure:**
+| Chat | Purpose |
+|------|---------|
+| C-Suite Group | Strategic oversight, high-level direction |
+| CEO Direct (Project X) | Direct communication between Ron & Arnel |
+| Project Ops Groups | Day-to-day work, approvals, team coordination |
+
+**Storage:**
+- Approved content → Dropbox → /[Project]/ folder → .docx format
+- Reports → /[Project]/Reports/ folder
+- Drafts → Project workspace ~/drafts/
+
+**Approval Flow:**
+1. Agent submits draft in project ops channel
+2. Ron posts to group with "Approve?" request
+3. Arnel replies "yes" or reacts ✅ to approve
+4. Ron saves to Dropbox as .docx
+5. Ron posts confirmation
 
 ## Business Setup Summary (2026-04-16)
 
@@ -175,6 +196,13 @@ Locations:
 - **Email:** info@sativaexchange.com (Google Workspace)
 - **Discord:** DISABLED (as per Arnel's request)
 - **Telegram:** ENABLED - Bot: @btcpastafarianbot
+- **Cloudflare API:** Global API key available (cfk_udFYU0BTvaDpMMAXrqI5P4VWa0Pw3LEaubUYNgTC2b28e27d) - can add/edit DNS records without asking
+
+### What I Can Do (No Need to Ask)
+- Cloudflare DNS management (A, CNAME, TXT records)
+- All existing integrations in INTEGRATIONS.md
+- Git operations (push to openclaw-workspace)
+- File read/write/edit in workspace
 
 ### Telegram Channels (CORRECTED)
 | Channel ID | Name | Purpose |
@@ -189,7 +217,45 @@ Locations:
 
 **Bidirectional Comms:** ALL collaboration groups accept text replies + emoji reactions for approve/deny/alter
 
+## CRITICAL: Context Loss Prevention
+
+**Problem:** Conversation context can reset unexpectedly (context limit exceeded). This is NOT visible from Telegram.
+
+**Solution: ALWAYS save state proactively**
+- After EVERY meaningful conversation → write to memory/YYYY-MM-DD.md
+- Keep MEMORY.md updated with current critical info
+- Never rely on conversation history alone
+
+### BEFORE DOCUMENTING - CHECK FIRST
+**Rule:** Never re-document what already exists.
+
+- Search workflow-memo.md, MEMORY.md, docs/ folder first
+- Use "As documented in [file]" instead of re-writing details
+- If it exists: REFERENCE it, don't duplicate it
+- Only create new documentation if it doesn't exist
+
+### CHECKPOINT SYSTEM (Active)
+
+**Protocol:**
+- Save checkpoint every ~20-25 messages (~30 min of chat)
+- Warn at 80% context before next response
+- Save immediately after significant decisions/work
+
+**Current state tracked in:** memory/2026-04-16.md
+
+**Backup protocol:**
+1. Start of session: Read memory files
+2. During session: Save key info to memory/YYYY-MM-DD.md
+3. End of session: Update MEMORY.md with final state
+
+---
+
 ## Known Issues
+
+### System Path Configuration
+**CRITICAL:** All paths in openclaw.json MUST use `/home/openclaw/.openclaw/` (NOT `/root/.openclaw/`)
+
+This was the cause of C-Suite group failure on 2026-04-16. Fixed by replacing all 78 path occurrences.
 
 ### Memory Auto-Indexing Bug
 **Status:** OPEN - No automatic memory indexing exists in OpenClaw v2026.3.2
