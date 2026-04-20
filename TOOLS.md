@@ -3,13 +3,13 @@
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
 ## Telegram Groups (Two-way chat)
-- **Sativa Exchange Ops:** -5167418353
-- **Sativa Exchange Ops (old):** -1003873622522
-- **RinkStop Ops:** -5043773858
-- **Top Shelf Toker Ops:** -5164369379
+- **C-Suite Group:** -4990884833 ✅ (bidirectional) - Strategic discussions
+- **CEO Direct (Project X):** -5026194744 ✅ (bidirectional) - Direct Ron ↔ Arnel
+- **Sativa Exchange Ops:** -5167418353 ✅ (bidirectional)
+- **RinkStop Ops:** -5043773858 ✅ (bidirectional)
+- **Top Shelf Toker Ops:** -5164369379 ✅ (bidirectional)
 - **Kevlar Data Ops:** -5132774377 ✅ (bidirectional)
 - **Confidential Ops:** -5283458613 ✅ (bidirectional)
-- **Planning:** -4990884833 ✅ (bidirectional)
 
 ## Telegram Channels (One-way broadcast - deprecated)
 - **CEO Channel:** -1003745665491

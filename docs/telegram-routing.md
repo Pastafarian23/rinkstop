@@ -6,7 +6,7 @@
 |---------------|------------|---------|
 | CEO Channel | `-1003745665491` | Strategic updates |
 | Social Media | `-1003907321273` | Social team |
-| Blog Posts | `-1003779195973` | Content team |
+| ~~Blog Posts~~ | ~~`-1003779195973`~~ | ~~ARCHIVED~~ |
 | Brainstorm | `-1003847388689` | Brainstorming |
 | RinkStop Ops | `-1003967596187` | RinkStop team |
 | SativaExchange Ops | `-1003873622522` | SativaExchange team |
@@ -24,7 +24,6 @@
 | CEO | `-1003745665491` | Strategic updates |
 | Social Media Agents | `-1003907321273` | Social team |
 | Brainstorm Agents | `-1003847388689` | Brainstorming |
-| Blog Posts | `-1003779195973` | Content team |
 
 ## Routing Rules (Bindings)
 
@@ -38,8 +37,7 @@ All bindings are configured in openclaw.json:
     {"match": {"channel": "telegram", "peer": {"kind": "group", "id": "-1003967596187"}}, "agentId": "rinkstop-head"},
     {"match": {"channel": "telegram", "peer": {"kind": "group", "id": "-1003510871879"}}, "agentId": "topshelf-head"},
     {"match": {"channel": "telegram", "peer": {"kind": "group", "id": "-1003907321273"}}, "agentId": "topshelf-social"},
-    {"match": {"channel": "telegram", "peer": {"kind": "group", "id": "-1003847388689"}}, "agentId": "topshelf-brainstormer"},
-    {"match": {"channel": "telegram", "peer": {"kind": "group", "id": "-1003779195973"}}, "agentId": "topshelf-content"}
+    {"match": {"channel": "telegram", "peer": {"kind": "group", "id": "-1003847388689"}}, "agentId": "topshelf-brainstormer"}
   ]
 }
 ```
@@ -57,7 +55,6 @@ All groups configured with `requireMention: false`:
         "-1003873622522": {"requireMention": false},
         "-1003510871879": {"requireMention": false},
         "-1003967596187": {"requireMention": false},
-        "-1003779195973": {"requireMention": false},
         "-1003907321273": {"requireMention": false},
         "-1003847388689": {"requireMention": false}
       }
@@ -81,7 +78,6 @@ All groups configured with `requireMention: false`:
 | TopShelfToker | topshelf-head | workspace-topshelf-head |
 | Social Media | topshelf-social | workspace-topshelf-social |
 | Brainstorm | topshelf-brainstormer | workspace-topshelf-brainstormer |
-| Blog Posts | topshelf-content | workspace-topshelf-content |
 
 ## Recovery Steps
 

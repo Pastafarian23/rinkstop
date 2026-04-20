@@ -2,6 +2,56 @@
 
 ## 2026-04-16
 
+### Path Mismatch - Critical
+**Problem:** C-Suite group (-4990884833) returned "Something went wrong" error. Logs showed `EACCES: permission denied, mkdir '/root/.openclaw/agents/main/sessions'`.
+
+**Root Cause:** 
+- openclaw.json had all paths pointing to `/root/.openclaw/...`
+- Gateway (running as root) wrote to `/root/.openclaw/...`
+- User "openclaw" only had access to `/home/openclaw/.openclaw/...`
+- Path mismatch caused complete session failure for certain groups
+
+**What should have happened:** Paths should point to `/home/openclaw/.openclaw/...` to match where the data actually is.
+
+**Fix Applied:**
+1. Replaced all `/root/.openclaw` with `/home/openclaw/.openclaw` in openclaw.json (78 occurrences)
+2. Restarted gateway to apply changes
+
+**Prevention (NON-NEGOTIABLE):**
+- All paths in openclaw.json MUST use `/home/openclaw/.openclaw/` not `/root/.openclaw/`
+- Before any config change, verify path consistency
+- This should be checked in pre-flight or validation
+- Document the correct base path: `/home/openclaw/.openclaw/`
+
+---
+
+## 2026-04-16
+
+### Re-Documenting Instead of Referencing
+**Problem:** Documented workflow details that were already in workflow-memo.md (morning activation, 24h deadline, Dropbox .docx format). Re-wrote existing information.
+
+**Root Cause:** 
+- Not checking existing docs before adding new documentation
+- Duplicating instead of referencing
+- "New session" syndrome - treating everything as new
+
+**What should have happened:** When documenting workflow, check if it already exists in workflow-memo.md or other docs. Reference it: "As documented in workflow-memo.md..."
+
+**Fixes Applied:**
+1. Added this lesson
+2. Updated MEMORY.md with "Check Before Document" rule
+
+**Prevention (NON-NEGOTIABLE):**
+- Before documenting ANY workflow/process, SEARCH existing docs first
+- Use "As documented in [file]" instead of re-writing details
+- Check: workflow-memo.md, MEMORY.md, docs/ folder
+- Ask "Is this already documented?" before writing
+- If already documented, just reference - don't duplicate
+
+---
+
+## 2026-04-16
+
 ### Forgetting Integrations - Critical
 **Problem:** Asked about Dropbox, couldn't recall the Maton.ai integration even though it was documented in INTEGRATIONS.md.
 
@@ -50,6 +100,24 @@
 - Ask "Ready to push X files to [repo]. Approve?" before executing
 - Never force push without explicit permission
 - NEVER mix projects in one repo
+
+---
+
+### Announcing Without Delivering
+**Problem:** Ron announces tasks ("Let me analyze this") but doesn't deliver results - leaves messages hanging.
+
+**Root Cause:** 
+- Not following through on announced intentions
+- No explicit commitment to delivery timeframe
+- Treating announcement as completion
+
+**What should have happened:** State task, state expected delivery, then deliver. Never announce without completing.
+
+**Prevention (NON-NEGOTIABLE):**
+- Use format: "Starting [task], will report back in [X min] with [specific deliverable]"
+- If delayed, proactively report: "Still working on [task], need ~X more minutes"
+- If a message is left hanging, immediately resume and deliver when asked
+- See: `/workspace/docs/discipline-protocol.md`
 
 ---
 

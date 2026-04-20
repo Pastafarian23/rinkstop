@@ -336,3 +336,40 @@ This was the cause of C-Suite group failure on 2026-04-16. Fixed by replacing al
 | 10 | "find hockey coach near me" | ⏳ PENDING |
 
 **Progress:** 1/10 completed (10%)
+---
+
+## Make.com MCP Integration (2026-04-19) ✅ WORKING
+
+### What We Learned:
+
+**Problem:** Make.com was blocking API calls via Cloudflare protection
+
+**Root Cause:** 
+- Using wrong endpoint (`www.make.com` instead of zone-specific URL)
+- Using regular API token instead of MCP token
+- Cloudflare was challenging all requests to generic endpoints
+
+**Solution:**
+1. Generate an MCP token in Make.com (Profile → API access → Add token → add `mcp:use` scope)
+2. Find your specific zone (us1, us2, eu1, eu3, etc.) by testing each
+3. Use the zone-specific endpoint: `https://<ZONE>.make.com/mcp/stateless`
+4. Pass token via header: `Authorization: Bearer <MCP_TOKEN>`
+
+**Working Config:**
+- Zone: `us2.make.com`
+- Endpoint: `https://us2.make.com/mcp/stateless`
+- MCP Token: `1c38b12d-1c30-4459-a14f-3f2dee8040c5`
+
+**OpenClaw Config Location:** `/root/.openclaw/openclaw.json` - added `mcpServers` section
+
+**Key Insight:** Make.com has different zones. You MUST use your organization's specific zone, not generic `www.make.com`. Test each zone (us1, us2, eu1, eu2, eu3) to find yours.
+
+**Mistakes Made:**
+1. Initially tried `www.make.com` - got Cloudflare challenge
+2. Used regular API token instead of MCP token with `mcp:use` scope
+3. Didn't realize the zone system until reading Make.com MCP docs
+
+---
+
+### Maton.ai (Still Broken)
+**Status:** Auth errors - still needs investigation

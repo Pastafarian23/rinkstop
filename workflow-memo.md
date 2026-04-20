@@ -5,7 +5,42 @@
 - Human Bridge (physical tasks only he can do)
 - Strategic direction
 
-## C-Suite Chat (This Chat)
+## Communication Structure
+
+| Chat | Purpose |
+|------|---------|
+| C-Suite Group | Strategic oversight, high-level direction |
+| CEO Direct (Project X) | Direct Ron ↔ Arnel communication |
+| Project Ops Groups | Day-to-day work, approvals, team coordination |
+
+## Morning Activation Protocol (CRITICAL)
+
+**This is the primary workflow for content generation:**
+
+1. **CEO posts morning activation** in each PROJECT OPS group
+   - Includes direction for the day
+   - Sets deadline: 24 hours
+   - Specifies what content is needed
+
+2. **Agents have 24 hours** to generate and submit content
+
+3. **Agents submit drafts** to the PROJECT OPS group
+   - Not to C-Suite directly
+   - Format: Ready for review with summary
+
+4. **Arnel reviews → approves (✅) or requests changes (❌)**
+   - Reply in project ops group
+   - Or react with ✅/❌
+
+5. **Upon approval:** Save as .docx to Dropbox
+   - Path: /[Project]/Social/ or /[Project]/Blog Posts/
+   - Format: .docx (Word document)
+
+6. **Ron confirms** save location in group
+
+---
+
+## C-Suite Chat
 - Strategic discussions
 - High-level execution updates
 - Cross-project issues
