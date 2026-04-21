@@ -272,6 +272,19 @@ This was the cause of C-Suite group failure on 2026-04-16. Fixed by replacing al
 
 **Root Cause:** OpenClaw's memory system requires manual reindexing - no auto-index on startup or file change
 
+## Post Tracker System (2026-04-21)
+
+All proposed posts now tracked in: `post-tracker.md`
+
+**Why:** Preserve context even if Arnel goes away for weeks. When they return and say "approve the LinkedIn post about Youth Hockey" - I know exact post referenced.
+
+**How it works:**
+- Every proposed post logged with: date, platform, preview, message ID, status
+- Status flows: pending → approved → revision → posted
+- Quick reference: "Post #5 from RinkStop LinkedIn" = RinkStop #5 in tracker
+
+---
+
 ## Revenue Goals
 - SativaExchange: Data subscriptions + risk management consulting
 - RinkStop: Directory listings + brand partnerships + advertising
