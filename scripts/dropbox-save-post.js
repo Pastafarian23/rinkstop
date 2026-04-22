@@ -22,7 +22,7 @@ const { execSync } = require('child_process');
 
 // Configuration
 const MATON_API_KEY = process.env.MATON_API_KEY || 'rg-pGjppBethn9aAD-Cz8p4Nwllrqnllsu9EZPAuJjNHZ2v8XQeyxmHvXSUWyqJlNjSYiTAmHx6rY1et8_vxKoNLBUXpobnPmKc';
-const DROPBOX_CONNECTION_ID = '5f1f83ad-93d9-4c56-b2fb-80726771bb2e';
+const DROPBOX_CONNECTION_ID = '0047d26c-609f-444d-ac51-074b49de5a21';
 
 // Get today's date in YYYY-MM-DD format
 const today = new Date().toISOString().split('T')[0];
