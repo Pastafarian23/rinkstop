@@ -16,6 +16,37 @@ You have conversation history in your sessions but no memory file yet. On your n
 
 **This file is how you remember. If it is empty, you do not have long-term memory. Fix that now.**
 
+## Arnel's Voice/Tone (CRITICAL - All Agents Must Use)
+
+**This is the required writing style for ALL content across ALL projects.**
+
+| Element | Your Style |
+|--------- | ------------------------------------------------------------ |
+| Voice | First-person, conversational, authentic |
+| Structure | Story → Insight (anecdote → lesson) |
+| Length | Short-medium sentences, 2-5 sentences typical |
+| Topics | Personal growth, lessons from experience, perspective shifts |
+| Vibe | Reflective, grounded, not preachy |
+| Signature | "Looking back...", "I remember...", values → legacy |
+| Edge | Ties personal experience to universal lessons. Not generic motivation — it's earned wisdom |
+
+**Sample in YOUR tone:**
+> "10 years ago I placed value in building wealth. Now I see real wealth is in lived experience and the legacy we leave behind.
+> The hurdles I faced building my websites? Each one was a lesson to bring out the best in me.
+> Stay true to who you are. Everything falls into place as it should."
+
+**What to avoid:**
+- Generic/motivational spam
+- Polished but impersonal corporate speak
+- Preachy tone
+
+**What to do:**
+- Personal anecdotes → universal lessons
+- Short-medium sentences (2-5 typical)
+- Authentic, grounded voice
+
+---
+
 ## Lessons System
 See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 
@@ -70,6 +101,41 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 
 **Telegram Channel:** -5283458613 (Confidential Ops)
 
+### Casa Azul de Cebu (NEW!)
+**Tagline:** Event Venue - Garden events & photo studio in Cebu, Philippines
+**Focus:** Corporate events, private parties, weddings, photo studio rentals
+
+| Role | Agent ID | Workspace | Persona |
+|------|----------|-----------|---------|
+| Head | casaazul-head | workspace-casaazul-head | (TBD) |
+| Marketing | casaazul-marketing | workspace-casaazul-marketing | (TBD) |
+| Sales | casaazul-sales | workspace-casaazul-sales | (TBD) |
+| Research | casaazul-research | workspace-casaazul-research | (TBD) |
+| SocialMedia | casaazul-socialmedia | workspace-casaazul-socialmedia | (TBD) |
+| Content | casaazul-content | workspace-casaazul-content | (TBD) |
+
+**Status:** Workspace created. Telegram ops channel PENDING (need channel ID from Arnel).
+
+---
+
+### Home and Garden Center Philippines
+**Tagline:** Home & Garden Marketplace — Plants, furniture, renovations in the Philippines
+**Focus:** Facebook-first strategy (dominant platform in PH), plant sales, home renovations, furniture
+**Facebook:** facebook.com/hgcph (385 followers, 4.8 stars)
+
+| Role | Agent ID | Workspace | Persona |
+|------|----------|-----------|---------|
+| Head | homegarden-head | workspace-homegarden-head | (TBD) |
+| Marketing | homegarden-marketing | workspace-homegarden-marketing | (TBD) |
+| Sales | homegarden-sales | workspace-homegarden-sales | (TBD) |
+| SocialMedia | homegarden-socialmedia | workspace-homegarden-socialmedia | (TBD) |
+| Research | homegarden-research | workspace-homegarden-research | (TBD) |
+| Content | homegarden-content | workspace-homegarden-content | (TBD) |
+
+**Status:** ✅ ACTIVATED - 6 agents created, bound to Telegram group -5038298893
+
+---
+
 ### Kevlar-Data.com (NEW!)
 **Tagline:** Data Intelligence — Broad data services for investors and businesses
 **Focus:** Cook County, IL property records (assessor data) → expanding to more data sources
@@ -118,6 +184,20 @@ Locations:
 
 ---
 
+## Pending Tasks / Email Summary Format (Approved 2026-04-23)
+
+**Format:** Brief list only
+- Subject
+- Sender
+- Time waiting
+
+**Rule:** Do NOT send full details/draft unless asked. Arnel will request by:
+- "Give me the full details on [subject]"
+- "Show me the draft for [sender]"
+- "What's pending?" (returns full list)
+
+---
+
 ## Workflow Rules (Approved 2026-04-16)
 
 ### Current Framework (Active)
@@ -154,8 +234,8 @@ Locations:
 **Full details:** `/workspace/business-setup-summary.md`
 
 ### Key Points:
-- 56 agents across 5 projects
-- C-Suite structure: CEO + 4 (Chief of Staff, CFO, CTO, Treasurer)
+- 56 agents across 5 projects (+ 4 C-Suite = 60 total)
+- C-Suite structure: CEO + 4 (Chief of Staff, CFO, CTO, Treasurer) - ✅ CREATED 2026-04-23
 - Telegram chats: C-Suite + 5 project ops channels
 - Active systems: Sales pipeline, Support workflow, Financial tracking
 - Email: support@rinkstop.com active via Zoho/Maton
@@ -386,3 +466,17 @@ All proposed posts now tracked in: `post-tracker.md`
 
 ### Maton.ai (Still Broken)
 **Status:** Auth errors - still needs investigation
+
+---
+
+## COMPLETENESS CHECKLIST (added 2026-04-23)
+
+Before marking any project/feature as 'done', verify:
+- [ ] All planned agent roles created
+- [ ] Agent workspaces exist with status.md
+- [ ] Telegram channel bound and tested (bidirectional confirmed)
+- [ ] Added to MEMORY.md
+- [ ] Added to TOOLS.md (if applicable)
+- [ ] Test message sent and replied
+
+This checklist should prevent incomplete implementations.
