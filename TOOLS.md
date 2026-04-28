@@ -10,6 +10,11 @@ Skills define _how_ tools work. This file is for _your_ specifics — the stuff 
 - **Top Shelf Toker Ops:** -5164369379 ✅ (bidirectional)
 - **Kevlar Data Ops:** -5132774377 ✅ (bidirectional)
 - **Confidential Ops:** -5283458613 ✅ (bidirectional)
+- **Monetize Arnel:** -5255517781 ✅ (bidirectional) - Personal brand monetization
+- **Home & Garden Center PH:** -5038298893 ✅ (bidirectional) - Home/garden business
+- **Casa Azul de Cebu:** -5028142945 ✅ (bidirectional) - Event venue in Cebu
+- **Arnel's Farm Ops:** -5266315809 ✅ (bidirectional) - Agricultural products (mushroom chicharon, dried mangoes, banana chips)
+- **Poi Restaurant Ops:** -5106187072 ✅ (bidirectional) - Hawaiian Filipino fusion restaurant
 
 ## Telegram Channels (One-way broadcast - deprecated)
 - **CEO Channel:** -1003745665491
@@ -59,6 +64,18 @@ Things like:
 
 ## Email
 - **Address:** info@sativaexchange.com
+
+## Dropbox Connections
+
+| Project | Connection ID | Status | Save Path |
+|---------|---------------|--------|-----------|
+| Casa Azul de Cebu | 0047d26c-609f-444d-ac51-074b49de5a21 | ✅ Active | /Casa Azul de Cebu/Social Media/ |
+| SativaExchange | (pending) | - | - |
+| RinkStop | (pending) | - | - |
+| TopShelfToker | (pending) | - | - |
+| Kevlar-Data | (pending) | - | - |
+| Home & Garden Center PH | (pending) | - | - |
+| Confidential | (pending) | - | - |
 
 ## Pexo Video Workflow (Important!)
 - **ALWAYS confirm prompts with Arnel BEFORE submitting to Pexo**

@@ -39,11 +39,21 @@ const [project, type, title, ...contentParts] = args;
 const content = contentParts.join(' ');
 
 // Validate project
-const validProjects = ['SativaExchange', 'RinkStop', 'TopShelfToker', 'KevlarData'];
+const validProjects = ['SativaExchange', 'RinkStop', 'TopShelfToker', 'KevlarData', 'CasaAzul', 'CasaAzuldeCebu', 'HomeGarden', 'HomeGardenCenterPH', 'Confidential', 'ArnelsFarm'];
 if (!validProjects.includes(project)) {
   console.error(`Invalid project. Choose from: ${validProjects.join(', ')}`);
   process.exit(1);
 }
+
+// Map project aliases to folder names
+const projectFolders = {
+  'CasaAzul': 'Casa Azul de Cebu',
+  'CasaAzuldeCebu': 'Casa Azul de Cebu',
+  'HomeGarden': 'Home and Garden Center PH',
+  'HomeGardenCenterPH': 'Home and Garden Center PH',
+  'Confidential': 'Confidential',
+  'ArnelsFarm': "Arnel's Farm"
+};
 
 // Validate type
 const validTypes = ['Blog Posts', 'Social Media', 'Reports'];
@@ -156,8 +166,9 @@ async function main() {
     await createDocx();
     console.log('✅ Document created');
     
-    // Dropbox path
-    const dropboxPath = `/${project}/${type}/${filename}`;
+    // Dropbox path - use mapped folder name if available
+    const folderName = projectFolders[project] || project;
+    const dropboxPath = `/${folderName}/${type}/${filename}`;
     console.log(`☁️ Uploading to Dropbox: ${dropboxPath}`);
     
     // Upload

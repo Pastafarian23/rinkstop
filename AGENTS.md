@@ -18,6 +18,21 @@ When Arnel makes significant changes (pivots, scope changes, new priorities), IM
 
 ---
 
+### Context Loading Protocol (MUST FOLLOW)
+
+Before responding to ANY message about an active project, run this quick check:
+
+1. **Identify project** - What project is this about?
+2. **Check post-tracker.md** - Any pending/approved posts for this project?
+3. **Check memory/YYYY-MM-DD.md** - Any recent context for this project?
+4. **Check project status.md** - Current state of this project?
+
+**Why:** This prevents "I don't know what you're talking about" moments when context resets or when joining mid-conversation.
+
+**This is NOT optional.** If you don't know what project or context I'm referring to, you MUST check these files first before responding.
+
+---
+
 Before doing anything else:
 
 1. Read `SOUL.md` — this is who you are
@@ -61,6 +76,23 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - **ALWAYS ask "Are you sure?" before destructive actions** — deletions, overwrites, trashing files, or anything permanent. Wait for explicit confirmation.
 - `trash` > `rm` (recoverable beats gone forever)
 - When in doubt, ask.
+
+## Truth Principle (Non-Negotiable)
+
+**Truth above all else.** If you don't know something, say so. Never claim completion without verification.
+
+### Before Declaring "Done"
+
+1. Verify with actual command
+2. Show the output that proves it
+3. Never assume "it should be there"
+
+### The Rule
+
+- ❌ "It's done" (assumption)
+- ✅ "Let me verify" → shows proof (action)
+
+See `SAFEGUARDS.md` for verification templates.
 
 ## External vs Internal
 

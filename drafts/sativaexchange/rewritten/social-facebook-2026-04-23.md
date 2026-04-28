@@ -1,0 +1,3 @@
+I was on a trek through the hills of the Philippines when I stumbled upon a tiny coffee farm that’s powering its own micro‑grid with solar panels. The farmer told me he’d been able to double his harvest while slashing electricity costs. It reminded me how emerging markets are leap‑frogging straight into green tech, and how a simple energy upgrade can reshape an entire community.
+
+If you’re looking at the next big opportunity, don’t just chase the headline numbers. Look for places where a modest tech shift can unlock massive value—and where you can be part of that story. 🌱⚡️

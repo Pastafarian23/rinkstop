@@ -1,87 +1,120 @@
-# Post Tracker - Social Media & Blog Posts
+# Post Tracking System
 
-**Purpose:** Track all posts proposed in ops channels so context is preserved even after time passes.
+**Last Updated:** 2026-04-24
 
----
-
-## How It Works
-- Every time I propose posts in an ops channel, I log it here
-- Use this file to reference: "Post #2 from the LinkedIn set" or "The blog post from April 21"
-- Status: `pending` → `approved` → `posted`
-
----
-
-## 2026-04-21
-
-### RinkStop Ops (-5043773858)
-
-| # | Type | Platform | Status | Message ID | Preview |
-|---|------|----------|--------|------------|---------|
-| 1 | Social | Facebook | pending | - | NHL Playoffs 2026 |
-| 2 | Social | Twitter | pending | - | NHL Playoffs 2026 |
-| 3 | Social | Instagram | pending | - | NHL Playoffs 2026 |
-| 4 | Social | LinkedIn | pending | 2311 | NHL Playoffs 2026 |
-| 5 | Social | LinkedIn | pending | 2311 | Youth Hockey Asia |
-| 6 | Social | LinkedIn | pending | 2311 | Hockey Training |
-
-**Notes:** 
+## Stages (All Projects)
+1. **Draft** → Agent writes post
+2. **Pending Approval** → Posted to Telegram ops channel for Arnel's review
+3. **Approved** → Saved to Dropbox, awaiting Arnel to confirm posting
+4. **Pending Posting** → Approved in Dropbox, waiting for Arnel to post to social
+5. **Posted** → Confirmed posted by Arnel
 
 ---
 
-### SativaExchange Ops (-5167418353)
+## RinkStop
 
-| # | Type | Platform | Status | Message ID | Preview |
-|---|------|----------|--------|------------|---------|
-| 1 | Social | Facebook | pending | - | Market Intelligence |
-| 2 | Social | Twitter | pending | - | Market Intelligence |
-| 3 | Social | Instagram | pending | - | Market Intelligence |
-| 4 | Social | LinkedIn | pending | 2312 | Market Intelligence |
-| 5 | Social | LinkedIn | pending | 2312 | Green Tech Investment |
-| 6 | Social | LinkedIn | pending | 2312 | Crypto & Emerging Markets |
+**Email:** support@rinkstop.com
+**Channel:** -5043773858
 
-**Notes:**
+### Social Posts (Pending Posting)
 
----
+| Platform | Content | Date |
+|----------|---------|------|
+| Facebook | NHL Playoffs 2026 | 2026-04-22 |
+| Twitter/X | NHL Playoffs 2026 | 2026-04-22 |
+| Facebook | Youth Hockey Asia | 2026-04-22 |
+| LinkedIn | Youth Hockey Asia | 2026-04-22 |
+| LinkedIn | Hockey Training | 2026-04-22 |
 
-### TopShelfToker Ops (-5164369379)
+### Blog Posts (Pending Posting)
 
-| # | Type | Platform | Status | Message ID | Preview |
-|---|------|----------|--------|------------|---------|
-| 1 | Social | Facebook | pending | - | Cannabis Industry Growth |
-| 2 | Social | Twitter | pending | - | Cannabis Industry Growth |
-| 3 | Social | Instagram | pending | - | Cannabis Industry Growth |
-| 4 | Social | LinkedIn | pending | 2313 | Cannabis Industry Growth |
-| 5 | Social | LinkedIn | pending | 2313 | Cannabis Accessories |
-| 6 | Social | LinkedIn | pending | 2313 | Cannabis Culture |
-
-**Notes:**
+| Title | Date |
+|-------|------|
+| Youth Hockey Growth | 2026-04-22 |
 
 ---
 
-## Previous Posts (Archive)
+## SativaExchange
 
-*(Add older posts here when approved/posted so history is preserved)*
+**Email:** [NOT SET]
+**Channel:** -5167418353
 
-### 
+### Social Posts (Pending Posting)
 
----
+| Platform | Content | Date |
+|----------|---------|------|
+| Facebook | Market Intelligence | 2026-04-22 |
+| Twitter | Market Intelligence | 2026-04-22 |
+| LinkedIn | Market Intelligence | 2026-04-22 |
+| LinkedIn | Green Tech Investment | 2026-04-22 |
+| LinkedIn | Crypto & Emerging Markets | 2026-04-22 |
 
-## Quick Reference
-
-### To Reference a Post:
-- "The LinkedIn post about Youth Hockey" → RinkStop #5
-- "Post 2 from the SativaExchange social set" → SativaExchange #2
-
-### Status Values:
-- `pending` - Awaiting your approval
-- `approved` - You approved, ready to post
-- `revision` - You requested changes
-- `posted` - Successfully posted to social media
+### Blog Posts (Pending Posting)
+(None)
 
 ---
 
-## Update Protocol
-1. Before sending to ops channel → Add entry as `pending`
-2. After you approve → Change to `approved`
-3. After you request changes → Change to `revision` + note what to change
-4. After posting → Change to `posted` + add date posted
+## TopShelfToker
+
+**Email:** [NOT SET]
+**Channel:** -5164369379
+
+### Social Posts (Pending Posting)
+
+| Platform | Content | Date |
+|----------|---------|------|
+| Facebook | Cannabis Industry Growth | 2026-04-22 |
+| Twitter | Cannabis Industry Growth | 2026-04-22 |
+| LinkedIn | Cannabis Industry Growth | 2026-04-22 |
+| LinkedIn | Cannabis Accessories | 2026-04-22 |
+| LinkedIn | Cannabis Culture | 2026-04-22 |
+
+### Blog Posts (Pending Posting)
+(None)
+
+---
+
+## Kevlar Data
+
+**Email:** [NOT SET]
+**Channel:** -5132774377
+
+### Social Posts
+(None)
+
+### Blog Posts
+(None)
+
+---
+
+## Confidential
+
+**Email:** [NOT SET]
+**Channel:** -5283458613
+
+### Social Posts
+(None)
+
+### Blog Posts
+(None)
+
+---
+
+## Home & Garden Center PH
+
+**Email:** [NOT SET]
+**Channel:** -5038298893
+
+### Social Posts
+(None)
+
+### Blog Posts
+(None)
+
+---
+
+## Commands
+- `pending rinkstop` - Show RinkStop pending items
+- `pending sativaexchange` - Show SativaExchange pending items
+- `posted rinkstop [platform]` - Mark post as posted
+- `update post [project] [post] to [stage]` - Move post between stages

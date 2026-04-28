@@ -1,0 +1,1 @@
+Just rolled a fresh batch of my favorite sativa and thought about how planting seeds mirrors building a brand – patience, care, and a little bit of sunshine go a long way. 🌱💚 #CannabisJourney

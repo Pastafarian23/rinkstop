@@ -1,0 +1,1 @@
+I still remember my first shaky strides on a thin Chicago pond. Fast‑forward to coaching kids in Cebu—watching an 8‑year‑old nail her first crossover reminded me: progress is a series of tiny steps, not giant leaps. Celebrate every small win on the ice; they add up to confidence. #hockey #youthsport

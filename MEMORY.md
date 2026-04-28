@@ -136,28 +136,57 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 
 ---
 
-### Kevlar-Data.com (NEW!)
+### Kevlar-Data.com (ON HOLD)
 **Tagline:** Data Intelligence — Broad data services for investors and businesses
 **Focus:** Cook County, IL property records (assessor data) → expanding to more data sources
 **GitHub:** https://github.com/Pastafarian23/Kevlar-Data
-**Platform:** Replit
-**Pivot Note (2026-04-15):** Expanded from property-only to broader data intelligence — property data is the starting point, but scope includes multiple data verticals (sports data, market data, etc.)
+**Platform:** Replit (paused)
+**Status:** ⏸️ ON HOLD — Domain listed for sale on atom.com (2026-04-28)
+
+**Telegram Channel:** -5132774377 (Kevlar Data Ops)
+**Note:** No active development until domain sells or decision to relaunch
+
+---
+
+### Arnel's Farm (NEW!)
+**Tagline:** Premium Philippine Agricultural Products — Mushroom chicharon, dried mangoes, banana chips
+**Location:** Cebu, Philippines
 
 | Role | Agent ID | Workspace | Persona |
 |------|----------|-----------|---------|
-| Head | kevlar-head | workspace-kevlar-head | (TBD) |
-| Marketing | kevlar-marketing | workspace-kevlar-marketing | (TBD) |
-| Sales | kevlar-sales | workspace-kevlar-sales | (TBD) |
-| SocialMedia | kevlar-socialmedia | workspace-kevlar-socialmedia | (TBD) |
-| Research | kevlar-research | workspace-kevlar-research | (TBD) |
-| Content | kevlar-content | workspace-kevlar-content | (TBD) |
-| Scraping | kevlar-scraping | workspace-kevlar-scraping | (TBD) |
-| Data | kevlar-data | workspace-kevlar-data | (TBD) |
-| Analytics | kevlar-analytics | workspace-kevlar-analytics | (TBD) |
-| Automation | kevlar-automation | workspace-kevlar-automation | (TBD) |
+| Head | arnels-farm-head | workspace-arnels-farm | (TBD) |
+| Marketing | arnels-farm-marketing | workspace-arnels-farm | (TBD) |
+| Sales | arnels-farm-sales | workspace-arnels-farm | (TBD) |
+| SocialMedia | arnels-farm-socialmedia | workspace-arnels-farm | (TBD) |
+| Research | arnels-farm-research | workspace-arnels-farm | (TBD) |
+| Content | arnels-farm-content | workspace-arnels-farm | (TBD) |
 
-**Status:** Scraper in progress - Replit building Cook County scraper
-**Telegram Channel:** -1003971951712 (Kevlar Data Ops)
+**Products:**
+- Mushroom Chicharon (original)
+- Dried Mangoes (new)
+- Banana Chips (new)
+
+**Status:** Workspace created, agents configured
+**Telegram Channel:** PENDING (need channel ID from Arnel)
+
+---
+
+### Poi Restaurant (NEW!)
+**Tagline:** Hawaiian Filipino Fusion Restaurant — Filipino dishes with Hawaiian flavors
+**Location:** Philippines (Cebu area)
+
+| Role | Agent ID | Workspace | Persona |
+|------|----------|-----------|---------|
+| Head | poi-head | workspace-poi-restaurant | (TBD) |
+| Marketing | poi-marketing | workspace-poi-restaurant | (TBD) |
+| Sales | poi-sales | workspace-poi-restaurant | (TBD) |
+| SocialMedia | poi-socialmedia | workspace-poi-restaurant | (TBD) |
+| Research | poi-research | workspace-poi-restaurant | (TBD) |
+| Content | poi-content | workspace-poi-restaurant | (TBD) |
+
+**Concept:** Hawaiian Filipino fusion cuisine
+**Status:** Workspace created, agents configured
+**Telegram Channel:** PENDING (need channel ID from Arnel)
 
 ---
 
@@ -187,14 +216,24 @@ Locations:
 ## Pending Tasks / Email Summary Format (Approved 2026-04-23)
 
 **Format:** Brief list only
-- Subject
-- Sender
-- Time waiting
+- Sender | Subject | Time waiting
+
+**⚠️ CRITICAL RULE - WHEN TO SEND:**
+- **New email arrives → Alert with summary + draft** (for review/approval)
+- **Pending list only when Arnel explicitly asks** — "what's pending", "pending emails"
+- **Condensed format for pending list:** Sender | Subject | Time waiting (no summaries, no drafts)
 
 **Rule:** Do NOT send full details/draft unless asked. Arnel will request by:
 - "Give me the full details on [subject]"
 - "Show me the draft for [sender]"
-- "What's pending?" (returns full list)
+- "What's pending?" (returns condensed list)
+
+**Workflow:**
+1. **Hourly check** → Only reports NEW emails (not seen before) with brief summary + draft
+2. **Pending list request** → Condensed: Sender | Subject | Time waiting
+3. **Full details** → Only when explicitly requested
+
+**⚠️ LESSON 2026-04-23 + 2026-04-24:** Must always use condensed format first. Never dump full email content in Telegram. Say less, not more.
 
 ---
 
@@ -240,6 +279,48 @@ Locations:
 - Active systems: Sales pipeline, Support workflow, Financial tracking
 - Email: support@rinkstop.com active via Zoho/Maton
 - GitHub: All backed up
+
+## Improvement Protocols (2026-04-23)
+
+### 1. Immediate Save Protocol
+When Arnel gives feedback or makes a point once:
+- Write to `lessons.md` or relevant file IMMEDIATELY
+- Update MEMORY.md if it's a workflow change
+- Never say "I'll save this" — just do it
+
+### 2. Pre-Response Check (MANDATORY)
+Before every outbound message in Telegram:
+1. Read the relevant rule from MEMORY.md
+2. Verify the message matches it
+3. If uncertain, ask before sending
+
+### 3. Lessons Review
+At the start of each session, check `lessons.md` for any recent lessons that apply to what's being discussed.
+
+### 4. Gap Detection (2026-04-23)
+Periodically (every few days), compare what I'm doing vs what MEMORY.md says:
+- Read MEMORY.md rules
+- Check actual behavior against those rules
+- If mismatch found → note it in `lessons.md` and fix immediately
+
+### 5. Real-Time Accountability (2026-04-24)
+- If I violate a rule, call it out immediately
+- No "I'll do better" — fix the behavior mid-conversation
+- Periodic check-in: "Are we following the rules?" (Arnel asks, I verify)
+
+### 6. Behavioral Guardrails (2026-04-24)
+
+**The Pause:** Before any outbound message, STOP (1 second) and think: "What was I asked for? What does MEMORY.md say?"
+
+**The Simplest Rule:** When asked for X, give ONLY X. Nothing extra "just in case."
+
+**The Question Test:** If unsure, end message with "Is this what you need?" instead of assuming.
+
+**No Auto-Send:** Nothing goes out automatically. Every message is intentional.
+
+**Double-Check on Send:** If violated a rule twice in one day → stop, re-read MEMORY.md, then proceed.
+
+---
 
 ## Active Projects
 
@@ -327,6 +408,31 @@ Locations:
 1. Start of session: Read memory files
 2. During session: Save key info to memory/YYYY-MM-DD.md
 3. End of session: Update MEMORY.md with final state
+
+---
+
+## Post Tracking Rule (CRITICAL)
+
+**Rule:** NEVER claim something is "saved", "done", "posted", or "complete" until:
+1. The action is actually performed
+2. It's logged in post-tracker.md
+3. Verification is confirmed
+
+**The Casa Azul Incident (2026-04-23):**
+- I claimed "Done! The file is now saved" WITHOUT actually running the save script
+- This broke trust and lost the post
+- FIX: Added Casa Azul to post-tracker, fixed the dropbox-save-post.js script, added Context Loading Protocol to AGENTS.md
+
+**Context Loading Protocol (MANDATORY):**
+Before responding to ANY project-related message:
+1. Identify the project
+2. Check post-tracker.md for pending/approved work
+3. Check today's memory file for context
+4. Check project status.md for current state
+
+**Before saying "I can't find it" → ALWAYS search memory files first with multiple keywords. If not found, ask for clarification instead of giving up.**
+
+If I don't know what you're referring to → I MUST check these files first.
 
 ---
 
@@ -480,3 +586,40 @@ Before marking any project/feature as 'done', verify:
 - [ ] Test message sent and replied
 
 This checklist should prevent incomplete implementations.
+
+---
+
+## OpenClaw Gateway Pairing Issue (GitHub #69284) - UNRESOLVED
+
+**Issue:** GitHub #69284 - Gateway recurring pairing required error
+
+**Problem:** 
+- Gateway shows "gateway closed (1008): pairing required" error
+- `paired.json` resets to {} after restart
+- Subagent sessions fail
+- This is a KNOWN UNFIXED BUG in OpenClaw
+
+**Root Cause:**
+- Gateway auth doing 3 jobs at once (user auth, internal service auth, local operator auth)
+- RFC #69066 proposed to fix - still in progress
+
+**Workaround:**
+- Manual fix: Copy pending.json → paired.json
+- Auto-repair script: scripts/gateway-health-monitor.sh (runs when needed)
+
+**Files involved:**
+- /root/.openclaw/devices/paired.json
+- /root/.openclaw/devices/pending.json
+- /root/.openclaw/identity/device.json
+
+**Status:** Still waiting on OpenClaw fix. Check GitHub issues #69284 and #69066 for updates.
+
+---
+
+## Dropbox Organization (Updated 2026-04-28)
+
+### Folder Structure
+Each project folder should have:
+- `Blog Posts/` → .docx (supports h1/h2 formatting)
+- `Social Media/` → .md (preserves emojis for copy-paste)
+- `Reports/` → .docx

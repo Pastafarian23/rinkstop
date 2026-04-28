@@ -1,0 +1,5 @@
+# Facebook Post (2026-04-23)
+
+I still remember the night I tried to launch my first online side hustle from a cramped coffee shop in Manila. The Wi‑Fi was spotty, the espresso machine broke, and I was juggling a half‑finished pitch deck on my laptop while my mind raced with doubts. Yet, every time I hit a snag, I reminded myself that growth lives outside the comfort zone. I pushed through, sent that pitch, and landed my first client—proof that persistence beats perfection.
+
+That experience taught me three things: 1️⃣ Embrace the chaos—it's where ideas get forged. 2️⃣ Show up, even when the odds seem stacked. 3️⃣ Treat every setback as a data point, not a failure. If you're thinking of starting an online business, remember: the perfect moment rarely shows up. Grab the coffee, fix the Wi‑Fi, and just start.

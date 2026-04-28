@@ -59,6 +59,35 @@ _Generated ideas for RinkStop growing and monetization. Updated 2026-04-22._
 
 ---
 
+## AI Image "Humanizer" / Detection Bypass Tool
+
+**Concept:** App/site where users upload AI-generated images to remove detection flags for social media (Facebook, Instagram, etc.)
+
+**Problem:** AI-generated images get flagged/reduced reach on social platforms
+
+**Solution:** Process images to bypass AI detection while maintaining quality
+
+### Market Research (2026-04-25)
+
+**Existing competitors:**
+- BypassAI.ai (text-focused, not images)
+- BypassGPT.ai (text)
+- Undetectable.ai (text)
+
+**Gap:** Most tools are for TEXT. IMAGE bypass is less developed.
+
+### Opportunity
+- Less competition than text humanizers
+- Target: marketers, creators using AI images
+- Bundle potential with text tools
+
+### Risks
+- Arms race with detection tools
+- Platform ToS could crack down
+- Ethical concerns (misleading content)
+
+---
+
 ## Other RinkStop Ideas (To Be Added)
 
 _(Previous ideas can be added here)_

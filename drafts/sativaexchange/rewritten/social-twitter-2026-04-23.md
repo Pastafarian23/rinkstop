@@ -1,0 +1,1 @@
+Just got back from a sunrise bike ride in Nairobi’s outskirts, where a new solar‑powered irrigation system is turning barren fields into thriving farms. The farmer showed me his new yield charts—up 45% in just one season. It’s a reminder: real value in emerging markets often comes from simple, sustainable tech swaps, not flash‑y ticker‑talk. 🌞🚜 #GreenTech #EmergingMarkets

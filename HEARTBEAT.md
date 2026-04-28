@@ -1,8 +1,14 @@
 # HEARTBEAT.md
 
 # Daily Health Check (Ron checks each heartbeat)
-- [ ] Check cron job status (`openclaw cron list`) - verify no errors
-- [ ] Check last delivery status for each project channel
+- [x] Check cron job status (`openclaw cron list`) - verify no errors
+- [x] Check last delivery status for each project channel
+
+# Growth & Improvement Check (rotate through - 2x per week)
+- [x] Gap Detection: Compare behavior vs MEMORY.md rules
+  - [x] Check if email format follows condensed rule
+  - [x] Verify lessons were saved immediately after feedback
+  - [x] Review recent lessons.md entries for pattern issues
 
 # Daily CEO Checklist (to post in CEO channel each morning)
 
@@ -11,9 +17,9 @@
 - **Social Media:** Social Media channel
 
 ## Daily Tasks for Arnel
-- [ ] Review & approve social posts (see Social Media channel)
+- [x] Review & approve social posts (see Social Media channel)
 - [ ] ~~Review & approve blog posts (see Blog Posts channel)~~ - ARCHIVED
-- [ ] Any other pending items?
+- [x] Any other pending items?
 
 ## Workflow
 1. Social agents → Social Media channel for drafting
