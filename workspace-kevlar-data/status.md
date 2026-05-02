@@ -1,21 +1,25 @@
 # Kevlar Data — Status
 
-**Last Updated:** 2026-04-16 12:10 UTC
+**Last Updated:** 2026-04-28 06:14 UTC
+**Status:** ⏸️ ON HOLD — Domain listed for sale on atom.com
 
 ---
 
 ## Current State
 
 ### 🚀 Application
-- **Running:** UNKNOWN (needs check)
+- **Running:** PAUSED (Replit paused or stopped)
 - **Location:** Replit (kevlardata.com)
 - **Platform:** Node.js/Express API
-- **Database:** PostgreSQL (Neon)
+- **Database:** PostgreSQL (Neon) — paused/stopped
 
 ### 🌐 DNS / Hosting
-- **Main Domain:** https://kevlardata.com — **LIVE** ✅
+- **Main Domain:** https://kevlardata.com — **LISTED FOR SALE** on atom.com
 - **API Subdomain:** https://api.kevlardata.com — **NOT CONFIGURED**
-- **Cloudflare:** Not connected yet
+
+### 🔄 Domain Sale
+- **Listing:** atom.com (domain marketplace)
+- **Status:** Listed, awaiting buyers
 
 ---
 
@@ -23,36 +27,32 @@
 
 **Purpose:** Property data intelligence for Cook County, IL investors
 
-**Features:**
+**Original Features:**
 - Property search API
 - Assessor data
 - Future: Multi-vertical API platform (hockey, property, finance, cannabis)
 
-**GitHub:** https://github.com/Pastafarian23/Kevlar-Data
+**GitHub:** https://github.com/Pastafarian23/Kevlar-Data (archived)
 
 ---
 
-## Session Notes (2026-04-16)
+## Session Notes (2026-04-28)
 
-### 12:10 UTC — Status File Created
-- Main site verified live (HTTP 200)
-- API subdomain not set up
-- No Cloudflare tunnel yet
+### 06:14 UTC — Project Put on Hold
+- Arnel decided to pause development
+- Domain listed on atom.com to test market interest
+- No active development until domain sells or decision to relaunch
 
 ---
 
 ## Action Items
 
-- [ ] Verify app is running on Replit
-- [ ] Set up API subdomain (api.kevlardata.com)
-- [ ] Consider Cloudflare tunnel for API
+- [ ] Monitor atom.com for any inquiries/offers
+- [ ] If domain sells: Transfer via Cloudflare/registrar
+- [ ] If no sale: Re-evaluate relaunch strategy
 
 ---
 
 ## Notes for Future Sessions
 
-When starting work on this project:
-1. Check this status.md file first
-2. Verify Replit app is running
-3. Check if API is responding: `curl https://kevlardata.com/api/...`
-4. Check DNS status in Cloudflare
+**Inactive project** — Do not allocate resources unless Arnel instructs otherwise.

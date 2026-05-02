@@ -3,6 +3,13 @@
 Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
 
 ## Telegram Groups (Two-way chat)
+
+⚠️ **CRITICAL:** Group IDs MUST match in TWO locations in openclaw.json:
+1. `channels.telegram.groups` (Telegram plugin)
+2. `bindings` (agent routing)
+
+Run `/root/.openclaw/scripts/verify-groups.sh` after any group config changes.
+
 - **C-Suite Group:** -4990884833 ✅ (bidirectional) - Strategic discussions
 - **CEO Direct (Project X):** -5026194744 ✅ (bidirectional) - Direct Ron ↔ Arnel
 - **Sativa Exchange Ops:** -5167418353 ✅ (bidirectional)
@@ -82,6 +89,24 @@ Things like:
 - Send the prompt text for review
 - Wait for go-ahead signal (✅ or "yes") before executing
 - This applies to: new videos AND revision requests
+
+## Browser on Heyron.ai Hosted Gateway
+
+**Profile:** `browserless` (cloud-hosted)
+**Status:** ✅ Working (2026-05-02)
+
+### Commands
+- Check status: `browser action=status`
+- Start browser: `browser action=start profile=browserless`
+- Open URL: `browser action=open profile=browserless targetUrl=https://example.com`
+- Take snapshot: `browser action=snapshot targetId=<tabId>`
+
+### If Browser Breaks
+1. Run `browser action=status` - check profile and running state
+2. Try `browser action=start profile=browserless`
+3. If errors persist - contact heyron.ai support with error message
+
+**Note:** Browser Relay / Chrome MCP extension requires local Gateway (not available on hosted)
 
 ---
 

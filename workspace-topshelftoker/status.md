@@ -1,6 +1,6 @@
 # Top Shelf Toker — Status
 
-**Last Updated:** 2026-04-16 12:10 UTC
+**Last Updated:** 2026-05-01 03:18 UTC
 
 ---
 
@@ -13,6 +13,50 @@
 
 ### 🌐 DNS / Hosting
 - **Main Domain:** https://topshelftoker.com — **REDIRECTING** (302 to Shopify)
+
+---
+
+## 🚀 White-Label Cannabis Venture
+
+**Status:** Research Phase
+
+**Concept:** White-label Top Shelf Toker branded cannabis vapes, sourced from licensed producers, sold to dispensaries
+
+**Target States:**
+1. Michigan (primary — easier entry)
+2. California (later)
+3. Illinois (home state — priority long-term)
+
+**Trademark Status:**
+- Original USPTO registration (Class 25, clothing): DEAD/CANCELLED Aug 2023
+- Original mark: TOP SHELF TOKER
+- Common law rights: Weakened due to site downtime + limited recent commerce
+- Plan: File fresh in Class 34 (cannabis vape products), cite prior registration for priority
+- Timeline: File within 6 months when funds available
+
+**Goals:**
+1. Find 2-3 Michigan white-label manufacturers (Month 1-2)
+2. Qualify partners, get quotes, finalize MOQs (Month 3-4)
+3. Secure initial order + file trademark $250-350 (Month 5-6)
+4. Get site live with "Coming Soon" to establish recent use
+
+**Startup Costs (No Cannabis License Required):**
+- General business registration: ~$50
+- Sales tax permit: Free
+- Brand registration: $0-500
+- **Total: ~$50-550**
+
+**Files Created:**
+- outreach-michigan-manufacturers.md (draft email)
+- research/michigan-manufacturer-template.md
+- research/illinois-manufacturer-template.md
+- research/regulatory-requirements.md
+
+**Next Steps:**
+- [ ] Find Michigan white-label processor/manufacturer partners
+- [ ] Get site live with landing page
+- [ ] File USPTO application for TOP SHELF TOKER (Class 34)
+- [ ] Draft co-packing agreements
 
 ---
 
@@ -54,6 +98,9 @@
 - [ ] Design "Opening Soon" landing page
 - [ ] Set up newsletter signup
 - [ ] Plan product line for launch
+- [ ] Find Michigan white-label processor partners
+- [ ] File USPTO application (Class 34)
+- [ ] Draft cold outreach to Michigan cannabis manufacturers
 
 ---
 

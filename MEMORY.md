@@ -623,3 +623,35 @@ Each project folder should have:
 - `Blog Posts/` → .docx (supports h1/h2 formatting)
 - `Social Media/` → .md (preserves emojis for copy-paste)
 - `Reports/` → .docx
+
+---
+
+## Heyron.ai Hosted Gateway - Browser Setup (2026-05-02)
+
+### Issue
+Browser tool returning "No supported browser found" on hosted heyron.ai Gateway.
+
+### Root Cause
+Gateway configured for `headless-chromium` profile, but:
+1. No local browser binary in cloud container
+2. Profile mismatch - agent didn't recognize the profile
+
+### Solution (heyron.ai support fixed)
+1. Changed browser config from local `headless-chromium` to **hosted browserless CDP**
+2. Fixed the browserless CDP profile and shared endpoint
+3. Agent now uses `browserless` profile (not `headless-chromium`)
+
+### How to Use Browser on Heyron Hosted Gateway
+- **Profile:** `browserless` (cloud-hosted browser)
+- **How to start:** `browser action=start profile=browserless`
+- **Note:** This is NOT Chrome MCP / Browser Relay - that requires local Gateway
+
+### Verification (2026-05-02)
+- `browser action=status` shows: profile=browserless, running=true, cdpReady=true
+- Successfully opened example.com and took screenshot ✅
+
+### If Browser Breaks Again
+1. Check status: `browser action=status`
+2. If wrong profile: try `browser action=start profile=browserless`
+3. If "profile not found" - contact heyron.ai to fix browserless CDP config
+4. If "CDP websocket not reachable" - contact heyron.ai to verify endpoint
