@@ -2,8 +2,8 @@
 # Validate openclaw.json before starting OpenClaw
 # Prevents startup failures due to JSON corruption
 
-CONFIG_FILE="/root/.openclaw/openclaw.json"
-BACKUP_FILE="/root/.openclaw/openclaw.json.validated"
+CONFIG_FILE="/home/openclaw/.openclaw/openclaw.json"
+BACKUP_FILE="/home/openclaw/.openclaw/openclaw.json.validated"
 
 # Check if config exists
 if [ ! -f "$CONFIG_FILE" ]; then
@@ -17,7 +17,7 @@ if ! python3 -c "import json; json.load(open('$CONFIG_FILE'))" 2>/dev/null; then
     echo "Attempting to restore from last valid backup..."
     
     # Try to find a backup
-    BACKUP_DIR="/root/.openclaw/backups"
+    BACKUP_DIR="/home/openclaw/.openclaw/backups"
     if [ -d "$BACKUP_DIR" ]; then
         LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/openclaw.json.*.backup 2>/dev/null | head -1)
         if [ -n "$LATEST_BACKUP" ]; then

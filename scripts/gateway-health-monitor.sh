@@ -252,7 +252,82 @@ main() {
         fi
     fi
     
+    # Run safeguard checks
+    run_safeguards
+    
     log "=== Gateway Health Check Complete ==="
+}
+
+# Layer 4: Config Health Check
+check_config_health() {
+    local config_file="/home/openclaw/.openclaw/openclaw.json"
+    local backup_dir="/home/openclaw/.openclaw/backups"
+    
+    # Validate JSON
+    if node -e "try { JSON.parse(require('fs').readFileSync('$config_file')); } catch(e) { throw e; }" 2>/dev/null; then
+        log "CONFIG: Valid JSON"
+        return 0
+    else
+        log "CONFIG: INVALID JSON - attempting backup restore"
+        
+        # Try latest backup
+        local latest_backup=$(ls -t "$backup_dir"/openclaw.json.*.backup 2>/dev/null | head -1)
+        if [ -n "$latest_backup" ]; then
+            if node -e "try { JSON.parse(require('fs').readFileSync('$latest_backup')); } catch(e) { throw e; }" 2>/dev/null; then
+                cp "$latest_backup" "$config_file"
+                log "CONFIG: Restored from $latest_backup"
+                send_alert "⚠️ *Config Auto-Restored*
+
+Config was corrupted but restored from backup. Please verify settings."
+                return 0
+            fi
+        fi
+        
+        log "CONFIG: CRITICAL - No valid backup found"
+        send_alert "🚨 *CRITICAL: Config Corrupted*
+
+
+Config JSON is invalid and no valid backup exists. Manual intervention required."
+        return 1
+    fi
+}
+
+# Layer 5: Session Backup
+backup_sessions() {
+    local session_dir="/home/openclaw/.openclaw/agents/main/sessions"
+    local backup_root="/home/openclaw/.openclaw/backups/sessions"
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local backup_dir="$backup_root/$timestamp"
+    
+    mkdir -p "$backup_dir"
+    
+    # Copy non-empty session files
+    local count=$(find "$session_dir" -type f \( -name "*.jsonl" -o -name "*.trajectory.jsonl" \) -size +0 -exec cp {} "$backup_dir" \; -print | wc -l)
+    
+    if [ "$count" -gt 0 ]; then
+        log "SESSION BACKUP: $count files backed up to $backup_dir"
+    else
+        log "SESSION BACKUP: No session files to backup"
+    fi
+}
+
+# Layer 6: Memory Integrity Check
+check_memory_integrity() {
+    local memory_dir="/home/openclaw/.openclaw/workspace/memory"
+    local today=$(date +%Y-%m-%d)
+    
+    # Check/create today's memory
+    if [ ! -f "$memory_dir/${today}.md" ]; then
+        echo "# $today — Daily Notes\n\n## Notes\n- (to be filled in)\n" > "$memory_dir/${today}.md"
+        log "MEMORY: Created missing ${today}.md"
+    fi
+}
+
+# Run safeguard checks (called at end of main health check)
+run_safeguards() {
+    check_config_health
+    backup_sessions
+    check_memory_integrity
 }
 
 # Run main function

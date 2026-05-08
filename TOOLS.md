@@ -63,7 +63,7 @@ Things like:
 ### Top Shelf Toker
 - **Store URL:** https://admin.shopify.com/store/top-shelf-toker-2
 - **Email:** topshelftoker69@gmail.com
-- **Password:** [SECURED]
+- **Password:** 1729WRascherAve1!
 - **Status:** Connected ✅
 
 ## Discord
@@ -71,6 +71,16 @@ Things like:
 
 ## Email
 - **Address:** info@sativaexchange.com
+
+## Maton API (Email via Zoho)
+- **API Key:** `rg-pGjppBethn9aAD-Cz8p4Nwllrqnllsu9EZPAuJjNHZ2v8XQeyxmHvXSUWyqJlNjSYiTAmHx6rY1et8_vxKoNLBUXpobnPmKc`
+- **Zoho Account ID:** `2958661000000008002`
+- **Connection ID:** `4b23a4ae-a744-4917-bf44-fe1ed21d0e99`
+- **Base URL:** `https://gateway.maton.ai/zoho-mail/api/accounts/2958661000000008002`
+
+## GitHub
+- **Token:** (PENDING - need to add)
+- Used for: GitHub issues, repo access, automated monitoring scripts
 
 ## Dropbox Connections
 
@@ -107,6 +117,16 @@ Things like:
 3. If errors persist - contact heyron.ai support with error message
 
 **Note:** Browser Relay / Chrome MCP extension requires local Gateway (not available on hosted)
+
+---
+
+## GitHub (API Access)
+
+**Access through Maton.ai** (NOT a token - use Maton gateway):
+- Use Maton API endpoint: `https://gateway.maton.ai/github/<path>`
+- Auth: Bearer token `rg-pGjppBethn9aAD-Cz8p4Nwllrqnllsu9EZPAuJjNHZ2v8XQeyxmHvXSUWyqJlNjSYiTAmHx6rY1et8_vxKoNLBUXpobnPmKc`
+- Used for: GitHub issues, repo access, automated monitoring
+- Connected 2026-05-08 (reconnected by user after gap discovered)
 
 ---
 

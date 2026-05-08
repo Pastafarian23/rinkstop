@@ -190,6 +190,19 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 
 ---
 
+### Monetize Arnel (Personal Agents)
+**Tagline:** Personal assistants for Arnel's health, fitness, and legal needs
+**Channel:** -5255517781 (Monetize Arnel)
+
+| Role | Agent ID | Workspace | Description |
+|------|----------|-----------|-------------|
+| Medical | monetize-arnel-medical | workspace-monetize-arnel-medical | Health questions, medical info, wellness guidance |
+| Fitness | monetize-arnel-fitness | workspace-monetize-arnel-fitness | Personal trainer, weight loss coach, motivation |
+| Legal | monetize-arnel-legal | workspace-monetize-arnel-legal | Legal guidance, case support, document review |
+
+**Status:** ✅ Created 2026-05-08
+**Note:** Personal agents for Arnel's own use - not business project agents
+
 ## Key People
 - **Arnel Larracas** — Owner, visionary, strong at ideation
 - **Step Dad** — Former Chicago Board of Trade corn options pit trader → Risk management services funnel
@@ -319,6 +332,17 @@ Periodically (every few days), compare what I'm doing vs what MEMORY.md says:
 **No Auto-Send:** Nothing goes out automatically. Every message is intentional.
 
 **Double-Check on Send:** If violated a rule twice in one day → stop, re-read MEMORY.md, then proceed.
+
+### 7. Cross-Reference Context (2026-05-03)
+
+**Rule:** Before ANY work starts, ALWAYS check:
+- MEMORY.md (long-term memory)
+- memory/YYYY-MM-DD.md (today + recent days)
+- Sessions from CEO/c-suite chat for cross-project context
+
+**Why:** Arnel shouldn't have to repeat context from CEO chat to project chats.
+
+**Implementation:** At session start or when starting new work, run memory_search for relevant context across ALL projects, not just the current one.
 
 ---
 
@@ -589,6 +613,21 @@ This checklist should prevent incomplete implementations.
 
 ---
 
+## Shopify API Access (2026-05-03)
+
+**Problem:** Browser blocked by Cloudflare on Shopify admin
+
+**Solution:** Create Shopify private app for API access
+
+**How to create:**
+1. Settings → Apps and sales channels → Develop apps
+2. Create app → Configure Admin API scopes (read_products, write_products, read_inventory, write_inventory)
+3. Install app → Copy Access Token
+
+**Use for:** Managing products, inventory, orders via API instead of browser
+
+---
+
 ## OpenClaw Gateway Pairing Issue (GitHub #69284) - UNRESOLVED
 
 **Issue:** GitHub #69284 - Gateway recurring pairing required error
@@ -613,6 +652,23 @@ This checklist should prevent incomplete implementations.
 - /root/.openclaw/identity/device.json
 
 **Status:** Still waiting on OpenClaw fix. Check GitHub issues #69284 and #69066 for updates.
+
+---
+
+## GitHub via Maton (2026-05-08)
+
+**How to access:**
+- Endpoint: `https://gateway.mathon.ai/github/<endpoint>`
+- Authentication: Bearer token (same as Maton email API)
+- Token: `rg-pGjppBethn9aAD-Cz8p4Nwllrqnllsu9EZPAuJjNHZ2v8XQeyxmHvXSUWyqJlNjSYiTAmHx6rY1et8_vxKoNLBUXpobnPmKc`
+
+**Example usage:**
+```bash
+curl "https://gateway.maton.ai/github/repos/openclaw/openclaw/issues" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Issue filed:** #79308 - Telegram group replies sent to wrong chat_id
 
 ---
 

@@ -1,68 +1,20 @@
-# TODO - OpenClaw Backup & Recovery Project
+# TODO - Active Tasks
 
-**Created:** 2026-04-14
+## Shopify Integration
+- [ ] Set up Shopify Admin API for Top Shelf Toker
+  - Create private app in Shopify
+  - Get Admin API access token
+  - Provide credentials to Ron
 
-## Goal
-Build a secure, automated backup system for OpenClaw workspace that can be easily restored if the server fails.
+## Top Shelf Toker Launch
+- [ ] Connect dropship app ($99/mo after trial)
+- [ ] Import products (bongs, pipes, etc.)
+- [ ] Generate product descriptions with AI
+- [ ] Launch 7-day trial marketing push
 
-## Cloud Sync Solution (Selected)
-- **Provider:** Google Drive (via rclone)
-- **Encryption:** Password-protected before upload
-- **Backup includes:**
-  - Core config (`openclaw.json`)
-  - All workspaces (`workspace-*` folders)
-  - Identity files (`IDENTITY.md`, `USER.md`, `MEMORY.md`, `SOUL.md`, `TOOLS.md`)
-  - Daily memory (`memory/` files)
-  - Integrations/API keys
-
-## Phases
-
-### Phase 1: Research & Planning
-- [x] Research cloud sync options
-- [ ] Document what needs to be backed up
-
-### Phase 2: Implementation
-- [ ] Install rclone
-- [ ] Configure Google Drive OAuth
-- [ ] Create encryption backup script
-- [ ] Test backup + restore flow
-
-### Phase 3: Automation
-- [ ] Schedule automatic backups
-- [ ] Document restore instructions for Arnel
-
-## Notes
-- Must be secure (encrypt sensitive data)
-- Must be easy for non-tech user to restore
-- Arnel not tech-savvy - need simple instructions
+## Browser (DONE ✅)
+- [x] Fix heyron browser connectivity - DONE 2026-05-03
 
 ---
 
-# RinkStop GA4 Setup
-**Status:** Pending (Replit agent paused until payment)
-
-- [ ] Add GA4 tracking code (G-533194109) to RinkStop site
-  ```html
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-533194109"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-533194109');
-  </script>
-  ```
-
----
-
-# 1000 Monthly Views Goal
-**Target:** 1,000 views/month for Mediavine onboarding
-
-| Site | Baseline | Current | Target |
-|------|----------|---------|--------|
-| SativaExchange (G-454149918) | - | - | 1,000 |
-| RinkStop (G-533194109) | - | - | 1,000 |
-
-## Related Files
-- `INTEGRATIONS.md` - Contains API keys (sensitive)
-- `MEMORY.md` - Long-term memory
-- `openclaw.json` - Core config
+*Last updated: 2026-05-03*
