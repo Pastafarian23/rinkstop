@@ -7,7 +7,7 @@
 
 const BOT_TOKEN = '7574311811:AAFV7RiYG8SFEE2P7UxFQw_ZxYn9lqFpntI';
 const BACKUP_DIR = '/root/.openclaw/workspace/telegram-backup';
-const MATON_API_KEY = 'rg-pGjppBethn9aAD-Cz8p4Nwllrqnllsu9EZPAuJjNHZ2v8XQeyxmHvXSUWyqJlNjSYiTAmHx6rY1et8_vxKoNLBUXpobnPmKc';
+const MATON_API_KEY = 'v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX';
 const DROPBOX_CONN_ID = '0047d26c-609f-444d-ac51-074b49de5a21';
 const DROPBOX_UPLOAD_URL = 'https://gateway.maton.ai/dropbox/2/files/upload';
 const DROPBOX_FOLDER = '/Ron Memory';

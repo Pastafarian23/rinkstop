@@ -1,9 +1,15 @@
 #!/bin/sh
+# Upload content to Dropbox via Maton API
+# Usage: ./upload_all.sh [--dry-run]
+
 cd /root/.openclaw/workspace/approved
 
-MATON_API_KEY="rg-pGjppBethn9aAD-Cz8p4Nwllrqnllsu9EZPAuJjNHZ2v8XQeyxmHvXSUWyqJlNjSYiTAmHx6rY1et8_vxKoNLBUXpobnPmKc"
+MATON_API_KEY="v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX"
 BASE_URL="https://gateway.maton.ai/dropbox/2/files/upload"
 DROPBOX_CONNECTION_ID="0047d26c-609f-444d-ac51-074b49de5a21"
+
+DRY_RUN=false
+[ "$1" = "--dry-run" ] && DRY_RUN=true
 
 upload_file() {
   src="$1"
@@ -12,6 +18,10 @@ upload_file() {
   filename=$(basename "$src")
   dropbox_path="/${project}/${category}/${filename}"
   echo "=== Uploading: ${src} -> ${dropbox_path} ==="
+  if [ "$DRY_RUN" = true ]; then
+    echo "  [DRY RUN] Skipped"
+    return 0
+  fi
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -X POST "${BASE_URL}" \
     -H "Authorization: Bearer ${MATON_API_KEY}" \
@@ -29,22 +39,29 @@ upload_file() {
   sleep 0.5
 }
 
-# Upload files from subdirectories (original pipeline)
-upload_file "rinkstop/social-posts/RinkStop-Social-2026-04-22.md" "RinkStop" "Social Media"
-upload_file "rinkstop/blog-posts/RinkStop-Blog-2026-04-22-Youth-Hockey-Growth.md" "RinkStop" "Blog Posts"
-upload_file "topshelftoker/social-posts/TopShelfToker-Social-2026-04-22.md" "TopShelfToker" "Social Media"
-upload_file "topshelftoker/blog-posts/TopShelfToker-Blog-2026-04-22-Cannabis-Trends.md" "TopShelfToker" "Blog Posts"
-upload_file "kevlar/social-posts/Kevlar-Social-2026-04-22.md" "KevlarData" "Social Media"
-upload_file "kevlar/blog-posts/Kevlar-Blog-2026-04-22-Cook-County-Property-Data.md" "KevlarData" "Blog Posts"
-upload_file "sativaexchange/social-posts/SativaExchange-Social-2026-04-22.md" "SativaExchange" "Social Media"
-upload_file "sativaexchange/blog-posts/SativaExchange-Blog-2026-04-22-Emerging-Markets.md" "SativaExchange" "Blog Posts"
+capitalize() {
+  echo "$1" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}'
+}
 
-# Upload flat dated files (current pipeline output)
-for project in rinkstop sativaexchange topshelftoker; do
-  for f in $(ls ${project}/*2026-05-08* 2>/dev/null); do
-    case "$f" in
-      *social*) upload_file "$f" "$(echo $project | sed 's/.*/\u&/')" "Social Media" ;;
-      *blog*) upload_file "$f" "$(echo $project | sed 's/.*/\u&/')" "Blog Posts" ;;
-    esac
-  done
+# Upload ALL blog posts and social media posts
+for project in kevlar rinkstop sativaexchange topshelftoker; do
+  project_cap=$(capitalize "$project")
+
+  # Blog Posts
+  blog_dir="${project}/Blog Posts"
+  if [ -d "$blog_dir" ]; then
+    for f in "${blog_dir}"/*"${project}"*.md; do
+      [ -f "$f" ] && upload_file "$f" "$project_cap" "Blog Posts"
+    done
+  fi
+
+  # Social Media
+  social_dir="${project}/Social Media"
+  if [ -d "$social_dir" ]; then
+    for f in "${social_dir}"/*"${project}"*.md; do
+      [ -f "$f" ] && upload_file "$f" "$project_cap" "Social Media"
+    done
+  fi
 done
+
+echo "=== Upload complete ==="

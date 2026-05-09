@@ -3,6 +3,8 @@
 # Daily Health Check (Ron checks each heartbeat)
 - [x] Check cron job status (`openclaw cron list`) - verify no errors
 - [x] Check last delivery status for each project channel
+- [x] Verify cron jobs are actually firing (check `openclaw cron runs` for recent activity)
+- [x] Verify gateway pairing is stable (`cat /root/.openclaw/devices/paired.json` not empty)
 
 # Growth & Improvement Check (rotate through - 2x per week)
 - [x] Gap Detection: Compare behavior vs MEMORY.md rules
