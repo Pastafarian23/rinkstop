@@ -95,7 +95,7 @@ async function uploadToDropboxDirect(fileBuffer, dropboxPath) {
     '-X', 'POST',
     url,
     '-H', `Authorization: Bearer ${MATON_API_KEY}`,
-    '-H', `x-connection-id: ${DROPBOX_CONNECTION_ID}`,
+    '-H', `Maton-Connection: ${DROPBOX_CONNECTION_ID}`,
     '-H', 'Content-Type: application/octet-stream',
     '-H', `Dropbox-API-Arg: ${apiArg}`,
     '--data-binary', '@-'

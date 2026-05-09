@@ -42,19 +42,33 @@ function getTimeWaiting(receivedTime) {
 }
 
 async function fetchEmails() {
-  const response = await fetch(
-    `https://api.maton.ai/zoho-mail/api/accounts/${ACCOUNT_ID}/messages/view?folderId=${FOLDER_ID}&limit=${MAX_EMAILS}`,
-    {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${MATON_API_KEY}`,
-        'Content-Type': 'application/json'
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+  try {
+    const response = await fetch(
+      `https://api.maton.ai/zoho-mail/api/accounts/${ACCOUNT_ID}/messages/view?folderId=${FOLDER_ID}&limit=${MAX_EMAILS}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${MATON_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
       }
+    );
+    clearTimeout(timeout);
+    const data = await response.json();
+    return data.data || [];
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') {
+      console.error('Error: Request timed out (>15s). Maton/Zoho API may be unreachable.');
+    } else {
+      console.error('Error fetching emails:', err.message);
     }
-  );
-  
-  const data = await response.json();
-  return data.data || [];
+    return [];
+  }
 }
 
 async function reportNewEmails(emails, seen) {
