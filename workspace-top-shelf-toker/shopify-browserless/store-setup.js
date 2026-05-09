@@ -20,8 +20,8 @@ const fs = require('fs');
 const path = require('path');
 
 const CONFIG = {
-  adminUrl: 'https://admin.shopify.com/store/top-shelf-toker-2',
-  storeUrl: 'https://topshelftoker-2.myshopify.com',
+  adminUrl: 'https://admin.shopify.com/store/xsisex-d6',
+  storeUrl: 'https://xsisex-d6.myshopify.com',
 
   shopifyEmail: 'arnellarracas@gmail.com',
   shopifyPassword: 'Arnelsl1!',

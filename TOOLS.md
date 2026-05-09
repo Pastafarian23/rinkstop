@@ -61,7 +61,7 @@ Things like:
 ## Shopify Stores
 
 ### Top Shelf Toker
-- **Store URL:** https://admin.shopify.com/store/top-shelf-toker-2
+- **Store URL:** https://admin.shopify.com/store/xsisex-d6
 - **Email:** arnellarracas@gmail.com
 - **Password:** Arnelsl1!
 - **Status:** Connected ✅

@@ -5,7 +5,7 @@
  * Full control, no third-party reliability concerns.
  *
  * Credentials (from TOOLS.md):
- *   Store: https://admin.shopify.com/store/top-shelf-toker-2
+ *   Store: https://admin.shopify.com/store/xsisex-d6
  *   Email: arnellarracas@gmail.com
  *   Pass:  Arnelsl1!
  *
@@ -27,7 +27,7 @@ const path = require('path');
 const CONFIG = {
   shopifyEmail: 'arnellarracas@gmail.com',
   shopifyPassword: 'Arnelsl1!',
-  adminUrl: 'https://admin.shopify.com/store/top-shelf-toker-2',
+  adminUrl: 'https://admin.shopify.com/store/xsisex-d6',
 
   // Local browser — self-hosted, no external dependency
   headless: true,
