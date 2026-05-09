@@ -23,8 +23,8 @@ const CONFIG = {
   adminUrl: 'https://admin.shopify.com/store/top-shelf-toker-2',
   storeUrl: 'https://topshelftoker-2.myshopify.com',
 
-  shopifyEmail: 'topshelftoker69@gmail.com',
-  shopifyPassword: '1729WRascherAve1!',
+  shopifyEmail: 'arnellarracas@gmail.com',
+  shopifyPassword: 'Arnelsl1!',
 
   headless: true,
   viewport: { width: 1920, height: 1080 },

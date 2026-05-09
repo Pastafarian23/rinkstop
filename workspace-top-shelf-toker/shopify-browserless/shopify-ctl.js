@@ -6,8 +6,8 @@
  *
  * Credentials (from TOOLS.md):
  *   Store: https://admin.shopify.com/store/top-shelf-toker-2
- *   Email: topshelftoker69@gmail.com
- *   Pass:  1729WRascherAve1!
+ *   Email: arnellarracas@gmail.com
+ *   Pass:  Arnelsl1!
  *
  * Commands:
  *   node shopify-ctl.js login          — Login to Shopify admin
@@ -25,8 +25,8 @@ const path = require('path');
 
 // ─── Configuration ───────────────────────────────────────────────────────────
 const CONFIG = {
-  shopifyEmail: 'topshelftoker69@gmail.com',
-  shopifyPassword: '1729WRascherAve1!',
+  shopifyEmail: 'arnellarracas@gmail.com',
+  shopifyPassword: 'Arnelsl1!',
   adminUrl: 'https://admin.shopify.com/store/top-shelf-toker-2',
 
   // Local browser — self-hosted, no external dependency
