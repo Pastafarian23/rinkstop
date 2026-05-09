@@ -40,3 +40,4 @@
 - Every session MUST write this file before ending
 - New sessions MUST read this file + `memory/YYYY-MM-DD.md` before responding
 - See `CONTEXT-PROTOCOL.md` for full protocol details
+- Backup conversation log: `conversation-backup.md` in workspace root
