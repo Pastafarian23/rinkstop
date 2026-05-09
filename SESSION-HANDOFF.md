@@ -2,42 +2,74 @@
 
 ## Context
 - Migrated from Heyron.ai to KiloClaw managed instance on 2026-05-08
-- New gateway has no prior session state — all context must be rebuilt from files
-- Previous session ended mid-task with two recommended actions outstanding
+- Context continuity protocol now enforced (CONTEXT-PROTOCOL.md)
+- Previous session issues documented and fixed
 
-## Active Session State
+## Completed Today (2026-05-09)
 
-### Completed Today (2026-05-09)
-1. ✅ **RinkStop Email Check Timeout Fix** — Added AbortController with 15s timeout to `email-check.js` and `fetch-emails.js`. Live tested: 14 pending emails returned in <3s.
-2. ✅ **Content Pipeline Path Fix** — `content-failsafe.js` was checking wrong directory (`sales-pipeline/` → now `approved/`). Added proper project→dir mapping.
-3. ✅ **Dropbox Upload Header Fix** — `dropbox-save-post-formatted.js` now uses `Maton-Connection` header (was `x-connection-id`).
-4. ✅ **Upload Script Enhanced** — `upload_all.sh` now picks up both subdirectory files AND flat dated files. Added `Maton-Connection` header.
-5. ✅ All files syntax-checked and committed to git (`3d13a77`).
+### Email Script Fixes
+1. **email-check.js** — Added 15s AbortController timeout + error handling
+2. **fetch-emails.js** — Same timeout fix. Live tested: 14 emails in <3s ✅
 
-### Pending / Next Steps
-- [ ] Upload all May 8 approved content to Dropbox (run `upload_all.sh` from approved/)
-- [ ] Review Arnel's 14 unread Zoho inbox emails
-- [ ] RinkStop: 14 support emails sitting ~18-21 days — needs triage
-- [ ] Content for today (May 9) not yet generated — agents need activation
-- [ ] TopShelfToker Shopify setup still pending (TODO.md)
-- [ ] Confirm Heyron.ai old instance is terminated (Arnel to cancel from dashboard)
-- [ ] Kevlar Data domain sale status (listed on atom.com)
-- [ ] Casa Azul, Arnel's Farm, Poi Restaurant — all need Telegram channel IDs from Arnel
+### Content Pipeline Fixes
+3. **content-failsafe.js** — Fixed wrong path (sales-pipeline/ → approved/), proper project→dir mapping
+4. **dropbox-save-post-formatted.js** — Fixed Maton-Connection header
+5. **upload_all.sh** — Added Maton-Connection header + flat file uploads
+6. All committed: git `3d13a77`
 
-### Key Files Updated
-- `scripts/email-check.js` — 15s timeout + error handling
-- `scripts/fetch-emails.js` — 15s timeout + error handling
-- `scripts/content-failsafe.js` — correct paths + project mapping
-- `scripts/dropbox-save-post-formatted.js` — Maton-Connection header fix
-- `approved/upload_all.sh` — Maton-Connection header + flat file support
+### Context Continuity (Root Cause Fix)
+7. **CONTEXT-PROTOCOL.md** — Mandatory session handoff protocol
+8. **SESSION-HANDOFF.md** — Live state snapshot
+9. **conversation-backup.md** — Structured conversation log
+10. **memory/2026-05-09.md** — Daily memory log
 
-### Known Issues
-- **KevlarData directory missing from `approved/`** — needs `kevlar/` subdir with blog-posts/social-posts folders created
-- **Confidential directory missing from `approved/`** — needs to be created
-- **No cron jobs configured** — old Heyron cron jobs didn't carry over; `site-health-monitor.js`, `email-check.js`, `content-failsafe.js` need scheduling
+### Telegram Backup System
+11. **telegram-backup.js** — Live capture script (reads @btcpastafarianbot updates)
+12. **telegram-backup-dropbox.js** — Backup + upload to Dropbox /Ron Memory folder
+13. **System cron installed** — `0 23 * * *` (11pm daily, Asia/Manila timezone)
+14. Cron runs backup and uploads to Dropbox, overwriting daily
 
-## Protocol
-- Every session MUST write this file before ending
-- New sessions MUST read this file + `memory/YYYY-MM-DD.md` before responding
-- See `CONTEXT-PROTOCOL.md` for full protocol details
-- Backup conversation log: `conversation-backup.md` in workspace root
+## Current State
+
+### Email
+- 14 unread emails in Zoho inbox (some from Arnel testing ~2-3 weeks ago)
+- Email scripts working with 15s timeout
+
+### Content Pipeline
+- upload_all.sh ready to push May 8 content to Dropbox
+- content-failsafe.js correctly checking approved/ directory
+
+### Telegram Backup
+- Bot (@btcpastafarianbot) confirmed active, token in config
+- 0 messages captured so far (bot needs messages to flow in real-time)
+- For FULL history: need Telegram Settings → Data → Export
+- Cron running at 11pm nightly
+
+### Cron Jobs Active
+- RinkStop Email Check (every 4h) — currently erroring
+- Daily Content Generation (7am daily) — currently erroring
+- HEARTBEAT Monitor (9am daily) — currently erroring
+- NEW: Telegram→Dropbox backup (11pm daily) — ✅ installed
+
+## Pending / Next Steps
+- [ ] Run `upload_all.sh` to push May 8 content to Dropbox
+- [ ] Triage 14 unread Zoho inbox emails
+- [ ] Fix 3 errored cron jobs (RinkStop email, content gen, heartbeat)
+- [ ] Confirm Heyron old instance cancelled by Arnel
+- [ ] Get Telegram export from Arnel for pre-migration history
+- [ ] Get Telegram channel IDs: Casa Azul, Arnel's Farm, Poi Restaurant
+- [ ] Generate content for today (May 9)
+- [ ] Kevlar Data domain sale status
+
+## Files Updated Today
+- scripts/email-check.js — timeout fix
+- scripts/fetch-emails.js — timeout fix
+- scripts/content-failsafe.js — path + mapping fix
+- scripts/dropbox-save-post-formatted.js — header fix
+- approved/upload_all.sh — header + flat file fix
+- scripts/telegram-backup.js — live capture
+- scripts/telegram-backup-dropbox.js — backup + Dropbox upload
+- CONTEXT-PROTOCOL.md — NEW
+- SESSION-HANDOFF.md — NEW (updated daily)
+- conversation-backup.md — NEW
+- memory/2026-05-09.md — NEW
