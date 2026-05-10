@@ -148,6 +148,31 @@ See `lessons.md` for a record of mistakes, root causes, and permanent fixes.
 
 ---
 
+### TopShelfToker — Printful Integration (ACTIVE)
+**Tagline:** Cannabis brand print-on-demand merch via Printful + Shopify
+**Started:** 2026-05-10
+**Store:** Shopify `xsisex-d6` at topshelftoker.com ($29/mo)
+**Fulfillment:** Printful (native Shopify app installed + syncing)
+**API:** Printful REST API for design upload + product creation — auto-syncs to Shopify
+**No Shopify API needed** — Printful app handles product push
+
+**Status as of 2026-05-10:**
+- [x] Shopify store live
+- [x] Printful app installed and syncing
+- [x] Decision: Stay on Shopify, no custom build
+- [ ] **BLOCKING: Printful API key + Store ID** (Settings > API in Printful dashboard)
+- [ ] **BLOCKING: Design zip file from Arnel** (cannabis-themed designs ready)
+
+**Next steps (once blocks cleared):**
+1. Upload designs to Printful via API
+2. Create product variants with pricing
+3. Auto-sync to Shopify = store is live
+4. Content pipeline (social, blog, email) drives traffic
+
+**Project file:** `top-shelf-toker-printful/PROJECT.md`
+
+---
+
 ### Arnel's Farm (NEW!)
 **Tagline:** Premium Philippine Agricultural Products — Mushroom chicharon, dried mangoes, banana chips
 **Location:** Cebu, Philippines
@@ -660,7 +685,7 @@ This checklist should prevent incomplete implementations.
 **How to access:**
 - Endpoint: `https://gateway.mathon.ai/github/<endpoint>`
 - Authentication: Bearer token (same as Maton email API)
-- Token: `rg-pGjppBethn9aAD-Cz8p4Nwllrqnllsu9EZPAuJjNHZ2v8XQeyxmHvXSUWyqJlNjSYiTAmHx6rY1et8_vxKoNLBUXpobnPmKc`
+- Token: `v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX`
 
 **Example usage:**
 ```bash

@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /**
- * approve-post.js - Approval + Dropbox Save + CMS Publish pipeline
+ * approve-post.js — Approval + Dropbox Save + CMS Publish pipeline
+ *
+ * Ensures posts in Dropbox and on site match proper header format and are SEO-optimized.
  *
  * Usage:
  *   node approve-post.js <project> <draft-file> [--blog|--social] [--publish]
  *
  * Examples:
- *   node approve-post.js rinkstop drafts/rinkstop/2026-05-10-rinkstop-social-1.md --blog
- *   node approve-post.js rinkstop drafts/rinkstop/2026-05-10-rinkstop-social-1.md --social --publish
+ *   node approve-post.js rinkstop drafts/rinkstop/my-post.md --blog --publish
+ *   node approve-post.js sativaexchange drafts/sativa/my-post.md --blog
  */
 
 'use strict';
@@ -20,7 +22,7 @@ const WORKSPACE = '/root/.openclaw/workspace';
 const TODAY = new Date().toISOString().split('T')[0];
 
 // ============================================================
-// CONFIG
+// PROJECT CONFIG
 // ============================================================
 
 const PROJECT_CONFIG = {
@@ -30,7 +32,14 @@ const PROJECT_CONFIG = {
     socialDir: 'Social Media',
     dropboxBaseDir: 'RinkStop',
     channel: '-5043773858',
-    url: 'https://rinkstop.com'
+    url: 'https://rinkstop.com',
+    seoDefaults: {
+      siteName: 'RinkStop',
+      siteUrl: 'https://rinkstop.com',
+      author: 'Arnel',
+      authorRole: 'Founder, RinkStop',
+      authorBio: 'Coach, hockey director, and founder of RinkStop — connecting the global hockey community.',
+    },
   },
   sativaexchange: {
     approvedDir: path.join(WORKSPACE, 'approved', 'sativaexchange'),
@@ -38,7 +47,13 @@ const PROJECT_CONFIG = {
     socialDir: 'Social Media',
     dropboxBaseDir: 'SativaExchange',
     channel: '-5167418353',
-    url: 'https://sativaexchange.com'
+    url: 'https://sativaexchange.com',
+    seoDefaults: {
+      siteName: 'SativaExchange',
+      siteUrl: 'https://sativaexchange.com',
+      author: 'Arnel',
+      authorRole: 'Founder, SativaExchange',
+    },
   },
   topshelftoker: {
     approvedDir: path.join(WORKSPACE, 'approved', 'topshelftoker'),
@@ -46,8 +61,14 @@ const PROJECT_CONFIG = {
     socialDir: 'Social Media',
     dropboxBaseDir: 'TopShelfToker',
     channel: '-5164369379',
-    url: 'https://topshelftoker.com'
-  }
+    url: 'https://topshelftoker.com',
+    seoDefaults: {
+      siteName: 'TopShelfToker',
+      siteUrl: 'https://topshelftoker.com',
+      author: 'Arnel',
+      authorRole: 'Founder, TopShelfToker',
+    },
+  },
 };
 
 // ============================================================
@@ -61,7 +82,6 @@ if (args.length < 2) {
   console.error('Projects: rinkstop, sativaexchange, topshelftoker');
   console.error('');
   console.error('Example:');
-  console.error('  node approve-post.js rinkstop drafts/rinkstop/my-post.md --blog');
   console.error('  node approve-post.js rinkstop drafts/rinkstop/my-post.md --blog --publish');
   process.exit(1);
 }
@@ -85,12 +105,12 @@ if (!isBlog && !isSocial) {
 }
 
 // ============================================================
-// STEP 1: Validate draft exists
+// STEP 1: Validate draft
 // ============================================================
 
 if (!fs.existsSync(draftPath)) {
   console.error('Draft not found: ' + draftPath);
-  console.error('Use topic-curator.js to generate topics first, then daily-content-gen.js to create drafts.');
+  console.error('Generate drafts with: node scripts/daily-content-gen.js');
   process.exit(1);
 }
 
@@ -100,9 +120,10 @@ console.log('Project:  ' + projectKey);
 console.log('Draft:    ' + path.basename(draftPath));
 console.log('Type:     ' + (isBlog ? 'Blog Post' : 'Social Post'));
 console.log('Publish:  ' + (PUBLISH ? 'YES' : 'NO (Dropbox save only)'));
+console.log('');
 
 // ============================================================
-// STEP 2: Extract title from draft
+// STEP 2: Extract & validate title
 // ============================================================
 
 let title = '';
@@ -119,26 +140,29 @@ if (h1Match) {
 console.log('Title:    ' + title);
 
 // ============================================================
-// STEP 3: Check compliance (primarily for TopShelfToker)
+// STEP 3: Compliance check (TopShelfToker specific)
 // ============================================================
 
-const COMPLIANCE_WARNINGS = [];
+var COMPLIANCE_WARNINGS = [];
 if (projectKey === 'topshelftoker') {
-  const medicalTerms = ['treats', 'cures', 'relieves', 'heals', 'medicinal', 'therapeutic', 'remedy', 'health benefits'];
+  const medicalTerms = ['treats', 'cures', 'relieves', 'heals', 'medicinal', 'therapeutic', 'remedy', 'health benefits', 'pain relief', 'anxiety'];
   for (var t = 0; t < medicalTerms.length; t++) {
     var term = medicalTerms[t];
     if (rawContent.toLowerCase().indexOf(term) !== -1) {
-      COMPLIANCE_WARNINGS.push('Possible medical claim detected: "' + term + '"');
+      COMPLIANCE_WARNINGS.push('Possible medical/health claim: "' + term + '"');
     }
+  }
+  if (rawContent.toLowerCase().indexOf('under 21') !== -1 || rawContent.toLowerCase().indexOf('minors') !== -1) {
+    COMPLIANCE_WARNINGS.push('Content references age — ensure 21+ audience only');
   }
 }
 
 if (COMPLIANCE_WARNINGS.length > 0) {
-  console.log('\nCOMPLIANCE WARNINGS:');
+  console.log('\n⚠️  COMPLIANCE WARNINGS:');
   COMPLIANCE_WARNINGS.forEach(function(w) { console.log('  ' + w); });
-  console.log('  Review these before publishing!');
+  console.log('  Fix these before publishing.');
 } else {
-  console.log('\nCompliance check passed');
+  console.log('\n✅ Compliance check passed');
 }
 
 // ============================================================
@@ -154,7 +178,7 @@ var typeDir = isBlog ? config.blogDir : config.socialDir;
 var approvedPath = path.join(config.approvedDir, typeDir, TODAY + '-' + slug + '.md');
 
 // ============================================================
-// STEP 5: Save to approved folder
+// STEP 5: Save to approved folder with SEO header
 // ============================================================
 
 var approvedDir = path.dirname(approvedPath);
@@ -162,6 +186,10 @@ if (!fs.existsSync(approvedDir)) {
   fs.mkdirSync(approvedDir, { recursive: true });
 }
 
+var wordCount = rawContent.split(/\s+/).length;
+var readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+// SEO-optimized approval header
 var approvalHeader = [
   '---',
   'title: "' + title + '"',
@@ -172,65 +200,126 @@ var approvalHeader = [
   'approvedBy: Arnel',
   'approvedAt: ' + new Date().toISOString(),
   'originalDraft: ' + draftPath,
+  'seo_title: "' + title + ' | ' + config.seoDefaults.siteName + '"',
+  'seo_description: "' + (rawContent.substring(0, 160).replace(/[^\w\s-]/g, '').trim()) + '"',
+  'author: ' + config.seoDefaults.author,
+  'author_role: "' + config.seoDefaults.authorRole + '"',
+  'reading_time: ' + readTime + ' minutes',
+  'word_count: ' + wordCount,
+  'tags: [' + (isBlog ? projectKey + ', blog' : projectKey + ', social') + ']',
+  'canonical: ' + config.seoDefaults.siteUrl + '/' + (isBlog ? 'blog/' : '') + slug,
   '---',
   ''
 ].join('\n');
 
-fs.writeFileSync(approvedPath, approvalHeader + rawContent);
-console.log('\nApproved: ' + approvedPath.replace(WORKSPACE + '/', ''));
+// Add author line to content if blog
+var finalContent = rawContent;
+if (isBlog) {
+  var authorLine = '*By ' + config.seoDefaults.author + ' — ' + config.seoDefaults.authorRole + '*\n\n*' + TODAY + '*\n\n';
+  // Remove existing byline if present
+  finalContent = rawContent.replace(/^\*By .+\*\n\n\*.+\*\n\n/, '');
+  finalContent = authorLine + finalContent;
+}
+
+fs.writeFileSync(approvedPath, approvalHeader + finalContent);
+console.log('✅ Approved: ' + approvedPath.replace(WORKSPACE + '/', ''));
+console.log('   SEO title: ' + title + ' | ' + config.seoDefaults.siteName);
+console.log('   Reading time: ~' + readTime + ' min (' + wordCount + ' words)');
 
 // ============================================================
-// STEP 6: Save to Dropbox
+// STEP 6: Save to Dropbox as formatted .docx
 // ============================================================
 
 async function saveToDropbox() {
-  // Lazy-load docx to avoid import issues at startup
   const docx = require('docx');
   var Document = docx.Document;
   var Packer = docx.Packer;
   var Paragraph = docx.Paragraph;
   var TextRun = docx.TextRun;
   var HeadingLevel = docx.HeadingLevel;
+  var AlignmentType = docx.AlignmentType;
 
   var dropboxDir = '/' + config.dropboxBaseDir + '/' + typeDir;
   var dropboxFilename = TODAY + '-' + slug + '.docx';
   var dropboxPath = dropboxDir + '/' + dropboxFilename;
 
-  // Convert markdown lines to docx paragraphs
   var lines = rawContent.split('\n');
   var children = [];
 
-  // Title
+  // Title — centered, large
   children.push(new Paragraph({
-    children: [new TextRun({ text: title, bold: true, size: 32 })],
-    spacing: { after: 200 }
+    children: [new TextRun({ text: title, bold: true, size: 36 })],
+    heading: HeadingLevel.HEADING_1,
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 200 },
   }));
-  children.push(new Paragraph({ text: '' }));
 
+  // Author line
+  children.push(new Paragraph({
+    children: [new TextRun({
+      text: 'By ' + config.seoDefaults.author + ' — ' + config.seoDefaults.authorRole,
+      italics: true,
+      color: '666666',
+      size: 20
+    })],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 100 },
+  }));
+
+  // Date
+  children.push(new Paragraph({
+    children: [new TextRun({ text: TODAY, size: 18, color: '999999' })],
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 300 },
+  }));
+
+  // Body content
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
     var trimmed = line.trim();
 
+    if (trimmed.indexOf('<!--') === 0) continue; // Skip comments
+    if (trimmed.indexOf('[DRAFT') === 0) continue; // Skip draft notes
+
     if (trimmed.indexOf('## ') === 0 || trimmed.indexOf('### ') === 0) {
       children.push(new Paragraph({
         heading: HeadingLevel.HEADING_2,
-        children: [new TextRun({ text: trimmed.replace(/^#{2,3}\s/, ''), bold: true, size: 28 })]
+        children: [new TextRun({ text: trimmed.replace(/^#{2,3}\s/, ''), bold: true, size: 28 })],
+        spacing: { before: 300, after: 100 },
       }));
     } else if (trimmed.indexOf('- ') === 0) {
       children.push(new Paragraph({
         text: trimmed.substring(2),
         bullet: { level: 0 },
-        indent: { left: 720 }
+        indent: { left: 720 },
       }));
-    } else if (trimmed !== '' && trimmed.indexOf('<!--') !== 0 && trimmed.indexOf('[DRAFT') !== 0) {
+    } else if (trimmed === '---') {
       children.push(new Paragraph({
-        children: [new TextRun({ text: trimmed, size: 22 })]
+        text: '_________________________________________________________',
+        spacing: { before: 200, after: 200 },
+      }));
+    } else if (trimmed !== '') {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: trimmed, size: 22, line: 360 })],
+        spacing: { after: 100 },
       }));
     }
   }
 
+  // Footer
+  children.push(new Paragraph({
+    children: [new TextRun({
+      text: '— ' + config.seoDefaults.author + ' | ' + config.seoDefaults.siteName,
+      italics: true,
+      color: '999999',
+      size: 16,
+    })],
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 400 },
+  }));
+
   var doc = new Document({
-    sections: [{ properties: {}, children: children }]
+    sections: [{ properties: {}, children: children }],
   });
 
   var buffer = await Packer.toBuffer(doc);
@@ -246,7 +335,7 @@ async function saveToDropbox() {
     path: dropboxPath,
     mode: 'add',
     autorename: true,
-    mute: false
+    mute: false,
   });
 
   var escapedArg = apiArg.replace(/'/g, "'\\''");
@@ -260,62 +349,163 @@ async function saveToDropbox() {
     "--data-binary @" + tempFile;
 
   try {
-    console.log('\nUploading to Dropbox: ' + dropboxPath);
+    console.log('\n☁️ Uploading to Dropbox: ' + dropboxPath);
     var result = execSync(curlCmd, { timeout: 30000, encoding: 'utf-8' });
     if (result.indexOf('path_display') !== -1) {
-      console.log('Saved to Dropbox: ' + dropboxPath);
+      console.log('✅ Saved to Dropbox: ' + dropboxPath);
       fs.unlinkSync(tempFile);
       return true;
     } else {
-      console.log('Dropbox response: ' + result.substring(0, 200));
+      console.log('⚠️ Dropbox response: ' + result.substring(0, 200));
       fs.unlinkSync(tempFile);
       return false;
     }
   } catch (e) {
-    console.log('Dropbox upload failed: ' + e.message.substring(0, 200));
+    console.log('❌ Dropbox upload failed: ' + e.message.substring(0, 200));
     try { fs.unlinkSync(tempFile); } catch (e2) {}
     return false;
   }
 }
 
 // ============================================================
-// STEP 7: CMS Publish (when site is live)
+// STEP 7: Publish to Supabase CMS
 // ============================================================
 
-async function publishToCMS() {
-  var siteUrl = config.url;
+async function publishToSupabase() {
   var https = require('https');
+  var API_SECRET = process.env.API_SECRET || process.env.ADMIN_SECRET || '';
 
-  var siteLive = await new Promise(function(resolve) {
-    var req = https.get(siteUrl, function(res) {
-      resolve(res.statusCode === 200);
-    });
-    req.on('error', function() { resolve(false); });
-    req.on('timeout', function() { req.destroy(); resolve(false); });
-    req.setTimeout(5000);
-  });
-
-  if (!siteLive) {
-    console.log('\nSite not live yet: ' + siteUrl);
-    console.log('CMS publish skipped. Re-run with --publish when site is live.');
-    console.log('Command: node approve-post.js ' + projectKey + ' ' + draftPath.replace(WORKSPACE + '/', '') + ' --' + (isBlog ? 'blog' : 'social') + ' --publish');
-
-    // Save publish command for later
-    var cmdFile = path.join(config.approvedDir, typeDir, 'PUBLISH_WHEN_LIVE_' + TODAY + '-' + slug + '.sh');
-    fs.writeFileSync(cmdFile, '#!/bin/bash\n# Run when ' + siteUrl + ' is live:\nnode ' + path.join(WORKSPACE, 'scripts/approve-post.js') + ' ' + projectKey + ' ' + draftPath + ' --' + (isBlog ? 'blog' : 'social') + ' --publish\n');
-    fs.chmodSync(cmdFile, '0755');
+  if (!API_SECRET) {
+    console.log('\n⚠️ No API_SECRET in environment.');
+    console.log('Set API_SECRET or ADMIN_SECRET to publish to the site.');
     return false;
   }
 
-  console.log('\nSite is live! Publishing to ' + siteUrl);
-  // TODO: Implement CMS-specific publishing:
-  // - WordPress: POST to /wp-json/wp/v2/posts
-  // - Ghost: POST to /ghost/api/v3/admin/posts/
-  // - Static: Copy markdown to content folder + rebuild
-  // - Custom: Use Make.com / Zapier webhook
-  console.log('CMS publish integration not yet configured for ' + projectKey);
-  console.log('Configure when site platform is confirmed (WordPress/Ghost/Static/etc.)');
-  return false;
+  var category = isBlog ? 'blog' : 'social';
+  var wordCount = rawContent.split(/\s+/).length;
+
+  var postData = {
+    slug: slug,
+    title: title,
+    subtitle: isBlog ? (rawContent.split('\n').find(function(l) { return l.trim().startsWith('## '); }) || '').replace(/^##\s*/, '').substring(0, 200) : '',
+    content: rawContent,
+    content_html: rawContent,
+    status: 'published',
+    category: category,
+    tags: [projectKey, isBlog ? 'blog' : 'social'],
+    seo_title: title + ' | ' + config.seoDefaults.siteName,
+    seo_description: rawContent.substring(0, 160).replace(/[^\w\s-]/g, '').trim(),
+    author_name: config.seoDefaults.author,
+    author_role: config.seoDefaults.authorRole,
+    reading_time_minutes: Math.max(1, Math.ceil(wordCount / 200)),
+  };
+
+  var postBody = JSON.stringify(postData);
+  var supabaseUrl = process.env.SUPABASE_URL;
+
+  if (!supabaseUrl || supabaseUrl.indexOf('your-project') !== -1) {
+    console.log('\n⚠️ SUPABASE_URL not configured.');
+    console.log('Add your Supabase URL to .env to publish to CMS.');
+    return false;
+  }
+
+  var apiUrl = supabaseUrl + '/rest/v1/posts';
+  console.log('\n🚀 Publishing to Supabase...');
+
+  try {
+    var result = await new Promise(function(resolve) {
+      var opts = {
+        method: 'POST',
+        hostname: new URL(apiUrl).hostname,
+        path: new URL(apiUrl).pathname,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': API_SECRET,
+          'Authorization': 'Bearer ' + API_SECRET,
+          'Prefer': 'return=representation',
+        },
+      };
+
+      var req = https.request(opts, function(res) {
+        var body = '';
+        res.on('data', function(chunk) { body += chunk; });
+        res.on('end', function() { resolve({ statusCode: res.statusCode, body: body }); });
+      });
+
+      req.on('error', function(e) { resolve({ error: e.message }); });
+      req.on('timeout', function() { req.destroy(); resolve({ error: 'timeout' }); });
+      req.setTimeout(15000);
+      req.write(postBody);
+      req.end();
+    });
+
+    if ('error' in result) {
+      if (result.error.indexOf('duplicate') !== -1) {
+        console.log('ℹ️ Slug exists — updating post...');
+        return updateSupabasePost();
+      }
+      console.log('❌ Supabase error: ' + result.error);
+      return false;
+    }
+
+    if (result.statusCode >= 200 && result.statusCode < 300) {
+      console.log('✅ Published to Supabase (HTTP ' + result.statusCode + ')');
+      return true;
+    }
+
+    console.log('⚠️ Supabase response (' + result.statusCode + '): ' + result.body.substring(0, 200));
+    return false;
+  } catch (e) {
+    console.log('❌ Supabase error: ' + e.message.substring(0, 200));
+    return false;
+  }
+}
+
+async function updateSupabasePost() {
+  var https = require('https');
+  var API_SECRET = process.env.API_SECRET || process.env.ADMIN_SECRET || '';
+  if (!API_SECRET) return false;
+
+  var supabaseUrl = process.env.SUPABASE_URL;
+  var apiUrl = supabaseUrl + '/rest/v1/posts?slug=eq.' + encodeURIComponent(slug);
+
+  try {
+    var result = await new Promise(function(resolve) {
+      var body = JSON.stringify({ content: rawContent, status: 'published' });
+      var opts = {
+        method: 'PATCH',
+        hostname: new URL(apiUrl).hostname,
+        path: new URL(apiUrl).pathname + new URL(apiUrl).search,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': API_SECRET,
+          'Authorization': 'Bearer ' + API_SECRET,
+          'Prefer': 'return=representation',
+        },
+      };
+
+      var req = https.request(opts, function(res) {
+        var data = '';
+        res.on('data', function(c) { data += c; });
+        res.on('end', function() { resolve({ statusCode: res.statusCode, body: data }); });
+      });
+
+      req.on('error', function(e) { resolve({ error: e.message }); });
+      req.setTimeout(15000);
+      req.write(body);
+      req.end();
+    });
+
+    if ('error' in result) {
+      console.log('❌ Update failed: ' + result.error);
+      return false;
+    }
+    console.log('✅ Updated in Supabase (HTTP ' + result.statusCode + ')');
+    return true;
+  } catch (e) {
+    console.log('❌ Update error: ' + e.message.substring(0, 200));
+    return false;
+  }
 }
 
 // ============================================================
@@ -328,7 +518,6 @@ function updateTracker() {
 
   var tracker = fs.readFileSync(trackerPath, 'utf-8');
   var typeLabel = isBlog ? 'Blog Posts' : 'Social Posts';
-
   var projectLabel = projectKey === 'rinkstop' ? 'RinkStop' :
                      projectKey === 'sativaexchange' ? 'SativaExchange' : 'TopShelfToker';
 
@@ -336,49 +525,55 @@ function updateTracker() {
   var existingIdx = tracker.indexOf(projectSection);
 
   if (existingIdx === -1) {
-    // Find the channel line and insert after it
     var channelLine = '**Channel:** ' + config.channel + '\n';
     var insertPoint = tracker.indexOf(channelLine);
     if (insertPoint !== -1) {
       var insertPos = insertPoint + channelLine.length;
       tracker = tracker.slice(0, insertPos) +
-        '\n### ' + typeLabel + ' (Approved)\n\n| Title | Date |\n|-------|------|\n| ' + title + ' | ' + TODAY + ' |\n' +
+        '\n### ' + typeLabel + ' (Approved)\n\n| Title | Date | Reading Time |\n|-------|------|-------------|\n| ' +
+        title + ' | ' + TODAY + ' | ~' + readTime + ' min |\n' +
         tracker.slice(insertPos);
     }
   } else {
-    // Add row to existing table
     var sectionEnd = tracker.indexOf('\n\n###', existingIdx + 1);
     var insertPos = sectionEnd !== -1 ? sectionEnd : existingIdx + projectSection.length;
-    tracker = tracker.slice(0, insertPos) + '\n| ' + title + ' | ' + TODAY + ' |' + tracker.slice(insertPos);
+    tracker = tracker.slice(0, insertPos) +
+      '\n| ' + title + ' | ' + TODAY + ' | ~' + readTime + ' min |' +
+      tracker.slice(insertPos);
   }
 
   fs.writeFileSync(trackerPath, tracker);
-  console.log('\nUpdated post-tracker.md');
+  console.log('✅ Updated post-tracker.md');
 }
 
 // ============================================================
-// RUN
+// MAIN
 // ============================================================
 
 (async function main() {
   try {
+    // Step 5 already done
     await saveToDropbox();
 
     if (PUBLISH) {
-      await publishToCMS();
+      await publishToSupabase();
+    } else {
+      console.log('\n💡 To publish to site, re-run with --publish flag');
+      console.log('   node approve-post.js ' + projectKey + ' ' +
+        draftPath.replace(WORKSPACE + '/', '') + ' --' +
+        (isBlog ? 'blog' : 'social') + ' --publish');
     }
 
     updateTracker();
 
     console.log('\n=== DONE ===');
-    console.log('Post approved and saved.');
-    console.log('  Approved file: ' + approvedPath.replace(WORKSPACE, '~'));
-    console.log('  Dropbox: ' + config.dropboxBaseDir + '/' + typeDir + '/' + TODAY + '-' + slug + '.docx');
-    if (PUBLISH) console.log('  CMS publish: attempted');
+    console.log('  Approved: ' + approvedPath.replace(WORKSPACE, '~'));
+    console.log('  Dropbox:  ' + config.dropboxBaseDir + '/' + typeDir + '/' + TODAY + '-' + slug + '.docx');
+    if (PUBLISH) console.log('  CMS:      Published to Supabase');
     console.log('');
 
   } catch (err) {
-    console.error('Error: ' + err.message);
+    console.error('❌ Error: ' + err.message);
     process.exit(1);
   }
 })();

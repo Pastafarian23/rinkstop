@@ -16,6 +16,24 @@
 **Email:** support@rinkstop.com
 **Channel:** -5043773858
 
+### Blog Posts (Approved)
+
+| Title | Date | Reading Time |
+|-------|------|-------------|
+| Coaching Hockey in Cebu: 5 Lessons That Changed How I Lead | 2026-05-10 | ~4 min |
+
+### Blog Posts (Approved)
+
+| Title | Date |
+|-------|------|
+| How RinkStop Is Building a Global Hockey Directory — One Team at a Time | 2026-05-10 |
+
+### Blog Posts (Approved)
+
+| Title | Date |
+|-------|------|
+| 🏒 New community rink opens in Cebu, Philippines | 2026-05-10 |
+
 ### Social Posts (Pending Posting)
 
 | Platform | Content | Date |

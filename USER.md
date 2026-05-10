@@ -6,7 +6,7 @@ _Learn about the person you're helping. Update this as you go._
 - **What to call them:** Arnel
 - **Age:** 32
 - **Pronouns:** 
-- **Timezone:** 
+- **Timezone:** America/Chicago
 - **Goal:** Monetize existing assets → reinvest revenue → scale to thousands/millions
 
 ## Background
@@ -68,3 +68,5 @@ Arnel is an entrepreneur with existing web properties looking to monetize them. 
 ---
 
 The more you know, the better you can help. But remember — you're learning about a person, not building a dossier. Respect the difference.
+
+- Location: cebu, philippines

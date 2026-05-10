@@ -131,7 +131,7 @@ const TOPIC_POOL = {
   rinkstop: [
     { title: 'NHL playoff intensity rises — coaching adjustments underway', niche: 'pro', type: 'blog' },
     { title: 'USA Hockey expands youth coaching certification program', niche: 'youth', type: 'blog' },
-    { title: 'New community rink opens in Cebu, Philippines', niche: 'local', type: 'social' },
+    { title: 'New community rink opens in local city', niche: 'local', type: 'social' },
     { title: 'IIHF announces 2027 World Championship host', niche: 'international', type: 'social' },
     { title: 'SportTechie: AI-powered analytics reach youth hockey', niche: 'tech', type: 'social' },
     { title: 'Scoresheet.pro update: new penalty tracking features', niche: 'product', type: 'social' },
@@ -312,7 +312,7 @@ Create this drill on [CoachBoard](https://rinkstop.com) | Find rinks near you in
 
 🏟️ Find your rink → rinkstop.com
 
-#Hockey #YouthHockey${topic.niche === 'local' ? ' #PHHockey #Cebu' : ''} #RinkStop
+#Hockey #YouthHockey${topic.niche === 'local' ? ' #LocalHockey' : ''} #RinkStop
 `;
   }
 
