@@ -18,6 +18,7 @@ interface Post {
   seo_title?: string;
   seo_description?: string;
   og_image_url?: string;
+  updated_at?: string;
   view_count?: number;
 }
 

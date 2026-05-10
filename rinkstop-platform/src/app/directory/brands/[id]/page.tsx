@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function BrandDetail() {
   const { id } = useParams();
-  const [brand, setBrand] = useState(null);
+  const [brand, setBrand] = useState<any>(null);
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {

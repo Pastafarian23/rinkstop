@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function NewFixture() {
@@ -42,6 +43,3 @@ export default function NewFixture() {
     </div>
   );
 }
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';

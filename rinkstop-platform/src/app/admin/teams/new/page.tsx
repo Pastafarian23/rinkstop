@@ -52,4 +52,4 @@ export default function NewTeam() {
   );
 }
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';

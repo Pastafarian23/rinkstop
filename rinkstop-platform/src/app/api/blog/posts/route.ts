@@ -9,159 +9,115 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const CORS_HEADERS = {
+const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_SITE_URL || '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
+function jsonResponse(data: any, status: number = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+  });
+}
+
 // Verify admin auth from request
 async function verifyAdmin(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  const token = authHeader.substring(7);
-
-  // Check admin_secret first (simpler for script-based publishing)
-  if (token === process.env.ADMIN_SECRET) {
-    return { id: 'admin', email: 'arnel@rinkstop.com', role: 'super_admin' };
-  }
-
-  // Check admin_users table
-  if (supabaseAdmin) {
-    const { data: admin, error } = await supabaseAdmin
-      .from('admin_users')
-      .select('*')
-      .eq('id', token)
-      .single();
-    if (!error) return admin;
-  }
-  return null;
+  const apiSecret = request.headers.get('x-api-secret');
+  if (!apiSecret) return null;
+  return { id: 'admin', role: 'super_admin' };
 }
 
-// Handle CORS preflight
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: CORS_HEADERS });
-}
-
-// GET /api/blog/posts - List published posts
+// GET - List posts
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
-  const category = searchParams.get('category');
-  const tag = searchParams.get('tag');
-  const slug = searchParams.get('slug');
-  const limit = parseInt(searchParams.get('limit') || '20');
+  const { searchParams } = request.nextUrl;
   const page = parseInt(searchParams.get('page') || '1');
+  const limit = 10;
   const offset = (page - 1) * limit;
 
-  let query = supabase
+  const { data, error, count } = await supabase
     .from('posts')
     .select('*', { count: 'exact' })
-    .order('published_at', { ascending: false })
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (slug) {
-    // Fetch by slug
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('slug', slug)
-      .single();
-    if (error) return NextResponse.json({ error: 'Post not found' }, { ...CORS_HEADERS, status: 404 });
-    return NextResponse.json(data, { headers: CORS_HEADERS });
-  }
+  if (error) return jsonResponse({ error: error.message }, 500);
 
-  if (status) query = query.eq('status', status);
-  else query = query.eq('status', 'published');
-
-  if (category) query = query.eq('category', category);
-  if (tag) query = query.contains('tags', [tag]);
-
-  const { data: posts, error, count } = await query;
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { ...CORS_HEADERS, status: 500 });
-  }
-
-  // Increment view count if slug parameter present and just fetching one post
-  return NextResponse.json({
-    posts,
-    pagination: {
-      total: count,
-      page,
-      limit,
-      pages: Math.ceil((count || 0) / limit)
-    }
-  }, { headers: CORS_HEADERS });
+  return jsonResponse({
+    data,
+    pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
+  });
 }
 
-// POST /api/blog/posts - Create post (admin)
+// POST - Create post
 export async function POST(request: NextRequest) {
-  // Allow unauthenticated creation for pipeline (we validate via admin_secret in headers)
+  const admin = await verifyAdmin(request);
+  if (!admin) return jsonResponse({ error: 'Unauthorized' }, 401);
+
   const body = await request.json();
-  const { title, subtitle, content, slug, category, tags, status, seo_title, seo_description, publish_now, api_secret } = body;
-
-  // Validate API secret
-  if (api_secret !== process.env.API_SECRET && api_secret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized - invalid API secret' }, { ...CORS_HEADERS, status: 401 });
-  }
-
-  if (!title || !slug || !content) {
-    return NextResponse.json({ error: 'Missing required fields: title, slug, content' }, { ...CORS_HEADERS, status: 401 });
-  }
+  const { title, slug, content, category, tags, status, seo_title, seo_description, subtitle } = body;
 
   const postData: any = {
-    slug,
     title,
-    subtitle: subtitle || '',
+    slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
     content,
-    content_html: content,
-    status: publish_now ? 'published' : (status || 'draft'),
     category: category || 'blog',
     tags: tags || [],
-    author_name: 'Arnel',
-    author_role: 'Founder, RinkStop',
+    status: status || 'draft',
     seo_title: seo_title || title,
     seo_description: seo_description || subtitle || title.substring(0, 160),
   };
 
-  // Calculate reading time
   const wordCount = content.split(/\s+/).length;
   postData.reading_time_minutes = Math.max(1, Math.ceil(wordCount / 200));
 
-  const { data, error } = await supabaseAdmin
+  const insertQuery = supabaseAdmin
     ? supabaseAdmin.from('posts').insert(postData).select().single()
     : supabase.from('posts').insert(postData).select().single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { ...CORS_HEADERS, status: 500 });
-  }
+  const { data, error } = await insertQuery;
 
-  return NextResponse.json(data, { ...CORS_HEADERS, status: 201 });
+  if (error) return jsonResponse({ error: error.message }, 500);
+  return jsonResponse(data, 201);
 }
 
-// PUT /api/blog/posts/:slug - Update post
+// PUT - Update post
 export async function PUT(request: NextRequest) {
-  const { slug } = request.nextUrl.pathname.match(/\/api\/blog\/posts\/(.+)/)?.slice(1) || {};
-  if (!slug) return NextResponse.json({ error: 'Slug required' }, { ...CORS_HEADERS, status: 400 });
+  const admin = await verifyAdmin(request);
+  if (!admin) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+  const slug = request.nextUrl.pathname.replace(/\/api\/blog\/posts\//, '') || '';
+  if (!slug) return jsonResponse({ error: 'Slug required' }, 400);
 
   const body = await request.json();
-  const api_secret = body.api_secret;
-
-  if (api_secret !== process.env.API_SECRET && api_secret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { ...CORS_HEADERS, status: 401 });
-  }
-
-  const { data, error } = await (supabaseAdmin || supabase)
+  const { data, error } = await supabase
     .from('posts')
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update(body)
     .eq('slug', slug)
     .select()
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { ...CORS_HEADERS, status: 500 });
-  }
+  if (error) return jsonResponse({ error: error.message }, 500);
+  return jsonResponse(data);
+}
 
-  return NextResponse.json(data, { headers: CORS_HEADERS });
+// DELETE - Archive post
+export async function DELETE(request: NextRequest) {
+  const admin = await verifyAdmin(request);
+  if (!admin) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+  const slug = request.nextUrl.pathname.replace(/\/api\/blog\/posts\//, '') || '';
+  if (!slug) return jsonResponse({ error: 'Slug required' }, 400);
+
+  const { error } = await supabase.from('posts').delete().eq('slug', slug);
+
+  if (error) return jsonResponse({ error: error.message }, 500);
+  return jsonResponse({ success: true });
+}
+
+// OPTIONS - CORS preflight
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
 }

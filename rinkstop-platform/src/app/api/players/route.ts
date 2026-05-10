@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     .range(offset, offset + limit - 1);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data, count, page, totalPages: Math.ceil(count / limit) });
+  return NextResponse.json({ data, count, page, totalPages: Math.ceil((count || 0) / limit) });
 }
 
 export async function POST(request: NextRequest) {

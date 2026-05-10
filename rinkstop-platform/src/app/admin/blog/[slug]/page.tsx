@@ -18,25 +18,26 @@ interface Post {
   published_at?: string;
 }
 
-export default function EditBlogPostPage({ params }: { params: { slug: string } }) {
+export default async function EditBlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
 
   useEffect(() => {
-    fetch(`/api/blog/posts/${params.slug}`)
+    fetch(`/api/blog/posts/${slug}`)
       .then((res) => res.json())
       .then((data) => { setPost(data); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [params.slug]);
+  }, [slug]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!post) return;
     setSaving(true);
 
-    const res = await fetch(`/api/blog/posts/${params.slug}`, {
+    const res = await fetch(`/api/blog/posts/${slug}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer admin' },
       body: JSON.stringify(post),

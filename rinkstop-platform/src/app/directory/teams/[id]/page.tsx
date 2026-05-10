@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function TeamDetail() {
   const { id } = useParams();
-  const [team, setTeam] = useState(null);
+  const [team, setTeam] = useState<any>(null);
   const [players, setPlayers] = useState([]);
   const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);

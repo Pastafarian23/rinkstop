@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function PlayerDetail() {
   const { id } = useParams();
-  const [player, setPlayer] = useState(null);
+  const [player, setPlayer] = useState<any>(null);
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
 
