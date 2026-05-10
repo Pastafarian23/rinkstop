@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/local/bin/node
 /**
  * daily-content-gen.js — Automated Content Pipeline Runner
  * 

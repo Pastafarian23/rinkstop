@@ -1,6 +1,9 @@
 #!/bin/bash
 # Full System Backup Script
 # Backs up all configs, workspaces, and critical files
+# FIX: Updated all paths from /home/openclaw/ to /root/.openclaw/
+
+export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
 
 BACKUP_DIR="/root/.openclaw/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -31,7 +34,15 @@ cp -r /root/.openclaw/workspace/docs/* "$BACKUP_DIR/$BACKUP_NAME/docs/" 2>/dev/n
 mkdir -p "$BACKUP_DIR/$BACKUP_NAME/scripts"
 cp /root/.openclaw/workspace/scripts/*.sh "$BACKUP_DIR/$BACKUP_NAME/scripts/" 2>/dev/null
 
-# 5. Create archive
+# 5. Device pairing state
+mkdir -p "$BACKUP_DIR/$BACKUP_NAME/devices"
+cp /root/.openclaw/devices/*.json "$BACKUP_DIR/$BACKUP_NAME/devices/" 2>/dev/null
+
+# 6. Memory files
+mkdir -p "$BACKUP_DIR/$BACKUP_NAME/memory"
+cp /root/.openclaw/workspace/memory/*.md "$BACKUP_DIR/$BACKUP_NAME/memory/" 2>/dev/null
+
+# 7. Create archive
 cd "$BACKUP_DIR"
 tar -czf "$BACKUP_NAME.tar.gz" "$BACKUP_NAME"
 rm -rf "$BACKUP_NAME"

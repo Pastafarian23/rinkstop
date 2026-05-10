@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/local/bin/node
 /**
  * Telegram Backup → Dropbox
  * Runs daily to capture all Telegram activity and save to Dropbox
