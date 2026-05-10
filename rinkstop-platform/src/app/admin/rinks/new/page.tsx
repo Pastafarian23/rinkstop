@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function NewRink() {
@@ -60,5 +61,3 @@ export default function NewRink() {
   );
 }
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';

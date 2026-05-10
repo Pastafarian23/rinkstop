@@ -653,32 +653,36 @@ This checklist should prevent incomplete implementations.
 
 ---
 
-## OpenClaw Gateway Pairing Issue (GitHub #69284) - UNRESOLVED
+## OpenClaw Gateway Pairing Issue (GitHub #69284) - RESOLVED / CLOSED
 
 **Issue:** GitHub #69284 - Gateway recurring pairing required error
+**Status:** ✅ CLOSED — No longer relevant to KiloClaw gateway (confirmed 2026-05-10)
 
-**Problem:** 
-- Gateway shows "gateway closed (1008): pairing required" error
-- `paired.json` resets to {} after restart
-- Subagent sessions fail
-- This is a KNOWN UNFIXED BUG in OpenClaw
+**Original Problem:**
+- Gateway showed "gateway closed (1008): pairing required" error
+- `paired.json` reset to {} after restart
+- Subagent sessions failed
+- KNOWN BUG in OpenClaw
 
 **Root Cause:**
 - Gateway auth doing 3 jobs at once (user auth, internal service auth, local operator auth)
-- RFC #69066 proposed to fix - still in progress
+- RFC #69066 was proposed to fix
 
-**Workaround:**
+**Resolution:**
+- Issue is no longer manifesting on current KiloClaw version
+- `paired.json` is stable with 2 valid devices
+- `pending.json` stays empty — no re-pairing needed
+- Both paired devices (webchat operator + gateway-client backend) remain healthy
+
+**Related Issue #79308 — Telegram group reply routing to DMs**
+- GitHub #79308 — Telegram group replies sent to wrong chat_id
+- Status: ✅ CLOSED — No longer relevant (patched in subsequent release)
+- Only affected group messaging on Heyron.ai hosted gateway in v2026.5.7
+- Current behavior is correct — replies route to the originating group
+
+**Workaround still documented in case of future regression:**
 - Manual fix: Copy pending.json → paired.json
-- Auto-repair script: scripts/gateway-health-monitor.sh (runs when needed)
-
-**Files involved:**
-- /root/.openclaw/devices/paired.json
-- /root/.openclaw/devices/pending.json
-- /root/.openclaw/identity/device.json
-
-**Status:** Still waiting on OpenClaw fix. Check GitHub issues #69284 and #69066 for updates.
-
----
+- Auto-repair script location: scripts/gateway-health-monitor.sh (not yet created)
 
 ## GitHub via Maton (2026-05-08)
 

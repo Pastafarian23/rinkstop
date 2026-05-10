@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function LeagueDetail() {
   const { id } = useParams();
-  const [league, setLeague] = useState(null);
+  const [league, setLeague] = useState<any>(null);
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {

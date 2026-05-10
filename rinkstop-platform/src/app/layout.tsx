@@ -20,11 +20,21 @@ export default function RootLayout({
                 </Link>
               </div>
               <div className="hidden md:flex items-center gap-6">
-                <Link href="/directory" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium">Directory</Link>
-                <Link href="/directory/teams" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium">Teams</Link>
-                <Link href="/directory/players" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium">Players</Link>
-                <Link href="/directory/leagues" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium">Leagues</Link>
-                <Link href="/blog" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium">Blog</Link>
+                <Link href="/directory/teams" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium flex items-center gap-1.5">
+                  🏒 Teams
+                </Link>
+                <Link href="/directory/leagues" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium flex items-center gap-1.5">
+                  🏆 Leagues
+                </Link>
+                <Link href="/directory/rinks" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium flex items-center gap-1.5">
+                  🏟️ Rinks
+                </Link>
+                <Link href="/directory/players" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium flex items-center gap-1.5">
+                  🥅 Players
+                </Link>
+                <Link href="/directory/fixtures" className="text-slate-300 hover:text-teal-400 transition-colors text-sm font-medium flex items-center gap-1.5">
+                  📊 Stats
+                </Link>
               </div>
             </div>
           </div>
@@ -52,28 +62,21 @@ export default function RootLayout({
               <div>
                 <h4 className="font-semibold text-white mb-3">Directory</h4>
                 <ul className="space-y-2 text-sm text-slate-500">
-                  <li><a href="/directory/teams" className="hover:text-teal-400 transition-colors">Teams</a></li>
-                  <li><a href="/directory/players" className="hover:text-teal-400 transition-colors">Players</a></li>
-                  <li><a href="/directory/leagues" className="hover:text-teal-400 transition-colors">Leagues</a></li>
-                  <li><a href="/directory/rinks" className="hover:text-teal-400 transition-colors">Rinks</a></li>
+                  <li><a href="/directory/teams" className="hover:text-teal-400 transition-colors">🏒 Teams</a></li>
+                  <li><a href="/directory/leagues" className="hover:text-teal-400 transition-colors">🏆 Leagues</a></li>
+                  <li><a href="/directory/rinks" className="hover:text-teal-400 transition-colors">🏟️ Rinks</a></li>
+                  <li><a href="/directory/players" className="hover:text-teal-400 transition-colors">🥅 Players</a></li>
+                  <li><a href="/directory/fixtures" className="hover:text-teal-400 transition-colors">📊 Stats</a></li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-white mb-3">More</h4>
+                <h4 className="font-semibold text-white mb-3">Info</h4>
                 <ul className="space-y-2 text-sm text-slate-500">
-                  <li><a href="/directory/brands" className="hover:text-teal-400 transition-colors">Brands</a></li>
-                  <li><a href="/directory/fixtures" className="hover:text-teal-400 transition-colors">Fixtures</a></li>
-                  <li><a href="/admin" className="hover:text-teal-400 transition-colors">Admin</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-white mb-3">Connect</h4>
-                <ul className="space-y-2 text-sm text-slate-500">
-                  <li><a href="https://topshelftoker.com" target="_blank" rel="noopener" className="hover:text-crimson-400 transition-colors">Shop Gear</a></li>
                   <li><a href="/blog" className="hover:text-teal-400 transition-colors">Blog</a></li>
                   <li><a href="/admin" className="hover:text-teal-400 transition-colors">Contribute Data</a></li>
                 </ul>
               </div>
+
             </div>
             <div className="border-t border-slate-800 mt-8 pt-4 text-center text-xs text-slate-700">
               © {new Date().getFullYear()} RinkStop. Built for the global hockey community.
@@ -85,4 +88,3 @@ export default function RootLayout({
   );
 }
 
-import Link from 'next/link';

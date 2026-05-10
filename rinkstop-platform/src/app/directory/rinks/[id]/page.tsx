@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function RinkDetail() {
   const { id } = useParams();
-  const [rink, setRink] = useState(null);
+  const [rink, setRink] = useState<any>(null);
   const [fixtures, setFixtures] = useState([]);
 
   useEffect(() => {
