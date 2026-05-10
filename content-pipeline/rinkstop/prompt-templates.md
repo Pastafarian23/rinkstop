@@ -79,7 +79,7 @@ INSTRUCTIONS:
 1. Lead with what makes this place unique (oldest rink? newest facility? community hub?)
 2. Include practical details: location, amenities, programs offered
 3. Tell a human story — the people who run it, the community it serves
-4. If in the Philippines or emerging hockey market, emphasize the "Local to Global" angle
+4. If in a growth market, emphasize the "Local Scenes" angle — how hockey is building in unexpected places
 5. Link to the facility in the RinkStop directory
 6. End with a call to visit or add their own rink to RinkStop
 
@@ -90,27 +90,28 @@ DO NOT:
 
 ---
 
-## TEMPLATE 4: "Local to Global" — PH Hockey Perspective
+## TEMPLATE 4: "Local Scenes" — Country-Specific Hockey Perspective
 
 ```
-Write a "Local to Global" blog post for RinkStop (rinkstop.com).
+Write a "Local Scenes" blog post for RinkStop (rinkstop.com).
 
-STRUCTURE: PH Hockey Scene → Global Connection → RinkStop's Role → CTA
+STRUCTURE: Local Hockey Scene → Global Connection → RinkStop's Role → CTA
 LENGTH: 400-700 words
 TONE: Proud, inspiring, bridges cultures through hockey
 
-TOPIC: [INSERT — e.g., "growing youth hockey in Cebu", "Philippine national team progress"]
+TOPIC: [INSERT — e.g., "growing youth hockey in the Philippines", "Canadian junior hockey scene", 
+         "European hockey league expansion"]
 
 INSTRUCTIONS:
-1. Start with a specific local hockey moment or story
+1. Start with a specific local hockey moment or story from any country
 2. Connect it to bigger trends in global hockey
-3. Highlight what makes PH hockey unique (climate, culture, growth trajectory)
-4. Show how RinkStop helps connect PH hockey to the global community
-5. Include practical resources (find rinks, join leagues, CoachBoard drills adapted for limited ice time)
+3. Highlight what makes this country's hockey scene unique (climate, culture, growth trajectory, history)
+4. Show how RinkStop helps connect local hockey to the global community
+5. Include practical resources (find rinks, join leagues, CoachBoard drills adapted for local conditions)
 6. End with an inspiring note about hockey being for everyone, everywhere
 
-SPECIAL NOTE: This is RinkStop's unique differentiator. Nobody else covers PH hockey 
-in the context of global hockey. Lean into this angle hard.
+SPECIAL NOTE: This is RinkStop's unique differentiator. Nobody else covers country-specific hockey 
+in the context of global hockey. Lean into the local-to-global angle hard.
 ```
 
 ---
@@ -147,7 +148,7 @@ DO NOT:
 | Breaking hockey news | Template 1 (Social) | 5-10 min | NHL, TSN, IIHF |
 | Coaching tips | Template 2 (Blog) | 20-30 min | USA Hockey, ADM, CoachThem |
 | Facility spotlight | Template 3 (Blog/Social) | 15-20 min | Arena Digest, local |
-| PH hockey story | Template 4 (Blog) | 30-45 min | PH sports, local |
+| Country-specific story | Template 4 (Blog) | 30-45 min | Local hockey scenes |
 | Game management tips | Template 5 (Social/Blog) | 15-20 min | Rules changes, officiating |
 
 ---

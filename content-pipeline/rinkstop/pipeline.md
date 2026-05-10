@@ -16,12 +16,12 @@ RSS Feeds (30+) → Scan Headlines → Select 3-5 Stories → AI Draft (RinkStop
 
 ### Morning Scan (15 min)
 1. Open feed reader with all 6 categories
-2. Flag 3-5 stories: mix of NHL news, coaching content, and community/PH hockey
+2. Flag 3-5 stories: mix of NHL news, coaching content, and local hockey scenes
 3. Quick social posts on breaking news (Template 1)
 
 ### Midday (15 min)
 4. Deeper piece if coaching tips or facility spotlight (Template 2 or 3)
-5. Check for PH hockey news — "Local to Global" angle (Template 4)
+5. Check for country-specific hockey news — "Local Scenes" angle (Template 4)
 
 ### End of Day (10 min)
 6. Game management tips if rules or officiating news (Template 5)
@@ -36,7 +36,7 @@ RSS Feeds (30+) → Scan Headlines → Select 3-5 Stories → AI Draft (RinkStop
 | **Quick News Posts** | Daily (1-2) | Template 1 | NHL, TSN, IIHF |
 | **Coaching Tips + CoachBoard** | 2-3x/week | Template 2 | USA Hockey, ADM, CoachThem |
 | **Facility Spotlights** | 1-2x/week | Template 3 | Arena Digest, local rinks |
-| **"Local to Global" PH Hockey** | 1-2x/week | Template 4 | PH sports, community |
+| **"Local Scenes"** | 1-2x/week | Template 4 | Country-specific hockey stories |
 | **Game Management / Scoresheet** | 1-2x/week | Template 5 | Rules updates, officiating |
 | **Weekly Recap** | Weekly | Template 1 (adapted) | All feeds |
 
@@ -49,7 +49,7 @@ These are what make RinkStop content DIFFERENT from every other hockey account:
 1. **"Find It on RinkStop"** — Every rink/league/facility mention links to RinkStop directory listing
 2. **"Coach This"** — Coaching news gets a CoachBoard drill visualization attached
 3. **"Score This"** — Game management tips show Scoresheet features
-4. **"Local to Global"** — PH hockey → global hockey community connection (NOBODY else does this)
+4. **"Local Scenes"** — Country-specific hockey stories → global hockey community connection (NOBODY else does this)
 5. **Community Spotlight** — Real teams, real players, real rinks from the directory
 
 ---

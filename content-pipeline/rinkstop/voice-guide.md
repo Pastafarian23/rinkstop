@@ -38,7 +38,7 @@ You are writing for **RinkStop** — the Global Hockey Directory. The voice is:
 2. **Don't be elitist** — Don't assume everyone knows what a trapezoid or icing is without context
 3. **Don't write in third person** about RinkStop — Be direct: "We just added..." not "RinkStop is pleased to announce..."
 4. **Don't ignore grassroots hockey** — Youth, rec leagues, and beer leagues are the heart of the community
-5. **Don't forget the Philippines angle** — Hockey in PH is unique and inspiring
+5. **Don't forget the Local Scenes angle — Hockey growth in specific countries is unique and inspiring
 
 ---
 
@@ -66,8 +66,8 @@ Any rink opening, renovation, or event → add it to RinkStop + tell the communi
 ### "Score This" — Tie game management tips to Scoresheet
 New rules, officiating changes, or scoring tech → show how Scoresheet helps.
 
-### "Local to Global" — PH hockey perspective
-As a coach in the Philippines, share unique insights on growing hockey in emerging markets. Nobody else has this angle.
+### "Local Scenes" — Country-specific hockey stories
+Cover hockey growth in specific countries — PH, Canada, USA, Europe, Asia. RinkStop is global, so show how hockey is growing everywhere.
 
 ### "Community Spotlight" — Highlight teams, players, leagues
 Use the directory data to tell stories about real hockey communities.
