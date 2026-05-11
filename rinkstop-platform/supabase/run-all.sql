@@ -234,11 +234,18 @@ DROP TRIGGER IF EXISTS trg_posts_published ON posts;
 CREATE TRIGGER trg_posts_published BEFORE UPDATE ON posts
   FOR EACH ROW EXECUTE FUNCTION set_published_at();
 
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'posts' AND relrowsecurity) THEN
+    ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+  END IF;
+END $$;
+DROP POLICY IF EXISTS "Public can read published posts" ON posts;
 CREATE POLICY "Public can read published posts" ON posts
   FOR SELECT USING (status = 'published');
+DROP POLICY IF EXISTS "Anyone can insert with API key" ON posts;
 CREATE POLICY "Anyone can insert with API key" ON posts
   FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Anyone can update own posts" ON posts;
 CREATE POLICY "Anyone can update own posts" ON posts
   FOR UPDATE USING (true);
 
