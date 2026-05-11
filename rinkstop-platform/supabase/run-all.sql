@@ -170,14 +170,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_leagues_updated ON leagues;
 CREATE TRIGGER trg_leagues_updated BEFORE UPDATE ON leagues
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DROP TRIGGER IF EXISTS trg_teams_updated ON teams;
 CREATE TRIGGER trg_teams_updated BEFORE UPDATE ON teams
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DROP TRIGGER IF EXISTS trg_players_updated ON players;
 CREATE TRIGGER trg_players_updated BEFORE UPDATE ON players
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DROP TRIGGER IF EXISTS trg_rinks_updated ON rinks;
 CREATE TRIGGER trg_rinks_updated BEFORE UPDATE ON rinks
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DROP TRIGGER IF EXISTS trg_brands_updated ON brands;
 CREATE TRIGGER trg_brands_updated BEFORE UPDATE ON brands
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
@@ -221,9 +226,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_posts_updated ON posts;
 CREATE TRIGGER trg_posts_updated BEFORE UPDATE ON posts
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS trg_posts_published ON posts;
 CREATE TRIGGER trg_posts_published BEFORE UPDATE ON posts
   FOR EACH ROW EXECUTE FUNCTION set_published_at();
 
