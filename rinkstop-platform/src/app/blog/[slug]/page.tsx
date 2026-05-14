@@ -320,6 +320,9 @@ export default async function BlogPostPage({ params }: Props) {
   );
 }
 
+// Dynamic route params — allow all slugs, not just pre-seeded ones
+export const dynamicParams = true;
+
 // Generate static params for existing seeded posts
 export async function generateStaticParams() {
   return [
