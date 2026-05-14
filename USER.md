@@ -70,3 +70,19 @@ Arnel is an entrepreneur with existing web properties looking to monetize them. 
 The more you know, the better you can help. But remember — you're learning about a person, not building a dossier. Respect the difference.
 
 - Location: cebu, philippines
+
+- Timezone: America/Chicago
+
+- Location: cebu, philippines
+
+- Timezone: America/Chicago
+
+- Location: cebu, philippines
+
+- Timezone: America/Chicago
+
+- Location: cebu, philippines
+
+- Timezone: America/Chicago
+
+- Location: cebu, philippines

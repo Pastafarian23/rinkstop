@@ -1,5 +1,11 @@
-// src/app/blog/page.tsx — Blog listing page (public)
+// src/app/blog/page.tsx — Blog listing page (Server Component)
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface Post {
   id: string;
@@ -8,117 +14,100 @@ interface Post {
   subtitle?: string;
   published_at?: string;
   category?: string;
-  tags?: string[];
   reading_time_minutes?: number;
-  view_count?: number;
   author_name?: string;
 }
 
-async function getPosts(): Promise<{ posts: Post[], total: number }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/blog/posts?status=published&limit=20&page=1`, {
-    next: { revalidate: 60 }
-  });
-  if (!res.ok) return { posts: [], total: 0 };
-  const data = await res.json();
-  return { posts: data.posts || [], total: data.pagination?.total || 0 };
+function formatDate(date?: string) {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch { return date; }
 }
 
-const CATEGORIES = [
-  { key: 'blog', label: 'Latest from the Blog' },
-  { key: 'coaching', label: 'Coaching Insights' },
-  { key: 'global-scenes', label: 'Local Scenes' },
-  { key: 'youth-hockey', label: 'Youth Hockey' },
-  { key: 'industry', label: 'Industry' },
-];
-
 export default async function BlogPage() {
-  const { posts, total } = await getPosts();
-
-  // Group by category
-  const grouped: Record<string, Post[]> = {};
-  CATEGORIES.forEach(c => { grouped[c.key] = posts.filter(p => p.category === c.key); });
-
-  const formatDate = (date?: string) => {
-    if (!date) return '';
-    try {
-      return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    } catch { return date; }
-  };
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('id, slug, title, subtitle, published_at, category, reading_time_minutes, author_name')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(20);
 
   return (
-    <div>
-      {/* Hero */}
-      <section className="text-center py-16">
-        <h1 className="text-4xl md:text-5xl font-black text-white mb-4">The RinkStop Blog</h1>
-        <p className="text-slate-400 max-w-2xl mx-auto text-lg">
-          Stories, insights, and analysis from the global hockey community — on and off the ice.
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+
+      {/* Breadcrumb */}
+      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: '#A0A0A0' }}>News</span>
+      </nav>
+
+      {/* Header */}
+      <div style={{ marginBottom: '2rem' }}>
+        <div className="label">Latest</div>
+        <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
+          HOCKEY NEWS
+        </h1>
+        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem', fontSize: '0.9375rem' }}>
+          Stories, insights, and analysis from the global hockey community.
         </p>
-      </section>
+      </div>
 
-      {/* Featured Post */}
-      {posts.length > 0 && (
-        <Link href={`/blog/${posts[0].slug}`} className="block group mb-12">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8 hover:border-teal-500/50 transition-all hover:-translate-y-1">
-            <div className="flex gap-2 mb-3">
-              <span className="text-xs bg-teal-500/10 text-teal-400 px-2 py-1 rounded capitalize">
-                {posts[0].category || 'blog'}
-              </span>
-              {posts[0].tags?.slice(0, 3).map((tag: string) => (
-                <span key={tag} className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white group-hover:text-teal-400 transition-colors mb-3">
-              {posts[0].title}
-            </h2>
-            {posts[0].subtitle && (
-              <p className="text-slate-400 text-lg mb-4">{posts[0].subtitle}</p>
-            )}
-            <div className="flex gap-4 text-sm text-slate-500">
-              <span>{posts[0].author_name || 'Arnel'}</span>
-              <span>·</span>
-              <span>{formatDate(posts[0].published_at)}</span>
-              <span>·</span>
-              <span>{posts[0].reading_time_minutes || 5} min read</span>
-            </div>
-          </div>
-        </Link>
-      )}
-
-      {/* Posts by Category */}
-      {CATEGORIES
-        .filter(c => grouped[c.key]?.length > 0)
-        .map(({ key, label }) => (
-          <section key={key} className="mb-12">
-            <h2 className="text-xl font-bold text-white mb-4">{label}</h2>
-            <div className="space-y-3">
-              {grouped[key]!.slice(key === 'blog' ? 1 : 0).map((post) => (
-                <Link
-                  key={post.id}
-                  href={`/blog/${post.slug}`}
-                  className="block p-4 bg-slate-900/60 rounded-lg border border-slate-800 hover:border-teal-500/50 hover:bg-slate-800/50 transition-all hover:translate-x-1"
-                >
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white hover:text-teal-400 transition-colors">
-                        {post.title}
-                      </h3>
-                      {post.subtitle && (
-                        <p className="text-sm text-slate-500 mt-1">{post.subtitle}</p>
-                      )}
-                    </div>
-                    <div className="flex-shrink-0 flex gap-2 text-xs text-slate-500">
-                      <span>{formatDate(post.published_at)}</span>
-                      <span>·</span>
-                      <span>{post.reading_time_minutes || 5} min</span>
-                    </div>
+      {/* Posts */}
+      {!posts || posts.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1.125rem', marginBottom: '0.5rem' }}>No posts yet.</p>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.875rem' }}>Check back soon — new content is coming.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+          {posts.map((post: Post) => (
+            <Link
+              key={post.id}
+              href={`/blog/${post.slug}`}
+              style={{
+                display: 'block',
+                background: 'var(--s2)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '1.125rem 1.375rem',
+                textDecoration: 'none',
+                borderLeft: '3px solid transparent',
+                transition: 'border-color 0.2s',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+                  {post.category && (
+                    <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(200,16,46,0.15)', color: 'var(--red)', marginBottom: '0.5rem' }}>
+                      {post.category}
+                    </span>
+                  )}
+                  <h2 style={{ fontWeight: 700, fontSize: '1.0625rem', color: '#fff', lineHeight: 1.35, marginBottom: '0.3rem' }}>
+                    {post.title.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')}
+                  </h2>
+                  {post.subtitle && (
+                    <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.875rem', lineHeight: 1.5, marginBottom: '0.5rem', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
+                      {post.subtitle.replace(/&amp;/g, '&')}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', flexWrap: 'wrap' }}>
+                    <span>{post.author_name || 'Arnel'}</span>
+                    <span>·</span>
+                    <span>{formatDate(post.published_at)}</span>
+                    <span>·</span>
+                    <span>{post.reading_time_minutes || 5} min read</span>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))}
+                </div>
+                <div style={{ flexShrink: 0, color: 'var(--red)', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', alignSelf: 'center' }}>
+                  Read →
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

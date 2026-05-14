@@ -1,52 +1,119 @@
 'use client';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+const BASE_URL = 'https://rinkstop.com';
 
 export default function FixturesPage() {
-  const [fixtures, setFixtures] = useState([]);
+  const [fixtures, setFixtures] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     fetch('/api/fixtures').then(r => r.json()).then(d => {
       setFixtures(d || []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  useEffect(() => {
+    if (fixtures.length === 0) return;
 
-  const statusColors: Record<string, string> = {
-    scheduled: 'text-slate-500',
-    in_progress: 'text-teal-400',
-    completed: 'text-emerald-400',
-    cancelled: 'text-brand-crimson',
-    postponed: 'text-amber-400',
+    const breadcrumbSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+        { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/fixtures` },
+      ],
+    };
+
+    const events = fixtures.map((f: any) => ({
+      '@type': 'SportsEvent',
+      name: `${f.home?.name || 'Home'} vs ${f.away?.name || 'Away'}`,
+      startDate: f.scheduled_at,
+      location: f.venue?.name ? { '@type': 'Place', name: f.venue.name } : undefined,
+      competitor: [
+        f.home ? { '@type': 'SportsTeam', name: f.home.name } : undefined,
+        f.away ? { '@type': 'SportsTeam', name: f.away.name } : undefined,
+      ].filter(Boolean),
+    }));
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify([breadcrumbSchema, ...events]);
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, [fixtures]);
+
+  const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
+  const statusStyle: Record<string, { color: string; label: string }> = {
+    scheduled:  { color: '#555',    label: 'Scheduled'  },
+    in_progress:{ color: '#00d4ff', label: 'In Progress'},
+    completed: { color: '#34d399', label: 'Completed'  },
+    cancelled: { color: '#C8102E', label: 'Cancelled'  },
+    postponed:  { color: '#fbbf24', label: 'Postponed'  },
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-white">Fixtures & Results</h1>
-      <div className="mb-6 h-[2px] bg-brand-gradient rounded-full w-24"></div>
-      {loading ? <p className="text-slate-400">Loading...</p> : (
-        <div className="grid grid-cols-1 gap-3">
-          {fixtures.map((f: any) => (
-            <div key={f.id} className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 flex items-center justify-between flex-wrap gap-3">
-              <div className="text-center">
-                <p className="font-semibold text-white">{f.home?.name}</p>
-                <p className="text-2xl font-bold text-white mt-1">{f.home_score ?? '–'}</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      {/* Breadcrumb */}
+      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: '#555' }}>Home</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: '#A0A0A0' }}>Scores</span>
+      </nav>
+
+      {/* Header */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div className="label">Live &amp; Recent</div>
+        <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
+          SCORES &amp; FIXTURES
+        </h1>
+      </div>
+
+      {/* Line accent */}
+      <div style={{ height: '2px', background: 'linear-gradient(90deg, #C8102E 0%, #041E42 100%)', borderRadius: '2px', marginBottom: '1.5rem', width: '80px' }} />
+
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '8px' }} />)}
+        </div>
+      ) : fixtures.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', marginBottom: '0.375rem' }}>No fixtures yet.</p>
+          <p style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.875rem' }}>Game schedules and results will appear here once data is available.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {fixtures.map((f: any) => {
+            const s = statusStyle[f.status] || statusStyle.scheduled;
+            return (
+              <div key={f.id} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{f.home?.name || 'Home'}</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: '0.2rem' }}>{f.home_score ?? '–'}</p>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.6875rem', color: '#555', marginBottom: '0.25rem' }}>{formatDate(f.scheduled_at)}</p>
+                  <span style={{ display: 'inline-block', padding: '0.2rem 0.5rem', borderRadius: '99px', fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: s.color, border: `1px solid ${s.color}40` }}>
+                    {s.label}
+                  </span>
+                </div>
+                <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{f.away?.name || 'Away'}</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: '0.2rem' }}>{f.away_score ?? '–'}</p>
+                </div>
+                {f.venue?.name && (
+                  <p style={{ width: '100%', textAlign: 'center', fontSize: '0.6875rem', color: '#444', marginTop: '0.25rem' }}>{f.venue.name}</p>
+                )}
               </div>
-              <div className="text-center px-4">
-                <p className="text-xs text-slate-500">{formatDate(f.scheduled_at)}</p>
-                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold mt-1 ${statusColors[f.status] || 'text-slate-500'}`}>
-                  {f.status.replace('_', ' ')}
-                </span>
-              </div>
-              <div className="text-center">
-                <p className="font-semibold text-white">{f.away?.name}</p>
-                <p className="text-2xl font-bold text-white mt-1">{f.away_score ?? '–'}</p>
-              </div>
-              {f.venue?.name && <p className="text-slate-500 text-xs">{f.venue.name}</p>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

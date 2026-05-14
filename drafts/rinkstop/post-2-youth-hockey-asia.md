@@ -27,7 +27,7 @@ With the 2022 Winter Olympics behind them, China is investing in hockey infrastr
 ### Philippines (Where We Operate)
 Here at RinkStop, we're proud to support hockey growth in the Philippines. Our founder, Arnel, coaches in Cebu, bringing the sport to young Filipinos who never imagined they'd play ice hockey.
 
-The Philippine Hockey Association has seen tremendous growth, with youth leagues forming in Manila, Cebu, and Davao.
+The Philippine Hockey Association has seen tremendous growth, with youth leagues forming in Manila and Cebu.
 
 ## Challenges Faced
 

@@ -1,6 +1,7 @@
 // src/app/blog/[slug]/page.tsx — Individual blog post (public, SEO-optimized)
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import BlogRelated from '@/components/BlogRelated';
 
 interface Post {
   id: string;
@@ -107,7 +108,8 @@ function formatDate(date?: string): string {
 async function getPost(slug: string): Promise<Post | null> {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/blog/posts/${slug}`, {
-      next: { revalidate: 60 }
+      cache: 'no-store',
+      next: { revalidate: 0 }
     });
     if (!res.ok) return null;
     return res.json();
@@ -156,7 +158,7 @@ export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPost(slug);
 
-  if (!post) notFound();
+  if (!post) return notFound();
 
   const htmlContent = contentToHtml(post.content);
   const authorName = post.author_name || 'Arnel';
@@ -305,30 +307,17 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </section>
 
-        {/* Related Posts */}
-        <section className="mt-12 pt-8 border-t border-slate-800">
-          <h2 className="text-lg font-bold text-white mb-4">More from RinkStop</h2>
-          <p className="text-slate-500 text-sm">
-            Explore more stories on the global hockey community →{' '}
-            <Link href="/blog" className="text-teal-400 hover:underline font-medium">
-              All posts →
-            </Link>
-          </p>
-        </section>
+        {/* Related Posts — client component, self-hydrates */}
+        <BlogRelated
+          currentSlug={post.slug}
+          currentTags={post.tags}
+          currentCategory={post.category}
+        />
       </article>
     </>
   );
 }
 
 // Dynamic route params — allow all slugs, not just pre-seeded ones
+export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
-
-// Generate static params for existing seeded posts
-export async function generateStaticParams() {
-  return [
-    { slug: 'global-hockey-directory-building-05-09-2026' },
-    { slug: 'coaching-cebu-lessons-05-08-2026' },
-    { slug: 'youth-hockey-overseas-05-08-2026' },
-    { slug: 'youth-hockey-growth-04-22-2026' },
-  ];
-}

@@ -1,49 +1,146 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { SearchIcon, FilterIcon, ChevronRightIcon } from '@/components/icons';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface League {
+  id: string;
+  name: string;
+  country?: string;
+  level?: string;
+  website_url?: string;
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LeaguesPage() {
-  const [leagues, setLeagues] = useState([]);
+  const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [country, setCountry] = useState('');
-  const [level, setLevel] = useState('');
 
   useEffect(() => {
+    setLoading(true);
     const params = new URLSearchParams();
-    if (country) params.set('country', country);
-    if (level) params.set('level', level);
-    fetch(`/api/leagues?${params}`).then(r => r.json()).then(d => {
-      setLeagues(d || []);
-      setLoading(false);
-    });
-  }, [country, level]);
+    fetch(`/api/leagues?${params}`)
+      .then(r => r.json())
+      .then(d => {
+        setLeagues(d || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // Client-side filters
+  const filtered = leagues.filter(l => {
+    const matchSearch = !search || l.name.toLowerCase().includes(search.toLowerCase());
+    const matchCountry = !country || (l.country || '').toLowerCase().includes(country.toLowerCase());
+    return matchSearch && matchCountry;
+  });
+
+  const clearFilters = () => { setSearch(''); setCountry(''); };
+  const hasFilters = search || country;
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-white">Leagues</h1>
-      <div className="mb-6 h-[2px] bg-brand-gradient rounded-full w-16"></div>
-      <div className="flex gap-4 mb-6 flex-wrap">
-        <input type="text" placeholder="Country" value={country}
-          onChange={e => setCountry(e.target.value)} className="input-field w-48" />
-        <select value={level} onChange={e => setLevel(e.target.value)} className="select-field w-48">
-          <option value="">All Levels</option>
-          <option value="professional">Professional</option>
-          <option value="junior">Junior</option>
-          <option value="amateur">Amateur</option>
-          <option value="youth">Youth</option>
-          <option value="recreational">Recreational</option>
-        </select>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      {/* Breadcrumb */}
+      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: '#A0A0A0' }}>Leagues</span>
+      </nav>
+
+      {/* Header */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <div className="label">Directory</div>
+        <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
+          HOCKEY LEAGUES
+        </h1>
       </div>
-      {loading ? <p className="text-slate-400">Loading...</p> : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {leagues.map((l: any) => (
-            <Link key={l.id} href={`/directory/leagues/${l.id}`} className="card-default p-5">
-              <h3 className="font-semibold text-lg text-white">{l.name}</h3>
-              <p className="text-slate-500 text-sm">{l.country} · {l.level?.replace('_',' ')}</p>
-            </Link>
-          ))}
+
+      {/* Filter Bar */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
+          <FilterIcon className="w-4 h-4" />
         </div>
+        <div style={{ position: 'relative', flex: '1 1 180px' }}>
+          <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
+            <SearchIcon className="w-4 h-4" />
+          </div>
+          <input
+            type="text"
+            placeholder="Search leagues..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="input-field"
+            style={{ paddingLeft: '2.25rem' }}
+          />
+        </div>
+        <input
+          type="text"
+          placeholder="Country"
+          value={country}
+          onChange={e => setCountry(e.target.value)}
+          className="input-field"
+          style={{ flex: '0 0 150px' }}
+        />
+        {hasFilters && (
+          <button onClick={clearFilters} style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '3px', padding: '0.5rem 0.875rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Results count */}
+      {!loading && (
+        <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
+          {filtered.length === 0 ? 'No results' : `${filtered.length} league${filtered.length !== 1 ? 's' : ''}`}
+          {hasFilters ? ' matching your search' : ' in directory'}
+        </p>
       )}
+
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.75rem' }}>
+        {loading
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.25rem' }}>
+                <div className="skeleton" style={{ height: '1.125rem', width: '70%', marginBottom: '0.625rem' }} />
+                <div className="skeleton" style={{ height: '0.875rem', width: '45%' }} />
+              </div>
+            ))
+          : filtered.length === 0
+            ? (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem' }}>
+                <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>No leagues found matching your search</p>
+                <button onClick={clearFilters} style={{ color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>Clear all filters</button>
+              </div>
+            )
+            : filtered.map(league => (
+              <Link
+                key={league.id}
+                href={`/directory/leagues/${league.id}`}
+                style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.125rem', textDecoration: 'none', transition: 'border-color 0.2s, transform 0.2s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+              >
+                <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff', marginBottom: '0.3rem' }}>
+                  {league.name}
+                </h3>
+                <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>
+                  {league.country || 'International'}
+                </p>
+                {league.level && (
+                  <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(200,16,46,0.15)', color: 'var(--red)' }}>
+                    {league.level.replace('_', ' ')}
+                  </span>
+                )}
+              </Link>
+            ))
+        }
+      </div>
     </div>
   );
 }
