@@ -29,3 +29,25 @@
 - /root/.openclaw/openclaw.json (binding config)
 - /root/.openclaw/workspace/TOOLS.md (reference ID storage)
 - /root/.openclaw/scripts/verify-groups.sh (verification script)
+## 2026-05-14: Philippines Hockey - Davao Correction
+
+**Problem:** Content drafts incorrectly stated hockey programs in Davao, Philippines. There is no ice rink or organized hockey program in Davao.
+
+**Source of Error:** AI-generated content assumed Philippines had 3 hockey programs (Manila, Cebu, Davao). Only Manila and Cebu actually have ice rinks.
+
+**Correct Facts:**
+- Philippines has ice rinks ONLY in Manila and Cebu
+- No ice rink exists in Davao
+- Cebu has the only indoor ice rink outside Manila (IRon City)
+- RinkStop operates in both markets (Arnel coaches in Cebu)
+
+**Files Corrected:**
+- `/root/.openclaw/workspace/drafts/rinkstop/post-2-youth-hockey-asia.md`
+- `/root/.openclaw/workspace/drafts/2026-05-14-rinkstop-content.md`
+
+**Prevention:**
+- Verify hockey rink locations before generating content about non-traditional markets
+- Cross-check against RinkStop's own directory data for accuracy
+- When in doubt, ask Arnel or check local sources
+
+**Verified Info:** Philippines hockey exists in Manila (multiple rinks) and Cebu (IRon City rink). No other location in PH has ice hockey infrastructure.

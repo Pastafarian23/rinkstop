@@ -120,6 +120,22 @@ Things like:
 
 ---
 
+## Vercel (RinkStop Deployment)
+- **Token:** `vcp_6IDcZ6oI4Xs0gr9ra5V3ea2wAMYrS6zKQDFKonEspAD2TXbPUH2KikoU`
+- **Project ID:** `prj_GVvqDaSS264FFo6q8LYAKGVe0bvM`
+- **Project Name:** `rinkstop-platform`
+- **Production URL:** https://rinkstop-platform.vercel.app
+- **Deploy command:** `cd /root/.openclaw/workspace/rinkstop-platform && vercel --prod --token <token> --yes`
+- **Env vars:** Already set on Vercel (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, API_SECRET, ADMIN_SECRET, NEXT_PUBLIC_SITE_URL)
+
+## Supabase (RinkStop)
+- **Project URL:** `https://yszheonqyyskkjoxoexk.supabase.co`
+- **Anon key:** `sb_publishable_yLLbqXl_CFS174sL6TRqjg_nej93X4g`
+- **Service role key:** `sb_secret_fJ-ROIi_4NWVvtJQ2GDnhA_NWMutFxA`
+- **API Secret:** `c8715ac4fa045dc58aa01ff7f1a679e53224454066e76beeb913b429dfa10336`
+
+---
+
 ## GitHub (API Access)
 
 **Access through Maton.ai** (NOT a token - use Maton gateway):

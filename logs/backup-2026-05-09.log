@@ -1,1 +1,5 @@
 /bin/sh: 1: /usr/bin/node: not found
+[2026-05-10 23:00:01] 🔄 Starting Telegram backup...
+  Captured 0 new messages from 0 conversations
+✅ Backup complete at 2026-05-10T23:00:01.868Z
+

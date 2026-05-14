@@ -74,7 +74,7 @@ async function fetchEmails() {
 async function reportNewEmails(emails, seen) {
   // Find truly NEW emails (not in seen list)
   const newEmails = emails.filter(e => 
-    e.status === '0' && !seen.seen.includes(e.messageId)
+    e.status === 0 && !seen.seen.includes(e.messageId)
   );
   
   if (newEmails.length === 0) {
@@ -92,13 +92,13 @@ async function reportNewEmails(emails, seen) {
   });
   
   // Update seen list
-  const currentIds = emails.filter(e => e.status === '0').map(e => e.messageId);
+  const currentIds = emails.filter(e => e.status === 0).map(e => e.messageId);
   const updatedSeen = [...new Set([...seen.seen, ...currentIds])];
   saveSeen({ seen: updatedSeen, lastCheck: new Date().toISOString() });
 }
 
 async function reportPending(emails) {
-  const pending = emails.filter(e => e.status === '0');
+  const pending = emails.filter(e => e.status === 0);
   
   if (pending.length === 0) {
     console.log('No pending emails');
