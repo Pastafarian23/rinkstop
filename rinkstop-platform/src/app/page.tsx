@@ -10,7 +10,7 @@ function fmt(n: number) {
   return n.toLocaleString();
 }
 
-interface Counts { teams: number; players: number; leagues: number; rinks: number; fixtures: number; }
+interface Counts { teams: number; players: number; leagues: number; rinks: number; games: number; }
 
 const CATS = [
   { label: 'Teams',   href: '/directory/teams',    color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
@@ -42,7 +42,7 @@ export default function Home() {
   const [posts, setPosts]   = useState<Post[]>([]);
   const [loading, setLoad]  = useState(true);
   const [q, setQ]           = useState('');
-  const [counts, setCounts] = useState<Counts>({ teams: 0, players: 0, leagues: 0, rinks: 0, fixtures: 0 });
+  const [counts, setCounts] = useState<Counts>({ teams: 0, players: 0, leagues: 0, rinks: 0, games: 0 });
 
   useEffect(() => {
     fetch('/api/teams').then(r => r.json())
@@ -134,7 +134,7 @@ export default function Home() {
                 { n: fmt(counts.teams),   l: 'Teams'   },
                 { n: fmt(counts.players), l: 'Players' },
                 { n: fmt(counts.leagues), l: 'Leagues' },
-                { n: counts.fixtures > 0 ? 'Live' : '—', l: 'Fixtures' },
+                { n: counts.games > 0 ? 'Live' : '—', l: 'Games' },
               ].map(s => (
                 <div key={s.l} style={{
                   background: 'rgba(255,255,255,0.05)',
@@ -179,7 +179,7 @@ export default function Home() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.2rem', gap: '0.25rem' }}>
                     <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{c.label}</span>
                     <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>
-                      {c.label === 'Teams' ? fmt(counts.teams) : c.label === 'Players' ? fmt(counts.players) : c.label === 'Leagues' ? fmt(counts.leagues) : c.label === 'Rinks' ? fmt(counts.rinks) : c.label === 'Scores' ? (counts.fixtures > 0 ? 'Live' : '—') : '—'}
+                      {c.label === 'Teams' ? fmt(counts.teams) : c.label === 'Players' ? fmt(counts.players) : c.label === 'Leagues' ? fmt(counts.leagues) : c.label === 'Rinks' ? fmt(counts.rinks) : c.label === 'Scores' ? (counts.games > 0 ? 'Live' : '—') : '—'}
                     </span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.75rem', lineHeight: 1.5 }}>{c.desc}</p>

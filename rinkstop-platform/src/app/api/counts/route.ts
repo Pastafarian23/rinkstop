@@ -22,6 +22,6 @@ export async function GET() {
     players: players ?? 0,
     leagues: leagues ?? 0,
     rinks: rinks ?? 0,
-    fixtures: fixtures ?? 0,
+    games: fixtures ?? 0,
   });
 }
