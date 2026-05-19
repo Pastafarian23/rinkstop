@@ -6,7 +6,7 @@
  */
 
 const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_KEY = 'sb_secret_fJ-ROIi_4NWVvtJQ2GDnhA_NWMutFxA';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const headers = {
   'apikey': SUPABASE_KEY,

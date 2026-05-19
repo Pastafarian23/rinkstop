@@ -13,7 +13,7 @@ const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
 const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = 'sb_secret_fJ-ROIi_4NWVvtJQ2GDnhA_NWMutFxA';
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SB_KEY);
 
 // ─── League definitions ────────────────────────────────────────────────────────

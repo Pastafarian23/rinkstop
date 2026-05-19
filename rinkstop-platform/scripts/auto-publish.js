@@ -15,7 +15,7 @@ const MATON_KEY    = 'v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtL
 const DROPBOX_CONN  = '0047d26c-609f-444d-ac51-074b49de5a21';
 const DROPBOX_PATH  = '/RinkStop/Blog Posts';
 const SUPABASE_URL  = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_KEY  = 'sb_secret_fJ-ROIi_4NWVvtJQ2GDnhA_NWMutFxA';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RINKSTOP_OPS  = '-5043773858'; // RinkStop Ops Telegram group
 
 const DRY   = process.argv.includes('--dry-run');
