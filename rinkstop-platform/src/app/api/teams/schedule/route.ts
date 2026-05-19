@@ -46,10 +46,12 @@ export async function GET(req: NextRequest) {
     .order('date', { ascending: false })
     .limit(limit);
 
-  // Merge and dedupe
-  const all = [...(homeMatches || []), ...(awayMatches || [])];
-  const unique = Array.from(new Map(all.map(m => m.id)).values())
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  // Merge and dedupe by id
+  const all: any[] = [...(homeMatches || []), ...(awayMatches || [])];
+  const uniqueMap = new Map<string, any>();
+  all.forEach(m => uniqueMap.set(m.id, m));
+  const unique = Array.from(uniqueMap.values())
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, limit);
 
   const now = new Date();

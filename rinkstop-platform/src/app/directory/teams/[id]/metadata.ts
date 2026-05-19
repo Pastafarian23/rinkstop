@@ -1,11 +1,6 @@
 import type { Metadata } from 'next';
-import TeamDetail from '../../teams/[id]/page';
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export const generateMetadata = async ({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> => {
   const { id } = await params;
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com'}/api/teams?id=${id}`, { cache: 'no-store' });
@@ -24,6 +19,4 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   } catch { /* ignore */ }
   return { title: 'Team | RinkStop' };
-}
-
-export default TeamDetail;
+};
