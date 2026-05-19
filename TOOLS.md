@@ -73,7 +73,7 @@ Things like:
 - **Address:** info@sativaexchange.com
 
 ## Maton API (Email via Zoho)
-- **API Key:** `v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX`
+- **API Key:** `(stored in 1Password — do NOT commit to repo)`
 - **Zoho Account ID:** `2958661000000008002`
 - **Connection ID:** `4b23a4ae-a744-4917-bf44-fe1ed21d0e99`
 - **Base URL:** `https://gateway.maton.ai/zoho-mail/api/accounts/2958661000000008002`
@@ -140,7 +140,7 @@ Things like:
 
 **Access through Maton.ai** (NOT a token - use Maton gateway):
 - Use Maton API endpoint: `https://gateway.maton.ai/github/<path>`
-- Auth: Bearer token `v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX`
+- Auth: Bearer token `(stored in 1Password — do NOT commit to repo)`
 - Used for: GitHub issues, repo access, automated monitoring
 - Connected 2026-05-08 (reconnected by user after gap discovered)
 
