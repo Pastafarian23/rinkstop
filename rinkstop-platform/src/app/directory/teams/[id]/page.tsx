@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import TeamRelated from '@/components/TeamRelated';
+import NHLShopWidget from '@/components/NHLShopWidget';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -150,6 +151,15 @@ export default function TeamDetail() {
         leagueId={team.league_id}
         currentTeamId={team.id}
         homeRinkId={team.home_rink_id}
+      />
+
+      {/* NHL Shop Affiliate Widget */}
+      <NHLShopWidget
+        teamName={team.name}
+        teamSlug={team.slug || team.id}
+        primaryColor="#C8102E"
+        secondaryColor="#FFFFFF"
+        logoUrl={team.logo_url}
       />
 
       {/* Divider */}
