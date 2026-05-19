@@ -9,14 +9,14 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   metadataBase: new URL('https://rinkstop.com'),
   title: {
-    default: 'RinkStop  --  The World\'s Hockey Directory',
+    default: 'RinkStop — The World\'s Hockey Directory',
     template: '%s | RinkStop',
   },
   description: 'Find hockey teams, players, leagues, and rinks from every corner of the globe.',
   openGraph: {
     type: 'website',
     siteName: 'RinkStop',
-    title: 'RinkStop  --  The World\'s Hockey Directory',
+    title: 'RinkStop — The World\'s Hockey Directory',
     description: 'Find hockey teams, players, leagues, and rinks from every corner of the globe.',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@rinkstop',
     creator: '@rinkstop',
-    title: 'RinkStop  --  The World\'s Hockey Directory',
+    title: 'RinkStop — The World\'s Hockey Directory',
     description: 'Find hockey teams, players, leagues, and rinks from every corner of the globe.',
     images: ['https://rinkstop.com/og-image.png'],
   },
@@ -87,7 +87,6 @@ const CONTENT_LINKS = [
   { href: '/rankings', label: 'Rankings'      },
   { href: '/hockey-travel', label: 'Hockey Travel' },
   { href: '/gear-brands', label: 'Gear & Brands'  },
-  { href: '/videos', label: 'Videos'        },
 ];
 
 const ABOUT_LINKS = [
@@ -129,7 +128,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#041E42" />
-        <meta name="impact-site-verification" content="51704996-fb5d-41fc-83f4-e67bb4374a68" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -139,10 +137,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
 
-        {/* ---- Score Ticker ---------------------------------------------------------------------------------------------- */}
+        {/* ── Score Ticker ─────────────────────────────────────────────── */}
         <ScoreTicker />
 
-        {/* ---- Nav ---------------------------------------------------------------------------------------------------------------- */}
+        {/* ── Nav ──────────────────────────────────────────────────────── */}
         <header className="nav-bar">
           <div className="container">
             <div className="nav-inner">
@@ -173,7 +171,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <SignUpButton />
               </div>
 
-              {/* Mobile hamburger  --  label toggles checkbox */}
+              {/* Mobile hamburger — label toggles checkbox */}
               <label htmlFor="mob-nav" className="hamburger" aria-label="Open menu">
                 <span /><span /><span />
               </label>
@@ -185,10 +183,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MobileNav />
         </header>
 
-        {/* ---- Page Content ---------------------------------------------------------------------------------------------- */}
+        {/* ── Page Content ─────────────────────────────────────────────── */}
         <main>{children}</main>
 
-        {/* ---- Footer ---------------------------------------------------------------------------------------------------------- */}
+        {/* ── Footer ───────────────────────────────────────────────────── */}
         <footer style={{ background: '#041E42', borderTop: '3px solid #C8102E', marginTop: '3rem', padding: '2.5rem 0 1.5rem' }}>
           <div className="container">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
@@ -252,7 +250,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
 
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>© 2019-2026 RinkStop. All rights reserved.</span>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>© 2026 RinkStop. All rights reserved.</span>
               <span style={{ display: 'flex', gap: '0.75rem' }}>
                 <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', textDecoration: 'none' }}>Privacy</Link>
                 <Link href="/terms" style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', textDecoration: 'none' }}>Terms</Link>

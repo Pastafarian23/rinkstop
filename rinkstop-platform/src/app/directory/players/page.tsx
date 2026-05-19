@@ -6,14 +6,13 @@ import { SearchIcon, FilterIcon, ChevronRightIcon } from '@/components/icons';
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Player {
   id: string;
-  slug: string;
   first_name: string;
   last_name: string;
   position?: string;
   jersey_number?: number | string;
   nationality?: string;
   headshot_url?: string;
-  teams?: { name: string; slug?: string };
+  teams?: { name: string };
 }
 
 const POSITIONS = [
@@ -183,7 +182,7 @@ export default function PlayersPage() {
             : players.map(player => (
               <Link
                 key={player.id}
-                href={`/directory/players/${player.slug}`}
+                href={`/directory/players/${player.id}`}
                 className="card-player p-5"
                 style={{ textDecoration: 'none', position: 'relative' }}
               >

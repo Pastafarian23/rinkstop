@@ -146,20 +146,6 @@ export default function TeamDetail() {
         ))}
       </div>
 
-      {/* Schedule Link */}
-      <div style={{ marginBottom: '1.5rem', maxWidth: '600px' }}>
-        <Link href={`/directory/teams/${team.id}/schedule`} style={{
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)',
-          borderRadius: '6px', textDecoration: 'none',
-          color: '#fff', fontSize: '0.875rem', fontWeight: 600,
-        }}>
-          <span style={{ fontSize: '1.25rem' }}>📅</span>
-          <span>View Schedule & Results</span>
-          <span style={{ marginLeft: 'auto', color: 'var(--red)' }}>→</span>
-        </Link>
-      </div>
-
       {/* Related Content (Home Rink, League, Other Teams) */}
       <TeamRelated
         leagueId={team.league_id}
