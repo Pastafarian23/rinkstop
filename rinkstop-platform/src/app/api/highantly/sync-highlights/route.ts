@@ -6,103 +6,83 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const HIGHLIGHTLY_API_KEY = process.env.HIGHLANTLY_API_KEY || process.env.HIGHLIGHTLY_API_KEY;
+const HIGHLIGHTLY_API_KEY = process.env.HIGHLANTLY_API_KEY || process.env.HIGHLIGHTLY_API_KEY || '879d8462-6431-41fd-aa73-151223ff1562';
 const RAPIDAPI_HOST = 'hockey-highlights-api.p.rapidapi.com';
-
-let apiCallsToday = 0;
+const HIGHLIGHTLY_BASE = 'https://hockey.highantly.net';
 
 async function fetchHighantly(endpoint: string): Promise<any> {
-  if (apiCallsToday >= 7400) throw new Error('API limit');
-  
-  const url = `https://hockey.highantly.net${endpoint}`;
-  console.log(`[Highantly] Calling: ${url}`);
-  
+  const url = `${HIGHLIGHTLY_BASE}${endpoint}`;
   const response = await fetch(url, {
     headers: {
-      'x-rapidapi-key': HIGHLIGHTLY_API_KEY || '879d8462-6431-41fd-aa73-151223ff1562',
+      'x-rapidapi-key': HIGHLIGHTLY_API_KEY,
       'x-rapidapi-host': RAPIDAPI_HOST,
     },
   });
   
-  apiCallsToday++;
-  const text = await response.text();
   if (!response.ok) {
+    const text = await response.text();
     throw new Error(`Highantly ${response.status}: ${text.slice(0,200)}`);
   }
-  return JSON.parse(text);
+  return response.json();
 }
 
 export async function GET() {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   const { count } = await supabase.from('highlightly_highlights').select('id', {count:'exact', head:true});
-  return NextResponse.json({ highlights: count, apiCallsToday });
+  return NextResponse.json({ highlights: count });
 }
 
 export async function POST(request: NextRequest) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { searchParams } = new URL(request.url);
+  const leagueId = searchParams.get('leagueId');
+  const teamId = searchParams.get('teamId');
+  const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
   
   try {
-    // Try simplest endpoint first - no params
-    let data;
-    let endpoint = '/highlights';
+    // Primary parameter is REQUIRED - use date as default
+    const params = new URLSearchParams();
+    params.append('date', date);
+    if (leagueId) params.append('leagueId', leagueId);
+    if (teamId) params.append('teamId', teamId);
+    params.append('limit', '20');
     
-    try {
-      data = await fetchHighantly(endpoint);
-    } catch(e: any) {
-      // Try with query params
-      const attempts = [
-        '/highlights?limit=10',
-        '/highlights?lmt=10', 
-        '/highlights?count=10',
-        '/highlights?limit=10&offset=0',
-      ];
-      
-      for (const ep of attempts) {
-        try {
-          data = await fetchHighantly(ep);
-          break;
-        } catch(e2: any) {
-          if (attempts.indexOf(ep) === attempts.length - 1) throw e2;
-        }
-      }
-    }
+    const data = await fetchHighantly(`/highlights?${params.toString()}`);
     
-    // Handle various response formats
     let highlights = [];
     if (data && typeof data === 'object') {
       if (Array.isArray(data)) highlights = data;
       else if (Array.isArray(data.data)) highlights = data.data;
       else if (Array.isArray(data.highlights)) highlights = data.highlights;
-      else if (Array.isArray(data.videos)) highlights = data.videos;
-      else if (Array.isArray(data.results)) highlights = data.results;
     }
     
     if (highlights.length === 0) {
       return NextResponse.json({ 
-        error: 'No highlights found', 
-        dataKeys: data ? Object.keys(data) : [],
-        data: data ? JSON.stringify(data).slice(0, 500) : null
-      }, { status: 200 });
+        success: true,
+        message: 'No highlights for this date',
+        date,
+        count: 0
+      });
     }
     
     let inserted = 0;
-    for (const h of highlights.slice(0, 50)) {
-      const id = h.id || h.videoId || h.externalId || h.external_id;
+    for (const h of highlights) {
+      const id = h.id || h.videoId || h.externalId;
       if (!id) continue;
       
       const { error } = await supabase.from('highlightly_highlights').upsert({
         id: String(id),
         title: h.title || h.name || 'Highlight',
         description: h.description || h.summary || '',
-        video_url: h.videoUrl || h.url || h.video_url || h.video || '',
+        video_url: h.videoUrl || h.url || h.video_url || h.embedUrl || '',
         thumbnail_url: h.thumbnailUrl || h.thumbnail || h.image || '',
-        date: h.date || h.gameDate || new Date().toISOString(),
-        league_id: String(h.leagueId || h.league_id || ''),
-        league_name: h.leagueName || h.league_name || h.league || '',
+        date: h.date || h.gameDate || date,
+        league_id: String(h.leagueId || leagueId || ''),
+        league_name: h.leagueName || h.league || '',
         country_code: h.countryCode || h.country_code || '',
         team_ids: h.teamIds || h.team_ids || [],
         tags: h.tags || [],
-        verified: h.verified || false,
+        verified: h.type === 'VERIFIED' || h.verified === true,
         last_synced: new Date().toISOString(),
       }, { onConflict: 'id' });
       
@@ -113,7 +93,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       synced: inserted, 
       total: highlights.length,
-      sample: highlights[0] || null
+      date
     });
     
   } catch (error: any) {
