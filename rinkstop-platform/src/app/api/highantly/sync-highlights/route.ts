@@ -1,12 +1,12 @@
 // POST /api/highantly/sync-highlights
-// Fetches video highlights from Highantly API and syncs to Supabase
+// Fetches video highlights from Highantly API
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
+const HIGHLIGHTLY_API_KEY = process.env.HIGHLANTLY_API_KEY || process.env.HIGHLIGHTLY_API_KEY;
 const RAPIDAPI_HOST = 'hockey-highlights-api.p.rapidapi.com';
 
 let apiCallsToday = 0;
@@ -14,19 +14,22 @@ let apiCallsToday = 0;
 async function fetchHighantly(endpoint: string): Promise<any> {
   if (apiCallsToday >= 7400) throw new Error('API limit');
   
-  const response = await fetch(`https://hockey.highantly.net${endpoint}`, {
+  const url = `https://hockey.highantly.net${endpoint}`;
+  console.log(`[Highantly] Calling: ${url}`);
+  
+  const response = await fetch(url, {
     headers: {
-      'x-rapidapi-key': HIGHLIGHTLY_API_KEY!,
+      'x-rapidapi-key': HIGHLIGHTLY_API_KEY || '879d8462-6431-41fd-aa73-151223ff1562',
       'x-rapidapi-host': RAPIDAPI_HOST,
     },
   });
   
   apiCallsToday++;
+  const text = await response.text();
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Highantly ${response.status}: ${text.slice(0,100)}`);
+    throw new Error(`Highantly ${response.status}: ${text.slice(0,200)}`);
   }
-  return response.json();
+  return JSON.parse(text);
 }
 
 export async function GET() {
@@ -38,68 +41,68 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
-  const { searchParams } = new URL(request.url);
-  const leagueId = searchParams.get('leagueId');
-  const limit = parseInt(searchParams.get('limit') || '10');
-  
   try {
-    // Try different endpoint formats
-    let endpoint = `/highlights?limit=${limit}&leagueId=${leagueId || ''}`;
-    
+    // Try simplest endpoint first - no params
     let data;
+    let endpoint = '/highlights';
+    
     try {
       data = await fetchHighantly(endpoint);
     } catch(e: any) {
-      // Try alternative format
-      if (e.message.includes('400')) {
-        endpoint = `/highlights?lmt=${limit}`;
-        data = await fetchHighantly(endpoint);
-      } else {
-        throw e;
+      // Try with query params
+      const attempts = [
+        '/highlights?limit=10',
+        '/highlights?lmt=10', 
+        '/highlights?count=10',
+        '/highlights?limit=10&offset=0',
+      ];
+      
+      for (const ep of attempts) {
+        try {
+          data = await fetchHighantly(ep);
+          break;
+        } catch(e2: any) {
+          if (attempts.indexOf(ep) === attempts.length - 1) throw e2;
+        }
       }
     }
     
-    // Handle both {data: [...]} and [...] response formats
+    // Handle various response formats
     let highlights = [];
-    if (Array.isArray(data)) {
-      highlights = data;
-    } else if (data?.data && Array.isArray(data.data)) {
-      highlights = data.data;
-    } else if (data?.highlights && Array.isArray(data.highlights)) {
-      highlights = data.highlights;
+    if (data && typeof data === 'object') {
+      if (Array.isArray(data)) highlights = data;
+      else if (Array.isArray(data.data)) highlights = data.data;
+      else if (Array.isArray(data.highlights)) highlights = data.highlights;
+      else if (Array.isArray(data.videos)) highlights = data.videos;
+      else if (Array.isArray(data.results)) highlights = data.results;
+    }
+    
+    if (highlights.length === 0) {
+      return NextResponse.json({ 
+        error: 'No highlights found', 
+        dataKeys: data ? Object.keys(data) : [],
+        data: data ? JSON.stringify(data).slice(0, 500) : null
+      }, { status: 200 });
     }
     
     let inserted = 0;
-    for (const h of highlights) {
-      // Handle different field naming conventions
-      const id = h.id || h.videoId || h.externalId;
-      const title = h.title || h.name || 'Highlight';
-      const description = h.description || h.summary || '';
-      const video_url = h.videoUrl || h.url || h.video || '';
-      const thumbnail_url = h.thumbnailUrl || h.thumbnail || h.image || '';
-      const date = h.date || h.gameDate || new Date().toISOString();
-      const league_id = h.leagueId || h.league?.id || leagueId || '';
-      const league_name = h.leagueName || h.league?.name || h.league || '';
-      const country_code = h.countryCode || h.country || '';
-      const team_ids = h.teamIds || h.teams || [];
-      const tags = h.tags || [];
-      const verified = h.verified || false;
-      
-      if (!id || !title) continue;
+    for (const h of highlights.slice(0, 50)) {
+      const id = h.id || h.videoId || h.externalId || h.external_id;
+      if (!id) continue;
       
       const { error } = await supabase.from('highlightly_highlights').upsert({
         id: String(id),
-        title,
-        description,
-        video_url,
-        thumbnail_url,
-        date,
-        league_id: String(league_id),
-        league_name,
-        country_code,
-        team_ids,
-        tags,
-        verified,
+        title: h.title || h.name || 'Highlight',
+        description: h.description || h.summary || '',
+        video_url: h.videoUrl || h.url || h.video_url || h.video || '',
+        thumbnail_url: h.thumbnailUrl || h.thumbnail || h.image || '',
+        date: h.date || h.gameDate || new Date().toISOString(),
+        league_id: String(h.leagueId || h.league_id || ''),
+        league_name: h.leagueName || h.league_name || h.league || '',
+        country_code: h.countryCode || h.country_code || '',
+        team_ids: h.teamIds || h.team_ids || [],
+        tags: h.tags || [],
+        verified: h.verified || false,
         last_synced: new Date().toISOString(),
       }, { onConflict: 'id' });
       
@@ -109,8 +112,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       synced: inserted, 
-      total: highlights.length, 
-      apiCalls: apiCallsToday,
+      total: highlights.length,
       sample: highlights[0] || null
     });
     
