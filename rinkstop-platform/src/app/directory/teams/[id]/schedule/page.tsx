@@ -1,12 +1,8 @@
-// /directory/teams/[id]/schedule - Team schedule, recent results, and standings
+'use client';
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
 import Breadcrumbs from '@/components/Breadcrumbs';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '—';
@@ -20,21 +16,121 @@ function formatTime(dateStr: string) {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 }
 
-function getResultClass(status: string) {
-  if (status === 'Finished') return { color: '#22c55e', label: 'W' };
-  if (status === 'In Progress') return { color: '#f59e0b', label: 'Live' };
-  return { color: '#888', label: 'Scheduled' };
+function GameCard({ match, teamName, isUpcoming }: { match: any; teamName: string; isUpcoming: boolean }) {
+  const isHome = match.home_team_name === teamName;
+  const opponent = isHome ? match.away_team_name : `@ ${match.home_team_name}`;
+  const teamScore = isHome ? match.home_score : match.away_score;
+  const oppScore = isHome ? match.away_score : match.home_score;
+  const won = parseInt(teamScore) > parseInt(oppScore);
+  const tie = parseInt(teamScore) === parseInt(oppScore);
+  const result = match.status === 'Finished' ? (won ? 'W' : tie ? 'T' : 'L') : 'LIVE';
+  const isLive = match.status === 'In Progress';
+
+  if (isUpcoming) {
+    return (
+      <div style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '0.875rem 1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {match.league_name || 'NHL'}
+          </span>
+          <span style={{ fontSize: '0.7rem', color: '#666' }}>{formatDate(match.date)}</span>
+        </div>
+        <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem' }}>
+          {opponent}
+        </div>
+        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.125rem' }}>
+          {formatTime(match.date)} · {match.venue || 'TBD'}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '0.875rem 1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <span style={{ fontSize: '0.75rem', color: '#666', marginRight: '0.5rem' }}>{formatDate(match.date)}</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>{match.league_name || 'NHL'}</span>
+        </div>
+        <span style={{
+          fontSize: '0.7rem', fontWeight: 800,
+          color: match.status === 'Finished' ? (won ? '#22c55e' : '#ef4444') : '#f59e0b',
+          background: match.status === 'Finished' ? (won ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') : 'rgba(245,158,11,0.15)',
+          padding: '0.2rem 0.5rem', borderRadius: '4px'
+        }}>
+          {isLive ? 'LIVE' : result}
+        </span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.375rem' }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', flex: 1, textAlign: isHome ? 'left' : 'right' }}>
+          {isHome ? 'vs' : ''} {opponent.replace('@ ', '')}
+        </span>
+        {match.status === 'Finished' && (
+          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.125rem', color: '#fff' }}>
+            {teamScore} – {oppScore}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default async function TeamSchedulePage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function TeamSchedulePage() {
+  const { id } = useParams();
+  const [team, setTeam] = useState<any>(null);
+  const [upcoming, setUpcoming] = useState<any[]>([]);
+  const [recent, setRecent] = useState<any[]>([]);
+  const [standings, setStandings] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch team
-  const { data: team } = await supabase
-    .from('teams')
-    .select('id, name, slug, city, country, logo_url, league_id')
-    .eq('id', id)
-    .single();
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+
+    // Fetch team info
+    fetch(`/api/teams?id=${id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d?.data?.length > 0) {
+          setTeam(d.data[0]);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || !team) return;
+
+    // Fetch schedule via API
+    fetch(`/api/teams/schedule?teamId=${id}&limit=20`)
+      .then(r => r.json())
+      .then(d => {
+        setUpcoming(d.upcoming || []);
+        setRecent(d.recent || []);
+      })
+      .catch(() => {});
+
+    // Fetch standings for this team (NHL for now)
+    fetch(`/api/highantly/standings?league_id=49291&season=2025`)
+      .then(r => r.json())
+      .then(d => {
+        const standing = d?.standings?.find((s: any) => s.team_name === team.name);
+        if (standing) setStandings(standing);
+      })
+      .catch(() => {});
+  }, [id, team]);
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
+        <div className="skeleton" style={{ height: '1.5rem', width: '200px', marginBottom: '1rem' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+          {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: '120px' }} />)}
+        </div>
+      </div>
+    );
+  }
 
   if (!team) {
     return (
@@ -44,44 +140,6 @@ export default async function TeamSchedulePage({ params }: { params: { id: strin
       </div>
     );
   }
-
-  // Fetch matches where this team is home or away
-  // Use highlightly_matches for recent + upcoming
-  const { data: homeMatches } = await supabase
-    .from('highlightly_matches')
-    .select('*')
-    .eq('home_team_id', id)
-    .gte('date', '2025-09-01')
-    .order('date', { ascending: false });
-
-  const { data: awayMatches } = await supabase
-    .from('highlightly_matches')
-    .select('*')
-    .eq('away_team_id', id)
-    .gte('date', '2025-09-01')
-    .order('date', { ascending: false });
-
-  // Combine and dedupe
-  const allMatchesMap = new Map();
-  for (const m of homeMatches || []) allMatchesMap.set(m.id, m);
-  for (const m of awayMatches || []) allMatchesMap.set(m.id, m);
-  const allMatches = Array.from(allMatchesMap.values()).sort((a, b) =>
-    new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
-  const now = new Date();
-  const upcoming = allMatches.filter(m => new Date(m.date) >= now && m.status !== 'Finished').slice(0, 5);
-  const recent = allMatches.filter(m => m.status === 'Finished' || new Date(m.date) < now).slice(0, 5);
-
-  // Fetch standings for this team
-  const { data: standings } = await supabase
-    .from('highlightly_standings')
-    .select('*')
-    .eq('league_id', '49291') // NHL for now - will expand
-    .eq('season', '2025')
-    .order('points', { ascending: false });
-
-  const teamStanding = standings?.find(s => s.team_name === team.name);
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
@@ -118,29 +176,14 @@ export default async function TeamSchedulePage({ params }: { params: { id: strin
             UPCOMING GAMES
           </h2>
           {upcoming.length === 0 ? (
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', padding: '1rem 0' }}>No upcoming games scheduled.</p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', padding: '1rem 0' }}>
+              No upcoming games scheduled.
+            </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {upcoming.map(m => {
-                const isHome = m.home_team_id === id;
-                const opponent = isHome ? m.away_team_name : `@ ${m.home_team_name}`;
-                return (
-                  <div key={m.id} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '0.875rem 1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        {m.league_name || 'NHL'}
-                      </span>
-                      <span style={{ fontSize: '0.7rem', color: '#666' }}>{formatDate(m.date)}</span>
-                    </div>
-                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem' }}>
-                      {isHome ? `${m.away_team_name}` : `@ ${m.home_team_name}`}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.125rem' }}>
-                      {formatTime(m.date)} · {m.venue || 'TBD'}
-                    </div>
-                  </div>
-                );
-              })}
+              {upcoming.map(m => (
+                <GameCard key={m.id} match={m} teamName={team.name} isUpcoming={true} />
+              ))}
             </div>
           )}
         </div>
@@ -151,46 +194,14 @@ export default async function TeamSchedulePage({ params }: { params: { id: strin
             RECENT RESULTS
           </h2>
           {recent.length === 0 ? (
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', padding: '1rem 0' }}>No recent results.</p>
+            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', padding: '1rem 0' }}>
+              No recent results.
+            </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {recent.map(m => {
-                const isHome = m.home_team_id === id;
-                const teamScore = isHome ? m.home_score : m.away_score;
-                const oppScore = isHome ? m.away_score : m.home_score;
-                const won = parseInt(teamScore) > parseInt(oppScore);
-                const tie = parseInt(teamScore) === parseInt(oppScore);
-                const result = m.status === 'Finished' ? (won ? 'W' : tie ? 'T' : 'L') : m.status;
-
-                return (
-                  <div key={m.id} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '0.875rem 1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <span style={{ fontSize: '0.75rem', color: '#666', marginRight: '0.5rem' }}>{formatDate(m.date)}</span>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#888', textTransform: 'uppercase' }}>{m.league_name || 'NHL'}</span>
-                      </div>
-                      <span style={{
-                        fontSize: '0.7rem', fontWeight: 800,
-                        color: m.status === 'Finished' ? (won ? '#22c55e' : '#ef4444') : '#f59e0b',
-                        background: m.status === 'Finished' ? (won ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') : 'rgba(245,158,11,0.15)',
-                        padding: '0.2rem 0.5rem', borderRadius: '4px'
-                      }}>
-                        {m.status === 'Finished' ? result : 'LIVE'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.375rem' }}>
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', flex: 1, textAlign: isHome ? 'left' : 'right' }}>
-                        {isHome ? 'vs' : ''} {isHome ? m.away_team_name : m.home_team_name}
-                      </span>
-                      {m.status === 'Finished' && (
-                        <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.125rem', color: '#fff' }}>
-                          {teamScore} – {oppScore}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {recent.map(m => (
+                <GameCard key={m.id} match={m} teamName={team.name} isUpcoming={false} />
+              ))}
             </div>
           )}
         </div>
@@ -200,16 +211,16 @@ export default async function TeamSchedulePage({ params }: { params: { id: strin
           <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.125rem', color: '#fff', letterSpacing: '0.03em', marginBottom: '0.875rem' }}>
             CURRENT STANDING
           </h2>
-          {teamStanding ? (
+          {standings ? (
             <div style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', padding: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
                 {[
-                  { label: 'Position', value: teamStanding.position || '—' },
-                  { label: 'Points', value: teamStanding.points || 0 },
-                  { label: 'Wins', value: teamStanding.wins || 0 },
-                  { label: 'Losses', value: teamStanding.losses || 0 },
-                  { label: 'OTL', value: teamStanding.overtime_losses || 0 },
-                  { label: 'Season', value: teamStanding.season || '2025' },
+                  { label: 'Position', value: standings.position || '—' },
+                  { label: 'Points', value: standings.points || 0 },
+                  { label: 'Wins', value: standings.wins || 0 },
+                  { label: 'Losses', value: standings.losses || 0 },
+                  { label: 'OTL', value: standings.overtime_losses || 0 },
+                  { label: 'Season', value: '2025' },
                 ].map(s => (
                   <div key={s.label} style={{ textAlign: 'center' }}>
                     <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: '0.2rem' }}>{s.label}</p>
@@ -219,12 +230,12 @@ export default async function TeamSchedulePage({ params }: { params: { id: strin
               </div>
               <div style={{ height: '1px', background: '#333', margin: '0.75rem 0' }} />
               <p style={{ fontSize: '0.75rem', color: '#666', textAlign: 'center' }}>
-                {teamStanding.league_name || 'NHL'} · {teamStanding.season || '2025'} Season
+                NHL · 2025 Season
               </p>
             </div>
           ) : (
             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', padding: '1rem 0' }}>
-              Standing data not available for this league.
+              Standing data not available.
             </p>
           )}
         </div>
