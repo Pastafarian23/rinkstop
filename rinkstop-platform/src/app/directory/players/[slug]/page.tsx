@@ -40,19 +40,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PlayerDetail({ params }: Props) {
   const { slug } = await params;
 
-  // Fetch player by slug
+  // Fetch player (needed first to get player_id for stats)
   const { data: player } = await supabase
     .from('players')
     .select('*, teams(name, slug, logo_url)')
     .eq('slug', slug)
     .single();
 
-  // Fetch stats
-  const { data: stats } = await supabase
-    .from('player_stats')
-    .select('*')
-    .eq('player_id', player?.id)
-    .order('season', { ascending: false });
+  // Fetch stats in parallel with other work once we have player
+  const { data: stats } = player
+    ? await supabase
+        .from('player_stats')
+        .select('*')
+        .eq('player_id', player.id)
+        .order('season', { ascending: false })
+    : { data: null };
 
   if (!player) {
     return (
