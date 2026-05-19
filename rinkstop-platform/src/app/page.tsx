@@ -5,26 +5,26 @@ import Link from 'next/link';
 interface Team { id: string; name: string; city?: string; country?: string; leagues?: { name: string }; }
 interface Post  { id: string; title: string; slug: string; excerpt?: string; category?: string; }
 
-const CATS = [
-  { label: 'Teams',   href: '/directory/teams',    count: '12,400+', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { label: 'Players', href: '/directory/players',  count: '89,000+', color: '#2563EB', desc: 'Profiles, stats & career histories',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
-  { label: 'Leagues', href: '/directory/leagues',  count: '340+',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & 300+ more',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
-  { label: 'Rinks',   href: '/directory/rinks',    count: '4,200+',  color: '#059669', desc: 'Ice arenas in every country',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="12" y1="3" x2="12" y2="21"/></svg> },
-  { label: 'Brands',  href: '/directory/brands',   count: '500+',    color: '#7C3AED', desc: 'Equipment & gear manufacturers',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-  { label: 'Scores',  href: '/directory/fixtures', count: 'Live',    color: '#C8102E', desc: 'Results, standings & schedules',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-];
+function fmt(n: number) {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return n.toLocaleString();
+}
 
-const STATS = [
-  { n: '12,400+', l: 'Teams' },
-  { n: '89,000+', l: 'Players' },
-  { n: '340+',    l: 'Leagues' },
-  { n: '80+',     l: 'Countries' },
+interface Counts { teams: number; players: number; leagues: number; rinks: number; fixtures: number; }
+
+const CATS = [
+  { label: 'Teams',   href: '/directory/teams',    color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { label: 'Players', href: '/directory/players',  color: '#2563EB', desc: 'Profiles, stats & career histories',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
+  { label: 'Leagues', href: '/directory/leagues',  color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
+  { label: 'Rinks',   href: '/directory/rinks',    color: '#059669', desc: 'Ice arenas in every country',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="12" y1="3" x2="12" y2="21"/></svg> },
+  { label: 'Brands',  href: '/directory/brands',   color: '#7C3AED', desc: 'Equipment & gear manufacturers',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+  { label: 'Scores',  href: '/directory/fixtures', color: '#C8102E', desc: 'Results, standings & schedules',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
 ];
 
 function Skel() {
@@ -42,6 +42,7 @@ export default function Home() {
   const [posts, setPosts]   = useState<Post[]>([]);
   const [loading, setLoad]  = useState(true);
   const [q, setQ]           = useState('');
+  const [counts, setCounts] = useState<Counts>({ teams: 0, players: 0, leagues: 0, rinks: 0, fixtures: 0 });
 
   useEffect(() => {
     fetch('/api/teams').then(r => r.json())
@@ -49,6 +50,9 @@ export default function Home() {
       .catch(() => setLoad(false));
     fetch('/api/blog/posts?limit=3').then(r => r.json())
       .then(d => setPosts(d.data || d.posts || []))
+      .catch(() => {});
+    fetch('/api/counts').then(r => r.json())
+      .then(d => { if (d.teams) setCounts(d); })
       .catch(() => {});
   }, []);
 
@@ -126,7 +130,12 @@ export default function Home() {
 
             {/* Stats */}
             <div className="stats-grid">
-              {STATS.map(s => (
+              {[
+                { n: fmt(counts.teams),   l: 'Teams'   },
+                { n: fmt(counts.players), l: 'Players' },
+                { n: fmt(counts.leagues), l: 'Leagues' },
+                { n: counts.fixtures > 0 ? 'Live' : '—', l: 'Fixtures' },
+              ].map(s => (
                 <div key={s.l} style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -169,7 +178,9 @@ export default function Home() {
                   }}>{c.icon}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.2rem', gap: '0.25rem' }}>
                     <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{c.label}</span>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>{c.count}</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>
+                      {c.label === 'Teams' ? fmt(counts.teams) : c.label === 'Players' ? fmt(counts.players) : c.label === 'Leagues' ? fmt(counts.leagues) : c.label === 'Rinks' ? fmt(counts.rinks) : c.label === 'Scores' ? (counts.fixtures > 0 ? 'Live' : '—') : '—'}
+                    </span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.75rem', lineHeight: 1.5 }}>{c.desc}</p>
                 </div>
