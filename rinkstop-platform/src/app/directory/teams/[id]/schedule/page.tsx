@@ -160,7 +160,7 @@ export default function TeamSchedulePage() {
         )}
         <div>
           <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-            {team.name.toUpperCase()} — SCHEDULE
+            {team.name.toUpperCase()} — SCHEDULE & RESULTS
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem' }}>
             {[team.city, team.country].filter(Boolean).join(', ')}
