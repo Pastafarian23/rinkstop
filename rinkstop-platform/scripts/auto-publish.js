@@ -11,7 +11,7 @@
 const https = require('https');
 
 // ── Config ──────────────────────────────────────────────────────────────────
-const MATON_KEY    = 'v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX';
+const MATON_KEY = process.env.MATON_API_KEY;
 const DROPBOX_CONN  = '0047d26c-609f-444d-ac51-074b49de5a21';
 const DROPBOX_PATH  = '/RinkStop/Blog Posts';
 const SUPABASE_URL  = 'https://yszheonqyyskkjoxoexk.supabase.co';
