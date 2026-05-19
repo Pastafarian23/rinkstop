@@ -8,7 +8,7 @@
 - **Service role key:** ❓ PENDING — Supabase Dashboard → Settings → API → service_role
 
 ## Vercel
-- **Token provided by Arnel:** `vcp_REDACTED`
+- **Token provided by Arnel:** `(stored in 1Password — do NOT commit to repo)`
 - **Target:** rinkstop-platform → deploy to Vercel
 
 ## Database

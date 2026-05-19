@@ -689,7 +689,7 @@ This checklist should prevent incomplete implementations.
 **How to access:**
 - Endpoint: `https://gateway.mathon.ai/github/<endpoint>`
 - Authentication: Bearer token (same as Maton email API)
-- Token: `v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX`
+- Token: `(stored in 1Password — do NOT commit to repo)`
 
 **Example usage:**
 ```bash

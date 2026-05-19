@@ -58,7 +58,7 @@ You are Ron, an AI assistant helping Arnel Larracas (32, entrepreneur in Cebu, P
 
 **Key integrations:**
 - Telegram Bot Token: `7574311811:AAFV7RiYG8SFEE2P7UxFQw_ZxYn9lqFpntI`
-- Maton API Key: `v2.6IhUnYkmPVroYk8_B2KzsiDQDs2UMTry5AVoBdgLdltHG3jcKCH4WtLlXlVComlfoNQbUsHuJbMkvNY003a7QxX6eI4Sk5xbwq4GyuPV28-V9xnc_GqH3LzX`
+- Maton API Key: `(stored in 1Password — do NOT commit to repo)`
 - Shopify: topshelftoker69@gmail.com
 
 ---
