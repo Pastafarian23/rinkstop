@@ -1,6 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
-import MobileNav from '@/components/MobileNav';
+import NestedNav, { MobileNestedNav } from '@/components/NestedNav';
 import SignUpButton from '@/components/SignUpButton';
 import CookieConsent from '@/components/CookieConsent';
 import ScoreTicker from '@/components/ScoreTicker';
@@ -156,14 +156,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               {/* Desktop links */}
               <nav className="nav-links" aria-label="Main navigation">
-                {NAV.map(n => (
-                  <div key={n.label} className="nav-item-wrapper">
-                    <span className="nav-link nav-section-label">
-                      {n.label}
-                    </span>
-                    <NavDropdown items={n.sub} />
-                  </div>
-                ))}
+                <NestedNav />
               </nav>
 
               {/* Desktop right */}
@@ -180,7 +173,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* CSS-only mobile drawer */}
           <input type="checkbox" id="mob-nav" />
-          <MobileNav />
+          <MobileNestedNav />
         </header>
 
         {/* ── Page Content ─────────────────────────────────────────────── */}

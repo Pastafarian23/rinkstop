@@ -56,6 +56,7 @@ function GameChip({ game }: { game: any }) {
     );
   }
   return null;
+}
 
 export default function ScoreTicker() {
   const [games, setGames] = useState<TickerGame[]>([]);
@@ -63,6 +64,7 @@ export default function ScoreTicker() {
   useEffect(() => {
     async function fetchGames() {
       try {
+        const res = await fetch('/api/nhl/scores?status=all&limit=20');
         if (res.ok) {
           const data = await res.json();
           const completed = (data.completed || []).slice(0, 6).map((g: any) => ({
@@ -104,7 +106,7 @@ export default function ScoreTicker() {
         }
         .ticker-anim-track {
           display: flex;
-          animation: ticker-scroll 160s linear infinite;
+          animation: ticker-scroll 100s linear infinite;
           will-change: transform;
         }
         .ticker-anim-track:hover { animation-play-state: paused; }
@@ -121,10 +123,18 @@ export default function ScoreTicker() {
           flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.2)', height: '100%',
           display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', zIndex: 1, background: '#041E42',
         }}>
-          NHL · STANLEY CUP PLAYOFFS 2026
+          NHL
         </div>
         <div style={{ overflow: 'hidden', flex: 1, height: '38px', display: 'flex', alignItems: 'center' }}>
           <div className="ticker-anim-track">
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0 1.5rem', height: '38px', whiteSpace: 'nowrap',
+              borderRight: '1px solid rgba(255,255,255,0.15)', flexShrink: 0,
+            }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#C8102E', letterSpacing: '0.05em' }}>STANLEY CUP PLAYOFFS 2026</span>
+              <span style={{ fontSize: '0.5625rem', color: 'rgba(255,255,255,0.2)', marginLeft: '0.25rem' }}>→</span>
+            </div>
             {parsed.map((game, i) => <GameChip key={`a-${i}`} game={game} />)}
             {parsed.map((game, i) => <GameChip key={`b-${i}`} game={game} />)}
           </div>

@@ -124,7 +124,7 @@ export default function Home() {
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href="/directory" className="btn btn-red">Explore Directory</Link>
-                <Link href="/admin/teams/new" className="btn btn-ghost">Add Your Team</Link>
+                <Link href="/add-listing" className="btn btn-ghost">Add Your Listing</Link>
               </div>
             </div>
 
@@ -295,7 +295,7 @@ export default function Home() {
               </p>
             </div>
             <div className="cta-btns">
-              <Link href="/admin/teams/new" className="btn btn-white">+ Add Your Team</Link>
+              <Link href="/add-listing" className="btn btn-white">+ Add Your Listing</Link>
               <Link href="/directory" className="btn btn-ghost" style={{ borderColor: 'rgba(255,255,255,0.4)' }}>Browse Directory</Link>
             </div>
           </div>

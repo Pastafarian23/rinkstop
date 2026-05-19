@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import ScoresSection from '@/components/nhl/ScoresSection';
 
 export const metadata: Metadata = {
   title: 'NHL Hub | RinkStop',
@@ -97,6 +98,9 @@ export default function NHLHubPage() {
           </div>
         ))}
       </div>
+
+
+      <ScoresSection />
 
       {/* NHL Divisions */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
