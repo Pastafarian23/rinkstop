@@ -84,9 +84,9 @@ export default function ScoreTicker() {
   useEffect(() => {
     async function fetchGames() {
       try {
-        const res = await fetch('/api/nhl/playoffs/updates?limit=12');
+        const res = await fetch('/api/nhl/scores?status=all&limit=12');
         const data = await res.json();
-        if (Array.isArray(data)) setGames(data);
+        if (Array.isArray(data?.completed)) setGames(data.completed.map((g: any) => ({ id: g.id, content: `FINAL: ${g.awayTeam?.abbr} ${g.awayTeam?.score ?? 0}–${g.homeTeam?.score ?? 0} ${g.homeTeam?.abbr}`, update_type: 'final', created_at: g.date })).concat(data.upcoming.map((g: any) => ({ id: g.id, content: `${g.awayTeam?.abbr} vs ${g.homeTeam?.abbr} Game ${g.seriesLabel}`, update_type: 'upcoming', created_at: g.date }))));
       } catch {}
     }
     fetchGames();
