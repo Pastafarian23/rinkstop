@@ -11,12 +11,10 @@ export default function LeagueDetail() {
   const { id } = useParams();
   const [league, setLeague] = useState<any>(null);
   const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/leagues').then(r => r.json()).then(d => {
-      const l = d.find((x: any) => x.id === id);
-      setLeague(l || null);
-    });
+    fetch(`/api/leagues?slug=${id}`).then(r => r.json()).then(d => { setLeague(d?.data || null); setLoading(false); }).catch(() => setLoading(false));
     fetch(`/api/teams?leagueId=${id}`).then(r => r.json()).then(d => setTeams(d?.data || []));
   }, [id]);
 
@@ -29,7 +27,7 @@ export default function LeagueDetail() {
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
         { '@type': 'ListItem', position: 2, name: 'Leagues', item: `${BASE_URL}/directory/leagues` },
-        { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.id}` },
+        { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.slug}` },
       ],
     };
 
@@ -38,7 +36,7 @@ export default function LeagueDetail() {
       '@type': 'SportsOrganization',
       name: league.name,
       sport: 'Ice hockey',
-      url: `${BASE_URL}/directory/leagues/${league.id}`,
+      url: `${BASE_URL}/directory/leagues/${league.slug}`,
       ...(league.alternateName && { alternateName: league.alternateName }),
       ...(league.website_url && { sameAs: [league.website_url] }),
     };
@@ -50,7 +48,8 @@ export default function LeagueDetail() {
     return () => { document.head.removeChild(script); };
   }, [league]);
 
-  if (!league) return <p className="text-slate-400">Loading...</p>;
+  if (loading) return <p className="text-slate-400">Loading...</p>;
+  if (!league) return <p className="text-slate-400">League not found.</p>;
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
@@ -58,7 +57,7 @@ export default function LeagueDetail() {
       <Breadcrumbs links={[
         { label: 'Directory', href: '/directory' },
         { label: 'Leagues', href: '/directory/leagues' },
-        { label: league.name, href: `/directory/leagues/${league.id}` },
+        { label: league.name, href: `/directory/leagues/${league.slug}` },
       ]} />
       <Link href="/directory/leagues" className="text-teal-400 text-sm mb-4 inline-block">&larr; Back to Leagues</Link>
       <div className="flex items-center gap-4 mb-6">

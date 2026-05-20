@@ -7,6 +7,7 @@ import { SearchIcon, FilterIcon, ChevronRightIcon } from '@/components/icons';
 interface League {
   id: string;
   name: string;
+  slug?: string;
   country?: string;
   level?: string;
   website_url?: string;
@@ -121,7 +122,7 @@ export default function LeaguesPage() {
             : filtered.map(league => (
               <Link
                 key={league.id}
-                href={`/directory/leagues/${league.id}`}
+                href={`/directory/leagues/${league.slug || league.id}`}
                 style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.125rem', textDecoration: 'none', transition: 'border-color 0.2s, transform 0.2s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = ''; }}

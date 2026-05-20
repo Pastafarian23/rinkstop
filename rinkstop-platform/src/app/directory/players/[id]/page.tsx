@@ -15,7 +15,7 @@ export default function PlayerDetail() {
 
   useEffect(() => {
     fetch(`/api/players?id=${id}`).then(r => r.json()).then(d => {
-      setPlayer(d?.data?.[0] || null);
+      setPlayer(d?.data || d?.data?.[0] || null);
     });
     fetch(`/api/stats?playerId=${id}`).then(r => r.json()).then(d => setStats(d || []));
     setLoading(false);

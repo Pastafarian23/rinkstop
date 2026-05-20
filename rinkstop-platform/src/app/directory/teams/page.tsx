@@ -7,6 +7,7 @@ import { SearchIcon, FilterIcon, ChevronRightIcon, PlusIcon } from '@/components
 interface Team {
   id: string;
   name: string;
+  slug?: string;
   city?: string;
   country?: string;
   league_id?: string;
@@ -118,7 +119,7 @@ export default function TeamsPage() {
             : teams.map(team => (
               <Link
                 key={team.id}
-                href={`/directory/teams/${team.id}`}
+                href={`/directory/teams/${team.slug || team.id}`}
                 style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.125rem', textDecoration: 'none', transition: 'border-color 0.2s, transform 0.2s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
