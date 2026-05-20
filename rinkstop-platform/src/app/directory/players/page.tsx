@@ -5,6 +5,7 @@ import Link from 'next/link';
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Player {
   id: string;
+  slug?: string;
   first_name: string;
   last_name: string;
   position?: string;

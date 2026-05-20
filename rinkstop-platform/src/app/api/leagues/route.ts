@@ -3,13 +3,25 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const slug = searchParams.get('slug');
+  if (id) {
+    const { data, error } = await supabase.from('leagues').select('*').eq('id', id).single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ data });
+  }
+  if (slug) {
+    const { data, error } = await supabase.from('leagues').select('*').eq('slug', slug).single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ data });
+  }
+
   const country = searchParams.get('country');
   const level = searchParams.get('level');
+  const activeOnly = searchParams.get('active') === 'true';
   const search = searchParams.get('search');
-  const activeOnly = searchParams.get('activeOnly') !== 'false';
 
   let query = supabase.from('leagues').select('*');
-
   if (country) query = query.eq('country', country);
   if (level) query = query.eq('level', level);
   if (activeOnly) query = query.eq('is_active', true);

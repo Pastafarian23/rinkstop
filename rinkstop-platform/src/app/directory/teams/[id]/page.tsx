@@ -17,10 +17,10 @@ export default function TeamDetail() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/teams?id=${id}`)
+    fetch(`/api/teams?slug=${id}`)
       .then(r => r.json())
       .then(d => {
-        if (d?.data?.length > 0) setTeam(d.data[0]);
+        if (d?.data) setTeam(d.data); else { fetch(`/api/teams?id=${id}`).then(r => r.json()).then(d2 => { if (d2?.data?.[0]) setTeam(d2.data[0]); }); }
         setLoading(false);
       })
       .catch(() => setLoading(false));

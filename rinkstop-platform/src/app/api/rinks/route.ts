@@ -3,14 +3,25 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const slug = searchParams.get('slug');
+  if (id) {
+    const { data, error } = await supabase.from('rinks').select('*').eq('id', id).single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ data });
+  }
+  if (slug) {
+    const { data, error } = await supabase.from('rinks').select('*').eq('slug', slug).single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+    return NextResponse.json({ data });
+  }
+
   const country = searchParams.get('country');
+  const activeOnly = searchParams.get('active') === 'true';
   const search = searchParams.get('search');
-  const activeOnly = searchParams.get('activeOnly') !== 'false';
 
   let query = supabase.from('rinks').select('*');
-
   if (country) query = query.eq('country', country);
-  if (activeOnly) query = query.eq('is_active', true);
   if (search) query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
 
   const { data, error } = await query.order('name');
