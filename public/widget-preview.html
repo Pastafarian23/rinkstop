@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { background: #0a0a0a; padding: 2rem; font-family: sans-serif; }
+  
+  /* Widget 1: Boston Bruins colors */
+  .widget-bruins {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    background: linear-gradient(135deg, #000000 0%, #000000CC 100%);
+    margin-bottom: 2rem;
+  }
+  .widget-bruins .inner { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .widget-bruins .left { display: flex; align-items: center; gap: 16px; }
+  .widget-bruins .icon { width: 64px; height: 64px; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; }
+  .widget-bruins .icon svg { width: 40px; height: 40px; }
+  .widget-bruins .label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
+  .widget-bruins h3 { font-size: 20px; font-weight: 700; color: #FFFFFF; margin: 0; }
+  .widget-bruins p { font-size: 14px; color: rgba(255,255,255,0.5); margin: 4px 0 0; }
+  .widget-bruins .cta { padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; display: inline-block; background: #FFFFFF; color: #000000; transition: transform 0.2s; }
+  .widget-bruins .footer { height: 4px; background: rgba(200,16,46,0.25); }
+
+  /* Widget 2: Vegas Golden Knights */
+  .widget-knights { width: 100%; max-width: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); background: linear-gradient(135deg, #B4975A 0%, #B4975ACC 100%); margin-bottom: 2rem; }
+  .widget-knights .inner { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .widget-knights .left { display: flex; align-items: center; gap: 16px; }
+  .widget-knights .icon { width: 64px; height: 64px; border-radius: 8px; background: #000000; display: flex; align-items: center; justify-content: center; }
+  .widget-knights .icon svg { width: 40px; height: 40px; }
+  .widget-knights .label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(0,0,0,0.6); margin-bottom: 4px; }
+  .widget-knights h3 { font-size: 20px; font-weight: 700; color: #000000; margin: 0; }
+  .widget-knights p { font-size: 14px; color: rgba(0,0,0,0.5); margin: 4px 0 0; }
+  .widget-knights .cta { padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; display: inline-block; background: #000000; color: #C8102E; transition: transform 0.2s; }
+  .widget-knights .footer { height: 4px; background: rgba(0,0,0,0.15); }
+
+  /* Widget 3: Toronto Maple Leafs */
+  .widget-leafs { width: 100%; max-width: 600px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); background: linear-gradient(135deg, #003887 0%, #003887CC 100%); margin-bottom: 2rem; }
+  .widget-leafs .inner { padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .widget-leafs .left { display: flex; align-items: center; gap: 16px; }
+  .widget-leafs .icon { width: 64px; height: 64px; border-radius: 8px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; }
+  .widget-leafs .icon svg { width: 40px; height: 40px; }
+  .widget-leafs .label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
+  .widget-leafs h3 { font-size: 20px; font-weight: 700; color: #FFFFFF; margin: 0; }
+  .widget-leafs p { font-size: 14px; color: rgba(255,255,255,0.5); margin: 4px 0 0; }
+  .widget-leafs .cta { padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; display: inline-block; background: #FFFFFF; color: #003887; transition: transform 0.2s; }
+  .widget-leafs .footer { height: 4px; background: rgba(255,255,255,0.15); }
+
+  h2 { color: white; font-size: 14px; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+
+<h2>Widget Preview — Boston Bruins</h2>
+<div class="widget-bruins">
+  <div class="inner">
+    <div class="left">
+      <div class="icon">
+        <svg viewBox="0 0 64 64" fill="#000000">
+          <path d="M32 8 L20 14 L12 24 L12 48 L20 56 L44 56 L52 48 L52 24 L44 14 Z" />
+          <path d="M24 14 L20 20 L20 44 L24 50 L40 50 L44 44 L44 20 L40 14 Z" fill="#FFFFFF" />
+          <rect x="26" y="22" width="12" height="16" rx="1" fill="#000000" />
+        </svg>
+      </div>
+      <div>
+        <p class="label">Official Partner</p>
+        <h3>Shop Boston Bruins Gear</h3>
+        <p>Jerseys · Equipment · Fan Gear</p>
+      </div>
+    </div>
+    <a href="#" class="cta">Shop Now →</a>
+  </div>
+  <div class="footer"></div>
+</div>
+
+<h2>Widget Preview — Vegas Golden Knights</h2>
+<div class="widget-knights">
+  <div class="inner">
+    <div class="left">
+      <div class="icon">
+        <svg viewBox="0 0 64 64" fill="#B4975A">
+          <path d="M32 8 L20 14 L12 24 L12 48 L20 56 L44 56 L52 48 L52 24 L44 14 Z" />
+          <path d="M24 14 L20 20 L20 44 L24 50 L40 50 L44 44 L44 20 L40 14 Z" fill="#000000" />
+          <rect x="26" y="22" width="12" height="16" rx="1" fill="#B4975A" />
+        </svg>
+      </div>
+      <div>
+        <p class="label">Official Partner</p>
+        <h3>Shop Vegas Golden Knights Gear</h3>
+        <p>Jerseys · Equipment · Fan Gear</p>
+      </div>
+    </div>
+    <a href="#" class="cta">Shop Now →</a>
+  </div>
+  <div class="footer"></div>
+</div>
+
+<h2>Widget Preview — Toronto Maple Leafs</h2>
+<div class="widget-leafs">
+  <div class="inner">
+    <div class="left">
+      <div class="icon">
+        <svg viewBox="0 0 64 64" fill="#003887">
+          <path d="M32 8 L20 14 L12 24 L12 48 L20 56 L44 56 L52 48 L52 24 L44 14 Z" />
+          <path d="M24 14 L20 20 L20 44 L24 50 L40 50 L44 44 L44 20 L40 14 Z" fill="#FFFFFF" />
+          <rect x="26" y="22" width="12" height="16" rx="1" fill="#003887" />
+        </svg>
+      </div>
+      <div>
+        <p class="label">Official Partner</p>
+        <h3>Shop Toronto Maple Leafs Gear</h3>
+        <p>Jerseys · Equipment · Fan Gear</p>
+      </div>
+    </div>
+    <a href="#" class="cta">Shop Now →</a>
+  </div>
+  <div class="footer"></div>
+</div>
+
+</body>
+</html>

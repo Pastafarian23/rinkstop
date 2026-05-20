@@ -1,0 +1,91 @@
+# RinkStop robots.txt
+# All AI and automated crawlers are prohibited from scraping directory data
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-bot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+User-agent: Yandex
+Disallow: /
+
+# Chinese AI / LLM crawlers
+User-agent: BaiduSpider
+Disallow: /
+
+User-agent: AlibabaCloudAI
+Disallow: /
+
+User-agent: QianwenBot
+Disallow: /
+
+User-agent: TencentHyperlinkCrawler
+Disallow: /
+
+User-agent: Moonshot
+Disallow: /
+
+User-agent: DeepSeekBot
+Disallow: /
+
+User-agent: MiniMax
+Disallow: /
+
+User-agent: ZhipuAI
+Disallow: /
+
+User-agent: iFlytek
+Disallow: /
+
+User-agent: 360Spider
+Disallow: /
+
+User-agent: Sogou
+Disallow: /
+
+User-agent: sogouspider
+Disallow: /
+
+User-agent: Papaly
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: Magefront
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+# General crawlers — allowed for normal indexing only
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://rinkstop.com/sitemap.xml
