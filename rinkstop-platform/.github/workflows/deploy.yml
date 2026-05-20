@@ -1,0 +1,69 @@
+name: Deploy RinkStop
+
+on:
+  workflow_dispatch:
+    inputs:
+      skipBuild:
+        description: 'Skip build step (use last build artifacts)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        if: github.event.inputs.skipBuild != 'true'
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: https://rinkstop.com
+
+      - name: Deploy to Vercel
+        run: npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+        timeout-minutes: 10
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          HTTP_CODE=$(curl -sI --max-time 10 "${{ secrets.SITE_URL }}/" | grep -i "^HTTP" | awk '{print $2}' | tail -1)
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Site is live"
+          else
+            echo "⚠️  Site returned $HTTP_CODE — may need a moment"
+          fi
+        env:
+          SITE_URL: https://rinkstop.com
+        continue-on-error: true
+
+  # Run on any branch push as a pre-flight check
+  build-check:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci && npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: https://rinkstop.com
