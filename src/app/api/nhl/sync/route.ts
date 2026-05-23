@@ -1,13 +1,15 @@
 // NHL/NCAAH Sync API Route
 // POST /api/nhl/sync - triggers sync of NCAA and NHL teams from Highantly
-// GET /api/nhl/sync?type=teams|standings|matches - check sync status
+// GET /api/nhl/sync?type=teams - check sync status
 
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
-// Use RapidAPI endpoint - nhl.highantly.net doesn't resolve from Vercel
-const RAPIDAPI_BASE_URL = 'https://nhl-ncaah-api.p.rapidapi.com';
+
+// Try direct highlightly.net first, fall back to RapidAPI
+const NHL_DIRECT_URL = 'https://nhl.highantly.net';
+const RAPIDAPI_URL = 'https://nhl-ncaah-api.p.rapidapi.com';
 const RAPIDAPI_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 
 const NCAA_CONFERENCES = [
@@ -31,12 +33,8 @@ interface SyncResult {
 
 let apiCallsToday = 0;
 
-async function fetchNHL(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-  if (!HIGHLIGHTLY_API_KEY) {
-    throw new Error('HIGHLIGHTLY_API_KEY not configured');
-  }
-
-  const url = new URL(`${RAPIDAPI_BASE_URL}${endpoint}`);
+async function fetchNHLDirect(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+  const url = new URL(`${NHL_DIRECT_URL}${endpoint}`);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null) {
@@ -47,7 +45,34 @@ async function fetchNHL(endpoint: string, params: Record<string, string> = {}): 
 
   const response = await fetch(url.toString(), {
     headers: {
-      'x-rapidapi-key': HIGHLIGHTLY_API_KEY,
+      'x-rapidapi-key': HIGHLIGHTLY_API_KEY || '',
+    },
+  });
+
+  apiCallsToday++;
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Direct API error ${response.status}: ${errText}`);
+  }
+
+  const json = await response.json();
+  return json.data ?? json;
+}
+
+async function fetchNHLRapidAPI(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+  const url = new URL(`${RAPIDAPI_URL}${endpoint}`);
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) {
+        url.searchParams.append(k, String(v));
+      }
+    });
+  }
+
+  const response = await fetch(url.toString(), {
+    headers: {
+      'x-rapidapi-key': HIGHLIGHTLY_API_KEY || '',
       'x-rapidapi-host': RAPIDAPI_HOST,
     },
   });
@@ -56,7 +81,7 @@ async function fetchNHL(endpoint: string, params: Record<string, string> = {}): 
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`Highantly API error ${response.status}: ${errText}`);
+    throw new Error(`RapidAPI error ${response.status}: ${errText}`);
   }
 
   const json = await response.json();
@@ -64,7 +89,19 @@ async function fetchNHL(endpoint: string, params: Record<string, string> = {}): 
 }
 
 async function syncTeamsForLeague(leagueId: string, leagueName: string): Promise<SyncResult> {
-  const teams = await fetchNHL('/teams', { leagueName, limit: '50' });
+  let teams: any;
+
+  // Try direct first, then RapidAPI
+  try {
+    teams = await fetchNHLDirect('/teams', { leagueName, limit: '50' });
+  } catch (directErr) {
+    console.log(`[NHL Sync] Direct failed for ${leagueName}, trying RapidAPI: ${directErr}`);
+    try {
+      teams = await fetchNHLRapidAPI('/teams', { leagueName, limit: '50' });
+    } catch (rapidErr) {
+      return { synced: 0, failed: 0, errors: [`${leagueName}: Direct failed (${directErr}), RapidAPI failed (${rapidErr})`] };
+    }
+  }
 
   if (!teams || !Array.isArray(teams)) {
     return { synced: 0, failed: 0, errors: [`No teams for ${leagueName}`] };
