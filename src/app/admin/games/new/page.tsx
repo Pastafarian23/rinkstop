@@ -11,8 +11,8 @@ export default function NewFixture() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/fixtures', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-    router.push('/admin/fixtures');
+    await fetch('/api/games', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    router.push('/admin/games');
   };
 
   return (

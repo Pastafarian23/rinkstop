@@ -61,7 +61,7 @@ const CATS = [
   },
   {
     label: 'Scores',
-    href: '/directory/fixtures',
+    href: '/directory/games',
     count: 'Live',
     desc: 'Game schedules, results, and standings',
     icon: (

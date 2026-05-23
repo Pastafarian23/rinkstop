@@ -10,13 +10,13 @@ export default function EditFixture() {
 
   useEffect(() => {
     fetch('/api/teams').then(r => r.json()).then(d => setTeams(d.data || []));
-    fetch(`/api/fixtures?id=${id}`).then(r => r.json()).then(d => { if (d[0]) setForm(d[0]); });
+    fetch(`/api/games?id=${id}`).then(r => r.json()).then(d => { if (d[0]) setForm(d[0]); });
   }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch('/api/fixtures', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...form }) });
-    router.push('/admin/fixtures');
+    await fetch('/api/games', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...form }) });
+    router.push('/admin/games');
   };
 
   return (
@@ -44,7 +44,7 @@ export default function EditFixture() {
           </select></div>
         <div className="flex gap-3">
           <button type="submit" className="btn-primary">Update</button>
-          <button type="button" onClick={() => router.push('/admin/fixtures')} className="btn-secondary">Cancel</button>
+          <button type="button" onClick={() => router.push('/admin/games')} className="btn-secondary">Cancel</button>
         </div>
       </form>
     </div>
