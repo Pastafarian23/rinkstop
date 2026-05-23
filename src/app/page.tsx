@@ -247,7 +247,7 @@ export default function Home() {
               {posts.map(p => (
                 <Link key={p.id} href={`/news/${p.slug}`} className="card" style={{ textDecoration: 'none' }}>
                   {p.og_image_url ? (
-                    <img src={p.og_image_url} alt={p.title} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
+                    <img src={p.og_image_url} alt={`${p.title} — ${p.category || 'Hockey News'} article image`} style={{ width: '100%', height: '150px', objectFit: 'cover' }} loading="lazy" />
                   ) : (
                     <div style={{ height: '150px', background: 'linear-gradient(135deg, #041E42, #0A2E5C)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.13)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
