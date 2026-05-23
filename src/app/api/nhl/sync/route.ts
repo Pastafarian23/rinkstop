@@ -91,8 +91,10 @@ async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
     console.log(`[Sync] ${leagueName} (${leagueType}): ${entries.length} teams in standings`);
 
     for (const entry of entries) {
+      const teamData = entry.team || {};
+      const teamId = String(teamData.id || 'unknown');
+
       try {
-        const team = entry.team || {};
         const stats = entry.statistics || [];
         
         // Extract common stats from statistics array
@@ -101,7 +103,7 @@ async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
           return s?.value || null;
         };
 
-        const standingId = `${leagueName}-${team.id}-${season}`.replace(/\s+/g, '_');
+        const standingId = `${leagueName}-${teamData.id || 'unknown'}-${season}`.replace(/\s+/g, '_');
 
         const { error } = await supabaseAdmin
           .from('nhl_standings')
@@ -111,9 +113,9 @@ async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
             league_name: leagueName,
             season,
             rank: entry.rank || getStat('Rank') || null,
-            team_id: String(team.id),
-            team_name: team.displayName || team.name,
-            team_logo: team.logo,
+            team_id: teamId,
+            team_name: teamData.displayName || teamData.name,
+            team_logo: teamData.logo,
             played: parseInt(getStat('Games Played') || '0'),
             wins: parseInt(getStat('Wins') || getStat('W') || '0'),
             losses: parseInt(getStat('Losses') || getStat('L') || '0'),
@@ -127,7 +129,7 @@ async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
         if (error) throw error;
         result.synced++;
       } catch (error: any) {
-        result.errors.push(`Standing ${leagueName} team ${team?.id}: ${error.message}`);
+        result.errors.push(`Standing ${leagueName} team ${teamId}: ${error.message}`);
       }
     }
   }
