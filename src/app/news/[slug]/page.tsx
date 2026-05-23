@@ -162,11 +162,20 @@ export default async function BlogPostPage({ params }: Props) {
       <article>
         {/* Hero */}
         <div style={{
-          background: 'linear-gradient(135deg, #041E42 0%, #0A2E5C 100%)',
-          padding: '2.5rem 1rem',
+          position: 'relative',
+          backgroundImage: `url(${post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          padding: '3rem 1rem',
           marginBottom: '2rem'
         }}>
-          <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          {/* Overlay */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(135deg, rgba(4,30,66,0.92) 0%, rgba(10,46,92,0.85) 100%)',
+          }} />
+          <div style={{ position: 'relative', maxWidth: '1280px', margin: '0 auto' }}>
             {post.category && (
               <div style={{
                 display: 'inline-block',
