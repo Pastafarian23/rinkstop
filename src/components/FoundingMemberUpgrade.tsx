@@ -86,7 +86,7 @@ export function FoundingMemberUpgrade({ entityId, entityType, entityName }: Upgr
       </button>
 
       <p style={{ fontSize: '0.75rem', color: '#444', textAlign: 'center', marginTop: '1rem' }}>
-        Secure one-time payment. Founding Member status is permanent.
+        Secure checkout. Founding Member benefits.
       </p>
     </div>
   );

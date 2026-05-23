@@ -114,7 +114,7 @@ export default function FoundersClubPopup({ frequency = 'always', entityType = '
         />
 
         <p style={{ fontSize: '0.6875rem', color: '#444', marginTop: '1rem' }}>
-          One-time payment. Founding Member status is permanent.
+          One-time payment. Founding Member benefits.
         </p>
       </div>
 
