@@ -10,12 +10,6 @@ const NHL_BASE_URL = 'https://nhl.highlightly.net';
 
 let apiCallsToday = 0;
 
-interface SyncResult {
-  synced: number;
-  failed: number;
-  errors: string[];
-}
-
 async function fetchAPI<T>(endpoint: string): Promise<T> {
   const url = `${NHL_BASE_URL}${endpoint}`;
   
@@ -76,6 +70,7 @@ async function syncTeams(): Promise<{ nhl: number; ncaa: number; errors: string[
 }
 
 // 2. Sync standings (NHL and NCAA conferences)
+// Schema: id, league_name, season, rank, team_id, team_name, team_logo, played, wins, losses, overtime_losses, points, goals_for, goals_against, last_synced
 async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
   const result = { synced: 0, errors: [] };
   
@@ -84,52 +79,48 @@ async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
 
   for (const conference of standingsData) {
     const leagueName = conference.leagueName;
-    const leagueType = conference.leagueType; // 'NCAA' or 'NHL'
     const season = String(conference.year);
     const entries = conference.data || [];
 
-    console.log(`[Sync] ${leagueName} (${leagueType}): ${entries.length} teams in standings`);
+    console.log(`[Sync] ${leagueName}: ${entries.length} teams in standings`);
 
     for (const entry of entries) {
-      const teamData = entry.team || {};
-      const teamId = String(teamData.id || 'unknown');
-
       try {
+        const teamData = entry.team || {};
         const stats = entry.statistics || [];
         
-        // Extract common stats from statistics array
         const getStat = (displayName: string) => {
           const s = stats.find((st: any) => st.displayName === displayName);
           return s?.value || null;
         };
 
-        const standingId = `${leagueName}-${teamData.id || 'unknown'}-${season}`.replace(/\s+/g, '_');
+        const standingId = `${leagueName}-${teamData.id || 'unknown'}-${season}`.replace(/[\s\-]+/g, '_');
 
         const { error } = await supabaseAdmin
           .from('nhl_standings')
           .upsert({
             id: standingId,
-            league_id: leagueType === 'NHL' ? 'NHL' : 'NCAA',
             league_name: leagueName,
             season,
-            rank: entry.rank || getStat('Rank') || null,
-            team_id: teamId,
-            team_name: teamData.displayName || teamData.name,
-            team_logo: teamData.logo,
-            played: parseInt(getStat('Games Played') || '0'),
-            wins: parseInt(getStat('Wins') || getStat('W') || '0'),
-            losses: parseInt(getStat('Losses') || getStat('L') || '0'),
-            overtime_losses: parseInt(getStat('Overtime Losses') || getStat('OT') || '0'),
-            points: parseInt(getStat('Points') || getStat('PTS') || '0'),
-            goals_for: parseInt(getStat('Goals For') || getStat('GF') || '0'),
-            goals_against: parseInt(getStat('Goals Against') || getStat('GA') || '0'),
+            rank: entry.rank ? String(entry.rank) : getStat('Rank'),
+            team_id: String(teamData.id || ''),
+            team_name: teamData.displayName || teamData.name || 'Unknown',
+            team_logo: teamData.logo || null,
+            played: parseInt(getStat('Games Played') || '0') || 0,
+            wins: parseInt(getStat('Wins') || getStat('W') || '0') || 0,
+            losses: parseInt(getStat('Losses') || getStat('L') || '0') || 0,
+            overtime_losses: parseInt(getStat('Overtime Losses') || getStat('OT') || '0') || 0,
+            points: parseInt(getStat('Points') || getStat('PTS') || '0') || 0,
+            goals_for: parseInt(getStat('Goals For') || getStat('GF') || '0') || 0,
+            goals_against: parseInt(getStat('Goals Against') || getStat('GA') || '0') || 0,
             last_synced: new Date().toISOString(),
           }, { onConflict: 'id' });
 
         if (error) throw error;
         result.synced++;
       } catch (error: any) {
-        result.errors.push(`Standing ${leagueName} team ${teamId}: ${error.message}`);
+        const tid = entry.team?.id ?? 'unknown';
+        result.errors.push(`Standing ${leagueName} team ${tid}: ${error.message}`);
       }
     }
   }
@@ -138,6 +129,7 @@ async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
 }
 
 // 3. Sync recent matches
+// Schema: id, date, status, home_team_id, home_team_name, home_team_logo, home_score, away_team_id, away_team_name, away_team_logo, away_score, period, clock, league_name, venue, last_synced
 async function syncMatches(limit: number = 50): Promise<{ synced: number; errors: string[] }> {
   const result = { synced: 0, errors: [] };
   
@@ -149,26 +141,27 @@ async function syncMatches(limit: number = 50): Promise<{ synced: number; errors
       const homeTeam = match.homeTeam || {};
       const awayTeam = match.awayTeam || {};
       const state = match.state || {};
+      const homeScore = state.score?.current?.split(' - ')[0];
+      const awayScore = state.score?.current?.split(' - ')[1];
 
       const { error } = await supabaseAdmin
         .from('nhl_matches')
         .upsert({
           id: String(match.id),
-          league: match.league,
-          season: String(match.season),
-          date: match.date,
-          round: match.round,
+          date: match.date || null,
           status: state.description || state.report || 'Unknown',
-          home_team_id: String(homeTeam.id),
-          home_team_name: homeTeam.displayName || homeTeam.name,
-          home_team_logo: homeTeam.logo,
-          away_team_id: String(awayTeam.id),
-          away_team_name: awayTeam.displayName || awayTeam.name,
-          away_team_logo: awayTeam.logo,
-          home_score: state.score?.current?.split(' - ')[0] || null,
-          away_score: state.score?.current?.split(' - ')[1] || null,
-          period: state.period,
-          clock: state.clock,
+          home_team_id: String(homeTeam.id || ''),
+          home_team_name: homeTeam.displayName || homeTeam.name || '',
+          home_team_logo: homeTeam.logo || null,
+          home_score: homeScore ? parseInt(homeScore) : null,
+          away_team_id: String(awayTeam.id || ''),
+          away_team_name: awayTeam.displayName || awayTeam.name || '',
+          away_team_logo: awayTeam.logo || null,
+          away_score: awayScore ? parseInt(awayScore) : null,
+          period: state.period ?? null,
+          clock: state.clock ?? null,
+          league_name: match.league || 'Unknown',
+          venue: match.venue || null,
           last_synced: new Date().toISOString(),
         }, { onConflict: 'id' });
 
@@ -253,7 +246,7 @@ export async function GET(request: Request) {
 
     if (type === 'matches') {
       let query = supabaseAdmin.from('nhl_matches').select('*', { count: 'exact' });
-      if (league) query = query.eq('league', league);
+      if (league) query = query.eq('league_name', league);
       const { data, count, error } = await query.order('date', { ascending: false }).limit(20);
       if (error) throw error;
       return NextResponse.json({ count, matches: data || [] });
