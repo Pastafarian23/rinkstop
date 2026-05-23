@@ -32,8 +32,6 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function SignUpButton({ entityId = 'signup', entityType = 'fan', label = 'Sign Up Now' }: SignUpButtonProps) {
-  const price = ENTITY_TYPE_PRICES[entityType] || '$9.99';
-
   return (
     <Link
       href="/add-listing"
@@ -53,7 +51,7 @@ export default function SignUpButton({ entityId = 'signup', entityType = 'fan', 
         whiteSpace: 'nowrap',
       }}
     >
-      {label} — {price}
+      {label}
     </Link>
   );
 }
