@@ -1,18 +1,15 @@
 // NHL/NCAAH Sync API Route
 // POST /api/nhl/sync - triggers sync of NCAA and NHL teams from Highantly
-// GET /api/nhl/sync?type=teams|standings|matches - check sync status
+// GET /api/nhl/sync?type=teams - check sync status
 
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 
-// NHL/NCAA API - uses direct highlightly.net with X-API-Key auth
+// Exactly as user specified
+const HOCKEY_BASE_URL = 'https://hockey.highantly.net';
 const NHL_BASE_URL = 'https://nhl.highantly.net';
-
-// Fallback: RapidAPI NHL endpoint
-const RAPIDAPI_URL = 'https://nhl-ncaah-api.p.rapidapi.com';
-const RAPIDAPI_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 
 const NCAA_CONFERENCES = [
   'Hockey East',
@@ -35,16 +32,13 @@ interface SyncResult {
 
 let apiCallsToday = 0;
 
-// Try direct highlightly.net first (user subscribed directly to highlightly, not RapidAPI)
-async function fetchNHLDirect(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-  const url = new URL(`${NHL_BASE_URL}${endpoint}`);
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) {
-        url.searchParams.append(k, String(v));
-      }
-    });
-  }
+async function fetchFromHighantly(baseUrl: string, endpoint: string, params: Record<string, string> = {}): Promise<any> {
+  const url = new URL(`${baseUrl}${endpoint}`);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) url.searchParams.append(k, String(v));
+  });
+
+  console.log(`[NHL Sync] Fetching: ${url.toString()}`);
 
   const response = await fetch(url.toString(), {
     headers: {
@@ -57,36 +51,7 @@ async function fetchNHLDirect(endpoint: string, params: Record<string, string> =
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`Direct error ${response.status}: ${errText}`);
-  }
-
-  const json = await response.json();
-  return json.data ?? json;
-}
-
-// Fallback to RapidAPI
-async function fetchNHLRapidAPI(endpoint: string, params: Record<string, string> = {}): Promise<any> {
-  const url = new URL(`${RAPIDAPI_URL}${endpoint}`);
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) {
-        url.searchParams.append(k, String(v));
-      }
-    });
-  }
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      'x-rapidapi-key': HIGHLIGHTLY_API_KEY || '',
-      'x-rapidapi-host': RAPIDAPI_HOST,
-    },
-  });
-
-  apiCallsToday++;
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`RapidAPI error ${response.status}: ${errText}`);
+    throw new Error(`${response.status}: ${errText}`);
   }
 
   const json = await response.json();
@@ -95,21 +60,27 @@ async function fetchNHLRapidAPI(endpoint: string, params: Record<string, string>
 
 async function syncTeamsForLeague(leagueId: string, leagueName: string): Promise<SyncResult> {
   let teams: any;
+  let lastError = '';
 
-  // Try direct first, then RapidAPI fallback
-  try {
-    teams = await fetchNHLDirect('/teams', { leagueName, limit: '50' });
-  } catch (directErr) {
-    console.log(`[NHL Sync] Direct failed for ${leagueName}, trying RapidAPI: ${directErr}`);
+  // Try hockey.highantly.net first (user specified this as working for other hockey data)
+  for (const baseUrl of [HOCKEY_BASE_URL, NHL_BASE_URL]) {
     try {
-      teams = await fetchNHLRapidAPI('/teams', { leagueName, limit: '50' });
-    } catch (rapidErr) {
-      return { synced: 0, failed: 0, errors: [`${leagueName}: Direct (${directErr}), RapidAPI (${rapidErr})`] };
+      console.log(`[NHL Sync] Trying ${baseUrl} for ${leagueName}`);
+      teams = await fetchFromHighantly(baseUrl, '/teams', { leagueName, limit: '50' });
+      console.log(`[NHL Sync] Success with ${baseUrl}: ${Array.isArray(teams) ? teams.length + ' teams' : teams}`);
+      break;
+    } catch (error: any) {
+      lastError = `${baseUrl}: ${error.message}`;
+      console.log(`[NHL Sync] Failed ${baseUrl}: ${error.message}`);
     }
   }
 
-  if (!teams || !Array.isArray(teams)) {
-    return { synced: 0, failed: 0, errors: [`No teams for ${leagueName}: ${JSON.stringify(teams)?.slice(0, 100)}`] };
+  if (!teams) {
+    return { synced: 0, failed: 0, errors: [`${leagueName}: All endpoints failed. Last error: ${lastError}`] };
+  }
+
+  if (!Array.isArray(teams)) {
+    return { synced: 0, failed: 0, errors: [`${leagueName}: Response was not an array: ${JSON.stringify(teams)?.slice(0, 100)}`] };
   }
 
   const results: SyncResult = { synced: 0, failed: 0, errors: [] };
@@ -155,11 +126,9 @@ export async function POST(request: Request) {
       errors: [] as string[],
     };
 
-    // Sync NCAA teams
     if (syncType === 'teams' || syncType === 'all') {
       for (const conf of NCAA_CONFERENCES) {
         if (leagueFilter && leagueFilter !== conf) continue;
-
         const r = await syncTeamsForLeague('NCAA', conf);
         results.synced += r.synced;
         results.failed += r.failed;
@@ -168,7 +137,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Sync NHL teams
     if (syncType === 'teams' || syncType === 'all') {
       if (!leagueFilter || leagueFilter === 'NHL') {
         const r = await syncTeamsForLeague('NHL', 'NHL');
@@ -181,46 +149,29 @@ export async function POST(request: Request) {
 
     results.apiCallsUsed = apiCallsToday;
 
-    return NextResponse.json({
-      message: 'NHL/NCAA sync completed',
-      ...results,
-    });
+    return NextResponse.json({ message: 'NHL/NCAA sync completed', ...results });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type') || 'teams';
   const leagueName = searchParams.get('league');
 
   try {
     let query = supabaseAdmin.from('nhl_teams').select('*', { count: 'exact' });
-
-    if (leagueName) {
-      query = query.eq('league_name', leagueName);
-    } else {
-      query = query.eq('league_id', type === 'nhl' ? 'NHL' : 'NCAA');
-    }
+    if (leagueName) query = query.eq('league_name', leagueName);
+    else query = query.eq('league_id', 'NCAA');
 
     const { data, count, error } = await query.order('name');
-
     if (error) throw error;
 
     return NextResponse.json({
-      type,
-      league: leagueName || 'all',
       count,
       teams: data?.map((t: any) => ({ id: t.id, name: t.name, league_name: t.league_name })) || [],
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
