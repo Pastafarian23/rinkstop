@@ -38,15 +38,20 @@ export async function GET(request: NextRequest) {
 
   const { data, error, count } = await supabase
     .from('posts')
-    .select('*', { count: 'exact' })
+    .select('id, slug, title, subtitle, category, reading_time_minutes, author_name, published_at, og_image_url, seo_title, seo_description, content', { count: 'exact' })
     .eq('status', 'published')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (error) return jsonResponse({ error: error.message }, 500);
 
+  const dataWithExcerpt = (data || []).map(post => ({
+    ...post,
+    excerpt: post.subtitle || (post.content ? post.content.replace(/<[^>]*>/g, '').substring(0, 160).trim() + '...' : ''),
+  }));
+
   return jsonResponse({
-    data,
+    data: dataWithExcerpt,
     pagination: { page, limit, total: count || 0, totalPages: Math.ceil((count || 0) / limit) },
   });
 }
