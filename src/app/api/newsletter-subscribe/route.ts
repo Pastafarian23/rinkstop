@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     .from('newsletter_subscribers')
     .upsert(
       { email: email.trim().toLowerCase() },
-      { onConflict: ['email'] }
+      { onConflict: 'email' }
     )
     .select()
     .single();
