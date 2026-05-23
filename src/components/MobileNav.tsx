@@ -11,7 +11,7 @@ const SECTIONS = [
       { href: '/directory/players',  label: 'Players' },
       { href: '/directory/leagues',  label: 'Leagues' },
       { href: '/directory/rinks',    label: 'Rinks'   },
-      { href: '/directory/fixtures', label: 'Games'   },
+      { href: '/directory/games', label: 'Games'   },
     ],
   },
   {

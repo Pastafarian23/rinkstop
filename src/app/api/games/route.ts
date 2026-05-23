@@ -2,21 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
 // Fetch team names from ESPN for a batch of game IDs
-async function enrichFromESPN(fixtures: any[]): Promise<any[]> {
-  const toEnrich = fixtures.filter(f => {
+async function enrichFromESPN(games: any[]): Promise<any[]> {
+  const toEnrich = games.filter(f => {
     const gameData = tryParseGameData(f.game_data);
     const needsEnrich = !f.home_team && !f.away_team && gameData?.espn_game_id;
     return needsEnrich;
   });
 
-  if (toEnrich.length === 0) return fixtures;
+  if (toEnrich.length === 0) return games;
 
   // Collect unique ESPN game IDs
   const espnIds = toEnrich
     .map(f => tryParseGameData(f.game_data)?.espn_game_id)
     .filter(Boolean) as string[];
 
-  if (espnIds.length === 0) return fixtures;
+  if (espnIds.length === 0) return games;
 
   // Determine date range to fetch (cover all games)
   const dates = new Set<string>();
@@ -60,7 +60,7 @@ async function enrichFromESPN(fixtures: any[]): Promise<any[]> {
   }));
 
   // Merge enriched data back
-  return fixtures.map(f => {
+  return games.map(f => {
     const gameData = tryParseGameData(f.game_data);
     const espnId = gameData?.espn_game_id;
     if (espnId && scoreboardMap[espnId]) {
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   const season = searchParams.get('season');
   const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-  let query = supabase.from('fixtures').select('*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url), venue:rinks(name), league:leagues(name)');
+  let query = supabase.from('games').select('*, home_team:teams!home_team_id(name,logo_url), away_team:teams!away_team_id(name,logo_url), venue:rinks(name), league:leagues(name)');
 
   if (leagueId) query = query.eq('league_id', leagueId);
   if (teamId) query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { data, error } = await supabase.from('fixtures').insert(body).select('*, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').single();
+  const { data, error } = await supabase.from('games').insert(body).select('*, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data, { status: 201 });
 }
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const { id, ...rest } = await request.json();
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { data, error } = await supabase.from('fixtures').update(rest).eq('id', id).select('*').single();
+  const { data, error } = await supabase.from('games').update(rest).eq('id', id).select('*').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);
 }
@@ -156,7 +156,7 @@ export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { error } = await supabase.from('fixtures').delete().eq('id', id);
+  const { error } = await supabase.from('games').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ success: true });
 }

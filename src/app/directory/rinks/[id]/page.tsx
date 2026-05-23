@@ -19,7 +19,7 @@ interface Review {
 export default function RinkDetail() {
   const { id } = useParams();
   const [rink, setRink] = useState<any>(null);
-  const [fixtures, setFixtures] = useState<any[]>([]);
+  const [games, setGames] = useState<any[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
@@ -38,7 +38,7 @@ export default function RinkDetail() {
       const r_ = d.find((x: any) => x.id === id);
       setRink(r_ || null);
     });
-    fetch(`/api/fixtures?venueId=${id}`).then(r => r.json()).then(d => setFixtures(d || []));
+    fetch(`/api/games?venueId=${id}`).then(r => r.json()).then(d => setGames(d || []));
   }, [id]);
 
   // Load reviews
@@ -297,11 +297,11 @@ export default function RinkDetail() {
       </div>
 
       {/* Events */}
-      {fixtures.length > 0 && (
+      {games.length > 0 && (
         <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
           <h2 style={{ fontWeight: 600, marginBottom: '16px', color: '#fff', fontSize: '16px' }}>Events at this Rink</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {fixtures.slice(0, 5).map((f: any) => (
+            {games.slice(0, 5).map((f: any) => (
               <div key={f.id} style={{ background: 'rgba(30,41,59,0.5)', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ color: '#94a3b8', fontSize: '13px' }}>{new Date(f.scheduled_at).toLocaleDateString()}</p>
                 <p style={{ color: '#fff', fontWeight: 500, fontSize: '14px' }}>{f.home?.name} vs {f.away?.name}</p>

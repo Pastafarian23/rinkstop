@@ -9,7 +9,7 @@ export async function GET() {
     );
 
     const { data, error } = await supabase
-      .from('fixtures')
+      .from('games')
       .select(`
         id,
         scheduled_at,
@@ -59,7 +59,7 @@ export async function GET() {
     return NextResponse.json(games);
   } catch (e) {
     const msg = e instanceof Error ? e.message : (typeof e === 'object' ? JSON.stringify(e) : String(e));
-    console.error('fixtures ticker error', msg);
+    console.error('games ticker error', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

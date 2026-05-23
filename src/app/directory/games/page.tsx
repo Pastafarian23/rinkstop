@@ -4,31 +4,31 @@ import Link from 'next/link';
 
 const BASE_URL = 'https://rinkstop.com';
 
-export default function FixturesPage() {
-  const [fixtures, setFixtures] = useState<any[]>([]);
+export default function GamesPage() {
+  const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fetch('/api/fixtures').then(r => r.json()).then(d => {
-      setFixtures(d || []);
+    fetch('/api/games').then(r => r.json()).then(d => {
+      setGames(d || []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    if (fixtures.length === 0) return;
+    if (games.length === 0) return;
 
     const breadcrumbSchema = {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-        { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/fixtures` },
+        { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/games` },
       ],
     };
 
-    const events = fixtures.map((f: any) => ({
+    const events = games.map((f: any) => ({
       '@type': 'SportsEvent',
       name: `${f.home_team?.name || 'Home'} vs ${f.away_team?.name || 'Away'}`,
       startDate: f.scheduled_at,
@@ -44,7 +44,7 @@ export default function FixturesPage() {
     script.text = JSON.stringify([breadcrumbSchema, ...events]);
     document.head.appendChild(script);
     return () => { document.head.removeChild(script); };;
-  }, [fixtures]);
+  }, [games]);
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', {
     weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -83,14 +83,14 @@ export default function FixturesPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '8px' }} />)}
         </div>
-      ) : fixtures.length === 0 ? (
+      ) : games.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', marginBottom: '0.375rem' }}>No fixtures yet.</p>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', marginBottom: '0.375rem' }}>No games yet.</p>
           <p style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.875rem' }}>Game schedules and results will appear here once data is available.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {fixtures.map((f: any) => {
+          {games.map((f: any) => {
             const s = statusStyle[f.status] || statusStyle.scheduled;
             return (
               <div key={f.id} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
