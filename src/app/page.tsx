@@ -120,7 +120,7 @@ export default function Home() {
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href="/directory" className="btn btn-red">Explore Directory</Link>
-                <Link href="/add-listing" className="btn btn-ghost">Join Now</Link>
+                <Link href="/add-listing" className="btn btn-yellow">Join Now</Link>
               </div>
             </div>
 
