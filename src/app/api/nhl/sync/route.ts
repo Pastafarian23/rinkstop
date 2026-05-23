@@ -1,28 +1,15 @@
 // NHL/NCAAH Sync API Route
-// POST /api/nhl/sync - triggers sync of NCAA and NHL teams from Highantly
-// GET /api/nhl/sync?type=teams - check sync status
+// Uses highlightly.net API (correct spelling: highlightly with 'y')
+// Docs: https://highlightly.net/nhl-api/documentation/
 
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 
-// Exactly as user specified
-const HOCKEY_BASE_URL = 'https://hockey.highantly.net';
-const NHL_BASE_URL = 'https://nhl.highantly.net';
-
-const NCAA_CONFERENCES = [
-  'Hockey East',
-  'Big Ten',
-  'NCHC',
-  'ECAC',
-  'WCHA',
-  'CCHA',
-  'College Hockey America',
-  'Metro Atlantic Athletic Conference',
-  'Northeast 10 Conference',
-  'West Coast Conference',
-];
+// Correct highlightly.net base URLs (NOT highantly.net)
+const NHL_BASE_URL = 'https://nhl.highlightly.net';
+const HOCKEY_BASE_URL = 'https://hockey.highlightly.net';
 
 interface SyncResult {
   synced: number;
@@ -32,17 +19,12 @@ interface SyncResult {
 
 let apiCallsToday = 0;
 
-async function fetchFromHighantly(baseUrl: string, endpoint: string, params: Record<string, string> = {}): Promise<any> {
-  const url = new URL(`${baseUrl}${endpoint}`);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) url.searchParams.append(k, String(v));
-  });
-
-  console.log(`[NHL Sync] Fetching: ${url.toString()}`);
-
-  const response = await fetch(url.toString(), {
+async function fetchHighlightly<T>(baseUrl: string, endpoint: string): Promise<T> {
+  const url = `${baseUrl}${endpoint}`;
+  
+  const response = await fetch(url, {
     headers: {
-      'X-API-Key': HIGHLIGHTLY_API_KEY || '',
+      'x-rapidapi-key': HIGHLIGHTLY_API_KEY || '',
       'Content-Type': 'application/json',
     },
   });
@@ -55,60 +37,90 @@ async function fetchFromHighantly(baseUrl: string, endpoint: string, params: Rec
   }
 
   const json = await response.json();
-  return json.data ?? json;
+  // May return { data: [...], ... } or just [...]
+  if (json.data) return json.data as T;
+  if (Array.isArray(json)) return json as T;
+  throw new Error(`Unexpected response: ${JSON.stringify(json).slice(0, 100)}`);
 }
 
-async function syncTeamsForLeague(leagueId: string, leagueName: string): Promise<SyncResult> {
-  let teams: any;
-  let lastError = '';
+async function syncNHLTeams(): Promise<SyncResult> {
+  try {
+    const teams = await fetchHighlightly<any[]>(NHL_BASE_URL, '/teams');
+    
+    // Filter to NHL teams only (league === "NHL")
+    const nhlTeams = teams.filter((t: any) => t.league === 'NHL');
+    
+    console.log(`[NHL Sync] Found ${nhlTeams.length} NHL teams`);
 
-  // Try hockey.highantly.net first (user specified this as working for other hockey data)
-  for (const baseUrl of [HOCKEY_BASE_URL, NHL_BASE_URL]) {
-    try {
-      console.log(`[NHL Sync] Trying ${baseUrl} for ${leagueName}`);
-      teams = await fetchFromHighantly(baseUrl, '/teams', { leagueName, limit: '50' });
-      console.log(`[NHL Sync] Success with ${baseUrl}: ${Array.isArray(teams) ? teams.length + ' teams' : teams}`);
-      break;
-    } catch (error: any) {
-      lastError = `${baseUrl}: ${error.message}`;
-      console.log(`[NHL Sync] Failed ${baseUrl}: ${error.message}`);
+    const results: SyncResult = { synced: 0, failed: 0, errors: [] };
+
+    for (const team of nhlTeams) {
+      try {
+        const { error } = await supabaseAdmin
+          .from('nhl_teams')
+          .upsert({
+            id: String(team.id),
+            name: team.displayName || team.name,
+            short_name: team.abbreviation,
+            logo: team.logo,
+            country_code: 'US',
+            league_id: 'NHL',
+            league_name: 'NHL',
+            last_synced: new Date().toISOString(),
+          }, { onConflict: 'id' });
+
+        if (error) throw error;
+        results.synced++;
+      } catch (error: any) {
+        results.failed++;
+        results.errors.push(`NHL Team ${team.id}: ${error.message}`);
+      }
     }
+
+    return results;
+  } catch (error: any) {
+    return { synced: 0, failed: 0, errors: [`NHL sync failed: ${error.message}`] };
   }
+}
 
-  if (!teams) {
-    return { synced: 0, failed: 0, errors: [`${leagueName}: All endpoints failed. Last error: ${lastError}`] };
-  }
+async function syncNCATeams(): Promise<SyncResult> {
+  try {
+    const teams = await fetchHighlightly<any[]>(NHL_BASE_URL, '/teams');
+    
+    // Filter to NCAA teams (league === "NCAA")
+    const ncaaTeams = teams.filter((t: any) => t.league === 'NCAA');
+    
+    console.log(`[NHL Sync] Found ${ncaaTeams.length} NCAA teams`);
 
-  if (!Array.isArray(teams)) {
-    return { synced: 0, failed: 0, errors: [`${leagueName}: Response was not an array: ${JSON.stringify(teams)?.slice(0, 100)}`] };
-  }
+    const results: SyncResult = { synced: 0, failed: 0, errors: [] };
 
-  const results: SyncResult = { synced: 0, failed: 0, errors: [] };
+    for (const team of ncaaTeams) {
+      try {
+        const { error } = await supabaseAdmin
+          .from('nhl_teams')
+          .upsert({
+            id: String(team.id),
+            name: team.displayName || team.name,
+            short_name: team.abbreviation,
+            logo: team.logo,
+            country_code: 'US',
+            league_id: 'NCAA',
+            league_name: 'NCAA',
+            last_synced: new Date().toISOString(),
+          }, { onConflict: 'id' });
 
-  for (const team of teams) {
-    try {
-      const { error } = await supabaseAdmin
-        .from('nhl_teams')
-        .upsert({
-          id: String(team.id),
-          name: team.name || team.displayName,
-          short_name: team.abbreviation || team.shortName,
-          logo: team.logo,
-          country_code: 'US',
-          league_id: leagueId,
-          league_name: leagueName,
-          last_synced: new Date().toISOString(),
-        }, { onConflict: 'id' });
-
-      if (error) throw error;
-      results.synced++;
-    } catch (error: any) {
-      results.failed++;
-      results.errors.push(`Team ${team.id}: ${error.message}`);
+        if (error) throw error;
+        results.synced++;
+      } catch (error: any) {
+        results.failed++;
+        results.errors.push(`NCAA Team ${team.id}: ${error.message}`);
+      }
     }
-  }
 
-  return results;
+    return results;
+  } catch (error: any) {
+    return { synced: 0, failed: 0, errors: [`NCAA sync failed: ${error.message}`] };
+  }
 }
 
 export async function POST(request: Request) {
@@ -127,22 +139,21 @@ export async function POST(request: Request) {
     };
 
     if (syncType === 'teams' || syncType === 'all') {
-      for (const conf of NCAA_CONFERENCES) {
-        if (leagueFilter && leagueFilter !== conf) continue;
-        const r = await syncTeamsForLeague('NCAA', conf);
-        results.synced += r.synced;
-        results.failed += r.failed;
-        results.details.push(`${conf}: ${r.synced} teams`);
-        results.errors.push(...r.errors);
-      }
-    }
-
-    if (syncType === 'teams' || syncType === 'all') {
+      // Sync NHL teams
       if (!leagueFilter || leagueFilter === 'NHL') {
-        const r = await syncTeamsForLeague('NHL', 'NHL');
+        const r = await syncNHLTeams();
         results.synced += r.synced;
         results.failed += r.failed;
         results.details.push(`NHL: ${r.synced} teams`);
+        results.errors.push(...r.errors);
+      }
+
+      // Sync NCAA teams
+      if (!leagueFilter || leagueFilter === 'NCAA') {
+        const r = await syncNCATeams();
+        results.synced += r.synced;
+        results.failed += r.failed;
+        results.details.push(`NCAA: ${r.synced} teams`);
         results.errors.push(...r.errors);
       }
     }
@@ -162,7 +173,6 @@ export async function GET(request: Request) {
   try {
     let query = supabaseAdmin.from('nhl_teams').select('*', { count: 'exact' });
     if (leagueName) query = query.eq('league_name', leagueName);
-    else query = query.eq('league_id', 'NCAA');
 
     const { data, count, error } = await query.order('name');
     if (error) throw error;
