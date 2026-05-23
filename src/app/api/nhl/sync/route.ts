@@ -6,7 +6,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
-const NHL_BASE_URL = 'https://nhl.highantly.net';
+// Use RapidAPI endpoint - nhl.highantly.net doesn't resolve from Vercel
+const RAPIDAPI_BASE_URL = 'https://nhl-ncaah-api.p.rapidapi.com';
 const RAPIDAPI_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 
 const NCAA_CONFERENCES = [
@@ -35,7 +36,7 @@ async function fetchNHL(endpoint: string, params: Record<string, string> = {}): 
     throw new Error('HIGHLIGHTLY_API_KEY not configured');
   }
 
-  const url = new URL(`${NHL_BASE_URL}${endpoint}`);
+  const url = new URL(`${RAPIDAPI_BASE_URL}${endpoint}`);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null) {
@@ -54,7 +55,8 @@ async function fetchNHL(endpoint: string, params: Record<string, string> = {}): 
   apiCallsToday++;
 
   if (!response.ok) {
-    throw new Error(`Highantly API error ${response.status}: ${await response.text()}`);
+    const errText = await response.text();
+    throw new Error(`Highantly API error ${response.status}: ${errText}`);
   }
 
   const json = await response.json();
