@@ -41,68 +41,89 @@ export default function FoundersClubPopup({ frequency = 'always', entityType = '
 
   if (!showPopup) return null;
 
-  const typeOptions: Array<{ value: string; label: string; price: string }> = [
-    { value: 'fan', label: 'Fan', price: '$9.99' },
-    { value: 'player', label: 'Player', price: '$9.99' },
-    { value: 'coach', label: 'Coach', price: '$19.99' },
-    { value: 'scout', label: 'Scout', price: '$19.99' },
-    { value: 'team', label: 'Team', price: '$29.99' },
-    { value: 'league', label: 'League', price: '$29.99' },
-    { value: 'rink', label: 'Rink', price: '$29.99' },
-    { value: 'business', label: 'Business', price: '$29.99' },
+  const typeOptions = [
+    { value: 'fan',     label: 'Fan',     price: '$9.99', desc: 'Hockey fan & supporter' },
+    { value: 'player',  label: 'Player',  price: '$9.99', desc: 'Get verified & get discovered' },
+    { value: 'coach',   label: 'Coach',   price: '$19.99',desc: 'Verified coaching credentials' },
+    { value: 'scout',   label: 'Scout',   price: '$19.99',desc: 'Connect with talent' },
+    { value: 'team',    label: 'Team',    price: '$29.99',desc: 'Verified team presence' },
+    { value: 'league',  label: 'League',  price: '$29.99',desc: 'Verified league presence' },
+    { value: 'rink',    label: 'Rink',    price: '$29.99',desc: 'Verified rink presence' },
+    { value: 'business',label: 'Business', price: '$29.99',desc: 'Verified business presence' },
   ];
 
   return (
     <div
       style={{
         position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,0.85)',
+        background: 'rgba(0,0,0,0.88)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         zIndex: 1000, padding: '1rem',
-        backdropFilter: 'blur(4px)',
+        backdropFilter: 'blur(6px)',
       }}
       onClick={e => { if (e.target === e.currentTarget) setShowPopup(false); }}
     >
       {/* Desktop modal */}
-      <div style={{
-        background: '#0f0f0f', border: '1px solid #1e1e1e',
+      <div className="founders-modal-desktop" style={{
+        background: '#0B1622', border: '1px solid #C8102E',
         borderRadius: '12px', padding: '2rem',
-        maxWidth: '540px', width: '100%', position: 'relative', textAlign: 'center',
-        display: 'none',
-      }} className="founders-modal-desktop">
+        maxWidth: '580px', width: '100%', position: 'relative',
+      }}>
         <button onClick={() => setShowPopup(false)} style={{
           position: 'absolute', top: '0.75rem', right: '0.75rem',
           background: 'none', border: 'none', color: '#555',
-          fontSize: '1.25rem', cursor: 'pointer', lineHeight: 1,
+          fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1,
         }}>×</button>
 
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-          JOIN THE FOUNDERS CLUB
-        </h2>
-        <p style={{ fontSize: '0.8125rem', color: '#888', marginBottom: '1.25rem' }}>
-          Be part of hockey history. Choose your membership type.
-        </p>
+        {/* Header */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', justifyContent: 'center' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#C8102E', textTransform: 'uppercase' }}>RinkStop Founding Club</span>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
+          </div>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#fff', letterSpacing: '0.04em', margin: '0.25rem 0' }}>
+            BECOME A FOUNDING MEMBER
+          </h2>
+          <p style={{ fontSize: '0.875rem', color: '#888' }}>Choose your plan. See exact benefits below.</p>
+        </div>
+
+        {/* Selected type badge */}
+        <div style={{
+          background: 'rgba(200,16,46,0.12)', border: '1px solid #C8102E',
+          borderRadius: '8px', padding: '0.75rem 1rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: '1.25rem', textAlign: 'left',
+        }}>
+          <div>
+            <div style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.1em', color: '#C8102E', textTransform: 'uppercase', marginBottom: '0.125rem' }}>Selected Plan</div>
+            <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff', textTransform: 'capitalize' }}>{selectedType}</div>
+          </div>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#C8102E' }}>
+            {PRICE_BY_TYPE[selectedType]}
+            <span style={{ fontSize: '0.625rem', color: '#666', fontFamily: 'Arial, sans-serif', display: 'block' }}>one-time</span>
+          </div>
+        </div>
 
         {/* Type selector */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '1.5rem' }}>
           {typeOptions.map(opt => (
             <button
               key={opt.value}
               onClick={() => setSelectedType(opt.value as typeof selectedType)}
               style={{
-                padding: '0.5rem 0.25rem',
-                borderRadius: '6px',
-                border: `1px solid ${selectedType === opt.value ? '#FFD700' : '#333'}`,
-                background: selectedType === opt.value ? 'rgba(255,215,0,0.1)' : '#161616',
-                color: selectedType === opt.value ? '#FFD700' : '#888',
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
+                padding: '0.625rem 0.375rem',
+                borderRadius: '8px',
+                border: `2px solid ${selectedType === opt.value ? '#C8102E' : '#1e2d3d'}`,
+                background: selectedType === opt.value ? 'rgba(200,16,46,0.15)' : '#0f1e2d',
+                color: selectedType === opt.value ? '#fff' : '#667788',
+                fontSize: '0.75rem', fontWeight: 700,
+                cursor: 'pointer', transition: 'all 0.15s',
+                textTransform: 'capitalize',
               }}
             >
-              <div style={{ marginBottom: '0.125rem' }}>{opt.label}</div>
-              <div style={{ color: selectedType === opt.value ? '#FFD700' : '#666' }}>{opt.price}</div>
+              <div style={{ marginBottom: '0.2rem' }}>{opt.label}</div>
+              <div style={{ color: selectedType === opt.value ? '#C8102E' : '#445566', fontSize: '0.6875rem' }}>{opt.price}</div>
             </button>
           ))}
         </div>
@@ -112,53 +133,70 @@ export default function FoundersClubPopup({ frequency = 'always', entityType = '
           entityType={selectedType}
           entityName="RinkStop Community"
         />
-
-        <p style={{ fontSize: '0.6875rem', color: '#444', marginTop: '1rem' }}>
-          One-time payment. Founding Member benefits.
-        </p>
       </div>
 
       {/* Mobile modal */}
-      <div style={{
-        background: '#0f0f0f', border: '1px solid #1e1e1e',
-        borderRadius: '12px', padding: '1.5rem',
-        width: '100%', maxHeight: '90vh', overflow: 'auto',
-        position: 'relative', textAlign: 'center',
-      }} className="founders-modal-mobile">
+      <div className="founders-modal-mobile" style={{
+        background: '#0B1622', border: '1px solid #C8102E',
+        borderRadius: '12px', padding: '1.25rem',
+        width: '100%', maxHeight: '92vh', overflowY: 'auto',
+        position: 'relative',
+      }}>
         <button onClick={() => setShowPopup(false)} style={{
           position: 'absolute', top: '0.5rem', right: '0.5rem',
           background: 'none', border: 'none', color: '#555',
-          fontSize: '1.25rem', cursor: 'pointer', lineHeight: 1,
+          fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1,
         }}>×</button>
 
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-          JOIN THE FOUNDERS CLUB
-        </h2>
-        <p style={{ fontSize: '0.75rem', color: '#888', marginBottom: '1rem' }}>
-          Choose your membership type:
-        </p>
+        {/* Header */}
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', justifyContent: 'center' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
+            <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#C8102E', textTransform: 'uppercase' }}>RinkStop Founding Club</span>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
+          </div>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', margin: '0.25rem 0' }}>
+            BECOME A FOUNDING MEMBER
+          </h2>
+          <p style={{ fontSize: '0.75rem', color: '#888' }}>Pick your plan below.</p>
+        </div>
 
-        {/* Mobile type selector - horizontal scroll */}
-        <div style={{ display: 'flex', gap: '0.375rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1rem', WebkitOverflowScrolling: 'touch' }}>
+        {/* Selected type badge */}
+        <div style={{
+          background: 'rgba(200,16,46,0.12)', border: '1px solid #C8102E',
+          borderRadius: '8px', padding: '0.625rem 0.875rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: '1rem',
+        }}>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', color: '#C8102E', textTransform: 'uppercase', marginBottom: '0.1rem' }}>Selected Plan</div>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', textTransform: 'capitalize' }}>{selectedType}</div>
+          </div>
+          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#C8102E', textAlign: 'right' }}>
+            {PRICE_BY_TYPE[selectedType]}
+            <span style={{ fontSize: '0.5625rem', color: '#666', fontFamily: 'Arial, sans-serif', display: 'block' }}>one-time</span>
+          </div>
+        </div>
+
+        {/* Mobile type selector */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.375rem', marginBottom: '1rem' }}>
           {typeOptions.map(opt => (
             <button
               key={opt.value}
               onClick={() => setSelectedType(opt.value as typeof selectedType)}
               style={{
-                flexShrink: 0,
-                padding: '0.4rem 0.6rem',
+                padding: '0.5rem',
                 borderRadius: '6px',
-                border: `1px solid ${selectedType === opt.value ? '#FFD700' : '#333'}`,
-                background: selectedType === opt.value ? 'rgba(255,215,0,0.1)' : '#161616',
-                color: selectedType === opt.value ? '#FFD700' : '#888',
-                fontSize: '0.625rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
+                border: `2px solid ${selectedType === opt.value ? '#C8102E' : '#1e2d3d'}`,
+                background: selectedType === opt.value ? 'rgba(200,16,46,0.15)' : '#0f1e2d',
+                color: selectedType === opt.value ? '#fff' : '#667788',
+                fontSize: '0.6875rem', fontWeight: 700,
+                cursor: 'pointer', transition: 'all 0.15s',
+                textTransform: 'capitalize',
               }}
             >
               <div>{opt.label}</div>
-              <div style={{ color: selectedType === opt.value ? '#FFD700' : '#666', fontSize: '0.5625rem' }}>{opt.price}</div>
+              <div style={{ color: selectedType === opt.value ? '#C8102E' : '#445566', fontSize: '0.625rem', marginTop: '0.125rem' }}>{opt.price}</div>
             </button>
           ))}
         </div>
@@ -170,10 +208,6 @@ export default function FoundersClubPopup({ frequency = 'always', entityType = '
             entityName="RinkStop Community"
           />
         </div>
-
-        <p style={{ fontSize: '0.6875rem', color: '#444', marginTop: '0.75rem' }}>
-          One-time payment. Permanent status.
-        </p>
       </div>
 
       <style>{`
