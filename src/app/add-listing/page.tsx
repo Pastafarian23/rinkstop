@@ -178,11 +178,11 @@ export default function AddListingPage() {
             BECOME A FOUNDING MEMBER
           </h1>
           <p style={{ fontSize: '1.125rem', color: '#888', maxWidth: '600px', margin: '0 auto 1rem' }}>
-            Get founding member pricing for life when you join today. Cancel anytime.
+            Get founding member pricing when you join today. Cancel anytime.
           </p>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '6px', padding: '0.5rem 1rem' }}>
             <span style={{ color: '#FFD700', fontSize: '0.875rem', fontWeight: 700 }}>*</span>
-            <span style={{ color: '#888', fontSize: '0.875rem' }}>Founding member pricing - locked in forever</span>
+            <span style={{ color: '#888', fontSize: '0.875rem' }}>Founding member pricing - save vs standard rates</span>
           </div>
         </div>
 
@@ -264,7 +264,7 @@ export default function AddListingPage() {
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', letterSpacing: '0.05em', marginBottom: '1rem', color: '#fff' }}>COMMON QUESTIONS</h2>
           <div style={{ display: 'grid', gap: '0.75rem', textAlign: 'left' }}>
             {[
-              { q: 'Is this pricing locked in forever?', a: 'Yes - founding members keep this pricing for life, even when standard prices increase.' },
+              { q: 'Do founding members get special pricing?', a: 'Yes - founding members get discounted rates that are better than standard pricing.' },,
               { q: 'Can I cancel anytime?', a: 'Yes, cancel anytime from your account settings. No questions asked.' },
               { q: 'What payment methods do you accept?', a: 'All major credit and debit cards via Stripe.' },
               { q: 'When does my subscription start?', a: "Immediately after checkout - you'll have instant access to your member features." },
