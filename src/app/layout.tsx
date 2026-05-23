@@ -3,6 +3,7 @@ import Link from 'next/link';
 import MobileNav from '@/components/MobileNav';
 import SignUpButton from '@/components/SignUpButton';
 import CookieConsent from '@/components/CookieConsent';
+import FoundersClubPopup from '@/components/FoundersClubPopup';
 import ScoreTicker from '@/components/ScoreTicker';
 import type { Metadata } from 'next';
 
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
+    apple: '/favicon.svg',
   },
 };
 
@@ -260,6 +261,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </footer>
       <CookieConsent />
+      <FoundersClubPopup />
       </body>
     </html>
   );

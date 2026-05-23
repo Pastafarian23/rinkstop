@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { PlayerUpgradeButton } from '@/components/PlayerUpgradeButton';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -280,11 +279,9 @@ export default function PlayerDetail() {
             {/* Upgrade CTA for free-tier players */}
             {(!player.badge_tier || player.badge_tier === 'free') && (
               <div style={{ marginBottom: '1rem' }}>
-                <PlayerUpgradeButton
-                  playerId={player.id}
-                  currentTier={player.badge_tier || 'free'}
-                  playerName={`${player.first_name} ${player.last_name}`}
-                />
+                <Link href="/add-listing" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.625rem 1.25rem', background: 'linear-gradient(135deg, #FFD700 0%, #FCC419 100%)', border: 'none', borderRadius: '6px', color: '#000', fontSize: '0.875rem', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(255,215,0,0.25)' }}>
+                  Become a Founding Member — $9.99
+                </Link>
               </div>
             )}
 

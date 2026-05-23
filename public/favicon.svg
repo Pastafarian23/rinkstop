@@ -1,17 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Background -->
   <rect width="32" height="32" rx="6" fill="#041E42"/>
-  
-  <!-- Hockey stick - diagonal with head pointing up-left -->
-  <!-- Shaft -->
-  <path d="M22 8 L10 26" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-  
-  <!-- Stick head/blade -->
-  <path d="M22 8 C22 5 20 4 18 5 C16 6 14 10 12 12" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" fill="none"/>
-  
-  <!-- Puck at base of stick -->
-  <ellipse cx="9" cy="27" rx="3.5" ry="2.5" fill="#C8102E"/>
-  
-  <!-- RS text at bottom, using brand red -->
-  <text x="16" y="21" font-family="Arial, sans-serif" font-size="5" font-weight="900" text-anchor="middle" fill="#C8102E" letter-spacing="0.5">RS</text>
+  <!-- Hockey stick shaft - diagonal -->
+  <line x1="10" y1="26" x2="23" y2="9" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Stick blade -->
+  <path d="M23 9 C24 7 22 5 19 6 C16 7 15 10 13 13" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Puck -->
+  <ellipse cx="8.5" cy="27" rx="3.5" ry="2.5" fill="#C8102E"/>
+  <!-- RS monogram in brand red -->
+  <text x="16" y="20" font-family="Arial Black, Arial, sans-serif" font-size="4.5" font-weight="900" text-anchor="middle" fill="#C8102E">RS</text>
 </svg>
