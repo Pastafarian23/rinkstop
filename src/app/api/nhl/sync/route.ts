@@ -22,15 +22,27 @@ const NCAA_CONFERENCES = [
   'West Coast Conference',
 ];
 
+interface SyncResult {
+  synced: number;
+  failed: number;
+  errors: string[];
+}
+
 let apiCallsToday = 0;
 
-async function fetchNHL(endpoint, params = {}) {
+async function fetchNHL(endpoint: string, params: Record<string, string> = {}): Promise<any> {
   if (!HIGHLIGHTLY_API_KEY) {
     throw new Error('HIGHLIGHTLY_API_KEY not configured');
   }
 
   const url = new URL(`${NHL_BASE_URL}${endpoint}`);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) {
+        url.searchParams.append(k, String(v));
+      }
+    });
+  }
 
   const response = await fetch(url.toString(), {
     headers: {
@@ -49,14 +61,14 @@ async function fetchNHL(endpoint, params = {}) {
   return json.data ?? json;
 }
 
-async function syncTeamsForLeague(leagueId, leagueName) {
-  const teams = await fetchNHL('/teams', { leagueName, limit: 50 });
+async function syncTeamsForLeague(leagueId: string, leagueName: string): Promise<SyncResult> {
+  const teams = await fetchNHL('/teams', { leagueName, limit: '50' });
 
   if (!teams || !Array.isArray(teams)) {
-    return { synced: 0, errors: [`No teams for ${leagueName}`] };
+    return { synced: 0, failed: 0, errors: [`No teams for ${leagueName}`] };
   }
 
-  const results = { synced: 0, failed: 0, errors: [] };
+  const results: SyncResult = { synced: 0, failed: 0, errors: [] };
 
   for (const team of teams) {
     try {
@@ -75,7 +87,7 @@ async function syncTeamsForLeague(leagueId, leagueName) {
 
       if (error) throw error;
       results.synced++;
-    } catch (error) {
+    } catch (error: any) {
       results.failed++;
       results.errors.push(`Team ${team.id}: ${error.message}`);
     }
@@ -84,11 +96,11 @@ async function syncTeamsForLeague(leagueId, leagueName) {
   return results;
 }
 
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const syncType = searchParams.get('type') || 'teams';
-    const leagueFilter = searchParams.get('league'); // optional filter
+    const leagueFilter = searchParams.get('league');
 
     const results = {
       success: true,
@@ -129,7 +141,7 @@ export async function POST(request) {
       message: 'NHL/NCAA sync completed',
       ...results,
     });
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -137,7 +149,7 @@ export async function POST(request) {
   }
 }
 
-export async function GET(request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'teams';
   const leagueName = searchParams.get('league');
@@ -159,9 +171,9 @@ export async function GET(request) {
       type,
       league: leagueName || 'all',
       count,
-      teams: data?.map(t => ({ id: t.id, name: t.name, league_name: t.league_name })) || [],
+      teams: data?.map((t: any) => ({ id: t.id, name: t.name, league_name: t.league_name })) || [],
     });
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
       { error: error.message },
       { status: 500 }
