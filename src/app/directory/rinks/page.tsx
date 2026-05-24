@@ -3,7 +3,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { SearchIcon, FilterIcon, ChevronRightIcon } from '@/components/icons';
 
+<<<<<<< Updated upstream
+=======
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
+>>>>>>> Stashed changes
 interface Rink {
   id: string;
   name: string;
@@ -13,7 +16,10 @@ interface Rink {
   capacity?: number;
   ice_size?: string;
 }
+<<<<<<< Updated upstream
+=======
 
+>>>>>>> Stashed changes
 // ------ Page ------------------------------------------------------------------------------------------------------------------------------------------
 export default function RinksPage() {
   const [rinks, setRinks] = useState<Rink[]>([]);

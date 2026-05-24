@@ -19,7 +19,11 @@ const nextConfig = {
     return [
       {
         source: '/scores',
+<<<<<<< Updated upstream
+        destination: '/directory/games',
+=======
         destination: '/directory/fixtures',
+>>>>>>> Stashed changes
         permanent: true,
       },
       {

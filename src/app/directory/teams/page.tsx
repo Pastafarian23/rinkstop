@@ -59,6 +59,19 @@ export default function TeamsPage() {
         </h1>
       </div>
 
+<<<<<<< Updated upstream
+      {/* Introductory copy for SEO */}
+      <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem', maxWidth: '42rem' }}>
+        RinkStop tracks 2,116+ hockey teams across 193 leagues worldwide. Browse by league, country, or level below to find pro, junior, and youth clubs.
+      </p>
+
+      {/* Introductory copy for SEO */}
+      <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem', maxWidth: '42rem' }}>
+        RinkStop tracks 2,116+ hockey teams across 193 leagues worldwide. Browse by league, country, or level below to find pro, junior, and youth clubs.
+      </p>
+
+=======
+>>>>>>> Stashed changes
       {/* Filter Bar */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>

@@ -67,7 +67,9 @@ function contentToHtml(content: string): string {
     }
 
     // Bold inline
-    const processed = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const processed = line
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\[(.*?)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" style="color:#C8102E;text-decoration:underline;">$1</a>');
     html.push(`<p>${processed}</p>`);
   }
 
@@ -162,6 +164,13 @@ export default async function BlogPostPage({ params }: Props) {
       <article>
         {/* Hero */}
         <div style={{
+<<<<<<< Updated upstream
+          background: 'linear-gradient(135deg, #041E42 0%, #0A2E5C 100%)',
+          padding: '2.5rem 1rem',
+          marginBottom: '2rem'
+        }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+=======
           position: 'relative',
           backgroundImage: `url(${post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`})`,
           backgroundSize: 'cover',
@@ -176,6 +185,7 @@ export default async function BlogPostPage({ params }: Props) {
             background: 'linear-gradient(135deg, rgba(4,30,66,0.92) 0%, rgba(10,46,92,0.85) 100%)',
           }} />
           <div style={{ position: 'relative', maxWidth: '1280px', margin: '0 auto' }}>
+>>>>>>> Stashed changes
             {post.category && (
               <div style={{
                 display: 'inline-block',
