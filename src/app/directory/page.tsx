@@ -1,15 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-interface Stats { teams: number; players: number; leagues: number; rinks: number; brands: number; }
-
-function fmt(n: number) { return n >= 1000 ? (n/1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : String(n); }
-
-const CATS_BASE = [
+const CATS = [
   {
     label: 'Teams',
     href: '/directory/teams',
+    count: '32',
     desc: 'NHL teams with full rosters, logos, and arena info',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -21,6 +17,7 @@ const CATS_BASE = [
   {
     label: 'Players',
     href: '/directory/players',
+    count: '831',
     desc: 'NHL players with stats, headshots, and profiles',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -31,6 +28,7 @@ const CATS_BASE = [
   {
     label: 'Leagues',
     href: '/directory/leagues',
+    count: '15',
     desc: 'NHL, AHL, KHL, SHL, Liiga, DEL, and more',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -41,6 +39,7 @@ const CATS_BASE = [
   {
     label: 'Rinks',
     href: '/directory/rinks',
+    count: '32',
     desc: 'NHL arenas with capacity, location, and details',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -52,6 +51,7 @@ const CATS_BASE = [
   {
     label: 'Brands',
     href: '/directory/brands',
+    count: '12',
     desc: 'Equipment makers  --  Bauer, CCM, Warrior, and more',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -61,11 +61,7 @@ const CATS_BASE = [
   },
   {
     label: 'Scores',
-<<<<<<< Updated upstream
-    href: '/directory/fixtures',
-=======
     href: '/directory/games',
->>>>>>> Stashed changes
     count: 'Live',
     desc: 'Game schedules, results, and standings',
     icon: (
@@ -78,7 +74,8 @@ const CATS_BASE = [
   {
     label: 'PWHL',
     href: '/directory/pwhl',
-    desc: "Professional Women's Hockey League  --  6 teams across North America",
+    count: '6',
+    desc: 'Professional Women\'s Hockey League  --  6 teams across North America',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2a5 5 0 0 1 5 5c0 2-1 3-2 4l-3 3-3-3c-1-1-2-2-2-4a5 5 0 0 1 5-5z"/>
@@ -91,12 +88,6 @@ const CATS_BASE = [
 ];
 
 export default function DirectoryPage() {
-  const [stats, setStats] = useState<Stats | null>(null);
-
-  useEffect(() => {
-    fetch('/api/stats').then(r => r.json()).then(d => setStats(d)).catch(() => {});
-  }, []);
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
@@ -124,11 +115,7 @@ export default function DirectoryPage() {
         gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
         gap: '1rem',
       }}>
-        {CATS_BASE.map(cat => {
-          const label = cat.label;
-          const count = label === 'Scores' ? 'Live' :
-            label === 'PWHL' ? '6' :
-            fmt(stats?.[label.toLowerCase() as keyof Stats] ?? 0);
+        {CATS.map(cat => {
           const accent = cat.accentColor || '#C8102E';
           return (
           <Link
@@ -170,7 +157,7 @@ export default function DirectoryPage() {
                 background: `${accent}1e`, padding: '0.2rem 0.5rem',
                 borderRadius: '3px', flexShrink: 0, letterSpacing: '0.06em',
               }}>
-                {count}
+                {cat.count}
               </span>
             </div>
             <div>

@@ -2,10 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-<<<<<<< Updated upstream
-import { PlayerUpgradeButton } from '@/components/PlayerUpgradeButton';
-=======
->>>>>>> Stashed changes
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -40,10 +36,6 @@ interface Player {
   recruiting_bio?: string;
   parent_contact_name?: string;
   parent_contact_email?: string;
-<<<<<<< Updated upstream
-  career_stats?: any[];
-=======
->>>>>>> Stashed changes
   teams?: {
     name: string;
     slug?: string;
@@ -107,10 +99,6 @@ export default function PlayerDetail() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [otherPlayers, setOtherPlayers] = useState<Player[]>([]);
-<<<<<<< Updated upstream
-  const [statsLoading, setStatsLoading] = useState(false);
-=======
->>>>>>> Stashed changes
 
   useEffect(() => {
     if (!id) return;
@@ -124,22 +112,6 @@ export default function PlayerDetail() {
       .catch(() => setLoading(false));
   }, [id]);
 
-<<<<<<< Updated upstream
-  // Fetch career stats
-  useEffect(() => {
-    if (!player?.id) return;
-    fetch(`/api/players/stats?playerId=${player.id}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d?.data?.length > 0) {
-          setPlayer(prev => prev ? { ...prev, career_stats: d.data } : null);
-        }
-      })
-      .catch(() => {});
-  }, [player?.id]);
-
-=======
->>>>>>> Stashed changes
   // Fetch other players on same team
   useEffect(() => {
     if (!player?.team_id) return;
@@ -307,17 +279,9 @@ export default function PlayerDetail() {
             {/* Upgrade CTA for free-tier players */}
             {(!player.badge_tier || player.badge_tier === 'free') && (
               <div style={{ marginBottom: '1rem' }}>
-<<<<<<< Updated upstream
-                <PlayerUpgradeButton
-                  playerId={player.id}
-                  currentTier={player.badge_tier || 'free'}
-                  playerName={`${player.first_name} ${player.last_name}`}
-                />
-=======
                 <Link href="/add-listing" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.625rem 1.25rem', background: 'linear-gradient(135deg, #FFD700 0%, #FCC419 100%)', border: 'none', borderRadius: '6px', color: '#000', fontSize: '0.875rem', fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(255,215,0,0.25)' }}>
                   Become a Founding Member — $9.99
                 </Link>
->>>>>>> Stashed changes
               </div>
             )}
 
@@ -431,11 +395,7 @@ export default function PlayerDetail() {
         </div>
       )}
 
-<<<<<<< Updated upstream
-      {/* Career Statistics */}
-=======
       {/* Career Stats  --  placeholder for when career_stats table is populated */}
->>>>>>> Stashed changes
       <div style={{
         background: 'var(--s2)',
         border: '1px solid var(--border)',
@@ -443,116 +403,6 @@ export default function PlayerDetail() {
         padding: '1.5rem',
         marginBottom: '2rem',
       }}>
-<<<<<<< Updated upstream
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', margin: 0 }}>
-            CAREER STATISTICS
-          </h2>
-          <button
-            onClick={() => {
-              if (!player?.id) return;
-              setStatsLoading(true);
-              fetch('/api/highlightly/players/stats', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: player.id }),
-              })
-                .then(r => r.json())
-                .then(() => {
-                  setStatsLoading(false);
-                  // Refresh stats
-                  return fetch(`/api/players/stats?playerId=${player.id}`);
-                })
-                .then(r => r.json())
-                .then(d => {
-                  if (d?.data?.length > 0) {
-                    setPlayer(prev => prev ? { ...prev, career_stats: d.data } : null);
-                  }
-                  setStatsLoading(false);
-                })
-                .catch(() => setStatsLoading(false));
-            }}
-            disabled={statsLoading}
-            style={{
-              fontSize: '0.6875rem',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '4px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#666',
-              cursor: statsLoading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            {statsLoading ? 'Syncing...' : 'Sync Stats'}
-          </button>
-        </div>
-
-        {!player.career_stats || player.career_stats.length === 0 ? (
-          <div style={{
-            border: '1px dashed rgba(255,255,255,0.1)',
-            borderRadius: '8px',
-            padding: '2.5rem 1rem',
-            textAlign: 'center',
-          }}>
-            <p style={{ color: '#444', fontSize: '0.9375rem', marginBottom: '0.5rem' }}>
-              No career statistics available yet
-            </p>
-            <p style={{ color: '#333', fontSize: '0.8125rem' }}>
-              Stats are synced from official league data when available.
-            </p>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  {player.position === 'goalie'
-                    ? ['Season', 'GP', 'W', 'L', 'GAA', 'SV%', 'SO'].map(h => (
-                        <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', color: '#666', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
-                      ))
-                    : ['Season', 'GP', 'G', 'A', 'Pts', 'PIM', '+/-'].map(h => (
-                        <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', color: '#666', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
-                      ))
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                {player.career_stats.map((stat: any, i: number) => (
-                  <tr key={stat.id || i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    {player.position === 'goalie' ? (
-                      <>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff', fontWeight: 600 }}>{stat.season}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#888' }}>{stat.games_played ?? '-'}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.wins ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.losses ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.goals_against_avg ?? '-'} </td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.save_pct ? `${(parseFloat(stat.save_pct) * 100).toFixed(1)}%` : '-'}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.shutouts ?? 0}</td>
-                      </>
-                    ) : (
-                      <>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff', fontWeight: 600 }}>{stat.season}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#888' }}>{stat.games_played ?? '-'}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.goals ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.assists ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: 'var(--red)', fontWeight: 700 }}>{stat.points ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#888' }}>{stat.penalty_minutes ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: (stat.plus_minus ?? 0) >= 0 ? '#14B8A6' : '#ef4444' }}>
-                          {stat.plus_minus != null ? (stat.plus_minus >= 0 ? `+${stat.plus_minus}` : stat.plus_minus) : '-'}
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-=======
         <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#fff', marginBottom: '1rem', letterSpacing: '-0.01em' }}>
           CAREER STATISTICS
         </h2>
@@ -569,7 +419,6 @@ export default function PlayerDetail() {
             Stats (goals, assists, points, PIM, games played) will be populated once the career_stats table is seeded.
           </p>
         </div>
->>>>>>> Stashed changes
       </div>
 
       {/* Other players on team */}

@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-// src/app/blog/[slug]/page.tsx - Individual blog post (public, SEO-optimized)
-=======
 // src/app/blog/[slug]/page.tsx — Individual blog post (public, SEO-optimized)
->>>>>>> Stashed changes
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
@@ -10,8 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  'https://placeholder.supabase.co',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 );
 
 interface Post {
@@ -158,11 +154,7 @@ export default async function BlogPostPage({ params }: Props) {
       {/* JSON-LD structured data */}
       <script
         type="application/ld+json"
-<<<<<<< Updated upstream
-        dangerouslySetInnerHTML={{ 
-=======
         dangerouslySetInnerHTML={{
->>>>>>> Stashed changes
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'NewsArticle',
@@ -171,18 +163,7 @@ export default async function BlogPostPage({ params }: Props) {
             image: post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`,
             datePublished: post.published_at,
             dateModified: post.updated_at || post.published_at,
-<<<<<<< Updated upstream
-            author: {
-              '@type': 'Person',
-              name: 'Arnel Larracas',
-              url: 'https://www.linkedin.com/in/arnellarracas',
-              sameAs: ['https://www.linkedin.com/in/arnellarracas'],
-              jobTitle: 'Founder',
-              description: 'Writer and hockey enthusiast.'
-            },
-=======
             author: { '@type': 'Person', name: 'Arnel Larracas' },
->>>>>>> Stashed changes
             publisher: {
               '@type': 'Organization',
               name: 'RinkStop',

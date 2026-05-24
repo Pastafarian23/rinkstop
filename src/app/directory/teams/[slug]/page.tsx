@@ -3,10 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { NHL_TEAM_DATA } from '@/lib/nhl-teams-data';
-<<<<<<< Updated upstream
-=======
 type NHLStaticData = typeof NHL_TEAM_DATA[string];
->>>>>>> Stashed changes
 import NHLShopWidget from '@/components/NHLShopWidget';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -41,11 +38,7 @@ export default function TeamDetail() {
 
   useEffect(() => {
     if (!team) return;
-<<<<<<< Updated upstream
-    const enriched = NHL_TEAM_DATA[team.slug] || {};
-=======
     const enriched = (NHL_TEAM_DATA[team.slug] || {}) as NHLStaticData;
->>>>>>> Stashed changes
     const teamData = { ...team, ...enriched };
 
     const schemaOrg = {
@@ -106,11 +99,7 @@ export default function TeamDetail() {
     );
   }
 
-<<<<<<< Updated upstream
-  const staticData = NHL_TEAM_DATA[team.slug] || {};
-=======
   const staticData = (NHL_TEAM_DATA[team.slug] || {}) as NHLStaticData;
->>>>>>> Stashed changes
   const hasRichData = Object.keys(staticData).length > 0;
 
   return (
@@ -156,11 +145,7 @@ export default function TeamDetail() {
         <>
           <section style={{ marginBottom: '2rem' }}>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.9375rem', lineHeight: 1.75, maxWidth: '720px', marginBottom: '1.25rem', borderLeft: '3px solid var(--red)', paddingLeft: '1rem' }}>
-<<<<<<< Updated upstream
-              {staticData.description}
-=======
               {staticData.description as string}
->>>>>>> Stashed changes
             </p>
           </section>
 
@@ -176,11 +161,7 @@ export default function TeamDetail() {
             ].map(s => (
               <div key={s.label} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.875rem 1rem' }}>
                 <p style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: '0.2rem' }}>{s.label}</p>
-<<<<<<< Updated upstream
-                <p style={{ fontSize: s.highlight ? '1.5rem' : '0.875rem', fontWeight: s.highlight ? 800 : 700, color: s.highlight ? 'var(--red)' : '#fff' }}>{s.value}</p>
-=======
                 <p style={{ fontSize: s.highlight ? '1.5rem' : '0.875rem', fontWeight: s.highlight ? 800 : 700, color: s.highlight ? 'var(--red)' : '#fff' }}>{String(s.value)}</p>
->>>>>>> Stashed changes
               </div>
             ))}
           </div>

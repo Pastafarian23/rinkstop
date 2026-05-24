@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
   // Try Supabase first
   try {
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      'https://placeholder.supabase.co',
+      'placeholder-key'
     );
     const { data } = await supabase
       .from('playoff_updates')
