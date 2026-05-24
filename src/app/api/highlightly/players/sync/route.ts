@@ -1,5 +1,5 @@
 // Manual sync trigger endpoint
-// POST /api/highantly/sync
+// POST /api/highlightly/sync
 // Body: { action: 'sync_league' | 'sync_country' | 'sync_all', leagueId?, countryCode? }
 
 import { NextRequest, NextResponse } from 'next/server';
