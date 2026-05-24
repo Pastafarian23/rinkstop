@@ -81,6 +81,28 @@ CREATE TABLE IF NOT EXISTS highlightly_sync_log (
   synced_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Add match detail columns to highlightly_matches if not exist
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'highlightly_matches' AND column_name = 'referees') THEN
+    ALTER TABLE highlightly_matches ADD COLUMN referees JSONB DEFAULT '[]';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'highlightly_matches' AND column_name = 'period_scores') THEN
+    ALTER TABLE highlightly_matches ADD COLUMN period_scores JSONB DEFAULT '{}';
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'highlightly_matches' AND column_name = 'venue_details') THEN
+    ALTER TABLE highlightly_matches ADD COLUMN venue_details JSONB DEFAULT '{}';
+  END IF;
+END $$;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_leagues_country ON highlightly_leagues(country_code);
 CREATE INDEX IF NOT EXISTS idx_teams_league ON highlightly_teams(league_id);

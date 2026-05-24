@@ -70,4 +70,8 @@ export async function POST(req: NextRequest) {
     message: isNew ? 'Successfully subscribed!' : 'Email already subscribed.',
     isNew
   });
+<<<<<<< Updated upstream
+}// Force redeploy - Wed May 20 15:12:59 UTC 2026
+=======
 }
+>>>>>>> Stashed changes

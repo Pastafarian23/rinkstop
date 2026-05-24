@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type BadgeTier = 'free' | 'founding' | 'verified' | 'elite';
+export type BadgeTier = 'free' | 'verified' | 'elite';
 
 interface BadgeConfig {
   tier: BadgeTier;
@@ -13,18 +13,6 @@ interface BadgeConfig {
   description: string;
 }
 
-// Type labels for founding badges
-const FOUNDING_TYPE_LABELS: Record<string, string> = {
-  fan: 'Fan',
-  player: 'Player',
-  coach: 'Coach',
-  scout: 'Scout',
-  business: 'Business',
-  team: 'Team',
-  league: 'League',
-  rink: 'Rink',
-};
-
 const BADGE_CONFIGS: Record<BadgeTier, BadgeConfig> = {
   free: {
     tier: 'free',
@@ -34,29 +22,21 @@ const BADGE_CONFIGS: Record<BadgeTier, BadgeConfig> = {
     borderColor: 'rgba(136,136,136,0.3)',
     description: 'Basic profile',
   },
-  founding: {
-    tier: 'founding',
-    label: 'Founding Member',
-    color: '#FFD700',
-    bgColor: 'rgba(255,215,0,0.12)',
-    borderColor: 'rgba(255,215,0,0.4)',
-    description: 'Founding Member - Permanent badge & exclusive perks',
-  },
   verified: {
     tier: 'verified',
-    label: 'Verified',
+    label: 'Verified Recruit',
     color: '#14B8A6',
-    bgColor: 'rgba(20,184,166,0.1)',
-    borderColor: 'rgba(20,184,166,0.3)',
-    description: 'Verified profile',
+    bgColor: 'rgba(20,184,166,0.12)',
+    borderColor: 'rgba(20,184,166,0.4)',
+    description: 'Identity verified, contact visible to scouts',
   },
   elite: {
     tier: 'elite',
-    label: 'Elite',
-    color: '#A855F7',
-    bgColor: 'rgba(168,85,247,0.1)',
-    borderColor: 'rgba(168,85,247,0.3)',
-    description: 'Elite profile',
+    label: 'Elite Recruit',
+    color: '#F59E0B',
+    bgColor: 'rgba(245,158,11,0.12)',
+    borderColor: 'rgba(245,158,11,0.5)',
+    description: 'Featured, full video gallery, priority search',
   },
 };
 
@@ -65,11 +45,18 @@ interface VerifiedBadgeProps {
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   interactive?: boolean;
+<<<<<<< Updated upstream
+=======
   foundingType?: string;
+>>>>>>> Stashed changes
 }
 
-export function VerifiedBadge({ tier, size = 'md', showLabel = true, interactive = false, foundingType }: VerifiedBadgeProps) {
+export function VerifiedBadge({ tier, size = 'md', showLabel = true, interactive = false }: VerifiedBadgeProps) {
   const config = BADGE_CONFIGS[tier];
+<<<<<<< Updated upstream
+  if (tier === 'free') return null;
+
+=======
 
   if (tier === 'free') return null;
 
@@ -77,6 +64,7 @@ export function VerifiedBadge({ tier, size = 'md', showLabel = true, interactive
     ? `Founding ${FOUNDING_TYPE_LABELS[foundingType]}`
     : config.label;
 
+>>>>>>> Stashed changes
   const sizeStyles = {
     sm: { fontSize: '0.5625rem', padding: '0.15rem 0.4rem', gap: '0.25rem' },
     md: { fontSize: '0.625rem', padding: '0.2rem 0.5rem', gap: '0.3rem' },
@@ -106,6 +94,31 @@ export function VerifiedBadge({ tier, size = 'md', showLabel = true, interactive
       }}
       title={config.description}
     >
+<<<<<<< Updated upstream
+      {/* Checkmark shield icon */}
+      <svg
+        width={iconSizes[size]}
+        height={iconSizes[size]}
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ flexShrink: 0 }}
+      >
+        {tier === 'elite' ? (
+          /* Star for elite */
+          <path
+            d="M8 1l1.9 3.8 4.1.6-3 2.9.7 4.1L8 10.3l-3.7 1.9.7-4.1-3-2.9 4.1-.6L8 1z"
+            fill={config.color}
+          />
+        ) : (
+          /* Shield check for verified */
+          <path
+            d="M8 1L2 3.5v4C2 10.5 4.8 13.4 8 14.5c3.2-1.1 6-4 6-7v-4L8 1z"
+            stroke={config.color}
+            strokeWidth="1.5"
+            fill={config.bgColor}
+          />
+=======
       <svg width={iconSizes[size]} height={iconSizes[size]} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
         <path
           d="M8 1L2 3.5v4C2 10.5 4.8 13.4 8 14.5c3.2-1.1 6-4 6-7v-4L8 1z"
@@ -118,9 +131,10 @@ export function VerifiedBadge({ tier, size = 'md', showLabel = true, interactive
         )}
         {tier === 'elite' && (
           <path d="M8 4l1 3h3l-2.5 2 1 3L8 10l-2.5 2 1-3L4 7h3z" fill={config.color} />
+>>>>>>> Stashed changes
         )}
       </svg>
-      {showLabel && displayLabel}
+      {showLabel && config.label}
     </span>
   );
 }
@@ -164,5 +178,5 @@ export function TierBadgeSelect({
   );
 }
 
-export { BADGE_CONFIGS, FOUNDING_TYPE_LABELS };
+export { BADGE_CONFIGS };
 export type { BadgeConfig };

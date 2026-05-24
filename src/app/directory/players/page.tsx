@@ -3,6 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SearchIcon, FilterIcon } from '@/components/icons';
+<<<<<<< Updated upstream
+// ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
+interface Player {
+=======
 
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
 interface Player {
@@ -10,6 +14,7 @@ interface Player {
   first_name: string;
   last_name: string;
   position?: string;
+>>>>>>> Stashed changes
   jersey_number?: number | string;
   nationality?: string;
   headshot_url?: string;

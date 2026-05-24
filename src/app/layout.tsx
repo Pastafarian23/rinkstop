@@ -261,7 +261,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </footer>
       <CookieConsent />
-      <FoundersClubPopup />
       </body>
     </html>
   );
