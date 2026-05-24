@@ -146,18 +146,8 @@ async function upsertGame(game, dryRun = false) {
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const dateArg = process.argv.find(a => a.startsWith('--date='));
-<<<<<<< Updated upstream
-  let date;
-  if (dateArg) {
-    const param = dateArg.split('=')[1];
-    date = param === 'today' ? today() : param;
-  } else {
-    date = today();
-  }
-=======
   const date = (dateArg ? dateArg.split('=')[1] : 'today').trim();
   const dateStr = date === 'today' ? today() : date;
->>>>>>> Stashed changes
 
   console.log(`\n🏒 NHL Live Game Sync | ${date} | dry=${dryRun}`);
   console.log(`${'─'.repeat(55)}`);
