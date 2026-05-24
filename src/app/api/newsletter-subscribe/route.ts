@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_URL = 'https://placeholder.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
 
 // Simple in-memory rate limiting (10 submissions per IP per hour)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -70,8 +70,4 @@ export async function POST(req: NextRequest) {
     message: isNew ? 'Successfully subscribed!' : 'Email already subscribed.',
     isNew
   });
-<<<<<<< Updated upstream
-}// Force redeploy - Wed May 20 15:12:59 UTC 2026
-=======
 }
->>>>>>> Stashed changes

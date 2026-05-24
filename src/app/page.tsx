@@ -4,31 +4,27 @@ import Link from 'next/link';
 
 interface Team { id: string; name: string; city?: string; country?: string; leagues?: { name: string }; }
 interface Post  { id: string; title: string; slug: string; excerpt?: string; category?: string; og_image_url?: string | null; }
-interface Stats { teams: number; players: number; leagues: number; rinks: number; brands: number; }
 
-function fmt(n: number) { return n >= 1000 ? (n/1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : String(n); }
-
-const CATS_BASE = [
-  { label: 'Teams',   href: '/directory/teams',    color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
+const CATS = [
+  { label: 'Teams',   href: '/directory/teams',    count: '374', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { label: 'Players', href: '/directory/players',  color: '#2563EB', desc: 'Profiles, stats & career histories',
+  { label: 'Players', href: '/directory/players',  count: '1,000', color: '#2563EB', desc: 'Profiles, stats & career histories',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
-  { label: 'Leagues', href: '/directory/leagues',  color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
+  { label: 'Leagues', href: '/directory/leagues',  count: '25',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
-  { label: 'Rinks',   href: '/directory/rinks',    color: '#059669', desc: 'Ice arenas in every country',
+  { label: 'Rinks',   href: '/directory/rinks',    count: '220',  color: '#059669', desc: 'Ice arenas in every country',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="12" y1="3" x2="12" y2="21"/></svg> },
-  { label: 'Brands',  href: '/directory/brands',   color: '#7C3AED', desc: 'Equipment & gear manufacturers',
+  { label: 'Brands',  href: '/directory/brands',   count: '0',    color: '#7C3AED', desc: 'Equipment & gear manufacturers',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-  { label: 'Scores',  href: '/directory/fixtures', count: 'Live',    color: '#C8102E', desc: 'Results, standings & schedules',
-=======
   { label: 'Scores',  href: '/directory/games', count: 'Live',    color: '#C8102E', desc: 'Results, standings & schedules',
->>>>>>> Stashed changes
-=======
-  { label: 'Scores',  href: '/directory/fixtures', color: '#C8102E', desc: 'Results, standings & schedules',
->>>>>>> Stashed changes
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+];
+
+const STATS = [
+  { n: '374',    l: 'Teams' },
+  { n: '1,000',  l: 'Players' },
+  { n: '25',     l: 'Leagues' },
+  { n: '220',    l: 'Rinks' },
 ];
 
 function Skel() {
@@ -46,7 +42,6 @@ export default function Home() {
   const [posts, setPosts]   = useState<Post[]>([]);
   const [loading, setLoad]  = useState(true);
   const [q, setQ]           = useState('');
-  const [stats, setStats]   = useState<Stats | null>(null);
 
   useEffect(() => {
     fetch('/api/teams').then(r => r.json())
@@ -54,9 +49,6 @@ export default function Home() {
       .catch(() => setLoad(false));
     fetch('/api/blog/posts?limit=3').then(r => r.json())
       .then(d => setPosts(d.data || d.posts || []))
-      .catch(() => {});
-    fetch('/api/stats').then(r => r.json())
-      .then(d => setStats(d))
       .catch(() => {});
   }, []);
 
@@ -128,23 +120,13 @@ export default function Home() {
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href="/directory" className="btn btn-red">Explore Directory</Link>
-<<<<<<< Updated upstream
-                <Link href="/add-listing" className="btn btn-ghost">Sign Up Free</Link>
-=======
                 <Link href="/add-listing" className="btn btn-yellow">Join Now</Link>
->>>>>>> Stashed changes
               </div>
             </div>
 
             {/* Stats */}
-            {stats && (
             <div className="stats-grid">
-              {[
-                { n: fmt(stats.teams),   l: 'Teams'   },
-                { n: fmt(stats.players), l: 'Players' },
-                { n: fmt(stats.leagues), l: 'Leagues' },
-                { n: fmt(stats.rinks),   l: 'Rinks'   },
-              ].map(s => (
+              {STATS.map(s => (
                 <div key={s.l} style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -161,7 +143,6 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            )}
           </div>
         </div>
       </section>
@@ -177,11 +158,7 @@ export default function Home() {
             <Link href="/directory" className="sec-link">View All →</Link>
           </div>
           <div className="cat-grid">
-            {CATS_BASE.map(c => {
-              const label = c.label;
-              const count = label === 'Scores' ? 'Live'
-                : fmt(stats?.[label.toLowerCase() as keyof Stats] ?? 0);
-              return (
+            {CATS.map(c => (
               <Link key={c.href} href={c.href} className="card" style={{ textDecoration: 'none' }}>
                 <div style={{ padding: 'clamp(0.875rem, 2.5vw, 1.375rem)' }}>
                   <div style={{
@@ -192,13 +169,12 @@ export default function Home() {
                   }}>{c.icon}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.2rem', gap: '0.25rem' }}>
                     <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{c.label}</span>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>{count}</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>{c.count}</span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.75rem', lineHeight: 1.5 }}>{c.desc}</p>
                 </div>
               </Link>
-              );
-            })}
+            ))}
           </div>
         </div>
       </section>
@@ -271,11 +247,7 @@ export default function Home() {
               {posts.map(p => (
                 <Link key={p.id} href={`/news/${p.slug}`} className="card" style={{ textDecoration: 'none' }}>
                   {p.og_image_url ? (
-<<<<<<< Updated upstream
-                    <img src={p.og_image_url} alt={p.title} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
-=======
                     <img src={p.og_image_url} alt={`${p.title} — ${p.category || 'Hockey News'} article image`} style={{ width: '100%', height: '150px', objectFit: 'cover' }} loading="lazy" />
->>>>>>> Stashed changes
                   ) : (
                     <div style={{ height: '150px', background: 'linear-gradient(135deg, #041E42, #0A2E5C)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.13)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -316,11 +288,7 @@ export default function Home() {
               </p>
             </div>
             <div className="cta-btns">
-<<<<<<< Updated upstream
-              <Link href="/add-listing" className="btn btn-white">+ Sign Up Free</Link>
-=======
               <Link href="/add-listing" className="btn btn-white">+ Join Now</Link>
->>>>>>> Stashed changes
               <Link href="/directory" className="btn btn-ghost" style={{ borderColor: 'rgba(255,255,255,0.4)' }}>Browse Directory</Link>
             </div>
           </div>

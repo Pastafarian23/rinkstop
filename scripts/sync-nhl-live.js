@@ -146,16 +146,21 @@ async function upsertGame(game, dryRun = false) {
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const dateArg = process.argv.find(a => a.startsWith('--date='));
-  const date = (dateArg ? dateArg.split('=')[1] : 'today').trim();
-  const dateStr = date === 'today' ? today() : date;
+  let date;
+  if (dateArg) {
+    const param = dateArg.split('=')[1];
+    date = param === 'today' ? today() : param;
+  } else {
+    date = today();
+  }
 
   console.log(`\n🏒 NHL Live Game Sync | ${date} | dry=${dryRun}`);
   console.log(`${'─'.repeat(55)}`);
 
   // Fetch both today's scores and the 7-day schedule
   const [scores, allGames] = await Promise.all([
-    fetchScores(dateStr),
-    fetchScheduleRange(dateStr, 7),
+    fetchScores(date),
+    fetchScheduleRange(date, 7),
   ]);
 
   const playoff = allGames.filter(g => g.gameType === 3);

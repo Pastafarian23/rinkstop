@@ -1,17 +1,43 @@
-// POST /api/highlightly/players/stats
-// Syncs player career statistics from Highantly API into Supabase cache
+// POST /api/highantly/players/stats
+// Syncs player career statistics from highlightly API into Supabase cache
 // Body: { playerId: string, limit?: number }
 // Auth: x-api-key header required
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyApiKey } from '@/lib/api-auth';
 
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+
 const HIGHLIGHTLY_BASE_URL = 'https://hockey.highlightly.net';
 const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 
 export async function POST(request: NextRequest) {
-  const authError = verifyApiKey(request);
-  if (authError) return authError;
+  if (!ADMIN_API_KEY) {
+    console.warn('[Auth] ADMIN_API_KEY not set - blocking request');
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  const providedKey = request.headers.get('x-api-key');
+  if (!providedKey) {
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  // Timing-safe comparison
+  const keyBuffer = Buffer.from(ADMIN_API_KEY);
+  const providedBuffer = Buffer.from(providedKey);
+  
+  if (keyBuffer.length !== providedBuffer.length) {
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+  
+  let result = 0;
+  for (let i = 0; i < keyBuffer.length; i++) {
+    result |= keyBuffer[i] ^ providedBuffer[i];
+  }
+  
+  if (result !== 0) {
+    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
 
   try {
     const { playerId, limit = 10 } = await request.json();
@@ -29,11 +55,11 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json({ error: `Highantly API error: ${response.status}`, details: errorText }, { status: response.status });
+      return NextResponse.json({ error: `highlightly API error: ${response.status}`, details: errorText }, { status: response.status });
     }
 
     const data = await response.json();
-    
+
     // Highantly returns array of season stats: [{ season, type, general, offense, defense, penalties }]
     const statsArray = Array.isArray(data) ? data : data.data || [];
 
@@ -41,9 +67,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ synced: 0, message: 'No stats found for player' });
     }
 
-    // Dynamically import supabase admin
+    // Import supabase admin
     const { supabaseAdmin } = await import('@/lib/supabase');
-    const supabase = supabaseAdmin();
+    const supabase = supabaseAdmin;
 
     const upserts = [];
     for (const entry of statsArray) {
@@ -56,7 +82,7 @@ export async function POST(request: NextRequest) {
 
       const isGoalie = (gen.goals_against !== undefined || gen.wins !== undefined);
 
-      const record = {
+      const record: any = {
         id: `${playerId}-${season}-${seasonType}`,
         player_id: playerId,
         season,
@@ -67,16 +93,10 @@ export async function POST(request: NextRequest) {
         points: (off.goals ?? 0) + (off.assists ?? 0),
         penalty_minutes: pen.penalty_minutes ?? pen.pim ?? 0,
         plus_minus: def.plus_minus ?? def['+/-'] ?? 0,
-        additional_stats: {
-          offense: off,
-          defense: def,
-          penalties: pen,
-          general: gen,
-        },
+        additional_stats: { offense: off, defense: def, penalties: pen, general: gen },
         last_synced: new Date().toISOString(),
       };
 
-      // Add goalie-specific fields only if present
       if (isGoalie || gen.goals_against !== undefined) {
         record.wins = gen.wins ?? gen.w ?? null;
         record.losses = gen.losses ?? gen.l ?? null;
@@ -100,9 +120,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Database error', details: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ synced: upserts.length, seasons: upserts.map(u => u.season) });
-  } catch (err: any) {
+    return NextResponse.json({ synced: upserts.length, seasons: upserts.map((u: any) => u.season) });
+  } catch (err: unknown) {
     console.error('Player stats sync error:', err);
-    return NextResponse.json({ error: 'Internal error', details: err.message }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal error', details: message }, { status: 500 });
   }
 }

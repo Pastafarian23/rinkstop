@@ -1,32 +1,43 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const playerId = searchParams.get('playerId');
+  const teamId = searchParams.get('teamId');
 
-export const dynamic = 'force-dynamic';
-
-export async function GET() {
-  try {
-    const [teams, leagues, rinks, brands, players] = await Promise.all([
-      supabase.from('teams').select('id', { count: 'exact', head: true }),
-      supabase.from('leagues').select('id', { count: 'exact', head: true }),
-      supabase.from('rinks').select('id', { count: 'exact', head: true }),
-      supabase.from('brands').select('id', { count: 'exact', head: true }),
-      supabase.from('players').select('id', { count: 'exact', head: true }),
-    ]);
-
-    return NextResponse.json({
-      teams: teams.count ?? 0,
-      leagues: leagues.count ?? 0,
-      rinks: rinks.count ?? 0,
-      brands: brands.count ?? 0,
-      players: players.count ?? 0,
-      updated_at: new Date().toISOString(),
-    });
-  } catch (err) {
-    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
+  let query = supabase.from('player_stats').select('*, players(first_name,last_name,headshot_url)');
+  if (playerId) query = query.eq('player_id', playerId);
+  if (teamId) {
+    const { data: players } = await supabase.from('players').select('id').eq('team_id', teamId);
+    if (players?.length) query = query.in('player_id', players.map((p: any) => p.id));
   }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { data, error } = await supabase.from('player_stats').insert(body).select().single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json(data, { status: 201 });
+}
+
+export async function PUT(request: NextRequest) {
+  const { id, ...rest } = await request.json();
+  if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+  const { data, error } = await supabase.from('player_stats').update(rest).eq('id', id).select().single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json(data);
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
+  const { error } = await supabase.from('player_stats').delete().eq('id', id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ success: true });
 }

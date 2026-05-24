@@ -21,7 +21,7 @@ export default function TermsPage() {
       </h1>
 
       <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <p style={{ marginBottom: '1.5rem', color: '#444' }}>Last updated: May 19, 2026</p>
+        <p style={{ marginBottom: '1.5rem', color: '#444' }}>Last updated: May 15, 2026</p>
 
         <p style={{ marginBottom: '1.5rem' }}>
           Welcome to RinkStop. These Terms of Service (&quot;Terms&quot;) govern your access to and use of the RinkStop website (rinkstop.com) and all related services operated by RinkStop (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;). By accessing or using our website, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use our website.
@@ -67,29 +67,6 @@ export default function TermsPage() {
         </p>
         <p style={{ marginBottom: '1.5rem' }}>
           The RinkStop name, logo, and all related names, logos, product and service names, designs, and slogans are trademarks of RinkStop. You may not use such marks without prior written permission.
-        </p>
-
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Data Ownership and Proprietary Rights</h2>
-        <p style={{ marginBottom: '1rem' }}>
-          All data contained in the RinkStop directory — including but not limited to rink information, team listings, player profiles, league standings, game scores, match schedules, facility details, brand information, and any other hockey-related content ("Directory Data") — is proprietary to RinkStop regardless of the source of underlying data. This includes data sourced from third-party APIs, public records, or user submissions, as well as RinkStop&apos;s own original research, curation, and editorial contributions.
-        </p>
-        <p style={{ marginBottom: '1rem' }}>
-          <strong>Directory Data may not be scraped, harvested, aggregated, redistributed, resold, or commercially exploited in any form</strong> — whether manually, through automated tools, bots, spiders, AI systems, or any third party — without prior written consent from RinkStop. Prohibited uses include but are not limited to:
-        </p>
-        <ul style={{ marginLeft: '1.5rem', marginBottom: '1rem' }}>
-          <li>Collecting rink names, addresses, operator details, or facility information</li>
-          <li>Copying team rosters, player profiles, statistics, or biographical data</li>
-          <li>Aggregating league standings, game scores, or match schedules</li>
-          <li>Building competing directories, databases, or hockey products</li>
-          <li>Feeding hockey data into AI training sets or model training pipelines</li>
-          <li>Redistributing RinkStop data as part of any paid or free service</li>
-          <li>Using Directory Data to train, improve, or fine-tune any AI system</li>
-        </ul>
-        <p style={{ marginBottom: '1rem' }}>
-          RinkStop invests significant resources in aggregating, verifying, organizing, and maintaining Directory Data. This includes cross-referencing multiple data sources, correcting errors, enriching bare data with contextual information, and presenting data in a structured, searchable format. That compilation and curation process — not merely the raw underlying data — is the proprietary asset RinkStop protects.
-        </p>
-        <p style={{ marginBottom: '1.5rem' }}>
-          If you have a legitimate need to access or use Directory Data for a purpose not covered by these Terms — including academic research, partnership proposals, or authorized data sharing arrangements — please contact us at <a href="mailto:info@rinkstop.com" style={{ color: '#C8102E' }}>info@rinkstop.com</a> to discuss licensing options.
         </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Third-Party Content and Links</h2>

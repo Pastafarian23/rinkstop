@@ -5,8 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = 'https://placeholder.supabase.co';
+const supabaseServiceKey = 'placeholder-key';
 
 // League registry — defines source priority for each league
 // Hierarchy: NHL (1st) > ESPN (2nd) > Highantly (3rd, gap-fill only)

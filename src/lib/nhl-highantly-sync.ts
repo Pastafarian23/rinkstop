@@ -1,11 +1,11 @@
 // NHL & NCAAH Highlightly Sync Service
-// Base URL: https://nhl.highlightly.net (per official docs)
+// Base URL: https://nhl.highantly.net (per official docs)
 // RapidAPI host: nhl-ncaah-api.p.rapidapi.com
 
 import { supabaseAdmin } from './supabase';
 
 const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
-const NHL_BASE_URL = 'https://nhl.highlightly.net';
+const NHL_BASE_URL = 'https://nhl.highantly.net';
 const RAPIDAPI_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 
 interface SyncResult {

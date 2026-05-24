@@ -1,5 +1,5 @@
 // Test endpoint for Highantly integration
-// GET /api/highlightly/test
+// GET /api/highantly/test
 
 import { NextRequest, NextResponse } from 'next/server';
 
