@@ -17,8 +17,13 @@ const PUBLIC_API_PATHS = [
   '/api/teams',
   '/api/leagues',
   '/api/players',
+<<<<<<< Updated upstream
+  '/api/fixtures',
+  '/api/highlightly',
+=======
   '/api/games',
-  '/api/highantly',
+  '/api/highlightly',
+>>>>>>> Stashed changes
   '/api/hockey',
   '/api/locations',
 ];

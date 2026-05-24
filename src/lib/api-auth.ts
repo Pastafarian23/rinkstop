@@ -5,12 +5,12 @@ const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
 
 // Protected sync endpoints - require API key header
 const PROTECTED_PATHS = [
-  '/api/highantly/sync',
-  '/api/highantly/sync-all',
-  '/api/highantly/sync-matches',
-  '/api/highantly/sync-teams',
-  '/api/highantly/sync-teams-target',
-  '/api/highantly/sync-batch',
+  '/api/highlightly/sync',
+  '/api/highlightly/sync-all',
+  '/api/highlightly/sync-matches',
+  '/api/highlightly/sync-teams',
+  '/api/highlightly/sync-teams-target',
+  '/api/highlightly/sync-batch',
 ];
 
 export function isProtectedPath(pathname: string): boolean {
