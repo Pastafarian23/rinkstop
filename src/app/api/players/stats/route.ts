@@ -1,12 +1,11 @@
 // GET /api/players/stats?playerId=X
 // Fetches cached career stats for a player from Supabase
-// Requires UUID lookup first to get highlightly_id
+// Uses direct REST fetch instead of supabase-js to avoid connection issues
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const supabaseKey = '***REMOVED***';
+const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
+const SUPABASE_KEY = '***REMOVED***';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -17,21 +16,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'playerId is required' }, { status: 400 });
   }
 
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Supabase env vars not set. URL:', !!supabaseUrl, 'Key:', !!supabaseKey);
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+  // Step 1: Look up the player's highlightly_id from the players table
+  const playerRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/players?id=eq.${playerId}&select=id,highlightly_id,first_name,last_name&limit=1`,
+    {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+      }
+    }
+  );
+
+  if (!playerRes.ok) {
+    return NextResponse.json({ error: 'Player not found' }, { status: 404 });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  // Step 1: Look up the player's highlightly_id from the players table
-  const { data: playerData, error: playerError } = await supabase
-    .from('players')
-    .select('id, highlightly_id, first_name, last_name')
-    .eq('id', playerId)
-    .limit(1);
-
-  if (playerError || !playerData || playerData.length === 0) {
+  const playerData = await playerRes.json();
+  if (!playerData || playerData.length === 0) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 });
   }
 
@@ -43,22 +44,25 @@ export async function GET(request: NextRequest) {
   }
 
   // Step 2: Fetch career stats using the highlightly numeric ID
-  let query = supabase
-    .from('highlightly_career_stats')
-    .select('*')
-    .eq('player_id', highlightlyId)
-    .order('season', { ascending: false });
-
+  let statsUrl = `${SUPABASE_URL}/rest/v1/highlightly_career_stats?player_id=eq.${highlightlyId}&order=season.desc`;
   if (leagueId) {
-    query = query.eq('league_id', leagueId);
+    statsUrl += `&league_id=eq.${leagueId}`;
   }
 
-  const { data, error } = await query;
+  const statsRes = await fetch(statsUrl, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+    }
+  });
 
-  if (error) {
-    console.error('Error fetching player stats:', error);
-    return NextResponse.json({ error: 'Database error', details: error.message }, { status: 500 });
+  if (!statsRes.ok) {
+    const errText = await statsRes.text();
+    console.error('Stats fetch error:', errText);
+    return NextResponse.json({ error: 'Database error', details: errText }, { status: 500 });
   }
 
-  return NextResponse.json({ stats: data || [], highlightly_id: highlightlyId });
+  const stats = await statsRes.json();
+
+  return NextResponse.json({ stats: stats || [], highlightly_id: highlightlyId });
 }
