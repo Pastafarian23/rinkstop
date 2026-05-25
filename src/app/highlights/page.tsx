@@ -85,7 +85,7 @@ export default function HighlightsPage() {
     <>
       <Head>
         <title>NHL Highlights | RinkStop</title>
-        <meta name=\"description\" content=\"Watch the latest NHL hockey highlights from RinkStop.\" />
+        <meta name="description" content="Watch the latest NHL hockey highlights from RinkStop." />
       </Head>
 
       {/* Modal for video embed */}
@@ -125,8 +125,8 @@ export default function HighlightsPage() {
             ) : (
               <a
                 href={selectedHighlight.url}
-                target=\"_blank\"
-                rel=\"noopener noreferrer\"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   display: 'block', background: '#C8102E', color: '#fff',
                   padding: '1rem', borderRadius: '8px', textAlign: 'center',
@@ -170,13 +170,13 @@ export default function HighlightsPage() {
             <span style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Filter:
             </span>
-            <Link href=\"/highlights\" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: '#C8102E', color: '#fff', textDecoration: 'none' }}>
+            <Link href="/highlights" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: '#C8102E', color: '#fff', textDecoration: 'none' }}>
               All
             </Link>
-            <Link href=\"/highlights?league=NHL\" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
+            <Link href="/highlights?league=NHL" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
               NHL
             </Link>
-            <Link href=\"/highlights?league=NCAAH\" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
+            <Link href="/highlights?league=NCAAH" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
               NCAAH
             </Link>
           </div>
@@ -248,8 +248,8 @@ export default function HighlightsPage() {
                             borderRadius: '50%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}>
-                            <svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"white\">
-                              <path d=\"M8 5v14l11-7z\" />
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                              <path d="M8 5v14l11-7z" />
                             </svg>
                           </div>
                           {/* Type badge */}
