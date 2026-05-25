@@ -37,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult] = await Promise.all([
     supabaseAdmin.from('teams').select('slug, updated_at').eq('is_active', true),
-    supabaseAdmin.from('rinks').select('id, slug, updated_at').eq('is_active', true),
+    supabaseAdmin.from('rinks').select('slug, updated_at').eq('is_active', true),
     supabaseAdmin.from('leagues').select('slug, updated_at').eq('is_active', true),
     supabaseAdmin.from('posts').select('slug, updated_at').eq('status', 'published'),
     supabaseAdmin.from('players').select('id, updated_at').eq('is_active', true).order('updated_at', { ascending: false }).limit(500),
@@ -51,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const rinkUrls: MetadataRoute.Sitemap = (rinksResult.data || []).map(r => ({
-    url: `${baseUrl}/directory/rinks/${r.id}`,
+    url: `${baseUrl}/directory/rinks/${r.slug}`,
     lastModified: r.updated_at ? new Date(r.updated_at) : new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
