@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -10,22 +10,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'playerId is required' }, { status: 400 });
   }
 
-  // Test connection first
-  const { data: testData, error: testError } = await supabaseAdmin
-    .from('players')
-    .select('id')
-    .limit(1);
-
-  if (testError) {
-    return NextResponse.json({ 
-      error: 'Supabase connection failed', 
-      details: testError.message,
-      hint: 'Check Supabase credentials in lib/supabase.ts'
-    }, { status: 500 });
-  }
-
   // Step 1: Look up highlightly_id from players table
-  const { data: playerData, error: playerError } = await supabaseAdmin
+  const { data: playerData, error: playerError } = await supabase
     .from('players')
     .select('highlightly_id, first_name, last_name')
     .eq('id', playerId)
@@ -47,17 +33,11 @@ export async function GET(request: NextRequest) {
   }
 
   // Step 2: Fetch career stats
-  let query = supabaseAdmin
+  const { data: stats, error: statsError } = await supabase
     .from('highlightly_career_stats')
     .select('*')
     .eq('player_id', highlightlyId)
     .order('season', { ascending: false });
-
-  if (leagueId) {
-    query = query.eq('league_id', leagueId);
-  }
-
-  const { data: stats, error: statsError } = await query;
 
   if (statsError) {
     return NextResponse.json({ 
