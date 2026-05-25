@@ -556,7 +556,7 @@ export default function PlayerDetail() {
             {otherPlayers.map(p => (
               <Link
                 key={p.id}
-                href={`/directory/players/${p.id}`}
+                href={`/directory/players/${p.slug}`}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                   padding: '0.75rem',
