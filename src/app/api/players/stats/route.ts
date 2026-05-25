@@ -1,63 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yszheonqyyskkjoxoexk.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_yLLbqXl_CFS174sL6TRqjg_nej93X4g';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const playerId = searchParams.get('playerId');
   const leagueId = searchParams.get('leagueId');
 
-  const debug = {
-    supabaseUrlConfigured: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    supabaseAnonKeyConfigured: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    supabaseUrl,
-    supabaseAnonKey: supabaseAnonKey ? '[SET]' : '[NOT SET]',
-    playerId,
-    leagueId
-  };
-
   if (!playerId) {
-    return NextResponse.json({ error: 'playerId is required', debug }, { status: 400 });
+    return NextResponse.json({ error: 'playerId is required' }, { status: 400 });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
   // Test connection first
-  const { data: testData, error: testError } = await supabase
+  const { data: testData, error: testError } = await supabaseAdmin
     .from('players')
     .select('id')
     .limit(1);
 
   if (testError) {
-    return NextResponse.json({ error: 'Supabase connection failed', debug, testError: testError.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Supabase connection failed', 
+      details: testError.message,
+      hint: 'Check Supabase credentials in lib/supabase.ts'
+    }, { status: 500 });
   }
 
   // Step 1: Look up highlightly_id from players table
-  const { data: playerData, error: playerError } = await supabase
+  const { data: playerData, error: playerError } = await supabaseAdmin
     .from('players')
     .select('highlightly_id, first_name, last_name')
     .eq('id', playerId)
     .limit(1);
 
   if (playerError) {
-    return NextResponse.json({ error: 'Player lookup failed', debug, playerError: playerError.message }, { status: 500 });
+    return NextResponse.json({ error: 'Player lookup failed', details: playerError.message }, { status: 500 });
   }
 
   if (!playerData || playerData.length === 0) {
-    return NextResponse.json({ error: 'Player not found', debug }, { status: 404 });
+    return NextResponse.json({ error: 'Player not found' }, { status: 404 });
   }
 
   const highlightlyId = playerData[0].highlightly_id;
   const playerName = `${playerData[0].first_name} ${playerData[0].last_name}`;
 
   if (!highlightlyId) {
-    return NextResponse.json({ stats: [], message: 'No highlightly link', debug, playerName });
+    return NextResponse.json({ stats: [], message: 'No highlightly link', playerName });
   }
 
   // Step 2: Fetch career stats
-  let query = supabase
+  let query = supabaseAdmin
     .from('highlightly_career_stats')
     .select('*')
     .eq('player_id', highlightlyId)
@@ -72,15 +62,15 @@ export async function GET(request: NextRequest) {
   if (statsError) {
     return NextResponse.json({ 
       error: 'Stats fetch failed', 
-      debug: { ...debug, playerName, highlightlyId },
-      statsError: statsError.message 
+      details: statsError.message,
+      playerName,
+      highlightlyId
     }, { status: 500 });
   }
 
   return NextResponse.json({ 
     stats: stats || [], 
     highlightly_id: highlightlyId,
-    playerName,
-    debug
+    playerName
   });
 }
