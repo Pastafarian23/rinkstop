@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
 import { mapTeamForHighlights } from '@/lib/highlights-helpers';
 
 interface Highlight {
@@ -57,12 +56,12 @@ export default function HighlightsGrid({
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<Highlight | null>(null);
 
   useEffect(() => {
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
-        // Normalize team name for highlightly API (expects short names like "Golden Knights" not "Vegas Golden Knights")
         const normalizedTeam = teamFilter && teamName ? mapTeamForHighlights(teamName) : teamName;
         if (teamFilter && normalizedTeam) {
           params.append(teamFilter, normalizedTeam);
@@ -109,80 +108,126 @@ export default function HighlightsGrid({
   };
 
   return (
-    <div className="py-8">
-      <h2 className="text-2xl font-bold mb-6 text-[#041E42]">{title}</h2>
-      <div className={`grid grid-cols-1 ${gridCols[columns]} gap-6`}>
-        {highlights.map((highlight) => {
-          const score = highlight.match.homeTeam && highlight.match.awayTeam
-            ? `${highlight.match.homeTeam.abbreviation} vs ${highlight.match.awayTeam.abbreviation}`
-            : '';
+    <>
+      <div className="py-8">
+        <h2 className="text-2xl font-bold mb-6 text-[#041E42]">{title}</h2>
+        <div className={`grid grid-cols-1 ${gridCols[columns]} gap-6`}>
+          {highlights.map((highlight) => {
+            const score = highlight.match.homeTeam && highlight.match.awayTeam
+              ? `${highlight.match.homeTeam.abbreviation} vs ${highlight.match.awayTeam.abbreviation}`
+              : '';
+            const hasEmbed = !!highlight.embedUrl;
 
-          return (
-            <a
-              key={highlight.id}
-              href={highlight.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block"
-            >
-              <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
-                {highlight.imageUrl ? (
-                  <img
-                    src={highlight.imageUrl}
-                    alt={highlight.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-[#041E42]">
-                    <svg className="w-12 h-12 text-white/50" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+            return (
+              <div
+                key={highlight.id}
+                className="group block cursor-pointer"
+                onClick={() => {
+                  if (hasEmbed) setSelectedVideo(highlight);
+                  else if (highlight.url) window.open(highlight.url, '_blank', 'noopener,noreferrer');
+                }}
+              >
+                <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
+                  {highlight.imageUrl ? (
+                    <img
+                      src={highlight.imageUrl}
+                      alt={highlight.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-[#041E42]" />
+                  )}
+                  {/* Centered play button on thumbnail for embeddable videos */}
+                  {hasEmbed && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                  {/* Non-embeddable: show source badge top-right */}
+                  {!hasEmbed && (
+                    <div className="absolute top-2 right-2">
+                      <span className="text-xs px-2 py-1 rounded bg-gray-800/80 text-white text-xs">
+                        Watch on {highlight.source}
+                      </span>
+                    </div>
+                  )}
+                  {/* Verified badge top-left for embeddable */}
+                  {hasEmbed && highlight.type === 'VERIFIED' && (
+                    <div className="absolute top-2 left-2">
+                      <span className="text-xs px-2 py-1 rounded bg-green-600 text-white">
+                        {highlight.type}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3">
+                  <h3 className="font-semibold text-[#041E42] line-clamp-2 group-hover:text-[#C8102E] transition-colors">
+                    {highlight.title}
+                  </h3>
+                  <div className="mt-1 text-sm text-gray-500 flex items-center gap-2">
+                    {highlight.match.date && (
+                      <span>{new Date(highlight.match.date).toLocaleDateString()}</span>
+                    )}
+                    {score && (
+                      <>
+                        <span>•</span>
+                        <span>{score}</span>
+                      </>
+                    )}
                   </div>
-                )}
-                <div className="absolute top-2 right-2">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    highlight.type === 'VERIFIED' 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-yellow-500 text-black'
-                  }`}>
-                    {highlight.type}
-                  </span>
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-gray-400 uppercase">{highlight.source}</span>
+                    {highlight.channel && (
+                      <>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-xs text-gray-400">{highlight.channel}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="mt-3">
-                <h3 className="font-semibold text-[#041E42] line-clamp-2 group-hover:text-[#C8102E] transition-colors">
-                  {highlight.title}
-                </h3>
-                <div className="mt-1 text-sm text-gray-500 flex items-center gap-2">
-                  {highlight.match.date && (
-                    <span>{new Date(highlight.match.date).toLocaleDateString()}</span>
-                  )}
-                  {score && (
-                    <>
-                      <span>•</span>
-                      <span>{score}</span>
-                    </>
-                  )}
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-xs text-gray-400 uppercase">{highlight.source}</span>
-                  {highlight.channel && (
-                    <>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-xs text-gray-400">{highlight.channel}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </a>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* Video Modal - plays YouTube embed in-page */}
+      {selectedVideo && selectedVideo.embedUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setSelectedVideo(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl mx-4 rounded-lg overflow-hidden bg-black"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white text-2xl hover:bg-black/80"
+              onClick={() => setSelectedVideo(null)}
+            >
+              ×
+            </button>
+            <div className="aspect-video">
+              <iframe
+                src={selectedVideo.embedUrl.replace('watch?v=', 'embed/')}
+                className="w-full h-full"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+              />
+            </div>
+            <div className="bg-[#041E42] p-4">
+              <h3 className="font-semibold text-white">{selectedVideo.title}</h3>
+              <p className="text-sm text-gray-300 mt-1">
+                {selectedVideo.match.homeTeam?.name} vs {selectedVideo.match.awayTeam?.name}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
