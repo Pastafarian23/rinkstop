@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { mapTeamForHighlights } from '@/lib/highlights-helpers';
 
 interface Highlight {
@@ -66,7 +66,6 @@ export default function HighlightsGrid({
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     async function fetchHighlights() {
@@ -124,67 +123,98 @@ export default function HighlightsGrid({
       <h2 className="text-2xl font-bold mb-6 text-[#041E42]">{title}</h2>
       <div className={`grid grid-cols-1 ${gridCols[columns]} gap-6`}>
         {highlights.map((highlight) => {
-          const score = highlight.match.homeTeam && highlight.match.awayTeam
-            ? `${highlight.match.homeTeam.abbreviation} vs ${highlight.match.awayTeam.abbreviation}`
-            : '';
+          const home = highlight.match.homeTeam;
+          const away = highlight.match.awayTeam;
+          const score = home && away ? `${home.abbreviation} vs ${away.abbreviation}` : '';
           const href = `/highlights/${highlight.id}/${slugify(highlight.title)}`;
 
           return (
-            <a
+            <Link
               key={highlight.id}
               href={href}
-              className="group block cursor-pointer"
+              style={{ textDecoration: 'none' }}
             >
-              <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
-                {highlight.imageUrl ? (
-                  <img
-                    src={highlight.imageUrl}
-                    alt={highlight.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-[#041E42]" />
-                )}
-                {/* Centered play button overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center group-hover:bg-black/70 transition-colors">
-                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+              <div style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                transition: 'border-color 0.2s',
+                cursor: 'pointer',
+              }}>
+                {/* Thumbnail / Video Preview */}
+                <div style={{ position: 'relative' }}>
+                  <div style={{ aspectRatio: '16/9', background: '#041E42', position: 'relative' }}>
+                    {highlight.imageUrl ? (
+                      <img
+                        src={highlight.imageUrl}
+                        alt={highlight.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : null}
+                    {/* Gradient overlay */}
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)',
+                    }} />
+                    {/* Play button */}
+                    <div style={{
+                      position: 'absolute', top: '50%', left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: 56, height: 56,
+                      background: 'rgba(200,16,46,0.9)',
+                      borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    {/* Type badge */}
+                    <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem' }}>
+                      <span style={{
+                        fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.08em',
+                        padding: '0.25rem 0.5rem', borderRadius: '4px',
+                        background: highlight.type === 'VERIFIED' ? '#16A34A' : '#F59E0B',
+                        color: '#fff',
+                      }}>
+                        {highlight.type}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                {/* Type badge */}
-                {highlight.type === 'VERIFIED' && (
-                  <div className="absolute top-2 left-2">
-                    <span className="text-xs px-2 py-1 rounded bg-green-600 text-white">
-                      {highlight.type}
-                    </span>
-                  </div>
-                )}
-                {/* Score overlay bottom */}
-                {score && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                    <span className="text-xs font-semibold text-white">{score}</span>
-                  </div>
-                )}
-              </div>
-              <div className="mt-3">
-                <h3 className="font-semibold text-[#041E42] line-clamp-2 group-hover:text-[#C8102E] transition-colors">
-                  {highlight.title}
-                </h3>
-                <div className="mt-1 text-sm text-gray-500 flex items-center gap-2">
-                  {highlight.match.date && (
-                    <span>{new Date(highlight.match.date).toLocaleDateString()}</span>
-                  )}
+
+                {/* Content */}
+                <div style={{ padding: '1rem' }}>
+                  <h3 style={{
+                    fontWeight: 700, fontSize: '0.9375rem', color: '#fff',
+                    lineHeight: 1.4, marginBottom: '0.5rem',
+                  }}>
+                    {highlight.title}
+                  </h3>
+
                   {score && (
-                    <>
-                      <span>•</span>
-                      <span>{score}</span>
-                    </>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '0.25rem 0.625rem', borderRadius: '4px',
+                      background: 'rgba(200,16,46,0.15)', color: '#C8102E',
+                      fontSize: '0.75rem', fontWeight: 700,
+                    }}>
+                      {score}
+                    </div>
+                  )}
+
+                  {highlight.match.date && (
+                    <div style={{
+                      marginTop: '0.5rem',
+                      fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)',
+                    }}>
+                      {new Date(highlight.match.date).toLocaleDateString()}
+                    </div>
                   )}
                 </div>
               </div>
-            </a>
+            </Link>
           );
         })}
       </div>
