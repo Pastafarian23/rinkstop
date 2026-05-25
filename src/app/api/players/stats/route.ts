@@ -2,10 +2,7 @@
 // Fetches cached career stats for a player from Supabase
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yszheonqyyskkjoxoexk.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_yLLbqXl_CFS174sL6TRqjg_nej93X4g';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -15,8 +12,6 @@ export async function GET(request: NextRequest) {
   if (!playerId) {
     return NextResponse.json({ error: 'playerId is required' }, { status: 400 });
   }
-
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   // Step 1: Look up highlightly_id from players table
   const { data: playerData, error: playerError } = await supabase
