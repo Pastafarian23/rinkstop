@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
+import HighlightsGrid from '@/components/HighlightsGrid';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -526,6 +527,19 @@ export default function PlayerDetail() {
           </div>
         )}
       </div>
+
+      {/* Player Highlights */}
+      {player.teams?.name && (
+        <div style={{ marginTop: '1.5rem' }}>
+          <HighlightsGrid
+            limit={4}
+            teamFilter="homeTeamName"
+            teamName={player.teams.name.replace('Los Angeles Kings', 'Los Angeles').replace('San Jose Sharks', 'San Jose').replace('Anaheim Ducks', 'Anaheim').split(' ')[0]}
+            title={`${player.first_name} ${player.last_name} HIGHLIGHTS`}
+            columns={2}
+          />
+        </div>
+      )}
 
       {/* Other players on team */}
       {otherPlayers.length > 0 && (

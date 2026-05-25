@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import HighlightsGrid from '@/components/HighlightsGrid';
 
 interface Team { id: string; name: string; city?: string; country?: string; leagues?: { name: string }; }
 interface Post  { id: string; title: string; slug: string; excerpt?: string; category?: string; og_image_url?: string | null; }
@@ -274,6 +275,13 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* ---- LATEST HIGHLIGHTS --------------------------------------------------------------------------------------------- */}
+      <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <HighlightsGrid limit={8} columns={4} title="LATEST HIGHLIGHTS" />
+        </div>
+      </section>
 
       {/* ---- CTA BAND -------------------------------------------------------------------------------------------------------------- */}
       <section style={{ background: 'linear-gradient(135deg, #C8102E 0%, #9B0D23 100%)', padding: 'clamp(2rem, 5vw, 3rem) 0' }}>
