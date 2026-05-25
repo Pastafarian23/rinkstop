@@ -40,7 +40,9 @@ export default function HighlightsPage() {
         const res = await fetch(`/api/highlights?limit=12&offset=0`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        setHighlights(data.highlights || []);
+        // Filter to YouTube-only for inline playback (ESPN has no embedUrl)
+        const all = data.highlights || [];
+        setHighlights(all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl));
         setHasMore((data.pagination?.totalCount || 0) > 12);
       } catch (err) {
         setError('Failed to load highlights');
@@ -57,9 +59,10 @@ export default function HighlightsPage() {
       const newOffset = offset + 12;
       const res = await fetch(`/api/highlights?limit=12&offset=${newOffset}`);
       const data = await res.json();
-      setHighlights(prev => [...prev, ...(data.highlights || [])]);
+      const all = data.highlights || [];
+      setHighlights(prev => [...prev, ...all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl)]);
       setOffset(newOffset);
-      setHasMore(highlights.length + (data.highlights || []).length < (data.pagination?.totalCount || 0));
+      setHasMore(highlights.length + all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl).length < (data.pagination?.totalCount || 0));
     } catch (err) {
       console.error('Failed to load more:', err);
     } finally {

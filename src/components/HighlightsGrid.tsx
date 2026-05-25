@@ -73,7 +73,11 @@ export default function HighlightsGrid({
         const res = await fetch(`/api/highlights?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        setHighlights(data.highlights || []);
+        // Filter to YouTube-only for inline playback (ESPN has no embedUrl)
+        const all = data.highlights || [];
+        const youtube = all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
+        setHighlights(youtube);
+        setHasMore((data.pagination?.totalCount || 0) > youtube.length);
       } catch (err) {
         setError('Failed to load highlights');
       } finally {
