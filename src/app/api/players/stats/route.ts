@@ -1,56 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const playerId = searchParams.get('playerId');
-  const leagueId = searchParams.get('leagueId');
-
-  if (!playerId) {
-    return NextResponse.json({ error: 'playerId is required' }, { status: 400 });
-  }
-
-  // Step 1: Look up highlightly_id from players table
-  const { data: playerData, error: playerError } = await supabase
+// Simple test endpoint to debug Supabase connection
+export async function GET() {
+  // Test 1: Simple players query
+  const { data: players, error: playersError } = await supabase
     .from('players')
-    .select('highlightly_id, first_name, last_name')
-    .eq('id', playerId)
+    .select('id, first_name')
     .limit(1);
 
-  if (playerError) {
-    return NextResponse.json({ error: 'Player lookup failed', details: playerError.message }, { status: 500 });
-  }
-
-  if (!playerData || playerData.length === 0) {
-    return NextResponse.json({ error: 'Player not found' }, { status: 404 });
-  }
-
-  const highlightlyId = playerData[0].highlightly_id;
-  const playerName = `${playerData[0].first_name} ${playerData[0].last_name}`;
-
-  if (!highlightlyId) {
-    return NextResponse.json({ stats: [], message: 'No highlightly link', playerName });
-  }
-
-  // Step 2: Fetch career stats
+  // Test 2: highlightly_career_stats query  
   const { data: stats, error: statsError } = await supabase
     .from('highlightly_career_stats')
-    .select('*')
-    .eq('player_id', highlightlyId)
-    .order('season', { ascending: false });
+    .select('id, season')
+    .limit(1);
 
-  if (statsError) {
-    return NextResponse.json({ 
-      error: 'Stats fetch failed', 
-      details: statsError.message,
-      playerName,
-      highlightlyId
-    }, { status: 500 });
-  }
-
-  return NextResponse.json({ 
-    stats: stats || [], 
-    highlightly_id: highlightlyId,
-    playerName
+  return NextResponse.json({
+    test1_players: {
+      data: players,
+      error: playersError?.message || null
+    },
+    test2_stats: {
+      data: stats?.length ? `${stats.length} rows` : 'empty',
+      error: statsError?.message || null
+    }
   });
 }
