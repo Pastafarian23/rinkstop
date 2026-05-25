@@ -40,8 +40,10 @@ export default function HighlightsPage() {
         const res = await fetch(`/api/highlights?limit=12&offset=0&youtubeOnly=true`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        setHighlights(data.highlights || []);
-        setHasMore((data.pagination?.totalCount || 0) > (data.highlights || []).length);
+        // Client-side filter: never render ESPN clips (belt-and-suspenders)
+        const filtered = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
+        setHighlights(filtered);
+        setHasMore((data.pagination?.totalCount || 0) > filtered.length);
       } catch (err) {
         setError('Failed to load highlights');
       } finally {
@@ -57,9 +59,10 @@ export default function HighlightsPage() {
       const newOffset = offset + 12;
       const res = await fetch(`/api/highlights?limit=12&offset=${newOffset}&youtubeOnly=true`);
       const data = await res.json();
-      setHighlights(prev => [...prev, ...(data.highlights || [])]);
+      const newHighlights = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
+      setHighlights(prev => [...prev, ...newHighlights]);
       setOffset(newOffset);
-      setHasMore((data.highlights || []).length === 12);
+      setHasMore(newHighlights.length === 12);
     } catch (err) {
       console.error('Failed to load more:', err);
     } finally {
@@ -84,8 +87,16 @@ export default function HighlightsPage() {
   return (
     <>
       <Head>
-        <title>NHL Highlights | RinkStop</title>
-        <meta name="description" content="Watch the latest NHL hockey highlights from RinkStop." />
+        <title>Hockey Highlights | Watch NHL & Global Hockey Videos | RinkStop</title>
+        <meta name="description" content="Watch the latest NHL, KHL, NCAA and international hockey highlights on RinkStop. Full game recaps, top plays, and player highlights from leagues worldwide." />
+        <meta property="og:title" content="Hockey Highlights | RinkStop" />
+        <meta property="og:description" content="Watch the latest NHL, KHL, NCAA and international hockey highlights." />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="RinkStop" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Hockey Highlights | RinkStop" />
+        <meta name="twitter:description" content="Watch the latest NHL, KHL, NCAA and international hockey highlights." />
+        <link rel="canonical" href="https://rinkstop.com/highlights" />
       </Head>
 
       {/* Modal for video embed */}

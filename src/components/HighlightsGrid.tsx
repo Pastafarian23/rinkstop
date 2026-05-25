@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { mapTeamForHighlights } from '@/lib/highlights-helpers';
 
 interface Highlight {
@@ -45,6 +46,15 @@ interface HighlightsGridProps {
   columns?: 2 | 3 | 4;
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+}
+
 export default function HighlightsGrid({
   limit = 8,
   teamFilter,
@@ -56,13 +66,15 @@ export default function HighlightsGrid({
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const [selectedVideo, setSelectedVideo] = useState<Highlight | null>(null);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
-        // Request YouTube-only: server filters out ESPN before response (avoids DNS issues)
+        // Request YouTube-only: server filters out ESPN before response
         params.append('youtubeOnly', 'true');
         const normalizedTeam = teamFilter && teamName ? mapTeamForHighlights(teamName) : teamName;
         if (teamFilter && normalizedTeam) {
@@ -75,8 +87,10 @@ export default function HighlightsGrid({
         const res = await fetch(`/api/highlights?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        setHighlights(data.highlights || []);
-        setHasMore((data.pagination?.totalCount || 0) > (data.highlights || []).length);
+        // Always filter client-side too
+        const filtered = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
+        setHighlights(filtered);
+        setHasMore((data.pagination?.totalCount || 0) > filtered.length);
       } catch (err) {
         setError('Failed to load highlights');
       } finally {
@@ -127,7 +141,7 @@ export default function HighlightsGrid({
                 className="group block cursor-pointer"
                 onClick={() => {
                   if (hasEmbed) setSelectedVideo(highlight);
-                  else if (highlight.url) window.open(highlight.url, '_blank', 'noopener,noreferrer');
+                  else router.push(`/highlights/${highlight.id}/${slugify(highlight.title)}`);
                 }}
               >
                 <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
@@ -150,10 +164,10 @@ export default function HighlightsGrid({
                       </div>
                     </div>
                   )}
-                  {/* Non-embeddable: show source badge top-right */}
+                  {/* Non-embeddable: show source badge */}
                   {!hasEmbed && (
                     <div className="absolute top-2 right-2">
-                      <span className="text-xs px-2 py-1 rounded bg-gray-800/80 text-white text-xs">
+                      <span className="text-xs px-2 py-1 rounded bg-gray-800/80 text-white">
                         Watch on {highlight.source}
                       </span>
                     </div>
@@ -198,7 +212,7 @@ export default function HighlightsGrid({
         </div>
       </div>
 
-      {/* Video Modal - plays YouTube embed in-page */}
+      {/* Video Modal */}
       {selectedVideo && selectedVideo.embedUrl && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
