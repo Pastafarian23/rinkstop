@@ -6,8 +6,8 @@ const VALID_TYPES = ['update', 'analysis', 'goal', 'period', 'final', 'trade'];
 export async function GET() {
   try {
     const supabase = createClient(
-      'https://placeholder.supabase.co',
-      'placeholder-key'
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yszheonqyyskkjoxoexk.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
     );
     const { data, error } = await supabase
       .from('playoff_updates')
@@ -33,9 +33,10 @@ export async function POST(request: NextRequest) {
 
     const updateType = VALID_TYPES.includes(body.type) ? body.type : 'update';
 
+
     const supabase = createClient(
-      'https://placeholder.supabase.co',
-      'placeholder-key'
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yszheonqyyskkjoxoexk.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
     );
     const { data, error } = await supabase
       .from('playoff_updates')
