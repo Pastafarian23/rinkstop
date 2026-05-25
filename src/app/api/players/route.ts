@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
     if (isUuid) {
       query = query.eq('id', id).limit(1);
     } else {
-      // Treat as name-based slug (e.g. connor-mcdavid) — derive clean name from first+last
+      // Treat as name-based slug (e.g. connor-mcdavid) — match slugs that start with clean name
       const cleanSlug = id.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-      query = query.or(`slug.ilike.%${cleanSlug}%,slug.eq.${cleanSlug}`).limit(1);
+      query = query.or(`slug.ilike.${cleanSlug}-%,slug.eq.${cleanSlug}`).limit(1);
     }
   } else {
     if (teamId) query = query.eq('team_id', teamId);
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { data, error, count } = id
-    ? await query.single().then(d => ({ data: d.data ? [d.data] : [], error: d.error, count: d.data ? 1 : 0 }))
+    ? await query.then(d => ({ data: Array.isArray(d.data) ? d.data.slice(0, 1) : d.data ? [d.data] : [], error: d.error, count: d.error ? 0 : 1 }))
     : await query
         .order('last_name', { ascending: true })
         .order('first_name', { ascending: true })
