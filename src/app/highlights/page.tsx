@@ -37,13 +37,11 @@ export default function HighlightsPage() {
   useEffect(() => {
     async function fetchHighlights() {
       try {
-        const res = await fetch(`/api/highlights?limit=12&offset=0`);
+        const res = await fetch(`/api/highlights?limit=12&offset=0&youtubeOnly=true`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        // Filter to YouTube-only for inline playback (ESPN has no embedUrl)
-        const all = data.highlights || [];
-        setHighlights(all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl));
-        setHasMore((data.pagination?.totalCount || 0) > 12);
+        setHighlights(data.highlights || []);
+        setHasMore((data.pagination?.totalCount || 0) > (data.highlights || []).length);
       } catch (err) {
         setError('Failed to load highlights');
       } finally {
@@ -57,12 +55,11 @@ export default function HighlightsPage() {
     setLoadingMore(true);
     try {
       const newOffset = offset + 12;
-      const res = await fetch(`/api/highlights?limit=12&offset=${newOffset}`);
+      const res = await fetch(`/api/highlights?limit=12&offset=${newOffset}&youtubeOnly=true`);
       const data = await res.json();
-      const all = data.highlights || [];
-      setHighlights(prev => [...prev, ...all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl)]);
+      setHighlights(prev => [...prev, ...(data.highlights || [])]);
       setOffset(newOffset);
-      setHasMore(highlights.length + all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl).length < (data.pagination?.totalCount || 0));
+      setHasMore((data.highlights || []).length === 12);
     } catch (err) {
       console.error('Failed to load more:', err);
     } finally {

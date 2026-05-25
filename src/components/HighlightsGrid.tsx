@@ -62,6 +62,8 @@ export default function HighlightsGrid({
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
+        // Request YouTube-only: server filters out ESPN before response (avoids DNS issues)
+        params.append('youtubeOnly', 'true');
         const normalizedTeam = teamFilter && teamName ? mapTeamForHighlights(teamName) : teamName;
         if (teamFilter && normalizedTeam) {
           params.append(teamFilter, normalizedTeam);
@@ -73,11 +75,8 @@ export default function HighlightsGrid({
         const res = await fetch(`/api/highlights?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        // Filter to YouTube-only for inline playback (ESPN has no embedUrl)
-        const all = data.highlights || [];
-        const youtube = all.filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
-        setHighlights(youtube);
-        setHasMore((data.pagination?.totalCount || 0) > youtube.length);
+        setHighlights(data.highlights || []);
+        setHasMore((data.pagination?.totalCount || 0) > (data.highlights || []).length);
       } catch (err) {
         setError('Failed to load highlights');
       } finally {
