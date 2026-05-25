@@ -67,14 +67,11 @@ export default function HighlightsGrid({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const [selectedVideo, setSelectedVideo] = useState<Highlight | null>(null);
-  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
-        // Request YouTube-only: server filters out ESPN before response
         params.append('youtubeOnly', 'true');
         const normalizedTeam = teamFilter && teamName ? mapTeamForHighlights(teamName) : teamName;
         if (teamFilter && normalizedTeam) {
@@ -87,10 +84,8 @@ export default function HighlightsGrid({
         const res = await fetch(`/api/highlights?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        // Always filter client-side too
         const filtered = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
         setHighlights(filtered);
-        setHasMore((data.pagination?.totalCount || 0) > filtered.length);
       } catch (err) {
         setError('Failed to load highlights');
       } finally {
@@ -125,126 +120,74 @@ export default function HighlightsGrid({
   };
 
   return (
-    <>
-      <div className="py-8">
-        <h2 className="text-2xl font-bold mb-6 text-[#041E42]">{title}</h2>
-        <div className={`grid grid-cols-1 ${gridCols[columns]} gap-6`}>
-          {highlights.map((highlight) => {
-            const score = highlight.match.homeTeam && highlight.match.awayTeam
-              ? `${highlight.match.homeTeam.abbreviation} vs ${highlight.match.awayTeam.abbreviation}`
-              : '';
-            const hasEmbed = !!highlight.embedUrl;
+    <div className="py-8">
+      <h2 className="text-2xl font-bold mb-6 text-[#041E42]">{title}</h2>
+      <div className={`grid grid-cols-1 ${gridCols[columns]} gap-6`}>
+        {highlights.map((highlight) => {
+          const score = highlight.match.homeTeam && highlight.match.awayTeam
+            ? `${highlight.match.homeTeam.abbreviation} vs ${highlight.match.awayTeam.abbreviation}`
+            : '';
+          const href = `/highlights/${highlight.id}/${slugify(highlight.title)}`;
 
-            return (
-              <div
-                key={highlight.id}
-                className="group block cursor-pointer"
-                onClick={() => {
-                  if (hasEmbed) setSelectedVideo(highlight);
-                  else router.push(`/highlights/${highlight.id}/${slugify(highlight.title)}`);
-                }}
-              >
-                <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
-                  {highlight.imageUrl ? (
-                    <img
-                      src={highlight.imageUrl}
-                      alt={highlight.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#041E42]" />
-                  )}
-                  {/* Centered play button on thumbnail for embeddable videos */}
-                  {hasEmbed && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center">
-                        <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                  {/* Non-embeddable: show source badge */}
-                  {!hasEmbed && (
-                    <div className="absolute top-2 right-2">
-                      <span className="text-xs px-2 py-1 rounded bg-gray-800/80 text-white">
-                        Watch on {highlight.source}
-                      </span>
-                    </div>
-                  )}
-                  {/* Verified badge top-left for embeddable */}
-                  {hasEmbed && highlight.type === 'VERIFIED' && (
-                    <div className="absolute top-2 left-2">
-                      <span className="text-xs px-2 py-1 rounded bg-green-600 text-white">
-                        {highlight.type}
-                      </span>
-                    </div>
-                  )}
+          return (
+            <a
+              key={highlight.id}
+              href={href}
+              className="group block cursor-pointer"
+            >
+              <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video">
+                {highlight.imageUrl ? (
+                  <img
+                    src={highlight.imageUrl}
+                    alt={highlight.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-[#041E42]" />
+                )}
+                {/* Centered play button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center group-hover:bg-black/70 transition-colors">
+                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
                 </div>
-                <div className="mt-3">
-                  <h3 className="font-semibold text-[#041E42] line-clamp-2 group-hover:text-[#C8102E] transition-colors">
-                    {highlight.title}
-                  </h3>
-                  <div className="mt-1 text-sm text-gray-500 flex items-center gap-2">
-                    {highlight.match.date && (
-                      <span>{new Date(highlight.match.date).toLocaleDateString()}</span>
-                    )}
-                    {score && (
-                      <>
-                        <span>•</span>
-                        <span>{score}</span>
-                      </>
-                    )}
+                {/* Type badge */}
+                {highlight.type === 'VERIFIED' && (
+                  <div className="absolute top-2 left-2">
+                    <span className="text-xs px-2 py-1 rounded bg-green-600 text-white">
+                      {highlight.type}
+                    </span>
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-xs text-gray-400 uppercase">{highlight.source}</span>
-                    {highlight.channel && (
-                      <>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-xs text-gray-400">{highlight.channel}</span>
-                      </>
-                    )}
+                )}
+                {/* Score overlay bottom */}
+                {score && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <span className="text-xs font-semibold text-white">{score}</span>
                   </div>
+                )}
+              </div>
+              <div className="mt-3">
+                <h3 className="font-semibold text-[#041E42] line-clamp-2 group-hover:text-[#C8102E] transition-colors">
+                  {highlight.title}
+                </h3>
+                <div className="mt-1 text-sm text-gray-500 flex items-center gap-2">
+                  {highlight.match.date && (
+                    <span>{new Date(highlight.match.date).toLocaleDateString()}</span>
+                  )}
+                  {score && (
+                    <>
+                      <span>•</span>
+                      <span>{score}</span>
+                    </>
+                  )}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </a>
+          );
+        })}
       </div>
-
-      {/* Video Modal */}
-      {selectedVideo && selectedVideo.embedUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
-          onClick={() => setSelectedVideo(null)}
-        >
-          <div
-            className="relative w-full max-w-4xl mx-4 rounded-lg overflow-hidden bg-black"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white text-2xl hover:bg-black/80"
-              onClick={() => setSelectedVideo(null)}
-            >
-              ×
-            </button>
-            <div className="aspect-video">
-              <iframe
-                src={selectedVideo.embedUrl.replace('watch?v=', 'embed/')}
-                className="w-full h-full"
-                allow="autoplay; fullscreen"
-                allowFullScreen
-              />
-            </div>
-            <div className="bg-[#041E42] p-4">
-              <h3 className="font-semibold text-white">{selectedVideo.title}</h3>
-              <p className="text-sm text-gray-300 mt-1">
-                {selectedVideo.match.homeTeam?.name} vs {selectedVideo.match.awayTeam?.name}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
