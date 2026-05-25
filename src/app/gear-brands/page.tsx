@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Gear & Brands | RinkStop',
+  title: 'Hockey Gear Reviews | RinkStop',
   description: 'Hockey equipment reviews, brand comparisons, and buying guides for skates, sticks, pads, and more.',
 };
 
@@ -12,16 +12,29 @@ export default function GearBrandsPage() {
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Gear & Brands</span>
+        <span style={{ color: '#A0A0A0' }}>Gear & Reviews</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          GEAR & BRANDS
+          GEAR & REVIEWS
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
           Equipment reviews, brand comparisons, and what to buy  --  from skates to sticks.
         </p>
+      </div>
+
+      {/* Directory link */}
+      <div style={{ marginBottom: '2rem' }}>
+        <Link
+          href="/directory/brands"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', background: 'linear-gradient(135deg, #FFD700, #FCC419)', color: '#000', fontWeight: 700, fontSize: '0.875rem', borderRadius: '8px', textDecoration: 'none', boxShadow: '0 2px 8px rgba(255,215,0,0.2)' }}
+        >
+          Browse All Brands
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          </svg>
+        </Link>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
