@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
   const teamId = searchParams.get('teamId');
+  const venueId = searchParams.get('venueId');
   const status = searchParams.get('status');
   const limit = parseInt(searchParams.get('limit') || '50', 10);
 
@@ -15,10 +16,26 @@ export async function GET(request: NextRequest) {
 
   if (leagueId) query = query.eq('league_id', leagueId);
   if (teamId) query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
+  if (venueId) {
+    // venueId is the rink slug — look up rink id first, then filter by venue
+    const { data: rinkData } = await supabase
+      .from('rinks')
+      .select('id')
+      .eq('slug', venueId)
+      .limit(1);
+    const rinkId = rinkData?.[0]?.id;
+    if (rinkId) {
+      query = query.eq('venue', rinkId);
+    }
+    // If rink not found or no venue set, return empty
+    if (!rinkId) {
+      return NextResponse.json([], { status: 200 });
+    }
+  }
   if (status) query = query.eq('status', status);
   
   const { data, error } = await query
-    .order('date', { ascending: false })
+    .order('date', { ascending: true })
     .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

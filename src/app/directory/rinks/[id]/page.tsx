@@ -193,10 +193,21 @@ export default function RinkDetail() {
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
+      {/* Permanently Closed Banner */}
+      {!rink.is_active && (
+        <div style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid #dc2626', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '24px' }}>🚫</span>
+          <div>
+            <p style={{ color: '#fca5a5', fontWeight: 600, fontSize: '15px', marginBottom: '2px' }}>Permanently Closed</p>
+            <p style={{ color: 'rgba(252,165,165,0.7)', fontSize: '13px' }}>This rink is no longer operating.</p>
+          </div>
+        </div>
+      )}
+
       <Breadcrumbs links={[
         { label: 'Directory', href: '/directory' },
         { label: 'Rinks', href: '/directory/rinks' },
-        { label: rink.name, href: `/directory/rinks/${rink.id}` },
+        { label: rink.name, href: `/directory/rinks/${rink.slug}` },
       ]} />
       <Link href="/directory/rinks" style={{ color: '#38bdf8', fontSize: '14px', marginBottom: '12px', display: 'inline-block', textDecoration: 'none' }}>
         &larr; Back to Rinks
@@ -296,9 +307,9 @@ export default function RinkDetail() {
       </div>
 
       {/* Events */}
-      {games.length > 0 && (
-        <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
-          <h2 style={{ fontWeight: 600, marginBottom: '16px', color: '#fff', fontSize: '16px' }}>Events at this Rink</h2>
+      <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+        <h2 style={{ fontWeight: 600, marginBottom: '16px', color: '#fff', fontSize: '16px' }}>Events at this Rink</h2>
+        {games.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {games.slice(0, 5).map((f: any) => (
               <div key={f.id} style={{ background: 'rgba(30,41,59,0.5)', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -307,8 +318,10 @@ export default function RinkDetail() {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px', fontStyle: 'italic' }}>No scheduled events</p>
+        )}
+      </div>
 
       {/* Related Teams */}
       <RinkRelated rinkId={rink.id} rinkCity={rink.city} />
