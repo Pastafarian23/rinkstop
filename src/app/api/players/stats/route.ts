@@ -5,8 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = 'https://yszheonqyyskkjoxoexk.supabase.co';
+const supabaseKey = '***REMOVED***';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase env vars not set. URL:', !!supabaseUrl, 'Key:', !!supabaseKey);
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
