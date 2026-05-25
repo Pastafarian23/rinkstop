@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { NHL_TEAM_DATA } from '@/lib/nhl-teams-data';
+import { FANATICS_ADS } from '@/lib/fanatics-ads';
 type NHLStaticData = typeof NHL_TEAM_DATA[string];
 import NHLShopWidget from '@/components/NHLShopWidget';
 
@@ -204,12 +205,20 @@ export default function TeamDetail() {
           )}
 
           {/* NHL Shop Widget */}
-          <NHLShopWidget
-            teamName={team.name}
-            teamSlug={team.slug}
-            primaryColor={staticData.colors?.[0] || '#C8102E'}
-            secondaryColor={staticData.colors?.[1] || '#FFFFFF'}
-          />
+          {/* NHL Shop Jersey Ad */}
+          {(() => {
+            const ad = FANATICS_ADS[team.slug as string];
+            return (
+              <NHLShopWidget
+                teamName={team.name}
+                teamSlug={team.slug}
+                primaryColor={staticData.colors?.[0] || '#C8102E'}
+                secondaryColor={staticData.colors?.[1] || '#FFFFFF'}
+                affiliateLink={ad?.affiliateLink}
+                adImageUrl={ad?.imageUrl}
+              />
+            );
+          })()}
         </>
       )}
 
