@@ -117,11 +117,11 @@ export default function PlayerDetail() {
   // Fetch career stats
   useEffect(() => {
     if (!player?.id) return;
-    fetch(`/api/players/stats?playerId=${player.id}`)
+    fetch(`/api/players/player-stats-sync?playerId=${player.id}`)
       .then(r => r.json())
       .then(d => {
-        if (d?.data?.length > 0) {
-          setPlayer(prev => prev ? { ...prev, career_stats: d.data } : null);
+        if (d.stats && d.stats.length > 0) {
+          setPlayer(prev => prev ? { ...prev, career_stats: d.stats } : null);
         }
       })
       .catch(() => {});
@@ -434,12 +434,12 @@ export default function PlayerDetail() {
                 .then(r => r.json())
                 .then(() => {
                   setStatsLoading(false);
-                  return fetch(`/api/players/stats?playerId=${player.id}`);
+                  return fetch(`/api/players/player-stats-sync?playerId=${player.id}`);
                 })
                 .then(r => r.json())
                 .then(d => {
-                  if (d?.data?.length > 0) {
-                    setPlayer(prev => prev ? { ...prev, career_stats: d.data } : null);
+                  if (d.stats && d.stats.length > 0) {
+                    setPlayer(prev => prev ? { ...prev, career_stats: d.stats } : null);
                   }
                   setStatsLoading(false);
                 })
