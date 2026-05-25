@@ -40,7 +40,7 @@ export default function VideoPageClient({ highlight }: { highlight: Highlight })
   const [copied, setCopied] = useState(false);
 
   const pageUrl = `https://rinkstop.com/highlights/${highlight.id}/${slugify(highlight.title)}`;
-  const embedSrc = highlight.embedUrl?.replace('watch?v=', 'embed/') || '';
+  const embedSrc = highlight.embedUrl?.replace('watch?v=', 'embed/') + '?autoplay=1&mute=1' || '';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(pageUrl).then(() => {
