@@ -1,75 +1,151 @@
 import { NextResponse } from 'next/server';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
-const GAMES_FILE = join(process.cwd(), 'data', 'playoff-games.json');
+const NHL_HIGHLIGHTLY_BASE = 'https://nhl.highlightly.net';
+const RAPID_API_KEY = process.env.HIGHLIGHTLY_API_KEY || '***REMOVED***';
+const RAPID_API_HOST = 'nhl-highcaah-api.p.rapidapi.com';
 
-function readGames(): any {
-  try {
-    const raw = readFileSync(GAMES_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return { games: [] };
-  }
+interface HighlightlyGame {
+  id: number;
+  date: string;
+  round: string;
+  homeTeam: { abbreviation: string; name: string; displayName: string };
+  awayTeam: { abbreviation: string; name: string; displayName: string };
+  state: {
+    clock: number;
+    period: number;
+    report: string;
+    description: string;
+    score: {
+      current: string;
+      firstPeriod: string | null;
+      secondPeriod: string | null;
+      thirdPeriod: string | null;
+      overtimePeriod: string | null;
+    };
+  };
+}
+
+async function fetchHighlightly(path: string): Promise<any> {
+  const url = `${NHL_HIGHLIGHTLY_BASE}${path}`;
+  const res = await fetch(url, {
+    headers: {
+      'X-RapidAPI-Key': RAPID_API_KEY,
+      'X-RapidAPI-Host': RAPID_API_HOST,
+    },
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) throw new Error(`highlightly error: ${res.status}`);
+  return res.json();
+}
+
+function parseScore(score: string): { home: number; away: number } {
+  const parts = score.split('-').map((s) => parseInt(s.trim()) || 0);
+  return { home: parts[0] || 0, away: parts[1] || 0 };
+}
+
+function periodDisplay(game: HighlightlyGame): string {
+  const { period, score, report } = game.state;
+  if (report === 'Scheduled') return '';
+  if (report === 'Final') return 'FINAL';
+  const periods = ['Pre-Game', '1st', '2nd', '3rd', 'OT', 'SO'];
+  const name = periods[period] || `P${period}`;
+  // Use period scores if available
+  const p1 = score.firstPeriod;
+  const p2 = score.secondPeriod;
+  const p3 = score.thirdPeriod;
+  if (p1 && p2 && p3) return `${name} ${p1} · ${p2} · ${p3}`;
+  return name;
 }
 
 export async function GET() {
   try {
-    const data = readGames();
-    const games: any[] = data.games || [];
+    const data = await fetchHighlightly('/matches?limit=20');
 
-    const sorted = [...games].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const games: HighlightlyGame[] = data.data || [];
+    const now = new Date();
 
-    // Most recent completed first
-    const recent = sorted.filter(g => g.status === 'completed').slice(0, 6);
-    // Next upcoming games — oldest first (soonest games)
-    const upcoming = sorted
-      .filter(g => g.status === 'scheduled' || g.status === 'inProgress')
-      .slice(0, 4)
-      .reverse();
+    // Separate live, completed, and upcoming
+    const live = games.filter(
+      (g) => g.state.report === 'In Progress' || g.state.report === 'In progress'
+    );
+    const completed = games.filter((g) => g.state.report === 'Final');
+    const upcoming = games.filter((g) => g.state.report === 'Scheduled');
 
-    const tickerItems: any[] = [];
+    // Sort: live first, then upcoming by date ascending, then recent completed
+    const sortedUpcoming = [...upcoming].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    const sortedCompleted = [...completed].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
 
-    tickerItems.push({
-      type: 'label',
-      text: 'Stanley Cup Playoffs',
-    });
+    type TickerItem = {
+      id: string;
+      type: 'final' | 'live' | 'upcoming';
+      homeAbbr: string;
+      homeName: string;
+      awayAbbr: string;
+      awayName: string;
+      homeScore?: number;
+      awayScore?: number;
+      periodDisplay?: string;
+      seriesLabel?: string;
+      date?: string;
+      round?: string;
+    };
 
-    for (const g of upcoming) {
-      const home = g.homeTeam;
-      const away = g.awayTeam;
-      tickerItems.push({
+    const items: TickerItem[] = [];
+
+    // Live games first
+    for (const g of live) {
+      const score = parseScore(g.state.score.current);
+      items.push({
+        id: `live-${g.id}`,
+        type: 'live',
+        homeAbbr: g.homeTeam.abbreviation,
+        homeName: g.homeTeam.name,
+        awayAbbr: g.awayTeam.abbreviation,
+        awayName: g.awayTeam.name,
+        homeScore: score.home,
+        awayScore: score.away,
+        periodDisplay: periodDisplay(g),
+        round: g.round,
+      });
+    }
+
+    // Then upcoming (next 4)
+    for (const g of sortedUpcoming.slice(0, 4)) {
+      items.push({
+        id: `upcoming-${g.id}`,
         type: 'upcoming',
-        awayAbbr: away.abbr,
-        awayName: away.name,
-        homeAbbr: home.abbr,
-        homeName: home.name,
+        homeAbbr: g.homeTeam.abbreviation,
+        homeName: g.homeTeam.name,
+        awayAbbr: g.awayTeam.abbreviation,
+        awayName: g.awayTeam.name,
         date: g.date,
         round: g.round,
-        seriesLabel: g.seriesLabel,
-        tvNetwork: g.tvNetwork || null,
       });
     }
 
-    for (const g of recent) {
-      const home = g.homeTeam;
-      const away = g.awayTeam;
-      const homeWin = home.winner;
-      tickerItems.push({
+    // Then recent completed (last 6)
+    for (const g of sortedCompleted.slice(0, 6)) {
+      const score = parseScore(g.state.score.current);
+      items.push({
+        id: `final-${g.id}`,
         type: 'final',
-        awayAbbr: away.abbr,
-        awayName: away.name,
-        awayScore: homeWin ? away.score : home.score,
-        homeAbbr: home.abbr,
-        homeName: home.name,
-        homeScore: homeWin ? home.score : away.score,
+        homeAbbr: g.homeTeam.abbreviation,
+        homeName: g.homeTeam.name,
+        awayAbbr: g.awayTeam.abbreviation,
+        awayName: g.awayTeam.name,
+        homeScore: score.home,
+        awayScore: score.away,
+        periodDisplay: periodDisplay(g),
         round: g.round,
-        seriesLabel: g.seriesLabel,
-        periodDisplay: g.periodDisplay || null,
       });
     }
 
-    const allItems = [...tickerItems, ...tickerItems];
+    // Duplicate for seamless loop
+    const allItems = [...items, ...items];
     return NextResponse.json(allItems);
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
