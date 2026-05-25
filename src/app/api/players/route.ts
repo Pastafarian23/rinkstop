@@ -25,8 +25,9 @@ export async function GET(request: NextRequest) {
     if (isUuid) {
       query = query.eq('id', id).limit(1);
     } else {
-      // Treat as slug (name-based URL like connor-mcdavid)
-      query = query.eq('slug', id).limit(1);
+      // Treat as name-based slug (e.g. connor-mcdavid) — derive clean name from first+last
+      const cleanSlug = id.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      query = query.or(`slug.ilike.%${cleanSlug}%,slug.eq.${cleanSlug}`).limit(1);
     }
   } else {
     if (teamId) query = query.eq('team_id', teamId);
