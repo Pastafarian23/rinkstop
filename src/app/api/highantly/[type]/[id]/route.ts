@@ -1,5 +1,5 @@
 // Cached data retrieval endpoints
-// GET /api/highantly/[type]/[id]?type=standings|matches|teams&leagueId=X
+// GET /api/highlightly/[type]/[id]?type=standings|matches|teams&leagueId=X
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';

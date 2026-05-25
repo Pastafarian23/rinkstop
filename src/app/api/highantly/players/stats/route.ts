@@ -1,4 +1,4 @@
-// POST /api/highantly/players/stats
+// POST /api/highlightly/players/stats
 // Syncs player career statistics from highlightly API into Supabase cache
 // Body: { playerId: string, limit?: number }
 // Auth: x-api-key header required
