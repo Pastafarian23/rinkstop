@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import VideoPageClient from './VideoPageClient';
 
 const NHL_BASE = 'https://nhl.highlightly.net';
-const HOCKEY_BASE = 'https://hockey.highantly.net';
+const HOCKEY_BASE = 'https://hockey.highlightly.net';
 const API_KEY = '***REMOVED***';
 
 interface Props {
@@ -37,6 +37,8 @@ async function getHighlight(id: number, league?: string) {
   const data = await res.json();
   return (data.data || []).find((h: any) => h.id === id);
 }
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id, slug } = await params;
