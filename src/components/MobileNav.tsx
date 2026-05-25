@@ -70,7 +70,7 @@ const SECTIONS = [
       { href: '/guides', label: 'Guides'        },
       { href: '/rankings', label: 'Rankings'      },
       { href: '/hockey-travel', label: 'Hockey Travel' },
-      { href: '/gear-brands', label: 'Gear'  },
+      { href: '/gear-reviews', label: 'Gear'  },
     ],
   },
   {

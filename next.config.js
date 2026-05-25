@@ -23,6 +23,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/gear-brands',
+        destination: '/gear-reviews',
+        permanent: true,
+      },
+      {
         source: '/(.*)',
         has: [
           { type: 'host', value: 'rinkstop-platform\.vercel\.app' },
