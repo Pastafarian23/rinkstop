@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  const slug = searchParams.get('slug');
   const country = searchParams.get('country');
   const search = searchParams.get('search');
   const activeOnly = searchParams.get('activeOnly') !== 'false';
@@ -12,6 +13,8 @@ export async function GET(request: NextRequest) {
 
   if (id) {
     query = query.eq('id', id).limit(1);
+  } else if (slug) {
+    query = query.eq('slug', slug).limit(1);
   } else {
     if (country) query = query.eq('country', country);
     if (activeOnly) query = query.eq('is_active', true);
@@ -20,5 +23,5 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query.order('name');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(id ? (data?.[0] ?? null) : data);
+  return NextResponse.json(id || slug ? (data?.[0] ?? null) : data);
 }
