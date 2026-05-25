@@ -3,10 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function GET() {
   try {
-    const supabase = createClient(
-      'https://placeholder.supabase.co',
-      'placeholder-key'
-    );
+    const supabaseUrl = 'https://yszheonqyyskkjoxoexk.supabase.co';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     const { data, error } = await supabase
       .from('fixtures')
