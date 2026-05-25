@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { mapTeamForHighlights } from '@/lib/highlights-helpers';
+
 interface Highlight {
   id: number;
   title: string;
@@ -60,8 +62,10 @@ export default function HighlightsGrid({
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
-        if (teamFilter && teamName) {
-          params.append(teamFilter, teamName);
+        // Normalize team name for highlightly API (expects short names like "Golden Knights" not "Vegas Golden Knights")
+        const normalizedTeam = teamFilter && teamName ? mapTeamForHighlights(teamName) : teamName;
+        if (teamFilter && normalizedTeam) {
+          params.append(teamFilter, normalizedTeam);
         }
         if (matchId) {
           params.append('matchId', matchId);
