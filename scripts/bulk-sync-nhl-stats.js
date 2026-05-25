@@ -42,7 +42,7 @@ async function main() {
   const statsData = await statsRes.json();
   const existingStats = new Set(statsData.map(r => r.player_id));
   
-  // FIX: use highlightly_id (with 'y'), not highantly_id (without 'y')
+  // FIX: use highlightly_id (with 'y'), not highlightly_id (without 'y')
   const needSync = players.filter(p => p.highlightly_id && !existingStats.has(p.highlightly_id));
   console.log('Total players:', players.length, '| Already synced:', existingStats.size, '| Need to sync:', needSync.length);
   

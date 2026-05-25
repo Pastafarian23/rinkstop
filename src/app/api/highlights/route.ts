@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const NHL_BASE = 'https://nhl.highlightly.net';
+const HOCKEY_BASE = 'https://hockey.highlightly.net';
 const API_KEY = process.env.HIGHLIGHTLY_API_KEY || '***REMOVED***';
 
 export async function GET(request: NextRequest) {
@@ -12,7 +13,13 @@ export async function GET(request: NextRequest) {
   const awayTeamName = searchParams.get('awayTeamName');
   const matchId = searchParams.get('matchId');
   const date = searchParams.get('date');
-  const leagueName = searchParams.get('leagueName') || 'NHL';
+  const leagueName = searchParams.get('leagueName');
+  
+  // Determine which API base to use based on league
+  // NHL and NCAA leagues use nhl.highlightly.net, everything else uses hockey.highlightly.net
+  const isNHL = !leagueName || leagueName.toUpperCase() === 'NHL' || leagueName.toUpperCase() === 'NCAAH' || leagueName.toUpperCase() === 'NHL/NCAAH';
+  const BASE_URL = isNHL ? NHL_BASE : HOCKEY_BASE;
+  const RAPIDAPI_HOST = isNHL ? 'nhl-ncaah-api.p.rapidapi.com' : 'hockey-highlights-api.p.rapidapi.com';
   
   // Build query params
   const params = new URLSearchParams();
@@ -22,16 +29,16 @@ export async function GET(request: NextRequest) {
   if (awayTeamName) params.append('awayTeamName', awayTeamName);
   if (matchId) params.append('matchId', matchId);
   if (date) params.append('date', date);
-  params.append('leagueName', leagueName);
+  if (leagueName) params.append('leagueName', leagueName);
   
   try {
-    const url = `${NHL_BASE}/highlights?${params.toString()}`;
+    const url = `${BASE_URL}/highlights?${params.toString()}`;
     const res = await fetch(url, {
       headers: {
         'x-rapidapi-key': API_KEY,
-        'x-rapidapi-host': 'nhl-ncaah-api.p.rapidapi.com'
+        'x-rapidapi-host': RAPIDAPI_HOST
       },
-      next: { revalidate: 60 } // Cache for 60 seconds
+      next: { revalidate: 60 }
     });
     
     if (!res.ok) {

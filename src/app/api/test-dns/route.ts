@@ -7,8 +7,8 @@ export async function GET() {
   };
 
   const testUrls = [
-    'https://hockey.highantly.net/teams?limit=1',
-    'https://nhl.highantly.net/teams?leagueName=NHL&limit=1',
+    'https://hockey.highlightly.net/teams?limit=1',
+    'https://nhl.highlightly.net/teams?leagueName=NHL&limit=1',
     'https://hockey.highlights-api.p.rapidapi.com/teams?limit=1',
   ];
 

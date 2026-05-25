@@ -18,7 +18,7 @@ const PUBLIC_API_PATHS = [
   '/api/leagues',
   '/api/players',
   '/api/games',
-  '/api/highantly',
+  '/api/highlightly',
   '/api/hockey',
   '/api/locations',
 ];

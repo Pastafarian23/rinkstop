@@ -427,7 +427,7 @@ export default function PlayerDetail() {
             onClick={() => {
               if (!player?.id) return;
               setStatsLoading(true);
-              fetch('/api/highantly/players/stats', {
+              fetch('/api/highlightly/players/stats', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ playerId: player.id }),
