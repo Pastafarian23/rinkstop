@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const matchId = searchParams.get('matchId');
   const date = searchParams.get('date');
   const leagueName = searchParams.get('leagueName');
+  const youtubeOnly = searchParams.get('youtubeOnly') === 'true';
   
   // Determine which API base to use based on league
   // NHL and NCAA leagues use nhl.highlightly.net, everything else uses hockey.highlightly.net
@@ -47,8 +48,8 @@ export async function GET(request: NextRequest) {
     
     const data = await res.json();
     
-    // Transform highlights to include more useful info
-    const highlights = (data.data || []).map((h: any) => ({
+    // Filter to YouTube-only server-side when requested (avoids client-side DNS issues with ESPN)
+    const all = (data.data || []).map((h: any) => ({
       id: h.id,
       title: h.title,
       description: h.description || '',
@@ -80,10 +81,16 @@ export async function GET(request: NextRequest) {
         } : null,
       },
     }));
-    
+
+    const highlights = youtubeOnly
+      ? all.filter((h: any) => h.source === 'youtube' || !!h.embedUrl)
+      : all;
+
     return NextResponse.json({
       highlights,
-      pagination: data.pagination,
+      pagination: youtubeOnly
+        ? { totalCount: highlights.length, offset: parseInt(offset), limit: parseInt(limit) }
+        : data.pagination,
       plan: data.plan,
     });
   } catch (error) {
