@@ -2,9 +2,10 @@
 // Fetches cached career stats for a player from Supabase
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_yLLbqXl_CFS174sL6TRqjg_nej93X4g';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yszheonqyyskkjoxoexk.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_yLLbqXl_CFS174sL6TRqjg_nej93X4g';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -15,55 +16,45 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'playerId is required' }, { status: 400 });
   }
 
-  try {
-    // Step 1: Look up the player's highlightly_id
-    const playerRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/players?id=eq.${playerId}&select=highlightly_id,first_name,last_name&limit=1`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        next: { revalidate: 0 }
-      }
-    );
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-    if (!playerRes.ok) {
-      return NextResponse.json({ error: 'Player lookup failed' }, { status: 500 });
-    }
+  // Step 1: Look up highlightly_id from players table
+  const { data: playerData, error: playerError } = await supabase
+    .from('players')
+    .select('highlightly_id, first_name, last_name')
+    .eq('id', playerId)
+    .limit(1);
 
-    const playerData = await playerRes.json();
-    if (!playerData || playerData.length === 0) {
-      return NextResponse.json({ error: 'Player not found' }, { status: 404 });
-    }
-
-    const { highlightly_id: highlightlyId } = playerData[0];
-
-    if (!highlightlyId) {
-      return NextResponse.json({ stats: [], message: 'No highlightly link' });
-    }
-
-    // Step 2: Fetch career stats using highlightly_id
-    let statsUrl = `${SUPABASE_URL}/rest/v1/highlightly_career_stats?player_id=eq.${highlightlyId}&select=season,season_type,games_played,goals,assists,points,penalty_minutes,plus_minus,wins,losses,save_percentage,goals_against_average,shutouts&order=season.desc`;
-    if (leagueId) statsUrl += `&league_id=eq.${leagueId}`;
-
-    const statsRes = await fetch(statsUrl, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      next: { revalidate: 0 }
-    });
-
-    if (!statsRes.ok) {
-      return NextResponse.json({ error: 'Stats fetch failed' }, { status: 500 });
-    }
-
-    const stats = await statsRes.json();
-
-    return NextResponse.json({ stats: stats || [], highlightly_id: highlightlyId });
-
-  } catch (err: any) {
-    return NextResponse.json({ error: 'Server error', details: err.message }, { status: 500 });
+  if (playerError) {
+    return NextResponse.json({ error: 'Player lookup failed', details: playerError.message }, { status: 500 });
   }
+
+  if (!playerData || playerData.length === 0) {
+    return NextResponse.json({ error: 'Player not found' }, { status: 404 });
+  }
+
+  const highlightlyId = playerData[0].highlightly_id;
+
+  if (!highlightlyId) {
+    return NextResponse.json({ stats: [], message: 'No highlightly link' });
+  }
+
+  // Step 2: Fetch career stats
+  let query = supabase
+    .from('highlightly_career_stats')
+    .select('season,season_type,games_played,goals,assists,points,penalty_minutes,plus_minus,wins,losses,save_percentage,goals_against_average,shutouts')
+    .eq('player_id', highlightlyId)
+    .order('season', { ascending: false });
+
+  if (leagueId) {
+    query = query.eq('league_id', leagueId);
+  }
+
+  const { data: stats, error: statsError } = await query;
+
+  if (statsError) {
+    return NextResponse.json({ error: 'Stats fetch failed', details: statsError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ stats: stats || [], highlightly_id: highlightlyId });
 }
