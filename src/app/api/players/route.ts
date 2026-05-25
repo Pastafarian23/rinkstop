@@ -18,8 +18,16 @@ export async function GET(request: NextRequest) {
     .from('players')
     .select('*, teams(name, slug, logo_url, league_id, leagues(name, slug))', { count: 'exact' });
 
+  // Support both UUID lookups and slug lookups (e.g. connor-mcdavid)
+  const isUuid = id && /^[0-9a-f-]{36}$/i.test(id);
+
   if (id) {
-    query = query.eq('id', id).limit(1);
+    if (isUuid) {
+      query = query.eq('id', id).limit(1);
+    } else {
+      // Treat as slug (name-based URL like connor-mcdavid)
+      query = query.eq('slug', id).limit(1);
+    }
   } else {
     if (teamId) query = query.eq('team_id', teamId);
     if (position) query = query.eq('position', position);
