@@ -2,52 +2,41 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HighlightsGrid from '@/components/HighlightsGrid';
+import TicketmasterAd from '@/components/TicketmasterAd';
 
-interface Team { id: string; name: string; city?: string; country?: string; leagues?: { name: string }; }
 interface Post  { id: string; title: string; slug: string; excerpt?: string; category?: string; og_image_url?: string | null; }
 
 const CATS = [
-  { label: 'Teams',   href: '/directory/teams',    count: '374', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
+  { label: 'Teams',   href: '/directory/teams',    count: '1,000', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { label: 'Players', href: '/directory/players',  count: '1,000', color: '#2563EB', desc: 'Profiles, stats & career histories',
+  { label: 'Players', href: '/directory/players',  count: '24', color: '#2563EB', desc: 'Profiles, stats & career histories',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
-  { label: 'Leagues', href: '/directory/leagues',  count: '25',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
-  { label: 'Rinks',   href: '/directory/rinks',    count: '220',  color: '#059669', desc: 'Ice arenas in every country',
+  { label: 'Leagues', href: '/directory/leagues',  count: '192',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17	v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
+  { label: 'Rinks',   href: '/directory/rinks',    count: '223',  color: '#059669', desc: 'Ice arenas in every country',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="12" y1="3" x2="12" y2="21"/></svg> },
-  { label: 'Brands',  href: '/directory/brands',   count: '0',    color: '#7C3AED', desc: 'Equipment & gear manufacturers',
+  { label: 'Brands',  href: '/directory/brands',   count: '32',    color: '#7C3AED', desc: 'Equipment & gear manufacturers',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
   { label: 'Scores',  href: '/directory/games', count: 'Live',    color: '#C8102E', desc: 'Results, standings & schedules',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+  { label: 'Highlights', href: '/highlights', count: 'Video', color: '#FFB81C', desc: 'Top goals, saves & game recaps',
+    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> },
 ];
 
 const STATS = [
-  { n: '374',    l: 'Teams' },
-  { n: '1,000',  l: 'Players' },
-  { n: '25',     l: 'Leagues' },
-  { n: '220',    l: 'Rinks' },
+  { n: '1,000',  l: 'Teams' },
+  { n: '24',     l: 'Players' },
+  { n: '192',    l: 'Leagues' },
+  { n: '223',    l: 'Rinks' },
 ];
 
-function Skel() {
-  return (
-    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '6px', padding: '1rem' }}>
-      <div className="skeleton" style={{ width: 40, height: 40, borderRadius: '50%', marginBottom: '0.625rem' }}/>
-      <div className="skeleton" style={{ height: '0.875rem', width: '70%', marginBottom: '0.375rem' }}/>
-      <div className="skeleton" style={{ height: '0.75rem', width: '45%' }}/>
-    </div>
-  );
-}
-
 export default function Home() {
-  const [teams, setTeams]   = useState<Team[]>([]);
+
   const [posts, setPosts]   = useState<Post[]>([]);
-  const [loading, setLoad]  = useState(true);
-  const [q, setQ]           = useState('');
+  const [q, setQ] = useState('');
 
   useEffect(() => {
-    fetch('/api/teams').then(r => r.json())
-      .then(d => { setTeams((d.data || []).slice(0, 8)); setLoad(false); })
-      .catch(() => setLoad(false));
+
     fetch('/api/blog/posts?limit=3').then(r => r.json())
       .then(d => setPosts(d.data || d.posts || []))
       .catch(() => {});
@@ -158,6 +147,7 @@ export default function Home() {
             </div>
             <Link href="/directory" className="sec-link">View All →</Link>
           </div>
+          <TicketmasterAd size="468x60" />
           <div className="cat-grid">
             {CATS.map(c => (
               <Link key={c.href} href={c.href} className="card" style={{ textDecoration: 'none' }}>
@@ -180,56 +170,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- FEATURED TEAMS -------------------------------------------------------------------------------------------------- */}
+      {/* ---- LATEST HIGHLIGHTS --------------------------------------------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
-          <div className="sec-head">
-            <div>
-              <div className="label">Featured</div>
-              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>TEAMS</h2>
-            </div>
-            <Link href="/directory/teams" className="sec-link">All Teams →</Link>
-          </div>
-          <div className="teams-grid">
-            {loading
-              ? Array(8).fill(null).map((_, i) => <Skel key={i}/>)
-              : teams.length > 0
-                ? teams.map(t => (
-                    <Link key={t.id} href={`/directory/teams/${t.id}`} className="card">
-                      <div style={{ padding: '1rem' }}>
-                        <div style={{
-                          width: 40, height: 40, borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #C8102E, #041E42)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          marginBottom: '0.625rem',
-                          fontFamily: "'Bebas Neue', Impact, sans-serif",
-                          fontSize: '1rem', fontWeight: 700, color: '#fff',
-                          flexShrink: 0,
-                        }}>
-                          {(t.city || t.name || '?').charAt(0).toUpperCase()}
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fff', marginBottom: '0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {t.name}
-                        </div>
-                        <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {[t.city, t.country].filter(Boolean).join(', ')}
-                        </div>
-                        {t.leagues?.name && (
-                          <div style={{ marginTop: '0.5rem' }}>
-                            <span className="badge badge-blue">{t.leagues.name}</span>
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                  ))
-                : (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem' }}>
-                    <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>No teams yet.</p>
-                    <Link href="/add-listing" className="btn btn-red">Add the First Team</Link>
-                  </div>
-                )
-            }
-          </div>
+          <HighlightsGrid limit={8} columns={4} title="LATEST HIGHLIGHTS" />
         </div>
       </section>
 
@@ -276,12 +220,10 @@ export default function Home() {
         </section>
       )}
 
-      {/* ---- LATEST HIGHLIGHTS --------------------------------------------------------------------------------------------- */}
-      <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="container">
-          <HighlightsGrid limit={8} columns={4} title="LATEST HIGHLIGHTS" />
-        </div>
-      </section>
+      {/* Ticketmaster NHL Banner - 300x250 */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
+        <TicketmasterAd size="300x250" />
+      </div>
 
       {/* ---- CTA BAND -------------------------------------------------------------------------------------------------------------- */}
       <section style={{ background: 'linear-gradient(135deg, #C8102E 0%, #9B0D23 100%)', padding: 'clamp(2rem, 5vw, 3rem) 0' }}>
