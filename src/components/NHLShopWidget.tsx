@@ -7,6 +7,8 @@ interface NHLShopWidgetProps {
   secondaryColor?: string;
   affiliateLink?: string;
   adImageUrl?: string;
+  adWidth?: number;
+  adHeight?: number;
 }
 
 export default function NHLShopWidget({
@@ -16,6 +18,8 @@ export default function NHLShopWidget({
   secondaryColor = '#FFFFFF',
   affiliateLink,
   adImageUrl,
+  adWidth,
+  adHeight,
 }: NHLShopWidgetProps) {
   const shopLink = affiliateLink && affiliateLink !== '#'
     ? affiliateLink
@@ -40,11 +44,11 @@ export default function NHLShopWidget({
           <img
             src={adImageUrl}
             alt={`Shop ${teamName} Jersey`}
-            width={600}
-            height={600}
+            width={adWidth || 600}
+            height={adHeight || 600}
             style={{
               width: '100%',
-              maxWidth: '600px',
+              maxWidth: adWidth ? `${adWidth}px` : '600px',
               display: 'block',
               margin: '0 auto',
               borderRadius: '12px',
