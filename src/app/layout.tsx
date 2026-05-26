@@ -232,6 +232,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       ['/about','About'],
                       ['/advertise','Advertise'],
                       ['/contact','Contact'],
+                      ['/add-listing','Add Listing'],
+                      ['/founding-member','Founding Member'],
                     ].map(([href,label]) => (
                       <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
                     ))}
