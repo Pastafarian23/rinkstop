@@ -1,26 +1,38 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-const isProtected = [
-  '/dashboard',
-  '/account',
-];
+const isProtected = createRouteMatcher([
+  '/dashboard(.*)',
+  '/account(.*)',
+]);
 
-export default clerkMiddleware(async (auth, request) => {
-  const { userId } = await auth();
-  
-  const pathname = request.nextUrl.pathname;
-  const isProtectedRoute = isProtected.some(path => pathname.startsWith(path));
-  
-  if (isProtectedRoute && !userId) {
-    const signInUrl = new URL('/login', request.url);
-    signInUrl.searchParams.set('redirect_url', pathname);
-    return NextResponse.redirect(signInUrl);
+export default clerkMiddleware(
+  async (auth, request) => {
+    if (!isProtected(request)) {
+      return NextResponse.next();
+    }
+
+    const session = await auth();
+
+    if (!session.userId) {
+      return session.redirectToSignIn({ returnBackUrl: request.url });
+    }
+
+    return NextResponse.next();
+  },
+  {
+    // Explicit keys so Clerk doesn't try to read from process.env
+    publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!,
+    secretKey: process.env.CLERK_SECRET_KEY!,
   }
-  
-  return NextResponse.next();
-});
+);
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/account/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/account/:path*',
+    '/api/favorites/:path*',
+    '/api/claims/:path*',
+    '/api/support/:path*',
+  ],
 };
