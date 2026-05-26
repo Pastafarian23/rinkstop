@@ -31,6 +31,15 @@ interface StoredRound {
   series: StoredSeries[];
 }
 
+interface UpdateEntry {
+  id?: string;
+  text: string;
+  type: string;
+  content?: string;
+  author?: string;
+  created_at?: string;
+}
+
 const AHL_RED = '#003DA5';
 const AHL_GOLD = '#FFB81C';
 
@@ -38,6 +47,17 @@ export default function AHLPlayoffsPage() {
   const [rounds, setRounds] = useState<StoredRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [updates, setUpdates] = useState<UpdateEntry[]>([]);
+
+  const fetchUpdates = useCallback(async () => {
+    try {
+      const res = await fetch('/api/ahl/playoffs/updates');
+      if (res.ok) {
+        const data = await res.json();
+        setUpdates(data as UpdateEntry[]);
+      }
+    } catch {}
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -56,7 +76,10 @@ export default function AHLPlayoffsPage() {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchUpdates();
+    const interval = setInterval(fetchUpdates, 60000);
+    return () => clearInterval(interval);
+  }, [fetchData, fetchUpdates]);
 
   const roundLabels: Record<number, string> = {
     1: 'QUARTER-FINALS',
@@ -77,6 +100,25 @@ export default function AHLPlayoffsPage() {
       'CVF': '',
     };
     return logoMap[abbr] || '';
+  };
+
+  const formatUpdateTime = (iso?: string) => {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    } catch { return ''; }
+  };
+
+  const formatUpdateDate = (iso?: string) => {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch { return ''; }
+  };
+
+  const typeColors: Record<string, string> = {
+    goal: '#fff', period: 'rgba(255,255,255,0.7)', final: AHL_RED,
+    start: '#4CAF50', update: 'rgba(255,255,255,0.65)', analysis: '#FFD700', trade: '#9C27B0',
   };
 
   function SeriesCard({ s }: { s: StoredSeries }) {
@@ -168,6 +210,38 @@ export default function AHLPlayoffsPage() {
       </div>
 
       <div style={{ height: '2px', background: `linear-gradient(90deg, ${AHL_RED} 0%, ${AHL_GOLD} 100%)`, borderRadius: '2px', marginBottom: '1.5rem', width: '80px' }} />
+
+      {/* Live Updates Feed */}
+      <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', marginBottom: '1.5rem', borderLeft: `3px solid ${AHL_RED}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ fontSize: '0.5625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.35)' }}>Live Updates</div>
+          <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: AHL_RED, animation: 'pulse 2s infinite' }} />
+            <span style={{ fontSize: '0.5625rem', color: 'rgba(255,255,255,0.3)' }}>Refreshes every 60s</span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+          {updates.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '1rem 0', color: 'rgba(255,255,255,0.25)', fontSize: '0.8125rem' }}>
+              No live updates yet — check back during games.
+            </div>
+          ) : updates.map((u, i) => (
+            <div key={u.id || i} style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 56, flexShrink: 0 }}>
+                <span style={{ fontSize: '0.625rem', fontWeight: 700, color: AHL_RED, fontFamily: 'monospace', lineHeight: 1.2 }}>
+                  {formatUpdateTime(u.created_at)}
+                </span>
+                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace' }}>
+                  {formatUpdateDate(u.created_at)}
+                </span>
+              </div>
+              <span style={{ fontSize: '0.8125rem', color: typeColors[u.type] || 'rgba(255,255,255,0.65)', fontWeight: u.type === 'goal' || u.type === 'final' ? 700 : 400, lineHeight: 1.5 }}>
+                {u.text || u.content}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
