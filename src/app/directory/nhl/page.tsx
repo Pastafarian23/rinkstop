@@ -123,16 +123,6 @@ export default function NHLHubPage() {
         ))}
       </div>
 
-      {/* NHL Shop Affiliate Widget */}
-      <div style={{ marginTop: '2rem' }}>
-        <NHLShopWidget
-          teamName="NHL"
-          teamSlug="nhl"
-          primaryColor="#C8102E"
-          secondaryColor="#FFFFFF"
-        />
-      </div>
-
       {/* Ticketmaster NHL Banner - 300x250 */}
       <TicketmasterAd size="300x250" style={{ marginTop: '1.5rem' }} />
     </main>
