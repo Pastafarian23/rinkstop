@@ -198,8 +198,10 @@ export default function HighlightsGrid({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"
           onClick={() => setSelected(null)}
         >
+          {/* Modal container must have z-index higher than the iframe but lower than backdrop for proper layering */}
           <div
             className="relative w-full max-w-4xl mx-4 rounded-lg overflow-hidden bg-black"
+            style={{ zIndex: 1 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -210,11 +212,12 @@ export default function HighlightsGrid({
               ×
             </button>
 
-            {/* YouTube iframe */}
-            <div style={{ aspectRatio: '16/9', background: '#000' }}>
+            {/* YouTube iframe — z-index 0 keeps it below the close button (z-20) and backdrop (z-50) */}
+            <div style={{ aspectRatio: '16/9', background: '#000', position: 'relative', zIndex: 0 }}>
               <iframe
                 src={selected.embedUrl.replace('watch?v=', 'embed/') + '?autoplay=1'}
                 className="w-full h-full"
+                style={{ zIndex: 0, position: 'relative' }}
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
               />
