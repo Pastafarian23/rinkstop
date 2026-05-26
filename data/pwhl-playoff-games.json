@@ -55,7 +55,8 @@
             { "date": "2026-04-30", "home": "BOS", "away": "OTT", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
             { "date": "2026-05-02", "home": "BOS", "away": "OTT", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
             { "date": "2026-05-05", "home": "OTT", "away": "BOS", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
-            { "date": "2026-05-10", "home": "OTT", "away": "BOS", "homeScore": 4, "awayScore": 3, "status": "finished", "period": "Final", "ot": true } }
+            { "date": "2026-05-08", "home": "OTT", "away": "BOS", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-05-10", "home": "OTT", "away": "BOS", "homeScore": 4, "awayScore": 3, "status": "finished", "period": "Final", "ot": true, "otType": "2OT" }
           ],
           "nextGame": null
         }
