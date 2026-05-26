@@ -150,6 +150,23 @@ export default function TeamDetail() {
             </p>
           </section>
 
+          {/* NHL Shop Jersey Ad */}
+          {(() => {
+            const ad = FANATICS_ADS[team.slug as string];
+            return ad ? (
+              <NHLShopWidget
+                teamName={team.name}
+                teamSlug={team.slug}
+                primaryColor={staticData.colors?.[0] || '#C8102E'}
+                secondaryColor={staticData.colors?.[1] || '#FFFFFF'}
+                affiliateLink={ad?.affiliateLink}
+                adImageUrl={ad?.imageUrl}
+                adWidth={ad?.adWidth}
+                adHeight={ad?.adHeight}
+              />
+            ) : null;
+          })()}
+
           {/* Quick stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.625rem', marginBottom: '2rem' }}>
             {[
@@ -204,24 +221,7 @@ export default function TeamDetail() {
             </section>
           )}
 
-          {/* NHL Shop Widget */}
-          {/* NHL Shop Jersey Ad */}
-          {(() => {
-            const ad = FANATICS_ADS[team.slug as string];
-            return (
-              <NHLShopWidget
-                teamName={team.name}
-                teamSlug={team.slug}
-                primaryColor={staticData.colors?.[0] || '#C8102E'}
-                secondaryColor={staticData.colors?.[1] || '#FFFFFF'}
-                affiliateLink={ad?.affiliateLink}
-                adImageUrl={ad?.imageUrl}
-                adWidth={ad?.adWidth}
-                adHeight={ad?.adHeight}
-              />
-            );
-          })()}
-        </>
+</>
       )}
 
       {/* Navigation breadcrumb trail */}
