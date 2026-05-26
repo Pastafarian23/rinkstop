@@ -94,9 +94,10 @@ const CONTENT_LINKS = [
 const ABOUT_LINKS = [
   { href: '/about',       label: 'About Us'        },
   { href: '/contact',     label: 'Contact Us'       },
-  { href: '/advertise',    label: 'Advertise'        },
+  { href: '/advertise',   label: 'Advertise'       },
   { href: '/partner',     label: 'Partner With Us' },
-  { href: '/add-listing', label: 'Sign Up Free' },
+  { href: '/add-listing', label: 'Add Listing'     },
+  { href: '/founding-member', label: 'Founding Member' },
 ];
 
 const NAV = [
