@@ -1,5 +1,5 @@
-// Highantly Sync Service
-// Syncs data from Highantly API to Supabase, with caching and rate limit management
+// highlightly Sync Service
+// Syncs data from highlightly API to Supabase, with caching and rate limit management
 
 import { supabaseAdmin } from './supabase';
 
@@ -36,15 +36,15 @@ function recordApiCall() {
   dailyApiCalls++;
 }
 
-// Highantly API fetch helper
-async function fetchHighantly<T>(endpoint: string, params?: Record<string, string>): Promise<T | null> {
+// highlightly API fetch helper
+async function fetchhighlightly<T>(endpoint: string, params?: Record<string, string>): Promise<T | null> {
   if (!canMakeApiCall()) {
-    console.log('[Highantly Sync] Daily limit reached, skipping');
+    console.log('[highlightly Sync] Daily limit reached, skipping');
     return null;
   }
 
   if (!HIGHLIGHTLY_API_KEY) {
-    console.log('[Highantly Sync] No API key configured');
+    console.log('[highlightly Sync] No API key configured');
     return null;
   }
 
@@ -65,13 +65,13 @@ async function fetchHighantly<T>(endpoint: string, params?: Record<string, strin
     recordApiCall();
 
     if (!response.ok) {
-      throw new Error(`Highantly API error ${response.status}`);
+      throw new Error(`highlightly API error ${response.status}`);
     }
 
     const json = await response.json();
     return json.data ?? json;
   } catch (error: any) {
-    console.error(`[Highantly Sync] Fetch failed for ${endpoint}:`, error.message);
+    console.error(`[highlightly Sync] Fetch failed for ${endpoint}:`, error.message);
     return null;
   }
 }
@@ -80,7 +80,7 @@ async function fetchHighantly<T>(endpoint: string, params?: Record<string, strin
 export async function syncLeaguesByCountry(countryCode: string): Promise<SyncResult> {
   const result: SyncResult = { success: true, synced: 0, failed: 0, apiCallsUsed: 0, errors: [] };
 
-  const leagues = await fetchHighantly<any[]>(`/leagues?countryCode=${countryCode}&limit=20`);
+  const leagues = await fetchhighlightly<any[]>(`/leagues?countryCode=${countryCode}&limit=20`);
   
   if (!leagues) {
     result.success = false;
@@ -119,7 +119,7 @@ export async function syncLeaguesByCountry(countryCode: string): Promise<SyncRes
 export async function syncTeamsByLeague(leagueId: string): Promise<SyncResult> {
   const result: SyncResult = { success: true, synced: 0, failed: 0, apiCallsUsed: 0, errors: [] };
 
-  const teams = await fetchHighantly<any[]>(`/teams?leagueId=${leagueId}&limit=50`);
+  const teams = await fetchhighlightly<any[]>(`/teams?leagueId=${leagueId}&limit=50`);
   
   if (!teams) {
     result.success = false;
@@ -158,7 +158,7 @@ export async function syncTeamsByLeague(leagueId: string): Promise<SyncResult> {
 export async function syncStandingsByLeague(leagueId: string, leagueName: string): Promise<SyncResult> {
   const result: SyncResult = { success: true, synced: 0, failed: 0, apiCallsUsed: 0, errors: [] };
 
-  const standings = await fetchHighantly<any[]>(`/standings?leagueId=${leagueId}&limit=30`);
+  const standings = await fetchhighlightly<any[]>(`/standings?leagueId=${leagueId}&limit=30`);
   
   if (!standings) {
     result.success = false;
@@ -209,7 +209,7 @@ export async function syncStandingsByLeague(leagueId: string, leagueName: string
 export async function syncMatchesByLeague(leagueId: string, limit: number = 10): Promise<SyncResult> {
   const result: SyncResult = { success: true, synced: 0, failed: 0, apiCallsUsed: 0, errors: [] };
 
-  const matches = await fetchHighantly<any[]>(`/matches?leagueId=${leagueId}&limit=${limit}`);
+  const matches = await fetchhighlightly<any[]>(`/matches?leagueId=${leagueId}&limit=${limit}`);
   
   if (!matches) {
     result.success = false;
@@ -266,7 +266,7 @@ async function logSync(type: string, entityId: string, action: string, details: 
         api_calls_used: apiCalls,
       });
   } catch (error) {
-    console.error('[Highantly Sync] Failed to log sync:', error);
+    console.error('[highlightly Sync] Failed to log sync:', error);
   }
 }
 

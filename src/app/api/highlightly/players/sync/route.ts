@@ -9,8 +9,8 @@ const supabaseUrl = 'https://placeholder.supabase.co';
 const supabaseServiceKey = 'placeholder-key';
 
 // League registry — defines source priority for each league
-// Hierarchy: NHL (1st) > ESPN (2nd) > Highantly (3rd, gap-fill only)
-// For non-NHL: Highantly (1st) > ESPN (2nd) > NHL (3rd, fallback)
+// Hierarchy: NHL (1st) > ESPN (2nd) > highlightly (3rd, gap-fill only)
+// For non-NHL: highlightly (1st) > ESPN (2nd) > NHL (3rd, fallback)
 
 const LEAGUE_REGISTRY: Record<string, {
   name: string;
@@ -20,13 +20,13 @@ const LEAGUE_REGISTRY: Record<string, {
   primarySource: 'highlightly' | 'nhl';
   fallbackSources: ('espn' | 'highlightly' | 'nhl')[];
 }> = {
-  // NHL LEAGUES — NHL is authoritative, Highantly gap-fill only
+  // NHL LEAGUES — NHL is authoritative, highlightly gap-fill only
   '49291': { name: 'NHL', countryCode: 'US', countryName: 'United States', primarySource: 'nhl', fallbackSources: ['espn', 'highlightly'] },
   
-  // COLLEGE HOCKEY — NCAA official source, Highantly secondary
+  // COLLEGE HOCKEY — NCAA official source, highlightly secondary
   '218640': { name: 'NCAA', countryCode: 'US', countryName: 'United States', primarySource: 'nhl', fallbackSources: ['espn', 'highlightly'] },
   
-  // MINOR PRO — AHL/ECHL use NHL stats, Highantly for schedules
+  // MINOR PRO — AHL/ECHL use NHL stats, highlightly for schedules
   '50142': { name: 'AHL', countryCode: 'US', countryName: 'United States', primarySource: 'nhl', fallbackSources: ['espn', 'highlightly'] },
   '50993': { name: 'ECHL', countryCode: 'US', countryName: 'United States', primarySource: 'nhl', fallbackSources: ['espn', 'highlightly'] },
   '53546': { name: 'USHL', countryCode: 'US', countryName: 'United States', primarySource: 'highlightly', fallbackSources: ['nhl'] },
@@ -34,7 +34,7 @@ const LEAGUE_REGISTRY: Record<string, {
   // WOMENS — PWHL primary source
   '54397': { name: 'PWHL', countryCode: 'US', countryName: 'United States', primarySource: 'highlightly', fallbackSources: ['nhl'] },
   
-  // NON-NHL INTERNATIONAL — Highantly is primary
+  // NON-NHL INTERNATIONAL — highlightly is primary
   '40781': { name: 'SHL', countryCode: 'SE', countryName: 'Sweden', primarySource: 'highlightly', fallbackSources: ['espn'] },
   '40632': { name: 'HockeyAllsvenskan', countryCode: 'SE', countryName: 'Sweden', primarySource: 'highlightly', fallbackSources: [] },
   '40832': { name: 'Liiga', countryCode: 'FI', countryName: 'Finland', primarySource: 'highlightly', fallbackSources: [] },

@@ -132,7 +132,7 @@ export class HighlightlyClient {
     }
 
     const json = await response.json();
-    // Highantly returns { data: [...] } or just [...] depending on endpoint
+    // highlightly returns { data: [...] } or just [...] depending on endpoint
     return json.data ?? json;
   }
 
@@ -200,7 +200,7 @@ export class HighlightlyClient {
   }
 
   // Matches
-  // Note: Highantly `/matches` doesn't support dateFrom/dateTo — use leagueId or teamId filters instead
+  // Note: highlightly `/matches` doesn't support dateFrom/dateTo — use leagueId or teamId filters instead
   async getMatches(params?: {
     leagueId?: number;
     teamId?: number;
@@ -235,7 +235,7 @@ export class HighlightlyClient {
   }
 
   // Highlights
-  // Note: Highantly `/highlights` doesn't support dateFrom/dateTo — use leagueId or teamId
+  // Note: highlightly `/highlights` doesn't support dateFrom/dateTo — use leagueId or teamId
   async getHighlights(params?: {
     leagueId?: number;
     teamId?: number;

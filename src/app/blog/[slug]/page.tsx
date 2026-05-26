@@ -2,13 +2,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  'https://placeholder.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
-);
+import { supabase } from '@/lib/supabase';
 
 interface Post {
   id: string;

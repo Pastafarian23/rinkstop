@@ -3,7 +3,7 @@
 //   1st: NHL → NHL core facts (teams, schedules, scores, standings, rosters, stats)
 //   1st: RinkStop Internal → Facilities (rinks, arenas, addresses, phone, websites)
 //   2nd: ESPN → NHL headlines, recaps, summaries, backup display data
-//   3rd: Highantly → Non-NHL only; NHL gap-fill only (DOES NOT overwrite NHL)
+//   3rd: highlightly → Non-NHL only; NHL gap-fill only (DOES NOT overwrite NHL)
 
 export type DataSource = 'nhl' | 'espn' | 'highlightly' | 'rinkstop';
 export type DataType = 
@@ -68,14 +68,14 @@ const DATA_TYPE_PRIORITIES: Record<DataType, SourcePriority[]> = {
     { source: 'highlightly', priority: 3 },
   ],
   highlight: [
-    { source: 'highlightly', priority: 1 }, // highlights are Highantly's specialty
+    { source: 'highlightly', priority: 1 }, // highlights are highlightly's specialty
     { source: 'nhl', priority: 2 },
     { source: 'espn', priority: 3 },
   ],
 };
 
 // NHL leagues that must use NHL source only
-const NHL_LEAGUE_IDS = ['49291', 'NHL', 'nhl', 49291]; // Highantly's NHL league ID
+const NHL_LEAGUE_IDS = ['49291', 'NHL', 'nhl', 49291]; // highlightly's NHL league ID
 const NHL_COUNTRY_CODES = ['US', 'CA']; // NHL primarily covers US/Canada
 
 export function isNHLLeague(leagueId: string | number): boolean {
@@ -112,7 +112,7 @@ export function getSourcePriority(
     return DATA_TYPE_PRIORITIES.facility;
   }
 
-  // For NHL context: NHL is always first, Highantly is last (gap-fill only)
+  // For NHL context: NHL is always first, highlightly is last (gap-fill only)
   if (params && isNHLContext(params)) {
     const priorities = DATA_TYPE_PRIORITIES[dataType];
     // Ensure NHL is priority 1 for NHL context
@@ -122,7 +122,7 @@ export function getSourcePriority(
     })).sort((a, b) => a.priority - b.priority);
   }
 
-  // Non-NHL (non-facility, non-highlight): Highantly first, NHL as fallback
+  // Non-NHL (non-facility, non-highlight): highlightly first, NHL as fallback
   const priorities = DATA_TYPE_PRIORITIES[dataType];
   return priorities.map(p => ({
     source: p.source,
@@ -169,7 +169,7 @@ export function resolveConflict(
         valueSource2: source2Data,
         winner: 'nhl',
         resolvedAt: new Date().toISOString(),
-        resolutionNote: 'NHL is authoritative source — Highantly/ESPN rejected for NHL data',
+        resolutionNote: 'NHL is authoritative source — highlightly/ESPN rejected for NHL data',
       };
       console.log('[CONFLICT NHL WINS]', JSON.stringify(conflict, null, 2));
       return { winner: 'nhl', data: nhlData, conflict };
@@ -178,7 +178,7 @@ export function resolveConflict(
     return { winner: 'nhl', data: nhlData };
   }
 
-  // Non-NHL: Highantly wins (it's the primary source)
+  // Non-NHL: highlightly wins (it's the primary source)
   const highlightlyData = source1Data?._source === 'highlightly' ? source1Data : 
                           source2Data?._source === 'highlightly' ? source2Data : null;
   const otherData = highlightlyData === source1Data ? source2Data : source1Data;
@@ -194,9 +194,9 @@ export function resolveConflict(
       valueSource2: source2Data,
       winner: 'highlightly',
       resolvedAt: new Date().toISOString(),
-      resolutionNote: 'Highantly is primary source for non-NHL data',
+      resolutionNote: 'highlightly is primary source for non-NHL data',
     };
-    console.log('[CONFLICT HIGHANTLY WINS]', JSON.stringify(conflict, null, 2));
+    console.log('[CONFLICT highlightly WINS]', JSON.stringify(conflict, null, 2));
     return { winner: 'highlightly', data: highlightlyData, conflict };
   }
 

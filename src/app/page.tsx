@@ -9,7 +9,7 @@ interface Post  { id: string; title: string; slug: string; excerpt?: string; cat
 const CATS = [
   { label: 'Teams',   href: '/directory/teams',    count: '1,000', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { label: 'Players', href: '/directory/players',  count: '24', color: '#2563EB', desc: 'Profiles, stats & career histories',
+  { label: 'Players', href: '/directory/players',  count: '1,858', color: '#2563EB', desc: 'Profiles, stats & career histories',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
   { label: 'Leagues', href: '/directory/leagues',  count: '192',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17	v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
@@ -25,7 +25,7 @@ const CATS = [
 
 const STATS = [
   { n: '1,000',  l: 'Teams' },
-  { n: '24',     l: 'Players' },
+  { n: '1,858',  l: 'Players' },
   { n: '192',    l: 'Leagues' },
   { n: '223',    l: 'Rinks' },
 ];
