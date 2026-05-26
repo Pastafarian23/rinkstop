@@ -7,13 +7,13 @@ import TicketmasterAd from '@/components/TicketmasterAd';
 interface Post  { id: string; title: string; slug: string; excerpt?: string; category?: string; og_image_url?: string | null; }
 
 const CATS = [
-  { label: 'Teams',   href: '/directory/teams',    count: '1,000', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
+  { label: 'Teams',   href: '/directory/teams',    count: '2,116', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { label: 'Players', href: '/directory/players',  count: '1,858', color: '#2563EB', desc: 'Profiles, stats & career histories',
+  { label: 'Players', href: '/directory/players',  count: '6,352', color: '#2563EB', desc: 'Profiles, stats & career histories',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
   { label: 'Leagues', href: '/directory/leagues',  count: '192',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17	v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
-  { label: 'Rinks',   href: '/directory/rinks',    count: '223',  color: '#059669', desc: 'Ice arenas in every country',
+  { label: 'Rinks',   href: '/directory/rinks',    count: '224',  color: '#059669', desc: 'Ice arenas in every country',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="12" y1="3" x2="12" y2="21"/></svg> },
   { label: 'Brands',  href: '/directory/brands',   count: '32',    color: '#7C3AED', desc: 'Equipment & gear manufacturers',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
@@ -24,10 +24,10 @@ const CATS = [
 ];
 
 const STATS = [
-  { n: '1,000',  l: 'Teams' },
-  { n: '1,858',  l: 'Players' },
+  { n: '2,116',  l: 'Teams' },
+  { n: '6,352',  l: 'Players' },
   { n: '192',    l: 'Leagues' },
-  { n: '223',    l: 'Rinks' },
+  { n: '224',    l: 'Rinks' },
 ];
 
 export default function Home() {

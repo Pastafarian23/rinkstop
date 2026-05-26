@@ -36,10 +36,7 @@ export async function POST(request: NextRequest) {
     const totalCount = countData.pagination?.totalCount || 0;
     const totalBatches = Math.ceil(totalCount / LIMIT);
 
-    console.log(`[Roster Sync] Total: ${totalCount}, Batches: ${totalBatches}`);
-
     if (dryRun) {
-      // Count existing slugs
       const existingSlugs = new Set<string>();
       let page = 0;
       while (true) {
@@ -56,7 +53,6 @@ export async function POST(request: NextRequest) {
         totalInAPI: totalCount, 
         totalBatches,
         existingSlugsInDB: existingSlugs.size,
-        wouldSyncPerBatch: Math.ceil((totalCount - existingSlugs.size) / totalBatches)
       });
     }
 
@@ -95,6 +91,7 @@ export async function POST(request: NextRequest) {
       if (d.length < 1000) break;
       page++;
     }
+    console.log(`[Roster Sync] DB has ${existingSlugs.size} existing slugs`);
 
     // Build and filter records
     const newRecords: any[] = [];
@@ -132,12 +129,19 @@ export async function POST(request: NextRequest) {
         .insert(newRecords);
 
       if (insErr) {
-        // Fall back to individual inserts
-        for (const rec of newRecords) {
-          const { error: e } = await supabaseAdmin
-            .from('players')
-            .insert(rec);
-          if (!e) synced++;
+        const errMsg = insErr.message || '';
+        if (errMsg.includes('duplicate') && errMsg.includes('slug')) {
+          // Slug conflicts — insert one by one, skip duplicates silently
+          for (const rec of newRecords) {
+            const { error: e } = await supabaseAdmin
+              .from('players')
+              .insert(rec);
+            if (!e) synced++;
+          }
+        } else {
+          // Real error
+          console.error(`[Roster Sync] Insert error: ${insErr.message}`);
+          return NextResponse.json({ error: `Insert failed: ${insErr.message}` }, { status: 500 });
         }
       } else {
         synced = newRecords.length;
@@ -149,9 +153,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       batch: batchNum,
-      totalBatches,
       fetched: players.length,
-      newRecords,
+      newCount: newRecords.length,
       synced,
       done,
       nextBatch: done ? null : batchNum + 1,
