@@ -216,6 +216,8 @@ export default function TeamDetail() {
                 secondaryColor={staticData.colors?.[1] || '#FFFFFF'}
                 affiliateLink={ad?.affiliateLink}
                 adImageUrl={ad?.imageUrl}
+                adWidth={ad?.adWidth}
+                adHeight={ad?.adHeight}
               />
             );
           })()}
