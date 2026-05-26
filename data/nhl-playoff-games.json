@@ -1,0 +1,296 @@
+{
+  "rounds": [
+    {
+      "seriesDesc": "Stanley Cup Final",
+      "round": 4,
+      "series": [
+        {
+          "desc": "Best of 7",
+          "homeTeam": "TBD",
+          "awayTeam": "TBD",
+          "homeAbbr": "TBD",
+          "awayAbbr": "TBD",
+          "homeWins": 0,
+          "awayWins": 0,
+          "games": [],
+          "nextGame": null
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Eastern Conference Final",
+      "round": 3,
+      "series": [
+        {
+          "desc": "Series E",
+          "homeTeam": "Carolina Hurricanes",
+          "awayTeam": "Montreal Canadiens",
+          "homeAbbr": "CAR",
+          "awayAbbr": "MTL",
+          "homeWins": 3,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-05-21", "home": "CAR", "away": "MTL", "homeScore": 2, "awayScore": 6, "status": "finished", "period": "Final" },
+            { "date": "2026-05-23", "home": "CAR", "away": "MTL", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-05-26", "home": "MTL", "away": "CAR", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-27", "home": "MTL", "away": "CAR", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-05-28", "home": "CAR", "away": "MTL", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-05-30", "home": "MTL", "away": "CAR", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-05-31", "home": "CAR", "away": "MTL", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null }
+          ],
+          "nextGame": { "date": "2026-05-27", "home": "MTL", "away": "CAR" }
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Western Conference Final",
+      "round": 3,
+      "series": [
+        {
+          "desc": "Series F",
+          "homeTeam": "Vegas Golden Knights",
+          "awayTeam": "Colorado Avalanche",
+          "homeAbbr": "VGK",
+          "awayAbbr": "COL",
+          "homeWins": 3,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-05-21", "home": "VGK", "away": "COL", "homeScore": 2, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-05-23", "home": "VGK", "away": "COL", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-25", "home": "COL", "away": "VGK", "homeScore": 3, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-05-27", "home": "COL", "away": "VGK", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-05-29", "home": "VGK", "away": "COL", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-05-31", "home": "COL", "away": "VGK", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-06-02", "home": "VGK", "away": "COL", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null }
+          ],
+          "nextGame": { "date": "2026-05-27", "home": "COL", "away": "VGK" }
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Eastern Conference Semifinals",
+      "round": 2,
+      "series": [
+        {
+          "desc": "Series C",
+          "homeTeam": "Carolina Hurricanes",
+          "awayTeam": "Ottawa Senators",
+          "homeAbbr": "CAR",
+          "awayAbbr": "OTT",
+          "homeWins": 4,
+          "awayWins": 0,
+          "games": [
+            { "date": "2026-04-20", "home": "CAR", "away": "OTT", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-23", "home": "CAR", "away": "OTT", "homeScore": 1, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-25", "home": "OTT", "away": "CAR", "homeScore": 2, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-27", "home": "OTT", "away": "CAR", "homeScore": 3, "awayScore": 5, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series D",
+          "homeTeam": "Montreal Canadiens",
+          "awayTeam": "Tampa Bay Lightning",
+          "homeAbbr": "MTL",
+          "awayAbbr": "TBL",
+          "homeWins": 4,
+          "awayWins": 3,
+          "games": [
+            { "date": "2026-04-21", "home": "MTL", "away": "TBL", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-24", "home": "MTL", "away": "TBL", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-26", "home": "TBL", "away": "MTL", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-28", "home": "TBL", "away": "MTL", "homeScore": 1, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-30", "home": "MTL", "away": "TBL", "homeScore": 3, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-05-03", "home": "TBL", "away": "MTL", "homeScore": 1, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-05-05", "home": "MTL", "away": "TBL", "homeScore": 0, "awayScore": 1, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Western Conference Semifinals",
+      "round": 2,
+      "series": [
+        {
+          "desc": "Series E",
+          "homeTeam": "Vegas Golden Knights",
+          "awayTeam": "St. Louis Blues",
+          "homeAbbr": "VGK",
+          "awayAbbr": "STL",
+          "homeWins": 4,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-04-16", "home": "VGK", "away": "STL", "homeScore": 3, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-04-19", "home": "VGK", "away": "STL", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-21", "home": "STL", "away": "VGK", "homeScore": 3, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-23", "home": "STL", "away": "VGK", "homeScore": 2, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-04-25", "home": "VGK", "away": "STL", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-27", "home": "STL", "away": "VGK", "homeScore": 4, "awayScore": 3, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series F",
+          "homeTeam": "Colorado Avalanche",
+          "awayTeam": "Los Angeles Kings",
+          "homeAbbr": "COL",
+          "awayAbbr": "LAK",
+          "homeWins": 4,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-04-19", "home": "COL", "away": "LAK", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-22", "home": "COL", "away": "LAK", "homeScore": 4, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-24", "home": "LAK", "away": "COL", "homeScore": 1, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-04-26", "home": "LAK", "away": "COL", "homeScore": 1, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-04-28", "home": "COL", "away": "LAK", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Eastern Conference Round 1",
+      "round": 1,
+      "series": [
+        {
+          "desc": "Series 1",
+          "homeTeam": "Carolina Hurricanes",
+          "awayTeam": "Ottawa Senators",
+          "homeAbbr": "CAR",
+          "awayAbbr": "OTT",
+          "homeWins": 4,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-04-13", "home": "CAR", "away": "OTT", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-15", "home": "CAR", "away": "OTT", "homeScore": 4, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-17", "home": "OTT", "away": "CAR", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-19", "home": "OTT", "away": "CAR", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-21", "home": "CAR", "away": "OTT", "homeScore": 4, "awayScore": 2, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 2",
+          "homeTeam": "Florida Panthers",
+          "awayTeam": "Buffalo Sabres",
+          "homeAbbr": "FLA",
+          "awayAbbr": "BUF",
+          "homeWins": 4,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-04-13", "home": "FLA", "away": "BUF", "homeScore": 8, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-15", "home": "FLA", "away": "BUF", "homeScore": 3, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "BUF", "away": "FLA", "homeScore": 1, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-04-20", "home": "BUF", "away": "FLA", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-22", "home": "FLA", "away": "BUF", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-24", "home": "BUF", "away": "FLA", "homeScore": 3, "awayScore": 4, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 3",
+          "homeTeam": "Tampa Bay Lightning",
+          "awayTeam": "Toronto Maple Leafs",
+          "homeAbbr": "TBL",
+          "awayAbbr": "TOR",
+          "homeWins": 4,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-04-13", "home": "TBL", "away": "TOR", "homeScore": 4, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-15", "home": "TBL", "away": "TOR", "homeScore": 2, "awayScore": 6, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "TOR", "away": "TBL", "homeScore": 0, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-20", "home": "TOR", "away": "TBL", "homeScore": 2, "awayScore": 6, "status": "finished", "period": "Final" },
+            { "date": "2026-04-22", "home": "TBL", "away": "TOR", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-24", "home": "TOR", "away": "TBL", "homeScore": 3, "awayScore": 4, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 4",
+          "homeTeam": "Washington Capitals",
+          "awayTeam": "New York Rangers",
+          "homeAbbr": "WSH",
+          "awayAbbr": "NYR",
+          "homeWins": 4,
+          "awayWins": 3,
+          "games": [
+            { "date": "2026-04-13", "home": "WSH", "away": "NYR", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-15", "home": "WSH", "away": "NYR", "homeScore": 2, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "NYR", "away": "WSH", "homeScore": 8, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-20", "home": "NYR", "away": "WSH", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-22", "home": "WSH", "away": "NYR", "homeScore": 3, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-24", "home": "NYR", "away": "WSH", "homeScore": 3, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-26", "home": "WSH", "away": "NYR", "homeScore": 3, "awayScore": 1, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Western Conference Round 1",
+      "round": 1,
+      "series": [
+        {
+          "desc": "Series 1",
+          "homeTeam": "Winnipeg Jets",
+          "awayTeam": "Dallas Stars",
+          "homeAbbr": "WPG",
+          "awayAbbr": "DAL",
+          "homeWins": 2,
+          "awayWins": 4,
+          "games": [
+            { "date": "2026-04-11", "home": "WPG", "away": "DAL", "homeScore": 1, "awayScore": 7, "status": "finished", "period": "Final" },
+            { "date": "2026-04-14", "home": "WPG", "away": "DAL", "homeScore": 4, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-16", "home": "DAL", "away": "WPG", "homeScore": 5, "awayScore": 6, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "DAL", "away": "WPG", "homeScore": 1, "awayScore": 6, "status": "finished", "period": "Final" },
+            { "date": "2026-04-20", "home": "WPG", "away": "DAL", "homeScore": 5, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-22", "home": "DAL", "away": "WPG", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 2",
+          "homeTeam": "Vegas Golden Knights",
+          "awayTeam": "St. Louis Blues",
+          "homeAbbr": "VGK",
+          "awayAbbr": "STL",
+          "homeWins": 4,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-04-11", "home": "VGK", "away": "STL", "homeScore": 3, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-14", "home": "VGK", "away": "STL", "homeScore": 1, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-16", "home": "STL", "away": "VGK", "homeScore": 3, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "STL", "away": "VGK", "homeScore": 1, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-20", "home": "VGK", "away": "STL", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 3",
+          "homeTeam": "Colorado Avalanche",
+          "awayTeam": "Los Angeles Kings",
+          "homeAbbr": "COL",
+          "awayAbbr": "LAK",
+          "homeWins": 4,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-04-13", "home": "COL", "away": "LAK", "homeScore": 5, "awayScore": 6, "status": "finished", "period": "Final" },
+            { "date": "2026-04-15", "home": "COL", "away": "LAK", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "LAK", "away": "COL", "homeScore": 1, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-20", "home": "LAK", "away": "COL", "homeScore": 3, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-22", "home": "COL", "away": "LAK", "homeScore": 1, "awayScore": 0, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 4",
+          "homeTeam": "Edmonton Oilers",
+          "awayTeam": "Seattle Kraken",
+          "homeAbbr": "EDM",
+          "awayAbbr": "SEA",
+          "homeWins": 4,
+          "awayWins": 3,
+          "games": [
+            { "date": "2026-04-11", "home": "EDM", "away": "SEA", "homeScore": 4, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-14", "home": "EDM", "away": "SEA", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-16", "home": "SEA", "away": "EDM", "homeScore": 4, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "SEA", "away": "EDM", "homeScore": 1, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-20", "home": "EDM", "away": "SEA", "homeScore": 0, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-22", "home": "SEA", "away": "EDM", "homeScore": 2, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-04-24", "home": "EDM", "away": "SEA", "homeScore": 4, "awayScore": 3, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    }
+  ]
+}
