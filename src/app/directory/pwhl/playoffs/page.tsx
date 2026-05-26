@@ -2,6 +2,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
+interface StoredGame {
+  date: string;
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: string;
+  period: string | null;
+  ot?: boolean;
+}
+
 interface StoredSeries {
   desc: string;
   homeWins: number;
@@ -11,7 +22,7 @@ interface StoredSeries {
   homeAbbr: string;
   awayAbbr: string;
   nextGame: any;
-  games: any[];
+  games: StoredGame[];
 }
 
 interface StoredRound {
@@ -51,6 +62,56 @@ export default function PWHLPlayoffsPage() {
     2: 'SEMI-FINALS',
     3: 'WALTER CUP FINAL',
   };
+
+  function SeriesCard({ s }: { s: StoredSeries }) {
+    const seriesOver = s.homeWins >= 3 || s.awayWins >= 3;
+    const isInProgress = !seriesOver && (s.homeWins > 0 || s.awayWins > 0);
+    return (
+      <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem', opacity: seriesOver ? 0.55 : 1, transition: 'opacity 0.3s', borderTop: seriesOver ? `3px solid rgba(78,205,196,0.5)` : isInProgress ? `3px solid ${PWHL_TEAL}` : '3px solid transparent' }}>
+        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+          <span style={{ fontSize: '0.5625rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.desc}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.awayWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.awayTeam}</span>
+            <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.awayWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.awayWins}</span>
+          </div>
+          <div style={{ height: '1px', background: 'var(--border)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.homeWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.homeTeam}</span>
+            <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.homeWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.homeWins}</span>
+          </div>
+        </div>
+        {s.nextGame?.date && !seriesOver && (
+          <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+            <span style={{ fontSize: '0.5625rem', color: '#444' }}>
+              Next: {new Date(s.nextGame.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+        )}
+
+        {/* Game-by-game results */}
+        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {s.games.map((g, gi) => (
+            <div key={gi} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.375rem', background: g.status === 'finished' ? 'rgba(78,205,196,0.03)' : 'transparent', borderRadius: '3px', fontSize: '0.6875rem' }}>
+              <span style={{ color: 'rgba(255,255,255,0.2)', minWidth: 44 }}>{g.date?.slice(5)}</span>
+              <span style={{ color: g.awayScore !== null && g.homeScore !== null ? (g.awayScore > g.homeScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
+                {g.away} {g.awayScore ?? '-'}
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.15)' }}>@</span>
+              <span style={{ color: g.homeScore !== null && g.awayScore !== null ? (g.homeScore > g.awayScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
+                {g.home} {g.homeScore ?? '-'}
+              </span>
+              {g.ot && <span style={{ color: PWHL_TEAL, fontSize: '0.5625rem', fontWeight: 700 }}>OT</span>}
+              <span style={{ color: g.status === 'finished' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)', marginLeft: 'auto' }}>
+                {g.status === 'finished' ? 'F' : g.status === 'scheduled' ? 'S' : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
@@ -103,54 +164,8 @@ export default function PWHLPlayoffsPage() {
                 {roundLabels[round.round] || `ROUND ${round.round}`}
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(round.series.length, 4)}, 1fr)`, gap: '0.75rem' }}>
-                {round.series.map((s: StoredSeries, sIdx: number) => {
-                  const seriesOver = s.homeWins >= 3 || s.awayWins >= 3;
-                  const isInProgress = !seriesOver && (s.homeWins > 0 || s.awayWins > 0);
-                  return (
-                    <div key={sIdx} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem', opacity: seriesOver ? 0.55 : 1, transition: 'opacity 0.3s', borderTop: seriesOver ? `3px solid rgba(78,205,196,0.5)` : isInProgress ? `3px solid ${PWHL_TEAL}` : '3px solid transparent' }}>
-                      <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.5625rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.desc}</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.awayWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.awayTeam}</span>
-                          <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.awayWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.awayWins}</span>
-                        </div>
-                        <div style={{ height: '1px', background: 'var(--border)' }} />
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.homeWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.homeTeam}</span>
-                          <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.homeWins >= 3 ? PWHL_TEAL : '#fff' }}>{s.homeWins}</span>
-                        </div>
-                      </div>
-                      {s.nextGame?.date && !seriesOver && (
-                        <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.5625rem', color: '#444' }}>
-                            Next: {new Date(s.nextGame.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Game-by-game results */}
-              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                {s.games.map((g: any, gi: number) => (
-                  <div key={gi} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.375rem 0.5rem', background: g.status === 'finished' ? 'rgba(78,205,196,0.03)' : 'transparent', borderRadius: '4px', fontSize: '0.75rem' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.2)', minWidth: 50 }}>{g.date?.slice(5)}</span>
-                    <span style={{ color: g.awayScore !== null && g.homeScore !== null ? (g.awayScore > g.homeScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
-                      {g.away} {g.awayScore ?? '-'}
-                    </span>
-                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>@</span>
-                    <span style={{ color: g.homeScore !== null && g.awayScore !== null ? (g.homeScore > g.awayScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
-                      {g.home} {g.homeScore ?? '-'}
-                    </span>
-                    {g.ot && <span style={{ color: PWHL_TEAL, fontSize: '0.625rem', fontWeight: 700 }}>OT</span>}
-                    <span style={{ color: g.status === 'finished' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)', marginLeft: 'auto' }}>
-                      {g.status === 'finished' ? 'Final' : g.status === 'scheduled' ? 'Scheduled' : ''}
-                    </span>
-                  </div>
+                {round.series.map((s: StoredSeries, sIdx: number) => (
+                  <SeriesCard key={sIdx} s={s} />
                 ))}
               </div>
             </div>
@@ -160,7 +175,10 @@ export default function PWHLPlayoffsPage() {
 
       <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <Link href="/directory/pwhl" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>← PWHL Overview</Link>
-        <Link href="/directory/ahl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>AHL Playoffs →</Link>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Link href="/directory/ahl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>AHL Playoffs →</Link>
+          <Link href="/directory/nhl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>NHL Playoffs →</Link>
+        </div>
       </div>
     </div>
   );
