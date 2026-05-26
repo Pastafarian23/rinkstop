@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import NHLShopWidget from '@/components/NHLShopWidget';
+import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
   title: 'NHL Hub | RinkStop',
@@ -26,6 +27,9 @@ export default function NHLHubPage() {
           32 teams across North America. The world&apos;s premier hockey league.
         </p>
       </div>
+
+      {/* Ticketmaster NHL Banner - 468x60 */}
+      <TicketmasterAd size="468x60" />
 
       {/* Quick nav */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
@@ -128,6 +132,9 @@ export default function NHLHubPage() {
           secondaryColor="#FFFFFF"
         />
       </div>
+
+      {/* Ticketmaster NHL Banner - 300x250 */}
+      <TicketmasterAd size="300x250" style={{ marginTop: '1.5rem' }} />
     </main>
   );
 }
