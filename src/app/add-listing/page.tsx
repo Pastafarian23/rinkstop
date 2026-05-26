@@ -2,280 +2,233 @@
 
 import { useState } from 'react';
 
-const PLANS = [
-  {
-    type: 'fan',
-    label: 'Fan',
-    price: '$9.99',
-    period: '/year',
-    color: '#3B82F6',
-    bgColor: 'rgba(59,130,246,0.1)',
-    borderColor: 'rgba(59,130,246,0.3)',
-    popular: false,
-    features: [
-      'Follow your favorite teams & players',
-      'Personalized hockey news feed',
-      'Game reminders & notifications',
-      'Favorite venues & schedules',
-      'Ad-free experience',
-    ],
-  },
-  {
-    type: 'player',
-    label: 'Player',
-    price: '$9.99',
-    period: '/year',
-    color: '#14B8A6',
-    bgColor: 'rgba(20,184,166,0.1)',
-    borderColor: 'rgba(20,184,166,0.3)',
-    popular: true,
-    features: [
-      'Player profile page',
-      'Stats & highlights visibility',
-      'Scout discovery & contact',
-      'Video embeds',
-      'Recruiting tools',
-    ],
-  },
-  {
-    type: 'coach',
-    label: 'Coach',
-    price: '$19.99',
-    period: '/year',
-    color: '#8B5CF6',
-    bgColor: 'rgba(139,92,246,0.1)',
-    borderColor: 'rgba(139,92,246,0.3)',
-    popular: false,
-    features: [
-      'Coach profile page',
-      'Team management tools',
-      'Player evaluation tools',
-      'Recruit tracking',
-      'Video sharing & analysis',
-    ],
-  },
-  {
-    type: 'scout',
-    label: 'Scout',
-    price: '$19.99',
-    period: '/year',
-    color: '#F59E0B',
-    bgColor: 'rgba(245,158,11,0.1)',
-    borderColor: 'rgba(245,158,11,0.3)',
-    popular: false,
-    features: [
-      'Advanced player search',
-      'Player comparison tools',
-      'Scouting report creation',
-      'Contact unlimited players',
-      'Export data & reports',
-    ],
-  },
-  {
-    type: 'team',
-    label: 'Team',
-    price: '$29.99',
-    period: '/year',
-    color: '#C8102E',
-    bgColor: 'rgba(200,16,46,0.1)',
-    borderColor: 'rgba(200,16,46,0.3)',
-    popular: false,
-    features: [
-      'Team profile & schedule',
-      'Roster management',
-      'Game stats & analytics',
-      'Merchandise store',
-      'Sponsor management',
-    ],
-  },
-  {
-    type: 'league',
-    label: 'League',
-    price: '$29.99',
-    period: '/year',
-    color: '#10B981',
-    bgColor: 'rgba(16,185,129,0.1)',
-    borderColor: 'rgba(16,185,129,0.3)',
-    popular: false,
-    features: [
-      'League hub & standings',
-      'Multi-team management',
-      'Official stats league-wide',
-      'Scheduling engine',
-      'Sponsor & media tools',
-    ],
-  },
-  {
-    type: 'rink',
-    label: 'Rink',
-    price: '$29.99',
-    period: '/year',
-    color: '#06B6D4',
-    bgColor: 'rgba(6,182,212,0.1)',
-    borderColor: 'rgba(6,182,212,0.3)',
-    popular: false,
-    features: [
-      'Rink profile page',
-      'Ice time bookings',
-      'Tournament scheduling',
-      'Local news feed',
-      'Facility promotion',
-    ],
-  },
-  {
-    type: 'business',
-    label: 'Business',
-    price: '$29.99',
-    period: '/year',
-    color: '#EC4899',
-    bgColor: 'rgba(236,72,153,0.1)',
-    borderColor: 'rgba(236,72,153,0.3)',
-    popular: false,
-    features: [
-      'Hockey gear marketplace',
-      'Business profile & store',
-      'Event sponsorship tools',
-      'Targeted advertising',
-      'Analytics dashboard',
-    ],
-  },
+const LISTING_TYPES = [
+  { value: 'team', label: 'Team' },
+  { value: 'player', label: 'Player' },
+  { value: 'rink', label: 'Rink' },
+  { value: 'league', label: 'League' },
+  { value: 'tournament', label: 'Tournament' },
+  { value: 'other', label: 'Other' },
 ];
 
 export default function AddListingPage() {
-  const [loading, setLoading] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    listingType: '',
+    name: '',
+    city: '',
+    country: '',
+    website: '',
+    description: '',
+    email: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleCheckout = async (entityType: string) => {
-    setLoading(entityType);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.listingType || !form.name || !form.email) {
+      setError('Please fill in listing type, name, and email.');
+      return;
+    }
+    setLoading(true);
+    setError('');
     try {
-      const res = await fetch('/api/founding/upgrade', {
+      const res = await fetch('/api/listings/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityId: 'signup',
-          entityType,
-          successUrl: `${window.location.origin}/?signup=success`,
-          cancelUrl: `${window.location.origin}/add-listing?cancelled=true`,
-        }),
+        body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (res.ok) {
+        setSubmitted(true);
       } else {
-        alert('Could not start checkout. Please try again.');
+        const data = await res.json();
+        setError(data.error || 'Something went wrong. Please try again.');
       }
     } catch {
-      alert('Network error. Please try again.');
+      setError('Network error. Please try again.');
     } finally {
-      setLoading(null);
+      setLoading(false);
     }
   };
 
+  if (submitted) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div style={{ textAlign: 'center', maxWidth: '500px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.5rem', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
+            LISTING SUBMITTED
+          </h1>
+          <p style={{ color: '#888', fontSize: '1rem', marginBottom: '1.5rem' }}>
+            We received your submission and will review it within 1-2 business days. You'll hear from us at <strong style={{ color: '#fff' }}>{form.email}</strong>.
+          </p>
+          <a href="/add-listing" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#C8102E', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem' }}>
+            Submit Another Listing
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#fff', padding: '2rem 1rem' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2.5rem, 6vw, 4rem)', letterSpacing: '0.05em', color: '#fff', marginBottom: '0.5rem' }}>
-            BECOME A FOUNDING MEMBER
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', letterSpacing: '0.05em', color: '#fff', marginBottom: '0.5rem' }}>
+            ADD A LISTING
           </h1>
-          <p style={{ fontSize: '1.125rem', color: '#888', maxWidth: '600px', margin: '0 auto 1rem' }}>
-            Get founding member pricing when you join today. Cancel anytime.
+          <p style={{ fontSize: '1rem', color: '#888' }}>
+            Know a team, player, rink, or league that's missing from our directory? Submit it here and we'll review it.
           </p>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '6px', padding: '0.5rem 1rem' }}>
-            <span style={{ color: '#FFD700', fontSize: '0.875rem', fontWeight: 700 }}>*</span>
-            <span style={{ color: '#888', fontSize: '0.875rem' }}>Founding member pricing - save vs standard rates</span>
-          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
-          {PLANS.map((plan) => (
-            <div
-              key={plan.type}
-              style={{
-                background: plan.popular ? plan.bgColor : '#111118',
-                border: `1.5px solid ${plan.popular ? '#FFD700' : plan.borderColor}`,
-                borderRadius: '12px',
-                padding: '1.5rem',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem', background: '#111118', border: '1px solid #1e1e2e', borderRadius: '12px', padding: '2rem' }}>
+          {/* Listing Type */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Listing Type <span style={{ color: '#C8102E' }}>*</span>
+            </label>
+            <select
+              name="listingType"
+              value={form.listingType}
+              onChange={handleChange}
+              required
+              style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none' }}
             >
-              {plan.popular && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-11px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'linear-gradient(135deg, #FFD700 0%, #FCC419 100%)',
-                  color: '#000',
-                  fontSize: '0.5625rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.1em',
-                  padding: '0.2rem 0.7rem',
-                  borderRadius: '4px',
-                  whiteSpace: 'nowrap',
-                }}>
-                  MOST POPULAR
-                </div>
-              )}
-
-              <div style={{ marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: plan.color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{plan.label}</span>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.5rem', color: plan.color }}>{plan.price}</span>
-                <span style={{ fontSize: '0.75rem', color: '#666' }}>{plan.period}</span>
-              </div>
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.5rem', flex: 1, display: 'grid', gap: '0.5rem' }}>
-                {plan.features.map((f) => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.8125rem', color: '#aaa' }}>
-                    <span style={{ color: plan.color, flexShrink: 0, marginTop: '2px' }}>+</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={() => handleCheckout(plan.type)}
-                disabled={loading !== null}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: loading === plan.type ? '#333' : plan.popular ? 'linear-gradient(135deg, #FFD700 0%, #FCC419 100%)' : plan.color,
-                  border: 'none',
-                  borderRadius: '6px',
-                  color: plan.popular ? '#000' : '#fff',
-                  fontSize: '0.875rem',
-                  fontWeight: 700,
-                  cursor: loading === plan.type ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: plan.popular ? '0 4px 12px rgba(255,215,0,0.25)' : 'none',
-                }}
-              >
-                {loading === plan.type ? 'Redirecting to Stripe...' : `Join as ${plan.label}`}
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', letterSpacing: '0.05em', marginBottom: '1rem', color: '#fff' }}>COMMON QUESTIONS</h2>
-          <div style={{ display: 'grid', gap: '0.75rem', textAlign: 'left' }}>
-            {[
-              { q: 'Do founding members get special pricing?', a: 'Yes - founding members get discounted rates that are better than standard pricing.' },,
-              { q: 'Can I cancel anytime?', a: 'Yes, cancel anytime from your account settings. No questions asked.' },
-              { q: 'What payment methods do you accept?', a: 'All major credit and debit cards via Stripe.' },
-              { q: 'When does my subscription start?', a: "Immediately after checkout - you'll have instant access to your member features." },
-            ].map(({ q, a }) => (
-              <div key={q} style={{ background: '#111118', border: '1px solid #1e1e2e', borderRadius: '8px', padding: '1rem' }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{q}</div>
-                <div style={{ fontSize: '0.8125rem', color: '#888' }}>{a}</div>
-              </div>
-            ))}
+              <option value="">Select a type...</option>
+              {LISTING_TYPES.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
           </div>
-        </div>
+
+          {/* Name */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Name <span style={{ color: '#C8102E' }}>*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Team, player, rink, or league name"
+              required
+              style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none' }}
+            />
+          </div>
+
+          {/* City + Country */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                City
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                placeholder="e.g. Chicago"
+                style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Country
+              </label>
+              <input
+                type="text"
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+                placeholder="e.g. USA"
+                style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none' }}
+              />
+            </div>
+          </div>
+
+          {/* Website */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Website <span style={{ color: '#555', fontWeight: 400 }}>(optional)</span>
+            </label>
+            <input
+              type="url"
+              name="website"
+              value={form.website}
+              onChange={handleChange}
+              placeholder="https://"
+              style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none' }}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Tell us about this listing — league, division, notable facts, etc."
+              rows={4}
+              style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none', resize: 'vertical' }}
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Your Email <span style={{ color: '#C8102E' }}>*</span>
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="you@example.com"
+              required
+              style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none' }}
+            />
+            <p style={{ fontSize: '0.75rem', color: '#555', marginTop: '0.4rem' }}>We'll only use this to follow up on your submission.</p>
+          </div>
+
+          {error && (
+            <div style={{ background: 'rgba(200,16,46,0.15)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: '6px', padding: '0.75rem', color: '#ff6b6b', fontSize: '0.875rem' }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '0.875rem',
+              background: loading ? '#333' : 'linear-gradient(135deg, #C8102E 0%, #a00d25 100%)',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#fff',
+              fontSize: '0.9375rem',
+              fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            {loading ? 'Submitting...' : 'Submit Listing for Review'}
+          </button>
+        </form>
+
+        <p style={{ textAlign: 'center', fontSize: '0.8125rem', color: '#555', marginTop: '1.5rem' }}>
+          Listings are reviewed within 1-2 business days. Verified listings go live on RinkStop.
+        </p>
       </div>
     </div>
   );
