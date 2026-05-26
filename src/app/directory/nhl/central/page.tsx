@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import TeamLogo from '@/components/TeamLogo';
+import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
   title: 'NHL Central Division | RinkStop',
@@ -39,6 +40,11 @@ export default function CentralPage() {
         </p>
       </div>
 
+      </div>
+
+      {/* Ticketmaster NHL Banner - 468x60 */}
+      <TicketmasterAd size="468x60" />
+
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
           { label: 'All NHL', href: '/directory/nhl' },
@@ -69,6 +75,9 @@ export default function CentralPage() {
           </Link>
         ))}
       </div>
+
+      {/* Ticketmaster NHL Banner - 300x250 */}
+      <TicketmasterAd size="300x250" style={{ marginTop: '1.5rem' }} />
     </main>
   );
 }

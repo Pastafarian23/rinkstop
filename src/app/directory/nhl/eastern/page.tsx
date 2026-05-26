@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import TeamLogo from '@/components/TeamLogo';
+import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
   title: 'NHL Eastern Conference | RinkStop',
@@ -94,6 +95,9 @@ export default function NHLEasternPage() {
           {METRO_TEAMS.map(t => <TeamCard key={t.id} t={t} fallback="#1E3A5F" />)}
         </div>
       </div>
+
+      {/* Ticketmaster NHL Banner - 300x250 */}
+      <TicketmasterAd size="300x250" style={{ marginTop: '1.5rem' }} />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import TeamLogo from '@/components/TeamLogo';
+import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
   title: 'NHL Western Conference | RinkStop',
@@ -93,6 +94,9 @@ export default function NHLWesternPage() {
           {PACIFIC_TEAMS.map(t => <TeamCard key={t.id} t={t} fallback="#1E5B9C" />)}
         </div>
       </div>
+
+      {/* Ticketmaster NHL Banner - 300x250 */}
+      <TicketmasterAd size="300x250" style={{ marginTop: '1.5rem' }} />
     </main>
   );
 }

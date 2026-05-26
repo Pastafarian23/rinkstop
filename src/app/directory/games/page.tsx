@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import TicketmasterAd from '@/components/TicketmasterAd';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -184,6 +185,9 @@ export default function GamesPage() {
 
       <div style={{ height: '2px', background: 'linear-gradient(90deg, #C8102E 0%, #041E42 100%)', borderRadius: '2px', marginBottom: '1.5rem', width: '80px' }} />
 
+      {/* Ticketmaster NHL Banner - 468x60 */}
+      <TicketmasterAd size="468x60" />
+
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '8px' }} />)}
@@ -198,6 +202,9 @@ export default function GamesPage() {
           {games.map(g => <GameCard key={g.id} game={g} />)}
         </div>
       )}
+
+      {/* Ticketmaster NHL Banner - 300x250 */}
+      <TicketmasterAd size="300x250" style={{ marginTop: '2rem' }} />
     </div>
   );
 }// trigger production deploy Sun May 24 15:54:14 UTC 2026

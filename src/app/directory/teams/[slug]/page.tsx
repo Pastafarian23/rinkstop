@@ -6,6 +6,7 @@ import { NHL_TEAM_DATA } from '@/lib/nhl-teams-data';
 import { FANATICS_ADS } from '@/lib/fanatics-ads';
 type NHLStaticData = typeof NHL_TEAM_DATA[string];
 import NHLShopWidget from '@/components/NHLShopWidget';
+import TicketmasterAd from '@/components/TicketmasterAd';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -141,6 +142,9 @@ export default function TeamDetail() {
         </div>
       </div>
 
+      {/* Ticketmaster NHL Banner - 468x60 */}
+      <TicketmasterAd size="468x60" />
+
       {/* Rich team info section */}
       {hasRichData && (
         <>
@@ -274,6 +278,9 @@ export default function TeamDetail() {
           </div>
         )}
       </div>
+
+      {/* Ticketmaster NHL Banner - 300x250 */}
+      <TicketmasterAd size="300x250" />
     </div>
   );
 }
