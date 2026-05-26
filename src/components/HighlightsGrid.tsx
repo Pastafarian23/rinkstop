@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { mapTeamForHighlights } from '@/lib/highlights-helpers';
 
 interface Highlight {
@@ -46,15 +45,6 @@ interface HighlightsGridProps {
   columns?: 2 | 3 | 4;
 }
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-}
-
 export default function HighlightsGrid({
   limit = 8,
   teamFilter,
@@ -66,7 +56,7 @@ export default function HighlightsGrid({
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const [selected, setSelected] = useState<Highlight | null>(null);
 
   useEffect(() => {
     async function fetchHighlights() {
@@ -127,13 +117,12 @@ export default function HighlightsGrid({
           const score = highlight.match.homeTeam && highlight.match.awayTeam
             ? `${highlight.match.homeTeam.abbreviation} vs ${highlight.match.awayTeam.abbreviation}`
             : '';
-          const href = `/highlights/${highlight.id}/${slugify(highlight.title)}`;
 
           return (
-            <a
+            <div
               key={highlight.id}
-              href={href}
-              className="group block cursor-pointer"
+              onClick={() => setSelected(highlight)}
+              className="group cursor-pointer"
             >
               {/* Thumbnail with centered play button */}
               <div className="relative rounded-lg overflow-hidden bg-[#041E42] aspect-video">
@@ -198,10 +187,68 @@ export default function HighlightsGrid({
                   )}
                 </div>
               </div>
-            </a>
+            </div>
           );
         })}
       </div>
+
+      {/* Video Modal */}
+      {selected && selected.embedUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="relative w-full max-w-4xl mx-4 rounded-lg overflow-hidden bg-black"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              className="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-black/60 flex items-center justify-center text-white text-2xl hover:bg-black/80"
+              onClick={() => setSelected(null)}
+            >
+              ×
+            </button>
+
+            {/* YouTube iframe */}
+            <div style={{ aspectRatio: '16/9', background: '#000' }}>
+              <iframe
+                src={selected.embedUrl.replace('watch?v=', 'embed/') + '?autoplay=1'}
+                className="w-full h-full"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+
+            {/* Info bar */}
+            <div style={{
+              background: 'linear-gradient(135deg, #041E42, #0A2E5C)',
+              padding: '0.875rem 1.25rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '1rem',
+              flexWrap: 'wrap',
+            }}>
+              <div>
+                <h3 className="font-semibold text-white text-base">{selected.title}</h3>
+                {selected.match.homeTeam && selected.match.awayTeam && (
+                  <p className="text-sm text-gray-300 mt-0.25">
+                    {selected.match.homeTeam.abbreviation} vs {selected.match.awayTeam.abbreviation}
+                    {selected.match.date && (' • ' + new Date(selected.match.date).toLocaleDateString())}
+                  </p>
+                )}
+              </div>
+              <a
+                href="/highlights"
+                className="text-sm font-semibold text-white underline hover:text-gray-200 whitespace-nowrap"
+              >
+                All Highlights →
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
