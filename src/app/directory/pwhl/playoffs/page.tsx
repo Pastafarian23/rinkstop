@@ -80,7 +80,7 @@ export default function PWHLPlayoffsPage() {
           { href: '/directory/pwhl', label: 'Overview' },
           { href: '/directory/pwhl/playoffs', label: 'Playoffs' },
         ].map(n => (
-          <Link key={n.href} href={n.href} style={{ padding: '0.3rem 0.75rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', color: 'rgba(255,255,255,0.55)', background: 'var(--s2)', border: '1px solid var(--border)' }}>{n.href === '/directory/pwhl/playoffs' ? { background: `${PWHL_TEAL}22`, borderColor: PWHL_TEAL, color: PWHL_TEAL } : {}}>{n.label}</Link>
+          <Link key={n.href} href={n.href} style={{ padding: '0.3rem 0.75rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', color: n.href === '/directory/pwhl/playoffs' ? PWHL_TEAL : 'rgba(255,255,255,0.55)', background: n.href === '/directory/pwhl/playoffs' ? `${PWHL_TEAL}22` : 'var(--s2)', border: `1px solid ${n.href === '/directory/pwhl/playoffs' ? PWHL_TEAL : 'var(--border)'}` }}>{n.label}</Link>
         ))}
       </div>
 
