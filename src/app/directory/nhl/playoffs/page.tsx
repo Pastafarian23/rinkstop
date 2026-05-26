@@ -140,7 +140,7 @@ export default function PlayoffsPage() {
       <div style={{ marginBottom: '1rem' }}>
         <div className="label">2026 Stanley Cup Playoffs</div>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          NHL PLAYOFFS  --  LIVE
+          2026 NHL PLAYOFFS  --  LIVE
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', boxShadow: '0 0 6px #C8102E', animation: 'pulse 2s infinite' }} />

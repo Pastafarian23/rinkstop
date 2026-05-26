@@ -190,7 +190,7 @@ export default function AHLPlayoffsPage() {
       <div style={{ marginBottom: '1rem' }}>
         <div className="label" style={{ color: AHL_GOLD }}>2026 Calder Cup Playoffs</div>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          AHL PLAYOFFS  --  LIVE
+          2026 AHL PLAYOFFS  --  LIVE
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: AHL_RED, boxShadow: `0 0 6px ${AHL_RED}`, animation: 'pulse 2s infinite' }} />

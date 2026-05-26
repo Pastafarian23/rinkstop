@@ -168,7 +168,7 @@ export default function PWHLPlayoffsPage() {
       <div style={{ marginBottom: '1rem' }}>
         <div className="label" style={{ color: PWHL_TEAL }}>2026 PWHL Playoffs</div>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          PWHL PLAYOFFS
+          2026 PWHL PLAYOFFS
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: PWHL_TEAL, boxShadow: `0 0 6px ${PWHL_TEAL}` }} />
