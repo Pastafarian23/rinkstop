@@ -1,0 +1,122 @@
+{
+  "rounds": [
+    {
+      "seriesDesc": "PWHL Finals",
+      "round": 3,
+      "series": [
+        {
+          "desc": "Walter Cup Final",
+          "homeTeam": "Minnesota Whitecaps",
+          "awayTeam": "Boston Pride",
+          "homeAbbr": "MIN",
+          "awayAbbr": "BOS",
+          "homeWins": 3,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-05-01", "home": "MIN", "away": "BOS", "homeScore": 3, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-05-03", "home": "MIN", "away": "BOS", "homeScore": 2, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-05-05", "home": "BOS", "away": "MIN", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-07", "home": "BOS", "away": "MIN", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final", "ot": true },
+            { "date": "2026-05-10", "home": "MIN", "away": "BOS", "homeScore": 4, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-05-12", "home": "BOS", "away": "MIN", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final", "ot": true }
+          ]
+        }
+      ]
+    },
+    {
+      "seriesDesc": "PWHL Semifinals",
+      "round": 2,
+      "series": [
+        {
+          "desc": "Series A",
+          "homeTeam": "Boston Pride",
+          "awayTeam": "New York Sirens",
+          "homeAbbr": "BOS",
+          "awayAbbr": "NY",
+          "homeWins": 3,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-04-22", "home": "BOS", "away": "NY", "homeScore": 3, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-24", "home": "BOS", "away": "NY", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-26", "home": "NY", "away": "BOS", "homeScore": 1, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-04-28", "home": "NY", "away": "BOS", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series B",
+          "homeTeam": "Minnesota Whitecaps",
+          "awayTeam": "Ottawa Charge",
+          "homeAbbr": "MIN",
+          "awayAbbr": "OTT",
+          "homeWins": 3,
+          "awayWins": 0,
+          "games": [
+            { "date": "2026-04-21", "home": "MIN", "away": "OTT", "homeScore": 4, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-23", "home": "MIN", "away": "OTT", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-04-25", "home": "OTT", "away": "MIN", "homeScore": 1, "awayScore": 5, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    },
+    {
+      "seriesDesc": "PWHL Quarterfinals",
+      "round": 1,
+      "series": [
+        {
+          "desc": "Series 1",
+          "homeTeam": "New York Sirens",
+          "awayTeam": "Toronto Six",
+          "homeAbbr": "NY",
+          "awayAbbr": "TOR",
+          "homeWins": 2,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-04-14", "home": "NY", "away": "TOR", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-16", "home": "NY", "away": "TOR", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-18", "home": "TOR", "away": "NY", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 2",
+          "homeTeam": "Boston Pride",
+          "awayTeam": "Montreal Victo",
+          "homeAbbr": "BOS",
+          "awayAbbr": "MTL",
+          "homeWins": 2,
+          "awayWins": 0,
+          "games": [
+            { "date": "2026-04-14", "home": "BOS", "away": "MTL", "homeScore": 3, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-16", "home": "BOS", "away": "MTL", "homeScore": 4, "awayScore": 2, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 3",
+          "homeTeam": "Minnesota Whitecaps",
+          "awayTeam": "Seattle Sirens",
+          "homeAbbr": "MIN",
+          "awayAbbr": "SEA",
+          "homeWins": 2,
+          "awayWins": 0,
+          "games": [
+            { "date": "2026-04-13", "home": "MIN", "away": "SEA", "homeScore": 5, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-04-15", "home": "MIN", "away": "SEA", "homeScore": 3, "awayScore": 1, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series 4",
+          "homeTeam": "Ottawa Charge",
+          "awayTeam": "Washington Whiteout",
+          "homeAbbr": "OTT",
+          "awayAbbr": "WAS",
+          "homeWins": 2,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-04-13", "home": "OTT", "away": "WAS", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-04-15", "home": "OTT", "away": "WAS", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-04-17", "home": "WAS", "away": "OTT", "homeScore": 2, "awayScore": 4, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    }
+  ]
+}

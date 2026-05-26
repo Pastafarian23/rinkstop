@@ -1,0 +1,19 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+const GAMES_FILE = join(process.cwd(), 'data', 'pwhl-playoff-games.json');
+
+function readGames(): any {
+  try {
+    const raw = readFileSync(GAMES_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return { games: [], rounds: [] };
+  }
+}
+
+export async function GET() {
+  const data = readGames();
+  return NextResponse.json(data);
+}

@@ -251,7 +251,10 @@ export default function PlayoffsPage() {
 
       <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <Link href="/directory/nhl/standings" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>← Standings</Link>
-        <Link href="/directory/nhl/player-stats" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>Player Stats →</Link>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Link href="/directory/ahl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>AHL Playoffs →</Link>
+          <Link href="/directory/pwhl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>PWHL Playoffs →</Link>
+        </div>
       </div>
 
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
