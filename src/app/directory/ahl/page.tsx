@@ -28,8 +28,8 @@ export default function AHLPage() {
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
-          { label: 'Pro Leagues', href: '/directory/pro-leagues' },
           { label: 'NHL', href: '/directory/nhl' },
+          { label: 'AHL Playoffs', href: '/directory/ahl/playoffs' },
           { label: 'PWHL', href: '/directory/pwhl' },
           { label: 'All Leagues', href: '/directory/leagues' },
         ].map(n => (

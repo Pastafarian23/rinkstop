@@ -1,0 +1,125 @@
+{
+  "rounds": [
+    {
+      "seriesDesc": "Eastern Conference Final",
+      "round": 3,
+      "series": [
+        {
+          "desc": "Series A",
+          "homeTeam": "Wilkes-Barre/Scranton Penguins",
+          "awayTeam": "Toronto Marlies",
+          "homeAbbr": "WBS",
+          "awayAbbr": "TOR",
+          "homeWins": 1,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-05-27", "home": "WBS", "away": "TOR", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-29", "home": "WBS", "away": "TOR", "homeScore": 4, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-06-01", "home": "TOR", "away": "WBS", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-06-03", "home": "TOR", "away": "WBS", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-06-04", "home": "WBS", "away": "TOR", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null }
+          ],
+          "nextGame": { "date": "2026-06-03", "home": "TOR", "away": "WBS" }
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Western Conference Final",
+      "round": 3,
+      "series": [
+        {
+          "desc": "Series B",
+          "homeTeam": "Colorado Eagles",
+          "awayTeam": "Chicago Wolves",
+          "homeAbbr": "COL",
+          "awayAbbr": "CHI",
+          "homeWins": 1,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-05-29", "home": "COL", "away": "CHI", "homeScore": 4, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-05-31", "home": "COL", "away": "CHI", "homeScore": 1, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-06-03", "home": "CHI", "away": "COL", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null },
+            { "date": "2026-06-04", "home": "CHI", "away": "COL", "homeScore": null, "awayScore": null, "status": "scheduled", "period": null }
+          ],
+          "nextGame": { "date": "2026-06-03", "home": "CHI", "away": "COL" }
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Eastern Conference Semifinals",
+      "round": 2,
+      "series": [
+        {
+          "desc": "Series C",
+          "homeTeam": "Toronto Marlies",
+          "awayTeam": "Cleveland Monsters",
+          "homeAbbr": "TOR",
+          "awayAbbr": "CLE",
+          "homeWins": 3,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-05-14", "home": "TOR", "away": "CLE", "homeScore": 5, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-16", "home": "TOR", "away": "CLE", "homeScore": 1, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-20", "home": "CLE", "away": "TOR", "homeScore": 4, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-05-22", "home": "CLE", "away": "TOR", "homeScore": 2, "awayScore": 5, "status": "finished", "period": "Final" },
+            { "date": "2026-05-24", "home": "TOR", "away": "CLE", "homeScore": 3, "awayScore": 2, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series D",
+          "homeTeam": "Wilkes-Barre/Scranton Penguins",
+          "awayTeam": "Springfield Thunderbirds",
+          "homeAbbr": "WBS",
+          "awayAbbr": "SPR",
+          "homeWins": 4,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-05-12", "home": "WBS", "away": "SPR", "homeScore": 2, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-05-14", "home": "WBS", "away": "SPR", "homeScore": 3, "awayScore": 4, "status": "finished", "period": "Final", "ot": true },
+            { "date": "2026-05-19", "home": "SPR", "away": "WBS", "homeScore": 1, "awayScore": 2, "status": "finished", "period": "Final" },
+            { "date": "2026-05-21", "home": "SPR", "away": "WBS", "homeScore": 0, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-05-23", "home": "WBS", "away": "SPR", "homeScore": 8, "awayScore": 1, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    },
+    {
+      "seriesDesc": "Western Conference Semifinals",
+      "round": 2,
+      "series": [
+        {
+          "desc": "Series E",
+          "homeTeam": "Chicago Wolves",
+          "awayTeam": "Grand Rapids Griffins",
+          "homeAbbr": "CHI",
+          "awayAbbr": "GR",
+          "homeWins": 3,
+          "awayWins": 2,
+          "games": [
+            { "date": "2026-05-14", "home": "CHI", "away": "GR", "homeScore": 2, "awayScore": 1, "status": "finished", "period": "Final" },
+            { "date": "2026-05-16", "home": "CHI", "away": "GR", "homeScore": 3, "awayScore": 4, "status": "finished", "period": "Final", "ot": true },
+            { "date": "2026-05-20", "home": "GR", "away": "CHI", "homeScore": 4, "awayScore": 3, "status": "finished", "period": "Final", "ot": true },
+            { "date": "2026-05-22", "home": "GR", "away": "CHI", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-24", "home": "CHI", "away": "GR", "homeScore": 4, "awayScore": 2, "status": "finished", "period": "Final" }
+          ]
+        },
+        {
+          "desc": "Series F",
+          "homeTeam": "Colorado Eagles",
+          "awayTeam": "Coachella Valley Firebirds",
+          "homeAbbr": "COL",
+          "awayAbbr": "CVF",
+          "homeWins": 4,
+          "awayWins": 1,
+          "games": [
+            { "date": "2026-05-14", "home": "COL", "away": "CVF", "homeScore": 3, "awayScore": 0, "status": "finished", "period": "Final" },
+            { "date": "2026-05-16", "home": "COL", "away": "CVF", "homeScore": 0, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-05-18", "home": "CVF", "away": "COL", "homeScore": 1, "awayScore": 4, "status": "finished", "period": "Final" },
+            { "date": "2026-05-21", "home": "CVF", "away": "COL", "homeScore": 2, "awayScore": 3, "status": "finished", "period": "Final" },
+            { "date": "2026-05-23", "home": "COL", "away": "CVF", "homeScore": 4, "awayScore": 2, "status": "finished", "period": "Final" }
+          ]
+        }
+      ]
+    }
+  ]
+}
