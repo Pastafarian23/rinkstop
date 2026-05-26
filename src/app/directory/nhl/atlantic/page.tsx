@@ -41,8 +41,6 @@ export default function AtlanticPage() {
         </p>
       </div>
 
-      </div>
-
       {/* Ticketmaster NHL Banner - 468x60 */}
       <TicketmasterAd size="468x60" />
 

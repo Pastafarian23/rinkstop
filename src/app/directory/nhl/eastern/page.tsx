@@ -68,6 +68,9 @@ export default function NHLEasternPage() {
         </p>
       </div>
 
+      {/* Ticketmaster NHL Banner - 468x60 */}
+      <TicketmasterAd size="468x60" />
+
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
           { label: 'All NHL', href: '/directory/nhl' },
