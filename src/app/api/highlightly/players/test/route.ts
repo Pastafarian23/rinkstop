@@ -1,4 +1,4 @@
-// Test endpoint for Highantly integration
+// Test endpoint for highlightly integration
 // GET /api/highlightly/test
 
 import { NextRequest, NextResponse } from 'next/server';
