@@ -1,6 +1,17 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+
+interface StoredGame {
+  date: string;
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  status: string;
+  period: string | null;
+  ot?: boolean;
+}
 
 interface StoredSeries {
   desc: string;
@@ -11,7 +22,7 @@ interface StoredSeries {
   homeAbbr: string;
   awayAbbr: string;
   nextGame: any;
-  games: any[];
+  games: StoredGame[];
 }
 
 interface StoredRound {
@@ -27,19 +38,6 @@ export default function AHLPlayoffsPage() {
   const [rounds, setRounds] = useState<StoredRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
-  const [updates, setUpdates] = useState<any[]>([]);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const updatesIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const fetchUpdates = useCallback(async () => {
-    try {
-      const res = await fetch('/api/ahl/playoffs/updates');
-      if (res.ok) {
-        const data = await res.json();
-        setUpdates(data as any[]);
-      }
-    } catch {}
-  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -58,16 +56,7 @@ export default function AHLPlayoffsPage() {
 
   useEffect(() => {
     fetchData();
-    fetchUpdates();
-
-    const updatesInterval = setInterval(fetchUpdates, 60000);
-    updatesIntervalRef.current = updatesInterval;
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (updatesIntervalRef.current) clearInterval(updatesIntervalRef.current);
-    };
-  }, [fetchData, fetchUpdates]);
+  }, [fetchData]);
 
   const roundLabels: Record<number, string> = {
     1: 'QUARTER-FINALS',
@@ -90,29 +79,61 @@ export default function AHLPlayoffsPage() {
     return logoMap[abbr] || '';
   };
 
-  const formatUpdateTime = (iso?: string) => {
-    if (!iso) return '';
-    try {
-      return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    } catch { return ''; }
-  };
+  function SeriesCard({ s }: { s: StoredSeries }) {
+    const seriesOver = s.homeWins >= 4 || s.awayWins >= 4;
+    const isInProgress = !seriesOver && (s.homeWins > 0 || s.awayWins > 0);
+    return (
+      <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem', opacity: seriesOver ? 0.55 : 1, transition: 'opacity 0.3s', borderTop: seriesOver ? `3px solid rgba(0,61,165,0.5)` : isInProgress ? `3px solid ${AHL_GOLD}` : '3px solid transparent' }}>
+        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+          <span style={{ fontSize: '0.5625rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.desc}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              {getLogoUrl(s.awayAbbr) && <img src={getLogoUrl(s.awayAbbr)} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.awayWins >= 4 ? AHL_GOLD : '#fff' }}>{s.awayTeam.split(' ').pop()}</span>
+            </div>
+            <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.awayWins >= 4 ? AHL_GOLD : '#fff' }}>{s.awayWins}</span>
+          </div>
+          <div style={{ height: '1px', background: 'var(--border)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              {getLogoUrl(s.homeAbbr) && <img src={getLogoUrl(s.homeAbbr)} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.homeWins >= 4 ? AHL_GOLD : '#fff' }}>{s.homeTeam.split(' ').pop()}</span>
+            </div>
+            <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.homeWins >= 4 ? AHL_GOLD : '#fff' }}>{s.homeWins}</span>
+          </div>
+        </div>
+        {s.nextGame?.date && !seriesOver && (
+          <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+            <span style={{ fontSize: '0.5625rem', color: '#444' }}>
+              Next: {new Date(s.nextGame.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+        )}
 
-  const formatUpdateDate = (iso?: string) => {
-    if (!iso) return '';
-    try {
-      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    } catch { return ''; }
-  };
-
-  const typeColors: Record<string, string> = {
-    goal: '#fff', period: 'rgba(255,255,255,0.7)', final: AHL_RED,
-    start: '#4CAF50', update: 'rgba(255,255,255,0.65)', analysis: '#FFD700', trade: '#9C27B0',
-  };
-
-  const allGames = rounds.flatMap((r: StoredRound) =>
-    r.series.flatMap((s: StoredSeries) => s.games.filter((g: any) => g.status === 'finished'))
-  );
-  const hasLiveUpdates = allGames.length > 0;
+        {/* Game-by-game results */}
+        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {s.games.map((g, gi) => (
+            <div key={gi} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.375rem', background: g.status === 'finished' ? 'rgba(255,255,255,0.02)' : 'transparent', borderRadius: '3px', fontSize: '0.6875rem' }}>
+              <span style={{ color: 'rgba(255,255,255,0.2)', minWidth: 44 }}>{g.date?.slice(5)}</span>
+              <span style={{ color: g.awayScore !== null && g.homeScore !== null ? (g.awayScore > g.homeScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
+                {g.away} {g.awayScore ?? '-'}
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.15)' }}>@</span>
+              <span style={{ color: g.homeScore !== null && g.awayScore !== null ? (g.homeScore > g.awayScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
+                {g.home} {g.homeScore ?? '-'}
+              </span>
+              {g.ot && <span style={{ color: AHL_GOLD, fontSize: '0.5625rem', fontWeight: 700 }}>OT</span>}
+              <span style={{ color: g.status === 'finished' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)', marginLeft: 'auto' }}>
+                {g.status === 'finished' ? 'F' : g.status === 'scheduled' ? 'S' : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
@@ -142,7 +163,7 @@ export default function AHLPlayoffsPage() {
           { href: '/directory/ahl', label: 'Overview' },
           { href: '/directory/ahl/playoffs', label: 'Playoffs' },
         ].map(n => (
-          <Link key={n.href} href={n.href} style={{ padding: '0.3rem 0.75rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', color: 'rgba(255,255,255,0.55)', background: 'var(--s2)', border: '1px solid var(--border)' }}>{n.label}</Link>
+          <Link key={n.href} href={n.href} style={{ padding: '0.3rem 0.75rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none', color: n.href === '/directory/ahl/playoffs' ? AHL_GOLD : 'rgba(255,255,255,0.55)', background: n.href === '/directory/ahl/playoffs' ? `${AHL_GOLD}22` : 'var(--s2)', border: `1px solid ${n.href === '/directory/ahl/playoffs' ? AHL_GOLD : 'var(--border)'}` }}>{n.label}</Link>
         ))}
       </div>
 
@@ -165,60 +186,8 @@ export default function AHLPlayoffsPage() {
                 {roundLabels[round.round] || `ROUND ${round.round}`}
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(round.series.length, 4)}, 1fr)`, gap: '0.75rem' }}>
-                {round.series.map((s: StoredSeries, sIdx: number) => {
-                  const seriesOver = s.homeWins >= 4 || s.awayWins >= 4;
-                  const isInProgress = !seriesOver && (s.homeWins > 0 || s.awayWins > 0);
-                  return (
-                    <div key={sIdx} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem', opacity: seriesOver ? 0.55 : 1, transition: 'opacity 0.3s', borderTop: seriesOver ? `3px solid rgba(0,61,165,0.5)` : isInProgress ? `3px solid ${AHL_GOLD}` : '3px solid transparent' }}>
-                      <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.5625rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.desc}</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                            {getLogoUrl(s.awayAbbr) && <img src={getLogoUrl(s.awayAbbr)} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.awayWins >= 4 ? AHL_GOLD : '#fff' }}>{s.awayTeam.split(' ').pop()}</span>
-                          </div>
-                          <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.awayWins >= 4 ? AHL_GOLD : '#fff' }}>{s.awayWins}</span>
-                        </div>
-                        <div style={{ height: '1px', background: 'var(--border)' }} />
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                            {getLogoUrl(s.homeAbbr) && <img src={getLogoUrl(s.homeAbbr)} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.homeWins >= 4 ? AHL_GOLD : '#fff' }}>{s.homeTeam.split(' ').pop()}</span>
-                          </div>
-                          <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.homeWins >= 4 ? AHL_GOLD : '#fff' }}>{s.homeWins}</span>
-                        </div>
-                      </div>
-                      {s.nextGame?.date && !seriesOver && (
-                        <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.5625rem', color: '#444' }}>
-                            Next: {new Date(s.nextGame.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Game-by-game results */}
-              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                {s.games.map((g: any, gi: number) => (
-                  <div key={gi} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.375rem 0.5rem', background: g.status === 'finished' ? 'rgba(255,255,255,0.02)' : 'transparent', borderRadius: '4px', fontSize: '0.75rem' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.2)', minWidth: 50 }}>{g.date?.slice(5)}</span>
-                    <span style={{ color: g.awayScore !== null && g.homeScore !== null ? (g.awayScore > g.homeScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
-                      {g.away} {g.awayScore ?? '-'}
-                    </span>
-                    <span style={{ color: 'rgba(255,255,255,0.15)' }}>@</span>
-                    <span style={{ color: g.homeScore !== null && g.awayScore !== null ? (g.homeScore > g.awayScore ? '#fff' : 'rgba(255,255,255,0.4)') : 'rgba(255,255,255,0.3)' }}>
-                      {g.home} {g.homeScore ?? '-'}
-                    </span>
-                    {g.ot && <span style={{ color: AHL_GOLD, fontSize: '0.625rem', fontWeight: 700 }}>OT</span>}
-                    <span style={{ color: g.status === 'finished' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.15)', marginLeft: 'auto' }}>
-                      {g.status === 'finished' ? 'Final' : g.status === 'scheduled' ? 'Scheduled' : ''}
-                    </span>
-                  </div>
+                {round.series.map((s: StoredSeries, sIdx: number) => (
+                  <SeriesCard key={sIdx} s={s} />
                 ))}
               </div>
             </div>
@@ -228,7 +197,10 @@ export default function AHLPlayoffsPage() {
 
       <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <Link href="/directory/ahl" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>← AHL Overview</Link>
-        <Link href="/directory/pwhl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>PWHL Playoffs →</Link>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Link href="/directory/nhl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>NHL Playoffs →</Link>
+          <Link href="/directory/pwhl/playoffs" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', textDecoration: 'none' }}>PWHL Playoffs →</Link>
+        </div>
       </div>
 
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
