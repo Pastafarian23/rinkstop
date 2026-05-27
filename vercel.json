@@ -1,0 +1,39 @@
+{
+  "redirects": [
+    {
+      "source": "/directory/united-states",
+      "destination": "/hockey/united-states",
+      "permanent": true
+    },
+    {
+      "source": "/directory/canada",
+      "destination": "/hockey/canada",
+      "permanent": true
+    },
+    {
+      "source": "/directory/united-kingdom",
+      "destination": "/hockey/united-kingdom",
+      "permanent": true
+    },
+    {
+      "source": "/directory/sweden",
+      "destination": "/hockey/sweden",
+      "permanent": true
+    },
+    {
+      "source": "/directory/finland",
+      "destination": "/hockey/finland",
+      "permanent": true
+    },
+    {
+      "source": "/directory/germany",
+      "destination": "/hockey/germany",
+      "permanent": true
+    },
+    {
+      "source": "/directory/russia",
+      "destination": "/hockey/russia",
+      "permanent": true
+    }
+  ]
+}
