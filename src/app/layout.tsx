@@ -1,6 +1,7 @@
 import './globals.css';
 import Link from 'next/link';
 import { ClerkProvider } from '@clerk/nextjs';
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import SignUpButton from '@/components/SignUpButton';
 import CookieConsent from '@/components/CookieConsent';
@@ -126,7 +127,7 @@ function NavDropdown({ items }: { items: typeof NAV[0]['sub'] }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={clerkPublishableKey}>
       <html lang="en">
         <head>
           <meta charSet="utf-8" />
