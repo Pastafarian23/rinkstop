@@ -19,7 +19,7 @@ export default async function UnitedKingdomPage() {
     supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('country', 'UK'),
     supabase
       .from('rinks')
-      .select('name, city, address, phone, website_url, notes')
+      .select('id, name, city, address, phone, website_url, notes')
       .eq('country', 'UK').eq('is_active', true)
       .order('name').limit(30),
   ]);
@@ -193,7 +193,19 @@ export default async function UnitedKingdomPage() {
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
               {ukRinks.map((rink) => (
-                <div key={rink.name} style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: 20, transition: 'border-color 0.2s' }}>
+                <Link
+                  key={rink.id}
+                  href={`/directory/rinks/${rink.id}`}
+                  style={{
+                    background: card,
+                    border: `1px solid ${border}`,
+                    borderRadius: 10,
+                    padding: 20,
+                    transition: 'border-color 0.2s',
+                    textDecoration: 'none',
+                    display: 'block',
+                  }}
+                >
                   <h3 style={{ fontSize: 15, fontWeight: 700, color: textMain, marginBottom: 4 }}>{rink.name}</h3>
                   <div style={{ fontSize: 13, color: textMuted, marginBottom: 8 }}>{rink.city ?? ''}</div>
                   {rink.address && (
@@ -217,7 +229,7 @@ export default async function UnitedKingdomPage() {
                       {rink.notes}
                     </div>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
             {ukRinksCount && ukRinksCount > 30 && (
