@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+
+// Rate limit: 60 requests per minute per IP for general rink queries
+const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
 
 export async function GET(request: NextRequest) {
+  const ip = getClientIP(request);
+  const result = checkRateLimit(ip, RATE_LIMIT);
+  maybeCleanup();
+
+  if (!result.allowed) {
+    const response = new NextResponse(
+      JSON.stringify({ error: 'Too many requests. Please slow down.' }),
+      { status: 429 }
+    );
+    applyRateLimitHeaders(response, result);
+    response.headers.set('Content-Type', 'application/json');
+    return response;
+  }
+
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const slug = searchParams.get('slug');
@@ -22,6 +40,10 @@ export async function GET(request: NextRequest) {
   }
 
   const { data, error } = await query.order('name');
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(id || slug ? (data?.[0] ?? null) : data);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const response = NextResponse.json(id || slug ? (data?.[0] ?? null) : data);
+  return applyRateLimitHeaders(response, result);
 }

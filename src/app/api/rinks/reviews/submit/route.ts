@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+
+// Rate limit: 2 submissions per minute per IP (strict to prevent review spam)
+const RATE_LIMIT = { maxRequests: 2, windowMs: 60 * 1000 };
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIP(request);
+  const result = checkRateLimit(ip, RATE_LIMIT);
+  maybeCleanup();
+
+  if (!result.allowed) {
+    const response = new NextResponse(
+      JSON.stringify({ error: 'Too many review submissions. Please wait before submitting another review.' }),
+      { status: 429 }
+    );
+    applyRateLimitHeaders(response, result);
+    response.headers.set('Content-Type', 'application/json');
+    return response;
+  }
+
   try {
     const body = await request.json();
     const { rink_id, rating, review_text, reviewer_name, reviewer_email } = body;
@@ -45,7 +63,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    const response = NextResponse.json({ data }, { status: 201 });
+    return applyRateLimitHeaders(response, result);
   } catch (err) {
     return NextResponse.json(
       { error: 'Invalid request body' },
