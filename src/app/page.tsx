@@ -147,7 +147,7 @@ export default function Home() {
             </div>
             <Link href="/directory" className="sec-link">View All →</Link>
           </div>
-
+          <div className="cat-grid">
             {CATS.map(c => (
               <Link key={c.href} href={c.href} className="card" style={{ textDecoration: 'none' }}>
                 <div style={{ padding: 'clamp(0.875rem, 2.5vw, 1.375rem)' }}>
@@ -165,9 +165,9 @@ export default function Home() {
                 </div>
               </Link>
             ))}
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.875rem', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '0.25rem' }}>
-              <TicketmasterAd size="468x60" />
-            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '0.875rem 0 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <TicketmasterAd size="468x60" />
           </div>
         </div>
       </section>

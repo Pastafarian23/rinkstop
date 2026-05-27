@@ -77,7 +77,7 @@ export default function AboutPage() {
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
           Have a directory listing to submit, a correction to suggest, or want to partner with us? We'd love to hear from you.
         </p>
-        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>Email: <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>support@rinkstop.com</a></p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>Email: <a href="mailto:info@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>info@rinkstop.com</a></p>
         <p style={{ color: 'rgba(255,255,255,0.55)' }}>Website: <a href="https://rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>https://rinkstop.com</a></p>
       </div>
     </main>

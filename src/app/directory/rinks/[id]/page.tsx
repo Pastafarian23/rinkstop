@@ -34,7 +34,7 @@ export default function RinkDetail() {
   const [submitMsg, setSubmitMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    fetch(`/api/rinks?id=${id}`).then(r => r.json()).then(d => {
+    fetch(`/api/rinks?slug=${id}`).then(r => r.json()).then(d => {
       setRink(d || null);
     });
     fetch(`/api/games?venueId=${id}`).then(r => r.json()).then(d => setGames(d || []));
