@@ -1,4 +1,4 @@
-/* RinkStop Login Page — centered card, overflow hidden */
+/* RinkStop Login / Sign-Up Pages — centered card, Clerk iframe contained */
 .page {
   min-height: 80vh;
   display: flex;
@@ -37,14 +37,16 @@
   margin: 0;
 }
 
-/* Clerk injects an iframe — keep it contained and centered */
-.clerkWrap {
-  padding: 1.5rem;
+/* Clerk injects a nested structure inside .clerkWrap — target the root div it mounts to */
+.clerkWrap > div {
+  display: flex;
+  justify-content: center;
   overflow-x: hidden;
 }
 
-/* Constrain Clerk's iframe to card width */
+/* Clerk's sign-in iframe — force it to respect our card width */
 .clerkWrap iframe {
   max-width: 100% !important;
+  min-width: 0 !important;
   width: 100% !important;
 }
