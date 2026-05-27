@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import SignUpButton from '@/components/SignUpButton';
+import SignInLink from '@/components/SignInLink';
 import CookieConsent from '@/components/CookieConsent';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import ScoreTicker from '@/components/ScoreTicker';
@@ -173,21 +174,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
                 {/* Desktop right */}
                 <div className="nav-right">
-                  <Link
-                    href="/login"
-                    style={{
-                      color: 'rgba(255,255,255,0.6)',
-                      fontSize: '0.8125rem',
-                      fontWeight: 600,
-                      textDecoration: 'none',
-                      padding: '0.5rem 0.75rem',
-                      transition: 'color 0.15s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
-                  >
-                    Sign In
-                  </Link>
+                  <SignInLink />
                   <SignUpButton />
                 </div>
 
