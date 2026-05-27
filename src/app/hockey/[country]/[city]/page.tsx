@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import Breadcrumb from '@/components/Breadcrumb';
 import { Metadata } from 'next';
-import styles from '../country/country.module.css';
+import styles from './city.module.css';
 
 interface Props {
   params: Promise<{ country: string; city: string }>;
