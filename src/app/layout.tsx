@@ -173,6 +173,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
                 {/* Desktop right */}
                 <div className="nav-right">
+                  <Link
+                    href="/login"
+                    style={{
+                      color: 'rgba(255,255,255,0.6)',
+                      fontSize: '0.8125rem',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      padding: '0.5rem 0.75rem',
+                      transition: 'color 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                  >
+                    Sign In
+                  </Link>
                   <SignUpButton />
                 </div>
 
@@ -238,6 +253,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     ].map(([href,label]) => (
                       <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
                     ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Account</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <Link href="/login" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Sign In</Link>
+                    <Link href="/login" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Join Free</Link>
+                    <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>My Dashboard</Link>
+                    <Link href="/founding-member" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Founding Member</Link>
                   </div>
                 </div>
 
