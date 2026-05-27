@@ -91,7 +91,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
         {/* CTA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <Link
-            href="/login"
+            href="/sign-up"
             onClick={() => setShowPopup(false)}
             style={{
               display: 'block',
@@ -165,7 +165,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           <Link
-            href="/login"
+            href="/sign-up"
             onClick={() => setShowPopup(false)}
             style={{
               display: 'block',

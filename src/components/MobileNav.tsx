@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import SignUpButton from './SignUpButton';
 
 const SECTIONS = [
   {
@@ -119,7 +118,8 @@ export default function MobileNav() {
       ))}
       <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <Link href="/login" onClick={() => { const cb = document.getElementById('mob-nav') as HTMLInputElement; if (cb) cb.checked = false; }} style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none', padding: '0.5rem 0', textAlign: 'center' }}>Sign In</Link>
-        <SignUpButton />
+        <Link href="/login" onClick={() => { const cb = document.getElementById('mob-nav') as HTMLInputElement; if (cb) cb.checked = false; }} style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none', padding: '0.5rem 0', textAlign: 'center' }}>Sign In</Link>
+        <Link href="/sign-up" onClick={() => { const cb = document.getElementById('mob-nav') as HTMLInputElement; if (cb) cb.checked = false; setOpen(null); }} style={{ display: 'block', textAlign: 'center', padding: '0.625rem', background: 'linear-gradient(135deg, #FFD700 0%, #FCC419 100%)', borderRadius: '6px', color: '#000', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none' }}>Sign Up Free</Link>
       </div>
     </nav>
   );

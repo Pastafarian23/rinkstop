@@ -1,0 +1,50 @@
+/* RinkStop Login Page — centered card, overflow hidden */
+.page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  background: #f4f7fb;
+}
+
+.card {
+  width: 100%;
+  max-width: 460px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(4, 30, 66, 0.1);
+  overflow: hidden;
+}
+
+.header {
+  background: #041e42;
+  padding: 1.5rem 2rem 1.25rem;
+  border-bottom: 3px solid #c8102e;
+}
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: #fff;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.25rem;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Clerk injects an iframe — keep it contained and centered */
+.clerkWrap {
+  padding: 1.5rem;
+  overflow-x: hidden;
+}
+
+/* Constrain Clerk's iframe to card width */
+.clerkWrap iframe {
+  max-width: 100% !important;
+  width: 100% !important;
+}
