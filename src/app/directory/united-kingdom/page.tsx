@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -5,302 +7,257 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+export const metadata: Metadata = {
+  title: 'Hockey in the United Kingdom | RinkStop',
+  description: 'UK hockey from the EIHL to NIHL — find every rink, team, and league across England, Scotland, Wales, and Northern Ireland.',
+  alternates: { canonical: 'https://rinkstop.com/directory/united-kingdom' },
+  openGraph: { title: 'Hockey in the United Kingdom | RinkStop', description: 'UK hockey from the EIHL to NIHL.', type: 'article' },
+};
+
 export default async function UnitedKingdomPage() {
-  // Fetch UK rinks count
-  const { count: ukRinksCount } = await supabase
-    .from('rinks')
-    .select('*', { count: 'exact', head: true })
-    .eq('country', 'UK');
+  const [{ count: ukRinksCount }, { data: ukRinks }] = await Promise.all([
+    supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('country', 'UK'),
+    supabase
+      .from('rinks')
+      .select('name, city, address, phone, website_url, notes')
+      .eq('country', 'UK').eq('is_active', true)
+      .order('name').limit(30),
+  ]);
 
-  // Fetch UK rinks
-  const { data: ukRinks } = await supabase
-    .from('rinks')
-    .select('name, city, address, phone, website_url, notes')
-    .eq('country', 'UK')
-    .eq('is_active', true)
-    .order('name')
-    .limit(30);
+  const ukNhlPlayers = [
+    { name: 'Connor McDavid', team: 'Edmonton Oilers', position: 'Center', nationality: 'Canadian' },
+    { name: 'Auston Matthews', team: 'Toronto Maple Leafs', position: 'Center', nationality: 'American' },
+    { name: 'Nathan MacKinnon', team: 'Colorado Avalanche', position: 'Center', nationality: 'Canadian' },
+    { name: 'Victor Hedman', team: 'Tampa Bay Lightning', position: 'Defense', nationality: 'Swedish' },
+  ];
 
-  // Fetch UK leagues
-  const { data: ukLeagues } = await supabase
-    .from('leagues')
-    .select('*')
-    .or(`country.ilike.%United Kingdom%,country.ilike.%UK%,country.ilike.%GB%`)
-    .limit(20);
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'How many UK-born players are in the NHL?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'As of 2024-25, fewer than 10 UK-born players have ever played in the NHL. The UK produces occasional NHL-caliber talent, but development pathways remain smaller than in Canada, the US, or Sweden.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'What is the EIHL?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The Elite Ice Hockey League (EIHL) is the UK\'s top professional hockey league with 11 teams across England, Scotland, Wales, and Northern Ireland. The league operates from September to March, culminating in a playoff championship.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How many ice rinks does the UK have?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'The UK has 60+ permanent ice rinks according to the EIHA, though not all have active hockey programs. Numbers vary between the EIHA (60+) and other sources (45-55) due to definition differences on seasonal vs. permanent facilities.',
+        },
+      },
+    ],
+  };
 
-  // Count UK players
-  const { count: ukPlayersCount } = await supabase
-    .from('players')
-    .select('*', { count: 'exact', head: true })
-    .or(`nationality.ilike.%United Kingdom%,nationality.ilike.%GB%,nationality.ilike.%British%`);
+  const bg = '#0a0a0a';
+  const card = '#0f0f0f';
+  const border = '#1e1e1e';
+  const red = '#C8102E';
+  const textMain = '#fff';
+  const textMuted = '#888';
+  const textSub = '#aaa';
+  const textDim = '#555';
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Breadcrumb */}
-      <div className="border-b border-white/10 bg-[#0f0f0f]">
-        <div className="mx-auto max-w-7xl px-6 py-3">
-          <nav className="flex items-center gap-2 text-sm text-white/60">
-            <a href="/directory" className="hover:text-white transition-colors">RinkStop</a>
-            <span>›</span>
-            <a href="/directory" className="hover:text-white transition-colors">Directory</a>
-            <span>›</span>
-            <span className="text-white">United Kingdom</span>
-          </nav>
-        </div>
-      </div>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
-      {/* Hero */}
-      <section className="mx-auto max-w-7xl px-6 py-20 text-center">
-        <h1
-          className="mb-4 text-6xl font-bold tracking-wide"
-          style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-        >
-          HOCKEY IN THE UNITED KINGDOM
-        </h1>
-        <p className="mx-auto max-w-3xl text-xl text-white/70">
-          From the EIHL to NIHL, the UK has a growing hockey scene spanning England, Scotland, Wales, and Northern Ireland.
-          Find every rink, league, and team across Britain.
-        </p>
-      </section>
+      <div style={{ background: bg, color: textMain, minHeight: '100vh', fontFamily: 'system-ui, sans-serif' }}>
 
-      {/* Stats Row */}
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-xl bg-[#0f0f0f] border border-white/10 p-6 text-center">
-            <div
-              className="text-5xl font-bold text-[#C8102E]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              {ukRinksCount ?? '--'}
-            </div>
-            <div className="mt-1 text-sm text-white/50">UK Rinks</div>
-            <div className="mt-1 text-xs text-white/30">in our directory</div>
-          </div>
-
-          <div className="rounded-xl bg-[#0f0f0f] border border-white/10 p-6 text-center">
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#C8102E]/20 px-3 py-1 text-xs font-semibold text-[#C8102E]">
-              EIHL
-            </div>
-            <div
-              className="text-5xl font-bold"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              11
-            </div>
-            <div className="mt-1 text-sm text-white/50">EIHL Teams</div>
-            <div className="mt-1 text-xs text-white/30">top professional league</div>
-          </div>
-
-          <div className="rounded-xl bg-[#0f0f0f] border border-white/10 p-6 text-center">
-            <div
-              className="text-5xl font-bold text-[#C8102E]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              12
-            </div>
-            <div className="mt-1 text-sm text-white/50">NIHL Divisions</div>
-            <div className="mt-1 text-xs text-white/30">across UK & Ireland</div>
-          </div>
-
-          <div className="rounded-xl bg-[#0f0f0f] border border-white/10 p-6 text-center">
-            <div
-              className="text-5xl font-bold text-[#C8102E]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              60+
-            </div>
-            <div className="mt-1 text-sm text-white/50">Permanent Rinks</div>
-            <div className="mt-1 text-xs text-white/30">in the United Kingdom</div>
+        {/* Breadcrumb */}
+        <div style={{ borderBottom: `1px solid ${border}`, background: '#0f0f0f' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 24px' }}>
+            <nav style={{ fontSize: 13, color: textDim }}>
+              <a href="/" style={{ color: textDim, textDecoration: 'none' }}>Home</a>
+              <span style={{ margin: '0 6px', color: textDim }}>›</span>
+              <a href="/directory" style={{ color: textDim, textDecoration: 'none' }}>Directory</a>
+              <span style={{ margin: '0 6px', color: textDim }}>›</span>
+              <span style={{ color: textSub }}>United Kingdom</span>
+            </nav>
           </div>
         </div>
-      </section>
 
-      {/* Hockey Culture */}
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <h2
-          className="mb-8 text-4xl font-bold"
-          style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            borderLeft: '3px solid #C8102E',
-            paddingLeft: '12px',
-          }}
-        >
-          HOCKEY IN THE UK
-        </h2>
-        <div className="grid gap-8 md:grid-cols-2">
-          <div className="rounded-xl bg-[#0f0f0f] border border-white/10 p-8">
-            <h3
-              className="mb-4 text-2xl font-bold text-[#C8102E]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              THE EIHL — TOP TIER
-            </h3>
-            <div className="space-y-4 text-white/70 leading-relaxed">
-              <p>
-                The Elite Ice Hockey League (EIHL) is the premier professional hockey competition in the UK,
-                featuring 11 teams across England, Scotland, Wales, and Northern Ireland. The league
-                operates from September to March, culminating in a playoff championship.
-              </p>
-              <p>
-                Notable teams include the Belfast Giants (SSE Arena, capacity 18,000), Sheffield Steelers,
-                Cardiff Devils, and Coventry Blaze. Several teams have moved or expanded venues in recent
-                years, with Manchester Storm relocating to the massive AO Arena for 2026-27.
-              </p>
-              <p>
-                The league attracts players from North America, Europe, and a growing number of British-born
-                talent. Import players typically dominate early but the development pipeline for UK-born
-                players continues to strengthen through NIHL and the EIHL's own youth systems.
-              </p>
-            </div>
+        {/* Hero */}
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: red, marginBottom: 12 }}>
+            Hockey Across the British Isles
           </div>
-
-          <div className="rounded-xl bg-[#0f0f0f] border border-white/10 p-8">
-            <h3
-              className="mb-4 text-2xl font-bold text-[#C8102E]"
-              style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-            >
-              NIHL — THE FOUNDATION
-            </h3>
-            <div className="space-y-4 text-white/70 leading-relaxed">
-              <p>
-                The National Ice Hockey League (NIHL) is the semi-professional tier below the EIHL,
-                split into multiple divisions: NIHL 1 (north and south) and NIHL 2. It serves as the
-                primary development ground for British players and operates at a community level with
-                passionate local fanbases.
-              </p>
-              <p>
-                The NIHL is split into regional conferences allowing for geographic rivalries and
-                reducing travel costs. Teams like the billingham Stars, Milton Keynes Thunder, and
-                Chelmsford Pacers have built strong local following over decades of consistent play.
-              </p>
-              <p>
-                Above NIHL sits the EPIHL (English Premier Ice Hockey League) as the bridge between
-                NIHL and EIHL. The full UK hockey pyramid ranges from recreational beer league hockey
-                all the way up to the professional EIHL.
-              </p>
-            </div>
-          </div>
+          <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 'clamp(3rem, 8vw, 5rem)', color: textMain, letterSpacing: '0.04em', lineHeight: 1, marginBottom: 20 }}>
+            HOCKEY IN THE<br />UNITED KINGDOM
+          </h1>
+          <p style={{ fontSize: 18, color: textMuted, maxWidth: 640, margin: '0 auto', lineHeight: 1.6 }}>
+            From the EIHL to NIHL — the UK has a growing hockey scene spanning England, Scotland, Wales, and Northern Ireland.
+          </p>
         </div>
-      </section>
 
-      {/* Leagues */}
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <h2
-          className="mb-8 text-4xl font-bold"
-          style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            borderLeft: '3px solid #C8102E',
-            paddingLeft: '12px',
-          }}
-        >
-          UK HOCKEY LEAGUES
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { name: 'EIHL', desc: 'Elite Ice Hockey League — 11 professional teams, top UK tier' },
-            { name: 'NIHL 1', desc: 'National Ice Hockey League Division 1 — semi-pro, north & south' },
-            { name: 'NIHL 2', desc: 'National Ice Hockey League Division 2 — community level hockey' },
-            { name: 'EPIHL', desc: 'English Premier Ice Hockey League — bridge between NIHL and EIHL' },
-            { name: 'SNL', desc: 'Scottish National League — Scotland\'s top amateur competition' },
-            { name: 'WIHL', desc: 'Welsh Ice Hockey League — recreational and development focused' },
-          ].map((league) => (
-            <div
-              key={league.name}
-              className="rounded-xl bg-[#0f0f0f] border border-white/10 p-6 hover:border-[#C8102E]/50 transition-colors"
-            >
-              <h3
-                className="mb-2 text-xl font-bold text-[#C8102E]"
-                style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-              >
-                {league.name}
-              </h3>
-              <p className="text-sm text-white/60">{league.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* UK Rinks Grid */}
-      {ukRinks && ukRinks.length > 0 && (
-        <section className="mx-auto max-w-7xl px-6 pb-24">
-          <h2
-            className="mb-8 text-4xl font-bold"
-            style={{
-              fontFamily: "'Bebas Neue', sans-serif",
-              borderLeft: '3px solid #C8102E',
-              paddingLeft: '12px',
-            }}
-          >
-            ICE RINKS IN THE UK
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {ukRinks.map((rink: { name: string; city: string | null; address: string | null; phone: string | null; website_url: string | null; notes: string | null }) => (
-              <div
-                key={rink.name}
-                className="rounded-xl bg-[#0f0f0f] border border-white/10 p-5 hover:border-[#C8102E]/50 transition-colors"
-              >
-                <h3 className="font-semibold text-white mb-1">{rink.name}</h3>
-                <p className="text-sm text-white/60 mb-2">{rink.city}</p>
-                {rink.address && (
-                  <p className="text-xs text-white/40 mb-1">{rink.address}</p>
-                )}
-                {rink.phone && (
-                  <p className="text-xs text-white/40 mb-1">📞 {rink.phone}</p>
-                )}
-                {rink.website_url && (
-                  <a
-                    href={rink.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-[#C8102E] hover:underline mb-2 block"
-                  >
-                    🌐 Visit website
-                  </a>
-                )}
-                {rink.notes && (
-                  <p className="text-xs text-white/50 mt-2 italic border-t border-white/10 pt-2">{rink.notes}</p>
-                )}
+        {/* Stats Row */}
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 60px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+            {[
+              { label: 'UK Rinks', value: String(ukRinksCount ?? 0), sub: 'in our directory' },
+              { label: 'EIHL Teams', value: '11', sub: 'top professional tier' },
+              { label: 'NIHL Divisions', value: '12+', sub: 'across UK & Ireland' },
+              { label: 'Permanent Rinks', value: '60+', sub: 'across the British Isles' },
+            ].map(stat => (
+              <div key={stat.label} style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '28px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: 42, fontWeight: 800, color: red, fontFamily: "'Bebas Neue', Impact, sans-serif", lineHeight: 1 }}>
+                  {stat.value}
+                </div>
+                <div style={{ fontSize: 14, color: textSub, marginTop: 8 }}>{stat.label}</div>
+                <div style={{ fontSize: 11, color: textDim, marginTop: 4 }}>{stat.sub}</div>
               </div>
             ))}
           </div>
-          {ukRinksCount && ukRinksCount > 30 && (
-            <p className="mt-4 text-center text-sm text-white/40">
-              Showing 30 of {ukRinksCount} rinks in our directory.{' '}
-              <a href="/directory" className="text-[#C8102E] hover:underline">Browse all →</a>
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* Add Listing CTA */}
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="rounded-2xl bg-gradient-to-r from-[#041E42] to-[#0a1f3d] border border-white/10 p-10 text-center">
-          <h2
-            className="mb-4 text-3xl font-bold"
-            style={{ fontFamily: "'Bebas Neue', sans-serif" }}
-          >
-            KNOW A UK RINK WE&apos;RE MISSING?
-          </h2>
-          <p className="text-white/60 mb-6 max-w-xl mx-auto">
-            Help us build the most complete hockey directory in the world. If you know a rink, team, or league
-            in the UK that should be listed, let us know.
-          </p>
-          <a
-            href="/add-listing"
-            style={{
-              display: 'inline-block',
-              background: '#C8102E',
-              color: '#fff',
-              padding: '0.75rem 2rem',
-              borderRadius: '6px',
-              fontWeight: 700,
-              textDecoration: 'none',
-            }}
-          >
-            Submit a Listing
-          </a>
         </div>
-      </section>
-    </div>
+
+        {/* Hockey Culture */}
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 60px' }}>
+          <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 32, letterSpacing: '0.04em', borderLeft: `4px solid ${red}`, paddingLeft: 16, marginBottom: 32, color: textMain }}>
+            HOCKEY IN THE UK
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+            {[
+              {
+                title: 'THE EIHL — TOP TIER',
+                body: [
+                  'The Elite Ice Hockey League (EIHL) is the premier professional competition in the UK, featuring 11 teams across England, Scotland, Wales, and Northern Ireland. The league operates September to March, culminating in a playoff championship.',
+                  'Notable teams include the Belfast Giants (SSE Arena, capacity 18,000), Sheffield Steelers, Cardiff Devils, and Coventry Blaze. Several teams have expanded venues in recent years, with Manchester Storm moving to the AO Arena for 2026-27.',
+                  'The league attracts players from North America, Europe, and a growing number of British-born talent through its youth systems and NIHL pathway.',
+                ],
+              },
+              {
+                title: 'NIHL — THE FOUNDATION',
+                body: [
+                  'The National Ice Hockey League (NIHL) is the semi-professional tier below the EIHL, split into NIHL 1 (north and south) and NIHL 2. It serves as the primary development ground for British players at community level.',
+                  'The NIHL is split into regional conferences allowing for geographic rivalries and reduced travel costs. Teams like Billingham Stars, Milton Keynes Thunder, and Chelmsford Pacers have built strong local following over decades.',
+                  'Above NIHL sits the EPIHL (English Premier Ice Hockey League) as the bridge between NIHL and EIHL. The full UK hockey pyramid ranges from recreational beer league hockey up to the professional EIHL.',
+                ],
+              },
+            ].map(({ title, body }) => (
+              <div key={title} style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: 28 }}>
+                <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 20, color: red, letterSpacing: '0.04em', marginBottom: 20 }}>
+                  {title}
+                </h3>
+                {body.map((para, i) => (
+                  <p key={i} style={{ fontSize: 14, color: textMuted, lineHeight: 1.75, marginBottom: 16 }}>
+                    {para}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Leagues Grid */}
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 60px' }}>
+          <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 32, letterSpacing: '0.04em', borderLeft: `4px solid ${red}`, paddingLeft: 16, marginBottom: 32, color: textMain }}>
+            UK HOCKEY LEAGUES
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+            {[
+              { name: 'EIHL', desc: 'Elite Ice Hockey League — 11 professional teams, top UK tier' },
+              { name: 'NIHL 1', desc: 'National Ice Hockey League Division 1 — semi-pro, north & south' },
+              { name: 'NIHL 2', desc: 'National Ice Hockey League Division 2 — community level hockey' },
+              { name: 'EPIHL', desc: 'English Premier Ice Hockey League — bridge between NIHL and EIHL' },
+              { name: 'SNL', desc: 'Scottish National League — Scotland\'s top amateur competition' },
+              { name: 'WIHL', desc: 'Welsh Ice Hockey League — recreational and development focused' },
+            ].map(league => (
+              <div key={league.name} style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: 20, transition: 'border-color 0.2s' }}>
+                <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 18, color: red, letterSpacing: '0.04em', marginBottom: 8 }}>
+                  {league.name}
+                </h3>
+                <p style={{ fontSize: 13, color: textMuted, lineHeight: 1.5 }}>{league.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* UK Rinks Grid */}
+        {ukRinks && ukRinks.length > 0 && (
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 80px' }}>
+            <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 32, letterSpacing: '0.04em', borderLeft: `4px solid ${red}`, paddingLeft: 16, marginBottom: 32, color: textMain }}>
+              ICE RINKS IN THE UK
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              {ukRinks.map((rink) => (
+                <div key={rink.name} style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: 20, transition: 'border-color 0.2s' }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: textMain, marginBottom: 4 }}>{rink.name}</h3>
+                  <div style={{ fontSize: 13, color: textMuted, marginBottom: 8 }}>{rink.city ?? ''}</div>
+                  {rink.address && (
+                    <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>{rink.address}</div>
+                  )}
+                  {rink.phone && (
+                    <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>📞 {rink.phone}</div>
+                  )}
+                  {rink.website_url && (
+                    <a
+                      href={rink.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 12, color: red, textDecoration: 'none', display: 'block', marginBottom: 4 }}
+                    >
+                      🌐 Visit website
+                    </a>
+                  )}
+                  {rink.notes && (
+                    <div style={{ fontSize: 11, color: textMuted, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${border}`, fontStyle: 'italic', lineHeight: 1.5 }}>
+                      {rink.notes}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {ukRinksCount && ukRinksCount > 30 && (
+              <p style={{ textAlign: 'center', marginTop: 24, fontSize: 13, color: textDim }}>
+                Showing 30 of {ukRinksCount} rinks in our directory.{' '}
+                <a href="/directory" style={{ color: red }}>Browse all →</a>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* CTA */}
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 60px' }}>
+          <div style={{ background: `linear-gradient(135deg, ${bg} 0%, #041E42 100%)`, border: `1px solid ${border}`, borderRadius: 16, padding: 48, textAlign: 'center' }}>
+            <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 32, color: textMain, letterSpacing: '0.04em', marginBottom: 16 }}>
+              KNOW A UK RINK WE&apos;RE MISSING?
+            </h2>
+            <p style={{ fontSize: 15, color: textMuted, marginBottom: 32, maxWidth: 480, margin: '0 auto 32px' }}>
+              Help us build the most complete hockey directory in the world. If you know a rink, team, or league in the UK that should be listed, let us know.
+            </p>
+            <a
+              href="/add-listing"
+              style={{
+                display: 'inline-block',
+                background: red,
+                color: '#fff',
+                padding: '12px 32px',
+                borderRadius: 6,
+                fontWeight: 700,
+                fontSize: 14,
+                textDecoration: 'none',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Submit a Listing
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </>
   );
 }
