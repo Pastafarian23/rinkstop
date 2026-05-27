@@ -146,25 +146,28 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json();
-  const { data, error } = await supabase.from('fixtures').insert(body).select('*, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').single();
+  const { data, error } = await supabaseAdmin.from('fixtures').insert(body).select('*, home_team:teams!home_team_id(name), away_team:teams!away_team_id(name)').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data, { status: 201 });
 }
 
 export async function PUT(request: NextRequest) {
+  if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, ...rest } = await request.json();
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { data, error } = await supabase.from('fixtures').update(rest).eq('id', id).select('*').single();
+  const { data, error } = await supabaseAdmin.from('fixtures').update(rest).eq('id', id).select('*').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { error } = await supabase.from('fixtures').delete().eq('id', id);
+  const { error } = await supabaseAdmin.from('fixtures').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ success: true });
 }
