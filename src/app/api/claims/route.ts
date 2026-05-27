@@ -1,0 +1,96 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { supabase } from '@/lib/supabase';
+import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+
+const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
+
+// POST /api/claims — submit a new claim
+export async function POST(request: NextRequest) {
+  const ip = getClientIP(request);
+  const result = checkRateLimit(ip, RATE_LIMIT);
+  maybeCleanup();
+
+  if (!result.allowed) {
+    const response = new NextResponse(
+      JSON.stringify({ error: 'Too many requests. Please slow down.' }),
+      { status: 429 }
+    );
+    applyRateLimitHeaders(response, result);
+    return response;
+  }
+
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { claim_type, entity_name, entity_id, reason, proof } = body;
+
+    if (!claim_type || !entity_name || !reason) {
+      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    }
+
+    if (!['rink', 'team', 'player'].includes(claim_type)) {
+      return NextResponse.json({ error: 'Invalid claim type.' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('claims')
+      .insert({
+        user_id: userId,
+        claim_type,
+        entity_name,
+        entity_id: entity_id || null,
+        reason,
+        proof: proof || null,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Claims insert error:', error);
+      return NextResponse.json({ error: 'Failed to submit claim.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, claim: data }, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+  }
+}
+
+// GET /api/claims — get user's claims
+export async function GET(request: NextRequest) {
+  const ip = getClientIP(request);
+  const result = checkRateLimit(ip, RATE_LIMIT);
+  maybeCleanup();
+
+  if (!result.allowed) {
+    const response = new NextResponse(
+      JSON.stringify({ error: 'Too many requests.' }),
+      { status: 429 }
+    );
+    applyRateLimitHeaders(response, result);
+    return response;
+  }
+
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from('claims')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: 'Failed to fetch claims.' }, { status: 500 });
+  }
+
+  return NextResponse.json({ claims: data });
+}
