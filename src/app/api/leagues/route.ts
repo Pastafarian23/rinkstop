@@ -49,9 +49,6 @@ export async function PUT(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);
 }
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json(data);
-}
 
 export async function DELETE(request: NextRequest) {
   if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

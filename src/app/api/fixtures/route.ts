@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
+
+const API_SECRET = process.env.API_SECRET;
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+
+function requireAuth(request: NextRequest) {
+  const key = request.headers.get('x-api-secret');
+  return key === API_SECRET || key === ADMIN_SECRET;
+}
 
 // Fetch team names from ESPN for a batch of game IDs
 async function enrichFromESPN(fixtures: any[]): Promise<any[]> {
