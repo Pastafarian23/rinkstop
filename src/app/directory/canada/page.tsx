@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -68,7 +69,7 @@ export default async function CanadaPage() {
 
   const canadianRinks = await supabase
     .from('rinks')
-    .select('name, city, rink_type, capacity')
+    .select('id, name, city, rink_type, capacity')
     .ilike('country', '%anada%')
     .limit(12);
 
@@ -251,7 +252,19 @@ export default async function CanadaPage() {
           {canadianRinks.data && canadianRinks.data.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
               {canadianRinks.data.map((rink) => (
-                <div key={rink.name} style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 8, padding: '20px' }}>
+                <Link
+                  key={rink.id}
+                  href={`/directory/rinks/${rink.id}`}
+                  style={{
+                    display: 'block',
+                    background: '#0f0f0f',
+                    border: '1px solid #1e1e1e',
+                    borderRadius: 8,
+                    padding: '20px',
+                    textDecoration: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                >
                   <div style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.2rem', letterSpacing: '0.05em', color: '#fff', marginBottom: 6 }}>
                     {rink.name}
                   </div>
@@ -260,7 +273,7 @@ export default async function CanadaPage() {
                     {rink.rink_type ? ` · ${rink.rink_type}` : ''}
                     {rink.capacity ? ` · ${rink.capacity.toLocaleString()} capacity` : ''}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
