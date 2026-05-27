@@ -165,8 +165,10 @@ export default function Home() {
                 </div>
               </Link>
             ))}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '0.875rem', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '0.25rem' }}>
+              <TicketmasterAd size="468x60" />
+            </div>
           </div>
-          <TicketmasterAd size="468x60" />
         </div>
       </section>
 
