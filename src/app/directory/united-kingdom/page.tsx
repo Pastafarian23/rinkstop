@@ -19,7 +19,7 @@ export default async function UnitedKingdomPage() {
     supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('country', 'UK'),
     supabase
       .from('rinks')
-      .select('id, name, city, address, phone, website_url, notes')
+      .select('id, slug, name, city, address, phone, website_url, notes')
       .eq('country', 'UK').eq('is_active', true)
       .order('name').limit(30),
   ]);
@@ -195,7 +195,7 @@ export default async function UnitedKingdomPage() {
               {ukRinks.map((rink) => (
                 <Link
                   key={rink.id}
-                  href={`/directory/rinks/${rink.id}`}
+                  href={`/directory/rinks/${rink.slug}`}
                   style={{
                     background: card,
                     border: `1px solid ${border}`,
