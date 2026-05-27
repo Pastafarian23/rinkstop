@@ -743,7 +743,6 @@ export default async function PhilippinesPage() {
                   padding: '1.25rem',
                   textDecoration: 'none',
                   transition: 'border-color 0.2s',
-                  ...style,
                 }}
               >
                 <h4
