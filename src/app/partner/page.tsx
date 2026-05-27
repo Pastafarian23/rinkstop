@@ -60,7 +60,7 @@ export default function PartnerPage() {
           We work with hockey organizations, brands, media companies, and technology platforms. Tell us about your goals and we&apos;ll put together a custom partnership proposal.
         </p>
         <a
-          href="mailto:info@rinkstop.com?subject=Partnership Inquiry"
+          href="mailto:support@rinkstop.com?subject=Partnership Inquiry"
           style={{
             display: 'inline-block',
             background: '#C8102E',
