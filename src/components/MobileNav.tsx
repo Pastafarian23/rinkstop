@@ -117,7 +117,8 @@ export default function MobileNav() {
           ))}
         </div>
       ))}
-      <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <Link href="/login" onClick={() => { const cb = document.getElementById('mob-nav') as HTMLInputElement; if (cb) cb.checked = false; }} style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none', padding: '0.5rem 0', textAlign: 'center' }}>Sign In</Link>
         <SignUpButton />
       </div>
     </nav>
