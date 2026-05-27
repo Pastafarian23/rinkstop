@@ -90,27 +90,30 @@ export async function GET(request: NextRequest) {
 
 // POST /api/games
 export async function POST(request: NextRequest) {
+  if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json();
-  const { data, error } = await supabase.from('highlightly_matches').insert(body).select().single();
+  const { data, error } = await supabaseAdmin.from('highlightly_matches').insert(body).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data, { status: 201 });
 }
 
 // PUT /api/games
 export async function PUT(request: NextRequest) {
+  if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, ...rest } = await request.json();
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { data, error } = await supabase.from('highlightly_matches').update(rest).eq('id', id).select().single();
+  const { data, error } = await supabaseAdmin.from('highlightly_matches').update(rest).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);
 }
 
 // DELETE /api/games
 export async function DELETE(request: NextRequest) {
+  if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { error } = await supabase.from('highlightly_matches').delete().eq('id', id);
+  const { error } = await supabaseAdmin.from('highlightly_matches').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ success: true });
 }
