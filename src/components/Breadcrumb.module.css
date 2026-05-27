@@ -1,0 +1,26 @@
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1.25rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+.breadcrumbHome {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.breadcrumbHome:hover { color: #c8102e; }
+.breadcrumbItem { display: inline-flex; align-items: center; gap: 0; }
+.breadcrumbSep { margin: 0 0.35rem; color: #bbb; }
+.breadcrumbLink {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.breadcrumbLink:hover { color: #c8102e; }
+.breadcrumbCurrent { color: #555; font-weight: 500; }
