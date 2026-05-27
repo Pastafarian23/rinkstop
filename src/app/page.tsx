@@ -110,7 +110,7 @@ export default function Home() {
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href="/directory" className="btn btn-red">Explore Directory</Link>
-                <Link href="/login" className="btn btn-yellow">Join Now</Link>
+                <Link href="/sign-up" className="btn btn-yellow">Join Now</Link>
               </div>
             </div>
 
@@ -240,7 +240,7 @@ export default function Home() {
               </p>
             </div>
             <div className="cta-btns">
-              <Link href="/login" className="btn btn-white">+ Join Now</Link>
+              <Link href="/sign-up" className="btn btn-white">+ Join Now</Link>
               <Link href="/directory" className="btn btn-ghost" style={{ borderColor: 'rgba(255,255,255,0.4)' }}>Browse Directory</Link>
             </div>
           </div>
