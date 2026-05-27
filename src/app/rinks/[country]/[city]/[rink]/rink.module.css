@@ -1,0 +1,38 @@
+.pageContainer { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+.hero { padding: 2rem 0 1.5rem; border-bottom: 2px solid #e5e7eb; margin-bottom: 2rem; }
+.heroBadge { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #c8102e; margin-bottom: 0.5rem; }
+.heroTitle { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 3rem); color: #041e42; letter-spacing: 0.03em; margin: 0 0 0.5rem; line-height: 1; }
+.heroLocation { color: #666; font-size: 1rem; margin: 0; }
+.introBlock { max-width: 700px; margin: 0 auto 2rem; padding: 1.25rem 1.5rem; background: #fff; border-left: 4px solid #c8102e; border-radius: 0 8px 8px 0; box-shadow: 0 2px 12px rgba(4,30,66,0.06); }
+.introBlock p { margin: 0; font-size: 1.05rem; line-height: 1.7; color: #333; }
+.infoGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2.5rem; }
+.infoCard { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem 1.25rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+.infoIcon { font-size: 1.3rem; flex-shrink: 0; }
+.infoLabel { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 0.2rem; }
+.infoValue { color: #041e42; font-size: 0.95rem; font-weight: 500; }
+.infoLink { color: #c8102e; font-size: 0.95rem; text-decoration: none; }
+.infoLink:hover { text-decoration: underline; }
+.section { margin-bottom: 3rem; }
+.section h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: #041e42; letter-spacing: 0.03em; margin: 0 0 0.25rem; }
+.sectionDesc { color: #666; margin: 0 0 1.25rem; font-size: 0.95rem; }
+.gamesList { display: flex; flex-direction: column; gap: 0.5rem; }
+.gameCard { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.25rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; transition: border-color 0.2s; }
+.gameCard:hover { border-color: #c8102e; }
+.gameDate { display: flex; flex-direction: column; align-items: center; min-width: 40px; }
+.gameMonth { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #c8102e; }
+.gameDay { font-size: 1.4rem; font-weight: 800; color: #041e42; line-height: 1; }
+.gameInfo { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+.gameTeams { display: flex; align-items: center; gap: 0.75rem; }
+.teamName { font-weight: 600; color: #041e42; font-size: 0.95rem; }
+.score { color: #888; font-size: 0.875rem; }
+.gameStatus { font-size: 0.8rem; color: #888; }
+.linkGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.5rem; }
+.entityLink { display: flex; flex-direction: column; padding: 0.75rem 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.entityLink:hover { border-color: #041e42; background: #041e42; }
+.entityLink:hover .entityName { color: #fff; }
+.entityLink:hover .entityMeta { color: #ffb81c; }
+.entityName { font-weight: 600; font-size: 0.95rem; color: #041e42; }
+.entityMeta { font-size: 0.78rem; color: #888; margin-top: 0.15rem; }
+.linkFooter { display: flex; gap: 1.5rem; flex-wrap: wrap; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; margin-top: 2rem; }
+.footerLink { color: #666; font-size: 0.875rem; text-decoration: none; font-weight: 500; transition: color 0.2s; }
+.footerLink:hover { color: #c8102e; }
