@@ -1,8 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
-// GET /api/games — list matches from highlightly_matches table
+// Rate limit: 60 requests per minute per IP
+const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
+
 export async function GET(request: NextRequest) {
+  const ip = getClientIP(request);
+  const result = checkRateLimit(ip, RATE_LIMIT);
+  maybeCleanup();
+
+  if (!result.allowed) {
+    const response = new NextResponse(
+      JSON.stringify({ error: 'Too many requests. Please slow down.' }),
+      { status: 429 }
+    );
+    applyRateLimitHeaders(response, result);
+    response.headers.set('Content-Type', 'application/json');
+    return response;
+  }
+
   const { searchParams } = new URL(request.url);
   const leagueId = searchParams.get('leagueId');
   const teamId = searchParams.get('teamId');
@@ -60,7 +77,7 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.json(games, { status: 200 });
   response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
-  return response;
+  return applyRateLimitHeaders(response, result);
 }
 
 // POST /api/games
