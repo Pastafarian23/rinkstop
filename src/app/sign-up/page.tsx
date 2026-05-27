@@ -1,5 +1,5 @@
 import { SignUp } from '@clerk/nextjs';
-import styles from './login.module.css';
+import styles from '../login/login.module.css';
 
 export default function SignUpPage() {
   return (
