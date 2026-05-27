@@ -208,7 +208,19 @@ export default async function SwedenPage() {
           {swedishRinks.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
               {swedishRinks.map((rink) => (
-                <div key={rink.id} style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 8, padding: 20 }}>
+                <Link
+                  key={rink.id}
+                  href={`/directory/rinks/${rink.id}`}
+                  style={{
+                    display: 'block',
+                    background: '#0f0f0f',
+                    border: '1px solid #1e1e1e',
+                    borderRadius: 8,
+                    padding: 20,
+                    textDecoration: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                >
                   <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 20, letterSpacing: '0.04em', margin: '0 0 8px', color: '#fff' }}>
                     {rink.name}
                   </h3>
@@ -218,7 +230,7 @@ export default async function SwedenPage() {
                   <p style={{ fontSize: 13, color: '#C8102E', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {rink.rink_type ?? 'Arena'}{rink.capacity ? ` - Cap: ${rink.capacity.toLocaleString()}` : ''}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

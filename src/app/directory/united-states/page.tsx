@@ -42,7 +42,7 @@ export default async function UnitedStatesPage() {
   // Fetch US rinks
   const { data: usRinks } = await supabase
     .from('rinks')
-    .select('name, city, rink_type, capacity')
+    .select('id, name, city, rink_type, capacity')
     .or('country.ilike.%United States%,country.ilike.%US%')
     .eq('is_active', true)
     .order('name')
@@ -332,10 +332,11 @@ export default async function UnitedStatesPage() {
               AMERICAN RINKS
             </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {usRinks.map((rink: { name: string; city: string; rink_type: string | null; capacity: number | null }) => (
-                <div
-                  key={rink.name}
-                  className="rounded-xl bg-[#0f0f0f] border border-white/10 p-5 hover:border-[#C8102E]/50 transition-colors"
+              {usRinks.map((rink: { id: number; name: string; city: string; rink_type: string | null; capacity: number | null }) => (
+                <Link
+                  key={rink.id}
+                  href={`/directory/rinks/${rink.id}`}
+                  className="block rounded-xl bg-[#0f0f0f] border border-white/10 p-5 hover:border-[#C8102E]/50 transition-colors no-underline"
                 >
                   <h3 className="font-semibold text-white mb-1">{rink.name}</h3>
                   <p className="text-sm text-white/60">{rink.city}</p>
@@ -345,7 +346,7 @@ export default async function UnitedStatesPage() {
                       <span>Cap: {rink.capacity.toLocaleString()}</span>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             {usRinks.length === 24 && (

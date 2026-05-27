@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { metadata as siteMetadata } from './metadata';
 export { siteMetadata as metadata };
 
@@ -160,7 +161,9 @@ export default async function PhilippinesPage() {
         color: '#fff',
         minHeight: '100vh',
         fontFamily: 'monospace',
-        padding: '0 1.5rem 4rem',
+        padding: '0 clamp(1rem, 4vw, 2rem) 4rem',
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       {/* script removed */}
@@ -194,7 +197,7 @@ export default async function PhilippinesPage() {
       </nav>
 
       {/* ---- Hero ---- */}
-      <header style={{ padding: '3rem 0 2.5rem' }}>
+      <header style={{ padding: 'clamp(1.5rem, 5vw, 3rem) 0 clamp(1rem, 4vw, 2.5rem)' }}>
         <h1
           style={{
             fontFamily: '"Bebas Neue", monospace',
@@ -229,13 +232,13 @@ export default async function PhilippinesPage() {
           border: '1px solid #222',
           borderTop: '3px solid #C8102E',
           borderRadius: '8px',
-          padding: '2rem 2.5rem',
+          padding: 'clamp(1rem, 4vw, 2rem) clamp(1rem, 4vw, 2.5rem)',
           display: 'grid',
-          gridTemplateColumns: '1fr auto',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))',
           gap: '2rem',
           alignItems: 'start',
         }}>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{
               display: 'inline-block',
               background: '#C8102E',
@@ -559,7 +562,7 @@ export default async function PhilippinesPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))',
               gap: '1rem',
             }}
           >
@@ -724,12 +727,25 @@ export default async function PhilippinesPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))',
               gap: '1rem',
             }}
           >
             {rinks.map((rink) => (
-              <Card key={rink.id}>
+              <Link
+                key={rink.id}
+                href={`/directory/rinks/${rink.id}`}
+                style={{
+                  display: 'block',
+                  background: '#0f0f0f',
+                  border: '1px solid #1e1e1e',
+                  borderRadius: '6px',
+                  padding: '1.25rem',
+                  textDecoration: 'none',
+                  transition: 'border-color 0.2s',
+                  ...style,
+                }}
+              >
                 <h4
                   style={{
                     fontFamily: '"Bebas Neue", monospace',
@@ -793,7 +809,7 @@ export default async function PhilippinesPage() {
                     Visit Website →
                   </a>
                 )}
-              </Card>
+              </Link>
             ))}
           </div>
         )}
