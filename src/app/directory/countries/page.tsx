@@ -22,7 +22,7 @@ const HOCKEY_NATIONS = [
   { country: 'Norway', flag: '🇳🇴', tier: 'Mid', leagues: 'Fjordkraft-Ligaen', note: 'Rapidly improving program' },
   { country: 'Denmark', flag: '🇩🇰', tier: 'Mid', leagues: 'Metal Ligaen', note: 'Strong domestic league' },
   { country: 'France', flag: '🇫🇷', tier: 'Mid', leagues: 'Ligue Magnus', note: 'Growing NHL interest' },
-  { country: 'Great Britain', flag: '🇬🇧', tier: 'Mid', leagues: 'EIHL, NIHL', note: 'UK hockey expanding' },
+  { country: 'United Kingdom', flag: '🇬🇧', tier: 'Mid', leagues: 'EIHL, NIHL', note: 'UK hockey expanding' },
   { country: 'Italy', flag: '🇮🇹', tier: 'Developing', leagues: 'Serie A, Serie B', note: 'Mediterranean hockey hub' },
   { country: 'Kazakhstan', flag: '🇰🇿', tier: 'Developing', leagues: 'Kazakhstan Hockey League', note: 'Asian hockey presence' },
   { country: 'Japan', flag: '🇯🇵', tier: 'Developing', leagues: 'BHL, JHML', note: 'Asia&apos;s most developed program' },
