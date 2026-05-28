@@ -47,8 +47,20 @@ function HighlightsContent() {
   async function fetchHighlights(league: string, offsetVal: number) {
     setLoading(true);
     try {
-      let url = `/api/highlights?limit=12&offset=${offsetVal}&youtubeOnly=true`;
+      let url = `/api/highlights?limit=12&offset=${offsetVal}`;
+      // Only apply youtubeOnly filter for NHL and All (NCAA has no YouTube content)
+      if (youtubeOnly || league === 'NHL' || !league) url += '&youtubeOnly=true';
       if (league) url += `&leagueName=${encodeURIComponent(league)}`;
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch');
+      let data = await res.json();
+      let filtered = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
+      
+      // If youtube filter returns nothing for NCAA, fall back to showing all NCAA sources
+      if (league && filtered.length === 0 && data.highlights?.length > 0) {
+        filtered = data.highlights;
+      }
       
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch');
