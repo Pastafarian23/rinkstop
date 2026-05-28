@@ -18,6 +18,20 @@ const US_STATES: Record<string, string> = {
   'district-of-columbia': 'DC',
 };
 
+const STATE_NAMES: Record<string, string> = {
+  'al': 'Alabama', 'ak': 'Alaska', 'az': 'Arizona', 'ar': 'Arkansas', 'ca': 'California',
+  'co': 'Colorado', 'ct': 'Connecticut', 'de': 'Delaware', 'fl': 'Florida', 'ga': 'Georgia',
+  'hi': 'Hawaii', 'id': 'Idaho', 'il': 'Illinois', 'in': 'Indiana', 'ia': 'Iowa',
+  'ks': 'Kansas', 'ky': 'Kentucky', 'la': 'Louisiana', 'me': 'Maine', 'md': 'Maryland',
+  'ma': 'Massachusetts', 'mi': 'Michigan', 'mn': 'Minnesota', 'ms': 'Mississippi', 'mo': 'Missouri',
+  'mt': 'Montana', 'ne': 'Nebraska', 'nv': 'Nevada', 'nh': 'New Hampshire', 'nj': 'New Jersey',
+  'nm': 'New Mexico', 'ny': 'New York', 'nc': 'North Carolina', 'nd': 'North Dakota', 'oh': 'Ohio',
+  'ok': 'Oklahoma', 'or': 'Oregon', 'pa': 'Pennsylvania', 'ri': 'Rhode Island', 'sc': 'South Carolina',
+  'sd': 'South Dakota', 'tn': 'Tennessee', 'tx': 'Texas', 'ut': 'Utah', 'vt': 'Vermont',
+  'va': 'Virginia', 'wa': 'Washington', 'wv': 'West Virginia', 'wi': 'Wisconsin', 'wy': 'Wyoming',
+  'dc': 'District of Columbia',
+};
+
 export default function USStatePage({
   params,
 }: {
@@ -29,19 +43,22 @@ export default function USStatePage({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    params.then(async p => {
+    const init = async () => {
+      const p = await params;
       const stateSlug = p.state;
       
-      // Convert slug to state abbreviation or name
+      // Convert slug to state abbreviation
       const abbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
-      const fullName = Object.entries(US_STATES).find(([name, a]) => a === abbr || name === stateSlug)?.[0] || stateSlug;
-      const displayName = fullName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      
       setStateAbbr(abbr);
-      setStateName(displayName);
+      
+      // Get full name
+      const fullName = STATE_NAMES[abbr.toLowerCase()] || stateSlug.replace(/-/g, ' ');
+      setStateName(fullName.replace(/\b\w/g, l => l.toUpperCase()));
       
       await loadCities(abbr);
-    });
+    };
+    
+    init();
   }, [params]);
 
   async function loadCities(stateAbbr: string) {
