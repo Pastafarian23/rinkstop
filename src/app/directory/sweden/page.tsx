@@ -23,7 +23,7 @@ export default async function SwedenPage() {
     supabase
       .from('rinks')
       .select('*')
-      .ilike('country', '%weden%')
+      .eq('country', 'Sweden')
       .eq('is_active', true),
   ]);
 
