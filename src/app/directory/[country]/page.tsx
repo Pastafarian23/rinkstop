@@ -53,7 +53,6 @@ const COUNTRY_MAP: Record<string, string> = {
   'botswana': 'Botswana', 'angola': 'Angola', 'mozambique': 'Mozambique',
   'jamaica': 'Jamaica', 'trinidad-and-tobago': 'Trinidad and Tobago', 'costa-rica': 'Costa Rica',
   'puerto-rico': 'Puerto Rico', 'panama': 'Panama', 'guatemala': 'Guatemala',
-  'iceland': 'Iceland',
 };
 
 // League info for top countries
