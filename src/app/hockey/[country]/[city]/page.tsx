@@ -34,7 +34,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CityPage({ params }: Props) {
   const { country, city } = await params;
-  const cityName = formatName(city);
   const countryName = formatName(country);
 
   // URL decode and convert slug to city name (e.g. "new-york" → "New York")
