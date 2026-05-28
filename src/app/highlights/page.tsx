@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import { useSearchParams } from 'next/navigation';
 
 interface Highlight {
   id: number;
@@ -33,31 +34,49 @@ export default function HighlightsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
+  const [activeLeague, setActiveLeague] = useState<string>('');
+  const searchParams = useSearchParams();
 
+  // Read league from URL on mount
   useEffect(() => {
-    async function fetchHighlights() {
-      try {
-        const res = await fetch(`/api/highlights?limit=12&offset=0&youtubeOnly=true`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
-        // Client-side filter: never render ESPN clips (belt-and-suspenders)
-        const filtered = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
-        setHighlights(filtered);
-        setHasMore((data.pagination?.totalCount || 0) > filtered.length);
-      } catch (err) {
-        setError('Failed to load highlights');
-      } finally {
-        setLoading(false);
-      }
+    const league = searchParams.get('league') || '';
+    setActiveLeague(league);
+    fetchHighlights(league, 0);
+  }, [searchParams]);
+
+  async function fetchHighlights(league: string, offsetVal: number) {
+    setLoading(true);
+    try {
+      let url = `/api/highlights?limit=12&offset=${offsetVal}&youtubeOnly=true`;
+      if (league) url += `&leagueName=${encodeURIComponent(league)}`;
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      const filtered = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
+      setHighlights(filtered);
+      setOffset(offsetVal);
+      setHasMore((data.pagination?.totalCount || 0) > filtered.length);
+    } catch (err) {
+      setError('Failed to load highlights');
+    } finally {
+      setLoading(false);
     }
-    fetchHighlights();
-  }, []);
+  }
+
+  function handleLeagueFilter(league: string) {
+    setActiveLeague(league);
+    fetchHighlights(league, 0);
+  }
 
   async function loadMore() {
     setLoadingMore(true);
     try {
       const newOffset = offset + 12;
-      const res = await fetch(`/api/highlights?limit=12&offset=${newOffset}&youtubeOnly=true`);
+      let url = `/api/highlights?limit=12&offset=${newOffset}&youtubeOnly=true`;
+      if (activeLeague) url += `&leagueName=${encodeURIComponent(activeLeague)}`;
+      
+      const res = await fetch(url);
       const data = await res.json();
       const newHighlights = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
       setHighlights(prev => [...prev, ...newHighlights]);
@@ -69,6 +88,12 @@ export default function HighlightsPage() {
       setLoadingMore(false);
     }
   }
+
+  const leagueOptions = [
+    { label: 'All', value: '' },
+    { label: 'NHL', value: 'NHL' },
+    { label: 'NCAA', value: 'NCAAH' },
+  ];
 
   if (loading) {
     return (
@@ -87,15 +112,15 @@ export default function HighlightsPage() {
   return (
     <>
       <Head>
-        <title>Hockey Highlights | Watch NHL & Global Hockey Videos | RinkStop</title>
-        <meta name="description" content="Watch the latest NHL, KHL, NCAA and international hockey highlights on RinkStop. Full game recaps, top plays, and player highlights from leagues worldwide." />
+        <title>Hockey Highlights | Watch NHL & NCAA Videos | RinkStop</title>
+        <meta name="description" content="Watch the latest NHL and NCAA hockey highlights on RinkStop. Full game recaps, top plays, and memorable moments from professional and college hockey." />
         <meta property="og:title" content="Hockey Highlights | RinkStop" />
-        <meta property="og:description" content="Watch the latest NHL, KHL, NCAA and international hockey highlights." />
+        <meta property="og:description" content="Watch the latest NHL and NCAA hockey highlights." />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="RinkStop" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Hockey Highlights | RinkStop" />
-        <meta name="twitter:description" content="Watch the latest NHL, KHL, NCAA and international hockey highlights." />
+        <meta name="twitter:description" content="Watch the latest NHL and NCAA hockey highlights." />
         <link rel="canonical" href="https://rinkstop.com/highlights" />
       </Head>
 
@@ -163,10 +188,10 @@ export default function HighlightsPage() {
               Video
             </div>
             <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontFamily: "'Bebas Neue', Impact, sans-serif", color: '#fff', lineHeight: 1, marginBottom: '0.75rem' }}>
-              NHL HIGHLIGHTS
+              HOCKEY HIGHLIGHTS
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', maxWidth: '600px' }}>
-              Watch the latest NHL game highlights, best plays, and memorable moments from across professional hockey.
+              Watch the latest NHL and NCAA hockey highlights, top plays, and memorable moments.
             </p>
           </div>
         </div>
@@ -181,15 +206,25 @@ export default function HighlightsPage() {
             <span style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Filter:
             </span>
-            <Link href="/highlights" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: '#C8102E', color: '#fff', textDecoration: 'none' }}>
-              All
-            </Link>
-            <Link href="/highlights?league=NHL" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
-              NHL
-            </Link>
-            <Link href="/highlights?league=NCAAH" style={{ padding: '0.375rem 0.875rem', borderRadius: '20px', fontSize: '0.8125rem', fontWeight: 600, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>
-              NCAAH
-            </Link>
+            {leagueOptions.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => handleLeagueFilter(opt.value)}
+                style={{
+                  padding: '0.375rem 0.875rem',
+                  borderRadius: '20px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  background: activeLeague === opt.value ? '#C8102E' : 'rgba(255,255,255,0.07)',
+                  color: activeLeague === opt.value ? '#fff' : 'rgba(255,255,255,0.6)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -199,7 +234,7 @@ export default function HighlightsPage() {
             <div style={{ textAlign: 'center', padding: '3rem' }}>
               <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => fetchHighlights(activeLeague, 0)}
                 style={{ background: '#C8102E', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.75rem 1.5rem', cursor: 'pointer', fontWeight: 700 }}
               >
                 Retry
@@ -208,7 +243,9 @@ export default function HighlightsPage() {
           ) : highlights.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.125rem' }}>No highlights available yet.</p>
-              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.875rem', marginTop: '0.5rem' }}>Check back soon for the latest NHL highlights.</p>
+              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                {activeLeague ? `${activeLeague} highlights` : 'Check back soon for the latest hockey highlights.'}
+              </p>
             </div>
           ) : (
             <>
