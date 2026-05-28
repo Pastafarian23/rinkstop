@@ -8,7 +8,7 @@
   margin: 0 0 0.5rem;
   line-height: 1;
 }
-.heroMeta { color: #666; font-size: 1rem; margin: 0; }
+.heroMeta { color: #444; font-size: 1rem; margin: 0; }
 .introBlock {
   max-width: 700px;
   margin: 0 auto 2.5rem;
@@ -27,7 +27,7 @@
   letter-spacing: 0.03em;
   margin: 0 0 0.25rem;
 }
-.sectionDesc { color: #666; margin: 0 0 1.25rem; font-size: 0.95rem; }
+.sectionDesc { color: #444; margin: 0 0 1.25rem; font-size: 0.95rem; }
 .cardGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
 .cityCard {
   display: flex; align-items: center; gap: 0.75rem;

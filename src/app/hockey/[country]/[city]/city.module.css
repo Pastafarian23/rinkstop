@@ -2,12 +2,12 @@
 .pageContainer { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; background: #fff; min-height: 80vh; }
 .hero { text-align: center; padding: 2.5rem 0 1.5rem; }
 .heroTitle { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 6vw, 3.75rem); color: #041e42; letter-spacing: 0.03em; margin: 0 0 0.5rem; line-height: 1; }
-.heroMeta { color: #666; font-size: 1rem; margin: 0; }
+.heroMeta { color: #444; font-size: 1rem; margin: 0; }
 .introBlock { max-width: 700px; margin: 0 auto 2.5rem; padding: 1.25rem 1.5rem; background: #fff; border-left: 4px solid #c8102e; border-radius: 0 8px 8px 0; box-shadow: 0 2px 12px rgba(4,30,66,0.06); }
 .introBlock p { margin: 0; font-size: 1.05rem; line-height: 1.7; color: #333; }
 .section { margin-bottom: 3rem; }
 .section h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.75rem; color: #041e42; letter-spacing: 0.03em; margin: 0 0 0.25rem; }
-.sectionDesc { color: #666; margin: 0 0 1.25rem; font-size: 0.95rem; }
+.sectionDesc { color: #444; margin: 0 0 1.25rem; font-size: 0.95rem; }
 .cardGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
 .cityCard { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 8px; text-decoration: none; transition: all 0.2s; }
 .cityCard:hover { border-color: #c8102e; box-shadow: 0 4px 16px rgba(200,16,46,0.1); transform: translateY(-1px); }
