@@ -8,18 +8,12 @@ interface Team {
   name: string;
   logo_url?: string;
   slug?: string;
-  leagues?: { name: string } | { name: string }[];
+  league_id?: string;
 }
 interface Rink {
   id: string;
   name: string;
   address?: string;
-}
-interface YouthProgram {
-  id: string;
-  name: string;
-  program_type?: string;
-  age_group?: string;
 }
 
 // US state abbreviations mapping
@@ -61,7 +55,6 @@ export default function USStateCityPage({
   const [cityName, setCityName] = useState('');
   const [teams, setTeams] = useState<Team[]>([]);
   const [rinks, setRinks] = useState<Rink[]>([]);
-  const [programs, setPrograms] = useState<YouthProgram[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -90,11 +83,11 @@ export default function USStateCityPage({
   async function loadData(stateAbbr: string, city: string) {
     setLoading(true);
 
-    // Search for teams in this city/state
-    const [{ data: teamsData }, { data: rinksData }, { data: programsData }] = await Promise.all([
+    // Get teams and rinks in this city/state
+    const [{ data: teamsData }, { data: rinksData }] = await Promise.all([
       supabase
         .from('teams')
-        .select('id, name, logo_url, slug, leagues(name)')
+        .select('id, name, logo_url, slug')
         .eq('country', 'United States')
         .eq('city', city)
         .eq('is_active', true)
@@ -103,39 +96,14 @@ export default function USStateCityPage({
         .from('rinks')
         .select('id, name, address')
         .eq('country', 'United States')
-        .eq('city', city)
-        .eq('is_active', true)
-        .order('name'),
-      supabase
-        .from('youth_programs')
-        .select('id, name, program_type, age_group')
-        .eq('country', 'United States')
+        .eq('province_state', stateAbbr)
         .eq('city', city)
         .eq('is_active', true)
         .order('name'),
     ]);
 
-    // Also search by state in address for rinks
-    if (!rinksData || rinksData.length === 0) {
-      const { data: rinksByState } = await supabase
-        .from('rinks')
-        .select('id, name, address')
-        .eq('country', 'United States')
-        .ilike('address', `%, ${stateAbbr}%`)
-        .eq('is_active', true)
-        .order('name');
-      
-      if (rinksByState && rinksByState.length > 0) {
-        setRinks(rinksByState.filter(r => r.address?.toLowerCase().includes(city.toLowerCase())));
-      } else {
-        setRinks([]);
-      }
-    } else {
-      setRinks(rinksData || []);
-    }
-
     setTeams(teamsData || []);
-    setPrograms(programsData || []);
+    setRinks(rinksData || []);
     setLoading(false);
   }
 
@@ -161,7 +129,7 @@ export default function USStateCityPage({
           {cityName} Hockey
         </h1>
         <p style={{ color: '#666666', fontSize: '1rem' }}>
-          {loading ? 'Loading...' : `${teams.length} teams · ${rinks.length} rinks · ${programs.length} programs`}
+          {loading ? 'Loading...' : `${teams.length} teams · ${rinks.length} rinks`}
         </p>
       </div>
 
@@ -202,14 +170,7 @@ export default function USStateCityPage({
                     ) : (
                       <div style={{ width: 40, height: 40, background: 'var(--s3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>🏒</div>
                     )}
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{team.name}</div>
-                      {team.leagues && (
-                        <div style={{ fontSize: '0.75rem', color: '#888' }}>
-                          {Array.isArray(team.leagues) ? team.leagues.map(l => (l as any).name).join(', ') : (team.leagues as any).name}
-                        </div>
-                      )}
-                    </div>
+                    <div style={{ fontWeight: 600 }}>{team.name}</div>
                   </Link>
                 ))}
               </div>
@@ -243,41 +204,13 @@ export default function USStateCityPage({
             </div>
           )}
 
-          {/* Programs Section */}
-          {programs.length > 0 && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span>🏃</span> Youth Programs in {cityName}
-              </h2>
-              <div style={{ display: 'grid', gap: '0.75rem' }}>
-                {programs.map(program => (
-                  <div
-                    key={program.id}
-                    style={{
-                      padding: '1rem',
-                      background: 'var(--s2)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    <div style={{ fontWeight: 600 }}>{program.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>
-                      {program.program_type && `${program.program_type} · `}
-                      {program.age_group}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Empty State */}
-          {teams.length === 0 && rinks.length === 0 && programs.length === 0 && (
+          {teams.length === 0 && rinks.length === 0 && (
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: '#666' }}>
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏒</div>
               <p>No hockey found in {cityName}, {stateName} yet.</p>
               <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                Know a team, rink, or program? <Link href="/add-listing" style={{ color: '#C8102E' }}>Add it</Link>
+                Know a team or rink? <Link href="/add-listing" style={{ color: '#C8102E' }}>Add it</Link>
               </p>
             </div>
           )}
