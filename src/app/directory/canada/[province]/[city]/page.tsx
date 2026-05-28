@@ -15,6 +15,10 @@ interface Rink {
 
 // Canadian province abbreviations mapping
 const CA_PROVINCES: Record<string, string> = {
+  'alberta': 'AB', 'british-columbia': 'BC', 'manitoba': 'MB',
+  'new-brunswick': 'NB', 'newfoundland-and-labrador': 'NL', 'nova-scotia': 'NS',
+  'northwest-territories': 'NT', 'nunavut': 'NU', 'ontario': 'ON',
+  'prince-edward-island': 'PE', 'quebec': 'QC', 'saskatchewan': 'SK', 'yukon': 'YT',
   'ab': 'AB', 'bc': 'BC', 'mb': 'MB',
   'nb': 'NB', 'nl': 'NL', 'ns': 'NS',
   'nt': 'NT', 'nu': 'NU', 'on': 'ON',
