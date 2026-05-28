@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import Breadcrumb from '@/components/Breadcrumb';
 import { Metadata } from 'next';
-import styles from '../rink/rink.module.css';
+import styles from './team.module.css';
 
 interface Props {
   params: Promise<{ country: string; league: string; team: string }>;
