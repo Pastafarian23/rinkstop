@@ -1,5 +1,3 @@
-'use client';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -8,7 +6,6 @@ interface Team {
   name: string;
   logo_url?: string;
   slug?: string;
-  league_id?: string;
 }
 interface Rink {
   id: string;
@@ -45,67 +42,43 @@ const STATE_NAMES: Record<string, string> = {
   'dc': 'District of Columbia',
 };
 
-export default function USStateCityPage({
+export const dynamic = 'force-dynamic';
+
+export default async function USStateCityPage({
   params,
 }: {
   params: Promise<{ state: string; city: string }>;
 }) {
-  const [stateName, setStateName] = useState('');
-  const [stateAbbr, setStateAbbr] = useState('');
-  const [cityName, setCityName] = useState('');
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [rinks, setRinks] = useState<Rink[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { state: stateSlug, city: citySlug } = await params;
+  
+  // Convert slug to state abbreviation
+  const stateAbbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
+  const stateName = STATE_NAMES[stateAbbr.toLowerCase()] || stateAbbr;
+  
+  // Convert slug to readable city name
+  const cityName = citySlug.replace(/-/g, ' ');
 
-  useEffect(() => {
-    const init = async () => {
-      const p = await params;
-      const stateSlug = p.state;
-      const citySlug = p.city;
-      
-      // Convert slug to state abbreviation
-      const abbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
-      setStateAbbr(abbr);
-      
-      const stateFullName = STATE_NAMES[abbr.toLowerCase()] || abbr;
-      setStateName(stateFullName);
-      
-      // Convert slug to readable city name
-      const cityReadable = citySlug.replace(/-/g, ' ');
-      setCityName(cityReadable);
-      
-      await loadData(abbr, cityReadable);
-    };
-    
-    init();
-  }, [params]);
+  // Get teams and rinks in this city/state
+  const [{ data: teams }, { data: rinks }] = await Promise.all([
+    supabase
+      .from('teams')
+      .select('id, name, logo_url, slug')
+      .eq('country', 'United States')
+      .eq('city', cityName)
+      .eq('is_active', true)
+      .order('name'),
+    supabase
+      .from('rinks')
+      .select('id, name, address')
+      .eq('country', 'United States')
+      .eq('province_state', stateAbbr)
+      .eq('city', cityName)
+      .eq('is_active', true)
+      .order('name'),
+  ]);
 
-  async function loadData(stateAbbr: string, city: string) {
-    setLoading(true);
-
-    // Get teams and rinks in this city/state
-    const [{ data: teamsData }, { data: rinksData }] = await Promise.all([
-      supabase
-        .from('teams')
-        .select('id, name, logo_url, slug')
-        .eq('country', 'United States')
-        .eq('city', city)
-        .eq('is_active', true)
-        .order('name'),
-      supabase
-        .from('rinks')
-        .select('id, name, address')
-        .eq('country', 'United States')
-        .eq('province_state', stateAbbr)
-        .eq('city', city)
-        .eq('is_active', true)
-        .order('name'),
-    ]);
-
-    setTeams(teamsData || []);
-    setRinks(rinksData || []);
-    setLoading(false);
-  }
+  const teamsList = (teams || []) as Team[];
+  const rinksList = (rinks || []) as Rink[];
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem 4rem' }}>
@@ -129,93 +102,85 @@ export default function USStateCityPage({
           {cityName} Hockey
         </h1>
         <p style={{ color: '#666666', fontSize: '1rem' }}>
-          {loading ? 'Loading...' : `${teams.length} teams · ${rinks.length} rinks`}
+          {teamsList.length} teams · {rinksList.length} rinks
         </p>
       </div>
 
-      {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton" style={{ height: '120px', borderRadius: '8px' }} />
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-          {/* Teams Section */}
-          {teams.length > 0 && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span>🏒</span> Teams in {cityName}
-              </h2>
-              <div style={{ display: 'grid', gap: '0.75rem' }}>
-                {teams.map(team => (
-                  <Link
-                    key={team.id}
-                    href={`/directory/teams/${team.slug || team.id}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      padding: '1rem',
-                      background: 'var(--s2)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      textDecoration: 'none',
-                      color: 'inherit',
-                      transition: 'border-color 0.15s',
-                    }}
-                  >
-                    {team.logo_url ? (
-                      <img src={team.logo_url} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />
-                    ) : (
-                      <div style={{ width: 40, height: 40, background: 'var(--s3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>🏒</div>
-                    )}
-                    <div style={{ fontWeight: 600 }}>{team.name}</div>
-                  </Link>
-                ))}
-              </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        {/* Teams Section */}
+        {teamsList.length > 0 && (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>🏒</span> Teams in {cityName}
+            </h2>
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              {teamsList.map(team => (
+                <Link
+                  key={team.id}
+                  href={`/directory/teams/${team.slug || team.id}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '1rem',
+                    background: 'var(--s2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    transition: 'border-color 0.15s',
+                  }}
+                >
+                  {team.logo_url ? (
+                    <img src={team.logo_url} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+                  ) : (
+                    <div style={{ width: 40, height: 40, background: 'var(--s3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>🏒</div>
+                  )}
+                  <div style={{ fontWeight: 600 }}>{team.name}</div>
+                </Link>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Rinks Section */}
-          {rinks.length > 0 && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span>⛸️</span> Rinks in {cityName}
-              </h2>
-              <div style={{ display: 'grid', gap: '0.75rem' }}>
-                {rinks.map(rink => (
-                  <div
-                    key={rink.id}
-                    style={{
-                      padding: '1rem',
-                      background: 'var(--s2)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                    }}
-                  >
-                    <div style={{ fontWeight: 600 }}>{rink.name}</div>
-                    {rink.address && (
-                      <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>{rink.address}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
+        {/* Rinks Section */}
+        {rinksList.length > 0 && (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>⛸️</span> Rinks in {cityName}
+            </h2>
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              {rinksList.map(rink => (
+                <div
+                  key={rink.id}
+                  style={{
+                    padding: '1rem',
+                    background: 'var(--s2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <div style={{ fontWeight: 600 }}>{rink.name}</div>
+                  {rink.address && (
+                    <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>{rink.address}</div>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Empty State */}
-          {teams.length === 0 && rinks.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: '#666' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏒</div>
-              <p>No hockey found in {cityName}, {stateName} yet.</p>
-              <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
-                Know a team or rink? <Link href="/add-listing" style={{ color: '#C8102E' }}>Add it</Link>
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+        {/* Empty State */}
+        {teamsList.length === 0 && rinksList.length === 0 && (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: '#666' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏒</div>
+            <p>No hockey found in {cityName}, {stateName} yet.</p>
+            <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+              Know a team or rink? <Link href="/add-listing" style={{ color: '#C8102E' }}>Add it</Link>
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

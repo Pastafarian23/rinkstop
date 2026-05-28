@@ -1,5 +1,3 @@
-'use client';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -38,85 +36,62 @@ interface CityData {
   team_count: number;
 }
 
-export default function USStatePage({
+export const dynamic = 'force-dynamic';
+
+export default async function USStatePage({
   params,
 }: {
   params: Promise<{ state: string }>;
 }) {
-  const [stateName, setStateName] = useState('');
-  const [stateAbbr, setStateAbbr] = useState('');
-  const [cities, setCities] = useState<CityData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { state: stateSlug } = await params;
+  
+  // Convert slug to state abbreviation
+  const stateAbbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
+  const stateName = STATE_NAMES[stateAbbr.toLowerCase()] || stateSlug.replace(/-/g, ' ');
 
-  useEffect(() => {
-    const init = async () => {
-      const p = await params;
-      const stateSlug = p.state;
-      
-      // Convert slug to state abbreviation
-      const abbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
-      setStateAbbr(abbr);
-      
-      // Get full name
-      const fullName = STATE_NAMES[abbr.toLowerCase()] || stateSlug.replace(/-/g, ' ');
-      setStateName(fullName);
-      
-      await loadData(abbr);
-    };
-    
-    init();
-  }, [params]);
+  // Get rinks in this state
+  const { data: rinks } = await supabase
+    .from('rinks')
+    .select('city')
+    .eq('country', 'United States')
+    .eq('province_state', stateAbbr)
+    .eq('is_active', true)
+    .not('city', 'is', null);
 
-  async function loadData(stateAbbr: string) {
-    setLoading(true);
+  // Count rinks per city
+  const rinkCounts = new Map<string, number>();
+  (rinks || []).forEach(r => {
+    if (r.city) {
+      rinkCounts.set(r.city, (rinkCounts.get(r.city) || 0) + 1);
+    }
+  });
 
-    // Get rinks in this state (rinks have proper province_state field)
-    const { data: rinks } = await supabase
-      .from('rinks')
+  // Get teams - filter by city names we know are in this state
+  const cityNames = Array.from(rinkCounts.keys());
+  let teamCounts = new Map<string, number>();
+  
+  if (cityNames.length > 0) {
+    const { data: teams } = await supabase
+      .from('teams')
       .select('city')
       .eq('country', 'United States')
-      .eq('province_state', stateAbbr)
       .eq('is_active', true)
-      .not('city', 'is', null);
-
-    // Count rinks per city
-    const rinkCounts = new Map<string, number>();
-    (rinks || []).forEach(r => {
-      if (r.city) {
-        rinkCounts.set(r.city, (rinkCounts.get(r.city) || 0) + 1);
+      .in('city', cityNames);
+    
+    (teams || []).forEach(t => {
+      if (t.city) {
+        teamCounts.set(t.city, (teamCounts.get(t.city) || 0) + 1);
       }
     });
-
-    // Get teams - filter by city names we know are in this state
-    const cityNames = Array.from(rinkCounts.keys());
-    let teamCounts = new Map<string, number>();
-    
-    if (cityNames.length > 0) {
-      const { data: teams } = await supabase
-        .from('teams')
-        .select('city')
-        .eq('country', 'United States')
-        .eq('is_active', true)
-        .in('city', cityNames);
-      
-      (teams || []).forEach(t => {
-        if (t.city) {
-          teamCounts.set(t.city, (teamCounts.get(t.city) || 0) + 1);
-        }
-      });
-    }
-
-    // Merge data
-    const allCities = new Set<string>([...rinkCounts.keys(), ...teamCounts.keys()]);
-    const cityData: CityData[] = Array.from(allCities).map(city => ({
-      city,
-      rink_count: rinkCounts.get(city) || 0,
-      team_count: teamCounts.get(city) || 0,
-    })).sort((a, b) => (b.rink_count + b.team_count) - (a.rink_count + a.team_count));
-
-    setCities(cityData);
-    setLoading(false);
   }
+
+  // Merge data
+  const allCities = new Set<string>([...rinkCounts.keys(), ...teamCounts.keys()]);
+  const cities: CityData[] = Array.from(allCities).map(city => ({
+    city,
+    rink_count: rinkCounts.get(city) || 0,
+    team_count: teamCounts.get(city) || 0,
+  })).sort((a, b) => (b.rink_count + b.team_count) - (a.rink_count + a.team_count));
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem 4rem' }}>
@@ -138,49 +113,41 @@ export default function USStatePage({
           {stateName} Hockey
         </h1>
         <p style={{ color: '#666666', fontSize: '1rem' }}>
-          {loading ? 'Loading...' : `${cities.length} cities with hockey`}
+          {cities.length} cities with hockey
         </p>
       </div>
 
-      {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="skeleton" style={{ height: '120px', borderRadius: '8px' }} />
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-          {cities.map(({ city, team_count, rink_count }) => {
-            const citySlug = city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            return (
-              <Link
-                key={city}
-                href={`/directory/united-states/${stateAbbr.toLowerCase()}/${citySlug}`}
-                style={{
-                  display: 'block',
-                  padding: '1.25rem',
-                  background: 'var(--s2)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  transition: 'border-color 0.15s',
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: '1.0625rem', marginBottom: '0.5rem' }}>
-                  {city}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#888', display: 'flex', gap: '1rem' }}>
-                  {team_count > 0 && <span>🏒 {team_count} teams</span>}
-                  {rink_count > 0 && <span>⛸️ {rink_count} rinks</span>}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+        {cities.map(({ city, team_count, rink_count }) => {
+          const citySlug = city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          return (
+            <Link
+              key={city}
+              href={`/directory/united-states/${stateAbbr.toLowerCase()}/${citySlug}`}
+              style={{
+                display: 'block',
+                padding: '1.25rem',
+                background: 'var(--s2)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                color: 'inherit',
+                transition: 'border-color 0.15s',
+              }}
+            >
+              <div style={{ fontWeight: 600, fontSize: '1.0625rem', marginBottom: '0.5rem' }}>
+                {city}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#888', display: 'flex', gap: '1rem' }}>
+                {team_count > 0 && <span>🏒 {team_count} teams</span>}
+                {rink_count > 0 && <span>⛸️ {rink_count} rinks</span>}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
 
-      {!loading && cities.length === 0 && (
+      {cities.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏒</div>
           <p>No hockey found in {stateName} yet.</p>
