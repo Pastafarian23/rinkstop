@@ -3,10 +3,10 @@ import { supabase } from '@/lib/supabase';
 
 // Canadian province abbreviations and full names
 const CA_PROVINCES: Record<string, string> = {
-  'alberta': 'AB', 'british-columbia': 'BC', 'manitoba': 'MB',
-  'new-brunswick': 'NB', 'newfoundland-and-labrador': 'NL', 'nova-scotia': 'NS',
-  'northwest-territories': 'NT', 'nunavut': 'NU', 'ontario': 'ON',
-  'prince-edward-island': 'PE', 'quebec': 'QC', 'saskatchewan': 'SK', 'yukon': 'YT',
+  'ab': 'AB', 'bc': 'BC', 'mb': 'MB',
+  'nb': 'NB', 'nl': 'NL', 'ns': 'NS',
+  'nt': 'NT', 'nu': 'NU', 'on': 'ON',
+  'pe': 'PE', 'qc': 'QC', 'sk': 'SK', 'yt': 'YT',
 };
 
 const PROVINCE_NAMES: Record<string, string> = {
@@ -16,83 +16,68 @@ const PROVINCE_NAMES: Record<string, string> = {
   'pe': 'Prince Edward Island', 'qc': 'Quebec', 'sk': 'Saskatchewan', 'yt': 'Yukon',
 };
 
-interface ProvinceData {
-  province: string;
-  provinceAbbr: string;
+interface CityData {
+  city: string;
   rink_count: number;
   team_count: number;
 }
 
 export const dynamic = 'force-dynamic';
 
-export default async function CanadaPage() {
-  // Get all rinks grouped by province
+export default async function CanadaProvincePage({
+  params,
+}: {
+  params: Promise<{ province: string }>;
+}) {
+  const { province: provinceSlug } = await params;
+  
+  // Convert slug to province abbreviation
+  const provinceAbbr = CA_PROVINCES[provinceSlug] || provinceSlug.toUpperCase();
+  const provinceName = PROVINCE_NAMES[provinceAbbr.toLowerCase()] || provinceAbbr;
+
+  // Get rinks in this province
   const { data: rinks } = await supabase
     .from('rinks')
-    .select('city, province_state')
+    .select('city')
     .eq('country', 'Canada')
+    .eq('province_state', provinceAbbr)
     .eq('is_active', true)
     .not('city', 'is', null);
 
-  // Get all teams grouped by city (we'll match by province later)
-  const { data: teams } = await supabase
-    .from('teams')
-    .select('city, province_state')
-    .eq('country', 'Canada')
-    .eq('is_active', true)
-    .not('city', 'is', null);
-
-  // Count rinks per province
+  // Count rinks per city
   const rinkCounts = new Map<string, number>();
   (rinks || []).forEach(r => {
-    if (r.province_state) {
-      const abbr = r.province_state.toUpperCase();
-      rinkCounts.set(abbr, (rinkCounts.get(abbr) || 0) + 1);
+    if (r.city) {
+      rinkCounts.set(r.city, (rinkCounts.get(r.city) || 0) + 1);
     }
   });
 
-  // Count teams per province
-  const teamCounts = new Map<string, number>();
-  (teams || []).forEach(t => {
-    if (t.province_state) {
-      const abbr = t.province_state.toUpperCase();
-      teamCounts.set(abbr, (teamCounts.get(abbr) || 0) + 1);
-    }
-  });
-
-  // Build provinces list (only provinces with data)
-  const provinces: ProvinceData[] = [];
+  // Get cities that have teams in this province
+  const cityNames = Array.from(rinkCounts.keys());
+  let teamCounts = new Map<string, number>();
   
-  // Get all provinces with rinks
-  rinkCounts.forEach((count, abbr) => {
-    const name = PROVINCE_NAMES[abbr.toLowerCase()];
-    if (name) {
-      provinces.push({
-        province: name,
-        provinceAbbr: abbr,
-        rink_count: count,
-        team_count: teamCounts.get(abbr) || 0,
-      });
-    }
-  });
-
-  // Add provinces that only have teams
-  teamCounts.forEach((count, abbr) => {
-    if (!rinkCounts.has(abbr)) {
-      const name = PROVINCE_NAMES[abbr.toLowerCase()];
-      if (name) {
-        provinces.push({
-          province: name,
-          provinceAbbr: abbr,
-          rink_count: 0,
-          team_count: count,
-        });
+  if (cityNames.length > 0) {
+    const { data: teams } = await supabase
+      .from('teams')
+      .select('city, province_state')
+      .eq('country', 'Canada')
+      .eq('province_state', provinceAbbr)
+      .eq('is_active', true);
+    
+    (teams || []).forEach(t => {
+      if (t.city) {
+        teamCounts.set(t.city, (teamCounts.get(t.city) || 0) + 1);
       }
-    }
-  });
+    });
+  }
 
-  // Sort by total hockey activity
-  provinces.sort((a, b) => (b.rink_count + b.team_count) - (a.rink_count + a.team_count));
+  // Merge data
+  const allCities = new Set<string>([...rinkCounts.keys(), ...teamCounts.keys()]);
+  const cities: CityData[] = Array.from(allCities).map(city => ({
+    city,
+    rink_count: rinkCounts.get(city) || 0,
+    team_count: teamCounts.get(city) || 0,
+  })).sort((a, b) => (b.rink_count + b.team_count) - (a.rink_count + a.team_count));
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem 4rem' }}>
@@ -101,7 +86,9 @@ export default async function CanadaPage() {
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Canada</span>
+        <Link href="/directory/canada" style={{ color: '#555555' }}>Canada</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: '#A0A0A0' }}>{provinceName}</span>
       </nav>
 
       <div style={{ marginBottom: '2.5rem', paddingTop: '1.5rem' }}>
@@ -109,20 +96,20 @@ export default async function CanadaPage() {
           🇨🇦 Canada
         </div>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>
-          Canada Hockey
+          {provinceName} Hockey
         </h1>
         <p style={{ color: '#666666', fontSize: '1rem' }}>
-          {provinces.length} provinces and territories with hockey
+          {cities.length} cities with hockey
         </p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-        {provinces.map(({ province, provinceAbbr, team_count, rink_count }) => {
-          const provinceSlug = province.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        {cities.map(({ city, team_count, rink_count }) => {
+          const citySlug = city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
           return (
             <Link
-              key={provinceAbbr}
-              href={`/directory/canada/${provinceAbbr.toLowerCase()}`}
+              key={city}
+              href={`/directory/canada/${provinceAbbr.toLowerCase()}/${citySlug}`}
               style={{
                 display: 'block',
                 padding: '1.25rem',
@@ -135,7 +122,7 @@ export default async function CanadaPage() {
               }}
             >
               <div style={{ fontWeight: 600, fontSize: '1.0625rem', marginBottom: '0.5rem' }}>
-                {province}
+                {city}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#888', display: 'flex', gap: '1rem' }}>
                 {team_count > 0 && <span>🏒 {team_count} teams</span>}
@@ -146,10 +133,10 @@ export default async function CanadaPage() {
         })}
       </div>
 
-      {provinces.length === 0 && (
+      {cities.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏒</div>
-          <p>No hockey found in Canada yet.</p>
+          <p>No hockey found in {provinceName} yet.</p>
           <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
             Know a team or rink? <Link href="/add-listing" style={{ color: '#C8102E' }}>Add it</Link>
           </p>
