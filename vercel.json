@@ -1,11 +1,6 @@
 {
   "redirects": [
     {
-      "source": "/directory/united-states",
-      "destination": "/hockey/united-states",
-      "permanent": true
-    },
-    {
       "source": "/directory/canada",
       "destination": "/hockey/canada",
       "permanent": true
