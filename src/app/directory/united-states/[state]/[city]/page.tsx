@@ -55,8 +55,8 @@ export default async function USStateCityPage({
   const stateAbbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
   const stateName = STATE_NAMES[stateAbbr.toLowerCase()] || stateAbbr;
   
-  // Convert slug to readable city name
-  const cityName = citySlug.replace(/-/g, ' ');
+  // Convert slug to readable city name (title case)
+  const cityName = citySlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   // Get teams and rinks in this city/state
   const [{ data: teams }, { data: rinks }] = await Promise.all([
