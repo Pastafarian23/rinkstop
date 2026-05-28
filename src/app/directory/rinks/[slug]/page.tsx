@@ -7,16 +7,13 @@ import RinkGames from '@/components/RinkGames';
 import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
     .select('name, slug, city, country')
-    .eq('slug', id)
+    .eq('slug', slug)
     .single();
 
   if (!rink) return { title: 'Rink Not Found | RinkStop' };
@@ -32,14 +29,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function RinkDetailPage({ params }: PageProps) {
-  const { id } = await params;
+export default async function RinkDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   // Fetch rink by slug (URL contains slug, not UUID)
   const { data: rink, error } = await supabase
     .from('rinks')
     .select('*')
-    .eq('slug', id)
+    .eq('slug', slug)
     .single();
 
   if (error || !rink) {

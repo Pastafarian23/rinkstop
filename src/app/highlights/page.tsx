@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useSearchParams } from 'next/navigation';
@@ -26,7 +26,7 @@ interface Highlight {
   };
 }
 
-export default function HighlightsPage() {
+function HighlightsContent() {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +92,7 @@ export default function HighlightsPage() {
   const leagueOptions = [
     { label: 'All', value: '' },
     { label: 'NHL', value: 'NHL' },
-    { label: 'NCAA', value: 'NCAAH' },
+    { label: 'NCAA', value: 'NCAA' },
   ];
 
   if (loading) {
@@ -384,3 +384,13 @@ export default function HighlightsPage() {
     </>
   );
 }
+
+const HighlightsPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HighlightsContent />
+    </Suspense>
+  );
+};
+
+export default HighlightsPage;

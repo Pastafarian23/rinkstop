@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   const youtubeOnly = searchParams.get('youtubeOnly') === 'true';
   
   // Determine which API base to use based on league
-  const isNHL = !leagueName || leagueName.toUpperCase() === 'NHL' || leagueName.toUpperCase() === 'NCAAH' || leagueName.toUpperCase() === 'NHL/NCAAH';
+  const isNHL = !leagueName || leagueName.toUpperCase() === 'NHL' || leagueName.toUpperCase() === 'NHL/NCAAH';
   const BASE_URL = isNHL ? NHL_BASE : HOCKEY_BASE;
   const RAPIDAPI_HOST = isNHL ? 'nhl-ncaah-api.p.rapidapi.com' : 'hockey-highlights-api.p.rapidapi.com';
   
