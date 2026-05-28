@@ -37,9 +37,19 @@ const US_STATES: Record<string, string> = {
   'district-of-columbia': 'DC',
 };
 
-const STATE_NAMES: Record<string, string> = Object.fromEntries(
-  Object.entries(US_STATES).map(([name, abbr]) => [abbr.toLowerCase(), name])
-);
+const STATE_NAMES: Record<string, string> = {
+  'al': 'Alabama', 'ak': 'Alaska', 'az': 'Arizona', 'ar': 'Arkansas', 'ca': 'California',
+  'co': 'Colorado', 'ct': 'Connecticut', 'de': 'Delaware', 'fl': 'Florida', 'ga': 'Georgia',
+  'hi': 'Hawaii', 'id': 'Idaho', 'il': 'Illinois', 'in': 'Indiana', 'ia': 'Iowa',
+  'ks': 'Kansas', 'ky': 'Kentucky', 'la': 'Louisiana', 'me': 'Maine', 'md': 'Maryland',
+  'ma': 'Massachusetts', 'mi': 'Michigan', 'mn': 'Minnesota', 'ms': 'Mississippi', 'mo': 'Missouri',
+  'mt': 'Montana', 'ne': 'Nebraska', 'nv': 'Nevada', 'nh': 'New Hampshire', 'nj': 'New Jersey',
+  'nm': 'New Mexico', 'ny': 'New York', 'nc': 'North Carolina', 'nd': 'North Dakota', 'oh': 'Ohio',
+  'ok': 'Oklahoma', 'or': 'Oregon', 'pa': 'Pennsylvania', 'ri': 'Rhode Island', 'sc': 'South Carolina',
+  'sd': 'South Dakota', 'tn': 'Tennessee', 'tx': 'Texas', 'ut': 'Utah', 'vt': 'Vermont',
+  'va': 'Virginia', 'wa': 'Washington', 'wv': 'West Virginia', 'wi': 'Wisconsin', 'wy': 'Wyoming',
+  'dc': 'District of Columbia',
+};
 
 export default function USStateCityPage({
   params,
@@ -47,6 +57,7 @@ export default function USStateCityPage({
   params: Promise<{ state: string; city: string }>;
 }) {
   const [stateName, setStateName] = useState('');
+  const [stateAbbr, setStateAbbr] = useState('');
   const [cityName, setCityName] = useState('');
   const [teams, setTeams] = useState<Team[]>([]);
   const [rinks, setRinks] = useState<Rink[]>([]);
@@ -54,21 +65,26 @@ export default function USStateCityPage({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    params.then(async p => {
+    const init = async () => {
+      const p = await params;
       const stateSlug = p.state;
       const citySlug = p.city;
       
       // Convert slug to state abbreviation
-      const stateAbbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
-      const stateFullName = STATE_NAMES[stateAbbr.toLowerCase()] || stateAbbr;
+      const abbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
+      setStateAbbr(abbr);
+      
+      const stateFullName = STATE_NAMES[abbr.toLowerCase()] || abbr;
       setStateName(stateFullName);
       
       // Convert slug to readable city name
       const cityReadable = citySlug.replace(/-/g, ' ');
       setCityName(cityReadable);
       
-      await loadData(stateAbbr, cityReadable);
-    });
+      await loadData(abbr, cityReadable);
+    };
+    
+    init();
   }, [params]);
 
   async function loadData(stateAbbr: string, city: string) {
@@ -132,9 +148,7 @@ export default function USStateCityPage({
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <Link href="/directory/united-states" style={{ color: '#555555' }}>United States</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href={`/directory/united-states/${params.then ? 'state' : ''}`} style={{ color: '#555555' }}>
-          {stateName || 'States'}
-        </Link>
+        <span style={{ color: '#A0A0A0' }}>{stateName}</span>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <span style={{ color: '#A0A0A0' }}>{cityName}</span>
       </nav>
@@ -143,8 +157,8 @@ export default function USStateCityPage({
         <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C8102E', marginBottom: '0.5rem' }}>
           United States · {stateName}
         </div>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem', textTransform: 'capitalize' }}>
-          {cityName.replace(/-/g, ' ')} Hockey
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>
+          {cityName} Hockey
         </h1>
         <p style={{ color: '#666666', fontSize: '1rem' }}>
           {loading ? 'Loading...' : `${teams.length} teams · ${rinks.length} rinks · ${programs.length} programs`}
