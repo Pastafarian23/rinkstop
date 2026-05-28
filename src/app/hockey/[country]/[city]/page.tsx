@@ -37,12 +37,18 @@ export default async function CityPage({ params }: Props) {
   const cityName = formatName(city);
   const countryName = formatName(country);
 
-  // Get rinks in this city
+  // URL decode and convert slug to city name (e.g. "new-york" → "New York")
+  const rawCity = decodeURIComponent(city);
+  const cityName = rawCity.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  // Get rinks in this city — use PostgREST ilike with wildcards for partial match
+  // Escape special ilike chars in cityName, then build pattern
+  const escapedCity = cityName.replace(/[%_]/g, '\\$&');
   const { data: rinks } = await supabaseAdmin
     .from('rinks')
     .select('id, name, slug, address, city, province')
     .eq('country', countryName)
-    .ilike('city', cityName)
+    .ilike('city', `*${escapedCity}*`)
     .not('slug', 'is', null)
     .order('name');
 

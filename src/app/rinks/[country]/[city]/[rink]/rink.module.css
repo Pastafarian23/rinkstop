@@ -1,4 +1,4 @@
-.pageContainer { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+.pageContainer { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; background: #fff; min-height: 80vh; }
 .hero { padding: 2rem 0 1.5rem; border-bottom: 2px solid #e5e7eb; margin-bottom: 2rem; }
 .heroBadge { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #c8102e; margin-bottom: 0.5rem; }
 .heroTitle { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 3rem); color: #041e42; letter-spacing: 0.03em; margin: 0 0 0.5rem; line-height: 1; }
