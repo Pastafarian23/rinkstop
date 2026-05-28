@@ -16,11 +16,11 @@ export const metadata: Metadata = {
 
 export default async function UnitedKingdomPage() {
   const [{ count: ukRinksCount }, { data: ukRinks }] = await Promise.all([
-    supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('country', 'UK'),
+    supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('country', 'United Kingdom'),
     supabase
       .from('rinks')
       .select('id, slug, name, city, address, phone, website_url, notes')
-      .eq('country', 'UK').eq('is_active', true)
+      .eq('country', 'United Kingdom').eq('is_active', true)
       .order('name').limit(30),
   ]);
 
