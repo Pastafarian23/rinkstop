@@ -68,7 +68,7 @@ export default async function FinlandPage() {
   const { data: rinks } = await supabase
     .from('rinks')
     .select('id, name, city, rink_type, capacity, country')
-    .ilike('country', '%inland%')
+    .eq('country', 'Finland')
     .eq('is_active', true)
     .limit(20);
 
