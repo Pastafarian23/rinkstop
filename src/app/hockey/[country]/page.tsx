@@ -148,8 +148,8 @@ export default async function CountryPage({ params }: Props) {
 
   // Build contextual intro
   const contextualIntro = countryData 
-    ? `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? \u0027y\u0027 : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels. ${countryData.overview}`
-    : `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? \u0027y\u0027 : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels.`;
+    ? `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? 'y' : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels. ${countryData.overview}`
+    : `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? 'y' : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels.`;
 
   return (
     <div className={styles.pageContainer}>
