@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
   const city = searchParams.get('city');
   const search = searchParams.get('search');
   const limit = parseInt(searchParams.get('limit') || '100', 10);
+  const sort = searchParams.get('sort') || 'name';
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
   let query = supabase.from('rinks').select('*');
@@ -43,7 +44,9 @@ export async function GET(request: NextRequest) {
     query = query.limit(limit);
   }
 
-  const { data, error, count } = await query.order('name');
+  // Support sort=recent to return newest entries first
+  const orderCol = sort === 'recent' ? 'created_at' : 'name';
+  const { data, error, count } = await query.order(orderCol, { ascending: sort === 'recent' ? false : true });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

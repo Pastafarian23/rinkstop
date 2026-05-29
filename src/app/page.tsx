@@ -5,6 +5,9 @@ import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
 
 interface Post  { id: string; title: string; slug: string; excerpt?: string; category?: string; og_image_url?: string | null; }
+interface Rink    { id: string; name: string; slug: string; city: string; country: string; }
+interface Team   { id: string; name: string; slug: string; league: string; city: string; }
+interface Game   { id: string; date: string; home_team_name: string; away_team_name: string; venue_name: string; }
 
 const CATS = [
   { label: 'Teams',   href: '/directory/teams',    count: '2,116', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
@@ -33,13 +36,24 @@ const STATS = [
 export default function Home() {
 
   const [posts, setPosts]   = useState<Post[]>([]);
+  const [recentRinks, setRecentRinks] = useState<Rink[]>([]);
+  const [recentTeams, setRecentTeams] = useState<Team[]>([]);
+  const [upcomingGames, setUpcomingGames] = useState<Game[]>([]);
   const [q, setQ] = useState('');
 
   useEffect(() => {
 
     fetch('/api/blog/posts?limit=3').then(r => r.json())
-      .then(d => setPosts(d.data || d.posts || []))
-      .catch(() => {});
+      .then(d => setPosts(d.data || d.posts || [])).catch(() => {});
+    // Recently added rinks
+    fetch('/api/rinks?limit=6&sort=recent').then(r => r.json())
+      .then(d => setRecentRinks((d.data || d || []).slice(0, 3))).catch(() => {});
+    // Recently added teams
+    fetch('/api/teams?limit=6&sort=recent').then(r => r.json())
+      .then(d => setRecentTeams((d.data || d || []).slice(0, 3))).catch(() => {});
+    // Upcoming games
+    fetch('/api/games?limit=10&status=upcoming').then(r => r.json())
+      .then(d => setUpcomingGames((d.data || d.games || d || []).slice(0, 3))).catch(() => {});
   }, []);
 
   const search = (e: React.FormEvent) => {
@@ -226,6 +240,88 @@ export default function Home() {
       <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
         <TicketmasterAd size="300x250" />
       </div>
+
+      {/* ---- RECENT ACTIVITY MODULE ----------------------------------------------------------------------------------------------- */}
+      {(recentRinks.length > 0 || recentTeams.length > 0 || upcomingGames.length > 0) && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+          <div className="container">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+
+              {/* Recently Added Rinks */}
+              {recentRinks.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>NEW RINKS ADDED</h3>
+                    <Link href="/directory/rinks" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {recentRinks.map(r => (
+                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)', transition: 'border-color 0.15s' }}
+                        onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(200,16,46,0.4)')}
+                        onMouseOut={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)')}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{r.name}</div>
+                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{r.city}, {r.country}</div>
+                        </div>
+                        <span style={{ color: '#059669', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recently Added Teams */}
+              {recentTeams.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>NEW TEAMS JOINED</h3>
+                    <Link href="/directory/teams" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {recentTeams.map(t => (
+                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)', transition: 'border-color 0.15s' }}
+                        onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(200,16,46,0.4)')}
+                        onMouseOut={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)')}>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{t.name}</div>
+                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{t.league}{t.city ? ` · ${t.city}` : ''}</div>
+                        </div>
+                        <span style={{ color: '#2563EB', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upcoming Games */}
+              {upcomingGames.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>UPCOMING GAMES</h3>
+                    <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All Games →</Link>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {upcomingGames.map(g => {
+                      const d = new Date(g.date + 'T00:00:00');
+                      return (
+                        <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{g.away_team_name} @ {g.home_team_name}</div>
+                            <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ---- CTA BAND -------------------------------------------------------------------------------------------------------------- */}
       <section style={{ background: 'linear-gradient(135deg, #C8102E 0%, #9B0D23 100%)', padding: 'clamp(2rem, 5vw, 3rem) 0' }}>

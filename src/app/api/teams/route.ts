@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
   const leagueId = searchParams.get('leagueId');
   const rinkId = searchParams.get('rinkId');
   const city = searchParams.get('city');
+  const sort = searchParams.get('sort') || 'name';
+  const limit = parseInt(searchParams.get('limit') || '100', 10);
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
   let query = supabase.from('teams').select('*, leagues(name)');
@@ -33,9 +35,11 @@ export async function GET(request: NextRequest) {
     if (leagueId) query = query.eq('league_id', leagueId);
     if (activeOnly && !search) query = query.eq('is_active', true);
     if (search) query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
+    query = query.limit(limit);
   }
 
-  const { data, error, count } = await query.order('name', { ascending: true });
+  const orderCol = sort === 'recent' ? 'created_at' : 'name';
+  const { data, error, count } = await query.order(orderCol, { ascending: sort === 'recent' ? false : true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data, count });
 }
