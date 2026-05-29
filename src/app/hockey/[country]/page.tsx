@@ -55,7 +55,7 @@ const COUNTRY_HOCKEY_DATA: Record<string, {
   },
   'germany': {
     overview: 'Germany has emerged as a hockey powerhouse in recent decades, with strong club infrastructure and rapidly growing youth participation. The DEL (Deutsche Eishockey Liga) has established itself as a top European league.',
-    highlights: ['Germany\'s men\'s team won Olympic silver (2018) and gold (2018)', 'DEL is Europe\'s most-attended hockey league', 'Growing women's hockey program', 'Strong youth development academy system'],
+    highlights: ['Germany\'s men\'s team won Olympic silver (2018) and gold (2018)', 'DEL is Europe\'s most-attended hockey league', 'Growing women\'s hockey program', 'Strong youth development academy system'],
     playerDev: 'German players develop through DEL academy clubs with structured youth programs. The NHL\'s European scouting has increased visibility of German talent, with players like Leon Draisaitl becoming stars.',
     notableLeagues: ['DEL (Deutsche Eishockey Liga)', 'DEL2 (2nd tier)', 'Oberliga', 'German women\'s league'],
     youthGrowth: 'Youth hockey participation in Germany has grown consistently, driven by national team success and increased facility development across the country.'
@@ -148,8 +148,8 @@ export default async function CountryPage({ params }: Props) {
 
   // Build contextual intro
   const contextualIntro = countryData 
-    ? `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? 'y' : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels. ${countryData.overview}`
-    : `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? 'y' : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels.`;
+    ? `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? \u0027y\u0027 : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels. ${countryData.overview}`
+    : `${countryName} is home to a growing hockey community spanning ${uniqueCities.length} cit${uniqueCities.length === 1 ? \u0027y\u0027 : 'ies'}, ${leagues?.length || 0} leagues, and ${rinkCount || 0} registered rinks. From youth programs to professional ice, ${countryName}'s hockey ecosystem offers opportunities for players of all ages and skill levels.`;
 
   return (
     <div className={styles.pageContainer}>
