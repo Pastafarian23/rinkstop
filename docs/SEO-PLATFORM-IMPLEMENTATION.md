@@ -125,11 +125,11 @@
 ## STATUS
 
 - [x] Implementation Plan created
-- [ ] Phase 1: Content templates (in progress)
-- [ ] Phase 2: Linking engine
-- [ ] Phase 3: Hub pages
-- [ ] Phase 4: Freshness
-- [ ] Phase 5: Programmatic pages
-- [ ] Phase 6: Schema
-- [ ] Phase 7: Article funnel
-- [ ] Phase 8: Homepage
+- [x] Phase 1: Content templates — country/city/rink pages with rich contextual content
+- [x] Phase 2: Contextual linking engine — inline links + bidirectional entity graph
+- [x] Phase 3: Hub pages — NHL hub (/directory/nhl), Learn Hub (/learn), FAQ (/faq)
+- [x] Phase 4: Freshness — Last Updated timestamps + Recent Activity Module on homepage
+- [x] Phase 5: Programmatic pages — Best Rinks (/best-ice-rinks/[city]), Near Me (/ice-rinks-near-me)
+- [x] Phase 6: Schema markup — SportsActivityLocation, SportsTeam, SportsOrganization on all entity pages
+- [ ] Phase 7: Article funnel — content distribution engine (blog → city → rink funnel)
+- [ ] Phase 8: Homepage repositioning — hero messaging + featured content blocks
