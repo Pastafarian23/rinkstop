@@ -35,6 +35,7 @@ function HighlightsContent() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedHighlight, setSelectedHighlight] = useState<Highlight | null>(null);
   const [activeLeague, setActiveLeague] = useState<string>('');
+  const [youtubeOnly, setYoutubeOnly] = useState(true);
   const searchParams = useSearchParams();
 
   // Read league from URL on mount
@@ -49,7 +50,7 @@ function HighlightsContent() {
     try {
       let url = `/api/highlights?limit=12&offset=${offsetVal}`;
       // Only apply youtubeOnly filter for NHL and All (NCAA has no YouTube content)
-      if (youtubeOnly || league === 'NHL' || !league) url += '&youtubeOnly=true';
+      if (youtubeOnly) url += '&youtubeOnly=true';
       if (league) url += `&leagueName=${encodeURIComponent(league)}`;
       
       const res = await fetch(url);
@@ -62,10 +63,6 @@ function HighlightsContent() {
         filtered = data.highlights;
       }
       
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      const filtered = (data.highlights || []).filter((h: Highlight) => h.source === 'youtube' || !!h.embedUrl);
       setHighlights(filtered);
       setOffset(offsetVal);
       setHasMore((data.pagination?.totalCount || 0) > filtered.length);

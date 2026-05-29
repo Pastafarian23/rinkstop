@@ -4,6 +4,32 @@ import { supabaseAdmin } from '@/lib/supabase';
 const baseUrl = 'https://rinkstop.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // All 198 countries with their URL slugs
+  const countries = [
+    'united-states', 'canada', 'mexico', 'antigua-and-barbuda', 'bahamas', 'barbados', 'belize', 'costa-rica', 'cuba', 'dominica',
+    'dominican-republic', 'el-salvador', 'grenada', 'guatemala', 'haiti', 'honduras', 'jamaica', 'nicaragua', 'panama',
+    'saint-kitts-and-nevis', 'saint-lucia', 'saint-vincent-and-the-grenadines', 'trinidad-and-tobago',
+    'argentina', 'bolivia', 'brazil', 'chile', 'colombia', 'ecuador', 'guyana', 'paraguay', 'peru', 'suriname', 'uruguay', 'venezuela',
+    'albania', 'andorra', 'austria', 'belarus', 'belgium', 'bosnia-and-herzegovina', 'bulgaria', 'croatia', 'cyprus', 'czech-republic',
+    'denmark', 'estonia', 'finland', 'france', 'georgia', 'germany', 'greece', 'hungary', 'iceland', 'ireland', 'italy', 'kosovo',
+    'latvia', 'liechtenstein', 'lithuania', 'luxembourg', 'malta', 'moldova', 'monaco', 'montenegro', 'netherlands', 'north-macedonia',
+    'norway', 'poland', 'portugal', 'romania', 'russia', 'san-marino', 'serbia', 'slovakia', 'slovenia', 'spain', 'sweden',
+    'switzerland', 'ukraine', 'united-kingdom', 'vatican-city',
+    'afghanistan', 'armenia', 'azerbaijan', 'bahrain', 'bangladesh', 'bhutan', 'brunei', 'cambodia', 'china', 'hong-kong',
+    'india', 'indonesia', 'iran', 'iraq', 'israel', 'japan', 'jordan', 'kazakhstan', 'kuwait', 'kyrgyzstan', 'laos', 'lebanon',
+    'malaysia', 'maldives', 'mongolia', 'myanmar', 'nepal', 'north-korea', 'oman', 'pakistan', 'palestine', 'philippines',
+    'qatar', 'saudi-arabia', 'singapore', 'south-korea', 'sri-lanka', 'syria', 'taiwan', 'tajikistan', 'thailand', 'timor-leste',
+    'turkey', 'turkmenistan', 'united-arab-emirates', 'uzbekistan', 'vietnam', 'yemen',
+    'algeria', 'angola', 'benin', 'botswana', 'burkina-faso', 'burundi', 'cabo-verde', 'cameroon', 'central-african-republic',
+    'chad', 'comoros', 'congo', 'democratic-republic-of-the-congo', 'djibouti', 'egypt', 'equatorial-guinea', 'eritrea',
+    'eswatini', 'ethiopia', 'gabon', 'gambia', 'ghana', 'guinea', 'guinea-bissau', 'ivory-coast', 'kenya', 'lesotho', 'liberia',
+    'libya', 'madagascar', 'malawi', 'mali', 'mauritania', 'mauritius', 'morocco', 'mozambique', 'namibia', 'niger', 'nigeria',
+    'rwanda', 'sao-tome-and-principe', 'senegal', 'seychelles', 'sierra-leone', 'somalia', 'south-africa', 'south-sudan',
+    'sudan', 'tanzania', 'togo', 'tunisia', 'uganda', 'zambia', 'zimbabwe',
+    'australia', 'fiji', 'kiribati', 'marshall-islands', 'micronesia', 'nauru', 'new-zealand', 'palau', 'papua-new-guinea',
+    'samoa', 'solomon-islands', 'tonga', 'tuvalu', 'vanuatu'
+  ];
+
   const staticPages: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily', priority: 1.0 },
     { url: `${baseUrl}/directory`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
@@ -30,9 +56,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/gear-brands`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
   ];
 
+  const countryUrls: MetadataRoute.Sitemap = countries.map(c => ({
+    url: `${baseUrl}/directory/${c}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
   // Fetch dynamic content from Supabase using admin client
   if (!supabaseAdmin) {
-    return staticPages;
+    return [...staticPages, ...countryUrls];
   }
 
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult] = await Promise.all([
@@ -78,5 +111,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls];
+  return [...staticPages, ...countryUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls];
 }
