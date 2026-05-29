@@ -74,7 +74,7 @@ export default function CookiesPage() {
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Contact Us</h2>
         <p style={{ marginBottom: '1rem' }}>For questions about our use of cookies, contact us:</p>
-        <p style={{ marginBottom: '0.5rem' }}>Email: <a href="mailto:info@rinkstop.com" style={{ color: '#C8102E' }}>info@rinkstop.com</a></p>
+        <p style={{ marginBottom: '0.5rem' }}>Email: <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a></p>
         <p style={{ marginBottom: '2rem' }}>Website: <a href="https://rinkstop.com" style={{ color: '#C8102E' }}>https://rinkstop.com</a></p>
       </div>
     </main>

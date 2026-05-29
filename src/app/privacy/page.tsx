@@ -105,7 +105,7 @@ export default function PrivacyPage() {
           <li>Opt out of personalized advertising (see Google Ads Settings link above)</li>
         </ul>
         <p style={{ marginBottom: '1.5rem' }}>
-          To exercise any of these rights, please contact us at <a href="mailto:info@rinkstop.com" style={{ color: '#C8102E' }}>info@rinkstop.com</a>.
+          To exercise any of these rights, please contact us at <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a>.
         </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Children's Privacy</h2>
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
           If you have questions or concerns about this Privacy Policy or our data practices, please contact us:
         </p>
         <p style={{ marginBottom: '0.5rem' }}><strong>RinkStop</strong></p>
-        <p style={{ marginBottom: '0.5rem' }}>Email: <a href="mailto:info@rinkstop.com" style={{ color: '#C8102E' }}>info@rinkstop.com</a></p>
+        <p style={{ marginBottom: '0.5rem' }}>Email: <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a></p>
         <p style={{ marginBottom: '2rem' }}>Website: <a href="https://rinkstop.com" style={{ color: '#C8102E' }}>https://rinkstop.com</a></p>
       </div>
     </main>

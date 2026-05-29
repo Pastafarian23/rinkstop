@@ -127,7 +127,7 @@ export default function TermsPage() {
           If you have any questions about these Terms, please contact us:
         </p>
         <p style={{ marginBottom: '0.5rem' }}><strong>RinkStop</strong></p>
-        <p style={{ marginBottom: '0.5rem' }}>Email: <a href="mailto:info@rinkstop.com" style={{ color: '#C8102E' }}>info@rinkstop.com</a></p>
+        <p style={{ marginBottom: '0.5rem' }}>Email: <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a></p>
         <p style={{ marginBottom: '2rem' }}>Website: <a href="https://rinkstop.com" style={{ color: '#C8102E' }}>https://rinkstop.com</a></p>
       </div>
     </main>
