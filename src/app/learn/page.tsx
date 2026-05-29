@@ -158,8 +158,8 @@ export default function LearnHubPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '0.75rem' }}>
             {cat.guides.map(g => (
               <Link key={g.href} href={g.href} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', background: 'var(--s2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none', transition: 'border-color 0.15s' }}
-                onMouseOver={(e) => e.currentTarget.style.borderColor = '#C8102E'}
-                onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}>
+                
+                >
                 <div>
                   <div style={{ fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{g.title}</div>
                   <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)' }}>{g.desc}</div>
