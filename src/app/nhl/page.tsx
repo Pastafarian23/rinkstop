@@ -101,8 +101,8 @@ export default async function NHLHubPage() {
                 const team = NHL_TEAMS.find(t => t.slug === slug);
                 return team ? (
                   <Link key={slug} href={`/teams/nhl/${slug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '4px', color: '#fff', textDecoration: 'none', transition: 'background 0.15s' }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200,16,46,0.15)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                    
+                    >
                     <span style={{ fontSize: '1rem' }}>🏒</span>
                     <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{team.name}</span>
                   </Link>
@@ -119,8 +119,8 @@ export default async function NHLHubPage() {
                 const team = NHL_TEAMS.find(t => t.slug === slug);
                 return team ? (
                   <Link key={slug} href={`/teams/nhl/${slug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '4px', color: '#fff', textDecoration: 'none', transition: 'background 0.15s' }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200,16,46,0.15)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                    
+                    >
                     <span style={{ fontSize: '1rem' }}>🏒</span>
                     <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{team.name}</span>
                   </Link>
@@ -147,8 +147,8 @@ export default async function NHLHubPage() {
                 const team = slug === 'utah-hockey-club' ? ARIZONA_TEAM : NHL_TEAMS.find(t => t.slug === slug);
                 return team ? (
                   <Link key={slug} href={`/teams/nhl/${slug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '4px', color: '#fff', textDecoration: 'none', transition: 'background 0.15s' }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200,16,46,0.15)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                    
+                    >
                     <span style={{ fontSize: '1rem' }}>🏒</span>
                     <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{team.name}</span>
                   </Link>
@@ -165,16 +165,16 @@ export default async function NHLHubPage() {
                 const team = NHL_TEAMS.find(t => t.slug === slug);
                 return team ? (
                   <Link key={slug} href={`/teams/nhl/${slug}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '4px', color: '#fff', textDecoration: 'none', transition: 'background 0.15s' }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200,16,46,0.15)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                    
+                    >
                     <span style={{ fontSize: '1rem' }}>🏒</span>
                     <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>{team.name}</span>
                   </Link>
                 ) : null;
               })}
               <Link href="/teams/nhl/arizona-coyotes" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', borderRadius: '4px', color: '#fff', textDecoration: 'none', transition: 'background 0.15s' }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200,16,46,0.15)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                
+                >
                 <span style={{ fontSize: '1rem' }}>🏒</span>
                 <span style={{ fontWeight: 600, fontSize: '0.9375rem' }}>Arizona Coyotes</span>
               </Link>
@@ -196,8 +196,8 @@ export default async function NHLHubPage() {
             { href: '/hockey/united-states', icon: '🌍', label: 'US Hockey', desc: 'Hockey across America' },
           ].map(item => (
             <Link key={item.href} href={item.href} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', textDecoration: 'none', transition: 'background 0.15s' }}
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(200,16,46,0.15)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
+              
+              >
               <span style={{ fontSize: '1.5rem' }}>{item.icon}</span>
               <div>
                 <div style={{ fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{item.label}</div>
