@@ -68,6 +68,16 @@ export default async function CityPage({ params }: Props) {
     .not('slug', 'is', null)
     .limit(100);
 
+  // Get most recent update timestamp for freshness signal
+  const { data: latestUpdate } = await supabaseAdmin
+    .from('teams')
+    .select('updated_at')
+    .eq('country', countryName)
+    .ilike('city', cityName)
+    .not('updated_at', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
   const allCities = nearbyCityRows 
     ? Array.from(new Set((nearbyCityRows as any[]).map((c: any) => c.city as string))).filter(c => c !== cityName).slice(0, 8)
     : [];
@@ -257,6 +267,15 @@ export default async function CityPage({ params }: Props) {
           <Link href="/directory/teams" className={styles.btnSecondary}>All Teams</Link>
         </div>
       </section>
+
+      {/* Last Updated Freshness Signal */}
+      <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.25)' }}>
+          Last updated: {latestUpdate?.[0]?.updated_at
+            ? new Date(latestUpdate[0].updated_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        </p>
+      </div>
     </div>
   );
 }

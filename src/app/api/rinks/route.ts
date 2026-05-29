@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
   const id = searchParams.get('id');
   const slug = searchParams.get('slug');
   const country = searchParams.get('country');
+  const city = searchParams.get('city');
   const search = searchParams.get('search');
+  const limit = parseInt(searchParams.get('limit') || '100', 10);
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
   let query = supabase.from('rinks').select('*');
@@ -35,15 +37,17 @@ export async function GET(request: NextRequest) {
     query = query.eq('slug', slug).limit(1);
   } else {
     if (country) query = query.eq('country', country);
+    if (city) query = query.ilike('city', `%${city}%`);
     if (activeOnly) query = query.eq('is_active', true);
     if (search) query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
+    query = query.limit(limit);
   }
 
-  const { data, error } = await query.order('name');
+  const { data, error, count } = await query.order('name');
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const response = NextResponse.json(id || slug ? (data?.[0] ?? null) : data);
+  const response = NextResponse.json(id || slug ? (data?.[0] ?? null) : { count: count ?? data?.length ?? 0, data });
   return applyRateLimitHeaders(response, result);
 }
