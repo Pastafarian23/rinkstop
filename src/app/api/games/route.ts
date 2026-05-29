@@ -58,15 +58,27 @@ export async function GET(request: NextRequest) {
     }
   }
   if (status) query = query.eq('status', status);
-  
+
+  // Fetch more than limit to allow proper in-memory sorting
   const { data, error } = await query
-    .order('date', { ascending: true })
-    .limit(limit);
+    .order('date', { ascending: false })
+    .limit(1000);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Sort: completed games (newest first), then upcoming (soonest first), then other
+  const allGames = data || [];
+  const completed = allGames
+    .filter((g: any) => g.status === 'completed')
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const upcoming = allGames
+    .filter((g: any) => g.status === 'scheduled' || g.status === 'in_progress' || g.status === 'inProgress')
+    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const other = allGames.filter((g: any) => !['completed', 'scheduled', 'in_progress', 'inProgress'].includes(g.status));
+  const sortedGames = [...completed, ...upcoming, ...other].slice(0, limit);
+
   // Map id fields to expected frontend shape
-  const games = (data || []).map(m => ({
+  const games = sortedGames.map(m => ({
     id: m.id,
     date: m.date,
     status: m.status,

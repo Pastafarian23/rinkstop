@@ -131,7 +131,7 @@ export default function GamesPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch('/api/games?limit=50')
+    fetch('/api/scores?limit=50')
       .then(r => r.json())
       .then(d => {
         if (Array.isArray(d)) setGames(d);
