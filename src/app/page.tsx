@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
+import HomeNewsSection from '@/components/HomeNewsSection';
 
-interface Post  { id: string; title: string; slug: string; excerpt?: string; category?: string; og_image_url?: string | null; }
 interface Rink    { id: string; name: string; slug: string; city: string; country: string; }
 interface Team   { id: string; name: string; slug: string; league: string; city: string; }
 interface Game   { id: string; date: string; home_team_name: string; away_team_name: string; venue_name: string; }
@@ -35,7 +35,6 @@ const STATS = [
 
 export default function Home() {
 
-  const [posts, setPosts]   = useState<Post[]>([]);
   const [recentRinks, setRecentRinks] = useState<Rink[]>([]);
   const [recentTeams, setRecentTeams] = useState<Team[]>([]);
   const [upcomingGames, setUpcomingGames] = useState<Game[]>([]);
@@ -43,8 +42,6 @@ export default function Home() {
 
   useEffect(() => {
 
-    fetch('/api/blog/posts?limit=3').then(r => r.json())
-      .then(d => setPosts(d.data || d.posts || [])).catch(() => {});
     // Recently added rinks
     fetch('/api/rinks?limit=6&sort=recent').then(r => r.json())
       .then(d => setRecentRinks((d.data || d || []).slice(0, 3))).catch(() => {});
@@ -193,48 +190,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- NEWS ---------------------------------------------------------------------------------------------------------------------- */}
-      {posts.length > 0 && (
-        <section className="section-py" style={{ background: '#111823', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="container">
-            <div className="sec-head">
-              <div>
-                <div className="label">Latest</div>
-                <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>HOCKEY NEWS</h2>
-              </div>
-              <Link href="/news" className="sec-link">All News →</Link>
-            </div>
-            <div className="news-grid">
-              {posts.map(p => (
-                <Link key={p.id} href={`/news/${p.slug}`} className="card" style={{ textDecoration: 'none' }}>
-                  {p.og_image_url ? (
-                    <img src={p.og_image_url} alt={`${p.title} — ${p.category || 'Hockey News'} article image`} style={{ width: '100%', height: '150px', objectFit: 'cover' }} loading="lazy" />
-                  ) : (
-                    <div style={{ height: '150px', background: 'linear-gradient(135deg, #041E42, #0A2E5C)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.13)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-                        <line x1="4" y1="22" x2="4" y2="15"/>
-                      </svg>
-                    </div>
-                  )}
-                  <div style={{ padding: '1rem' }}>
-                    {p.category && <span className="badge badge-red" style={{ marginBottom: '0.5rem', display: 'inline-flex' }}>{p.category}</span>}
-                    <h3 style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem', lineHeight: 1.4, marginBottom: '0.5rem' }}>{p.title}</h3>
-                    {p.excerpt && (
-                      <p style={{
-                        color: 'rgba(255,255,255,0.38)', fontSize: '0.8125rem', lineHeight: 1.6, marginBottom: '0.75rem',
-                        display: '-webkit-box', overflow: 'hidden',
-                        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const,
-                      }}>{p.excerpt}</p>
-                    )}
-                    <span style={{ color: '#C8102E', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Read More →</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      <HomeNewsSection />
 
       {/* Ticketmaster NHL Banner - 300x250 */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
