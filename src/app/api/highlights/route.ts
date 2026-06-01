@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
                 },
               }));
               
-              if (youtubeOnly) {
+              if (true) {
                 batch = batch.filter((h: any) => h.source === 'youtube' || !!h.embedUrl);
               }
               
