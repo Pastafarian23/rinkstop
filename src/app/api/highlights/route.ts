@@ -144,11 +144,11 @@ export async function GET(request: NextRequest) {
                 },
               }));
               
-              allHighlights.push(...batch);
-              
               if (youtubeOnly) {
-                allHighlights.push(...allHighlights.filter((h: any) => h.source === 'youtube' || !!h.embedUrl));
+                batch = batch.filter((h: any) => h.source === 'youtube' || !!h.embedUrl);
               }
+              
+              allHighlights.push(...batch);
             }
           } catch {
             // Continue with what we have
