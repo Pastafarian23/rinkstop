@@ -153,13 +153,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="nav-inner">
 
                 {/* Logo */}
-                <Link href="/" className="nav-logo">
+                <a href="/" className="nav-logo" onClick={e => { e.preventDefault(); window.location.href = '/'; }}>
                   <img
                     src="/rinkstoplogo.png"
                     alt="RinkStop"
                     style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }}
                   />
-                </Link>
+                </a>
 
                 {/* Desktop links */}
                 <nav className="nav-links" aria-label="Main navigation">
