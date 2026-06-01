@@ -161,6 +161,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         debug: all.length,
+        test: "hello",
         highlights: all,
         pagination: {
           totalCount: data.pagination?.totalCount || all.length,
