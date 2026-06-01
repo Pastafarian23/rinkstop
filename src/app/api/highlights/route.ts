@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Fix for highlights batch loop - ensure youtubeOnly filter applied
 const NHL_BASE = 'https://nhl.highlightly.net';
 const HOCKEY_BASE = 'https://hockey.highlightly.net';
 const API_KEY = process.env.HIGHLIGHTLY_API_KEY || '***REMOVED***';
