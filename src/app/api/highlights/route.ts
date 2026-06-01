@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Paginate (simulate higher limits by fetching multiple offset batches)
-      if (limit > 5) {
+      if (false) {
         const allHighlights: any[] = [...all];
         const batchesNeeded = Math.ceil(limit / 5) - 1;
         
