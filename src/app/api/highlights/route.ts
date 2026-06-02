@@ -253,4 +253,3 @@ async function getHighlightsFromBackup(limit: number, offset: number, youtubeOnl
     console.error('Backup fallback error:', error);
     return NextResponse.json({ error: 'Failed to fetch highlights' }, { status: 500 });
   }
-}
