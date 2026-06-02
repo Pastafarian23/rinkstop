@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ClerkProvider } from '@clerk/nextjs';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
+import NavLinks from '@/components/NavLinks';
 import SignUpButton from '@/components/SignUpButton';
 import SignInLink from '@/components/SignInLink';
 import CookieConsent from '@/components/CookieConsent';
@@ -103,29 +104,10 @@ const ABOUT_LINKS = [
   { href: '/founding-member', label: 'Founding Member' },
 ];
 
-const NAV = [
-  { label: 'Explore Hockey',  sub: EXPLORE       },
-  { label: 'Pro Hockey',      sub: PRO_HOCKEY    },
-  { label: 'International',   sub: INTERNATIONAL },
-  { label: 'College Hockey',  sub: COLLEGE       },
-  { label: 'Junior Hockey',   sub: JUNIOR        },
-  { label: 'Youth & Adult', sub: YOUTH_AMATEUR },
-  { label: 'Content',        sub: CONTENT_LINKS },
-  { label: 'About',          sub: ABOUT_LINKS   },
-];
+const NAV: never[] = []; // unused, kept to avoid breaking any external references
 
 
-function NavDropdown({ items }: { items: typeof NAV[0]['sub'] }) {
-  return (
-    <div className="nav-dropdown">
-      {items.map(item => (
-        <Link key={item.href + item.label} href={item.href} className="nav-dropdown-item">
-          {item.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -162,16 +144,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
 
                 {/* Desktop links */}
-                <nav className="nav-links" aria-label="Main navigation">
-                  {NAV.map(n => (
-                    <div key={n.label} className="nav-item-wrapper">
-                      <span className="nav-link nav-section-label">
-                        {n.label}
-                      </span>
-                      <NavDropdown items={n.sub} />
-                    </div>
-                  ))}
-                </nav>
+                <NavLinks />
 
                 {/* Desktop right */}
                 <div className="nav-right">
