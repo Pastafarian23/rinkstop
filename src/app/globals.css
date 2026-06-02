@@ -186,9 +186,14 @@ img  { max-width: 100%; display: block; }
 }
 .nav-link:hover::after { transform: scaleX(1); }
 
-/* Desktop dropdown (shown on hover) */
+/* Desktop dropdown (shown on hover or when active) */
 .nav-item-wrapper { position: relative; }
 .nav-item-wrapper:hover .nav-dropdown { display: flex; }
+.nav-dropdown-wrapper { position: relative; }
+.nav-dropdown-wrapper .nav-dropdown { display: none; }
+.nav-dropdown-wrapper .nav-section-label.active + .nav-dropdown { display: flex; }
+.nav-section-label { cursor: pointer; user-select: none; }
+.nav-section-label.active { color: #C8102E; }
 .nav-dropdown {
   display: none;
   flex-direction: column;
