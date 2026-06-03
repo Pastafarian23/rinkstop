@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
-import HomeNewsSection from '@/components/HomeNewsSection';
+import HomeNewsSection from '@/app/components/HomeNewsSection';
 
 interface Rink    { id: string; name: string; slug: string; city: string; country: string; }
 interface Team   { id: string; name: string; slug: string; league: string; city: string; }
