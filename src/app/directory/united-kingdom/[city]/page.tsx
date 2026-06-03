@@ -1,33 +1,40 @@
-import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
+import type { Metadata } from 'next';
+import { getCityPageData, slugToTitle } from '@/lib/city-page';
+import CityPageContent from '@/components/CityPageContent';
 
 export const dynamic = 'force-dynamic';
 
-export default async function UKCityPage({ params }: { params: Promise<{ city: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ city: string }>;
+}): Promise<Metadata> {
   const { city: citySlug } = await params;
-  const cityName = citySlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const cityName = slugToTitle(citySlug);
 
-  const { data: rinks, error } = await supabase
-    .from('rinks')
-    .select('id, name, slug, address, phone, website_url, notes')
-    .eq('country', 'United Kingdom')
-    .eq('is_active', true)
-    .ilike('city', `%${cityName}%`)
-    .order('name');
+  return {
+    title: `${cityName} Hockey - Ice Rinks & Teams | RinkStop`,
+    description: `Find hockey teams and ice rinks in ${cityName}, United Kingdom. Discover local EIHL teams, NIHL clubs, and skating facilities.`,
+    alternates: {
+      canonical: `https://rinkstop.com/directory/united-kingdom/${citySlug}`,
+    },
+  };
+}
 
-  return (
-    <div>
-      <h1>Test: {cityName}</h1>
-      <p>Found {rinks?.length || 0} rinks</p>
-      {error && <p>Error: {error.message}</p>}
-      <ul>
-        {rinks?.map(r => (
-          <li key={r.id}>
-            {r.name} - {r.address}
-            {r.website_url && <Link href={r.website_url}>Website</Link>}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+export default async function UKCityPage({
+  params,
+}: {
+  params: Promise<{ city: string }>;
+}) {
+  const { city: citySlug } = await params;
+  const cityName = slugToTitle(citySlug);
+
+  const data = await getCityPageData({
+    countryName: 'United Kingdom',
+    countrySlug: 'united-kingdom',
+    cityName,
+    citySlug,
+  });
+
+  return <CityPageContent data={data} />;
 }
