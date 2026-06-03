@@ -1,5 +1,7 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabaseAdmin } from '@/lib/supabase';
 
 interface Post {
   id: string;
@@ -10,24 +12,30 @@ interface Post {
   category?: string;
   reading_time_minutes?: number;
   author_name?: string;
+  og_image_url?: string | null;
 }
 
-export default async function HomeNewsSection() {
-  const { data: posts, error } = await supabaseAdmin
-    .from('posts')
-    .select('id, slug, title, subtitle, published_at, category, reading_time_minutes, author_name')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(3);
+export default function HomeNewsSection() {
+  const [posts, setPosts] = useState<Post[] | null>(null);
 
-  if (error) {
-    console.error('Error fetching posts for home page:', error);
-    return null;
-  }
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/blog/posts?page=1');
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        setPosts((json.data || []).slice(0, 9));
+      } catch {
+        if (!cancelled) setPosts([]);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
-  if (!posts || posts.length === 0) {
-    return null;
-  }
+  if (!posts || posts.length === 0) return null;
 
   return (
     <section className="section-py" style={{ background: '#111823', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -40,7 +48,7 @@ export default async function HomeNewsSection() {
           <Link href="/news" className="sec-link">All News →</Link>
         </div>
         <div className="news-grid">
-          {posts.map((post: Post) => (
+          {posts.map((post) => (
             <Link key={post.id} href={`/news/${post.slug}`} className="card" style={{ textDecoration: 'none' }}>
               {post.og_image_url ? (
                 <img src={post.og_image_url} alt={`${post.title} — ${post.category || 'Hockey News'} article image`} style={{ width: '100%', height: '150px', objectFit: 'cover' }} loading="lazy" />
