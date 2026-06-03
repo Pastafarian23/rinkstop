@@ -235,7 +235,7 @@ export default function CountryPageContent({ data }: Props) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
                 {leagues.map(l => (
-                  <Link key={l.id} href={`/directory/leagues/${l.slug}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Link key={l.id} href={`/directory/leagues/${l.slug}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
                     {l.logo_url ? (
                       <img src={l.logo_url} alt="" style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0, borderRadius: 4 }} />
                     ) : (
@@ -264,13 +264,13 @@ export default function CountryPageContent({ data }: Props) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
                 {teams.map(team => (
-                  <Link key={team.id} href={`/directory/teams/${team.slug || team.id}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Link key={team.id} href={`/directory/teams/${team.slug || team.id}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
                     {team.logo_url ? (
                       <img src={team.logo_url} alt="" style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0, borderRadius: 4 }} />
                     ) : (
                       <div style={{ width: 28, height: 28, borderRadius: 4, background: '#1a1a1a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🏒</div>
                     )}
-                    <span style={{ fontSize: 14, fontWeight: 600, color: textMain, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: textMain, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', position: 'relative', zIndex: 1 }}>{team.name}</span>
                   </Link>
                 ))}
               </div>
@@ -290,14 +290,30 @@ export default function CountryPageContent({ data }: Props) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
                 {rinks.map(rink => (
-                  <article key={rink.id} style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: 18 }}>
+                  <article key={rink.id} style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: 18, position: 'relative' }}>
+                    {/* Full-card clickable overlay — wraps the title in a stretched link */}
                     <h3 style={{ fontSize: 15, fontWeight: 700, color: textMain, marginBottom: 4 }}>
-                      <Link href={`/directory/rinks/${rink.slug || rink.id}`} style={{ color: textMain, textDecoration: 'none' }}>{rink.name}</Link>
+                      <Link href={`/directory/rinks/${rink.slug || rink.id}`} style={{ color: textMain, textDecoration: 'none', position: 'static' }}>
+                        <span style={{ position: 'absolute', inset: 0, zIndex: 0 }} aria-hidden="true" />
+                        <span style={{ position: 'relative', zIndex: 1 }}>{rink.name}</span>
+                      </Link>
                     </h3>
-                    {rink.city && <div style={{ fontSize: 13, color: textMuted, marginBottom: 8 }}>{rink.city}{rink.address ? `, ${countryName}` : ''}</div>}
-                    {rink.address && <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>📍 {rink.address}</div>}
-                    {rink.phone && <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>📞 {rink.phone}</div>}
-                    {rink.website_url && <a href={rink.website_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: red, textDecoration: 'none' }}>🌐 Visit website →</a>}
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      {rink.city && <div style={{ fontSize: 13, color: textMuted, marginBottom: 8 }}>{rink.city}{rink.address ? `, ${countryName}` : ''}</div>}
+                      {rink.address && <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>📍 {rink.address}</div>}
+                      {rink.phone && <div style={{ fontSize: 12, color: textDim, marginBottom: 4 }}>📞 {rink.phone}</div>}
+                      {rink.website_url && (
+                        <a
+                          href={rink.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ fontSize: 12, color: red, textDecoration: 'none', position: 'relative', zIndex: 2 }}
+                        >
+                          🌐 Visit website →
+                        </a>
+                      )}
+                    </div>
                   </article>
                 ))}
               </div>
@@ -312,7 +328,7 @@ export default function CountryPageContent({ data }: Props) {
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
                 {players.map(p => (
-                  <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 12px', textDecoration: 'none', textAlign: 'center' }}>
+                  <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 12px', textDecoration: 'none', textAlign: 'center', position: 'relative' }}>
                     {p.headshot_url ? (
                       <img src={p.headshot_url} alt="" style={{ width: 56, height: 56, objectFit: 'cover', flexShrink: 0, borderRadius: '50%', margin: '0 auto 8px', display: 'block' }} />
                     ) : (

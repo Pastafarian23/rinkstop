@@ -1,10 +1,9 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { getCountryPageData, getCountryMetadata, countryToSlug } from '@/lib/country-page';
+import CountryPageContent from '@/components/CountryPageContent';
 
-const supabase = createClient(
-  'https://yszheonqyyskkjoxoexk.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
-);
+const COUNTRY_NAME = 'United States';
 
 // US states with abbreviations
 const US_STATES = [
@@ -61,124 +60,104 @@ const US_STATES = [
   { name: 'District of Columbia', slug: 'district-of-columbia', abbr: 'DC' },
 ];
 
-export const metadata = {
-  title: 'United States Hockey | RinkStop',
-  description: 'Find hockey teams, leagues, rinks, and youth programs across the United States.',
-};
+const BORDER = '#1e1e1e';
+const CARD = '#0f0f0f';
+const RED = '#C8102E';
+const TEXT_DIM = '#555';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return getCountryMetadata(COUNTRY_NAME, countryToSlug(COUNTRY_NAME));
+}
+
+export const dynamic = 'force-dynamic';
 
 export default async function UnitedStatesPage() {
-  // Fetch US stats
-  const [{ data: teams }, { data: rinks }, { data: leagues }] = await Promise.all([
-    supabase
-      .from('teams')
-      .select('id', { count: 'exact', head: true })
-      .eq('country', 'United States')
-      .eq('is_active', true),
-    supabase
-      .from('rinks')
-      .select('id', { count: 'exact', head: true })
-      .eq('country', 'United States')
-      .eq('is_active', true),
-    supabase
-      .from('leagues')
-      .select('id', { count: 'exact', head: true })
-      .or('country.ilike.%United States%,slug.ilike.%nhl%,slug.ilike.%ushl%,slug.ilike.%nahl%')
-      .eq('is_active', true),
-  ]);
-
-  const stats = {
-    teams: teams?.length || 0,
-    rinks: rinks?.length || 0,
-    leagues: leagues?.length || 0,
-  };
+  const data = await getCountryPageData(COUNTRY_NAME);
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem 4rem' }}>
-      {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', padding: '1.5rem 0 0', marginBottom: '0' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>United States</span>
-      </nav>
+    <>
+      <CountryPageContent data={data} />
 
-      {/* Header */}
-      <div style={{ marginBottom: '2.5rem', paddingTop: '1.5rem' }}>
-        <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C8102E', marginBottom: '0.5rem' }}>
-          🇺🇸 United States
-        </div>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem' }}>
-          US Hockey Directory
-        </h1>
-        <p style={{ color: '#666666', fontSize: '1rem', marginBottom: '1.5rem' }}>
-          {stats.teams.toLocaleString()} teams · {stats.rinks.toLocaleString()} rinks · {stats.leagues.toLocaleString()} leagues
-        </p>
-
-        {/* Stats Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#C8102E' }}>{stats.teams.toLocaleString()}</div>
-            <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Teams</div>
-          </div>
-          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#C8102E' }}>{stats.rinks.toLocaleString()}</div>
-            <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rinks</div>
-          </div>
-          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#C8102E' }}>{stats.leagues.toLocaleString()}</div>
-            <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Leagues</div>
-          </div>
-        </div>
-      </div>
-
-      {/* States Grid */}
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Browse by State</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
-        {US_STATES.map(state => (
-          <Link
-            key={state.slug}
-            href={`/directory/united-states/${state.slug}`}
+      {/* US State drilldown — preserved from original USA page */}
+      <div style={{ background: '#0a0a0a' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 80px' }}>
+          <h2
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.875rem 1rem',
-              background: 'var(--s2)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              textDecoration: 'none',
-              color: 'inherit',
-              transition: 'border-color 0.15s, background 0.15s',
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: 26,
+              letterSpacing: '0.04em',
+              color: '#fff',
+              marginBottom: 16,
+              borderLeft: `4px solid ${RED}`,
+              paddingLeft: 14,
             }}
           >
-            <span style={{ fontWeight: 700, color: '#C8102E', fontSize: '0.875rem', minWidth: '32px' }}>{state.abbr}</span>
-            <span style={{ fontSize: '0.875rem' }}>{state.name}</span>
-          </Link>
-        ))}
-      </div>
-
-      {/* Popular Leagues */}
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '2.5rem 0 1rem' }}>Major US Leagues</h2>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-        {['NHL', 'AHL', 'USHL', 'NAHL', 'NCAA Division I', 'NCAA Division III', 'USAC'].map(league => (
-          <Link
-            key={league}
-            href={`/directory/leagues/${league.toLowerCase().replace(/\s+/g, '-')}`}
+            Browse by State
+          </h2>
+          <div
             style={{
-              padding: '0.5rem 1rem',
-              background: 'var(--s2)',
-              border: '1px solid var(--border)',
-              borderRadius: '20px',
-              textDecoration: 'none',
-              color: 'inherit',
-              fontSize: '0.875rem',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: 10,
             }}
           >
-            {league}
-          </Link>
-        ))}
+            {US_STATES.map(state => (
+              <Link
+                key={state.slug}
+                href={`/directory/united-states/${state.slug}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 16px',
+                  background: CARD,
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 8,
+                  textDecoration: 'none',
+                  color: '#fff',
+                }}
+              >
+                <span style={{ fontWeight: 700, color: RED, fontSize: 14, minWidth: 32 }}>{state.abbr}</span>
+                <span style={{ fontSize: 14 }}>{state.name}</span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Major US leagues quick-links */}
+          <h2
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: 26,
+              letterSpacing: '0.04em',
+              color: '#fff',
+              margin: '40px 0 16px',
+              borderLeft: `4px solid ${RED}`,
+              paddingLeft: 14,
+            }}
+          >
+            Major US Hockey Leagues
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {['NHL', 'AHL', 'USHL', 'NAHL', 'NCAA Division I', 'NCAA Division III', 'USAC'].map(league => (
+              <Link
+                key={league}
+                href={`/directory/leagues/${league.toLowerCase().replace(/\s+/g, '-')}`}
+                style={{
+                  padding: '8px 16px',
+                  background: CARD,
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 20,
+                  textDecoration: 'none',
+                  color: '#fff',
+                  fontSize: 14,
+                }}
+              >
+                {league}
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
