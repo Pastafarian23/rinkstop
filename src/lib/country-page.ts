@@ -238,3 +238,5 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
     openGraph: { title, description, type: 'website' },
   };
 }
+
+// Auto-deploy test: 2026-06-03
