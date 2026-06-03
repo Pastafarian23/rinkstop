@@ -404,7 +404,6 @@ export default function CityPageContent({ data }: Props) {
                           href={rink.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
                           style={{
                             color: red,
                             textDecoration: 'none',
