@@ -145,9 +145,10 @@ function PlayerRow({ p }: { p: NhlPlayer }) {
           <div style={{ color: '#fff', fontSize: '0.8125rem', fontWeight: 600 }}>{p.full_name}</div>
           <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem' }}>
             {p.position || '—'}
+            {p.position_abbreviation ? ` (${p.position_abbreviation})` : ''}
             {p.height ? ` · ${Math.floor(p.height/12)}'${p.height%12}"` : ''}
             {p.weight ? ` · ${p.weight}lb` : ''}
-            {p.nationality ? ` · ${p.nationality}` : ''}
+            {p.birth_place ? ` · ${p.birth_place}` : p.nationality ? ` · ${p.nationality}` : ''}
           </div>
         </div>
         {p.birth_date && (

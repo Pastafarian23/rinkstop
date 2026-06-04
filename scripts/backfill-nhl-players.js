@@ -47,9 +47,7 @@ async function fetchPlayer(id) {
   });
   if (!res.ok) {
     if (res.status === 429) {
-      log('  429 RATE LIMITED - backing off 60s');
-      await sleep(60000);
-      return fetchPlayer(id);
+      return { error: '429', rateLimited: true };
     }
     return { error: `HTTP ${res.status}` };
   }
@@ -102,16 +100,23 @@ function mapPlayerToRow(apiRow) {
     last_name: lastName,
     logo: p.logo || null,
     birth_date: toIsoDate(profile.birthDate),
+    birth_place: profile.birthPlace || null,
     birth_country: profile.birthPlace ? (profile.birthPlace.split(',').pop() || '').trim() || null : null,
     nationality: profile.birthPlace ? (profile.birthPlace.split(',').pop() || '').trim() || null : null,
     height: toInches(profile.height),
     weight: toLbs(profile.weight),
     position: position.main || null,
+    position_abbreviation: position.abbreviation || null,
     jersey_number: profile.jersey || null,
+    is_active: profile.isActive ?? null,
     draft_year: draft.year ?? null,
     draft_round: draft.round ?? null,
     draft_pick: draft.pick ?? null,
     current_team_id: team.id ? String(team.id) : null,
+    current_team_name: team.displayName || team.name || null,
+    current_team_abbreviation: team.abbreviation || null,
+    current_team_logo: team.logo || null,
+    league_name: team.league || null,
     updated_at: new Date().toISOString(),
   };
 }
@@ -142,7 +147,8 @@ async function getAllPlayerIds() {
   const state = await loadState();
   const doneSet = new Set(state.doneIds);
   const failedSet = new Set(state.failedIds);
-  const remaining = allIds.filter(id => !doneSet.has(id) && !failedSet.has(id));
+  const rateLimitedSet = new Set(state.rateLimitedIds || []);
+  const remaining = allIds.filter(id => !doneSet.has(id) && !failedSet.has(id) && !rateLimitedSet.has(id));
   log(`Already done: ${doneSet.size}, Previously failed: ${failedSet.size}, Remaining: ${remaining.length}`);
 
   if (remaining.length === 0) {
@@ -153,15 +159,18 @@ async function getAllPlayerIds() {
   let processed = 0;
   let ok = 0;
   let failed = 0;
+  let rateLimited = 0;
+  let consecutiveRateLimits = 0;
   const startTime = Date.now();
   let rateLimitRemaining = null;
+  const MAX_CONSECUTIVE_429 = 5; // stop after this many 429s in a row
 
   for (let i = 0; i < remaining.length; i += BATCH_SIZE) {
     const batch = remaining.slice(i, i + BATCH_SIZE);
     const results = await Promise.all(batch.map(async (id) => {
       try {
         const r = await fetchPlayer(id);
-        if (r.error) return { id, error: r.error };
+        if (r.error) return { id, error: r.error, rateLimited: r.rateLimited };
         return { id, data: r.data };
       } catch (e) {
         return { id, error: e.message };
@@ -184,8 +193,12 @@ async function getAllPlayerIds() {
       } else {
         for (const r of results) {
           if (r.error) {
-            failedSet.add(r.id);
-            failed++;
+            if (r.rateLimited) {
+              rateLimited++;
+            } else {
+              failedSet.add(r.id);
+              failed++;
+            }
           } else {
             doneSet.add(r.id);
             ok++;
@@ -194,9 +207,37 @@ async function getAllPlayerIds() {
       }
     } else {
       for (const r of results) {
-        failedSet.add(r.id);
-        failed++;
+        if (r.rateLimited) {
+          rateLimited++;
+        } else {
+          failedSet.add(r.id);
+          failed++;
+        }
       }
+    }
+
+    // Check if we got rate limited on most of this batch
+    if (rateLimited >= BATCH_SIZE) {
+      consecutiveRateLimits++;
+      if (consecutiveRateLimits >= MAX_CONSECUTIVE_429) {
+        log(`\n  Hit ${MAX_CONSECUTIVE_429} consecutive batches with 429s.`);
+        log('  Saving state and exiting. Re-run tomorrow when rate limit resets.');
+        state.doneIds = Array.from(doneSet);
+        state.failedIds = Array.from(failedSet);
+        state.rateLimitedIds = state.rateLimitedIds || [];
+        // Mark the 429ed ones as not-done
+        for (const r of results) {
+          if (r.rateLimited && !state.rateLimitedIds.includes(r.id)) {
+            state.rateLimitedIds.push(r.id);
+          }
+        }
+        state.lastUpdate = new Date().toISOString();
+        await saveState(state);
+        log(`Done: ${ok} ok, ${failed} fail, ${rateLimited} rate-limited (will retry next run)`);
+        return;
+      }
+    } else {
+      consecutiveRateLimits = 0;
     }
 
     processed += batch.length;
