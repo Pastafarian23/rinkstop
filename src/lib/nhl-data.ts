@@ -60,6 +60,7 @@ export interface NhlPlayer {
   logo: string | null;
   birth_date: string | null;
   birth_country: string | null;
+  birth_place: string | null;
   nationality: string | null;
   height: number | null;
   weight: number | null;
