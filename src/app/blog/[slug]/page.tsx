@@ -2,6 +2,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
+import BlogRelatedServer from '@/components/BlogRelatedServer';
 import { supabase } from '@/lib/supabase';
 
 interface Post {
@@ -325,8 +326,15 @@ export default async function BlogPostPage({ params }: Props) {
 
             {/* Sidebar */}
             <aside style={{ position: 'sticky', top: '1rem' }}>
-              {/* Related content */}
-              <BlogRelated currentSlug={post.slug} currentCategory={post.category} />
+              {/* Related content - server-rendered for SEO */}
+              <BlogRelatedServer
+                currentSlug={post.slug}
+                currentTitle={post.title}
+                currentCategory={post.category}
+                currentTags={tags}
+              />
+              {/* Client-rendered backup (fetches on hydration) */}
+              <BlogRelated currentSlug={post.slug} currentCategory={post.category} currentTags={tags} />
 
               {/* Back to news */}
               <div style={{ marginTop: '1.5rem' }}>
