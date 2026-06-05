@@ -305,7 +305,6 @@ export default function CountryPageContent({ data }: Props) {
                           href={rink.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
                           style={{ fontSize: 12, color: red, textDecoration: 'none', position: 'relative', zIndex: 2 }}
                         >
                           🌐 Visit website →
