@@ -232,7 +232,8 @@ export async function getCityPageData(opts: {
       .eq('province_state', regionAbbr || '')
       .or(`city.ilike.${cityName},address.ilike.%${cityName}%`);
   } else if (countrySlug === 'canada') {
-    teamsQuery = teamsQuery.eq('province_state', regionAbbr || '').eq('city', cityName);
+    // Teams table has no province_state column; use exact city match (filtered by country)
+    teamsQuery = teamsQuery.eq('city', cityName);
     rinksQuery = rinksQuery.eq('province_state', regionAbbr || '').eq('city', cityName);
   } else if (countrySlug === 'united-kingdom' || countrySlug === 'uk') {
     teamsQuery = teamsQuery.ilike('city', `%${cityName}%`);

@@ -72,12 +72,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [...staticPages, ...countryUrls];
   }
 
-  const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult] = await Promise.all([
+  const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult, caRinksResult, ukRinksResult] = await Promise.all([
     supabaseAdmin.from('teams').select('slug, updated_at').eq('is_active', true),
     supabaseAdmin.from('rinks').select('slug, updated_at').eq('is_active', true),
     supabaseAdmin.from('leagues').select('slug, updated_at').eq('is_active', true),
     supabaseAdmin.from('posts').select('slug, updated_at').eq('status', 'published'),
     supabaseAdmin.from('players').select('id, updated_at').eq('is_active', true).order('updated_at', { ascending: false }).limit(500),
+    supabaseAdmin.from('rinks').select('city, province_state').eq('country', 'Canada').eq('is_active', true).not('city', 'is', null).not('province_state', 'is', null),
+    supabaseAdmin.from('rinks').select('city').eq('country', 'United Kingdom').eq('is_active', true).not('city', 'is', null),
   ]);
 
   const teamUrls: MetadataRoute.Sitemap = (teamsResult.data || []).map(t => ({
@@ -115,5 +117,47 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...countryUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls];
+  // CA city subroutes: /directory/canada/{province_slug}/{city_slug}
+  const caCities = new Set<string>();
+  (caRinksResult.data || []).forEach((r: { city: string; province_state: string }) => {
+    const citySlug = r.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const provSlug = r.province_state.toLowerCase();
+    caCities.add(`/directory/canada/${provSlug}/${citySlug}`);
+  });
+  const caCityUrls: MetadataRoute.Sitemap = [...caCities].map(path => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  // UK city subroutes: /directory/united-kingdom/{city_slug}
+  const ukCities = new Set<string>();
+  (ukRinksResult.data || []).forEach((r: { city: string }) => {
+    const citySlug = r.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    ukCities.add(`/directory/united-kingdom/${citySlug}`);
+  });
+  const ukCityUrls: MetadataRoute.Sitemap = [...ukCities].map(path => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  // US state pages
+  const usStates = [
+    'alabama','alaska','arizona','arkansas','california','colorado','connecticut','delaware','florida','georgia',
+    'hawaii','idaho','illinois','indiana','iowa','kansas','kentucky','louisiana','maine','maryland',
+    'massachusetts','michigan','minnesota','mississippi','missouri','montana','nebraska','nevada','new-hampshire','new-jersey',
+    'new-mexico','new-york','north-carolina','north-dakota','ohio','oklahoma','oregon','pennsylvania','rhode-island','south-carolina',
+    'south-dakota','tennessee','texas','utah','vermont','virginia','washington','west-virginia','wisconsin','wyoming',
+  ];
+  const usStateUrls: MetadataRoute.Sitemap = usStates.map(slug => ({
+    url: `${baseUrl}/directory/united-states/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  }));
+
+  return [...staticPages, ...countryUrls, ...usStateUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
 }
