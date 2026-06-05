@@ -34,7 +34,7 @@ function pickCTAs(category: string | undefined, tags: string[] | undefined, titl
       href: '/directory/rinks',
       cta: 'Browse Rinks',
       icon: '🏒',
-      highlight: '900+ rinks in 30+ countries',
+      highlight: '800+ cities in 50+ countries',
     });
   }
 
@@ -109,7 +109,7 @@ function pickCTAs(category: string | undefined, tags: string[] | undefined, titl
   if (ctas.length === 0) {
     ctas.push({
       title: 'Explore the RinkStop Directory',
-      pitch: '900+ rinks in 30+ countries, 2,100+ teams, 6,300+ players, 190+ leagues. The world\'s largest hockey directory — searchable by city, state, or country.',
+      pitch: '800+ cities in 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues. The world\'s largest hockey directory — searchable by city, state, or country.',
       href: '/directory',
       cta: 'Open Directory',
       icon: '🏒',
