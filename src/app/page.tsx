@@ -97,7 +97,7 @@ export default function Home() {
               </h1>
 
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
-                <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong> 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country.
+                <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong> 900+ rinks in 30+ countries, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country.
               </p>
 
               {/* Search bar */}
