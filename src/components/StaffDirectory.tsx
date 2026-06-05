@@ -74,7 +74,7 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
     <div className="container" style={{ padding: '2rem 1rem 4rem' }}>
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
-          Hockey {roleLabel}s
+          Hockey {role === 'coach' ? 'Coaches' : `${roleLabel}s`}
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9375rem', maxWidth: '680px' }}>
           {role === 'coach' && 'Head coaches and assistant coaches across the NHL, KHL, and other professional leagues.'}
