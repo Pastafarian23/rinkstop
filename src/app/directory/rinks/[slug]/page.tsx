@@ -6,21 +6,30 @@ import { supabase } from '@/lib/supabase';
 import RinkGames from '@/components/RinkGames';
 import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
+import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country')
+    .select('name, slug, city, country, province_state, description, website, phone, amenities')
     .eq('slug', slug)
     .single();
 
   if (!rink) return { title: 'Rink Not Found | RinkStop' };
 
+  // Count populated fields to score content quality
+  const fields = ['city', 'country', 'province_state', 'description', 'website', 'phone', 'amenities'];
+  const fieldCount = fields.filter(f => rink[f] && (Array.isArray(rink[f]) ? rink[f].length > 0 : String(rink[f]).trim().length > 0)).length;
+  // Estimate word count from description (the main unique content field)
+  const descWords = rink.description ? String(rink.description).split(/\s+/).filter(w => w.length > 0).length : 0;
+  const decision = rinkPageDecision(fieldCount, descWords);
+
   return {
     title: `${rink.name} | RinkStop`,
     description: `Find ice hockey teams, leagues, games, and more at ${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
+    robots: robotsMeta(decision),
     openGraph: {
       title: `${rink.name} | RinkStop`,
       description: `Hockey at ${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
