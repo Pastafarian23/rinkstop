@@ -15,9 +15,11 @@ interface NavSection {
 const EXPLORE: NavItem[] = [
   { href: '/directory/teams',    label: 'Teams'   },
   { href: '/directory/players',  label: 'Players' },
+  { href: '/directory/coaches',  label: 'Coaches' },
+  { href: '/directory/scouts',   label: 'Scouts'  },
   { href: '/directory/leagues',  label: 'Leagues' },
   { href: '/directory/rinks',    label: 'Rinks'   },
-  { href: '/directory/games', label: 'Games'   },
+  { href: '/directory/games',    label: 'Games'   },
 ];
 
 const PRO_HOCKEY: NavItem[] = [

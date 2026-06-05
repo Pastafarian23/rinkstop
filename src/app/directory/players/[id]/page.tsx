@@ -277,6 +277,17 @@ export default function PlayerDetail() {
                   Inactive
                 </span>
               )}
+              {(player as any).role && (player as any).role !== 'player' && (
+                <span style={{
+                  display: 'inline-block', fontSize: '0.6875rem', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  padding: '0.2rem 0.5rem', borderRadius: '4px',
+                  background: (player as any).role === 'coach' ? 'rgba(255,184,28,0.15)' : (player as any).role === 'scout' ? 'rgba(20,184,166,0.15)' : 'rgba(168,85,247,0.15)',
+                  color: (player as any).role === 'coach' ? '#FFB81C' : (player as any).role === 'scout' ? '#14B8A6' : '#A855F7',
+                }}>
+                  {(player as any).role === 'coach' ? 'Coach' : (player as any).role === 'scout' ? 'Scout' : (player as any).role === 'official' ? 'Official' : 'Staff'}
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
