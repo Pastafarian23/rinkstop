@@ -41,6 +41,24 @@ function formatDate(date?: string) {
   } catch { return date; }
 }
 
+// Convert inline markdown (links + bold) to HTML
+function processInline(text: string): string {
+  // 1) Process markdown links [text](url) — must come BEFORE bold to avoid the URL being mangled
+  let result = text.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    (_m, linkText: string, url: string) => {
+      const safeUrl = url.replace(/"/g, '&quot;');
+      // External links (https/http) get target=_blank; internal links stay in-page
+      const isExternal = /^https?:\/\//i.test(url);
+      const linkHtml = `<a href="${safeUrl}"${isExternal ? ' target="_blank" rel="noopener noreferrer"' : ''} style="color:#C8102E;text-decoration:underline">${linkText}</a>`;
+      return linkHtml;
+    }
+  );
+  // 2) Process bold **text** (must come AFTER links so link text with ** works)
+  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  return result;
+}
+
 function contentToHtml(content: string): string {
   // Remove sign-off lines
   let text = content
@@ -57,21 +75,20 @@ function contentToHtml(content: string): string {
 
     // H2
     if (line.startsWith('## ')) {
-      const text = line.substring(3).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      html.push(`<h2>${text}</h2>`);
+      const text = line.substring(3);
+      html.push(`<h2>${processInline(text)}</h2>`);
       continue;
     }
 
     // H3
     if (line.startsWith('### ')) {
-      const text = line.substring(4).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      html.push(`<h3>${text}</h3>`);
+      const text = line.substring(4);
+      html.push(`<h3>${processInline(text)}</h3>`);
       continue;
     }
 
-    // Bold inline
-    const processed = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html.push(`<p>${processed}</p>`);
+    // Paragraph with inline formatting (links + bold)
+    html.push(`<p>${processInline(line)}</p>`);
   }
 
   return html.join('\n');
