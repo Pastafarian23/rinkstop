@@ -90,14 +90,14 @@ export default function Home() {
               <div className="label">The Global Hockey Directory</div>
 
               <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#fff', lineHeight: 0.95, marginBottom: '0.5rem' }}>
-                FIND HOCKEY
+                THE GLOBAL
               </h1>
               <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#C8102E', lineHeight: 0.95, marginBottom: '1rem' }}>
-                IN ANY CITY
+                HOCKEY DIRECTORY
               </h1>
 
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
-                <strong style={{ color: '#fff' }}>900+ rinks, 2,100+ teams, 30+ countries.</strong> The only directory that covers every level — from NHL arenas to youth programs to beer-league drop-in.
+                <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong> 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country.
               </p>
 
               {/* Search bar */}
