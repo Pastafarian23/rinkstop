@@ -18,7 +18,7 @@ const COUNTRY_NAMES: Record<string, string> = {
 
 export const metadata: Metadata = {
   title: 'Global Hockey Leagues & Teams Directory | RinkStop',
-  description: 'Browse hockey leagues and teams from 30+ countries worldwide. NHL, SHL, Liiga, KHL, DEL, and more. Complete standings, schedules, and team information.',
+  description: 'Browse hockey leagues and teams from 50+ countries worldwide. NHL, SHL, Liiga, KHL, DEL, and more. Complete standings, schedules, and team information.',
   alternates: {
     canonical: 'https://rinkstop.com/hockey',
   },
@@ -131,7 +131,7 @@ export default async function HockeyPage() {
               "@context": "https://schema.org",
               "@type": "WebPage",
               name: "Global Hockey Leagues Directory",
-              description: "Browse hockey leagues and teams from 30+ countries worldwide",
+              description: "Browse hockey leagues and teams from 50+ countries worldwide",
               url: "https://rinkstop.com/hockey",
             })
           }}
