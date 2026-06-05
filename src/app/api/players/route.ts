@@ -39,6 +39,8 @@ function formatNhlPlayer(p: any) {
       round: p.draft_round ?? null,
       pick: p.draft_pick ?? null,
     },
+    role: p.role ?? 'player',
+    was_player: p.was_player ?? false,
     highlightly_id: p.id,
     _partial: !(p.birth_date && p.position && p.height), // flag for backfill
   };
