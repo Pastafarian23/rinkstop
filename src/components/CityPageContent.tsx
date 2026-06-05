@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { CityPageData } from '@/lib/city-page';
+import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
 
 interface Props {
   data: CityPageData;
@@ -527,6 +528,16 @@ export default function CityPageContent({ data }: Props) {
             </div>
           </section>
         )}
+
+        {/* RELATED ARTICLES — directory → article funnel */}
+        <DirectoryRelatedArticles
+          countryName={countryName}
+          countrySlug={countrySlug}
+          regionName={regionName}
+          regionSlug={regionSlug}
+          cityName={cityName}
+          citySlug=""
+        />
 
         {/* EXPLORE MORE */}
         <section

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { CountryPageData } from '@/lib/country-page';
+import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
 
 interface Props {
   data: CountryPageData;
@@ -426,6 +427,12 @@ export default function CountryPageContent({ data }: Props) {
               ))}
             </div>
           </section>
+
+          {/* Related Articles */}
+          <DirectoryRelatedArticles
+            countryName={countryName}
+            countrySlug={countrySlug}
+          />
 
           {/* Back to Directory */}
           <div style={{ textAlign: 'center', marginTop: 48 }}>
