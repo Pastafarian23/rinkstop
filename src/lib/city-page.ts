@@ -134,6 +134,9 @@ export interface CityPageData {
   teamCount: number;
   rinkCount: number;
 
+  // Leagues present in this city (derived from teams data, with counts)
+  leaguesInCity: { name: string; count: number; slug: string }[];
+
   // Pro cross-reference
   proTeams: { name: string; league: string }[];
 
@@ -216,7 +219,7 @@ export async function getCityPageData(opts: {
   // - UK uses ilike for both
   let teamsQuery = supabase
     .from('teams')
-    .select('id, name, slug, logo_url')
+    .select('id, name, slug, logo_url, league_id')
     .eq('country', countryName)
     .eq('is_active', true);
 
@@ -258,6 +261,34 @@ export async function getCityPageData(opts: {
 
   const teams = teamsData || [];
 
+  // Compute leagues in this city from team data (Phase 1 step 2 - unique content)
+  // Aggregate by league_id, then look up league names + slugs
+  const leagueIdCounts: Record<string, number> = {};
+  for (const t of teams) {
+    if (t.league_id) {
+      leagueIdCounts[t.league_id] = (leagueIdCounts[t.league_id] || 0) + 1;
+    }
+  }
+  const leagueIds = Object.keys(leagueIdCounts);
+
+  // Fetch league names + slugs for the unique league IDs
+  let leaguesInCity: { name: string; count: number; slug: string }[] = [];
+  if (leagueIds.length > 0) {
+    const { data: leaguesData } = await supabase
+      .from('leagues')
+      .select('id, name, slug')
+      .in('id', leagueIds);
+    if (leaguesData) {
+      leaguesInCity = leaguesData
+        .map(l => ({
+          name: l.name,
+          count: leagueIdCounts[l.id] || 0,
+          slug: l.slug,
+        }))
+        .sort((a, b) => b.count - a.count); // Largest first
+    }
+  }
+
   const locationDesc = regionName
     ? `${cityName}, ${regionName}, ${countryName}`
     : `${cityName}, ${countryName}`;
@@ -274,6 +305,7 @@ export async function getCityPageData(opts: {
     rinks,
     teamCount: teams.length,
     rinkCount: rinks.length,
+    leaguesInCity,
     proTeams,
     breadcrumb,
     title: `${locationDesc} Hockey - Teams, Rinks & Leagues | RinkStop`,

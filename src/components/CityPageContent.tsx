@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { CityPageData } from '@/lib/city-page';
 import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
+import CityHockeyScene from '@/components/CityHockeyScene';
 
 interface Props {
   data: CityPageData;
@@ -19,6 +20,7 @@ export default function CityPageContent({ data }: Props) {
     rinkCount,
     proTeams,
     breadcrumb,
+    leaguesInCity = [],
   } = data;
 
   // Theme
@@ -257,6 +259,21 @@ export default function CityPageContent({ data }: Props) {
             )}
           </div>
         </header>
+
+        {/* HOCKEY SCENE — data-driven unique content for SEO (Phase 1 step 2) */}
+        <CityHockeyScene
+          cityName={cityName}
+          countryName={countryName}
+          countrySlug={countrySlug}
+          regionName={regionName}
+          regionSlug={regionSlug}
+          rinks={rinks}
+          teams={teams}
+          teamCount={teamCount}
+          rinkCount={rinkCount}
+          proTeams={proTeams}
+          leaguesInCity={leaguesInCity}
+        />
 
         {/* TEAMS */}
         {teams.length > 0 && (
