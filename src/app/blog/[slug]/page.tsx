@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
 import BlogRelatedServer from '@/components/BlogRelatedServer';
+import BlogDirectoryCTA from '@/components/BlogDirectoryCTA';
 import { supabase } from '@/lib/supabase';
 
 interface Post {
@@ -269,6 +270,13 @@ export default async function BlogPostPage({ params }: Props) {
               <div
                 className="article-card"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
+              />
+
+              {/* Directory CTA — article → directory funnel */}
+              <BlogDirectoryCTA
+                category={post.category}
+                tags={tags}
+                title={post.title}
               />
 
               {/* Share */}
