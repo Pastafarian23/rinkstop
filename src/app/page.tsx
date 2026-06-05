@@ -87,20 +87,17 @@ export default function Home() {
 
             {/* Headline + search */}
             <div>
-              <div className="label">Global Hockey Directory</div>
+              <div className="label">The Global Hockey Directory</div>
 
-              <h1 className="font-sport" style={{ fontSize: 'clamp(2.75rem, 11vw, 6rem)', color: '#fff', lineHeight: 0.92 }}>
-                THE WORLD&apos;S
+              <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#fff', lineHeight: 0.95, marginBottom: '0.5rem' }}>
+                FIND HOCKEY
               </h1>
-              <h1 className="font-sport" style={{ fontSize: 'clamp(2.75rem, 11vw, 6rem)', color: '#C8102E', lineHeight: 0.92 }}>
-                HOCKEY
-              </h1>
-              <h1 className="font-sport" style={{ fontSize: 'clamp(2.75rem, 11vw, 6rem)', color: 'transparent', WebkitTextStroke: '2px rgba(255,255,255,0.3)', lineHeight: 0.92, marginBottom: '1.25rem' }}>
-                DIRECTORY
+              <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#C8102E', lineHeight: 0.95, marginBottom: '1rem' }}>
+                IN ANY CITY
               </h1>
 
-              <p style={{ color: 'rgba(255,255,255,0.58)', fontSize: 'clamp(0.875rem, 2.5vw, 1rem)', lineHeight: 1.7, marginBottom: '1.5rem', maxWidth: '440px' }}>
-                Find teams, players, leagues, and rinks from every corner of the globe  --  from NHL arenas to backyard rinks.
+              <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
+                <strong style={{ color: '#fff' }}>900+ rinks, 2,100+ teams, 30+ countries.</strong> The only directory that covers every level — from NHL arenas to youth programs to beer-league drop-in.
               </p>
 
               {/* Search bar */}
@@ -179,6 +176,56 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0.875rem 0 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <TicketmasterAd size="468x60" />
+          </div>
+        </div>
+      </section>
+
+      {/* ---- TOP HOCKEY CITIES ------------------------------------------------------------------------------------------------- */}
+      <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Featured</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>TOP HOCKEY CITIES</h2>
+            </div>
+            <Link href="/directory/united-states" className="sec-link">All US Cities →</Link>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.625rem' }}>
+            {[
+              { name: 'Toronto', country: 'CA', href: '/directory/canada/ontario/toronto', count: 1 },
+              { name: 'Montreal', country: 'CA', href: '/directory/canada/quebec/montreal', count: 1 },
+              { name: 'Boston', country: 'US', href: '/directory/united-states/massachusetts/boston', count: 1 },
+              { name: 'New York', country: 'US', href: '/directory/united-states/new-york/new-york', count: 1 },
+              { name: 'Chicago', country: 'US', href: '/directory/united-states/illinois/chicago', count: 1 },
+              { name: 'Detroit', country: 'US', href: '/directory/united-states/michigan/detroit', count: 1 },
+              { name: 'Pittsburgh', country: 'US', href: '/directory/united-states/pennsylvania/pittsburgh', count: 1 },
+              { name: 'Edmonton', country: 'CA', href: '/directory/canada/alberta/edmonton', count: 1 },
+            ].map(city => (
+              <Link
+                key={city.name}
+                href={city.href}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '1.25rem 0.75rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+                onMouseOver={e => { e.currentTarget.style.borderColor = '#C8102E'; e.currentTarget.style.background = 'rgba(200,16,46,0.05)'; }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+              >
+                <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', color: '#C8102E', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                  {city.country}
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{city.name}</div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -285,15 +332,15 @@ export default function Home() {
           <div className="cta-flex">
             <div>
               <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: '#fff', marginBottom: '0.375rem' }}>
-                ADD YOUR TEAM TO THE DIRECTORY
+                CLAIM YOUR FREE PROFILE
               </h2>
-              <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)' }}>
-                List your team, league, rink, or brand. Reach hockey fans worldwide.
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)', maxWidth: '540px' }}>
+                Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates. Free forever.
               </p>
             </div>
             <div className="cta-btns">
-              <Link href="/sign-up" className="btn btn-white">+ Join Now</Link>
-              <Link href="/directory" className="btn btn-ghost" style={{ borderColor: 'rgba(255,255,255,0.4)' }}>Browse Directory</Link>
+              <Link href="/sign-up" className="btn btn-white">Claim Your Profile</Link>
+              <Link href="/add-listing" className="btn btn-ghost" style={{ borderColor: 'rgba(255,255,255,0.4)' }}>+ Add a Listing</Link>
             </div>
           </div>
         </div>
