@@ -177,7 +177,7 @@ export default function ContactPage() {
                 { href: '/admin/teams/new', label: 'Add Your Listing' },
                 { href: '/admin/leagues/new', label: 'Add Your League' },
                 { href: '/admin/rinks/new', label: 'Add a Rink' },
-                { href: '/blog', label: 'Latest News' },
+                { href: '/news', label: 'Latest News' },
               ].map(l => (
                 <Link key={l.href} href={l.href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.875rem', textDecoration: 'none' }}>
                   → {l.label}
