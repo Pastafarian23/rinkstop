@@ -4,6 +4,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 const baseUrl = 'https://rinkstop.com';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Phase 1 SEO filter stats — track effectiveness
+  const stats = { teams_total: 0, teams_indexed: 0, rinks_total: 0, rinks_indexed: 0,
+                leagues_total: 0, leagues_indexed: 0, players_total: 0, players_indexed: 0,
+                countries_total: 0, countries_indexed: 0 };
+
   // All 198 countries with their URL slugs
   const countries = [
     'united-states', 'canada', 'mexico', 'antigua-and-barbuda', 'bahamas', 'barbados', 'belize', 'costa-rica', 'cuba', 'dominica',
@@ -60,7 +65,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/ice-rinks-near-me`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
   ];
 
-  const countryUrls: MetadataRoute.Sitemap = countries.map(c => ({
+  // Country slugs to exclude from sitemap: countries with NO real hockey content
+  // (Antigua, Bahamas, Barbados, Belize, Caribbean nations, Pacific islands, etc.)
+  // These pages exist for completeness but have <10 rinks and are essentially empty.
+  const COUNTRY_EXCLUDE_SLUGS = new Set([
+    'antigua-and-barbuda', 'bahamas', 'barbados', 'belize', 'costa-rica', 'cuba',
+    'dominica', 'dominican-republic', 'el-salvador', 'grenada', 'guatemala', 'haiti',
+    'honduras', 'jamaica', 'nicaragua', 'panama', 'saint-kitts-and-nevis',
+    'saint-lucia', 'saint-vincent-and-the-grenadines', 'trinidad-and-tobago',
+    'vatican-city', 'liechtenstein', 'san-marino', 'monaco', 'andorra', 'malta',
+    'fiji', 'kiribati', 'marshall-islands', 'micronesia', 'nauru', 'palau',
+    'samoa', 'solomon-islands', 'tonga', 'tuvalu', 'vanuatu', 'comoros',
+    'seychelles', 'cabo-verde', 'sao-tome-and-principe', 'maldives', 'bhutan',
+  ]);
+  const filteredCountrySlugs = countries.filter(c => !COUNTRY_EXCLUDE_SLUGS.has(c));
+  stats.countries_total = countries.length;
+  stats.countries_indexed = filteredCountrySlugs.length;
+
+  const countryUrls: MetadataRoute.Sitemap = filteredCountrySlugs.map(c => ({
     url: `${baseUrl}/directory/${c}`,
     lastModified: new Date(),
     changeFrequency: 'monthly' as const,
@@ -73,30 +95,71 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult, caRinksResult, ukRinksResult] = await Promise.all([
-    supabaseAdmin.from('teams').select('slug, updated_at').eq('is_active', true),
-    supabaseAdmin.from('rinks').select('slug, updated_at').eq('is_active', true),
-    supabaseAdmin.from('leagues').select('slug, updated_at').eq('is_active', true),
+    // Phase 1 SEO: select fields needed for quality filter. See isHighQualityTeam() below.
+    supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true),
+    supabaseAdmin.from('rinks').select('slug, updated_at, city, country').eq('is_active', true),
+    supabaseAdmin.from('leagues').select('slug, updated_at, country, level, website_url').eq('is_active', true),
     supabaseAdmin.from('posts').select('slug, updated_at').eq('status', 'published'),
-    supabaseAdmin.from('players').select('id, updated_at').eq('is_active', true).order('updated_at', { ascending: false }).limit(500),
+    supabaseAdmin.from('players').select('id, updated_at, first_name, last_name, position, team_id, nationality, headshot_url').eq('is_active', true).order('updated_at', { ascending: false }).limit(500),
     supabaseAdmin.from('rinks').select('city, province_state').eq('country', 'Canada').eq('is_active', true).not('city', 'is', null).not('province_state', 'is', null),
     supabaseAdmin.from('rinks').select('city').eq('country', 'United Kingdom').eq('is_active', true).not('city', 'is', null),
   ]);
 
-  const teamUrls: MetadataRoute.Sitemap = (teamsResult.data || []).map(t => ({
+  // ─── Phase 1 SEO: quality filters ─────────────────────────────────────────────
+  // Pages below the threshold are NOT included in the sitemap. They remain
+  // accessible to users but Google won't waste crawl budget indexing them.
+  // Goal: stop indexing thin/duplicate pages that hurt domain authority.
+  //
+  // Log stats so we can track filter effectiveness over time.
+
+  function isHighQualityTeam(t: any): boolean {
+    // Team must have: slug + country + at least 1 of (city, league, division, logo, website)
+    // Excludes the 1,439 teams with NULL country field (known data quality issue)
+    if (!t.slug || !t.country) return false;
+    return !!(t.city || t.league_id || t.division || t.logo_url || t.website_url);
+  }
+  function isHighQualityRink(r: any): boolean {
+    return !!(r.slug && r.city && r.country);
+  }
+  function isHighQualityLeague(l: any): boolean {
+    return !!(l.slug && (l.country || l.level || l.website_url));
+  }
+  function isHighQualityPlayer(p: any): boolean {
+    // Player must have: name + team + at least 1 of (position, nationality, headshot)
+    if (!(p.first_name || p.last_name)) return false;
+    if (!p.team_id) return false;
+    return !!(p.position || p.nationality || p.headshot_url);
+  }
+
+  const filteredTeams = (teamsResult.data || []).filter(isHighQualityTeam);
+  const filteredRinks = (rinksResult.data || []).filter(isHighQualityRink);
+  const filteredLeagues = (leaguesResult.data || []).filter(isHighQualityLeague);
+  const filteredPlayers = (playersResult.data || []).filter(isHighQualityPlayer);
+
+  stats.teams_total = (teamsResult.data || []).length;
+  stats.teams_indexed = filteredTeams.length;
+  stats.rinks_total = (rinksResult.data || []).length;
+  stats.rinks_indexed = filteredRinks.length;
+  stats.leagues_total = (leaguesResult.data || []).length;
+  stats.leagues_indexed = filteredLeagues.length;
+  stats.players_total = (playersResult.data || []).length;
+  stats.players_indexed = filteredPlayers.length;
+
+  const teamUrls: MetadataRoute.Sitemap = filteredTeams.map(t => ({
     url: `${baseUrl}/directory/teams/${t.slug}`,
     lastModified: t.updated_at ? new Date(t.updated_at) : new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
 
-  const rinkUrls: MetadataRoute.Sitemap = (rinksResult.data || []).map(r => ({
+  const rinkUrls: MetadataRoute.Sitemap = filteredRinks.map(r => ({
     url: `${baseUrl}/directory/rinks/${r.slug}`,
     lastModified: r.updated_at ? new Date(r.updated_at) : new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
 
-  const leagueUrls: MetadataRoute.Sitemap = (leaguesResult.data || []).map(l => ({
+  const leagueUrls: MetadataRoute.Sitemap = filteredLeagues.map(l => ({
     url: `${baseUrl}/directory/leagues/${l.slug}`,
     lastModified: l.updated_at ? new Date(l.updated_at) : new Date(),
     changeFrequency: 'weekly' as const,
@@ -110,7 +173,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const playerUrls: MetadataRoute.Sitemap = (playersResult.data || []).map(p => ({
+  const playerUrls: MetadataRoute.Sitemap = filteredPlayers.map(p => ({
     url: `${baseUrl}/directory/players/${p.id}`,
     lastModified: p.updated_at ? new Date(p.updated_at) : new Date(),
     changeFrequency: 'monthly' as const,
@@ -159,5 +222,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticPages, ...countryUrls, ...usStateUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
+  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
+
+  // Log filter effectiveness — Vercel picks this up in logs
+  console.log('[sitemap] Phase 1 SEO filter:', JSON.stringify({
+    ...stats,
+    excluded_teams: stats.teams_total - stats.teams_indexed,
+    excluded_rinks: stats.rinks_total - stats.rinks_indexed,
+    excluded_countries: stats.countries_total - stats.countries_indexed,
+    total_urls: all.length,
+    percent_kept: ((all.length / 2966) * 100).toFixed(1) + '%',
+  }));
+
+  return all;
 }
