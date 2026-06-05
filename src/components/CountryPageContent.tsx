@@ -29,12 +29,10 @@ export default function CountryPageContent({ data }: Props) {
 
   // Build league name list for FAQ
   const topLeagueName = info?.league.split(',')[0] || (leagues?.[0]?.name ?? null);
-  const womenLeague = leagues.find(l =>
-    l.name.toLowerCase().includes('women') ||
-    l.name.toLowerCase().includes('sdhl') ||
-    l.name.toLowerCase().includes('naisten') ||
-    l.name.toLowerCase().includes('pwhl')
-  );
+  const womenLeague = leagues.find(l => {
+    const n = (l?.name || '').toLowerCase();
+    return n.includes('women') || n.includes('sdhl') || n.includes('naisten') || n.includes('pwhl');
+  });
 
   // FAQ schema (8 Q&As)
   const faqSchema = {
