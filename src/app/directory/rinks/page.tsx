@@ -26,7 +26,9 @@ export default function RinksPage() {
     fetch('/api/rinks')
       .then(r => r.json())
       .then(d => {
-        setRinks(d || []);
+        // API returns {count, data} shape — extract data array
+        const list = Array.isArray(d) ? d : (d?.data || []);
+        setRinks(list);
         setLoading(false);
       })
       .catch(() => setLoading(false));
