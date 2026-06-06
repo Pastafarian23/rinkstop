@@ -27,17 +27,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Phase 1b SEO: evaluate noindex for thin team pages
   const { data: teamRow } = await supabaseAdmin
     .from('teams')
-    .select('city, country, league_id, home_rink_id, logo_url, website_url, division, description')
+    .select('id, city, country, league_id, home_rink_id, logo_url, website_url, division')
     .eq('slug', team)
     .single();
 
   let robots: string | undefined;
   if (teamRow) {
-    const fields = ['city', 'country', 'league_id', 'home_rink_id', 'logo_url', 'website_url', 'division', 'description'];
+    const fields = ['city', 'country', 'league_id', 'home_rink_id', 'logo_url', 'website_url', 'division'];
     const fieldCount = fields.filter(f => teamRow[f] != null && teamRow[f] !== '').length;
-    const uniqueWordCount = teamRow.description
-      ? String(teamRow.description).split(/\s+/).filter(w => w.length > 0).length
-      : 0;
+    // Count games as content (each game ~10 unique words: date, teams, score)
+    const { count: gamesCount } = await supabaseAdmin
+      .from('games')
+      .select('id', { count: 'exact', head: true })
+      .or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`)
+      .gte('date', new Date().toISOString().split('T')[0]);
+    const uniqueWordCount = (gamesCount || 0) * 10;
     const decision = teamPageDecision(fieldCount, uniqueWordCount);
     robots = robotsMeta(decision);
   }
