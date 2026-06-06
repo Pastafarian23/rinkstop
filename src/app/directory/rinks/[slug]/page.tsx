@@ -13,18 +13,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, description, website, phone, amenities')
+    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email')
     .eq('slug', slug)
     .single();
 
   if (!rink) return { title: 'Rink Not Found | RinkStop' };
 
-  // Count populated fields to score content quality
-  const fields = ['city', 'country', 'province_state', 'description', 'website', 'phone', 'amenities'];
+  // Count populated fields to score content quality (use correct column names)
+  const fields = ['city', 'country', 'province_state', 'notes', 'website_url', 'phone', 'email', 'address', 'capacity', 'ice_size', 'surface_type'];
   const fieldCount = fields.filter(f => rink[f] && (Array.isArray(rink[f]) ? rink[f].length > 0 : String(rink[f]).trim().length > 0)).length;
-  // Estimate word count from description (the main unique content field)
-  const descWords = rink.description ? String(rink.description).split(/\s+/).filter(w => w.length > 0).length : 0;
-  const decision = rinkPageDecision(fieldCount, descWords);
+  // Estimate word count from notes (the main unique content field on rinks)
+  const noteWords = rink.notes ? String(rink.notes).split(/\s+/).filter(w => w.length > 0).length : 0;
+  const addrWords = rink.address ? String(rink.address).split(/\s+/).filter(w => w.length > 0).length : 0;
+  const uniqueWordCount = noteWords + addrWords;
+  const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 
   return {
     title: `${rink.name} | RinkStop`,
@@ -44,7 +46,7 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
   // Fetch rink by slug (URL contains slug, not UUID)
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('*')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, is_active, notes, source')
     .eq('slug', slug)
     .single();
 
