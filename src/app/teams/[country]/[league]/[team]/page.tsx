@@ -35,13 +35,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (teamRow) {
     const fields = ['city', 'country', 'league_id', 'logo_url', 'website_url', 'division'];
     const fieldCount = fields.filter(f => teamRow[f] != null && teamRow[f] !== '').length;
-    // Count games as content (each game ~10 unique words: date, teams, score)
-    const { count: gamesCount } = await supabaseAdmin
-      .from('games')
-      .select('id', { count: 'exact', head: true })
-      .or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`)
-      .gte('date', new Date().toISOString().split('T')[0]);
-    const uniqueWordCount = (gamesCount || 0) * 10;
+    // Count games + same-league teams as content. Each entry ~10 unique words
+    // (date, teams, score for games; team name + league for related teams).
+    const [{ count: gamesCount }, { count: sameLeagueCount }] = await Promise.all([
+      supabaseAdmin
+        .from('games')
+        .select('id', { count: 'exact', head: true })
+        .or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`)
+        .gte('date', new Date().toISOString().split('T')[0]),
+      teamRow.league_id
+        ? supabaseAdmin
+            .from('teams')
+            .select('id', { count: 'exact', head: true })
+            .eq('league_id', teamRow.league_id)
+            .neq('id', teamRow.id)
+        : Promise.resolve({ count: 0 }),
+    ]);
+    const uniqueWordCount = ((gamesCount || 0) + (sameLeagueCount || 0)) * 10;
     const decision = teamPageDecision(fieldCount, uniqueWordCount);
     robots = robotsMeta(decision);
   }
