@@ -7,6 +7,7 @@ import { FANATICS_ADS } from '@/lib/fanatics-ads';
 type NHLStaticData = typeof NHL_TEAM_DATA[string];
 import NHLShopWidget from '@/components/NHLShopWidget';
 import TicketmasterAd from '@/components/TicketmasterAd';
+import { teamPageDecision, robotsMeta } from '@/lib/seo';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -29,6 +30,25 @@ export default function TeamDetail() {
       })
       .catch(() => setLoading(false));
   }, [slug]);
+
+  // Phase 1b SEO: inject noindex meta tag for thin team pages
+  useEffect(() => {
+    if (!team) return;
+    const fields = ['city', 'country', 'league_id', 'home_rink_id', 'logo_url'];
+    const fieldCount = fields.filter(f => team[f] != null && team[f] !== '').length;
+    // Roster count contributes unique words (each player ~2-3 unique words)
+    const uniqueWordCount = players.length * 5;
+    const decision = teamPageDecision(fieldCount, uniqueWordCount);
+    if (decision.indexable) return;
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = robotsMeta(decision);
+    meta.setAttribute('data-seo-noindex', 'team');
+    document.head.appendChild(meta);
+    return () => {
+      if (document.head.contains(meta)) document.head.removeChild(meta);
+    };
+  }, [team, players]);
 
   useEffect(() => {
     if (!team) return;

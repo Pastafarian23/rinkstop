@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import HighlightsGrid from '@/components/HighlightsGrid';
+import { playerPageDecision, robotsMeta } from '@/lib/seo';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -114,6 +115,32 @@ export default function PlayerDetail() {
       })
       .catch(() => setLoading(false));
   }, [id]);
+
+  // Phase 1b SEO: inject noindex meta tag for thin player pages
+  useEffect(() => {
+    if (!player) return;
+    // Count populated identifying fields (not name - name is the page's reason to exist)
+    const fields = ['position', 'nationality', 'team_id', 'headshot_url', 'birth_date', 'jersey_number'];
+    const fieldCount = fields.filter(f => {
+      const v = (player as any)[f];
+      return v != null && v !== '';
+    }).length;
+    // Career stats contribute substantial unique content
+    const statsWords = (player.career_stats?.length || 0) * 20;
+    // Other identifying info (height, weight, shoots) add some content
+    const extras = [player.height_cm, player.weight_kg, player.shoots, player.catches].filter(Boolean).length * 3;
+    const uniqueWordCount = statsWords + extras;
+    const decision = playerPageDecision(fieldCount, uniqueWordCount);
+    if (decision.indexable) return;
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = robotsMeta(decision);
+    meta.setAttribute('data-seo-noindex', 'player');
+    document.head.appendChild(meta);
+    return () => {
+      if (document.head.contains(meta)) document.head.removeChild(meta);
+    };
+  }, [player]);
 
   // Fetch career stats
   useEffect(() => {

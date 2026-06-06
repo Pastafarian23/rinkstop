@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import Breadcrumb from '@/components/Breadcrumb';
 import { Metadata } from 'next';
+import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 import styles from './rink.module.css';
 
 interface Props {
@@ -22,9 +23,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const rinkName = formatName(rink);
   const cityName = formatName(city);
   const countryName = formatName(country);
+
+  // Phase 1b SEO: evaluate noindex for thin rink pages
+  const { data: rinkRow } = await supabaseAdmin
+    .from('rinks')
+    .select('address, city, country, phone, website, description, seating_capacity, amenities')
+    .eq('slug', rink)
+    .single();
+
+  let robots: string | undefined;
+  if (rinkRow) {
+    const fields = ['address', 'city', 'country', 'phone', 'website', 'description', 'seating_capacity', 'amenities'];
+    const fieldCount = fields.filter(f => {
+      const v = rinkRow[f];
+      if (v == null || v === '') return false;
+      if (Array.isArray(v)) return v.length > 0;
+      return String(v).trim().length > 0;
+    }).length;
+    const descWords = rinkRow.description
+      ? String(rinkRow.description).split(/\s+/).filter(w => w.length > 0).length
+      : 0;
+    const decision = rinkPageDecision(fieldCount, descWords);
+    robots = robotsMeta(decision);
+  }
+
   return {
     title: `${rinkName} — Ice Rink in ${cityName}, ${countryName} | RinkStop`,
     description: `${rinkName} in ${cityName}, ${countryName}. Find upcoming hockey games, leagues, public skate times, and team schedules at this venue.`,
+    robots,
     openGraph: {
       title: `${rinkName} | RinkStop`,
       description: `Hockey at ${rinkName} in ${cityName}, ${countryName}.`,
