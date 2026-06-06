@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import Breadcrumb from '@/components/Breadcrumb';
 import { Metadata } from 'next';
+import { teamPageDecision, robotsMeta } from '@/lib/seo';
 import styles from './team.module.css';
 
 interface Props {
@@ -22,9 +23,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const teamName = formatName(team);
   const leagueName = formatName(league);
   const countryName = formatName(country);
+
+  // Phase 1b SEO: evaluate noindex for thin team pages
+  const { data: teamRow } = await supabaseAdmin
+    .from('teams')
+    .select('city, country, league_id, home_rink_id, logo_url, website_url, division, description')
+    .eq('slug', team)
+    .single();
+
+  let robots: string | undefined;
+  if (teamRow) {
+    const fields = ['city', 'country', 'league_id', 'home_rink_id', 'logo_url', 'website_url', 'division', 'description'];
+    const fieldCount = fields.filter(f => teamRow[f] != null && teamRow[f] !== '').length;
+    const uniqueWordCount = teamRow.description
+      ? String(teamRow.description).split(/\s+/).filter(w => w.length > 0).length
+      : 0;
+    const decision = teamPageDecision(fieldCount, uniqueWordCount);
+    robots = robotsMeta(decision);
+  }
+
   return {
     title: `${teamName} Hockey Team | ${leagueName} | RinkStop`,
     description: `${teamName} roster, schedule, home arena, and stats. Part of the ${leagueName} in ${countryName}. Follow the team on RinkStop.`,
+    robots,
     openGraph: {
       title: `${teamName} | ${leagueName}`,
       description: `${teamName} hockey team — roster, schedule, and more.`,
