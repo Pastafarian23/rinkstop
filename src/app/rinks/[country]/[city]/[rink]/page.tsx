@@ -27,23 +27,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Phase 1b SEO: evaluate noindex for thin rink pages
   const { data: rinkRow } = await supabaseAdmin
     .from('rinks')
-    .select('address, city, country, phone, website, description, seating_capacity, amenities')
+    .select('address, city, country, phone, website_url, notes, capacity, ice_size, surface_type, province_state, email')
     .eq('slug', rink)
     .single();
 
   let robots: string | undefined;
   if (rinkRow) {
-    const fields = ['address', 'city', 'country', 'phone', 'website', 'description', 'seating_capacity', 'amenities'];
+    const fields = ['address', 'city', 'country', 'phone', 'website_url', 'notes', 'capacity', 'ice_size', 'surface_type', 'province_state', 'email'];
     const fieldCount = fields.filter(f => {
       const v = rinkRow[f];
       if (v == null || v === '') return false;
       if (Array.isArray(v)) return v.length > 0;
       return String(v).trim().length > 0;
     }).length;
-    const descWords = rinkRow.description
-      ? String(rinkRow.description).split(/\s+/).filter(w => w.length > 0).length
-      : 0;
-    const decision = rinkPageDecision(fieldCount, descWords);
+    const noteWords = rinkRow.notes ? String(rinkRow.notes).split(/\s+/).filter(w => w.length > 0).length : 0;
+    const addrWords = rinkRow.address ? String(rinkRow.address).split(/\s+/).filter(w => w.length > 0).length : 0;
+    const uniqueWordCount = noteWords + addrWords;
+    const decision = rinkPageDecision(fieldCount, uniqueWordCount);
     robots = robotsMeta(decision);
   }
 

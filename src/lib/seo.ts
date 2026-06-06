@@ -29,9 +29,9 @@ export const THRESHOLDS = {
   /** Country page: should have content + at least one rink/team */
   country: { minListings: 1, minUniqueWordCount: 150 },
   /** Team page: needs name + at least some metadata */
-  team: { minFields: 2, minUniqueWordCount: 80 },
+  team: { minFields: 2, minUniqueWordCount: 10 },
   /** Rink page: needs name + at least city/country/amenity */
-  rink: { minFields: 2, minUniqueWordCount: 80 },
+  rink: { minFields: 2, minUniqueWordCount: 10 },
   /** Player page: needs name + at least one of team/position/nationality */
   player: { minFields: 1, minUniqueWordCount: 60 },
   /** League page: needs name + at least one team */
