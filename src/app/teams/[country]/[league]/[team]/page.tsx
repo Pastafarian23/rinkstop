@@ -27,13 +27,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Phase 1b SEO: evaluate noindex for thin team pages
   const { data: teamRow } = await supabaseAdmin
     .from('teams')
-    .select('id, city, country, league_id, home_rink_id, logo_url, website_url, division')
+    .select('id, city, country, league_id, logo_url, website_url, division')
     .eq('slug', team)
     .single();
 
   let robots: string | undefined;
   if (teamRow) {
-    const fields = ['city', 'country', 'league_id', 'home_rink_id', 'logo_url', 'website_url', 'division'];
+    const fields = ['city', 'country', 'league_id', 'logo_url', 'website_url', 'division'];
     const fieldCount = fields.filter(f => teamRow[f] != null && teamRow[f] !== '').length;
     // Count games as content (each game ~10 unique words: date, teams, score)
     const { count: gamesCount } = await supabaseAdmin
