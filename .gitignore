@@ -27,3 +27,6 @@ npm-debug.log*
 *.tgz
 *.tar.gz
 .vercel
+
+# clerk configuration (can include secrets)
+/.clerk/
