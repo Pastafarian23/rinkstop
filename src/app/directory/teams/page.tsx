@@ -13,6 +13,8 @@ interface Team {
   leagues?: { name: string };
   slug?: string;
   logo_url?: string;
+  claimed_by_tier?: string | null;
+  claimed_by_user_id?: string | null;
 }
 
 // ------ Page ------------------------------------------------------------------------------------------------------------------------------------------
@@ -25,6 +27,7 @@ export default function TeamsPage() {
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
+    params.set('sort', 'tier');
     if (search) params.set('search', search);
     if (country) params.set('country', country);
     fetch(`/api/teams?${params}`)
@@ -35,6 +38,12 @@ export default function TeamsPage() {
       })
       .catch(() => setLoading(false));
   }, [search, country]);
+
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const verifiedCount = teams.filter(t => t.claimed_by_tier === 'verified' || t.claimed_by_tier === 'pro').length;
+  const visibleTeams = verifiedOnly
+    ? teams.filter(t => t.claimed_by_tier === 'verified' || t.claimed_by_tier === 'pro')
+    : teams;
 
   const clearFilters = () => { setSearch(''); setCountry(''); };
   const hasFilters = search || country;
@@ -85,6 +94,21 @@ export default function TeamsPage() {
           className="input-field"
           style={{ flex: '0 0 150px' }}
         />
+        <button
+          onClick={() => setVerifiedOnly(v => !v)}
+          style={{
+            background: verifiedOnly ? 'rgba(20,184,166,0.15)' : 'transparent',
+            border: `1.5px solid ${verifiedOnly ? '#14B8A6' : 'rgba(255,255,255,0.2)'}`,
+            color: verifiedOnly ? '#14B8A6' : 'rgba(255,255,255,0.6)',
+            borderRadius: '3px', padding: '0.5rem 0.875rem',
+            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+            letterSpacing: '0.07em', textTransform: 'uppercase',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          Verified only ({verifiedCount})
+        </button>
         {hasFilters && (
           <button onClick={clearFilters} style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '3px', padding: '0.5rem 0.875rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
             Clear
@@ -95,7 +119,7 @@ export default function TeamsPage() {
       {/* Results count */}
       {!loading && (
         <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
-          {teams.length === 0 ? 'No results' : `${teams.length} team${teams.length !== 1 ? 's' : ''}`}
+          {visibleTeams.length === 0 ? 'No results' : `${visibleTeams.length} team${visibleTeams.length !== 1 ? 's' : ''}`}
           {hasFilters ? ' matching your search' : ' in directory'}
         </p>
       )}
@@ -109,22 +133,42 @@ export default function TeamsPage() {
                 <div className="skeleton" style={{ height: '0.875rem', width: '45%' }} />
               </div>
             ))
-          : teams.length === 0
+          : visibleTeams.length === 0
             ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem' }}>
                 <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>No teams found matching your search</p>
                 <button onClick={clearFilters} style={{ color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>Clear all filters</button>
               </div>
             )
-            : teams.map(team => (
+            : visibleTeams.map(team => (
               <Link
                 key={team.id}
                 href={`/directory/teams/${team.slug}`}
-                style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.125rem', textDecoration: 'none', transition: 'border-color 0.2s, transform 0.2s' }}
+                style={{
+                  display: 'block', textDecoration: 'none',
+                  background: team.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
+                  border: `1px solid ${team.claimed_by_tier === 'pro' ? 'rgba(200,16,46,0.5)' : team.claimed_by_tier === 'verified' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  borderRadius: '6px',
+                  padding: '1.125rem',
+                  position: 'relative',
+                  transition: 'border-color 0.2s, transform 0.2s',
+                }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
+                {/* Tier badge in corner */}
+                {team.claimed_by_tier === 'pro' && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
+                    ⭐ Featured
+                  </div>
+                )}
+                {team.claimed_by_tier === 'verified' && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    Verified
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem', paddingRight: team.claimed_by_tier ? 70 : 0 }}>
                   {team.logo_url ? (
                     <img src={team.logo_url} alt="" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
                   ) : (

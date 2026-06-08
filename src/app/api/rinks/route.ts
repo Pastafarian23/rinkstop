@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
 
 // Rate limit: 60 requests per minute per IP for general rink queries
 const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
@@ -45,12 +46,31 @@ export async function GET(request: NextRequest) {
   }
 
   // Support sort=recent to return newest entries first
+  // Support sort=tier to put Pro/Verified owners at the top (closes the 'Above search results' promise)
   const orderCol = sort === 'recent' ? 'created_at' : 'name';
   const { data, error, count } = await query.order(orderCol, { ascending: sort === 'recent' ? false : true });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const response = NextResponse.json(id || slug ? (data?.[0] ?? null) : { count: count ?? data?.length ?? 0, data });
+  // For list responses (no id/slug), enrich with the active claimer's tier so the
+  // directory can show "Verified owner" and sort by tier.
+  let enrichedData = data;
+  if (!id && !slug && data && data.length) {
+    const tierMap = await enrichEntitiesWithClaimTier(supabaseAdmin, 'rink', data.map((d: any) => d.id));
+    enrichedData = data.map((d: any) => {
+      const claim = tierMap.get(d.id);
+      return {
+        ...d,
+        claimed_by_tier: claim?.tier || null,
+        claimed_by_user_id: claim?.user_id || null,
+      };
+    });
+    if (sort === 'tier') {
+      enrichedData.sort(compareByTier);
+    }
+  }
+
+  const response = NextResponse.json(id || slug ? (data?.[0] ?? null) : { count: count ?? enrichedData?.length ?? 0, data: enrichedData });
   return applyRateLimitHeaders(response, result);
 }
