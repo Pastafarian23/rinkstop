@@ -4,14 +4,18 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
+import { TierBadge, VerifiedCheckmark, FoundingMemberBadge } from '@/components/TierBadge';
 
 interface Profile {
   user_id: string;
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  location: string | null;
   tier: string;
   tier_expires_at: string | null;
+  is_founding_member: boolean;
+  created_at: string | null;
 }
 
 interface ManagedProfile {
@@ -87,6 +91,11 @@ export default function UserProfilePage() {
 
   const tier = TIER_COLORS[profile.tier] || TIER_COLORS.free;
   const displayName = profile.display_name || 'RinkStop Member';
+  const isVerified = profile.tier === 'verified' || profile.tier === 'pro';
+  const isFounding = profile.is_founding_member;
+  const memberSince = profile.created_at
+    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : null;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
@@ -103,11 +112,23 @@ export default function UserProfilePage() {
           )}
 
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, marginBottom: 8 }}>{displayName}</h1>
-            <div style={{ marginBottom: 12 }}>
-              <span style={{ display: 'inline-block', padding: '0.25rem 0.75rem', background: tier.bg, color: tier.text, border: `1px solid ${tier.border}`, borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
-                {tier.label}
-              </span>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, marginBottom: 8, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+              {displayName}
+              {isVerified && <VerifiedCheckmark size={20} />}
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+              <TierBadge tier={profile.tier} size="sm" />
+              {isFounding && <FoundingMemberBadge size="sm" />}
+              {profile.location && (
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                  📍 {profile.location}
+                </span>
+              )}
+              {memberSince && (
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+                  · Member since {memberSince}
+                </span>
+              )}
             </div>
             {profile.bio && (
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.5, margin: 0, marginBottom: 12 }}>{profile.bio}</p>

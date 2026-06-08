@@ -1,6 +1,9 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { supabaseAdmin } from '@/lib/supabase';
+import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
+import ProfileEditForm from './ProfileEditForm';
 
 export default async function ProfilePage() {
   const { userId } = await auth();
@@ -12,7 +15,14 @@ export default async function ProfilePage() {
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
   const avatarUrl = user?.imageUrl || '';
 
-  // Fields managed by Clerk — redirect to Clerk for editing
+  // Pull the profile fields editable here (bio + location + tier + founding)
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('bio, location, tier, is_founding_member, display_name')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  // Clerk-managed fields
   const clerkFields = [
     { label: 'First Name', value: firstName || '—' },
     { label: 'Last Name', value: lastName || '—' },
@@ -47,10 +57,14 @@ export default async function ProfilePage() {
             </div>
           )}
           <div>
-            <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.25rem' }}>
+            <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
               {firstName} {lastName || 'Your Name'}
             </h2>
-            <p style={{ color: '#888', fontSize: '0.875rem', margin: 0 }}>{email}</p>
+            <p style={{ color: '#888', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>{email}</p>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <TierBadge tier={profile?.tier || 'free'} size="xs" />
+              {profile?.is_founding_member && <FoundingMemberBadge size="sm" />}
+            </div>
           </div>
         </div>
 
@@ -68,6 +82,9 @@ export default async function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Editable profile fields (bio, location) */}
+      <ProfileEditForm initialBio={profile?.bio || ''} initialLocation={profile?.location || ''} />
 
       {/* Manage via Clerk */}
       <div style={{
@@ -97,34 +114,6 @@ export default async function ProfilePage() {
           }}
         >
           Manage Account →
-        </Link>
-      </div>
-
-      {/* Connected accounts */}
-      <div style={{
-        background: '#0f0f0f',
-        border: '1px solid #1e1e1e',
-        borderRadius: 12,
-        padding: '1.5rem',
-      }}>
-        <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1rem', color: '#888', letterSpacing: '0.06em', margin: '0 0 0.75rem' }}>
-          CONNECTED ACCOUNTS
-        </h3>
-        <p style={{ color: '#555', fontSize: '0.875rem', margin: '0 0 1rem', lineHeight: 1.6 }}>
-          Sign-in methods and connected social accounts are managed through your account profile.
-        </p>
-        <Link
-          href="/user-profile"
-          style={{
-            display: 'inline-block',
-            background: 'transparent',
-            color: '#38bdf8',
-            padding: '0.5rem 0',
-            textDecoration: 'none',
-            fontSize: '0.875rem',
-          }}
-        >
-          Manage connected accounts →
         </Link>
       </div>
 

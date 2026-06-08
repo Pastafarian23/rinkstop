@@ -29,6 +29,31 @@ async function updateUserTier(clerkUserId: string, tier: string | null, subscrip
   if (subscriptionId) update.stripe_subscription_id = subscriptionId;
   if (customerId) update.stripe_customer_id = customerId;
   if (expiresAtIso) update.tier_expires_at = expiresAtIso;
+
+  // Founding Member scarcity lever: award is_founding_member=true to the first 500
+  // paying members (Supporter or higher), only on the first time they become a paid tier.
+  // Once the cap is hit, no more are awarded.
+  if (tier && tier !== 'free' && status === 'active') {
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('is_founding_member')
+      .eq('user_id', clerkUserId)
+      .maybeSingle();
+
+    if (existing && !existing.is_founding_member) {
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_founding_member', true);
+      if ((count || 0) < 500) {
+        update.is_founding_member = true;
+        console.log(`[Webhook] Awarded Founding Member status to ${clerkUserId} (cap: 500, current: ${count})`);
+      } else {
+        console.log(`[Webhook] Founding Member cap of 500 reached; ${clerkUserId} gets Supporter without founding badge`);
+      }
+    }
+  }
+
   const { error } = await supabase.from('profiles').update(update).eq('user_id', clerkUserId);
   if (error) {
     console.error('[Webhook] Failed to update user tier', { clerkUserId, tier, error });
