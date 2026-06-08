@@ -63,11 +63,12 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
     .order('date', { ascending: true })
     .limit(20);
 
-  // Fetch reviews
+  // Fetch reviews (rink_reviews table; only approved reviews are visible to anon per RLS)
   const { data: reviewsData } = await supabase
-    .from('reviews')
+    .from('rink_reviews')
     .select('id, rating, review_text, reviewer_name, created_at')
     .eq('rink_id', rink.id)
+    .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(10);
 
