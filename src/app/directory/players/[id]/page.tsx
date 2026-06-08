@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import SaveButton from '@/components/SaveButton';
+import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimParentButton from '@/components/ClaimParentButton';
 import { playerPageDecision, robotsMeta } from '@/lib/seo';
 
@@ -335,6 +336,7 @@ export default function PlayerDetail() {
               <SaveButton favoriteType="player" favoriteId={player.id} entityName={`${player.first_name} ${player.last_name}`} size="sm" />
               <ClaimParentButton playerId={player.id} playerName={`${player.first_name} ${player.last_name}`} birthDate={player.birth_date || null} />
             </div>
+            <ClaimedBy entityType="player" entityId={player.id} entityName={`${player.first_name} ${player.last_name}`} />
 
             {/* Upgrade CTA for free-tier players */}
             {(!player.badge_tier || player.badge_tier === 'free') && (

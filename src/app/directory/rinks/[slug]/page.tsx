@@ -7,6 +7,7 @@ import RinkGames from '@/components/RinkGames';
 import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
 import SaveButton from '@/components/SaveButton';
+import { ClaimedBy } from '@/components/ClaimedBy';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 
 
@@ -158,6 +159,9 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
         <div style={{ marginBottom: '24px' }}>
           <SaveButton favoriteType="rink" favoriteId={rink.id} entityName={rink.name} size="md" />
         </div>
+
+        {/* Claimed by (if any) */}
+        <ClaimedBy entityType="rink" entityId={rink.id} entityName={rink.name} />
 
         {/* Details Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>

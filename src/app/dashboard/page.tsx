@@ -1,6 +1,8 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { supabaseAdmin } from '@/lib/supabase';
+import { TierBadge } from '@/components/TierBadge';
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -11,6 +13,25 @@ export default async function DashboardPage() {
   const lastName = user?.lastName || '';
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
   const avatarUrl = user?.imageUrl || '';
+
+  // Profile completeness + tier
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('bio, location, tier, is_founding_member, created_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
+    { field: 'Display name', done: !!firstName, href: '/dashboard/profile', hint: 'Add your first and last name' },
+    { field: 'Avatar', done: !!avatarUrl, href: '/dashboard/profile', hint: 'Upload a profile photo' },
+    { field: 'Bio', done: !!profile?.bio, href: '/dashboard/profile', hint: 'Tell people who you are' },
+    { field: 'Location', done: !!profile?.location, href: '/dashboard/profile', hint: 'Add your city so people nearby can find you' },
+  ];
+  const completenessPct = Math.round((completeness.filter(c => c.done).length / completeness.length) * 100);
+  const firstMissing = completeness.find(c => !c.done);
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : null;
 
   const quickLinks = [
     { href: '/dashboard/profile', label: 'Edit Profile', icon: '👤', desc: 'Update your name, avatar & contact info' },
@@ -54,11 +75,61 @@ export default async function DashboardPage() {
             </h2>
             <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>{email}</p>
             <p style={{ color: '#555', fontSize: '0.8rem', margin: '0.5rem 0 0' }}>
-              Member since {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {memberSince ? `Member since ${memberSince}` : 'Welcome to RinkStop'}
             </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <TierBadge tier={profile?.tier || 'free'} size="xs" />
+              {profile?.is_founding_member && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  padding: '0.1rem 0.5rem', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
+                  textTransform: 'uppercase', borderRadius: 999,
+                  background: 'rgba(255,184,28,0.12)', color: '#FFB81C',
+                  border: '1px solid rgba(255,184,28,0.4)',
+                }}>⭐ Founding</span>
+              )}
+              {profile?.tier === 'free' && (
+                <Link href="/founding-member" style={{ fontSize: 11, color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
+                  ✨ Upgrade →
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Profile completeness */}
+      {completenessPct < 100 && firstMissing && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(255,184,28,0.08) 0%, rgba(20,184,166,0.04) 100%)',
+          border: '1px solid rgba(255,184,28,0.2)',
+          borderRadius: 12,
+          padding: '1.25rem 1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>Profile {completenessPct}% complete</span>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: 0 }}>
+                {firstMissing.hint}
+              </p>
+              <div style={{ marginTop: 10, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ width: `${completenessPct}%`, height: '100%', background: 'linear-gradient(90deg, #FFB81C, #14B8A6)' }} />
+              </div>
+            </div>
+            <Link
+              href={firstMissing.href}
+              style={{
+                padding: '0.5rem 1rem', background: '#FFB81C', color: '#0a0a0a',
+                borderRadius: 6, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 700,
+              }}
+            >
+              Complete profile →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Quick links */}
       <div style={{
