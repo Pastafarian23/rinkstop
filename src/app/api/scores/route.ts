@@ -112,8 +112,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Time filter (status + date)
+  // historical = anything older than the recent cutoff EXCEPT in-progress games
+  // (old 'scheduled' rows count as historical — some leagues never got status backfilled)
   if (time === 'historical') {
-    query = query.eq('status', 'completed').lt('scheduled_at', recentCutoffISO);
+    query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoffISO);
   } else {
     // current: scheduled/in_progress (any date) OR recently completed
     query = query.or(
