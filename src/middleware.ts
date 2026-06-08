@@ -40,6 +40,7 @@ function cleanupOldEntries() {
 const isProtected = createRouteMatcher([
   '/dashboard(.*)',
   '/account(.*)',
+  '/admin(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
