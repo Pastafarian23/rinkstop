@@ -6,7 +6,7 @@ const NAV = [
   { href: '/admin', label: 'Overview', icon: '📊' },
   { href: '/admin/games', label: 'Games', icon: '🏒' },
   { href: '/admin/data-quality', label: 'Data Quality', icon: '✅' },
-  { href: '/admin/users', label: 'Users', icon: '👥', disabled: true, badge: 'Phase 3' },
+  { href: '/admin/users', label: 'Users', icon: '👥' },
   { href: '/admin/revenue', label: 'Revenue', icon: '💰', disabled: true, badge: 'Phase 5' },
   { href: '/admin/cron-health', label: 'Cron Health', icon: '⏰', disabled: true, badge: 'Phase 5' },
 ];
