@@ -10,6 +10,8 @@ interface League {
   country?: string;
   level?: string;
   website_url?: string;
+  claimed_by_tier?: string | null;
+  claimed_by_user_id?: string | null;
 }
 
 // ------ Page ------------------------------------------------------------------------------------------------------------------------------------------
@@ -22,6 +24,7 @@ export default function LeaguesPage() {
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
+    params.set('sort', 'tier');
     fetch(`/api/leagues?${params}`)
       .then(r => r.json())
       .then(d => {
@@ -31,11 +34,15 @@ export default function LeaguesPage() {
       .catch(() => setLoading(false));
   }, []);
 
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const verifiedCount = leagues.filter(l => l.claimed_by_tier === 'verified' || l.claimed_by_tier === 'pro').length;
+
   // Client-side filters
   const filtered = leagues.filter(l => {
     const matchSearch = !search || l.name.toLowerCase().includes(search.toLowerCase());
     const matchCountry = !country || (l.country || '').toLowerCase().includes(country.toLowerCase());
-    return matchSearch && matchCountry;
+    const matchVerified = !verifiedOnly || l.claimed_by_tier === 'verified' || l.claimed_by_tier === 'pro';
+    return matchSearch && matchCountry && matchVerified;
   });
 
   const clearFilters = () => { setSearch(''); setCountry(''); };
@@ -87,6 +94,21 @@ export default function LeaguesPage() {
           className="input-field"
           style={{ flex: '0 0 150px' }}
         />
+        <button
+          onClick={() => setVerifiedOnly(v => !v)}
+          style={{
+            background: verifiedOnly ? 'rgba(20,184,166,0.15)' : 'transparent',
+            border: `1.5px solid ${verifiedOnly ? '#14B8A6' : 'rgba(255,255,255,0.2)'}`,
+            color: verifiedOnly ? '#14B8A6' : 'rgba(255,255,255,0.6)',
+            borderRadius: '3px', padding: '0.5rem 0.875rem',
+            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+            letterSpacing: '0.07em', textTransform: 'uppercase',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          Verified only ({verifiedCount})
+        </button>
         {hasFilters && (
           <button onClick={clearFilters} style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '3px', padding: '0.5rem 0.875rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
             Clear
@@ -122,11 +144,30 @@ export default function LeaguesPage() {
               <Link
                 key={league.id}
                 href={`/directory/leagues/${league.id}`}
-                style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.125rem', textDecoration: 'none', transition: 'border-color 0.2s, transform 0.2s' }}
+                style={{
+                  display: 'block', textDecoration: 'none',
+                  background: league.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
+                  border: `1px solid ${league.claimed_by_tier === 'pro' ? 'rgba(200,16,46,0.5)' : league.claimed_by_tier === 'verified' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  borderRadius: '6px',
+                  padding: '1.125rem',
+                  position: 'relative',
+                  transition: 'border-color 0.2s, transform 0.2s',
+                }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
-                <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff', marginBottom: '0.3rem' }}>
+                {league.claimed_by_tier === 'pro' && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
+                    ⭐ Featured
+                  </div>
+                )}
+                {league.claimed_by_tier === 'verified' && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    Verified
+                  </div>
+                )}
+                <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff', marginBottom: '0.3rem', paddingRight: league.claimed_by_tier ? 80 : 0 }}>
                   {league.name}
                 </h3>
                 <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.8125rem', marginBottom: '0.5rem' }}>

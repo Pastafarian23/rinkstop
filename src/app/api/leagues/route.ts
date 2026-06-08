@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
 
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -30,7 +31,25 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query.order('name');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+
+  // Enrich list responses with claimer's tier (leagues use 'league' claim_type
+  // — the enrich helper falls back to no-op if no rows match, so this is safe).
+  let enrichedData = data;
+  if (!id && data && data.length) {
+    const tierMap = await enrichEntitiesWithClaimTier(supabaseAdmin, 'league', data.map((d: any) => d.id));
+    enrichedData = data.map((d: any) => {
+      const claim = tierMap.get(d.id);
+      return {
+        ...d,
+        claimed_by_tier: claim?.tier || null,
+        claimed_by_user_id: claim?.user_id || null,
+      };
+    });
+    const sort = searchParams.get('sort');
+    if (sort === 'tier') enrichedData.sort(compareByTier);
+  }
+
+  return NextResponse.json(enrichedData);
 }
 
 export async function POST(request: NextRequest) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
 
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -41,7 +42,26 @@ export async function GET(request: NextRequest) {
   const orderCol = sort === 'recent' ? 'created_at' : 'name';
   const { data, error, count } = await query.order(orderCol, { ascending: sort === 'recent' ? false : true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data, count });
+
+  // Enrich list responses with the active claimer's tier so the directory can sort
+  // claimed listings (Pro/Verified) to the top.
+  let enrichedData = data;
+  if (!id && !slug && data && data.length) {
+    const tierMap = await enrichEntitiesWithClaimTier(supabaseAdmin, 'team', data.map((d: any) => d.id));
+    enrichedData = data.map((d: any) => {
+      const claim = tierMap.get(d.id);
+      return {
+        ...d,
+        claimed_by_tier: claim?.tier || null,
+        claimed_by_user_id: claim?.user_id || null,
+      };
+    });
+    if (sort === 'tier') {
+      enrichedData.sort(compareByTier);
+    }
+  }
+
+  return NextResponse.json({ data: enrichedData, count });
 }
 
 export async function POST(request: NextRequest) {
