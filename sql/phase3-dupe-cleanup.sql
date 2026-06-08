@@ -1,0 +1,1 @@
+UPDATE nhl_players SET is_active = false, updated_at = now() WHERE id IN (80137982,80137457) AND league_name = 'NCAA';
