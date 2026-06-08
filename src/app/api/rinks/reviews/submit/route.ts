@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
 // Rate limit: 2 submissions per minute per IP (strict to prevent review spam)
@@ -43,6 +44,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // If the user is signed in, capture their Clerk userId and authoritative email.
+    // This lets /dashboard/reviews show their reviews even if they used a different
+    // email on the public review form, and prevents impersonation of other users.
+    const { userId } = await auth();
+    let authoritativeEmail = reviewer_email;
+    let authoritativeName = reviewer_name;
+    if (userId) {
+      const user = await currentUser();
+      const clerkEmail = user?.emailAddresses?.[0]?.emailAddress || reviewer_email;
+      const clerkName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || reviewer_name;
+      authoritativeEmail = clerkEmail;
+      authoritativeName = clerkName;
+    }
+
     const insertData: Record<string, unknown> = {
       rink_id,
       rating,
@@ -50,17 +65,19 @@ export async function POST(request: NextRequest) {
     };
 
     if (review_text) insertData.review_text = review_text;
-    if (reviewer_name) insertData.reviewer_name = reviewer_name;
-    if (reviewer_email) insertData.reviewer_email = reviewer_email;
+    if (authoritativeName) insertData.reviewer_name = authoritativeName;
+    if (authoritativeEmail) insertData.reviewer_email = authoritativeEmail;
+    if (userId) insertData.user_id = userId;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('rink_reviews')
       .insert(insertData)
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('reviews/submit: insert failed', error);
+      return NextResponse.json({ error: 'Failed to save review.' }, { status: 500 });
     }
 
     const response = NextResponse.json({ data }, { status: 201 });

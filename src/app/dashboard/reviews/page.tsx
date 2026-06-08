@@ -9,12 +9,27 @@ export default async function ReviewsPage() {
   const user = await currentUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
 
-  // Fetch user's reviews by matching email (use service role so users see their own pending reviews too)
-  const { data: reviews } = await supabaseAdmin
-    .from('rink_reviews')
-    .select('id, rating, review_text, reviewer_name, created_at, rink_id, status')
-    .eq('reviewer_email', email)
-    .order('created_at', { ascending: false });
+  // Fetch user's reviews. Prefer matching by Clerk userId (most accurate), but
+  // fall back to email for legacy reviews submitted before Clerk was set up.
+  // Use service role so users also see their own pending reviews.
+  let reviews: any[] | null = null;
+  if (userId) {
+    const { data } = await supabaseAdmin
+      .from('rink_reviews')
+      .select('id, rating, review_text, reviewer_name, created_at, rink_id, status, user_id, reviewer_email')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    reviews = data;
+  }
+  if (!reviews || reviews.length === 0) {
+    // Fall back to email match for older reviews
+    const { data } = await supabaseAdmin
+      .from('rink_reviews')
+      .select('id, rating, review_text, reviewer_name, created_at, rink_id, status, user_id, reviewer_email')
+      .eq('reviewer_email', email)
+      .order('created_at', { ascending: false });
+    reviews = data;
+  }
 
   // Fetch rink names for each review
   const rinkIds = [...new Set((reviews || []).map(r => r.rink_id).filter(Boolean))];
