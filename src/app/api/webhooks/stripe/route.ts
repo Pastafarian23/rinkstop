@@ -20,6 +20,23 @@ function getSupabase() {
   return _supabase;
 }
 
+async function updateUserTier(clerkUserId: string, tier: string | null, subscriptionId: string | null, customerId: string | null, status: string, expiresAtIso: string | null) {
+  const supabase = getSupabase() as any;
+  const update: Record<string, any> = {
+    tier,
+    subscription_status: status,
+  };
+  if (subscriptionId) update.stripe_subscription_id = subscriptionId;
+  if (customerId) update.stripe_customer_id = customerId;
+  if (expiresAtIso) update.tier_expires_at = expiresAtIso;
+  const { error } = await supabase.from('profiles').update(update).eq('user_id', clerkUserId);
+  if (error) {
+    console.error('[Webhook] Failed to update user tier', { clerkUserId, tier, error });
+    throw new Error('user_tier_update_failed');
+  }
+  console.log(`[Webhook] User ${clerkUserId} -> tier=${tier}, status=${status}, expires=${expiresAtIso}`);
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
@@ -46,16 +63,27 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as any;
-        const { playerId, tier } = session.metadata || {};
+        const metadata = session.metadata || {};
 
+        // User-level tier subscription (new 4-tier model)
+        if (metadata.clerk_user_id && metadata.tier) {
+          const subscriptionId = session.subscription as string;
+          const customerId = session.customer as string;
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+          await updateUserTier(metadata.clerk_user_id, metadata.tier, subscriptionId, customerId, subscription.status, expiresAt);
+          break;
+        }
+
+        // Entity-level badge (legacy founding member per-player / per-rink)
+        const { playerId, tier } = metadata;
         if (!playerId || !tier) {
-          console.error('[Webhook] Missing playerId/tier in session metadata', session.id);
+          console.error('[Webhook] Missing metadata in session', session.id);
           break;
         }
 
         const subscriptionId = session.subscription as string;
         const customerId = session.customer as string;
-
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
         const status = subscription.status;
@@ -77,7 +105,16 @@ export async function POST(req: NextRequest) {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as any;
-        const { playerId } = subscription.metadata || {};
+        const metadata = subscription.metadata || {};
+
+        if (metadata.clerk_user_id) {
+          const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+          const tier = subscription.status === 'active' || subscription.status === 'trialing' ? (metadata.tier || null) : null;
+          await updateUserTier(metadata.clerk_user_id, tier, subscription.id, subscription.customer, subscription.status, expiresAt);
+          break;
+        }
+
+        const { playerId } = metadata;
         if (!playerId) break;
 
         const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
@@ -94,7 +131,14 @@ export async function POST(req: NextRequest) {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as any;
-        const { playerId } = subscription.metadata || {};
+        const metadata = subscription.metadata || {};
+
+        if (metadata.clerk_user_id) {
+          await updateUserTier(metadata.clerk_user_id, null, null, null, 'cancelled', null);
+          break;
+        }
+
+        const { playerId } = metadata;
         if (!playerId) break;
 
         const supabase = getSupabase() as any;
@@ -112,11 +156,25 @@ export async function POST(req: NextRequest) {
         const customerId = invoice.customer as string;
 
         const supabase = getSupabase() as any;
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('stripe_customer_id', customerId)
+          .maybeSingle();
+
+        if (userProfile) {
+          await supabase
+            .from('profiles')
+            .update({ subscription_status: 'past_due' })
+            .eq('user_id', userProfile.user_id);
+          break;
+        }
+
         const { data: player } = await supabase
           .from('players')
           .select('id')
           .eq('stripe_customer_id', customerId)
-          .single();
+          .maybeSingle();
 
         if (player) {
           await supabase
