@@ -1,7 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import TicketmasterAd from '@/components/TicketmasterAd';
+import { SCORE_CHIPS, DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip } from '@/lib/score-chips';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -9,23 +11,34 @@ interface Game {
   id: string;
   date: string;
   status: string;
-  home_team_id: string;
-  away_team_id: string;
+  scheduled_at: string;
   home_score: number | null;
   away_score: number | null;
-  scheduled_at: string;
-  home_team: { name: string; logo_url: string | null; slug: string } | null;
-  away_team: { name: string; logo_url: string | null; slug: string } | null;
-  league: { name: string } | null;
-  venue_details: any;
-  period_scores: any;
-  referees: any;
+  home_team: { id: string; name: string; slug: string | null; logo_url: string | null } | null;
+  away_team: { id: string; name: string; slug: string | null; logo_url: string | null } | null;
+  league: { id: string; name: string; slug: string } | null;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  city?: string | null;
+}
+
+interface ApiResponse {
+  data: Game[];
+  count: number;
+  chip: string;
+  time: string;
+  hasMore: boolean;
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
   scheduled:  { color: '#555',    label: 'Scheduled'  },
-  in_progress:{ color: '#00d4ff', label: 'In Progress'},
-  completed: { color: '#34d399', label: 'Completed'  },
+  in_progress:{ color: '#00d4ff', label: 'Live'       },
+  completed: { color: '#34d399', label: 'Final'      },
   cancelled: { color: '#C8102E', label: 'Cancelled'  },
   postponed:  { color: '#fbbf24', label: 'Postponed'  },
 };
@@ -36,19 +49,12 @@ function formatDate(d: string) {
   });
 }
 
-function PeriodScores({ scores }: any) {
-  if (!scores || !Array.isArray(scores)) return null;
-  return (
-    <span style={{ fontSize: '0.625rem', color: '#444', marginLeft: '0.5rem' }}>
-      [{scores.map((p: any, i: number) => `P${i+1}: ${p.home}-${p.away}`).join(' ')}]
-    </span>
-  );
-}
-
 function GameCard({ game }: { game: Game }) {
   const s = statusStyle[game.status] || statusStyle.scheduled;
-  const homeName = game.home_team?.name || game.home_team_id?.slice(0, 8) || 'Home';
-  const awayName = game.away_team?.name || game.away_team_id?.slice(0, 8) || 'Away';
+  const homeName = game.home_team?.name || 'Home';
+  const awayName = game.away_team?.name || 'Away';
+  const homeSlug = game.home_team?.slug;
+  const awaySlug = game.away_team?.slug;
 
   return (
     <div style={{
@@ -61,12 +67,11 @@ function GameCard({ game }: { game: Game }) {
       alignItems: 'center',
       gap: '1rem',
     }}>
-      {/* Home team */}
-      <div style={{ textAlign: game.home_team?.slug ? 'left' : 'center' }}>
-        {game.home_team?.slug ? (
-          <Link href={`/directory/teams/${game.home_team.slug}`} style={{ textDecoration: 'none' }}>
-            {game.home_team.logo_url && (
-              <img src={game.home_team.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain', marginBottom: '4px' }} />
+      <div style={{ textAlign: 'left' }}>
+        {homeSlug ? (
+          <Link href={`/directory/teams/${homeSlug}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {game.home_team?.logo_url && (
+              <img src={game.home_team.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             )}
             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{homeName}</p>
           </Link>
@@ -75,7 +80,6 @@ function GameCard({ game }: { game: Game }) {
         )}
       </div>
 
-      {/* Score + status */}
       <div style={{ textAlign: 'center', minWidth: '80px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>{game.home_score ?? '-'}</span>
@@ -99,76 +103,189 @@ function GameCard({ game }: { game: Game }) {
         </span>
       </div>
 
-      {/* Away team */}
-      <div style={{ textAlign: game.away_team?.slug ? 'right' : 'center' }}>
-        {game.away_team?.slug ? (
-          <Link href={`/directory/teams/${game.away_team.slug}`} style={{ textDecoration: 'none' }}>
-            {game.away_team.logo_url && (
-              <img src={game.away_team.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain', marginBottom: '4px' }} />
-            )}
+      <div style={{ textAlign: 'right' }}>
+        {awaySlug ? (
+          <Link href={`/directory/teams/${awaySlug}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{awayName}</p>
+            {game.away_team?.logo_url && (
+              <img src={game.away_team.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            )}
           </Link>
         ) : (
           <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{awayName}</p>
         )}
       </div>
 
-      {/* Metadata footer */}
-      {(game.period_scores || game.venue_details?.name || game.league?.name) && (
+      {game.league?.name && (
         <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: '0.25rem' }}>
-          {game.league?.name && <span style={{ fontSize: '0.6875rem', color: '#666' }}>{game.league.name}</span>}
-          {game.period_scores && <PeriodScores scores={game.period_scores} />}
-          {game.venue_details?.name && <span style={{ fontSize: '0.6875rem', color: '#444', marginLeft: '0.5rem' }}>@{game.venue_details.name}</span>}
+          <span style={{ fontSize: '0.6875rem', color: '#666' }}>{game.league.name}</span>
         </div>
       )}
     </div>
   );
 }
 
-const PAGE_SIZE = 200;
+function Dropdown({
+  label, value, options, onChange, disabled,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#888' }}>
+      <span>{label}:</span>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+        style={{
+          background: 'var(--s2)',
+          color: '#fff',
+          border: '1px solid var(--border)',
+          borderRadius: '6px',
+          padding: '0.35rem 0.6rem',
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
+        }}
+      >
+        {options.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
-export default function GamesPage() {
+// Human-readable labels for sub-league slugs in the dropdown.
+function chipSubleagueLabel(slug: string): string {
+  const map: Record<string, string> = {
+    'khl': 'KHL',
+    'shl': 'SHL (Sweden)',
+    'shl-sweden': 'SHL (Sweden)',
+    'liiga': 'Liiga (Finland)',
+    'liiga-finland': 'Liiga (Finland)',
+    'del': 'DEL (Germany)',
+    'del-germany': 'DEL (Germany)',
+    'national-league-switzerland': 'NL (Switzerland)',
+    'nl-ch': 'NL (Switzerland)',
+    'extraliga-cz': 'Extraliga (Czech)',
+    'ncaa-division-1-hockey': 'NCAA',
+    'ncaa': 'NCAA',
+    'whl': 'WHL',
+    'ohl': 'OHL',
+    'qmjhl': 'QMJHL',
+    'ushl': 'USHL',
+  };
+  return map[slug] || slug.toUpperCase();
+}
+
+function GamesPageInner() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Read filters from URL with defaults
+  const league = searchParams.get('league') || DEFAULT_CHIP;
+  const team = searchParams.get('team') || '';
+  const time = searchParams.get('time') || DEFAULT_TIME;
+  const subleague = searchParams.get('subleague') || '';
+
+  const chip = useMemo(() => getChip(league), [league]);
+  const isLeagueChip = chip.type === 'league';
+
+  // Sub-league options for category chips (from config)
+  const subleagueOptions = useMemo(() => {
+    if (isLeagueChip) return [];
+    return chip.leagueSlugs.map(s => ({
+      value: s,
+      label: chipSubleagueLabel(s),
+    }));
+  }, [chip, isLeagueChip]);
+
+  // Team list (only for league chips)
+  const [teams, setTeams] = useState<Team[]>([]);
+  useEffect(() => {
+    if (!isLeagueChip) {
+      setTeams([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/scores/teams?league=${chip.slug}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!cancelled) setTeams(d?.data || []);
+      })
+      .catch(() => { if (!cancelled) setTeams([]); });
+    return () => { cancelled = true; };
+  }, [chip.slug, isLeagueChip]);
+
+  // Game list
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalShown, setTotalShown] = useState(0);
 
+  // Reset & refetch on filter change
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/scores?limit=${PAGE_SIZE}&offset=0`)
+    setGames([]);
+    setTotalShown(0);
+    setHasMore(false);
+    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=0`)
       .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d) ? d : d?.data;
-        if (Array.isArray(list)) {
-          setGames(list);
-          setOffset(list.length);
-          setHasMore(list.length === PAGE_SIZE);
-        }
+      .then((d: ApiResponse) => {
+        setGames(d?.data || []);
+        setHasMore(!!d?.hasMore);
+        setTotalShown(d?.count || 0);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [league, time, team, subleague]);
 
   const loadMore = () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    fetch(`/api/scores?limit=${PAGE_SIZE}&offset=${offset}`)
+    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=${games.length}`)
       .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d) ? d : d?.data;
-        if (Array.isArray(list)) {
-          setGames(prev => [...prev, ...list]);
-          setOffset(prev => prev + list.length);
-          setHasMore(list.length === PAGE_SIZE);
-        } else {
-          setHasMore(false);
-        }
+      .then((d: ApiResponse) => {
+        setGames(prev => [...prev, ...(d?.data || [])]);
+        setHasMore(!!d?.hasMore);
+        setTotalShown(prev => prev + (d?.count || 0));
         setLoadingMore(false);
       })
       .catch(() => setLoadingMore(false));
   };
 
+  // URL update helper
+  const updateParam = useCallback((key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (!value) params.delete(key);
+    else params.set(key, value);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [searchParams, router, pathname]);
+
+  const setLeague = (slug: string) => {
+    // Reset team / subleague when switching chips
+    const params = new URLSearchParams();
+    params.set('league', slug);
+    if (time !== DEFAULT_TIME) params.set('time', time);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const clearFilters = () => {
+    router.replace(pathname, { scroll: false });
+  };
+
+  // Clear is visible only if any filter diverges from defaults
+  const isDefault = league === DEFAULT_CHIP && time === DEFAULT_TIME && !team && !subleague;
+
+  // JSON-LD structured data
   useEffect(() => {
     if (games.length === 0) return;
     const breadcrumbSchema = {
@@ -182,8 +299,8 @@ export default function GamesPage() {
     const events = games.map(g => ({
       '@type': 'SportsEvent',
       name: `${g.home_team?.name || 'Home'} vs ${g.away_team?.name || 'Away'}`,
-      startDate: g.date,
-      location: g.venue_details?.name ? { '@type': 'Place', name: g.venue_details.name } : undefined,
+      startDate: g.scheduled_at,
+      location: undefined,
       competitor: [
         g.home_team ? { '@type': 'SportsTeam', name: g.home_team.name } : undefined,
         g.away_team ? { '@type': 'SportsTeam', name: g.away_team.name } : undefined,
@@ -195,6 +312,27 @@ export default function GamesPage() {
     document.head.appendChild(script);
     return () => { document.head.removeChild(script); };
   }, [games]);
+
+  // Empty state message varies by chip
+  const emptyMessage = useMemo(() => {
+    if (loading) return null;
+    if (games.length > 0) return null;
+    if (time === 'historical') {
+      return {
+        title: 'No archived games found.',
+        sub: 'Try switching to Current to see recent and upcoming games.',
+      };
+    }
+    const emptyCopy: Record<string, { title: string; sub: string }> = {
+      nhl:     { title: 'No NHL games right now.', sub: 'The season is between rounds. Check back soon or browse Historical games.' },
+      ahl:     { title: 'No AHL games right now.', sub: 'Try Historical to browse past AHL matchups.' },
+      pwhl:    { title: 'No PWHL games right now.', sub: 'PWHL season is between phases. Check back for upcoming games.' },
+      intl:    { title: 'No international games right now.', sub: 'KHL season is between phases. Try Historical to browse past international matchups.' },
+      college: { title: 'NCAA hockey data coming soon.', sub: 'We are working on syncing college hockey fixtures. In the meantime, browse NHL, AHL, or Junior games.' },
+      junior:  { title: 'No CHL games right now.', sub: 'CHL (WHL/OHL/QMJHL) season is between phases. Try Historical to browse past junior matchups.' },
+    };
+    return emptyCopy[chip.slug] || { title: 'No games found.', sub: 'Try adjusting your filters.' };
+  }, [chip, time, games.length, loading]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -213,21 +351,112 @@ export default function GamesPage() {
 
       <div style={{ height: '2px', background: 'linear-gradient(90deg, #C8102E 0%, #041E42 100%)', borderRadius: '2px', marginBottom: '1.5rem', width: '80px' }} />
 
+      {/* Filter bar: chips */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
+        {SCORE_CHIPS.map(c => {
+          const active = c.slug === league;
+          return (
+            <button
+              key={c.slug}
+              onClick={() => setLeague(c.slug)}
+              data-testid={`chip-${c.slug}`}
+              style={{
+                padding: '0.4rem 0.9rem',
+                borderRadius: '99px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                background: active ? '#C8102E' : 'var(--s2)',
+                color: active ? '#fff' : '#A0A0A0',
+                border: active ? '1px solid #C8102E' : '1px solid var(--border)',
+              }}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+        {!isDefault && (
+          <button
+            onClick={clearFilters}
+            data-testid="chip-clear"
+            style={{
+              marginLeft: 'auto',
+              padding: '0.4rem 0.9rem',
+              borderRadius: '99px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              background: 'transparent',
+              color: '#888',
+              border: '1px dashed var(--border)',
+            }}
+          >
+            ✕ Clear
+          </button>
+        )}
+      </div>
+
+      {/* Filter bar: dropdowns (conditional by chip type) */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', marginBottom: '1.25rem' }}>
+        {isLeagueChip ? (
+          <>
+            <Dropdown
+              label="Team"
+              value={team}
+              onChange={v => updateParam('team', v)}
+              options={[{ value: '', label: 'All Teams' }, ...teams.map(t => ({ value: t.slug, label: t.name }))]}
+            />
+            <Dropdown
+              label="Time"
+              value={time}
+              onChange={v => updateParam('time', v)}
+              options={[
+                { value: 'current', label: 'Current' },
+                { value: 'historical', label: 'Historical' },
+              ]}
+            />
+          </>
+        ) : (
+          <>
+            <Dropdown
+              label="Time"
+              value={time}
+              onChange={v => updateParam('time', v)}
+              options={[
+                { value: 'current', label: 'Current' },
+                { value: 'historical', label: 'Historical' },
+              ]}
+            />
+            <Dropdown
+              label="League"
+              value={subleague}
+              onChange={v => updateParam('subleague', v)}
+              options={[{ value: '', label: 'All' }, ...subleagueOptions]}
+            />
+          </>
+        )}
+      </div>
+
       {/* Ticketmaster NHL Banner - 468x60 */}
       <TicketmasterAd size="468x60" />
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
           {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '8px' }} />)}
         </div>
-      ) : games.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1rem', marginBottom: '0.375rem' }}>No games yet.</p>
-          <p style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.875rem' }}>Game schedules and results will appear here once data is available.</p>
+      ) : games.length === 0 && emptyMessage ? (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', marginTop: '1.25rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', marginBottom: '0.5rem' }}>{emptyMessage.title}</p>
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem' }}>{emptyMessage.sub}</p>
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
             {games.map(g => <GameCard key={g.id} game={g} />)}
           </div>
           {hasMore && (
@@ -235,6 +464,7 @@ export default function GamesPage() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
+                data-testid="load-more"
                 style={{
                   padding: '0.625rem 1.5rem',
                   background: loadingMore ? 'rgba(200,16,46,0.4)' : '#C8102E',
@@ -251,15 +481,14 @@ export default function GamesPage() {
                 onMouseEnter={e => { if (!loadingMore) e.currentTarget.style.background = '#a30d24'; }}
                 onMouseLeave={e => { if (!loadingMore) e.currentTarget.style.background = '#C8102E'; }}
               >
-                {loadingMore ? 'Loading…' : 'Load More Games'}
+                {loadingMore ? 'Loading…' : 'Show More Games'}
               </button>
             </div>
           )}
-          {!hasMore && games.length > 0 && (
-            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.8125rem', marginTop: '1.5rem' }}>
-              {games.length} games shown — end of archive.
-            </p>
-          )}
+          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.8125rem', marginTop: '1.25rem' }}>
+            {totalShown} game{totalShown === 1 ? '' : 's'} shown
+            {hasMore ? ' — refine your filters or load more above.' : '.'}
+          </p>
         </>
       )}
 
@@ -267,5 +496,12 @@ export default function GamesPage() {
       <TicketmasterAd size="300x250" style={{ marginTop: '2rem' }} />
     </div>
   );
-}// trigger production deploy Sun May 24 15:54:14 UTC 2026
-// Final attempt Sun May 24 16:15:30 UTC 2026
+}
+
+export default function GamesPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><div className="skeleton" style={{ height: '200px', borderRadius: '8px' }} /></div>}>
+      <GamesPageInner />
+    </Suspense>
+  );
+}

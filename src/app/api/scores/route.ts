@@ -1,8 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip, getRecentCutoff } from '@/lib/score-chips';
 
 const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
+
+// Cache league_id lookups per-process (chip → league_id[]) for the lifetime of the lambda.
+let leagueIdCache: Record<string, string[]> | null = null;
+async function getLeagueIdsForChip(chipSlug: string): Promise<string[]> {
+  if (leagueIdCache && leagueIdCache[chipSlug]) return leagueIdCache[chipSlug];
+  if (!leagueIdCache) leagueIdCache = {};
+  const chip = getChip(chipSlug);
+  if (chip.leagueSlugs.length === 0) {
+    leagueIdCache[chipSlug] = [];
+    return [];
+  }
+  const { data } = await supabase
+    .from('leagues')
+    .select('id, slug')
+    .in('slug', chip.leagueSlugs);
+  leagueIdCache[chipSlug] = (data || []).map(l => l.id);
+  return leagueIdCache[chipSlug];
+}
+
+// Cache single-league lookups (for subleague within a category chip).
+let singleLeagueCache: Record<string, string | null> = {};
+async function getLeagueIdBySlug(slug: string): Promise<string | null> {
+  if (slug in singleLeagueCache) return singleLeagueCache[slug];
+  const { data } = await supabase
+    .from('leagues')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  singleLeagueCache[slug] = data?.id ?? null;
+  return singleLeagueCache[slug];
+}
+
+// Cache team_id lookups (slug → id) for the team filter.
+let teamIdCache: Record<string, string | null> = {};
+async function getTeamIdBySlug(slug: string): Promise<string | null> {
+  if (slug in teamIdCache) return teamIdCache[slug];
+  const { data } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  teamIdCache[slug] = data?.id ?? null;
+  return teamIdCache[slug];
+}
 
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
@@ -20,69 +65,99 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status'); // 'completed' | 'scheduled' | 'all'
-  const limit = Math.min(parseInt(searchParams.get('limit') || '200', 10), 500);
-  const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
+  const league = searchParams.get('league') || DEFAULT_CHIP;
+  const team = searchParams.get('team');
+  const subleague = searchParams.get('subleague');
+  const time = searchParams.get('time') || DEFAULT_TIME;
+  const limit = Math.min(parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10), 200);
 
-  // Fetch a wide window so the date-desc slice covers all the data we need.
-  // 5000 covers ~3 seasons of NHL + PWHL + juniors; paginate via offset.
+  const chip = getChip(league);
+  const leagueIds = await getLeagueIdsForChip(league);
+  const recentCutoffISO = getRecentCutoff().toISOString();
+
+  // Build the fixtures query with joins to teams + leagues for accurate team names.
+  // Time filter is applied via an OR clause:
+  //   current    = status IN (scheduled, in_progress)  OR  (status=completed AND scheduled_at >= recentCutoff)
+  //   historical = status=completed AND scheduled_at <  recentCutoff
   let query = supabase
     .from('fixtures')
-    .select('*')
-    .order('scheduled_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .select(`
+      id, scheduled_at, status, home_score, away_score, season, league_id, home_team_id, away_team_id,
+      home_team:teams!home_team_id(id, name, slug, logo_url),
+      away_team:teams!away_team_id(id, name, slug, logo_url),
+      league:leagues(id, name, slug, level, country)
+    `)
+    .order('scheduled_at', { ascending: false });
 
-  const { data, error } = await query;
+  // League filter
+  if (leagueIds.length === 0) {
+    const empty = NextResponse.json({ data: [], count: 0, chip: chip.slug, time });
+    empty.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+    return applyRateLimitHeaders(empty, result);
+  }
+  query = query.in('league_id', leagueIds);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  let games = data || [];
-
-  // Filter by status
-  if (status === 'completed') {
-    games = games.filter((g: any) => g.status === 'completed');
-  } else if (status === 'scheduled') {
-    games = games.filter((g: any) => g.status === 'scheduled');
+  // Subleague (within a category chip) — narrows to a single league_id
+  if (subleague) {
+    const subId = await getLeagueIdBySlug(subleague);
+    if (subId) query = query.eq('league_id', subId);
   }
 
-  // Interleave all games by date desc so upcoming, current, and historical
-  // all appear in the natural order. Upcoming games are not pushed off the
-  // end of the page by older completed games.
-  const sortedGames = games
-    .slice()
-    .sort((a: any, b: any) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
+  // Team filter (only meaningful for league chips)
+  if (team && chip.type === 'league') {
+    const teamId = await getTeamIdBySlug(team);
+    if (teamId) {
+      query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
+    }
+  }
 
-  // Map fixtures to the Game interface the frontend expects
-  const mapped = sortedGames.map((g: any) => {
-    const home = g.game_data?.home_team;
-    const away = g.game_data?.away_team;
-    return {
-      id: g.id,
-      date: g.scheduled_at,
-      status: g.status,
-      home_team_id: home?.id?.toString() ?? null,
-      away_team_id: away?.id?.toString() ?? null,
-      home_score: g.home_score,
-      away_score: g.away_score,
-      scheduled_at: g.scheduled_at,
-      home_team: home ? {
-        name: home.placeName?.default || home.commonName?.default || home.abbrev || 'Home',
-        logo_url: home.logo || null,
-        slug: home.abbrev?.toLowerCase() || null,
-      } : null,
-      away_team: away ? {
-        name: away.placeName?.default || away.commonName?.default || away.abbrev || 'Away',
-        logo_url: away.logo || null,
-        slug: away.abbrev?.toLowerCase() || null,
-      } : null,
-      league: { name: 'NHL' },
-      venue_details: g.game_data?.venue ? { name: g.game_data.venue } : null,
-      period_scores: null,
-      referees: null,
-    };
+  // Time filter (status + date)
+  if (time === 'historical') {
+    query = query.eq('status', 'completed').lt('scheduled_at', recentCutoffISO);
+  } else {
+    // current: scheduled/in_progress (any date) OR recently completed
+    query = query.or(
+      `status.in.(scheduled,in_progress),and(status.eq.completed,scheduled_at.gte.${recentCutoffISO})`
+    );
+  }
+
+  query = query.limit(limit);
+
+  const { data, error } = await query;
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const mapped = (data || []).map((g: any) => ({
+    id: g.id,
+    date: g.scheduled_at,
+    status: g.status,
+    scheduled_at: g.scheduled_at,
+    home_score: g.home_score,
+    away_score: g.away_score,
+    home_team: g.home_team ? {
+      id: g.home_team.id,
+      name: g.home_team.name,
+      slug: g.home_team.slug,
+      logo_url: g.home_team.logo_url || null,
+    } : null,
+    away_team: g.away_team ? {
+      id: g.away_team.id,
+      name: g.away_team.name,
+      slug: g.away_team.slug,
+      logo_url: g.away_team.logo_url || null,
+    } : null,
+    league: g.league ? { id: g.league.id, name: g.league.name, slug: g.league.slug } : null,
+  }));
+
+  const response = NextResponse.json({
+    data: mapped,
+    count: mapped.length,
+    chip: chip.slug,
+    time,
+    hasMore: mapped.length === limit,
   });
-
-  const response = NextResponse.json(mapped, { status: 200 });
-  response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+  response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300');
   return applyRateLimitHeaders(response, result);
 }
+
