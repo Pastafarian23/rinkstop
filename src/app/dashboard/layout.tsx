@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -13,8 +14,48 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
   const avatarUrl = user?.imageUrl || '';
 
-  const navLinks = [
+  // Fetch pending connection requests + unread message counts for nav badges.
+  let pendingConnectionCount = 0;
+  let unreadMessageCount = 0;
+  try {
+    const { count: pc } = await supabaseAdmin
+      .from('connections')
+      .select('id', { count: 'exact', head: true })
+      .or(`user_low.eq.${userId},user_high.eq.${userId}`)
+      .eq('status', 'pending')
+      .neq('initiated_by', userId);
+    pendingConnectionCount = pc || 0;
+
+    const { data: myConns } = await supabaseAdmin
+      .from('connections')
+      .select('id')
+      .or(`user_low.eq.${userId},user_high.eq.${userId}`)
+      .eq('status', 'accepted');
+    if (myConns && myConns.length > 0) {
+      const connIds = myConns.map((c: any) => c.id);
+      const { data: myThreads } = await supabaseAdmin
+        .from('threads')
+        .select('id')
+        .in('connection_id', connIds);
+      if (myThreads && myThreads.length > 0) {
+        const threadIds = myThreads.map((t: any) => t.id);
+        const { count: um } = await supabaseAdmin
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .in('thread_id', threadIds)
+          .is('read_at', null)
+          .neq('sender_id', userId);
+        unreadMessageCount = um || 0;
+      }
+    }
+  } catch {
+    // Silently degrade — nav still works, just no badges.
+  }
+
+  const navLinks: Array<[string, string, number?]> = [
     ['/dashboard', 'Overview'],
+    ['/dashboard/connections', 'Connections', pendingConnectionCount],
+    ['/dashboard/messages', 'Messages', unreadMessageCount],
     ['/dashboard/profile', 'Profile'],
     ['/dashboard/favorites', 'Favorites'],
     ['/dashboard/reviews', 'Reviews'],
@@ -105,7 +146,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
           {/* Nav tabs */}
           <div style={{ display: 'flex', gap: '0', overflowX: 'auto', paddingBottom: 0 }}>
-            {navLinks.map(([href, label]) => (
+            {navLinks.map(([href, label, badge]) => (
               <Link
                 key={href}
                 href={href}
@@ -117,6 +158,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   borderBottom: '2px solid transparent',
                   whiteSpace: 'nowrap',
                   transition: 'color 0.15s, border-color 0.15s',
+                  position: 'relative',
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.color = '#fff';
@@ -128,6 +170,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 }}
               >
                 {label}
+                {badge && badge > 0 ? (
+                  <span style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 4,
+                    background: '#C8102E',
+                    color: '#fff',
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '0.1rem 0.4rem',
+                    minWidth: 18,
+                    textAlign: 'center',
+                    lineHeight: 1.4,
+                  }}>
+                    {badge > 99 ? '99+' : badge}
+                  </span>
+                ) : null}
               </Link>
             ))}
           </div>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import SaveButton from '@/components/SaveButton';
+import ClaimParentButton from '@/components/ClaimParentButton';
 import { playerPageDecision, robotsMeta } from '@/lib/seo';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -330,8 +331,9 @@ export default function PlayerDetail() {
             <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '0.75rem' }}>
               {player.first_name} {player.last_name}
             </h1>
-            <div style={{ marginBottom: '0.75rem' }}>
+            <div style={{ marginBottom: '0.75rem', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <SaveButton favoriteType="player" favoriteId={player.id} entityName={`${player.first_name} ${player.last_name}`} size="sm" />
+              <ClaimParentButton playerId={player.id} playerName={`${player.first_name} ${player.last_name}`} birthDate={player.birth_date || null} />
             </div>
 
             {/* Upgrade CTA for free-tier players */}
