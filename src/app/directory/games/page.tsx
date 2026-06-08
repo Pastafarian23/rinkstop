@@ -125,21 +125,49 @@ function GameCard({ game }: { game: Game }) {
   );
 }
 
+const PAGE_SIZE = 200;
+
 export default function GamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
     setLoading(true);
-    fetch('/api/scores?limit=50')
+    fetch(`/api/scores?limit=${PAGE_SIZE}&offset=0`)
       .then(r => r.json())
       .then(d => {
-        if (Array.isArray(d)) setGames(d);
-        else if (d?.data) setGames(d.data);
+        const list = Array.isArray(d) ? d : d?.data;
+        if (Array.isArray(list)) {
+          setGames(list);
+          setOffset(list.length);
+          setHasMore(list.length === PAGE_SIZE);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    fetch(`/api/scores?limit=${PAGE_SIZE}&offset=${offset}`)
+      .then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d) ? d : d?.data;
+        if (Array.isArray(list)) {
+          setGames(prev => [...prev, ...list]);
+          setOffset(prev => prev + list.length);
+          setHasMore(list.length === PAGE_SIZE);
+        } else {
+          setHasMore(false);
+        }
+        setLoadingMore(false);
+      })
+      .catch(() => setLoadingMore(false));
+  };
 
   useEffect(() => {
     if (games.length === 0) return;
@@ -198,9 +226,41 @@ export default function GamesPage() {
           <p style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.875rem' }}>Game schedules and results will appear here once data is available.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {games.map(g => <GameCard key={g.id} game={g} />)}
-        </div>
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {games.map(g => <GameCard key={g.id} game={g} />)}
+          </div>
+          {hasMore && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{
+                  padding: '0.625rem 1.5rem',
+                  background: loadingMore ? 'rgba(200,16,46,0.4)' : '#C8102E',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  cursor: loadingMore ? 'wait' : 'pointer',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => { if (!loadingMore) e.currentTarget.style.background = '#a30d24'; }}
+                onMouseLeave={e => { if (!loadingMore) e.currentTarget.style.background = '#C8102E'; }}
+              >
+                {loadingMore ? 'Loading…' : 'Load More Games'}
+              </button>
+            </div>
+          )}
+          {!hasMore && games.length > 0 && (
+            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.8125rem', marginTop: '1.5rem' }}>
+              {games.length} games shown — end of archive.
+            </p>
+          )}
+        </>
       )}
 
       {/* Ticketmaster NHL Banner - 300x250 */}
