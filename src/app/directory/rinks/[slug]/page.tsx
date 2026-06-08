@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import RinkGames from '@/components/RinkGames';
 import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
+import SaveButton from '@/components/SaveButton';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 
 
@@ -149,9 +150,14 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
           &larr; Back to Rinks
         </Link>
 
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '24px', marginTop: '8px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
           {rink.name}
         </h1>
+
+        {/* Actions: Save to favorites */}
+        <div style={{ marginBottom: '24px' }}>
+          <SaveButton favoriteType="rink" favoriteId={rink.id} entityName={rink.name} size="md" />
+        </div>
 
         {/* Details Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>

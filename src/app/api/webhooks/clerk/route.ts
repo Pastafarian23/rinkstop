@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import crypto from 'crypto';
 
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || '';
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
 
     const display_name = [first_name, last_name].filter(Boolean).join(' ') || null;
 
-    // Upsert into profiles table
-    const { error } = await supabase.from('profiles').upsert(
+    // Upsert into profiles table (service role — RLS would block this on anon key)
+    const { error } = await supabaseAdmin.from('profiles').upsert(
       {
         user_id: userId,
         display_name: display_name,
