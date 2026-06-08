@@ -1,11 +1,8 @@
 // src/app/news/page.tsx  --  Blog listing page (Server Component)
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key'
-);
+const supabase = supabaseAdmin;
 
 interface Post {
   id: string;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { mapTeamForHighlights } from '@/lib/highlights-helpers';
 
 interface Highlight {
@@ -106,16 +107,19 @@ export default function HighlightsGrid({
   return (
     <div style={{ padding: '2rem 0' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
-        <h2 style={{
-          fontSize: '1.5rem',
-          fontWeight: 800,
-          fontFamily: "'Bebas Neue', Impact, sans-serif",
-          color: '#fff',
-          marginBottom: '1.5rem',
-          letterSpacing: '0.05em',
-        }}>
-          {title.toUpperCase()}
-        </h2>
+        <div className="sec-head" style={{ marginBottom: '1.5rem' }}>
+          <h2 style={{
+            fontSize: '1.5rem',
+            fontWeight: 800,
+            fontFamily: "'Bebas Neue', Impact, sans-serif",
+            color: '#fff',
+            letterSpacing: '0.05em',
+            margin: 0,
+          }}>
+            {title.toUpperCase()}
+          </h2>
+          <Link href="/highlights" className="sec-link">View all highlights →</Link>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
           {highlights.map((highlight) => {
             const home = highlight.match.homeTeam;

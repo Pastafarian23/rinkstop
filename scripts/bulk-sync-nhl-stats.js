@@ -7,7 +7,7 @@ const SUPABASE_KEY = '***REMOVED***';
 
 function fetchPlayerStats(id) {
   return new Promise((resolve) => {
-    https.get({ hostname: NHL_BASE, path: '/players/' + id + '/statistics', headers: { 'x-rapidapi-key': API_KEY, 'x-rapidapi-host': 'nhl-ncaah-api.p.rapidapi.com' } }, (res) => {
+    https.get({ hostname: NHL_BASE, path: '/players/' + id + '/statistics', headers: { 'x-rapidapi-key': API_KEY, 'x-rapidapi-host': 'nhl-ncaah-api.p.rapidapi.com', 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } }, (res) => {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => {
