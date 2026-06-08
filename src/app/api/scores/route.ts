@@ -21,13 +21,16 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status'); // 'completed' | 'scheduled' | 'all'
-  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const limit = Math.min(parseInt(searchParams.get('limit') || '200', 10), 500);
+  const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
 
+  // Fetch a wide window so the date-desc slice covers all the data we need.
+  // 5000 covers ~3 seasons of NHL + PWHL + juniors; paginate via offset.
   let query = supabase
     .from('fixtures')
     .select('*')
     .order('scheduled_at', { ascending: false })
-    .limit(1000);
+    .range(offset, offset + limit - 1);
 
   const { data, error } = await query;
 
@@ -42,16 +45,12 @@ export async function GET(request: NextRequest) {
     games = games.filter((g: any) => g.status === 'scheduled');
   }
 
-  // Sort: completed (newest first), then upcoming (soonest first)
-  const completed = games
-    .filter((g: any) => g.status === 'completed')
+  // Interleave all games by date desc so upcoming, current, and historical
+  // all appear in the natural order. Upcoming games are not pushed off the
+  // end of the page by older completed games.
+  const sortedGames = games
+    .slice()
     .sort((a: any, b: any) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
-
-  const upcoming = games
-    .filter((g: any) => g.status === 'scheduled')
-    .sort((a: any, b: any) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
-
-  const sortedGames = [...completed, ...upcoming].slice(0, limit);
 
   // Map fixtures to the Game interface the frontend expects
   const mapped = sortedGames.map((g: any) => {
