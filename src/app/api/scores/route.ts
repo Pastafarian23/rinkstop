@@ -76,9 +76,12 @@ export async function GET(request: NextRequest) {
   const recentCutoffISO = getRecentCutoff().toISOString();
 
   // Build the fixtures query with joins to teams + leagues for accurate team names.
+  // We also exclude fixtures with NULL team_ids — the NHL import was incomplete
+  // for ~53% of NHL rows (no home/away team assigned), and they render as the
+  // "Home vs Away" placeholder. Hide them until a backfill restores them.
   // Time filter is applied via an OR clause:
   //   current    = status IN (scheduled, in_progress)  OR  (status=completed AND scheduled_at >= recentCutoff)
-  //   historical = status=completed AND scheduled_at <  recentCutoff
+  //   historical = anything older than recentCutoff AND status != 'in_progress'
   let query = supabase
     .from('fixtures')
     .select(`
@@ -87,6 +90,8 @@ export async function GET(request: NextRequest) {
       away_team:teams!away_team_id(id, name, slug, logo_url),
       league:leagues(id, name, slug, level, country)
     `)
+    .not('home_team_id', 'is', null)
+    .not('away_team_id', 'is', null)
     .order('scheduled_at', { ascending: false });
 
   // League filter
