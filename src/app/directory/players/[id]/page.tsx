@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import HighlightsGrid from '@/components/HighlightsGrid';
+import SaveButton from '@/components/SaveButton';
 import { playerPageDecision, robotsMeta } from '@/lib/seo';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -329,6 +330,9 @@ export default function PlayerDetail() {
             <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '0.75rem' }}>
               {player.first_name} {player.last_name}
             </h1>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <SaveButton favoriteType="player" favoriteId={player.id} entityName={`${player.first_name} ${player.last_name}`} size="sm" />
+            </div>
 
             {/* Upgrade CTA for free-tier players */}
             {(!player.badge_tier || player.badge_tier === 'free') && (

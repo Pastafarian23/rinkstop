@@ -7,6 +7,7 @@ import { FANATICS_ADS } from '@/lib/fanatics-ads';
 type NHLStaticData = typeof NHL_TEAM_DATA[string];
 import NHLShopWidget from '@/components/NHLShopWidget';
 import TicketmasterAd from '@/components/TicketmasterAd';
+import SaveButton from '@/components/SaveButton';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -158,6 +159,9 @@ export default function TeamDetail() {
               {[team.city, team.country].filter(Boolean).join(', ')}
               {team.leagues?.name ? ` · ${team.leagues.name}` : ''}
             </p>
+            <div style={{ marginTop: '0.75rem' }}>
+              <SaveButton favoriteType="team" favoriteId={team.id} entityName={team.name} size="sm" />
+            </div>
           </div>
         </div>
       </div>
