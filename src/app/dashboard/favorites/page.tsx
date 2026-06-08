@@ -1,13 +1,13 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function FavoritesPage() {
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
-  const { data: favorites } = await supabase
+  const { data: favorites } = await supabaseAdmin
     .from('favorites')
     .select('id, favorite_type, favorite_id, created_at')
     .eq('user_id', userId)
@@ -25,15 +25,15 @@ export default async function FavoritesPage() {
   const rinkIds = (favorites as FavItem[]|null)?.filter(f => f.favorite_type === 'rink').map(f => f.favorite_id) || [];
 
   if (playerIds.length) {
-    const { data } = await supabase.from('players').select('id, full_name').in('id', playerIds);
+    const { data } = await supabaseAdmin.from('players').select('id, full_name').in('id', playerIds);
     (data || []).forEach(p => { players[p.id] = p.full_name; });
   }
   if (teamIds.length) {
-    const { data } = await supabase.from('teams').select('id, name').in('id', teamIds);
+    const { data } = await supabaseAdmin.from('teams').select('id, name').in('id', teamIds);
     (data || []).forEach(t => { teams[t.id] = t.name; });
   }
   if (rinkIds.length) {
-    const { data } = await supabase.from('rinks').select('id, name').in('id', rinkIds);
+    const { data } = await supabaseAdmin.from('rinks').select('id, name').in('id', rinkIds);
     (data || []).forEach(r => { rinks[r.id] = r.name; });
   }
 

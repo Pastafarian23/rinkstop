@@ -1,6 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export default async function ReviewsPage() {
   const { userId } = await auth();
@@ -9,8 +9,8 @@ export default async function ReviewsPage() {
   const user = await currentUser();
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
 
-  // Fetch user's reviews by matching email
-  const { data: reviews } = await supabase
+  // Fetch user's reviews by matching email (use service role so users see their own pending reviews too)
+  const { data: reviews } = await supabaseAdmin
     .from('rink_reviews')
     .select('id, rating, review_text, reviewer_name, created_at, rink_id, status')
     .eq('reviewer_email', email)
@@ -20,7 +20,7 @@ export default async function ReviewsPage() {
   const rinkIds = [...new Set((reviews || []).map(r => r.rink_id).filter(Boolean))];
   let rinkNames: Record<string, string> = {};
   if (rinkIds.length > 0) {
-    const { data: rinks } = await supabase
+    const { data: rinks } = await supabaseAdmin
       .from('rinks')
       .select('id, name')
       .in('id', rinkIds);
