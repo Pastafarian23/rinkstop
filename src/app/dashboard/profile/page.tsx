@@ -80,12 +80,10 @@ export default async function ProfilePage() {
           MANAGE YOUR ACCOUNT
         </h3>
         <p style={{ color: '#666', fontSize: '0.875rem', margin: '0 0 1.25rem', lineHeight: 1.6 }}>
-          To update your name, email, or avatar, you'll be redirected to Clerk's secure account portal.
+          To update your name, email, or avatar, click your avatar in the top-right corner to open the account menu, or use the button below.
         </p>
-        <a
-          href="https://dashboard.clerk.com"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/user-profile"
           style={{
             display: 'inline-block',
             background: '#041E42',
@@ -98,8 +96,8 @@ export default async function ProfilePage() {
             border: '1px solid rgba(255,255,255,0.1)',
           }}
         >
-          Open Clerk Dashboard →
-        </a>
+          Manage Account →
+        </Link>
       </div>
 
       {/* Connected accounts */}
@@ -113,12 +111,10 @@ export default async function ProfilePage() {
           CONNECTED ACCOUNTS
         </h3>
         <p style={{ color: '#555', fontSize: '0.875rem', margin: '0 0 1rem', lineHeight: 1.6 }}>
-          Sign-in methods and connected social accounts appear here.
+          Sign-in methods and connected social accounts are managed through your account profile.
         </p>
-        <a
-          href="https://dashboard.clerk.com"
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          href="/user-profile"
           style={{
             display: 'inline-block',
             background: 'transparent',
@@ -129,7 +125,7 @@ export default async function ProfilePage() {
           }}
         >
           Manage connected accounts →
-        </a>
+        </Link>
       </div>
 
     </div>
