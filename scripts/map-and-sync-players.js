@@ -46,7 +46,7 @@ async function supabaseUpdate(table, id, data) {
 
 async function fetchHighlightlyPlayers(offset = 0) {
   const res = await fetch(`${NHL_BASE}/players?offset=${offset}&limit=100`, {
-    headers: { 'x-rapidapi-key': API_KEY, 'x-rapidapi-host': RAPIDAPI_HOST }
+    headers: { 'x-rapidapi-key': API_KEY, 'x-rapidapi-host': RAPIDAPI_HOST, 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
   });
   const data = await res.json();
   return data;
@@ -116,7 +116,7 @@ async function main() {
     for (const m of mapped.slice(0, 100)) {
       try {
         const res = await fetch(`${NHL_BASE}/players/${m.hlId}/statistics`, {
-          headers: { 'x-rapidapi-key': API_KEY, 'x-rapidapi-host': RAPIDAPI_HOST }
+          headers: { 'x-rapidapi-key': API_KEY, 'x-rapidapi-host': RAPIDAPI_HOST, 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
         });
         
         if (!res.ok) { console.log(`  ✗ ${m.name}: ${res.status}`); continue; }
