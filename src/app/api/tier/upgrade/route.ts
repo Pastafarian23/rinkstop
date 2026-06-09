@@ -6,11 +6,21 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 const RATE_LIMIT = { maxRequests: 5, windowMs: 10 * 60 * 1000 };
 
+function subscriptionIsActive(status: string | null | undefined): boolean {
+  return status === 'active' || status === 'trialing';
+}
+
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any })
   : null;
 
 type TierId = 'supporter' | 'verified' | 'pro';
+
+const TIER_RANK: Record<TierId, number> = {
+  supporter: 1,
+  verified: 2,
+  pro: 3,
+};
 
 const TIER_TO_PRICE_ENV: Record<TierId, string> = {
   supporter: 'STRIPE_PRICE_TIER_SUPPORTER',
@@ -76,9 +86,29 @@ export async function POST(req: NextRequest) {
   // Look up or create a Stripe customer for this Clerk user
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles')
-    .select('stripe_customer_id, email, display_name')
+    .select('stripe_customer_id, email, display_name, tier, stripe_subscription_id, subscription_status')
     .eq('user_id', userId)
     .maybeSingle();
+
+  // GUARD: Reject downgrades. Self-serve cancel/downgrade is intentionally not supported.
+  // Users must contact support to change or cancel a paid membership.
+  const currentTier = (profile?.tier || 'free') as TierId | 'free';
+  if (currentTier !== 'free' && profile?.stripe_subscription_id) {
+    // They have an active subscription
+    if (subscriptionIsActive(profile.subscription_status) && TIER_RANK[tier] <= (TIER_RANK[currentTier as TierId] ?? 0)) {
+      const res = NextResponse.json(
+        {
+          error: 'downgrade_not_self_serve',
+          message: 'To change or cancel your paid membership, please contact support@rinkstop.com. We respond within 24 hours and will work with you on any changes.',
+        },
+        { status: 403 }
+      );
+      return applyRateLimitHeaders(res, result);
+    }
+  }
+
+  // Look up or create a Stripe customer for this Clerk user
+  // (profile already loaded above for downgrade guard)
 
   if (profileErr) {
     console.error('profile lookup err', profileErr);

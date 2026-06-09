@@ -115,7 +115,7 @@ const TIERS: Tier[] = [
 const FAQ = [
   {
     q: 'Is this a subscription?',
-    a: 'Yes. Supporter, Verified, and Pro are annual subscriptions. Free is always free. You can downgrade to Free at any time \u2014 your benefits stay active until the end of your current period.',
+    a: 'Yes. Supporter, Verified, and Pro are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
   },
   {
     q: 'What\u2019s a Founding Member badge?',
@@ -138,8 +138,12 @@ const FAQ = [
     a: 'Yes. The parent\u2019s account sends the DM, the kid\u2019s profile is the context. Coaches and scouts see the kid\u2019s name and stats in the thread, and the parent\u2019s name in the from-line.',
   },
   {
-    q: 'What happens to my features if I downgrade?',
-    a: 'Your claimed listings stay claimed. Your profile goes back to the free tier. Your existing DMs become read-only \u2014 you can read old threads but not send new ones, and you can\u2019t receive new messages.',
+    q: 'What if I want to change or cancel my membership?',
+    a: 'Email support@rinkstop.com. We respond within 24 hours and can walk you through your options. Your benefits stay active through the end of your paid period. We don\u2019t bury a cancel button in your account \u2014 we just ask you to talk to us first so we can understand what we could have done better.',
+  },
+  {
+    q: 'Can I upgrade mid-year?',
+    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Supporter to Verified, or Verified to Pro, at any time from your dashboard.',
   },
   {
     q: 'Why no ad-free tier?',
@@ -459,7 +463,7 @@ export default function FoundingMemberPage() {
           Have a question we didn\u2019t answer? Email <a href="mailto:support@rinkstop.com" style={{ color: '#14B8A6', textDecoration: 'none' }}>support@rinkstop.com</a>.
         </p>
         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', margin: '0.5rem 0 0' }}>
-          Already a member? <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Manage your subscription</Link>.
+          Already a member? <Link href="/dashboard/subscription" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Manage your subscription</Link>.
         </p>
       </section>
     </main>
