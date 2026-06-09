@@ -22,11 +22,13 @@ export default async function CronHealthPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Cron Health</h1>
-      <p className="text-slate-400 mb-8">
-        OpenClaw cron job status, last run, and 24h failure rate. Updated every 5 min by
-        <code className="text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded ml-1">scripts/collect-cron-health.js</code>
-      </p>
+      <div className="page-header">
+        <h1><span aria-hidden="true">⏰</span> Cron Health</h1>
+        <p>
+          OpenClaw cron job status, last run, and 24h failure rate. Updated every 5 min by
+          <code className="text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded ml-1">scripts/collect-cron-health.js</code>
+        </p>
+      </div>
 
       <CronHealthDashboard initial={initial} />
     </div>

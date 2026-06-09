@@ -62,23 +62,26 @@ export default async function TeamsPage({
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Teams</h1>
-      <p className="text-slate-400 mb-8">
-        Manage team metadata and league assignments. League changes are super-admin only.
-      </p>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h1><span aria-hidden="true">🏒</span> Teams</h1>
+          <p>Manage team metadata and league assignments. League changes are super-admin only.</p>
+        </div>
+        <a href="/admin/teams/new" className="admin-btn admin-btn-primary">+ New Team</a>
+      </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div className="admin-card p-4" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Total Teams</div>
           <div className="text-2xl font-bold text-white">{total.toLocaleString()}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div className="admin-card p-4" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Assigned to League</div>
           <div className="text-2xl font-bold text-teal-400">
             {teams.filter((t) => t.league_id).length.toLocaleString()}
           </div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div className="admin-card p-4" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Unassigned</div>
           <div className={`text-2xl font-bold ${teams.some((t) => !t.league_id) ? 'text-amber-400' : 'text-slate-500'}`}>
             {teams.filter((t) => !t.league_id).length.toLocaleString()}
