@@ -65,3 +65,37 @@ export async function enrichEntitiesWithClaimTier(
   }
   return out;
 }
+
+// Single-entity lookup. Used by entity detail pages to decide whether to
+// render the Pro-tier-only ListingContactForm. Returns null if unclaimed
+// or no approved claim exists.
+// Leagues are not a first-class claim type today → returns null for leagues.
+export async function getEntityClaimTier(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabaseAdmin: any,
+  entityType: 'rink' | 'team' | 'league',
+  entityId: string
+): Promise<{ tier: string; user_id: string; claim_id: string } | null> {
+  if (entityType === 'league') return null; // not wired yet
+
+  const { data, error } = await supabaseAdmin
+    .from('claims')
+    .select('id, user_id, profiles!inner(tier)')
+    .eq('claim_type', entityType)
+    .eq('entity_id', entityId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[getEntityClaimTier] failed', { entityType, entityId, error });
+    return null;
+  }
+  if (!data) return null;
+  return {
+    tier: data.profiles?.tier || 'free',
+    user_id: data.user_id,
+    claim_id: data.id,
+  };
+}

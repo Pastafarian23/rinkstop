@@ -9,6 +9,7 @@ import NHLShopWidget from '@/components/NHLShopWidget';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import SaveButton from '@/components/SaveButton';
 import { ClaimedBy } from '@/components/ClaimedBy';
+import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -164,6 +165,13 @@ export default function TeamDetail() {
               <SaveButton favoriteType="team" favoriteId={team.id} entityName={team.name} size="sm" />
             </div>
             <ClaimedBy entityType="team" entityId={team.id} entityName={team.name} />
+            <div style={{ marginTop: '1rem' }}>
+              <ListingContactFormMount
+                listingType="team"
+                listingId={team.id}
+                listingName={team.name}
+              />
+            </div>
           </div>
         </div>
       </div>
