@@ -49,12 +49,13 @@ export default async function TeamEditPage({ params }: { params: Promise<{ id: s
 
   return (
     <div>
-      <div className="mb-6">
-        <a href="/admin/teams" className="text-slate-400 hover:text-white text-sm">← Back to Teams</a>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h1><span aria-hidden="true">🏒</span> {data.team.name}</h1>
+          <p className="font-mono text-xs">{data.team.id}</p>
+        </div>
+        <a href="/admin/teams" className="admin-btn admin-btn-secondary">← Back to Teams</a>
       </div>
-
-      <h1 className="text-3xl font-bold text-white mb-2">{data.team.name}</h1>
-      <p className="text-slate-400 mb-8 text-sm font-mono">{data.team.id}</p>
 
       <TeamEditForm
         team={data.team}
@@ -63,12 +64,12 @@ export default async function TeamEditPage({ params }: { params: Promise<{ id: s
       />
 
       <div className="mt-8 grid grid-cols-2 gap-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <div className="admin-card p-5" style={{ marginBottom: 0 }}>
           <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Claims</h3>
           <div className="text-3xl font-bold text-white">{data.claimsCount}</div>
           <p className="text-xs text-slate-500 mt-1">approved claims on this team</p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <div className="admin-card p-5" style={{ marginBottom: 0 }}>
           <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Recent Fixtures</h3>
           {data.fixtures.length === 0 ? (
             <p className="text-slate-500 text-sm">No fixtures yet</p>

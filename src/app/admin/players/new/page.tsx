@@ -21,8 +21,13 @@ export default function NewPlayer() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-white">New Player</h1>
-      <div className="mb-6 h-[2px] bg-brand-gradient rounded-full w-32"></div>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h1><span aria-hidden="true">⭐</span> New Player</h1>
+          <p>Add a new player profile to the directory.</p>
+        </div>
+        <button type="button" onClick={() => router.push('/admin/players')} className="admin-btn admin-btn-secondary">← Cancel</button>
+      </div>
       <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div><label className="block text-sm font-medium mb-1">First Name *</label>
@@ -67,7 +72,7 @@ export default function NewPlayer() {
           <input value={form.headshot_url} onChange={e => setForm({...form, headshot_url: e.target.value})} className="input-field" /></div>
         <div><label className="block text-sm font-medium mb-1">Bio</label>
           <textarea value={form.bio} onChange={e => setForm({...form, bio: e.target.value})} className="input-field h-24" /></div>
-        <button type="submit" className="btn-primary">Create Player</button>
+        <button type="submit" className="admin-btn admin-btn-primary">Create Player</button>
       </form>
     </div>
   );
