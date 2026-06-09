@@ -17,8 +17,13 @@ export default function NewFixture() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-white">New Fixture</h1>
-      <div className="mb-6 h-[2px] bg-brand-gradient rounded-full w-32"></div>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h1><span aria-hidden="true">📅</span> New Fixture</h1>
+          <p>Schedule a new fixture in the calendar.</p>
+        </div>
+        <button type="button" onClick={() => router.push('/admin/fixtures')} className="admin-btn admin-btn-secondary">← Cancel</button>
+      </div>
       <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
         <div><label className="block text-sm font-medium mb-1">Home Team *</label>
           <select required value={form.home_team_id} onChange={e => setForm({...form, home_team_id: e.target.value})} className="select-field">
@@ -38,7 +43,7 @@ export default function NewFixture() {
             <option value="completed">Completed</option><option value="cancelled">Cancelled</option>
             <option value="postponed">Postponed</option>
           </select></div>
-        <button type="submit" className="btn-primary">Create Fixture</button>
+        <button type="submit" className="admin-btn admin-btn-primary">Create Fixture</button>
       </form>
     </div>
   );

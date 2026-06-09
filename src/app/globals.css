@@ -1047,3 +1047,54 @@ img  { max-width: 100%; display: block; }
   font-family: 'Bebas Neue', Impact, sans-serif;
   letter-spacing: 0.04em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Opacity-modifier overrides (bg-slate-900/50, etc.)
+   Tailwind generates these as separate class names from the base
+   classes, so we need explicit rules for each. Use rgba with the
+   brand surface/border so the translucent look is preserved.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Background opacities */
+[data-admin] .bg-slate-900\/50 { background-color: rgba(20, 20, 20, 0.5) !important; }
+[data-admin] .bg-slate-900\/60 { background-color: rgba(20, 20, 20, 0.6) !important; }
+[data-admin] .bg-slate-900\/70 { background-color: rgba(20, 20, 20, 0.7) !important; }
+[data-admin] .bg-slate-800\/30 { background-color: rgba(15, 15, 15, 0.3) !important; }
+[data-admin] .bg-slate-800\/50 { background-color: rgba(15, 15, 15, 0.5) !important; }
+[data-admin] .bg-slate-800\/60 { background-color: rgba(15, 15, 15, 0.6) !important; }
+[data-admin] .bg-slate-700\/50 { background-color: rgba(31, 31, 31, 0.5) !important; }
+[data-admin] .bg-teal-400\/10 { background-color: rgba(255, 184, 28, 0.1) !important; }
+[data-admin] .bg-amber-400\/10 { background-color: rgba(245, 158, 11, 0.1) !important; }
+[data-admin] .bg-rose-400\/10 { background-color: rgba(248, 113, 113, 0.1) !important; }
+[data-admin] .bg-red-900\/50 { background-color: rgba(200, 16, 46, 0.5) !important; }
+[data-admin] .bg-blue-900\/50 { background-color: rgba(4, 30, 66, 0.5) !important; }
+[data-admin] .bg-navy\/50 { background-color: rgba(4, 30, 66, 0.5) !important; }
+
+/* Border opacities */
+[data-admin] .border-slate-800\/50 { border-color: rgba(30, 30, 30, 0.5) !important; }
+[data-admin] .border-slate-800\/30 { border-color: rgba(30, 30, 30, 0.3) !important; }
+[data-admin] .border-slate-700\/50 { border-color: rgba(42, 42, 42, 0.5) !important; }
+[data-admin] .border-teal-500\/30 { border-color: rgba(230, 163, 24, 0.3) !important; }
+[data-admin] .border-amber-500\/30 { border-color: rgba(217, 119, 6, 0.3) !important; }
+[data-admin] .border-rose-500\/30 { border-color: rgba(244, 63, 94, 0.3) !important; }
+[data-admin] .divide-slate-800 > * + * { border-color: rgba(30, 30, 30, 0.5) !important; }
+
+/* Hover variants — Tailwind class names contain literal ':' so we
+   escape with '\:' in the selector and add ':hover' to match the
+   generated :hover pseudo-class rule. */
+[data-admin] .hover\:bg-slate-800:hover { background-color: rgba(15, 15, 15, 0.7) !important; }
+[data-admin] .hover\:bg-slate-800\/30:hover { background-color: rgba(255, 184, 28, 0.04) !important; }
+[data-admin] .hover\:bg-slate-800\/50:hover { background-color: rgba(15, 15, 15, 0.5) !important; }
+[data-admin] .hover\:bg-slate-700:hover { background-color: rgba(31, 31, 31, 0.7) !important; }
+[data-admin] .hover\:bg-teal-500:hover { background-color: #e6a318 !important; }
+[data-admin] .hover\:bg-slate-900\/60:hover { background-color: rgba(20, 20, 20, 0.6) !important; }
+[data-admin] .hover\:border-slate-700:hover { border-color: rgba(42, 42, 42, 0.7) !important; }
+[data-admin] .hover\:border-teal-500:hover { border-color: #e6a318 !important; }
+[data-admin] .hover\:text-teal-300:hover { color: #ffd466 !important; }
+[data-admin] .hover\:text-red-300:hover { color: #ff8a99 !important; }
+[data-admin] .hover\:text-gold:hover { color: #ffd466 !important; }
+[data-admin] .hover\:text-white:hover { color: #fff !important; }
+
+/* Group hover variants (used in some card components) */
+[data-admin] .group:hover .group-hover\:text-white { color: #fff !important; }
+[data-admin] .group:hover .group-hover\:text-teal-400 { color: var(--admin-gold) !important; }

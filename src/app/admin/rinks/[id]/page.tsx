@@ -36,22 +36,23 @@ export default async function RinkEditPage({ params }: { params: Promise<{ id: s
 
   return (
     <div>
-      <div className="mb-6">
-        <a href="/admin/rinks" className="text-slate-400 hover:text-white text-sm">← Back to Rinks</a>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h1><span aria-hidden="true">🏟️</span> {data.rink.name}</h1>
+          <p className="font-mono text-xs">{data.rink.id}</p>
+        </div>
+        <a href="/admin/rinks" className="admin-btn admin-btn-secondary">← Back to Rinks</a>
       </div>
-
-      <h1 className="text-3xl font-bold text-white mb-2">{data.rink.name}</h1>
-      <p className="text-slate-400 mb-8 text-sm font-mono">{data.rink.id}</p>
 
       <RinkEditForm rink={data.rink} />
 
       <div className="mt-8 grid grid-cols-2 gap-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <div className="admin-card p-5" style={{ marginBottom: 0 }}>
           <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Claims</h3>
           <div className="text-3xl font-bold text-white">{data.claimsCount}</div>
           <p className="text-xs text-slate-500 mt-1">approved claims on this rink</p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <div className="admin-card p-5" style={{ marginBottom: 0 }}>
           <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Recent Reviews</h3>
           {data.reviews.length === 0 ? (
             <p className="text-slate-500 text-sm">No reviews yet</p>
