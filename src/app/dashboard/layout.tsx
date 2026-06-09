@@ -129,15 +129,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 </p>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {isAdmin ? (
                 <Link
                   href="/admin"
                   data-testid="header-admin-link"
+                  className="dashboard-header-admin"
                   style={{
                     background: 'linear-gradient(135deg, #FFB81C 0%, #e6a318 100%)',
                     color: '#041E42',
-                    padding: '0.5rem 1rem',
+                    padding: '0.5rem 0.85rem',
                     borderRadius: 6,
                     fontSize: '0.8rem',
                     fontWeight: 700,
@@ -147,26 +148,31 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     textTransform: 'uppercase',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.4rem',
+                    gap: '0.35rem',
                     boxShadow: '0 2px 8px rgba(255,184,28,0.25)',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  🛡️ Admin
+                  <span aria-hidden="true">🛡️</span>
+                  <span>Admin</span>
                 </Link>
               ) : null}
               <Link
                 href="/"
+                className="dashboard-header-back"
                 style={{
                   background: 'rgba(255,255,255,0.08)',
                   color: 'rgba(255,255,255,0.7)',
-                  padding: '0.5rem 1rem',
+                  padding: '0.5rem 0.85rem',
                   borderRadius: 6,
                   fontSize: '0.8rem',
                   textDecoration: 'none',
                   border: '1px solid rgba(255,255,255,0.1)',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                ← Back to Site
+                <span style={{ marginRight: 4 }}>←</span>
+                <span>Back to Site</span>
               </Link>
               {/* UserButton: avatar dropdown with sign-out + manage account. "Manage account" routes to our in-app profile page (no Clerk portal redirect). */}
               <UserButton
@@ -186,6 +192,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
           />
         </div>
       </header>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .dashboard-header-back { display: none !important; }
+        }
+        @media (max-width: 480px) {
+          .dashboard-header-admin span:last-child { display: none; }
+          .dashboard-header-admin { padding: 0.5rem 0.6rem !important; }
+        }
+      `}</style>
 
       {/* Page content */}
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
