@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
+import { FounderBadge } from '@/components/FounderBadge';
 import QuickActionsGrid from '@/components/QuickActionsGrid';
 
 export default async function DashboardPage() {
@@ -18,9 +19,20 @@ export default async function DashboardPage() {
   // Profile completeness + tier
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('bio, location, tier, is_founding_member, created_at')
+    .select('bio, location, tier, is_founding_member, created_at, role')
     .eq('user_id', userId)
     .maybeSingle();
+
+  const isSuperAdmin = profile?.role === 'super_admin';
+  const isFounder = isSuperAdmin;
+  // For the OG founder, "Member since" should reflect when they actually started the project
+  // (e.g. domain registration date), not when their Clerk account was created.
+  const founderSince = 'February 2019';
+  const memberSinceDate = isFounder
+    ? founderSince
+    : profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : null;
 
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
     { field: 'Display name', done: !!firstName, href: '/dashboard/profile', hint: 'Add your first and last name' },
@@ -30,9 +42,6 @@ export default async function DashboardPage() {
   ];
   const completenessPct = Math.round((completeness.filter(c => c.done).length / completeness.length) * 100);
   const firstMissing = completeness.find(c => !c.done);
-  const memberSince = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    : null;
 
   const quickLinks = [
     { href: '/dashboard/profile', label: 'Edit Profile', icon: '👤', desc: 'Update your name, avatar & contact info' },
@@ -76,27 +85,33 @@ export default async function DashboardPage() {
             </h2>
             <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>{email}</p>
             <p style={{ color: '#555', fontSize: '0.8rem', margin: '0.5rem 0 0' }}>
-              {memberSince ? `Member since ${memberSince}` : 'Welcome to RinkStop'}
+              {memberSinceDate ? `Founder since ${memberSinceDate}` : 'Welcome to RinkStop'}
             </p>
             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <TierBadge tier={profile?.tier || 'free'} size="xs" />
-              {profile?.is_founding_member && (
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
-                  padding: '0.1rem 0.5rem', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
-                  textTransform: 'uppercase', borderRadius: 999,
-                  background: 'rgba(255,184,28,0.12)', color: '#FFB81C',
-                  border: '1px solid rgba(255,184,28,0.4)',
-                }}>⭐ Founding</span>
-              )}
-              {profile?.tier === 'free' ? (
-                <Link href="/founding-member" style={{ fontSize: 11, color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
-                  ✨ Upgrade →
-                </Link>
+              {isFounder ? (
+                <FounderBadge size="xs" foundingDate="February 7, 2019" />
               ) : (
-                <Link href="/dashboard/subscription" style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textDecoration: 'none', fontWeight: 600 }}>
-                  Manage subscription →
-                </Link>
+                <>
+                  <TierBadge tier={profile?.tier || 'free'} size="xs" />
+                  {profile?.is_founding_member && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      padding: '0.1rem 0.5rem', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
+                      textTransform: 'uppercase', borderRadius: 999,
+                      background: 'rgba(255,184,28,0.12)', color: '#FFB81C',
+                      border: '1px solid rgba(255,184,28,0.4)',
+                    }}>⭐ Founding</span>
+                  )}
+                  {profile?.tier === 'free' ? (
+                    <Link href="/founding-member" style={{ fontSize: 11, color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
+                      ✨ Upgrade →
+                    </Link>
+                  ) : (
+                    <Link href="/dashboard/subscription" style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textDecoration: 'none', fontWeight: 600 }}>
+                      Manage subscription →
+                    </Link>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -149,44 +164,46 @@ export default async function DashboardPage() {
         <QuickActionsGrid links={quickLinks} />
       </div>
 
-      {/* Founding Member upsell */}
-      <div style={{
-        background: 'linear-gradient(135deg, #041E42 0%, #0a2a52 100%)',
-        borderRadius: 12,
-        padding: '1.75rem',
-        border: '1px solid #C8102E',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '1.5rem',
-        flexWrap: 'wrap',
-      }}>
-        <div>
-          <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: '#FFB81C', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-            ⚡ UNLOCK THE FULL RINKSTOP EXPERIENCE
-          </h3>
-          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.9rem', margin: 0, maxWidth: 500 }}>
-            Get verified status, priority support, and exclusive features. Become a Founding Member today.
-          </p>
+      {/* Founding Member upsell — hidden for users who already have full access (founder / founding member / paid tier) */}
+      {!isFounder && !profile?.is_founding_member && (profile?.tier === 'free' || !profile?.tier) && (
+        <div style={{
+          background: 'linear-gradient(135deg, #041E42 0%, #0a2a52 100%)',
+          borderRadius: 12,
+          padding: '1.75rem',
+          border: '1px solid #C8102E',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1.5rem',
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: '#FFB81C', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
+              ⚡ UNLOCK THE FULL RINKSTOP EXPERIENCE
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.9rem', margin: 0, maxWidth: 500 }}>
+              Get verified status, priority support, and exclusive features. Become a Founding Member today.
+            </p>
+          </div>
+          <Link
+            href="/founding-member"
+            style={{
+              display: 'inline-block',
+              background: '#C8102E',
+              color: 'white',
+              padding: '0.75rem 1.5rem',
+              borderRadius: 6,
+              textDecoration: 'none',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              letterSpacing: '0.03em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            View Plans →
+          </Link>
         </div>
-        <Link
-          href="/founding-member"
-          style={{
-            display: 'inline-block',
-            background: '#C8102E',
-            color: 'white',
-            padding: '0.75rem 1.5rem',
-            borderRadius: 6,
-            textDecoration: 'none',
-            fontWeight: 700,
-            fontSize: '0.875rem',
-            letterSpacing: '0.03em',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          View Plans →
-        </Link>
-      </div>
+      )}
     </div>
   );
 }
