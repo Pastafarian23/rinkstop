@@ -1,64 +1,76 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
+import { supabaseAdmin } from '@/lib/supabase';
+import RinkEditForm from './RinkEditForm';
 
-export default function EditRink() {
-  const { id } = useParams();
-  const router = useRouter();
-  const [form, setForm] = useState({ name: '', slug: '', city: '', province_state: '', country: '', address: '', latitude: 0, longitude: 0, capacity: 0, ice_size: 'NHL', surface_type: 'ice', website_url: '', phone: '', email: '' });
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    fetch(`/api/rinks?id=${id}`).then(r => r.json()).then(d => { if (d[0]) setForm(d[0]); });
-  }, [id]);
+async function getRink(id: string) {
+  const { data: rink } = await supabaseAdmin
+    .from('rinks')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch('/api/rinks', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...form }) });
-    router.push('/admin/rinks');
-  };
+  if (!rink) return null;
+
+  const { count: claimsCount } = await supabaseAdmin
+    .from('rink_claims')
+    .select('*', { count: 'exact', head: true })
+    .eq('rink_id', id)
+    .eq('status', 'approved');
+
+  const { data: reviews } = await supabaseAdmin
+    .from('rink_reviews')
+    .select('id, rating, review_text, reviewer_name, status, created_at')
+    .eq('rink_id', id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  return { rink, claimsCount: claimsCount || 0, reviews: reviews || [] };
+}
+
+export default async function RinkEditPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const data = await getRink(id);
+  if (!data) notFound();
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-white">Edit Rink</h1>
-      <div className="mb-6 h-[2px] bg-brand-gradient rounded-full w-32"></div>
-      <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
-        <div><label className="block text-sm font-medium mb-1">Name</label>
-          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="input-field" /></div>
-        <div><label className="block text-sm font-medium mb-1">Slug</label>
-          <input value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="input-field" /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium mb-1">City</label>
-            <input value={form.city} onChange={e => setForm({...form, city: e.target.value})} className="input-field" /></div>
-          <div><label className="block text-sm font-medium mb-1">Province/State</label>
-            <input value={form.province_state} onChange={e => setForm({...form, province_state: e.target.value})} className="input-field" /></div>
+      <div className="mb-6">
+        <a href="/admin/rinks" className="text-slate-400 hover:text-white text-sm">← Back to Rinks</a>
+      </div>
+
+      <h1 className="text-3xl font-bold text-white mb-2">{data.rink.name}</h1>
+      <p className="text-slate-400 mb-8 text-sm font-mono">{data.rink.id}</p>
+
+      <RinkEditForm rink={data.rink} />
+
+      <div className="mt-8 grid grid-cols-2 gap-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+          <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Claims</h3>
+          <div className="text-3xl font-bold text-white">{data.claimsCount}</div>
+          <p className="text-xs text-slate-500 mt-1">approved claims on this rink</p>
         </div>
-        <div><label className="block text-sm font-medium mb-1">Province/State</label>
-          <input value={form.province_state} onChange={e => setForm({...form, province_state: e.target.value})} className="input-field" /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium mb-1">Latitude</label>
-            <input type="number" step="any" value={form.latitude || ''} onChange={e => setForm({...form, latitude: parseFloat(e.target.value)})} className="input-field" /></div>
-          <div><label className="block text-sm font-medium mb-1">Longitude</label>
-            <input type="number" step="any" value={form.longitude || ''} onChange={e => setForm({...form, longitude: parseFloat(e.target.value)})} className="input-field" /></div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+          <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Recent Reviews</h3>
+          {data.reviews.length === 0 ? (
+            <p className="text-slate-500 text-sm">No reviews yet</p>
+          ) : (
+            <ul className="text-xs space-y-1.5 max-h-40 overflow-y-auto">
+              {data.reviews.slice(0, 5).map((rv: any) => (
+                <li key={rv.id} className="text-slate-400">
+                  <span className="text-amber-400">{'★'.repeat(rv.rating)}</span>
+                  {' '}
+                  {rv.reviewer_name}
+                  <span className={`ml-2 ${rv.status === 'approved' ? 'text-teal-400' : 'text-amber-400'}`}>
+                    ({rv.status})
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium mb-1">Ice Size</label>
-            <select value={form.ice_size} onChange={e => setForm({...form, ice_size: e.target.value})} className="select-field">
-              <option value="NHL">NHL</option><option value="Olympic">Olympic</option><option value="Recreational">Recreational</option>
-            </select></div>
-          <div><label className="block text-sm font-medium mb-1">Surface</label>
-            <select value={form.surface_type} onChange={e => setForm({...form, surface_type: e.target.value})} className="select-field">
-              <option value="ice">Ice</option><option value="synthetic">Synthetic</option><option value="other">Other</option>
-            </select></div>
-        </div>
-        <div><label className="block text-sm font-medium mb-1">Address</label>
-          <input value={form.address} onChange={e => setForm({...form, address: e.target.value})} className="input-field" /></div>
-        <div><label className="block text-sm font-medium mb-1">Phone</label>
-          <input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="input-field" /></div>
-        <div className="flex gap-3">
-          <button type="submit" className="btn-primary">Update</button>
-          <button type="button" onClick={() => router.push('/admin/rinks')} className="btn-secondary">Cancel</button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }

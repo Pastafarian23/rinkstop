@@ -1,50 +1,92 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { supabaseAdmin } from '@/lib/supabase';
+import RinksTable from './RinksTable';
 
-export default function AdminRinks() {
-  const [rinks, setRinks] = useState([]);
-  const [loading, setLoading] = useState(true);
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    fetch('/api/rinks').then(r => r.json()).then(d => { setRinks(d || []); setLoading(false); });
-  }, []);
+interface Rink {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  slug: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  created_at: string;
+  updated_at: string;
+}
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this rink?')) return;
-    await fetch(`/api/rinks?id=${id}`, { method: 'DELETE' });
-    setRinks(rinks.filter((r: any) => r.id !== id));
+async function getRinksData(search?: string, state?: string) {
+  let query = supabaseAdmin
+    .from('rinks')
+    .select('id, name, city, state, country, slug, latitude, longitude, created_at, updated_at', { count: 'exact' });
+
+  if (search) {
+    query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
+  }
+  if (state) {
+    query = query.eq('state', state);
+  }
+  query = query.order('name', { ascending: true }).range(0, 999);
+
+  const { data, count } = await query;
+
+  const { data: stateRows } = await supabaseAdmin
+    .from('rinks')
+    .select('state')
+    .not('state', 'is', null)
+    .neq('state', '');
+  const stateSet = new Set<string>((stateRows || []).map((r: any) => r.state).filter(Boolean));
+  const states = Array.from(stateSet).sort();
+
+  return {
+    rinks: (data || []) as unknown as Rink[],
+    total: count || 0,
+    states,
   };
+}
+
+export default async function RinksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; state?: string }>;
+}) {
+  const sp = await searchParams;
+  const search = sp.search?.trim() || '';
+  const state = sp.state || '';
+
+  const { rinks, total, states } = await getRinksData(search, state);
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Manage Rinks</h1>
-        <Link href="/admin/rinks/new" className="btn-primary">+ Add Rink</Link>
+      <h1 className="text-3xl font-bold text-white mb-2">Rinks</h1>
+      <p className="text-slate-400 mb-8">
+        Manage rink metadata, location, and details.
+      </p>
+
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Total Rinks</div>
+          <div className="text-2xl font-bold text-white">{total.toLocaleString()}</div>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Geocoded</div>
+          <div className="text-2xl font-bold text-teal-400">
+            {rinks.filter((r) => r.latitude !== null && r.longitude !== null).length.toLocaleString()}
+          </div>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">States</div>
+          <div className="text-2xl font-bold text-white">{states.length}</div>
+        </div>
       </div>
-      {loading ? <p>Loading...</p> : (
-        <table className="w-full text-sm">
-          <thead><tr className="border-b border-slate-700">
-            <th className="text-left py-2 px-3">Name</th>
-            <th className="text-left py-2 px-3">Location</th>
-            <th className="text-left py-2 px-3">Ice Size</th>
-            <th className="text-right py-2 px-3">Actions</th>
-          </tr></thead>
-          <tbody>
-            {rinks.map((r: any) => (
-              <tr key={r.id} className="border-b border-slate-800 hover:bg-slate-800/50">
-                <td className="py-2 px-3 font-semibold">{r.name}</td>
-                <td className="py-2 px-3 text-slate-400">{r.city}, {r.country}</td>
-                <td className="py-2 px-3 text-slate-400">{r.ice_size}</td>
-                <td className="py-2 px-3 text-right">
-                  <Link href={`/admin/rinks/${r.id}`} className="text-teal-400 mr-3">Edit</Link>
-                  <button onClick={() => handleDelete(r.id)} className="text-red-400 hover:text-red-300">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+
+      <RinksTable
+        initialRinks={rinks}
+        states={states}
+        initialSearch={search}
+        initialState={state}
+      />
     </div>
   );
 }
