@@ -107,20 +107,22 @@ export default async function DataQualityPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Data Quality</h1>
-      <p className="text-slate-400 mb-8">Team league assignments, data integrity triggers, and audit results</p>
+      <div className="page-header">
+        <h1><span aria-hidden="true">✅</span> Data Quality</h1>
+        <p>Team league assignments, data integrity triggers, and audit results</p>
+      </div>
 
       {/* Team summary */}
       <div className="grid grid-cols-3 gap-4 mb-10">
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <div className="admin-card p-5" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">Total Teams</div>
           <div className="text-3xl font-bold text-white">{report.totalTeams.toLocaleString()}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <div className="admin-card p-5" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">With League</div>
           <div className="text-3xl font-bold text-teal-400">{report.teamsWithLeague.toLocaleString()}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+        <div className="admin-card p-5" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">Null League</div>
           <div className={`text-3xl font-bold ${report.teamsWithNullLeague > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
             {report.teamsWithNullLeague.toLocaleString()}
@@ -129,18 +131,20 @@ export default async function DataQualityPage() {
       </div>
 
       {/* League team counts */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden mb-10">
-        <div className="px-6 py-4 border-b border-slate-800">
-          <h2 className="text-lg font-semibold text-white">Teams Per League (vs Expected)</h2>
-          <p className="text-xs text-slate-500 mt-1">Mismatches may indicate teams still need adding or have wrong league assignments</p>
+      <div className="admin-card" style={{ overflow: 'hidden', marginBottom: '2.5rem' }}>
+        <div className="admin-card-header">
+          <div>
+            <h2 className="admin-card-title">Teams Per League (vs Expected)</h2>
+            <p className="text-xs text-slate-500 mt-1">Mismatches may indicate teams still need adding or have wrong league assignments</p>
+          </div>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-800 bg-slate-900/50">
-              <th className="text-left py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">League</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">Current</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">Expected</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">Delta</th>
+            <tr>
+              <th className="text-left py-3 px-6">League</th>
+              <th className="text-right py-3 px-6">Current</th>
+              <th className="text-right py-3 px-6">Expected</th>
+              <th className="text-right py-3 px-6">Delta</th>
             </tr>
           </thead>
           <tbody>
@@ -148,7 +152,7 @@ export default async function DataQualityPage() {
               const delta = l.count - l.expected;
               const deltaClass = delta === 0 ? 'text-teal-400' : delta < 0 ? 'text-amber-400' : 'text-rose-400';
               return (
-                <tr key={l.league} className="border-b border-slate-800/50 hover:bg-slate-800/30">
+                <tr key={l.league}>
                   <td className="py-3 px-6 font-semibold text-white">{l.league}</td>
                   <td className="py-3 px-6 text-right text-slate-300 font-mono">{l.count}</td>
                   <td className="py-3 px-6 text-right text-slate-400 font-mono">{l.expected}</td>
@@ -163,10 +167,12 @@ export default async function DataQualityPage() {
       </div>
 
       {/* Active triggers */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden mb-10">
-        <div className="px-6 py-4 border-b border-slate-800">
-          <h2 className="text-lg font-semibold text-white">Data Integrity Triggers</h2>
-          <p className="text-xs text-slate-500 mt-1">Database-level constraints that prevent bad data from being inserted</p>
+      <div className="admin-card" style={{ overflow: 'hidden', marginBottom: '2.5rem' }}>
+        <div className="admin-card-header">
+          <div>
+            <h2 className="admin-card-title">Data Integrity Triggers</h2>
+            <p className="text-xs text-slate-500 mt-1">Database-level constraints that prevent bad data from being inserted</p>
+          </div>
         </div>
         <div className="divide-y divide-slate-800">
           {report.dataIntegrityTriggers.map((t) => (
@@ -182,7 +188,7 @@ export default async function DataQualityPage() {
                 <div className="font-mono text-sm text-white">{t.name}</div>
                 <div className="text-xs text-slate-400 mt-0.5">{t.description}</div>
               </div>
-              <div className="text-xs font-medium text-teal-400 uppercase tracking-wider">Active</div>
+              <div className="admin-pill admin-pill-success">Active</div>
             </div>
           ))}
         </div>

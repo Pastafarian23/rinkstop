@@ -68,6 +68,7 @@ export default function AdminShell({ email, role, displayName, avatarUrl, childr
 
   return (
     <div
+      data-admin="true"
       style={{
         minHeight: '100vh',
         background: '#0a0a0a',

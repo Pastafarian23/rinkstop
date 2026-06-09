@@ -722,3 +722,328 @@ img  { max-width: 100%; display: block; }
   margin: 1.5rem 0 0.5rem;
   line-height: 1.25;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ADMIN CONSOLE — RinkStop brand re-skin
+   Scoped to [data-admin] (set on AdminShell root). All admin subpages
+   automatically pick up the brand palette even if they still use
+   raw Tailwind utility classes (bg-slate-900, border-slate-800, etc.)
+   This is a 1-file change that re-skins every existing & future
+   admin subpage without touching 30+ files.
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-admin] {
+  --admin-navy: #041E42;
+  --admin-navy-light: #0A2E5C;
+  --admin-red: #C8102E;
+  --admin-gold: #FFB81C;
+  --admin-bg: #0a0a0a;
+  --admin-surface: #141414;
+  --admin-surface-alt: #0f0f0f;
+  --admin-border: #1e1e1e;
+  --admin-border-strong: #2a2a2a;
+  --admin-text: #e2e8f0;
+  --admin-text-muted: #8a8a8a;
+  --admin-text-dim: rgba(255, 255, 255, 0.4);
+  --admin-text-faint: rgba(255, 255, 255, 0.2);
+}
+
+/* Page background + scrollbar */
+[data-admin] body,
+[data-admin] {
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+}
+[data-admin] ::-webkit-scrollbar { width: 10px; height: 10px; }
+[data-admin] ::-webkit-scrollbar-track { background: var(--admin-bg); }
+[data-admin] ::-webkit-scrollbar-thumb { background: var(--admin-border-strong); border-radius: 5px; }
+[data-admin] ::-webkit-scrollbar-thumb:hover { background: var(--admin-navy-light); }
+
+/* Slate background overrides → brand surface */
+[data-admin] .bg-slate-950 { background-color: var(--admin-bg) !important; }
+[data-admin] .bg-slate-900 { background-color: var(--admin-surface) !important; }
+[data-admin] .bg-slate-800 { background-color: var(--admin-surface-alt) !important; }
+[data-admin] .bg-slate-700 { background-color: #1f1f1f !important; }
+[data-admin] .bg-slate-600 { background-color: #2a2a2a !important; }
+
+/* Navy variants used elsewhere */
+[data-admin] .bg-gray-900 { background-color: var(--admin-surface) !important; }
+[data-admin] .bg-gray-800 { background-color: var(--admin-surface-alt) !important; }
+[data-admin] .bg-gray-950 { background-color: var(--admin-bg) !important; }
+[data-admin] .bg-zinc-900 { background-color: var(--admin-surface) !important; }
+[data-admin] .bg-zinc-800 { background-color: var(--admin-surface-alt) !important; }
+[data-admin] .bg-zinc-950 { background-color: var(--admin-bg) !important; }
+[data-admin] .bg-neutral-900 { background-color: var(--admin-surface) !important; }
+[data-admin] .bg-neutral-800 { background-color: var(--admin-surface-alt) !important; }
+
+/* Border overrides → brand border */
+[data-admin] .border-slate-800,
+[data-admin] .border-slate-700,
+[data-admin] .border-gray-800,
+[data-admin] .border-gray-700,
+[data-admin] .border-zinc-800,
+[data-admin] .border-zinc-700,
+[data-admin] .border-neutral-800,
+[data-admin] .border-neutral-700 { border-color: var(--admin-border) !important; }
+[data-admin] .border-slate-600,
+[data-admin] .border-gray-600,
+[data-admin] .border-zinc-600,
+[data-admin] .border-neutral-600 { border-color: var(--admin-border-strong) !important; }
+[data-admin] .border-slate-500 { border-color: var(--admin-border-strong) !important; }
+
+/* Text overrides */
+[data-admin] .text-white { color: #fff !important; }
+[data-admin] .text-slate-100,
+[data-admin] .text-gray-100,
+[data-admin] .text-zinc-100 { color: #fff !important; }
+[data-admin] .text-slate-200,
+[data-admin] .text-slate-300,
+[data-admin] .text-gray-200,
+[data-admin] .text-gray-300,
+[data-admin] .text-zinc-200,
+[data-admin] .text-zinc-300 { color: var(--admin-text) !important; }
+[data-admin] .text-slate-400,
+[data-admin] .text-gray-400,
+[data-admin] .text-zinc-400 { color: var(--admin-text-muted) !important; }
+[data-admin] .text-slate-500,
+[data-admin] .text-gray-500,
+[data-admin] .text-zinc-500 { color: rgba(255, 255, 255, 0.55) !important; }
+[data-admin] .text-slate-600,
+[data-admin] .text-gray-600,
+[data-admin] .text-zinc-600 { color: rgba(255, 255, 255, 0.4) !important; }
+
+/* Brand color utility overrides (so teal-400 accent → RinkStop gold) */
+[data-admin] .text-teal-400 { color: var(--admin-gold) !important; }
+[data-admin] .text-teal-300 { color: #ffd466 !important; }
+[data-admin] .text-teal-500 { color: #e6a318 !important; }
+[data-admin] .bg-teal-400 { background-color: var(--admin-gold) !important; }
+[data-admin] .bg-teal-500,
+[data-admin] .bg-teal-600 { background-color: #e6a318 !important; }
+[data-admin] .bg-teal-900 { background-color: rgba(255, 184, 28, 0.12) !important; }
+[data-admin] .border-teal-400 { border-color: var(--admin-gold) !important; }
+[data-admin] .border-teal-500 { border-color: #e6a318 !important; }
+[data-admin] .border-teal-800 { border-color: rgba(255, 184, 28, 0.2) !important; }
+
+/* Red brand overrides — keep C8102E feel */
+[data-admin] .bg-red-600 { background-color: var(--admin-red) !important; }
+[data-admin] .bg-red-700,
+[data-admin] .bg-red-800 { background-color: #a00d24 !important; }
+[data-admin] .bg-red-900 { background-color: rgba(200, 16, 46, 0.15) !important; }
+[data-admin] .text-red-400 { color: #ff5570 !important; }
+[data-admin] .text-red-500 { color: #e8213f !important; }
+[data-admin] .text-red-600 { color: var(--admin-red) !important; }
+[data-admin] .border-red-500,
+[data-admin] .border-red-600 { border-color: var(--admin-red) !important; }
+[data-admin] .border-red-800 { border-color: rgba(200, 16, 46, 0.3) !important; }
+
+/* Blue overrides → navy accent (avoid competing with gold) */
+[data-admin] .text-blue-400 { color: #6ba6ff !important; }
+[data-admin] .text-blue-500 { color: #4d8eff !important; }
+[data-admin] .bg-blue-600 { background-color: var(--admin-navy) !important; }
+[data-admin] .bg-blue-900 { background-color: rgba(4, 30, 66, 0.5) !important; }
+[data-admin] .border-blue-500 { border-color: #1d4ed8 !important; }
+
+/* Success / warning / error status helpers (use sparingly) */
+[data-admin] .text-green-400,
+[data-admin] .text-emerald-400 { color: #4ade80 !important; }
+[data-admin] .bg-green-500,
+[data-admin] .bg-green-600 { background-color: #22c55e !important; }
+[data-admin] .text-yellow-400,
+[data-admin] .text-amber-400 { color: #f59e0b !important; }
+[data-admin] .text-orange-400 { color: #fb923c !important; }
+
+/* Input / form controls */
+[data-admin] input,
+[data-admin] textarea,
+[data-admin] select {
+  background-color: var(--admin-surface-alt) !important;
+  border-color: var(--admin-border-strong) !important;
+  color: var(--admin-text) !important;
+}
+[data-admin] input::placeholder,
+[data-admin] textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+[data-admin] input:focus,
+[data-admin] textarea:focus,
+[data-admin] select:focus {
+  border-color: var(--admin-gold) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 184, 28, 0.15) !important;
+}
+[data-admin] label {
+  color: var(--admin-text) !important;
+}
+
+/* Buttons: brand up the standard teal-400 cta pattern */
+[data-admin] a[class*="bg-teal-400"],
+[data-admin] button[class*="bg-teal-400"] {
+  background-color: var(--admin-gold) !important;
+  color: var(--admin-navy) !important;
+  font-weight: 600;
+}
+[data-admin] a[class*="bg-teal-400"]:hover,
+[data-admin] button[class*="bg-teal-400"]:hover {
+  background-color: #ffd466 !important;
+}
+
+/* Links: gold underline on hover */
+[data-admin] a:not([class*="bg-"]):not([class*="border-"]):hover {
+  color: var(--admin-gold);
+}
+
+/* Page header pattern (encouraged for new subpages) */
+[data-admin] .page-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+[data-admin] .page-header h1 {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.85rem;
+  letter-spacing: 0.04em;
+  color: #fff;
+  margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+[data-admin] .page-header p {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Card pattern */
+[data-admin] .admin-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+[data-admin] .admin-card-header {
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--admin-border);
+  background: rgba(4, 30, 66, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+[data-admin] .admin-card-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  color: #fff;
+  margin: 0;
+}
+
+/* Admin button — gold CTA used across subpages */
+[data-admin] .admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+[data-admin] .admin-btn-primary {
+  background: var(--admin-gold);
+  color: var(--admin-navy);
+  border-color: var(--admin-gold);
+}
+[data-admin] .admin-btn-primary:hover {
+  background: #ffd466;
+  border-color: #ffd466;
+}
+[data-admin] .admin-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--admin-text);
+  border-color: var(--admin-border-strong);
+}
+[data-admin] .admin-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--admin-text-muted);
+}
+[data-admin] .admin-btn-danger {
+  background: var(--admin-red);
+  color: #fff;
+  border-color: var(--admin-red);
+}
+[data-admin] .admin-btn-danger:hover {
+  background: #a00d24;
+  border-color: #a00d24;
+}
+
+/* Admin table — best-effort restyle of Tailwind table layouts */
+[data-admin] table thead {
+  background: rgba(4, 30, 66, 0.3) !important;
+}
+[data-admin] table thead th {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+}
+[data-admin] table tbody {
+  color: var(--admin-text) !important;
+}
+[data-admin] table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+[data-admin] table tbody tr:hover {
+  background: rgba(255, 184, 28, 0.04) !important;
+}
+
+/* Status pills (use these in subpages instead of raw bg-X-900) */
+[data-admin] .admin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+[data-admin] .admin-pill-success {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.25);
+}
+[data-admin] .admin-pill-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+[data-admin] .admin-pill-error {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.25);
+}
+[data-admin] .admin-pill-info {
+  background: rgba(107, 166, 255, 0.12);
+  color: #6ba6ff;
+  border-color: rgba(107, 166, 255, 0.25);
+}
+[data-admin] .admin-pill-neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  border-color: var(--admin-border-strong);
+}
+
+/* H1 default inside admin (when authors forget to add page-header class) */
+[data-admin] h1 {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 0.04em;
+}

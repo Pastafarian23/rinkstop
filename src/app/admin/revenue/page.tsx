@@ -27,10 +27,10 @@ export default async function RevenuePage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Revenue</h1>
-      <p className="text-slate-400 mb-8">
-        Stripe-backed snapshot of subscriptions, MRR, churn, and recent events.
-      </p>
+      <div className="page-header">
+        <h1><span aria-hidden="true">💰</span> Revenue</h1>
+        <p>Stripe-backed snapshot of subscriptions, MRR, churn, and recent events.</p>
+      </div>
 
       <RevenueDashboard initial={initial} />
     </div>

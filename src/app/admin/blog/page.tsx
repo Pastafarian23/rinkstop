@@ -36,11 +36,12 @@ export default function BlogPostsAdmin() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-white">Blog Posts</h1>
-        <Link href="/admin/blog/new" className="btn-primary text-sm px-4 py-2">
-          + New Post
-        </Link>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h1><span aria-hidden="true">✍️</span> Blog Posts</h1>
+          <p>Published and draft posts. Edit, preview, or create new content.</p>
+        </div>
+        <Link href="/admin/blog/new" className="admin-btn admin-btn-primary">+ New Post</Link>
       </div>
 
       {posts.length === 0 ? (
@@ -50,7 +51,7 @@ export default function BlogPostsAdmin() {
       ) : (
         <div className="space-y-3">
           {posts.map((post) => (
-            <div key={post.id} className="flex items-center justify-between p-4 bg-slate-900/60 rounded-lg border border-slate-800">
+            <div key={post.id} className="admin-card flex items-center justify-between p-4" style={{ marginBottom: '0.75rem' }}>
               <div>
                 <Link href={`/admin/blog/${post.slug}`} className="text-white font-medium hover:text-teal-400 transition-colors">
                   {post.title}
@@ -62,10 +63,10 @@ export default function BlogPostsAdmin() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link href={`/admin/blog/${post.slug}`} className="text-slate-400 hover:text-teal-400 text-sm px-3 py-1 border border-slate-700 rounded hover:border-teal-500 transition-colors">
+                <Link href={`/admin/blog/${post.slug}`} className="admin-btn admin-btn-secondary">
                   Edit
                 </Link>
-                <a href={`/blog/${post.slug}`} target="_blank" rel="noopener" className="text-slate-400 hover:text-teal-400 text-sm px-3 py-1 border border-slate-700 rounded hover:border-teal-500 transition-colors">
+                <a href={`/blog/${post.slug}`} target="_blank" rel="noopener" className="admin-btn admin-btn-secondary">
                   Preview
                 </a>
               </div>

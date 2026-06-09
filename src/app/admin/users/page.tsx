@@ -94,28 +94,28 @@ export default async function UsersPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Users</h1>
-      <p className="text-slate-400 mb-8">
-        Manage user roles and view subscription status. Source of truth: Clerk publicMetadata.role.
-      </p>
+      <div className="page-header">
+        <h1><span aria-hidden="true">👥</span> Users</h1>
+        <p>Manage user roles and view subscription status. Source of truth: Clerk publicMetadata.role.</p>
+      </div>
 
       {summary && (
         <div className="grid grid-cols-4 gap-4 mb-8">
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div className="admin-card p-4" style={{ marginBottom: 0 }}>
             <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Total Users</div>
             <div className="text-2xl font-bold text-white">{summary.totalUsers.toLocaleString()}</div>
           </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div className="admin-card p-4" style={{ marginBottom: 0 }}>
             <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Admins</div>
             <div className={`text-2xl font-bold ${summary.admins > 0 ? 'text-teal-400' : 'text-slate-500'}`}>
               {summary.admins.toLocaleString()}
             </div>
           </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div className="admin-card p-4" style={{ marginBottom: 0 }}>
             <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Active Subs</div>
             <div className="text-2xl font-bold text-white">{summary.activeSubs.toLocaleString()}</div>
           </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div className="admin-card p-4" style={{ marginBottom: 0 }}>
             <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Founding</div>
             <div className="text-2xl font-bold text-amber-400">{summary.foundingMembers.toLocaleString()}</div>
           </div>

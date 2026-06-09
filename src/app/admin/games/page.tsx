@@ -86,40 +86,42 @@ export default async function GamesPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Games</h1>
-      <p className="text-slate-400 mb-8">Most recent 100 fixtures across all leagues</p>
+      <div className="page-header">
+        <h1><span aria-hidden="true">🎮</span> Games</h1>
+        <p>Most recent 100 fixtures across all leagues</p>
+      </div>
 
       {/* Quick stats */}
       <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div className="admin-card p-4" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Total</div>
           <div className="text-2xl font-bold text-white">{games.length}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div className="admin-card p-4" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Completed</div>
           <div className="text-2xl font-bold text-teal-400">{completed.length}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div className="admin-card p-4" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Phantoms</div>
           <div className={`text-2xl font-bold ${phantoms.length > 0 ? 'text-amber-400' : 'text-slate-500'}`}>{phantoms.length}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <div className="admin-card p-4" style={{ marginBottom: 0 }}>
           <div className="text-xs uppercase tracking-wider text-slate-500 mb-1">Orphans</div>
           <div className={`text-2xl font-bold ${orphans.length > 0 ? 'text-rose-400' : 'text-slate-500'}`}>{orphans.length}</div>
         </div>
       </div>
 
       {/* Games table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+      <div className="admin-card" style={{ overflow: 'hidden' }}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-800 bg-slate-900/50">
-              <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">League</th>
-              <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Matchup</th>
-              <th className="text-right py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Score</th>
-              <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Status</th>
-              <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Scheduled</th>
-              <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Flags</th>
+            <tr>
+              <th className="text-left py-3 px-4">League</th>
+              <th className="text-left py-3 px-4">Matchup</th>
+              <th className="text-right py-3 px-4">Score</th>
+              <th className="text-left py-3 px-4">Status</th>
+              <th className="text-left py-3 px-4">Scheduled</th>
+              <th className="text-left py-3 px-4">Flags</th>
             </tr>
           </thead>
           <tbody>
@@ -127,7 +129,7 @@ export default async function GamesPage() {
               const phantom = isPhantom(g);
               const orphan = isOrphan(g);
               return (
-                <tr key={g.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                <tr key={g.id}>
                   <td className="py-2 px-4 text-slate-400 text-xs">{g.league_name}</td>
                   <td className="py-2 px-4 text-white">
                     <div className="font-medium">{g.away_team_name}</div>
@@ -139,10 +141,10 @@ export default async function GamesPage() {
                       : '—'}
                   </td>
                   <td className="py-2 px-4">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                    <span className={`admin-pill ${
                       g.status === 'completed' || g.status === 'final'
-                        ? 'bg-teal-400/10 text-teal-400'
-                        : 'bg-slate-700 text-slate-300'
+                        ? 'admin-pill-success'
+                        : 'admin-pill-neutral'
                     }`}>
                       {g.status}
                     </span>
@@ -153,14 +155,10 @@ export default async function GamesPage() {
                   <td className="py-2 px-4">
                     <div className="flex gap-1">
                       {phantom && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-400/10 text-amber-400 px-1.5 py-0.5 rounded">
-                          Phantom
-                        </span>
+                        <span className="admin-pill admin-pill-warning">Phantom</span>
                       )}
                       {orphan && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-400/10 text-rose-400 px-1.5 py-0.5 rounded">
-                          Orphan
-                        </span>
+                        <span className="admin-pill admin-pill-error">Orphan</span>
                       )}
                     </div>
                   </td>
