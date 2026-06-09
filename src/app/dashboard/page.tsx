@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
+import QuickActionsGrid from '@/components/QuickActionsGrid';
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -145,36 +146,7 @@ export default async function DashboardPage() {
         <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 1.25rem' }}>
           QUICK ACTIONS
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          {quickLinks.map(({ href, label, icon, desc }) => (
-            <Link
-              key={href}
-              href={href}
-              style={{
-                display: 'block',
-                padding: '1.25rem',
-                borderRadius: 8,
-                border: '1px solid #1e1e1e',
-                textDecoration: 'none',
-                color: 'inherit',
-                background: '#141414',
-                transition: 'border-color 0.2s, transform 0.15s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#C8102E';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = '#1e1e1e';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <span style={{ fontSize: '1.5rem' }}>{icon}</span>
-              <div style={{ fontWeight: 600, color: '#fff', marginTop: '0.5rem', fontSize: '0.95rem' }}>{label}</div>
-              <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '0.25rem', lineHeight: 1.5 }}>{desc}</div>
-            </Link>
-          ))}
-        </div>
+        <QuickActionsGrid links={quickLinks} />
       </div>
 
       {/* Founding Member upsell */}

@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import FavoriteItem from '@/components/FavoriteItem';
 
 export default async function FavoritesPage() {
   const { userId } = await auth();
@@ -117,33 +118,16 @@ export default async function FavoritesPage() {
                   {type === 'rink' ? '⛸️ RINKS' : type === 'team' ? '🏆 TEAMS' : '🏒 PLAYERS'} — {items.length}
                 </h3>
                 {items.map(f => (
-                  <Link
+                  <FavoriteItem
                     key={f.id}
-                    href={getHref(f)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      padding: '1rem 1.25rem',
-                      background: '#0f0f0f',
-                      border: '1px solid #1e1e1e',
-                      borderRadius: 8,
-                      textDecoration: 'none',
-                      color: 'inherit',
-                      transition: 'border-color 0.15s',
+                    favorite={{
+                      id: f.id,
+                      href: getHref(f),
+                      icon: getIcon(f.favorite_type),
+                      name: getName(f),
+                      createdAt: f.created_at,
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#C8102E'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; }}
-                  >
-                    <span style={{ fontSize: '1.25rem' }}>{getIcon(f.favorite_type)}</span>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>{getName(f)}</p>
-                      <p style={{ color: '#555', fontSize: '0.75rem', margin: '0.2rem 0 0' }}>
-                        Saved {new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <span style={{ color: '#333', fontSize: '1rem' }}>→</span>
-                  </Link>
+                  />
                 ))}
               </div>
             );
