@@ -1,5 +1,5 @@
-import { SignIn, SignUp } from '@clerk/nextjs';
-import styles from './login.module.css';
+import { SignIn } from '@clerk/nextjs';
+import styles from '../login.module.css';
 
 export default function LoginPage() {
   return (
@@ -10,7 +10,7 @@ export default function LoginPage() {
           <p className={styles.subtitle}>Access your dashboard, saved players, and more.</p>
         </div>
         <div className={styles.clerkWrap}>
-          <SignIn />
+          <SignIn path="/login" routing="path" signUpUrl="/sign-up" />
         </div>
       </div>
     </div>
