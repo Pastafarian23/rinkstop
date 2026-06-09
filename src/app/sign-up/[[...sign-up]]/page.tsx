@@ -1,5 +1,5 @@
 import { SignUp } from '@clerk/nextjs';
-import styles from '../login/login.module.css';
+import styles from '../../login/login.module.css';
 
 export default function SignUpPage() {
   return (
@@ -10,7 +10,7 @@ export default function SignUpPage() {
           <p className={styles.subtitle}>Create your free account. Verified profiles, saved favorites, and more.</p>
         </div>
         <div className={styles.clerkWrap}>
-          <SignUp />
+          <SignUp path="/sign-up" routing="path" signInUrl="/login" />
         </div>
       </div>
     </div>
