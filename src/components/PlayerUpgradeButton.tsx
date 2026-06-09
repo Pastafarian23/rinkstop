@@ -295,7 +295,7 @@ export function PlayerUpgradeButton({ playerId, currentTier, playerName }: Upgra
         </div>
 
         <p style={{ fontSize: '0.6875rem', color: '#444', textAlign: 'center' }}>
-          Secure checkout via Stripe. Cancel anytime. No refunds after 7 days.
+          Secure checkout via Stripe. To change or cancel your membership, email <a href="mailto:support@rinkstop.com" style={{ color: '#666', textDecoration: 'underline' }}>support@rinkstop.com</a>.
         </p>
       </div>
     </div>
