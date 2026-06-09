@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import Link from 'next/link';
+import styles from './admin.module.css';
 
 interface LeagueCoverage {
   league: string;
@@ -27,7 +28,6 @@ interface CoverageResponse {
 export const dynamic = 'force-dynamic';
 
 async function getCoverage(): Promise<CoverageResponse> {
-  // Get all leagues
   const { data: leagues } = await supabaseAdmin
     .from('leagues')
     .select('id, name, slug')
@@ -99,85 +99,148 @@ async function getCoverage(): Promise<CoverageResponse> {
   };
 }
 
+function coverageClass(pct: number): string {
+  if (pct >= 90) return styles.coverageFillGood;
+  if (pct >= 70) return styles.coverageFillMid;
+  return styles.coverageFillBad;
+}
+
 export default async function AdminOverview() {
   const data = await getCoverage();
   const { summary, coverage } = data;
 
   const stats = [
-    { label: 'Total Fixtures', value: summary.totalFixtures.toLocaleString(), color: 'text-white' },
-    { label: 'With Scores', value: `${summary.totalWithScores.toLocaleString()} (${summary.pct}%)`, color: 'text-teal-400' },
-    { label: 'Phantoms', value: summary.totalPhantoms.toLocaleString(), color: summary.totalPhantoms > 0 ? 'text-amber-400' : 'text-slate-500' },
-    { label: 'Orphans', value: summary.totalOrphans.toLocaleString(), color: summary.totalOrphans > 0 ? 'text-rose-400' : 'text-slate-500' },
+    {
+      label: 'Total Fixtures',
+      value: summary.totalFixtures.toLocaleString(),
+      tone: styles.statValue,
+    },
+    {
+      label: 'With Scores',
+      value: `${summary.totalWithScores.toLocaleString()} (${summary.pct}%)`,
+      tone: summary.pct >= 90 ? styles.statValueGood : summary.pct >= 70 ? styles.statValueWarn : styles.statValueBad,
+    },
+    {
+      label: 'Phantoms',
+      value: summary.totalPhantoms.toLocaleString(),
+      tone: summary.totalPhantoms > 0 ? styles.statValueWarn : styles.statValueMuted,
+    },
+    {
+      label: 'Orphans',
+      value: summary.totalOrphans.toLocaleString(),
+      tone: summary.totalOrphans > 0 ? styles.statValueBad : styles.statValueMuted,
+    },
+  ];
+
+  const quickLinks = [
+    { href: '/admin/teams', icon: '🏒', label: 'Teams', hint: 'Manage teams across leagues' },
+    { href: '/admin/rinks', icon: '🏟️', label: 'Rinks', hint: 'Rinks & facilities' },
+    { href: '/admin/users', icon: '👥', label: 'Users', hint: 'Members, roles, super admin' },
+    { href: '/admin/games', icon: '🎮', label: 'Games', hint: 'Live & upcoming games' },
+    { href: '/admin/blog', icon: '✍️', label: 'Blog', hint: 'Posts & drafts' },
+    { href: '/admin/revenue', icon: '💰', label: 'Revenue', hint: 'Subscriptions & affiliates' },
+    { href: '/admin/cron-health', icon: '⏰', label: 'Cron Health', hint: 'Background jobs status' },
+    { href: '/admin/data-quality', icon: '✅', label: 'Data Quality', hint: 'Phantoms, orphans, gaps' },
   ];
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Admin Overview</h1>
-      <p className="text-slate-400 mb-8">RinkStop system health at a glance</p>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>
+          <span aria-hidden="true">📊</span> Admin Overview
+        </h1>
+        <p className={styles.pageSubtitle}>RinkStop system health at a glance</p>
+      </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-4 mb-10">
+      <div className={styles.statGrid}>
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-slate-900 border border-slate-800 rounded-lg p-5">
-            <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">{stat.label}</div>
-            <div className={`text-3xl font-bold ${stat.color}`}>{stat.value}</div>
+          <div key={stat.label} className={styles.statCard}>
+            <div className={styles.statLabel}>{stat.label}</div>
+            <div className={`${styles.statValue} ${stat.tone}`}>{stat.value}</div>
           </div>
         ))}
       </div>
 
+      {/* Quick links */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle}>Quick Actions</h2>
+        </div>
+        <div style={{ padding: '1rem 1.25rem' }}>
+          <div className={styles.quickGrid}>
+            {quickLinks.map((q) => (
+              <Link key={q.href} href={q.href} className={styles.quickTile}>
+                <div className={styles.quickTileIcon} aria-hidden="true">
+                  {q.icon}
+                </div>
+                <div className={styles.quickTileText}>
+                  <span className={styles.quickTileLabel}>{q.label}</span>
+                  <span className={styles.quickTileHint}>{q.hint}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* League coverage */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">League Coverage</h2>
-          <Link href="/admin/data-quality" className="text-sm text-teal-400 hover:text-teal-300">
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle}>League Coverage</h2>
+          <Link href="/admin/data-quality" className={styles.cardAction}>
             View details →
           </Link>
         </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-800 bg-slate-900/50">
-              <th className="text-left py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">League</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">Total</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">With Scores</th>
-              <th className="text-left py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider w-64">Coverage</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">Scheduled</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">Phantoms</th>
-              <th className="text-right py-3 px-6 text-slate-500 font-medium uppercase text-xs tracking-wider">Orphans</th>
-            </tr>
-          </thead>
-          <tbody>
-            {coverage.map((c) => (
-              <tr key={c.leagueId} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                <td className="py-3 px-6 font-semibold text-white">{c.league}</td>
-                <td className="py-3 px-6 text-right text-slate-300 font-mono">{c.total.toLocaleString()}</td>
-                <td className="py-3 px-6 text-right text-teal-400 font-mono">{c.withScores.toLocaleString()}</td>
-                <td className="py-3 px-6">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          c.pct >= 90 ? 'bg-teal-400' : c.pct >= 70 ? 'bg-amber-400' : 'bg-rose-400'
-                        }`}
-                        style={{ width: `${c.pct}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-slate-400 font-mono w-10 text-right">{c.pct}%</span>
-                  </div>
-                </td>
-                <td className="py-3 px-6 text-right text-slate-400 font-mono">{c.scheduled.toLocaleString()}</td>
-                <td className={`py-3 px-6 text-right font-mono ${c.phantomCount > 0 ? 'text-amber-400' : 'text-slate-600'}`}>
-                  {c.phantomCount.toLocaleString()}
-                </td>
-                <td className={`py-3 px-6 text-right font-mono ${c.orphans > 0 ? 'text-rose-400' : 'text-slate-600'}`}>
-                  {c.orphans.toLocaleString()}
-                </td>
+        <div style={{ overflowX: 'auto' }}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>League</th>
+                <th style={{ textAlign: 'right' }}>Total</th>
+                <th style={{ textAlign: 'right' }}>With Scores</th>
+                <th>Coverage</th>
+                <th style={{ textAlign: 'right' }}>Scheduled</th>
+                <th style={{ textAlign: 'right' }}>Phantoms</th>
+                <th style={{ textAlign: 'right' }}>Orphans</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {coverage.map((c) => (
+                <tr key={c.leagueId}>
+                  <td className={styles.leagueCell}>{c.league}</td>
+                  <td className={styles.numCell}>{c.total.toLocaleString()}</td>
+                  <td className={`${styles.numCell} ${c.withScores > 0 ? styles.statValueGood : styles.statValueMuted}`}>
+                    {c.withScores.toLocaleString()}
+                  </td>
+                  <td>
+                    <div className={styles.coverageBar}>
+                      <div className={styles.coverageTrack}>
+                        <div
+                          className={`${styles.coverageFill} ${coverageClass(c.pct)}`}
+                          style={{ width: `${c.pct}%` }}
+                        />
+                      </div>
+                      <span className={styles.coveragePct}>{c.pct}%</span>
+                    </div>
+                  </td>
+                  <td className={`${styles.numCell} ${c.scheduled > 0 ? '' : styles.statValueMuted}`}>
+                    {c.scheduled.toLocaleString()}
+                  </td>
+                  <td className={`${styles.numCell} ${c.phantomCount > 0 ? styles.statValueWarn : styles.statValueMuted}`}>
+                    {c.phantomCount.toLocaleString()}
+                  </td>
+                  <td className={`${styles.numCell} ${c.orphans > 0 ? styles.statValueBad : styles.statValueMuted}`}>
+                    {c.orphans.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div className="mt-6 text-xs text-slate-500 text-right">
+      <div className={styles.pageFooter}>
         Last updated: {new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
       </div>
     </div>
