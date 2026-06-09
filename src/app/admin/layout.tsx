@@ -9,8 +9,8 @@ const NAV = [
   { href: '/admin/users', label: 'Users', icon: '👥' },
   { href: '/admin/games', label: 'Games', icon: '🎮' },
   { href: '/admin/data-quality', label: 'Data Quality', icon: '✅' },
-  { href: '/admin/revenue', label: 'Revenue', icon: '💰', disabled: true, badge: 'Phase 5' },
-  { href: '/admin/cron-health', label: 'Cron Health', icon: '⏰', disabled: true, badge: 'Phase 5' },
+  { href: '/admin/revenue', label: 'Revenue', icon: '💰' },
+  { href: '/admin/cron-health', label: 'Cron Health', icon: '⏰' },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -31,24 +31,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {NAV.map((item) => (
             <Link
               key={item.href}
-              href={item.disabled ? '#' : item.href}
-              className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                item.disabled
-                  ? 'text-slate-600 cursor-not-allowed'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-              aria-disabled={item.disabled}
-              onClick={(e) => item.disabled && e.preventDefault()}
+              href={item.href}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
             >
-              <span className="flex items-center gap-3">
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </span>
-              {item.badge && (
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
-                  {item.badge}
-                </span>
-              )}
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
