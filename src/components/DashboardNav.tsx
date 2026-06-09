@@ -11,27 +11,33 @@ type NavLink = {
 export default function DashboardNav({ links }: { links: NavLink[] }) {
   return (
     <div style={{ display: 'flex', gap: 0, overflowX: 'auto', paddingBottom: 0 }}>
-      {links.map(({ href, label, badge }) => (
+      {links.map(({ href, label, badge }) => {
+        const isAdmin = href === '/admin';
+        return (
         <Link
           key={href}
           href={href}
+          data-testid={`dashboard-nav-link-${href.replace(/\//g, '-')}`}
           style={{
             padding: '0.75rem 1.25rem',
-            color: 'rgba(255,255,255,0.5)',
+            color: isAdmin ? '#FFB81C' : 'rgba(255,255,255,0.5)',
             fontSize: '0.875rem',
+            fontWeight: isAdmin ? 700 : 400,
             textDecoration: 'none',
-            borderBottom: '2px solid transparent',
+            borderBottom: isAdmin ? '2px solid #FFB81C' : '2px solid transparent',
             whiteSpace: 'nowrap',
             transition: 'color 0.15s, border-color 0.15s',
             position: 'relative',
+            letterSpacing: isAdmin ? '0.04em' : 'normal',
+            textTransform: isAdmin ? 'uppercase' : 'none',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.color = '#fff';
-            e.currentTarget.style.borderBottomColor = '#C8102E';
+            e.currentTarget.style.color = isAdmin ? '#ffd466' : '#fff';
+            e.currentTarget.style.borderBottomColor = isAdmin ? '#ffd466' : '#C8102E';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
-            e.currentTarget.style.borderBottomColor = 'transparent';
+            e.currentTarget.style.color = isAdmin ? '#FFB81C' : 'rgba(255,255,255,0.5)';
+            e.currentTarget.style.borderBottomColor = isAdmin ? '#FFB81C' : 'transparent';
           }}
         >
           {label}
@@ -56,7 +62,8 @@ export default function DashboardNav({ links }: { links: NavLink[] }) {
             </span>
           ) : null}
         </Link>
-      ))}
+        );
+      })}
     </div>
   );
 }

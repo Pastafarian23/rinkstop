@@ -71,7 +71,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // Silently degrade — nav still works, just no badges.
   }
 
-  const navLinks: Array<[string, string, number?]> = [
+  // Admin tab appears FIRST in the nav (gold-accented) so it's never scrolled
+  // off the right edge of the horizontal nav. The header also has a prominent
+  // gold Admin button for desktop users.
+  const navLinks: Array<[string, string, number?]> = [];
+  if (isAdmin) {
+    navLinks.push(['/admin', '🛡️ Admin']);
+  }
+  navLinks.push(
     ['/dashboard', 'Overview'],
     ['/dashboard/connections', 'Connections', pendingConnectionCount],
     ['/dashboard/messages', 'Messages', unreadMessageCount],
@@ -82,10 +89,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ['/dashboard/leads', 'Leads'],
     ['/dashboard/subscription', 'Subscription'],
     ['/dashboard/support', 'Support'],
-  ];
-  if (isAdmin) {
-    navLinks.push(['/admin', 'Admin']);
-  }
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
@@ -126,6 +130,30 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {isAdmin ? (
+                <Link
+                  href="/admin"
+                  data-testid="header-admin-link"
+                  style={{
+                    background: 'linear-gradient(135deg, #FFB81C 0%, #e6a318 100%)',
+                    color: '#041E42',
+                    padding: '0.5rem 1rem',
+                    borderRadius: 6,
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    border: '1px solid #FFB81C',
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    boxShadow: '0 2px 8px rgba(255,184,28,0.25)',
+                  }}
+                >
+                  🛡️ Admin
+                </Link>
+              ) : null}
               <Link
                 href="/"
                 style={{
