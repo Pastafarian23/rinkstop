@@ -88,9 +88,13 @@ export default async function DashboardPage() {
                   border: '1px solid rgba(255,184,28,0.4)',
                 }}>⭐ Founding</span>
               )}
-              {profile?.tier === 'free' && (
+              {profile?.tier === 'free' ? (
                 <Link href="/founding-member" style={{ fontSize: 11, color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
                   ✨ Upgrade →
+                </Link>
+              ) : (
+                <Link href="/dashboard/subscription" style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textDecoration: 'none', fontWeight: 600 }}>
+                  Manage subscription →
                 </Link>
               )}
             </div>
