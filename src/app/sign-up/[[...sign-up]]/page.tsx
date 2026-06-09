@@ -10,7 +10,13 @@ export default function SignUpPage() {
           <p className={styles.subtitle}>Create your free account. Verified profiles, saved favorites, and more.</p>
         </div>
         <div className={styles.clerkWrap}>
-          <SignUp path="/sign-up" routing="path" signInUrl="/login" />
+          <SignUp
+            path="/sign-up"
+            routing="path"
+            signInUrl="/login"
+            forceRedirectUrl="/dashboard"
+            fallbackRedirectUrl="/dashboard"
+          />
         </div>
       </div>
     </div>

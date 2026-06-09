@@ -10,7 +10,13 @@ export default function LoginPage() {
           <p className={styles.subtitle}>Access your dashboard, saved players, and more.</p>
         </div>
         <div className={styles.clerkWrap}>
-          <SignIn path="/login" routing="path" signUpUrl="/sign-up" />
+          <SignIn
+            path="/login"
+            routing="path"
+            signUpUrl="/sign-up"
+            forceRedirectUrl="/dashboard"
+            fallbackRedirectUrl="/dashboard"
+          />
         </div>
       </div>
     </div>
