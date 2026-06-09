@@ -45,6 +45,7 @@ export default async function DashboardPage() {
 
   const quickLinks = [
     { href: '/dashboard/profile', label: 'Edit Profile', icon: '👤', desc: 'Update your name, avatar & contact info' },
+    { href: `/u/${userId}`, label: 'View Public Profile', icon: '👁️', desc: 'See how your profile appears to others' },
     { href: '/dashboard/reviews', label: 'My Reviews', icon: '⭐', desc: 'View and manage your submitted reviews' },
     { href: '/dashboard/favorites', label: 'Saved Items', icon: '❤️', desc: 'Players, teams and rinks you\'ve saved' },
     { href: '/dashboard/claims', label: 'Claim a Profile', icon: '✅', desc: 'Request ownership of a listing' },

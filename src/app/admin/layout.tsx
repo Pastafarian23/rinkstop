@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/admin-auth';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
+import { userButtonAppearance } from '@/lib/clerk-appearance';
 
 const NAV = [
   { href: '/admin', label: 'Overview', icon: '📊' },
@@ -46,7 +47,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <div className="text-sm font-medium text-white truncate">{admin.email}</div>
               <div className="text-xs text-teal-400 capitalize">{admin.role.replace('_', ' ')}</div>
             </div>
-            <UserButton />
           </div>
         </div>
       </aside>
