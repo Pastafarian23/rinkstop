@@ -4,8 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import NavLinks from '@/components/NavLinks';
-import SignUpButton from '@/components/SignUpButton';
-import SignInLink from '@/components/SignInLink';
+import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import ScoreTicker from '@/components/ScoreTicker';
@@ -146,10 +145,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {/* Desktop links */}
                 <NavLinks />
 
-                {/* Desktop right */}
+                {/* Desktop right — shows Sign In/Up when signed out, Dashboard+avatar when signed in */}
                 <div className="nav-right">
-                  <SignInLink />
-                  <SignUpButton />
+                  <NavAuth />
                 </div>
 
                 {/* Mobile hamburger  --  label toggles checkbox */}
