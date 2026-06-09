@@ -85,6 +85,75 @@ export const userButtonAppearance = {
  * `variables` so they cascade to all input elements; explicit `elements`
  * overrides handle the OTP code field which has its own custom structure.
  */
+/**
+ * Custom Clerk localization — overrides the default copy to remove the
+ * redundant "Sign in to RinkStop" / "Welcome back, please sign in to continue"
+ * stacking. The page title is rendered above the card in the page chrome, so
+ * the Clerk internal header just needs a friendly call-to-action subtitle.
+ */
+export const clerkSignInLocalization = {
+  signIn: {
+    start: {
+      title: 'Welcome back',
+      subtitle: 'Sign in to save players, track favorites, and unlock your dashboard.',
+      actionText: 'Continue',
+    },
+    emailCode: {
+      title: 'Check your email',
+      subtitle: 'We sent a 6-digit code to {{identifier}}. Enter it below to continue.',
+    },
+    emailLink: {
+      title: 'Check your email',
+      subtitle: 'We sent a sign-in link to {{identifier}}. Click the link to continue.',
+    },
+    phoneCode: {
+      title: 'Check your phone',
+      subtitle: 'We sent a code to {{identifier}}. Enter it below to continue.',
+    },
+    sso: {
+      title: 'Continue with {{provider}}',
+      subtitle: 'You will be redirected to {{provider}} to sign in.',
+    },
+    verifyEmailAddress: {
+      title: 'Verify your email',
+      subtitle: 'Enter the 6-digit code we sent to {{identifier}}.',
+    },
+    resetPassword: {
+      title: 'Reset your password',
+      subtitle: 'Enter your new password below.',
+    },
+  },
+  socialButtonsBlockButton: 'Continue with {{provider|titleize}}',
+  dividerText: 'or',
+  formFieldLabel__emailAddress: 'Email address',
+  formFieldLabel__password: 'Password',
+  formFieldLabel__firstName: 'First name',
+  formFieldLabel__lastName: 'Last name',
+  formFieldLabel__username: 'Username',
+  formFieldLabel__phoneNumber: 'Phone number',
+  formFieldLabel__code: 'Verification code',
+  formFieldLabel__newPassword: 'New password',
+  formFieldLabel__confirmPassword: 'Confirm password',
+  formFieldHintText__password: 'At least 8 characters.',
+} as const;
+
+export const clerkSignUpLocalization = {
+  ...clerkSignInLocalization,
+  signUp: {
+    start: {
+      title: 'Create your account',
+      subtitle: 'Join RinkStop to save players, follow teams, and unlock your dashboard.',
+      actionText: 'Create account',
+    },
+    verifications: {
+      emailCode: {
+        title: 'Verify your email',
+        subtitle: 'Enter the 6-digit code we sent to {{identifier}}.',
+      },
+    },
+  },
+} as const;
+
 export const signInAppearance = {
   variables: {
     // Primary

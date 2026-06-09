@@ -1,40 +1,21 @@
-/* RinkStop Login / Sign-Up Pages — centered card, Clerk iframe contained */
+/* RinkStop Login / Sign-Up Pages — dark card matching Clerk themed SignIn */
 .page {
   min-height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 3rem 1rem;
-  background: #f4f7fb;
+  background: #041e42;
 }
 
 .card {
   width: 100%;
   max-width: 460px;
-  background: #fff;
+  background: #0f0f0f;
+  border: 1px solid #1e1e1e;
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(4, 30, 66, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-}
-
-.header {
-  background: #041e42;
-  padding: 1.5rem 2rem 1.25rem;
-  border-bottom: 3px solid #c8102e;
-}
-
-.title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.6rem;
-  color: #fff;
-  letter-spacing: 0.05em;
-  margin: 0 0 0.25rem;
-}
-
-.subtitle {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.875rem;
-  margin: 0;
 }
 
 /* Clerk injects a nested structure inside .clerkWrap — target the root div it mounts to */
