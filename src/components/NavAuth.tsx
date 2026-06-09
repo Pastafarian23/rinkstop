@@ -2,6 +2,7 @@
 
 import { Show, UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
+import { userButtonAppearance } from '@/lib/clerk-appearance';
 
 /**
  * NavAuth — shows Sign In / Sign Up buttons when signed out,
@@ -34,16 +35,8 @@ export default function NavAuth() {
               Dashboard
             </Link>
             <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: { width: 36, height: 36, border: '2px solid #C8102E' },
-                  userButtonPopoverCard: { background: '#0f0f0f', border: '1px solid #1e1e1e' },
-                  userButtonPopoverActions: { color: '#e2e8f0' },
-                  userButtonPopoverActionButton: { color: '#e2e8f0' },
-                  userButtonPopoverActionButtonText: { color: '#e2e8f0' },
-                  userButtonPopoverFooter: { display: 'none' },
-                },
-              }}
+              appearance={userButtonAppearance}
+              userProfileUrl="/dashboard/profile"
             />
           </>
         }

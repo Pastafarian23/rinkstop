@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import { supabaseAdmin } from '@/lib/supabase';
 import DashboardNav from '@/components/DashboardNav';
+import { userButtonAppearance, signInAppearance } from '@/lib/clerk-appearance';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
@@ -139,30 +140,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
               >
                 ← Back to Site
               </Link>
-              {/* UserButton: avatar dropdown with sign-out + manage account */}
+              {/* UserButton: avatar dropdown with sign-out + manage account. "Manage account" routes to our in-app profile page (no Clerk portal redirect). */}
               <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: { width: 36, height: 36, border: '2px solid #C8102E' },
-                    userButtonPopoverCard: { background: '#0f0f0f', border: '1px solid #1e1e1e' },
-                    userButtonPopoverActions: { color: '#e2e8f0' },
-                    userButtonPopoverActionButton: { color: '#e2e8f0' },
-                    userButtonPopoverActionButtonText: { color: '#e2e8f0' },
-                    userButtonPopoverFooter: { display: 'none' },
-                  },
-                }}
-                userProfileProps={{
-                  appearance: {
-                    elements: {
-                      rootBox: { background: '#0a0a0a' },
-                      card: { background: '#0f0f0f', border: '1px solid #1e1e1e' },
-                      navbar: { background: '#0a0a0a', borderRight: '1px solid #1e1e1e' },
-                      pageScrollBox: { background: '#0f0f0f' },
-                      profileSectionTitleText: { color: '#FFB81C' },
-                      formButtonPrimary: { background: '#C8102E' },
-                    },
-                  },
-                }}
+                appearance={userButtonAppearance}
+                userProfileUrl="/dashboard/profile"
               />
             </div>
           </div>

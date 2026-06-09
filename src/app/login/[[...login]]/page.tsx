@@ -1,4 +1,5 @@
 import { SignIn } from '@clerk/nextjs';
+import { signInAppearance } from '@/lib/clerk-appearance';
 import styles from '../login.module.css';
 
 export default function LoginPage() {
@@ -16,6 +17,7 @@ export default function LoginPage() {
             signUpUrl="/sign-up"
             forceRedirectUrl="/dashboard"
             fallbackRedirectUrl="/dashboard"
+            appearance={signInAppearance}
           />
         </div>
       </div>
