@@ -15,6 +15,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
   const avatarUrl = user?.imageUrl || '';
 
+  // Determine admin / super_admin status. Clerk publicMetadata is the source
+  // of truth; fall back to profiles.role for defense in depth.
+  const clerkRole = (user?.publicMetadata as any)?.role;
+  let profileRole: string | null = null;
+  try {
+    const { data: prof } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    profileRole = prof?.role || null;
+  } catch {
+    // best-effort
+  }
+  const isSuperAdmin = clerkRole === 'super_admin' || profileRole === 'super_admin';
+  const isAdmin = isSuperAdmin || clerkRole === 'admin' || profileRole === 'admin';
+
   // Fetch pending connection requests + unread message counts for nav badges.
   let pendingConnectionCount = 0;
   let unreadMessageCount = 0;
@@ -65,6 +82,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ['/dashboard/subscription', 'Subscription'],
     ['/dashboard/support', 'Support'],
   ];
+  if (isAdmin) {
+    navLinks.push(['/admin', 'Admin']);
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
