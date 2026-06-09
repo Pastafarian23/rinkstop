@@ -8,6 +8,7 @@ import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import ScoreTicker from '@/components/ScoreTicker';
+import { clerkSignInLocalization, clerkSignUpLocalization } from '@/lib/clerk-appearance';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -110,7 +111,10 @@ const NAV: never[] = []; // unused, kept to avoid breaking any external referenc
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider
+      publishableKey={clerkPublishableKey}
+      localization={{ ...clerkSignInLocalization, ...clerkSignUpLocalization }}
+    >
       <html lang="en">
         <head>
           <meta charSet="utf-8" />
