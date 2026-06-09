@@ -1,61 +1,94 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
+import { supabaseAdmin } from '@/lib/supabase';
+import { requireAdmin } from '@/lib/admin-auth';
+import TeamEditForm from './TeamEditForm';
 
-export default function EditTeam() {
-  const { id } = useParams();
-  const router = useRouter();
-  const [leagues, setLeagues] = useState([]);
-  const [form, setForm] = useState({ name: '', slug: '', country: '', city: '', league_id: '' });
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    fetch('/api/leagues').then(r => r.json()).then(d => setLeagues(d || []));
-    fetch(`/api/teams?id=${id}`).then(r => r.json()).then(d => {
-      if (d.data?.[0]) setForm(d.data[0]);
-    });
-  }, [id]);
+interface League {
+  id: string;
+  name: string;
+  slug: string;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetch('/api/teams', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...form }) });
-    router.push('/admin/teams');
-  };
+async function getTeam(id: string) {
+  const { data: team } = await supabaseAdmin
+    .from('teams')
+    .select('*, leagues!teams_league_id_fkey(id, name, slug)')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (!team) return null;
+
+  const { count: claimsCount } = await supabaseAdmin
+    .from('team_claims')
+    .select('*', { count: 'exact', head: true })
+    .eq('team_id', id)
+    .eq('status', 'approved');
+
+  const { data: fixtures } = await supabaseAdmin
+    .from('fixtures')
+    .select('id, game_date, status, home_team_id, away_team_id, home_score, away_score')
+    .or(`home_team_id.eq.${id},away_team_id.eq.${id}`)
+    .order('game_date', { ascending: false })
+    .limit(10);
+
+  return { team, claimsCount: claimsCount || 0, fixtures: fixtures || [] };
+}
+
+export default async function TeamEditPage({ params }: { params: Promise<{ id: string }> }) {
+  const admin = await requireAdmin();
+  const { id } = await params;
+  const data = await getTeam(id);
+  if (!data) notFound();
+
+  const { data: leagues } = await supabaseAdmin
+    .from('leagues')
+    .select('id, name, slug')
+    .order('name', { ascending: true });
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6 text-white">Edit Team</h1>
-      <div className="mb-6 h-[2px] bg-brand-gradient rounded-full w-32"></div>
-      <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
-          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="input-field" />
+      <div className="mb-6">
+        <a href="/admin/teams" className="text-slate-400 hover:text-white text-sm">← Back to Teams</a>
+      </div>
+
+      <h1 className="text-3xl font-bold text-white mb-2">{data.team.name}</h1>
+      <p className="text-slate-400 mb-8 text-sm font-mono">{data.team.id}</p>
+
+      <TeamEditForm
+        team={data.team}
+        leagues={(leagues || []) as League[]}
+        isSuperAdmin={admin.isSuperAdmin}
+      />
+
+      <div className="mt-8 grid grid-cols-2 gap-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+          <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Claims</h3>
+          <div className="text-3xl font-bold text-white">{data.claimsCount}</div>
+          <p className="text-xs text-slate-500 mt-1">approved claims on this team</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Slug</label>
-          <input value={form.slug} onChange={e => setForm({...form, slug: e.target.value})} className="input-field" />
+        <div className="bg-slate-900 border border-slate-800 rounded-lg p-5">
+          <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-3">Recent Fixtures</h3>
+          {data.fixtures.length === 0 ? (
+            <p className="text-slate-500 text-sm">No fixtures yet</p>
+          ) : (
+            <ul className="text-xs space-y-1.5 max-h-40 overflow-y-auto">
+              {data.fixtures.slice(0, 5).map((f: any) => (
+                <li key={f.id} className="text-slate-400 font-mono">
+                  {new Date(f.game_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  {' '}
+                  <span className={f.status === 'completed' ? 'text-teal-400' : 'text-amber-400'}>
+                    {f.status}
+                  </span>
+                  {' '}
+                  {f.home_score !== null && f.away_score !== null ? `${f.home_score}-${f.away_score}` : '—'}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Country</label>
-            <input value={form.country} onChange={e => setForm({...form, country: e.target.value})} className="input-field" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">City</label>
-            <input value={form.city} onChange={e => setForm({...form, city: e.target.value})} className="input-field" />
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">League</label>
-          <select value={form.league_id} onChange={e => setForm({...form, league_id: e.target.value})} className="select-field">
-            <option value="">None</option>
-            {leagues.map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
-          </select>
-        </div>
-        <div className="flex gap-3">
-          <button type="submit" className="btn-primary">Update</button>
-          <button type="button" onClick={() => router.push('/admin/teams')} className="btn-secondary">Cancel</button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
