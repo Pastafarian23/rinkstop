@@ -61,6 +61,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ['/dashboard/reviews', 'Reviews'],
     ['/dashboard/claims', 'Claims'],
     ['/dashboard/leads', 'Leads'],
+    ['/dashboard/subscription', 'Subscription'],
     ['/dashboard/support', 'Support'],
   ];
 
