@@ -55,15 +55,38 @@ function estimateRinkUniqueWordCount(rink: { name: string; city: string | null; 
   return blurbWords + addrWords + baselineSections;
 }
 
+/**
+ * Map a rink's status to its SEO treatment.
+ *   closed, placeholder  -> noindex (don't rank, keep link equity)
+ *   open, planned,
+ *   under_construction,
+ *   seasonal             -> index (rank for related queries)
+ */
+function rinkIndexable(status: string | null | undefined): boolean {
+  return status !== 'closed' && status !== 'placeholder';
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email')
+    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email, status')
     .eq('slug', slug)
     .single();
 
   if (!rink) return { title: 'Rink Not Found | RinkStop' };
+
+  // Status drives indexability directly — closed/placeholder pages never rank.
+  // Other content checks (word count, field count) are still useful for the
+  // 'open' case but are not relevant for non-indexable statuses.
+  if (!rinkIndexable(rink.status)) {
+    return {
+      title: `${rink.name} | RinkStop`,
+      description: rink.notes || `${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
+      robots: { index: false, follow: true },
+      openGraph: { title: rink.name, type: 'website' },
+    };
+  }
 
   const fields = ['city', 'country', 'province_state', 'notes', 'website_url', 'phone', 'email', 'address', 'capacity', 'ice_size', 'surface_type'];
   const fieldCount = fields.filter(f => rink[f] && (Array.isArray(rink[f]) ? rink[f].length > 0 : String(rink[f]).trim().length > 0)).length;
@@ -91,7 +114,7 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
   // Fetch rink by slug
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, is_active, notes, source')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, is_active, notes, source, status')
     .eq('slug', slug)
     .single();
 
@@ -191,16 +214,69 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
-        {/* Permanently Closed Banner */}
-        {!rink.is_active && (
-          <div style={{ background: 'rgba(220,38,38,0.15)', border: '1px solid #dc2626', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '24px' }}>🚫</span>
-            <div>
-              <p style={{ color: '#fca5a5', fontWeight: 600, fontSize: '15px', marginBottom: '2px' }}>Permanently Closed</p>
-              <p style={{ color: 'rgba(252,165,165,0.7)', fontSize: '13px' }}>This rink is no longer operating.</p>
+        {/* Status banner — copy and color depend on the rink's status.
+            open = no banner. closed = red. placeholder = red.
+            planned/under_construction = blue (future). seasonal = amber. */}
+        {rink.status && rink.status !== 'open' && (() => {
+          const bannerContent: Record<string, { icon: string; title: string; subtitle: string; bg: string; border: string; titleColor: string; subColor: string }> = {
+            closed: {
+              icon: '🚫',
+              title: 'Permanently Closed',
+              subtitle: 'This rink is no longer operating.',
+              bg: 'rgba(220,38,38,0.15)',
+              border: '#dc2626',
+              titleColor: '#fca5a5',
+              subColor: 'rgba(252,165,165,0.7)',
+            },
+            placeholder: {
+              icon: 'ℹ️',
+              title: `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`,
+              subtitle: 'This page exists so people searching for hockey in this area can confirm there is no permanent rink. The country/region is verified against the IIHF membership list and major sources.',
+              bg: 'rgba(120,113,108,0.15)',
+              border: '#78716c',
+              titleColor: '#d6d3d1',
+              subColor: 'rgba(214,211,209,0.7)',
+            },
+            planned: {
+              icon: '🗓️',
+              title: 'Planned — Opening TBD',
+              subtitle: 'This arena has been announced but construction has not yet begun. The page is kept up to date as new details are released.',
+              bg: 'rgba(56,189,248,0.15)',
+              border: '#38bdf8',
+              titleColor: '#7dd3fc',
+              subColor: 'rgba(125,211,252,0.7)',
+            },
+            under_construction: {
+              icon: '🏗️',
+              title: 'Under Construction',
+              subtitle: 'This arena is being built and is not yet open to the public.',
+              bg: 'rgba(56,189,248,0.15)',
+              border: '#38bdf8',
+              titleColor: '#7dd3fc',
+              subColor: 'rgba(125,211,252,0.7)',
+            },
+            seasonal: {
+              icon: '⛸️',
+              title: 'Seasonal / Temporary Rink',
+              subtitle: 'This rink is only open during specific seasons (typically winter) or for temporary installations. It is not a permanent year-round facility.',
+              bg: 'rgba(245,158,11,0.15)',
+              border: '#f59e0b',
+              titleColor: '#fcd34d',
+              subColor: 'rgba(252,211,77,0.7)',
+            },
+          };
+          const c = bannerContent[rink.status];
+          if (!c) return null;
+          return (
+            <div style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '24px' }}>{c.icon}</span>
+              <div>
+                <p style={{ color: c.titleColor, fontWeight: 600, fontSize: '15px', marginBottom: '2px' }}>{c.title}</p>
+                <p style={{ color: c.subColor, fontSize: '13px' }}>{c.subtitle}</p>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         <Breadcrumbs links={[
           { label: 'Directory', href: '/directory' },
