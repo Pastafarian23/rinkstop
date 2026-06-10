@@ -333,6 +333,7 @@ img  { max-width: 100%; display: block; }
   align-items: center;
   gap: 0.125rem;
 }
+@media (min-width: 768px) { .nav-mobile-controls { display: none; } }
 
 /* Mobile profile button (shown only on mobile, only when signed in) */
 .mob-profile-icon {
