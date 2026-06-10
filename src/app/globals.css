@@ -224,18 +224,17 @@ img  { max-width: 100%; display: block; }
 
 /* Desktop dropdown panel — multi-column grid of all nav sections */
 .desktop-menu-panel {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  left: auto;
-  width: min(960px, 90vw);
+  position: fixed;
+  top: 68px; /* nav-bar height (60px) + 8px gap */
+  right: 1rem;
+  width: min(960px, calc(100vw - 2rem));
   max-height: calc(100vh - 80px);
   overflow-y: auto;
   background: var(--navy);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 8px;
   padding: 1.25rem;
-  z-index: 100;
+  z-index: 60; /* nav-bar is 50, panel sits above */
   box-shadow: 0 12px 32px rgba(0,0,0,0.5);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -244,7 +243,7 @@ img  { max-width: 100%; display: block; }
 @media (max-width: 1099px) {
   .desktop-menu-panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: min(640px, 90vw);
+    width: min(640px, calc(100vw - 2rem));
   }
 }
 .desktop-menu-section {
