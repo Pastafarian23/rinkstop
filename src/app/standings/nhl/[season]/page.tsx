@@ -28,7 +28,12 @@ function resolveCanonical(teamName: string): NhlTeamCanonical | undefined {
   // Keeping the slug stable means the team page URL doesn't change.
   const ALIASES: Record<string, string> = {
     'utah mammoth': 'utah-hockey-club',  // 2025-26 rebrand — data uses "Mammoth" identity
+    'arizona coyotes': 'utah-hockey-club',  // 2024 relocation — pre-2025 the franchise was Arizona
     'utah': 'utah-hockey-club',
+    'arizona': 'utah-hockey-club',
+    // Note: 'Brantford Bulldogs' is intentionally NOT aliased — it's an OHL
+    // team that got mis-synced into nhl_standings for 2023-24 and 2024-25.
+    // Leaving the row dropped is the safest behavior. See TODO.md "Data Integrity".
   };
   if (ALIASES[norm]) {
     return NHL_TEAMS_CANONICAL.find(t => t.slug === ALIASES[norm]);
