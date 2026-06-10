@@ -11,10 +11,21 @@ function requireAuth(request: NextRequest) {
 
 // Helpers to format NHL player records to match the RinkStop 'players' shape
 // so the existing /directory/players/[id] UI works for both datasets.
+const POSITION_MAP: Record<string, string> = {
+  C: 'center', LW: 'left_wing', RW: 'right_wing',
+  D: 'defenseman', G: 'goalie',
+  // Some sync sources send the full word instead of abbreviation
+  center: 'center', left_wing: 'left_wing', right_wing: 'right_wing',
+  defenseman: 'defenseman', defense: 'defenseman', goalie: 'goalie', goaltender: 'goalie',
+  forward: 'forward', winger: 'right_wing',
+};
+
 function formatNhlPlayer(p: any) {
   const name = p.full_name || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim();
   const [first, ...rest] = name.split(' ');
   const last = rest.join(' ');
+  const posAbbr = p.position_abbreviation ?? p.position;
+  const mappedPos = posAbbr ? (POSITION_MAP[posAbbr] ?? posAbbr.toLowerCase()) : null;
   return {
     id: `nhl-${p.id}`,            // prefix to avoid clashing with UUIDs
     source: 'nhl',
@@ -22,16 +33,21 @@ function formatNhlPlayer(p: any) {
     last_name: last || null,
     full_name: name,
     slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    position: p.position ?? null,
+    position: mappedPos,
+    position_abbreviation: posAbbr ?? null,
     jersey_number: p.jersey_number ?? null,
-    nationality: p.nationality ?? null,
+    nationality: p.nationality ?? p.birth_country ?? null,  // birth_country is the 3-letter code (CAN, RUS, etc.)
     birth_date: p.birth_date ?? null,
+    birth_place: p.birth_place ?? null,
     height_cm: p.height ?? null,
     weight_kg: p.weight ?? null,
     shoots: p.shoots ?? null,
     headshot_url: p.logo ?? null,
     is_active: true,
     team_id: p.current_team_id ? `nhl-team-${p.current_team_id}` : null,
+    current_team_abbreviation: p.current_team_abbreviation ?? null,
+    current_team_name: p.current_team_name ?? null,
+    current_team_logo: p.current_team_logo ?? null,
     teams: null, // hydrated below by team_id if needed
     draft: {
       year: p.draft_year ?? null,
@@ -42,7 +58,7 @@ function formatNhlPlayer(p: any) {
     role: p.role ?? 'player',
     was_player: p.was_player ?? false,
     highlightly_id: p.id,
-    _partial: !(p.birth_date && p.position && p.height), // flag for backfill
+    _partial: !(p.birth_date && mappedPos && p.height), // flag for backfill
   };
 }
 
@@ -88,21 +104,32 @@ export async function GET(request: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       if (data) {
         const formatted = formatNhlPlayer(data);
-        // Hydrate team info if available
+        // Hydrate team info if available — try current_team_id first, fall back to abbreviation
+        let team: any = null;
         if (data.current_team_id) {
-          const { data: team } = await supabase
+          const r = await supabase
             .from('nhl_teams')
             .select('id, name, short_name, logo')
             .eq('id', String(data.current_team_id))
             .maybeSingle();
-          if (team) {
-            formatted.teams = {
-              name: team.name,
-              logo_url: team.logo,
-              league_id: 'NHL',
-              leagues: { name: 'NHL', slug: 'nhl' },
-            };
-          }
+          team = r.data;
+        }
+        if (!team && data.current_team_abbreviation) {
+          const r = await supabase
+            .from('nhl_teams')
+            .select('id, name, short_name, logo')
+            .eq('short_name', data.current_team_abbreviation)
+            .maybeSingle();
+          team = r.data;
+        }
+        if (team) {
+          formatted.teams = {
+            name: team.name,
+            slug: (team.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            logo_url: team.logo,
+            league_id: 'NHL',
+            leagues: { name: 'NHL', slug: 'nhl' },
+          };
         }
         return NextResponse.json({ data: [formatted], count: 1, page: 1, totalPages: 1 });
       }
