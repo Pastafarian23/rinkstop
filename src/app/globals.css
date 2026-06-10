@@ -264,6 +264,26 @@ img  { max-width: 100%; display: block; }
 }
 @media (min-width: 768px) { .nav-right { display: flex; } }
 
+/* Mobile profile icon (shown only on mobile, only when signed in) */
+.mob-profile-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-right: 0.25rem;
+  border-radius: 6px;
+  color: #fff;
+  background: none;
+  border: none;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.mob-profile-icon:hover { background: rgba(255,255,255,0.08); }
+@media (min-width: 768px) { .mob-profile-icon { display: none; } }
+
 /* Hamburger */
 .hamburger {
   display: flex;
