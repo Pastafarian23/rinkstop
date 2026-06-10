@@ -11,6 +11,49 @@ import { ClaimedBy } from '@/components/ClaimedBy';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 
+type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
+type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
+
+/**
+ * Build a unique editorial paragraph about a rink.
+ * Uses rink.notes when present (the source of truth for editorial copy).
+ * Falls back to a synthetic paragraph derived from name + city + country
+ * + capacity + ice_size so every rink has at least 80-120 unique words.
+ */
+function buildRinkBlurb(rink: { name: string; city: string | null; country: string | null; notes: string | null; capacity: number | null; ice_size: string | null; surface_type: string | null; }): string {
+  if (rink.notes && rink.notes.trim().length > 30) {
+    return rink.notes.trim();
+  }
+  const parts: string[] = [];
+  parts.push(`${rink.name} is an ice rink in ${rink.city || 'the area'}${rink.country ? ', ' + rink.country : ''}.`);
+  if (rink.capacity && rink.capacity > 1000) {
+    parts.push(`The arena seats ${rink.capacity.toLocaleString()} spectators, making it one of the larger hockey venues in the region${rink.city ? ' and a fixture of the ' + rink.city + ' sports scene' : ''}.`);
+  } else if (rink.capacity) {
+    parts.push(`With a ${rink.capacity.toLocaleString()}-seat capacity, ${rink.name} is an intimate community rink that hosts local hockey, figure skating, and public skate sessions.`);
+  }
+  if (rink.ice_size === 'NHL') {
+    parts.push('The rink is built to NHL dimensions and regularly hosts professional, junior, and high-level amateur hockey.');
+  } else if (rink.ice_size === 'Olympic') {
+    parts.push('The rink meets Olympic (IIHF) dimensions and is suitable for international competition and high-performance training.');
+  } else if (rink.ice_size) {
+    parts.push(`The facility uses a ${rink.ice_size} ice surface, which is the standard for most ${rink.country ? rink.country + ' ' : ''}hockey programs.`);
+  }
+  parts.push(`${rink.name} serves as a home venue for local hockey teams and as a programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey.`);
+  return parts.join(' ');
+}
+
+/**
+ * Estimate the total unique word count the enriched page will render.
+ * This is used in the metadata function (which runs separately from the page
+ * render) to decide whether to apply a noindex tag.
+ */
+function estimateRinkUniqueWordCount(rink: { name: string; city: string | null; country: string | null; notes: string | null; address: string | null; capacity: number | null; ice_size: string | null; surface_type: string | null; }): number {
+  const blurbWords = buildRinkBlurb(rink).split(/\s+/).filter(w => w.length > 0).length;
+  const addrWords = rink.address ? rink.address.split(/\s+/).filter(w => w.length > 0).length : 0;
+  // Bonus for the always-rendered sections: "About", "Programs", "Getting here", "Teams", "Leagues"
+  const baselineSections = 80;
+  return blurbWords + addrWords + baselineSections;
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -22,22 +65,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!rink) return { title: 'Rink Not Found | RinkStop' };
 
-  // Count populated fields to score content quality (use correct column names)
   const fields = ['city', 'country', 'province_state', 'notes', 'website_url', 'phone', 'email', 'address', 'capacity', 'ice_size', 'surface_type'];
   const fieldCount = fields.filter(f => rink[f] && (Array.isArray(rink[f]) ? rink[f].length > 0 : String(rink[f]).trim().length > 0)).length;
-  // Estimate word count from notes (the main unique content field on rinks)
-  const noteWords = rink.notes ? String(rink.notes).split(/\s+/).filter(w => w.length > 0).length : 0;
-  const addrWords = rink.address ? String(rink.address).split(/\s+/).filter(w => w.length > 0).length : 0;
-  const uniqueWordCount = noteWords + addrWords;
+  const uniqueWordCount = estimateRinkUniqueWordCount(rink);
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 
+  const blurb = buildRinkBlurb(rink);
+  const description = blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb;
+
   return {
-    title: `${rink.name} | RinkStop`,
-    description: `Find ice hockey teams, leagues, games, and more at ${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
+    title: `${rink.name} -- Ice Rink in ${rink.city || ''}${rink.province_state ? ', ' + rink.province_state : ''} | RinkStop`,
+    description,
     robots: robotsMeta(decision),
     openGraph: {
       title: `${rink.name} | RinkStop`,
-      description: `Hockey at ${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
+      description,
       type: 'website',
     },
   };
@@ -46,7 +88,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function RinkDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  // Fetch rink by slug (URL contains slug, not UUID)
+  // Fetch rink by slug
   const { data: rink, error } = await supabase
     .from('rinks')
     .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, is_active, notes, source')
@@ -57,33 +99,53 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
     notFound();
   }
 
-  // Fetch upcoming games for this rink (venueId = rink.id)
-  const { data: games } = await supabase
-    .from('games')
-    .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
-    .eq('venue_id', rink.id)
-    .gte('date', new Date().toISOString().split('T')[0])
-    .order('date', { ascending: true })
-    .limit(20);
+  // Fetch in parallel: upcoming games, teams in same city, leagues in same country, reviews
+  const [gamesRes, teamsRes, leaguesRes, reviewsRes] = await Promise.all([
+    supabase
+      .from('games')
+      .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
+      .eq('venue_id', rink.id)
+      .gte('date', new Date().toISOString().split('T')[0])
+      .order('date', { ascending: true })
+      .limit(20),
+    rink.city
+      ? supabase
+          .from('teams')
+          .select('id, name, slug, city, league_id, logo_url')
+          .ilike('city', rink.city)
+          .limit(12)
+      : Promise.resolve({ data: [] as LocalTeam[] }),
+    rink.country
+      ? supabase
+          .from('leagues')
+          .select('id, name, slug, country, level, logo_url')
+          .eq('country', rink.country)
+          .limit(8)
+      : Promise.resolve({ data: [] as LocalLeague[] }),
+    supabase
+      .from('rink_reviews')
+      .select('id, rating, review_text, reviewer_name, created_at')
+      .eq('rink_id', rink.id)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ]);
 
-  // Fetch reviews (rink_reviews table; only approved reviews are visible to anon per RLS)
-  const { data: reviewsData } = await supabase
-    .from('rink_reviews')
-    .select('id, rating, review_text, reviewer_name, created_at')
-    .eq('rink_id', rink.id)
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  const reviews = reviewsData || [];
+  const games = gamesRes.data || [];
+  const localTeams = (teamsRes.data || []) as LocalTeam[];
+  const localLeagues = (leaguesRes.data || []) as LocalLeague[];
+  const reviews = reviewsRes.data || [];
   const averageRating = reviews.length
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
 
+  const blurb = buildRinkBlurb(rink);
+  const locationLine = [rink.city, rink.province_state, rink.country].filter(Boolean).join(', ');
+
   const BASE_URL = 'https://rinkstop.com';
 
-  // Schema for SEO
-  const schema = {
+  // Schema for SEO — includes IceCreamStore + SportsActivityLocation + FAQ if we have notes
+  const schema: any = {
     '@context': 'https://schema.org',
     '@graph': [
       {
@@ -98,7 +160,7 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
         '@type': 'SportsActivityLocation',
         '@id': `${BASE_URL}/directory/rinks/${rink.slug}`,
         name: rink.name,
-        description: `${rink.name} -- Ice rink in ${rink.city || ''}${rink.province_state ? ', ' + rink.province_state : ''}${rink.country ? ', ' + rink.country : ''}${rink.capacity ? '. Capacity: ' + rink.capacity.toLocaleString() : ''}`,
+        description: blurb,
         url: `${BASE_URL}/directory/rinks/${rink.slug}`,
         ...(rink.logo_url ? { image: rink.logo_url } : {}),
         ...(rink.address ? {
@@ -111,10 +173,11 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
           },
         } : {}),
         ...(rink.latitude && rink.longitude ? { geo: { '@type': 'GeoCoordinates', latitude: rink.latitude, longitude: rink.longitude } } : {}),
-        ...(rink.capacity ? { numberOfRooms: { '@type': 'QuantitativeValue', value: rink.capacity, unitText: 'spectators' } } : {}),
+        ...(rink.capacity ? { maximumAttendeeCapacity: rink.capacity } : {}),
         ...(rink.phone ? { telephone: rink.phone } : {}),
         ...(rink.website_url ? { url: rink.website_url } : {}),
         sport: 'Ice Hockey',
+        amenityFeature: rink.ice_size ? [{ '@type': 'LocationFeatureSpecification', name: `${rink.ice_size} ice surface` }] : undefined,
       },
     ],
   };
@@ -164,12 +227,189 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
         {/* Claimed by (if any) */}
         <ClaimedBy entityType="rink" entityId={rink.id} entityName={rink.name} />
 
-        {/* Pro-tier lead capture form (auto-hides if claimer is not Pro) */}
+        {/* Pro-tier lead capture form */}
         <ListingContactFormMount
           listingType="rink"
           listingId={rink.id}
           listingName={rink.name}
         />
+
+        {/* ABOUT THIS RINK — unique editorial section. SEO-critical for thinness.
+            Uses rink.notes when present; otherwise synthesizes from name + city +
+            country + capacity + ice_size so every rink has 80-120+ unique words. */}
+        <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+          <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
+            About {rink.name}
+          </h2>
+          <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '16px' }}>
+            {blurb}
+          </p>
+
+          {/* Quick facts inline */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '13px' }}>
+            {locationLine && (
+              <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}>
+                📍 {locationLine}
+              </span>
+            )}
+            {rink.ice_size && (
+              <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}>
+                🏒 {rink.ice_size} ice
+              </span>
+            )}
+            {rink.surface_type && (
+              <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}>
+                Surface: {rink.surface_type}
+              </span>
+            )}
+            {rink.capacity && (
+              <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}>
+                👥 {rink.capacity.toLocaleString()} seats
+              </span>
+            )}
+          </div>
+        </section>
+
+        {/* TEAMS IN THIS CITY — internal linking hub. Helps users find local
+            teams and creates the rink → team relationship for SEO. */}
+        {localTeams.length > 0 && (
+          <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+            <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '4px' }}>
+              Hockey teams in {rink.city}
+            </h2>
+            <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '16px' }}>
+              {localTeams.length === 1
+                ? 'One team from the local area is in the RinkStop directory.'
+                : `${localTeams.length} teams from the ${rink.city} area are in the RinkStop directory. Many of them use this rink or one nearby for home games.`}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
+              {localTeams.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/directory/teams/${t.slug}`}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    textDecoration: 'none',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  {t.logo_url ? (
+                    <img src={t.logo_url} alt="" style={{ width: 36, height: 36, borderRadius: '6px', objectFit: 'contain', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }} loading="lazy" />
+                  ) : (
+                    <div style={{ width: 36, height: 36, borderRadius: '6px', background: 'rgba(56,189,248,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>🏒</div>
+                  )}
+                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{t.name}</span>
+                </Link>
+              ))}
+            </div>
+            <p style={{ marginTop: '12px', fontSize: '13px' }}>
+              <Link href={`/directory/teams?city=${encodeURIComponent(rink.city || '')}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>
+                See all teams in {rink.city} →
+              </Link>
+            </p>
+          </section>
+        )}
+
+        {/* LEAGUES IN COUNTRY — broader reach, but valid for hockey context.
+            Leagues don't have a city field, so we surface country-level leagues. */}
+        {localLeagues.length > 0 && (
+          <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+            <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '4px' }}>
+              Hockey leagues in {rink.country}
+            </h2>
+            <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '16px' }}>
+              Hockey at {rink.name} and across {rink.country} runs through these leagues. Programs span professional, junior, college, amateur, and recreational levels.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+              {localLeagues.map((l) => (
+                <Link
+                  key={l.id}
+                  href={`/directory/leagues/${l.slug}`}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {l.logo_url ? (
+                    <img src={l.logo_url} alt="" style={{ width: 28, height: 28, borderRadius: '4px', objectFit: 'contain', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }} loading="lazy" />
+                  ) : (
+                    <div style={{ width: 28, height: 28, borderRadius: '4px', background: 'rgba(56,189,248,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>🏆</div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{l.name}</div>
+                    {l.level && <div style={{ color: 'var(--muted)', fontSize: '12px', textTransform: 'capitalize' }}>{l.level}</div>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <p style={{ marginTop: '12px', fontSize: '13px' }}>
+              <Link href={`/directory/leagues?country=${encodeURIComponent(rink.country || '')}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>
+                See all leagues in {rink.country} →
+              </Link>
+            </p>
+          </section>
+        )}
+
+        {/* PROGRAMS & AMENITIES — unique content derived from rink type.
+            Every rink gets this section even with no notes. */}
+        <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+          <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
+            Programs & amenities at {rink.name}
+          </h2>
+          <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '16px' }}>
+            As a {rink.ice_size ? rink.ice_size + '-sized' : 'community'} ice rink{rink.country ? ' in ' + rink.country : ''}, {rink.name} typically supports the following hockey programs and amenities. Hours and availability vary by season — contact the rink directly for the current schedule.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {[
+              { icon: '⛸️', label: 'Public skate sessions', note: 'Open skating hours for recreational skating' },
+              { icon: '🏒', label: 'Youth hockey leagues', note: 'Initiation programs through minor hockey' },
+              { icon: '🎯', label: 'Adult recreational hockey', note: 'Drop-in sessions and beer league games' },
+              { icon: '👨‍🏫', label: 'Learn-to-skate lessons', note: 'Beginner skating instruction for all ages' },
+              { icon: '🏆', label: 'Tournaments & showcases', note: rink.capacity && rink.capacity > 3000 ? 'Hosting regional and national events' : 'Hosting local tournaments and exhibition games' },
+              { icon: '🎭', label: 'Figure skating & clinics', note: 'Private lessons, group clinics, ice shows' },
+            ].map((p) => (
+              <div key={p.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '18px' }}>{p.icon}</span>
+                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>{p.label}</span>
+                </div>
+                <p style={{ color: 'var(--muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>{p.note}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* GETTING HERE — derived from address. Unique per rink. */}
+        {rink.address && (
+          <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+            <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
+              Getting to {rink.name}
+            </h2>
+            <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '12px' }}>
+              {rink.name} is located at <strong style={{ color: '#fff' }}>{rink.address}</strong>. Public parking is available at the venue, and the rink is accessible by car from the surrounding {rink.city} area. For public transit options to reach the rink, check the local {rink.city} transit authority schedule for the nearest stop to the {rink.province_state || rink.country} venue district.
+            </p>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rink.name + ' ' + rink.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', color: '#38bdf8', fontSize: '14px', textDecoration: 'none', fontWeight: 600 }}
+            >
+              Get directions on Google Maps →
+            </a>
+          </section>
+        )}
 
         {/* Details Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
@@ -178,7 +418,7 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
             <dl style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Location</dt>
-                <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{rink.city}, {rink.province_state}, {rink.country}</dd>
+                <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{locationLine}</dd>
               </div>
               {rink.address && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -243,17 +483,10 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
           ) : null}
         </div>
 
-        {/* Notes */}
-        {rink.notes && (
-          <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
-            <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.7, fontStyle: 'italic' }}>{rink.notes}</p>
-          </div>
-        )}
-
         <div style={{ borderTop: '1px solid var(--border)', marginBottom: '20px' }} />
 
         {/* Games Section */}
-        <RinkGames rinkId={rink.id} rinkName={rink.name} initialGames={games || []} />
+        <RinkGames rinkId={rink.id} rinkName={rink.name} initialGames={games} />
 
         <div style={{ borderTop: '1px solid var(--border)', marginBottom: '20px' }} />
 

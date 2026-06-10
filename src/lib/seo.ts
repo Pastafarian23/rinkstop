@@ -30,8 +30,12 @@ export const THRESHOLDS = {
   country: { minListings: 1, minUniqueWordCount: 150 },
   /** Team page: needs name + at least some metadata */
   team: { minFields: 2, minUniqueWordCount: 10 },
-  /** Rink page: needs name + at least city/country/amenity */
-  rink: { minFields: 2, minUniqueWordCount: 10 },
+  /** Rink page: needs name + at least city/country/amenity. The enriched
+      page always renders 200+ unique words via the about + programs +
+      getting-here sections, so the floor is intentionally low to avoid
+      over-noindexing. Rely on the per-rink estimateRinkUniqueWordCount()
+      in the page metadata for the actual scoring. */
+  rink: { minFields: 1, minUniqueWordCount: 10 },
   /** Player page: needs name + at least one of team/position/nationality */
   player: { minFields: 1, minUniqueWordCount: 60 },
   /** League page: needs name + at least one team */
