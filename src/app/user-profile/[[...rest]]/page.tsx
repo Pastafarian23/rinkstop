@@ -1,7 +1,18 @@
 import { UserProfile } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { userProfileAppearance } from '@/lib/clerk-appearance';
 
-export default function UserProfilePage() {
+export default async function UserProfilePage() {
+  const { userId } = await auth();
+  if (!userId) {
+    // Anonymous visitors get bounced to /login. Without this, the page would
+    // return 200 with the Clerk <UserProfile /> rendering nothing (silent error
+    // in the Clerk portal) and was previously leaking the account-management
+    // route to crawlers and unauthenticated users.
+    redirect('/login?redirect_url=/user-profile');
+  }
+
   return (
     <div style={{
       minHeight: '100vh',

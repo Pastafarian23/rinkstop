@@ -55,10 +55,12 @@ export default function HighlightsGrid({
 }: HighlightsGridProps) {
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Highlight | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
@@ -86,13 +88,39 @@ export default function HighlightsGrid({
     fetchHighlights();
   }, [limit, teamFilter, teamName, matchId]);
 
+  // Suppress the section entirely during SSR — the prior version baked 8 light-gray
+  // `bg-gray-200` skeleton boxes into the SSR HTML which clashed horribly with the
+  // dark site theme. Now SSR sends nothing; the client renders the heading + real
+  // (or dark-skeleton) content after mount.
+  if (!mounted) return null;
   if (loading) {
     return (
       <div style={{ padding: '2rem 0' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+          <div className="sec-head" style={{ marginBottom: '1.5rem' }}>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 800,
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              color: '#fff',
+              letterSpacing: '0.05em',
+              margin: 0,
+            }}>
+              {title.toUpperCase()}
+            </h2>
+            <Link href="/highlights" className="sec-link">View all highlights →</Link>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
             {[...Array(limit)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-48" />
+              <div
+                key={i}
+                className="animate-pulse rounded-lg"
+                style={{
+                  height: 192,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              />
             ))}
           </div>
         </div>
