@@ -144,9 +144,12 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .maybeSingle();
     if (rsErr) return NextResponse.json({ error: rsErr.message }, { status: 500 });
-    if (rsData) return NextResponse.json({ data: [{ ...rsData, source: 'rinkstop' }], count: 1, page: 1, totalPages: 1 });
 
-    // Try NHL by matching name
+    // Always also try the NHL table by name — if a match is found, enrich the
+    // RinkStop record with NHL-specific fields (birth_place, current_team_*,
+    // position, etc.) so the player page renders a complete profile. The
+    // RinkStop record is the base so free-tier claim/bio data wins; NHL
+    // data fills the gaps.
     const { data: nhlData, error: nhlErr } = await supabase
       .from('nhl_players')
       .select('*')
@@ -154,8 +157,63 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .maybeSingle();
     if (nhlErr) return NextResponse.json({ error: nhlErr.message }, { status: 500 });
+
+    if (rsData && nhlData) {
+      const nhlFormatted = formatNhlPlayer(nhlData);
+      // Hydrate NHL team info from abbreviation (current_team_id is always null)
+      if (nhlData.current_team_abbreviation) {
+        const { data: team } = await supabase
+          .from('nhl_teams')
+          .select('id, name, short_name, logo')
+          .eq('short_name', nhlData.current_team_abbreviation)
+          .maybeSingle();
+        if (team) {
+          nhlFormatted.teams = {
+            name: team.name,
+            slug: (team.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            logo_url: team.logo,
+            league_id: 'NHL',
+            leagues: { name: 'NHL', slug: 'nhl' },
+          };
+        }
+      }
+      // Merge: start with RinkStop (claim/bio/source), fill gaps from NHL
+      const merged: any = { ...rsData, source: 'rinkstop' };
+      const fieldsToFill = [
+        'birth_place', 'current_team_name', 'current_team_abbreviation',
+        'current_team_logo', 'position', 'position_abbreviation',
+        'nationality', 'shoots', 'height_cm', 'weight_kg',
+      ];
+      for (const f of fieldsToFill) {
+        if ((merged[f] == null || merged[f] === '') && nhlFormatted[f] != null && nhlFormatted[f] !== '') {
+          merged[f] = nhlFormatted[f];
+        }
+      }
+      // Use NHL teams hydration if RinkStop doesn't have one
+      if (!merged.teams && nhlFormatted.teams) merged.teams = nhlFormatted.teams;
+      // Tag with the NHL highlightly id so stats can be synced
+      if (!merged.highlightly_id) merged.highlightly_id = nhlData.id;
+      return NextResponse.json({ data: [merged], count: 1, page: 1, totalPages: 1 });
+    }
+    if (rsData) return NextResponse.json({ data: [{ ...rsData, source: 'rinkstop' }], count: 1, page: 1, totalPages: 1 });
     if (nhlData) {
       const formatted = formatNhlPlayer(nhlData);
+      if (nhlData.current_team_abbreviation) {
+        const { data: team } = await supabase
+          .from('nhl_teams')
+          .select('id, name, short_name, logo')
+          .eq('short_name', nhlData.current_team_abbreviation)
+          .maybeSingle();
+        if (team) {
+          formatted.teams = {
+            name: team.name,
+            slug: (team.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            logo_url: team.logo,
+            league_id: 'NHL',
+            leagues: { name: 'NHL', slug: 'nhl' },
+          };
+        }
+      }
       return NextResponse.json({ data: [formatted], count: 1, page: 1, totalPages: 1 });
     }
 
