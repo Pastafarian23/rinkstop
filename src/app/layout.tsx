@@ -45,7 +45,8 @@ const EXPLORE = [
   { href: '/directory/players',  label: 'Players' },
   { href: '/directory/leagues',  label: 'Leagues' },
   { href: '/directory/rinks',    label: 'Rinks'   },
-  { href: '/directory/games', label: 'Games'   },
+  { href: '/directory/games',    label: 'Games'   },
+  { href: '/standings',          label: 'Standings' },
 ];
 
 const PRO_HOCKEY = [
