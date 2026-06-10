@@ -155,13 +155,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <NavAuth />
                 </div>
 
-                {/* Mobile profile button — visible only on mobile + only when signed in */}
-                <MobileProfileButton />
+                {/* Mobile right-side controls (profile button + hamburger) */}
+                <div className="nav-mobile-controls">
+                  {/* Mobile profile button — visible only on mobile + only when signed in */}
+                  <MobileProfileButton />
 
-                {/* Mobile hamburger  --  label toggles checkbox */}
-                <label htmlFor="mob-nav" className="hamburger" aria-label="Open menu">
-                  <span /><span /><span />
-                </label>
+                  {/* Mobile hamburger  --  label toggles checkbox */}
+                  <label htmlFor="mob-nav" className="hamburger" aria-label="Open menu">
+                    <span /><span /><span />
+                  </label>
+                </div>
               </div>
             </div>
 
