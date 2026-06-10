@@ -14,6 +14,8 @@
  *   - Muted:      #8a8a8a
  *   - Danger:     #ff5555
  */
+
+import { dark } from '@clerk/themes';
 export const brandColors = {
   navy: '#041E42',
   red: '#C8102E',
@@ -317,6 +319,159 @@ export const signInAppearance = {
     spinner: { color: brandColors.red },
 
     // Hide Clerk branding in dev (won't show in prod, but defensive)
+    logoBox: { display: 'none' },
+  },
+} as const;
+
+/**
+ * Appearance for the full <UserProfile /> page (account management,
+ * email/phone updates, connected accounts, active devices, etc.).
+ *
+ * The Clerk <UserProfile /> component renders 100+ elements — far more than
+ * <SignIn />. Styling them all explicitly is brittle, so we use Clerk's
+ * `dark` base theme as the floor and apply our brand-aligned overrides on
+ * top. Without `baseTheme: dark`, anything we don't explicitly style falls
+ * back to Clerk's light default — which is what produced the unreadable
+ * light-on-light text inside "Update email" / "Add phone" modals.
+ */
+export const userProfileAppearance = {
+  baseTheme: dark,
+  variables: {
+    colorPrimary: brandColors.red,
+    colorDanger: brandColors.danger,
+    colorSuccess: brandColors.success,
+    colorWarning: brandColors.gold,
+
+    colorBackground: brandColors.surface,
+    colorInputBackground: brandColors.surfaceInput,
+    colorInputBorder: brandColors.border,
+    colorInputBorderHover: brandColors.borderHover,
+    colorInputBorderFocus: brandColors.red,
+
+    colorText: brandColors.text,
+    colorTextSecondary: brandColors.textMuted,
+    colorInputText: brandColors.text,
+    colorInputPlaceholder: brandColors.textMuted,
+
+    colorNeutral: brandColors.text,
+    colorNeutralForeground: brandColors.text,
+
+    borderRadius: '8px',
+    fontFamily: 'system-ui, sans-serif',
+    fontSize: '14px',
+  },
+  elements: {
+    rootBox: { width: '100%' },
+    card: { background: brandColors.surface, border: `1px solid ${brandColors.border}`, boxShadow: 'none' },
+    cardBox: { background: brandColors.surface },
+
+    navbar: { background: brandColors.surface, borderRight: `1px solid ${brandColors.border}` },
+    navbarButton: { color: brandColors.text, '&:hover': { background: brandColors.surfaceAlt } },
+    navbarButtonActive: { background: 'rgba(200,16,46,0.15)', color: brandColors.red },
+    navbarButtonActiveText: { color: brandColors.red },
+    navbarButtonIcon: { color: brandColors.textMuted },
+    navbarButtonActiveIcon: { color: brandColors.red },
+
+    pageScrollBox: { background: brandColors.surface },
+    page: { background: brandColors.surface },
+
+    profileSection: { background: brandColors.surface, border: `1px solid ${brandColors.border}` },
+    profileSectionTitleText: { color: brandColors.gold },
+    profileSectionContent: { background: brandColors.surface },
+    profileSection__profile: { background: brandColors.surface },
+    profileSectionPrimaryButton: {
+      background: brandColors.red,
+      color: '#fff',
+      '&:hover': { background: brandColors.redDark },
+    },
+
+    headerTitle: { color: '#fff' },
+    headerSubtitle: { color: brandColors.textMuted },
+
+    formButtonPrimary: {
+      background: brandColors.red,
+      color: '#fff',
+      fontWeight: 600,
+      '&:hover': { background: brandColors.redDark },
+    },
+    formButtonSecondary: {
+      background: brandColors.surfaceAlt,
+      color: brandColors.text,
+      border: `1px solid ${brandColors.border}`,
+      '&:hover': { background: brandColors.border },
+    },
+    formButtonReset: { color: brandColors.textMuted },
+    formFieldLabel: { color: brandColors.text, fontWeight: 500, fontSize: '13px' },
+    formFieldHint: { color: brandColors.textMuted, fontSize: '12px' },
+    formFieldHintText: { color: brandColors.textMuted, fontSize: '12px' },
+    formFieldErrorText: { color: brandColors.danger, fontSize: '12px' },
+    formFieldSuccessText: { color: brandColors.success, fontSize: '12px' },
+    formFieldWarningText: { color: brandColors.gold, fontSize: '12px' },
+    formFieldInput: {
+      background: brandColors.surfaceInput,
+      color: brandColors.text,
+      border: `1px solid ${brandColors.border}`,
+      caretColor: brandColors.text,
+    },
+    formFieldInputGroup: { background: brandColors.surfaceInput },
+    formFieldAction: { color: brandColors.gold, '&:hover': { color: '#ffd466' } },
+    formResendCodeLink: { color: brandColors.gold, '&:hover': { color: '#ffd466' } },
+
+    otpCodeFieldInput: {
+      background: brandColors.surfaceInput,
+      color: brandColors.text,
+      border: `1px solid ${brandColors.border}`,
+      caretColor: brandColors.text,
+      fontSize: '20px',
+      fontWeight: 600,
+    },
+    verificationCodeInput: {
+      background: brandColors.surfaceInput,
+      color: brandColors.text,
+      border: `1px solid ${brandColors.border}`,
+    },
+
+    identityPreview: { background: brandColors.surfaceInput, border: `1px solid ${brandColors.border}` },
+    identityPreviewText: { color: brandColors.text },
+    identityPreviewEditButton: { color: brandColors.red, '&:hover': { color: '#e0233f' } },
+    identityPreviewEditButtonIcon: { color: brandColors.red },
+
+    badge: { background: brandColors.surfaceAlt, color: brandColors.text, border: `1px solid ${brandColors.border}` },
+    badge__verified: { background: 'rgba(74,222,128,0.15)', color: brandColors.success, borderColor: 'rgba(74,222,128,0.3)' },
+    badge__primary: { background: 'rgba(255,184,28,0.15)', color: brandColors.gold, borderColor: 'rgba(255,184,28,0.3)' },
+
+    // Modals (Update email, Add phone, Add connected account, etc.)
+    modalContent: { background: brandColors.surface, border: `1px solid ${brandColors.border}` },
+    modalCloseButton: { color: brandColors.textMuted, '&:hover': { color: brandColors.text } },
+    backLink: { color: brandColors.text, '&:hover': { color: '#fff' } },
+    backLinkIcon: { color: brandColors.textMuted },
+
+    // Dropdown menu (e.g., "Add account" -> choose provider)
+    menuList: { background: brandColors.surface, border: `1px solid ${brandColors.border}` },
+    menuItem: { color: brandColors.text, '&:hover': { background: brandColors.surfaceAlt } },
+    menuItemIcon: { color: brandColors.textMuted },
+
+    // Connected-account action cards
+    actionCard: { background: brandColors.surface, border: `1px solid ${brandColors.border}` },
+    actionCardItem: { background: brandColors.surface, borderColor: brandColors.border },
+    actionCardIconBox: { background: brandColors.surfaceAlt },
+
+    // Active devices table
+    tableHead: { background: brandColors.surfaceAlt, color: brandColors.textMuted },
+    tableRow: { background: brandColors.surface, color: brandColors.text, borderColor: brandColors.border },
+    tableHeaderCell: { color: brandColors.textMuted, borderColor: brandColors.border },
+    tableBodyCell: { color: brandColors.text, borderColor: brandColors.border },
+    paginationButton: { color: brandColors.text, background: brandColors.surfaceAlt, '&:hover': { background: brandColors.border } },
+    paginationButton__disabled: { color: brandColors.textMuted, background: brandColors.surface, opacity: 0.5 },
+
+    // Selects
+    selectButton: { background: brandColors.surfaceInput, color: brandColors.text, border: `1px solid ${brandColors.border}` },
+    selectOption: { color: brandColors.text, background: brandColors.surface, '&:hover': { background: brandColors.surfaceAlt } },
+
+    // Spinner
+    spinner: { color: brandColors.red },
+
+    // Hide Clerk branding (defensive — won't show in prod)
     logoBox: { display: 'none' },
   },
 } as const;

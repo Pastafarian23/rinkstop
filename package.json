@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.4.1",
+    "@clerk/themes": "^2.4.57",
     "@supabase/supabase-js": "^2.45.0",
     "bcryptjs": "^3.0.3",
     "leaflet": "^1.9.4",

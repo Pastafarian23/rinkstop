@@ -1,4 +1,5 @@
 import { UserProfile } from '@clerk/nextjs';
+import { userProfileAppearance } from '@/lib/clerk-appearance';
 
 export default function UserProfilePage() {
   return (
@@ -25,26 +26,7 @@ export default function UserProfilePage() {
         <UserProfile
           routing="path"
           path="/user-profile"
-          appearance={{
-            elements: {
-              rootBox: { width: '100%' },
-              card: { background: '#0f0f0f', border: '1px solid #1e1e1e', boxShadow: 'none' },
-              navbar: { background: '#0a0a0a', borderRight: '1px solid #1e1e1e' },
-              navbarButton: { color: 'rgba(255,255,255,0.7)' },
-              navbarButtonActive: { background: 'rgba(200,16,46,0.15)', color: '#C8102E' },
-              navbarButtonActiveText: { color: '#C8102E' },
-              pageScrollBox: { background: '#0f0f0f' },
-              profileSectionTitleText: { color: '#FFB81C' },
-              formButtonPrimary: { background: '#C8102E', '&:hover': { background: '#a30d24' } },
-              formFieldInput: { background: '#141414', borderColor: '#1e1e1e', color: '#e2e8f0' },
-              formFieldLabel: { color: 'rgba(255,255,255,0.7)' },
-              identityPreview: { background: '#141414', borderColor: '#1e1e1e' },
-              identityPreviewText: { color: '#e2e8f0' },
-              identityPreviewEditButton: { color: '#C8102E' },
-              headerTitle: { color: '#fff' },
-              headerSubtitle: { color: 'rgba(255,255,255,0.5)' },
-            },
-          }}
+          appearance={userProfileAppearance}
         />
       </div>
     </div>
