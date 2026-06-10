@@ -237,63 +237,6 @@ export default function TeamDetail() {
             </section>
           )}
 
-          {/* Franchise History — shown for teams with relocations/renames */}
-          {(() => {
-            const chain = getChainForSlug(team.slug);
-            if (!chain) return null;
-            return (
-              <section style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
-                  FRANCHISE HISTORY
-                </h2>
-                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)', marginBottom: '0.875rem', lineHeight: 1.5 }}>
-                  {chain.blurb}
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {chain.chain.map((entry, i) => {
-                    const isCurrent = i === chain.chain.length - 1;
-                    const inner = (
-                      <>
-                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.9375rem', fontWeight: isCurrent ? 800 : 600, color: isCurrent ? 'var(--red)' : '#fff' }}>
-                            {entry.name}
-                            {isCurrent && <span style={{ marginLeft: '0.5rem', fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>CURRENT</span>}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontVariantNumeric: 'tabular-nums' }}>
-                            {entry.years}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.15rem' }}>
-                          {entry.city}
-                          {entry.notes ? <span style={{ color: 'rgba(255,255,255,0.35)' }}> — {entry.notes}</span> : null}
-                        </div>
-                      </>
-                    );
-                    return (
-                      <div
-                        key={entry.slug}
-                        style={{
-                          background: isCurrent ? 'rgba(200,16,46,0.06)' : 'var(--s2)',
-                          border: isCurrent ? '1px solid rgba(200,16,46,0.3)' : '1px solid var(--border)',
-                          borderRadius: '6px',
-                          padding: '0.75rem 1rem',
-                        }}
-                      >
-                        {inner}
-                      </div>
-                    );
-                  })}
-                </div>
-                <Link
-                  href={`/directory/nhl/history#${chain.current}`}
-                  style={{ display: 'inline-block', marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--red)', fontWeight: 600, textDecoration: 'none' }}
-                >
-                  View all NHL franchise chains →
-                </Link>
-              </section>
-            );
-          })()}
-
           {/* Coaching & Management */}
           {[
             { role: 'Head Coach', name: staticData.coach },
@@ -338,6 +281,60 @@ export default function TeamDetail() {
 
       {/* Home rink and league */}
       <TeamRelated leagueId={team.league_id} currentTeamId={team.id} homeRinkId={team.home_rink_id} />
+
+      {/* Franchise History — shown for teams with relocations/renames.
+          Renders independently of NHL_TEAM_DATA so it appears for newer
+          teams (e.g. Utah Hockey Club) that don't have static data yet. */}
+      {(() => {
+        const chain = getChainForSlug(team.slug);
+        if (!chain) return null;
+        return (
+          <section style={{ marginTop: '2.5rem' }}>
+            <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+              FRANCHISE HISTORY
+            </h2>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)', marginBottom: '0.875rem', lineHeight: 1.5 }}>
+              {chain.blurb}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {chain.chain.map((entry, i) => {
+                const isCurrent = i === chain.chain.length - 1;
+                return (
+                  <div
+                    key={entry.slug}
+                    style={{
+                      background: isCurrent ? 'rgba(200,16,46,0.06)' : 'var(--s2)',
+                      border: isCurrent ? '1px solid rgba(200,16,46,0.3)' : '1px solid var(--border)',
+                      borderRadius: '6px',
+                      padding: '0.75rem 1rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.9375rem', fontWeight: isCurrent ? 800 : 600, color: isCurrent ? 'var(--red)' : '#fff' }}>
+                        {entry.name}
+                        {isCurrent && <span style={{ marginLeft: '0.5rem', fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>CURRENT</span>}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontVariantNumeric: 'tabular-nums' }}>
+                        {entry.years}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.15rem' }}>
+                      {entry.city}
+                      {entry.notes ? <span style={{ color: 'rgba(255,255,255,0.35)' }}> — {entry.notes}</span> : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <Link
+              href={`/directory/nhl/history#${chain.current}`}
+              style={{ display: 'inline-block', marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--red)', fontWeight: 600, textDecoration: 'none' }}
+            >
+              View all NHL franchise chains →
+            </Link>
+          </section>
+        );
+      })()}
 
       <div style={{ height: '1px', background: 'var(--border)', margin: '2rem 0' }} />
 
