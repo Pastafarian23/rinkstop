@@ -1,6 +1,17 @@
 # RinkStop robots.txt
 # All AI and automated crawlers are prohibited from scraping directory data
 
+# Explicitly allow Google AdSense crawler (required for ads to serve)
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+# Google's main crawler (needed for AdSense policy review and indexing)
+User-agent: Googlebot
+Allow: /
+
 User-agent: CCBot
 Disallow: /
 
