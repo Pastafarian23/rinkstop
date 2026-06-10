@@ -360,36 +360,6 @@ img  { max-width: 100%; display: block; }
 }
 @media (min-width: 768px) { .mob-profile-icon { display: none; } }
 
-/* Desktop profile button (shown only on desktop, only when signed in) */
-.desktop-profile-icon {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  color: #fff;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  flex-shrink: 0;
-  text-decoration: none;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-  cursor: pointer;
-}
-.desktop-profile-icon:hover {
-  background: rgba(255,255,255,0.16);
-  border-color: rgba(255,255,255,0.25);
-}
-.desktop-profile-icon:active { transform: scale(0.96); }
-.desktop-profile-icon__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-@media (min-width: 768px) { .desktop-profile-icon { display: inline-flex; } }
-
 /* Hamburger */
 .hamburger {
   display: flex;

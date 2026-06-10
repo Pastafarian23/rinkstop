@@ -8,9 +8,11 @@ import { userButtonAppearance } from '@/lib/clerk-appearance';
  * NavAuth — shows Sign In / Sign Up buttons when signed out,
  * and a Clerk UserButton (avatar + dropdown with sign-out) when signed in.
  *
- * Dashboard access for signed-in users is handled by DesktopProfileButton /
- * MobileProfileButton (the avatar icons in the nav bar). The Clerk UserButton
- * here handles the sign-out dropdown and account management.
+ * The Clerk <UserButton> is the single profile icon for signed-in users on
+ * desktop. On mobile, MobileProfileButton renders a separate profile icon in
+ * the top bar (signed-in only); the UserButton does not appear on mobile.
+ * The UserButton's userProfileUrl="/dashboard/profile" makes its "Manage
+ * account" entry point to the dashboard profile page.
  *
  * Clerk v7+ uses <Show when="signed-in" | "signed-out"> instead of the
  * deprecated <SignedIn>/<SignedOut> components.
