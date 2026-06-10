@@ -4,6 +4,40 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+const POSITION_FULL: Record<string, string> = {
+  center: 'Center', left_wing: 'Left Wing', right_wing: 'Right Wing',
+  defenseman: 'Defenseman', defense: 'Defenseman', goalie: 'Goalie',
+  goaltender: 'Goalie', forward: 'Forward',
+};
+
+function buildPlayerDescription(player: any): string {
+  const fullName = `${player.first_name} ${player.last_name}`;
+  const teamName = player.teams?.name || player.current_team_name || 'their current team';
+  const leagueName = player.teams?.leagues?.name || '';
+  const position = POSITION_FULL[player.position] || player.position || 'Hockey Player';
+  const facts: string[] = [];
+  if (player.jersey_number != null) facts.push(`#${player.jersey_number}`);
+  if (player.height_cm) facts.push(`${player.height_cm} cm tall`);
+  if (player.weight_kg) facts.push(`${player.weight_kg} kg`);
+  if (player.shoots) facts.push(`shoots ${player.shoots === 'L' ? 'left' : 'right'}`);
+  if (player.birth_place) facts.push(`from ${player.birth_place}`);
+  if (player.nationality && player.nationality.length <= 3) {
+    // Treat short codes as country codes
+    const COUNTRY_NAMES: Record<string, string> = {
+      CAN: 'Canada', USA: 'United States', US: 'United States',
+      RUS: 'Russia', SWE: 'Sweden', FIN: 'Finland', CZE: 'Czechia',
+      SVK: 'Slovakia', DEU: 'Germany', GER: 'Germany', CHE: 'Switzerland',
+      NOR: 'Norway', DNK: 'Denmark', FRA: 'France', AUT: 'Austria',
+    };
+    facts.push(COUNTRY_NAMES[player.nationality] || player.nationality);
+  } else if (player.nationality) {
+    facts.push(player.nationality);
+  }
+  const factsStr = facts.length > 0 ? ` (${facts.join(', ')})` : '';
+  const leagueStr = leagueName ? ` in the ${leagueName}` : '';
+  return `${fullName}${factsStr} is a ${position} who plays for the ${teamName}${leagueStr}. View full profile, career stats, and highlights on RinkStop.`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
@@ -20,19 +54,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const fullName = `${player.first_name} ${player.last_name}`;
-    const teamName = player.teams?.name || 'Unknown Team';
+    const teamName = player.teams?.name || player.current_team_name || 'Hockey Player';
     const leagueName = player.teams?.leagues?.name || '';
-    const position = player.position?.replace('_', ' ') || 'Hockey Player';
-
-    const metaParts = [position];
-    if (player.height_cm) metaParts.push(`${player.height_cm}cm`);
-    if (player.nationality) metaParts.push(player.nationality);
-    metaParts.push(`plays for ${teamName}`);
-    if (leagueName) metaParts.push(`(${leagueName})`);
-    const description = `${fullName} — ${metaParts.join(', ')}. View full profile, stats and career information on RinkStop.`;
+    const description = buildPlayerDescription(player);
+    const title = `${fullName} - ${POSITION_FULL[player.position] || 'Hockey'} | ${teamName}${leagueName ? ` (${leagueName})` : ''} | RinkStop`;
 
     return {
-      title: `${fullName} | ${teamName} | RinkStop`,
+      title,
       description,
       openGraph: {
         title: `${fullName} | RinkStop`,
