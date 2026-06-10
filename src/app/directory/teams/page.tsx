@@ -66,6 +66,12 @@ export default function TeamsPage() {
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
           ALL TEAMS
         </h1>
+        <Link
+          href="/directory/nhl/history"
+          style={{ display: 'inline-block', marginTop: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}
+        >
+          Looking for a team that relocated or renamed? View NHL franchise history →
+        </Link>
       </div>
 
       {/* Filter Bar */}
