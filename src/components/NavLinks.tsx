@@ -63,7 +63,7 @@ export default function NavLinks() {
         <span className="nav-menu-button__bars" aria-hidden="true">
           <span /><span /><span />
         </span>
-        <span className="nav-menu-button__label">Menu</span>
+        <span className="nav-menu-button__label">{open ? 'Close' : 'Menu'}</span>
         <svg
           className="nav-menu-button__chevron"
           width="10"
