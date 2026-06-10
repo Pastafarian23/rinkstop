@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Show } from '@clerk/nextjs';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
@@ -118,7 +119,9 @@ export default function Home() {
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href="/directory" className="btn btn-red">Explore Directory</Link>
-                <Link href="/sign-up" className="btn btn-yellow">Join Now</Link>
+                <Show when="signed-out">
+                  <Link href="/sign-up" className="btn btn-yellow">Join Now</Link>
+                </Show>
               </div>
             </div>
 
