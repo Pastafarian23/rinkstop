@@ -6,6 +6,7 @@ import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
+import DesktopProfileButton from '@/components/DesktopProfileButton';
 import CookieConsent from '@/components/CookieConsent';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import ScoreTicker from '@/components/ScoreTicker';
@@ -151,8 +152,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {/* Desktop links */}
                 <NavLinks />
 
-                {/* Desktop right — shows Sign In/Up when signed out, Dashboard+avatar when signed in */}
+                {/* Desktop right — Menu, profile icon (signed in), and Sign In/Up or Clerk UserButton */}
                 <div className="nav-right">
+                  <DesktopProfileButton />
                   <NavAuth />
                 </div>
 
