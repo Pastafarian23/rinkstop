@@ -23,6 +23,16 @@ export async function generateMetadata({ params }: { params: Promise<{ season: s
 function resolveCanonical(teamName: string): NhlTeamCanonical | undefined {
   if (!teamName) return undefined;
   const norm = teamName.toLowerCase().trim();
+  // Map data-side names that drift from canonical (e.g. team rebrands).
+  // The data uses nicknames/short names; the canonical map uses official names.
+  // Keeping the slug stable means the team page URL doesn't change.
+  const ALIASES: Record<string, string> = {
+    'utah mammoth': 'utah-hockey-club',  // 2025-26 rebrand — data uses "Mammoth" identity
+    'utah': 'utah-hockey-club',
+  };
+  if (ALIASES[norm]) {
+    return NHL_TEAMS_CANONICAL.find(t => t.slug === ALIASES[norm]);
+  }
   return NHL_TEAMS_CANONICAL.find(t => t.name.toLowerCase() === norm);
 }
 
