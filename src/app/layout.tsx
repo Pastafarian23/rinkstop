@@ -1,8 +1,9 @@
 import './globals.css';
 import Link from 'next/link';
-import { ClerkProvider, Show } from '@clerk/nextjs';
+import { ClerkProvider } from '@clerk/nextjs';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
+import MobileProfileButton from '@/components/MobileProfileButton';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
@@ -154,15 +155,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <NavAuth />
                 </div>
 
-                {/* Mobile profile icon — visible only on mobile + only when signed in */}
-                <Show when="signed-in">
-                  <Link href="/dashboard" className="mob-profile-icon" aria-label="Go to your dashboard">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  </Link>
-                </Show>
+                {/* Mobile profile button — visible only on mobile + only when signed in */}
+                <MobileProfileButton />
 
                 {/* Mobile hamburger  --  label toggles checkbox */}
                 <label htmlFor="mob-nav" className="hamburger" aria-label="Open menu">
