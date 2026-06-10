@@ -2,7 +2,7 @@
  * NHL Live Game Sync — Fetches current playoff scores from NHL API and upserts to Supabase
  * Run: node scripts/sync-nhl-live.js [--dry-run] [--date=YYYY-MM-DD]
  *
- * Uses crypto.randomUUID() for Supabase IDs, stores NHL game ID in game_data.nhl_game_id
+ * Uses fixtures_natural_key_uniq (league_id, scheduled_at, home_team_id, away_team_id) for upsert; stores NHL game ID in game_data.nhl_game_id
  */
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
@@ -133,7 +133,6 @@ async function upsertGame(game, dryRun = false) {
   }
 
   const record = {
-    id: crypto.randomUUID(),
     home_team_id: homeTeamId,
     away_team_id: awayTeamId,
     league_id: NHL_LEAGUE_ID,
@@ -152,43 +151,14 @@ async function upsertGame(game, dryRun = false) {
     return { ok: true };
   }
 
-  // Try insert; if duplicate key error, fetch existing and update
-  const { error } = await supabase.from('fixtures').insert(record);
+  // Upsert on the natural key (league_id, scheduled_at, home_team_id, away_team_id).
+  // Unique constraint fixtures_natural_key_uniq enforces this; duplicate inserts update
+  // the existing row in place instead of creating a new row. This was added 2026-06-10
+  // to stop the 9-11x duplication of playoff games from daily re-syncs.
+  const { error } = await supabase
+    .from('fixtures')
+    .upsert(record, { onConflict: 'league_id,scheduled_at,home_team_id,away_team_id' });
   if (error) {
-    if (error.message.includes('duplicate') || error.message.includes('23505')) {
-      // Find by nhl_game_id in game_data and update
-      const { data: match } = await supabase
-        .from('fixtures')
-        .select('id, game_data')
-        .eq('league_id', NHL_LEAGUE_ID)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      let foundId = null;
-      for (const m of (match || [])) {
-        const nid = m.game_data?.nhl_game_id;
-        if (nid && String(nid) === nhlGameId) { foundId = m.id; break; }
-      }
-
-      if (foundId) {
-        const { error: updErr } = await supabase
-          .from('fixtures')
-          .update({
-            home_team_id: homeTeamId,
-            away_team_id: awayTeamId,
-            home_score: homeScore,
-            away_score: awayScore,
-            status,
-            game_data,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', foundId);
-        if (updErr) return { ok: false, reason: updErr.message };
-        return { ok: true };
-      }
-      // NHL game ID not found in DB — try deleting duplicate UUID and re-inserting
-      return { ok: false, reason: `duplicate without match: ${error.message.slice(0, 80)}` };
-    }
     return { ok: false, reason: error.message };
   }
   return { ok: true };
