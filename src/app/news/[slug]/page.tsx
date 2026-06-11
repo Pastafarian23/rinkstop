@@ -38,6 +38,36 @@ function formatDate(date?: string) {
   } catch { return date; }
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Convert inline markdown to HTML. Order matters:
+// 1) links first (may wrap with italic later)
+// 2) bold (**...**)
+// 3) italic (*...*) — single * not part of **
+function inlineMarkdownToHtml(line: string): string {
+  // 1) links: [label](https://url)
+  let s = line.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g,
+    (_m, label, url) => {
+      const safeLabel = escapeHtml(label);
+      const safeUrl = url.replace(/"/g, '&quot;');
+      return `<a href="${safeUrl}" rel="noopener noreferrer" target="_blank">${safeLabel}</a>`;
+    }
+  );
+  // 2) bold
+  s = s.replace(/\*\*(.+?)\*\*/g, (_m, t) => `<strong>${t}</strong>`);
+  // 3) italic — single * not in ** and not part of HTML tags we just emitted
+  s = s.replace(/(^|[^*\w])\*([^\*\n]+?)\*(?!\*)/g, (_m, lead, t) => `${lead}<em>${t}</em>`);
+  return s;
+}
+
 function contentToHtml(content: string): string {
   // Remove sign-off lines
   let text = content
@@ -54,21 +84,18 @@ function contentToHtml(content: string): string {
 
     // H2
     if (line.startsWith('## ')) {
-      const text = line.substring(3).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      html.push(`<h2>${text}</h2>`);
+      html.push(`<h2>${inlineMarkdownToHtml(line.substring(3))}</h2>`);
       continue;
     }
 
     // H3
     if (line.startsWith('### ')) {
-      const text = line.substring(4).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      html.push(`<h3>${text}</h3>`);
+      html.push(`<h3>${inlineMarkdownToHtml(line.substring(4))}</h3>`);
       continue;
     }
 
-    // Bold inline
-    const processed = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html.push(`<p>${processed}</p>`);
+    // Regular paragraph (escape HTML, then apply inline markdown)
+    html.push(`<p>${inlineMarkdownToHtml(escapeHtml(line))}</p>`);
   }
 
   return html.join('\n');
