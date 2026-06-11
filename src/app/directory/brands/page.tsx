@@ -179,16 +179,13 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
                       {brand.name}
                     </h3>
                     {brand.website_url && (
-                      <a
-                        href={brand.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow sponsored"
+                      <span
                         style={{ color: '#333', flexShrink: 0, marginTop: '2px' }}
                         title={`Visit ${brand.name}`}
-                        onClick={e => e.stopPropagation()}
+                        aria-hidden="true"
                       >
                         <ExternalLinkIcon className="w-3.5 h-3.5" />
-                      </a>
+                      </span>
                     )}
                   </div>
 
