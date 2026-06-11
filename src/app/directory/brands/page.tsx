@@ -1,7 +1,10 @@
-'use client';
-import { useState, useEffect } from 'react';
+// Brand listing page — server component.
+// Fetches all brands server-side, no useEffect/useState.
+// Optional ?category= filter via search params.
+
 import Link from 'next/link';
 import { ExternalLinkIcon } from '@/components/icons';
+import { getBrandList } from '@/lib/brand-page';
 
 const FILTER_CATEGORIES = [
   { key: 'all', label: 'All' },
@@ -53,39 +56,17 @@ function BrandLogo({ name, category }: { name: string; category: string }) {
   );
 }
 
-export default function BrandsPage() {
-  const [brands, setBrands] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('all');
+type SearchParams = Promise<{ category?: string }>;
 
-  useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (activeCategory !== 'all') params.set('category', activeCategory);
-    fetch(`/api/brands?${params}`)
-      .then(r => r.json())
-      .then(d => {
-        setBrands(d || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [activeCategory]);
+export default async function BrandsPage(props: { searchParams: SearchParams }) {
+  const { category } = await props.searchParams;
+  const activeCategory = category && category !== 'all' ? category : 'all';
+  const { brands, byCategory, totalCount } = await getBrandList(activeCategory);
 
-  // Count all brands for badge display
-  const [totalCount, setTotalCount] = useState(0);
-  useEffect(() => {
-    fetch('/api/brands')
-      .then(r => r.json())
-      .then(d => setTotalCount((d || []).length))
-      .catch(() => {});
-  }, []);
-
-  const filteredCount = brands.length;
-  const displayCount = activeCategory === 'all' ? totalCount : filteredCount;
+  const displayCount = activeCategory === 'all' ? totalCount : brands.length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
       {/* Breadcrumb */}
       <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555555' }}>Home</Link>
@@ -121,45 +102,53 @@ export default function BrandsPage() {
           </span>
         </div>
         <p style={{ color: '#555555', fontSize: '0.875rem', marginTop: '0.5rem', maxWidth: '640px' }}>
-          Equipment, apparel, and accessories from the brands trusted by players at every level  --  with affiliate links to shop directly.
+          Equipment, apparel, and accessories from the brands trusted by players at every level — with affiliate links to shop directly.
         </p>
       </div>
 
-      {/* Category Filter Pills */}
+      {/* Category Filter Pills — server-rendered as links so they work without JS */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-        {FILTER_CATEGORIES.map(cat => (
-          <button
-            key={cat.key}
-            onClick={() => setActiveCategory(cat.key)}
-            style={{
-              padding: '0.35rem 0.875rem',
-              borderRadius: '999px',
-              border: activeCategory === cat.key
-                ? `1px solid ${CATEGORY_COLORS[cat.key] ?? '#555'}`
-                : '1px solid #1f1f1f',
-              background: activeCategory === cat.key
-                ? (CATEGORY_BG[cat.key] ?? 'rgba(55,65,81,0.3)')
-                : '#0d0d0d',
-              color: activeCategory === cat.key
-                ? (CATEGORY_COLORS[cat.key] ?? '#ccc')
-                : '#666',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              letterSpacing: '0.04em',
-            }}
-          >
-            {cat.label}
-          </button>
-        ))}
+        {FILTER_CATEGORIES.map(cat => {
+          const isActive = cat.key === activeCategory;
+          const count = (byCategory[cat.key] || []).length;
+          return (
+            <Link
+              key={cat.key}
+              href={cat.key === 'all' ? '/directory/brands' : `/directory/brands?category=${cat.key}`}
+              style={{
+                padding: '0.35rem 0.875rem',
+                borderRadius: '999px',
+                border: isActive
+                  ? `1px solid ${CATEGORY_COLORS[cat.key] ?? '#555'}`
+                  : '1px solid #1f1f1f',
+                background: isActive
+                  ? (CATEGORY_BG[cat.key] ?? 'rgba(55,65,81,0.3)')
+                  : '#0d0d0d',
+                color: isActive
+                  ? (CATEGORY_COLORS[cat.key] ?? '#ccc')
+                  : '#666',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                letterSpacing: '0.04em',
+                textDecoration: 'none',
+              }}
+            >
+              {cat.label}
+              {count > 0 && (
+                <span style={{ marginLeft: '0.4rem', opacity: 0.7 }}>{count}</span>
+              )}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Brand Grid */}
-      {loading ? (
-        <div style={{ color: '#444', padding: '3rem 0', textAlign: 'center' }}>Loading brands...</div>
-      ) : brands.length === 0 ? (
-        <div style={{ color: '#444', padding: '3rem 0', textAlign: 'center' }}>No brands found.</div>
+      {brands.length === 0 ? (
+        <div style={{ color: '#444', padding: '3rem 0', textAlign: 'center' }}>
+          No brands found{activeCategory !== 'all' ? ` in ${activeCategory}` : ''}.
+        </div>
       ) : (
         <div
           style={{
@@ -168,16 +157,17 @@ export default function BrandsPage() {
             gap: '1rem',
           }}
         >
-          {brands.map((brand: any) => {
+          {brands.map(brand => {
             const catColor = CATEGORY_COLORS[brand.category] ?? '#374151';
             const catBg = CATEGORY_BG[brand.category] ?? 'rgba(55,65,81,0.15)';
             const catLabel = FILTER_CATEGORIES.find(c => c.key === brand.category)?.label ?? brand.category;
 
             return (
-              <div
+              <Link
                 key={brand.id}
+                href={`/directory/brands/${brand.slug}`}
                 className="card-default"
-                style={{ padding: '1.125rem', display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}
+                style={{ padding: '1.125rem', display: 'flex', gap: '0.875rem', alignItems: 'flex-start', textDecoration: 'none' }}
               >
                 {/* Logo circle */}
                 <BrandLogo name={brand.name} category={brand.category} />
@@ -188,7 +178,6 @@ export default function BrandsPage() {
                     <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
                       {brand.name}
                     </h3>
-                    {/* External link */}
                     {brand.website_url && (
                       <a
                         href={brand.website_url}
@@ -196,6 +185,7 @@ export default function BrandsPage() {
                         rel="noopener noreferrer nofollow sponsored"
                         style={{ color: '#333', flexShrink: 0, marginTop: '2px' }}
                         title={`Visit ${brand.name}`}
+                        onClick={e => e.stopPropagation()}
                       >
                         <ExternalLinkIcon className="w-3.5 h-3.5" />
                       </a>
@@ -222,9 +212,11 @@ export default function BrandsPage() {
                   </span>
 
                   {/* Description */}
-                  <p style={{ color: '#666', fontSize: '0.8125rem', marginTop: '0.4rem', lineHeight: 1.5 }}>
-                    {brand.description}
-                  </p>
+                  {brand.description && (
+                    <p style={{ color: '#666', fontSize: '0.8125rem', marginTop: '0.4rem', lineHeight: 1.5 }}>
+                      {brand.description}
+                    </p>
+                  )}
 
                   {/* Origin + CTA */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.6rem' }}>
@@ -234,25 +226,21 @@ export default function BrandsPage() {
                       </span>
                     )}
                     {brand.website_url && (
-                      <a
-                        href={brand.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow sponsored"
+                      <span
                         style={{
                           fontSize: '0.6875rem',
                           fontWeight: 700,
                           color: '#c8102e',
                           letterSpacing: '0.06em',
                           textTransform: 'uppercase',
-                          textDecoration: 'none',
                         }}
                       >
                         Shop ↗
-                      </a>
+                      </span>
                     )}
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
