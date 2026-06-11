@@ -55,7 +55,9 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(games);
+    return NextResponse.json(games, {
+      headers: { 'Cache-Control': 'public, max-age=5, s-maxage=10, stale-while-revalidate=30' }
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : (typeof e === 'object' ? JSON.stringify(e) : String(e));
     console.error('games ticker error', msg);

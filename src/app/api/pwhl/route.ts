@@ -24,5 +24,7 @@ export async function GET() {
     return NextResponse.json({ error: teamsError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ league, teams });
+  const r = NextResponse.json({ league, teams });
+  r.headers.set('Cache-Control', 'public, max-age=120, s-maxage=600, stale-while-revalidate=3600');
+  return r;
 }

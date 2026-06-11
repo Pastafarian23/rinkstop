@@ -37,5 +37,8 @@ export async function GET(
   }
 
   const res = NextResponse.json({ profile: data });
+  // 2026-06-11: Vercel Hobby limit reduction — public profile, cache 2min
+  // (tier/bio changes are not second-by-second; 2min staleness is fine)
+  res.headers.set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=1800');
   return applyRateLimitHeaders(res, result);
 }

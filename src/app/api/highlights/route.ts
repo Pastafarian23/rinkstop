@@ -52,9 +52,11 @@ export async function GET(request: NextRequest) {
   
   // If backup returned results, use them
   if (backupResult && backupResult.highlights && backupResult.highlights.length > 0) {
-    return NextResponse.json(backupResult);
+    const r = NextResponse.json(backupResult);
+    r.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=1800');
+    return r;
   }
-  
+
   // === STEP 2: Backup is empty for this query — fall back to Highlightly API ===
   if (fallbackToApi) {
     const apiResult = await getHighlightsFromHighlightly({
@@ -67,15 +69,21 @@ export async function GET(request: NextRequest) {
       leagueName,
       youtubeOnly,
     });
-    if (apiResult) return NextResponse.json(apiResult);
+    if (apiResult) {
+      const r = NextResponse.json(apiResult);
+      r.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=1800');
+      return r;
+    }
   }
-  
+
   // Both sources returned nothing
-  return NextResponse.json({
+  const empty = NextResponse.json({
     highlights: [],
     pagination: { totalCount: 0, offset, limit },
     source: 'empty',
   });
+  empty.headers.set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=600');
+  return empty;
 }
 
 async function getHighlightsFromBackup(opts: {

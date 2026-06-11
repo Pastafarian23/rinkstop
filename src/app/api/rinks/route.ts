@@ -72,5 +72,8 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.json(id || slug ? (data?.[0] ?? null) : { count: count ?? enrichedData?.length ?? 0, data: enrichedData });
+  // 2026-06-11: Vercel Hobby limit reduction — cache at CDN for 5min, allow stale 10x longer
+  // This cuts function invocations on bot crawls from O(requests) to O(cache-misses).
+  response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=3600');
   return applyRateLimitHeaders(response, result);
 }
