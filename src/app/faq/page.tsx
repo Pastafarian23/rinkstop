@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'FAQ | RinkStop',
+  title: 'FAQ',
   description: 'Frequently asked questions about RinkStop - the world\'s hockey directory. Find answers about accounts, listings, memberships, claims, and more.',
   alternates: { canonical: 'https://rinkstop.com/faq' },
   openGraph: {
-    title: 'FAQ | RinkStop',
+    title: 'FAQ',
     description: 'Accounts, listings, memberships, claims, and more - everything you need to know about RinkStop.',
     url: 'https://rinkstop.com/faq',
     siteName: 'RinkStop',
