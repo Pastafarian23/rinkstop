@@ -111,3 +111,4 @@ export const getBrandSlugMap = cache(async (): Promise<Map<string, string>> => {
   (data || []).forEach((r: any) => map.set(r.id, r.slug));
   return map;
 });
+// touched Thu Jun 11 06:01:45 UTC 2026
