@@ -51,7 +51,7 @@ async function getTeamIdBySlug(slug: string): Promise<string | null> {
 
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`scores:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   if (!result.allowed) {

@@ -15,7 +15,7 @@ export async function GET(
   const { type, id } = await params;
 
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RL);
+  const result = await checkRateLimit(`[id]:${ip}`, RL);
   maybeCleanup();
 
   if (!VALID_TYPES.includes(type as any)) {

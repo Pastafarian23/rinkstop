@@ -11,7 +11,7 @@ const RATE_LIMIT = { maxRequests: 5, windowMs: 60 * 60 * 1000 };
 
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`contact:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   if (!result.allowed) {

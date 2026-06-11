@@ -15,7 +15,7 @@ function isValidType(s: unknown): s is FavoriteType {
 // POST /api/favorites — add a favorite
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`favorites:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   const { userId } = await auth();
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 // DELETE /api/favorites — remove a favorite
 export async function DELETE(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`favorites:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   const { userId } = await auth();
@@ -129,7 +129,7 @@ export async function DELETE(request: NextRequest) {
 // GET /api/favorites?type=rink — check if a specific item is saved (lightweight; the dashboard page does the full list)
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`favorites:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   const { userId } = await auth();
