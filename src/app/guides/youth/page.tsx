@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Youth Hockey Guides | RinkStop',
+  title: 'Youth Hockey Guides',
   description: 'Guides for parents and young hockey players — equipment, age groups, development models, costs, and what to expect at every level from Learn to Play through Midget.',
+  robots: { index: false, follow: true },
+  alternates: { canonical: 'https://rinkstop.com/guides/youth' },
 };
 
 const YOUTH_GUIDE_CARDS = [

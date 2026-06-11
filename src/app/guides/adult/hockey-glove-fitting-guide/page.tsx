@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Gloves: A Guide for Adult Players | RinkStop',
+  title: 'How to Fit Hockey Gloves: A Guide for Adult Players',
   description: "How to fit hockey gloves for adult players — palm gap test, finger length, cuff overlap, length measurement, junior/intermediate sizing for women, and when to upgrade.",
   openGraph: {
-    title: 'How to Fit Hockey Gloves (Adults) | RinkStop',
+    title: 'How to Fit Hockey Gloves (Adults)',
     description: "A guide for adult players on fitting hockey gloves — palm gap, finger length, sizing, and junior sizes.",
     type: 'article',
   },

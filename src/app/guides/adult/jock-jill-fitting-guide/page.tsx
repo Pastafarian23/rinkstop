@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit a Hockey Jock or Jill: A Guide for Adult Players | RinkStop',
+  title: 'How to Fit a Hockey Jock or Jill: A Guide for Adult Players',
   description: "How to fit a hockey jock or jill for adult players — jock vs jill difference, waist measurement, women-specific fit, sizing, and when to upgrade.",
   openGraph: {
-    title: 'How to Fit a Hockey Jock or Jill (Adults) | RinkStop',
+    title: 'How to Fit a Hockey Jock or Jill (Adults)',
     description: "A guide for adult players on fitting a jock or jill — jock vs jill, fit, women-specific considerations, and when to upgrade.",
     type: 'article',
   },

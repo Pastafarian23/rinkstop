@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Pants (Breezers): A Parent\'s Guide | RinkStop',
+  title: 'How to Fit Hockey Pants (Breezers): A Parent\'s Guide',
   description: "How to fit hockey pants for your kid — waistband position, kidney pad coverage, thigh guard length, sizing, and when to size up.",
   openGraph: {
-    title: 'How to Fit Hockey Pants | RinkStop',
+    title: 'How to Fit Hockey Pants',
     description: "A parent's guide to fitting hockey pants — waistband, kidney pad, thigh guard, sizing, and when to size up.",
     type: 'article',
   },

@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Adult Hockey Guides | RinkStop',
+  title: 'Adult Hockey Guides',
   description: 'For adult hockey newcomers — rules, positions, learn-to-play programs, beer league, and what to expect on the ice.',
+  robots: { index: false, follow: true },
+  alternates: { canonical: 'https://rinkstop.com/guides/adult' },
 };
 
 const ADULT_GUIDE_CARDS = [

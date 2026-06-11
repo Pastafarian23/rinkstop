@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Equipment: A Complete Guide for Parents | RinkStop',
+  title: 'How to Fit Hockey Equipment: A Complete Guide for Parents',
   description: "How to fit every piece of hockey equipment for kids — helmet (HECC certified), shoulder pads, elbow pads, shin guards, pants, gloves, jock/jill, and mouthguard. Includes fit checks, sizing, and when to size up.",
   openGraph: {
-    title: 'How to Fit Hockey Equipment | RinkStop',
+    title: 'How to Fit Hockey Equipment',
     description: "A parent's complete guide to fitting hockey equipment — fit tests for every piece, sizing, and when to size up.",
     type: 'article',
   },

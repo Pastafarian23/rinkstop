@@ -20,18 +20,13 @@ export const metadata: Metadata = {
   },
   description: 'Find hockey teams, players, leagues, and rinks from every corner of the globe.',
   openGraph: {
-    type: 'website',
     siteName: 'RinkStop',
-    title: 'RinkStop  --  The World\'s Hockey Directory',
-    description: 'Find hockey teams, players, leagues, and rinks worldwide.',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@rinkstop',
     creator: '@rinkstop',
-    title: 'RinkStop  --  The World\'s Hockey Directory',
-    description: 'Find hockey teams, players, leagues, and rinks worldwide.',
     images: ['https://rinkstop.com/og-image.png'],
   },
   icons: {

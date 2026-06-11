@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Equipment: A Guide for Adult Players | RinkStop',
+  title: 'How to Fit Hockey Equipment: A Guide for Adult Players',
   description: 'How to fit every piece of hockey equipment for adult players — helmet (HECC/CSA), shoulder pads, elbow pads, shin guards, pants vs. girdle, gloves, jock/jill. Includes a section on women-specific gear.',
   openGraph: {
-    title: 'How to Fit Hockey Equipment for Adult Players | RinkStop',
+    title: 'How to Fit Hockey Equipment for Adult Players',
     description: 'A complete adult-player guide to fitting hockey equipment — every piece, with a women-specific section.',
     type: 'article',
   },

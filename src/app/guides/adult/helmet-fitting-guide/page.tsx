@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit a Hockey Helmet: A Guide for Adult Players | RinkStop',
+  title: 'How to Fit a Hockey Helmet: A Guide for Adult Players',
   description: "How to fit a hockey helmet for adult players — HECC vs CSA certification, ASTM F1045 standards, the shake test, chin strap fit, and when to replace. Covers rec league requirements too.",
   openGraph: {
-    title: 'How to Fit a Hockey Helmet (Adult Players) | RinkStop',
+    title: 'How to Fit a Hockey Helmet (Adult Players)',
     description: "A guide for adult players on fitting a hockey helmet — HECC and CSA certification, the shake test, and when to replace.",
     type: 'article',
   },

@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Shoulder Pads: A Guide for Adult Players | RinkStop',
+  title: 'How to Fit Hockey Shoulder Pads: A Guide for Adult Players',
   description: "How to fit hockey shoulder pads for adult players — coverage, mobility, chest measurement, tapered vs classic fit, junior sizing for women, and when to upgrade.",
   openGraph: {
-    title: 'How to Fit Hockey Shoulder Pads (Adults) | RinkStop',
+    title: 'How to Fit Hockey Shoulder Pads (Adults)',
     description: "A guide for adult players on fitting shoulder pads — fit, sizing, junior sizes for women, and when to upgrade.",
     type: 'article',
   },

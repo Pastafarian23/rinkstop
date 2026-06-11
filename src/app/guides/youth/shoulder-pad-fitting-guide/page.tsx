@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Shoulder Pads: A Parent\'s Guide | RinkStop',
+  title: 'How to Fit Hockey Shoulder Pads: A Parent\'s Guide',
   description: "How to fit hockey shoulder pads for your kid — coverage test, mobility test, chest measurement, sizing, and when to size up.",
   openGraph: {
-    title: 'How to Fit Hockey Shoulder Pads | RinkStop',
+    title: 'How to Fit Hockey Shoulder Pads',
     description: "A parent's guide to fitting shoulder pads — coverage, mobility, sizing, and when to size up.",
     type: 'article',
   },
