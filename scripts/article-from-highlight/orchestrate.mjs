@@ -101,7 +101,41 @@ async function findCandidates() {
     .in('highlight_id', ids);
   if (e2) throw e2;
   const taken = new Set((existing || []).map(p => p.highlight_id));
-  return highlights.filter(h => !taken.has(h.id)).slice(0, LIMIT);
+  // Sort: well-covered leagues first (NHL playoffs, AHL playoffs, Memorial Cup,
+  // IIHF) so we get the highest-quality articles first. The throttle bails after
+  // 25 consecutive no-data results, so this prevents it from cutting off the
+  // good leagues by hitting failures from under-covered leagues first.
+  const LEAGUE_PRIORITY = {
+    'NHL': 1,
+    'AHL': 2,
+    'IIHF': 3,
+    'Memorial Cup': 4,
+    'World Championship': 5,
+    'World Juniors': 6,
+    'Olympics': 7,
+    'QMJHL': 8,
+    'OHL': 9,
+    'WHL': 10,
+    'KHL': 11,
+    'SHL': 12,
+    'DEL': 13,
+    'NLA': 14,
+    'ECHL': 15,
+    'SPHL': 16,
+  };
+  function leagueKey(h) {
+    const lg = h.league_name;
+    const name = (lg && typeof lg === 'object' && lg.name) ? lg.name : (lg || '');
+    return LEAGUE_PRIORITY[name] || 99;
+  }
+  const filtered = highlights.filter(h => !taken.has(h.id));
+  filtered.sort((a, b) => {
+    const lp = leagueKey(a) - leagueKey(b);
+    if (lp !== 0) return lp;
+    // Same league: newer first
+    return (b.match_date || '').localeCompare(a.match_date || '');
+  });
+  return filtered.slice(0, LIMIT);
 }
 
 /**
@@ -654,10 +688,29 @@ async function main() {
   console.log(`Processing ${candidates.length} highlight(s)...`);
 
   const results = [];
+  // Throttle: if too many highlights in a row can't find data, bail early.
+  // Web-recap failures cluster by league/date (e.g. older AHL pre-2026 has no Highlightly data).
+  let consecutiveNoData = 0;
+  const MAX_CONSECUTIVE_NO_DATA = 25;
   for (const h of candidates) {
     try {
       const r = await processHighlight(h);
       results.push(r);
+      // Count 'no data' results (stub drafts OR llm failures with no usable data)
+      const isNoData = r.error && (
+        r.error.includes('no score data') ||
+        r.error.includes('no transcript') ||
+        r.error.includes('stub draft')
+      );
+      if (isNoData) {
+        consecutiveNoData++;
+        if (consecutiveNoData >= MAX_CONSECUTIVE_NO_DATA) {
+          console.warn(`\n⚠️  ${MAX_CONSECUTIVE_NO_DATA} consecutive no-data results — likely out of data coverage. Stopping early.`);
+          break;
+        }
+      } else {
+        consecutiveNoData = 0;
+      }
     } catch (e) {
       console.error(`Highlight ${h.id} crashed:`, e);
       results.push({ highlight_id: h.id, error: e.message?.slice(0, 500) });
