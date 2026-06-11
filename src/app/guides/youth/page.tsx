@@ -11,6 +11,7 @@ const YOUTH_GUIDE_CARDS = [
   { title: 'House vs Travel Hockey', cat: 'Parents', desc: 'How to choose the right level for your kid — recreational house, select, or travel/AAA.', icon: '🏠', href: '/guides/youth/house-vs-travel-hockey' },
   { title: "USA Hockey's ADM Explained", cat: 'Parents', desc: 'The American Development Model — what it is, what the stages mean, and why early specialization hurts.', icon: '📈', href: '/guides/youth/usa-hockey-adm-explained' },
   { title: 'How to Tie Hockey Skates', cat: 'Parents', desc: 'Step-by-step lacing for beginners — the standard crisscross plus how to fix lace bite.', icon: '⛸️', href: '/guides/youth/how-to-tie-hockey-skates' },
+  { title: 'How to Fit Hockey Equipment', cat: 'Equipment', desc: 'How to fit every piece — helmet, shoulder pads, elbow pads, shin guards, pants, gloves, jock/jill, and mouthguard.', icon: '🛡️', href: '/guides/youth/how-to-fit-hockey-equipment' },
   { title: 'From Youth to Junior Hockey', cat: 'Pathway', desc: 'What it takes to make the jump from youth travel hockey to junior leagues.', icon: '🚀', href: '/guides/youth-to-junior-hockey' },
   { title: 'Skate Fitting Guide', cat: 'Equipment', desc: 'How hockey skates should fit, common sizing mistakes, and what to look for at a fitting.', icon: '⛸️', href: '/guides/skate-fitting-guide' },
   { title: 'How to Choose the Right Stick', cat: 'Equipment', desc: 'Blade curve, flex, kickpoint, and length — what actually matters when buying your next stick.', icon: '🏒', href: '/guides/hockey-stick-guide' },
