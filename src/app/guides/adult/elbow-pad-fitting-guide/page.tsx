@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Elbow Pads: A Guide for Adult Players | RinkStop',
+  title: 'How to Fit Hockey Elbow Pads: A Guide for Adult Players',
   description: "How to fit hockey elbow pads for adult players — elbow cup position, strap order, length measurement, junior sizing, and when to upgrade.",
   openGraph: {
-    title: 'How to Fit Hockey Elbow Pads (Adults) | RinkStop',
+    title: 'How to Fit Hockey Elbow Pads (Adults)',
     description: "A guide for adult players on fitting elbow pads — cup position, strap order, sizing, and junior sizes.",
     type: 'article',
   },

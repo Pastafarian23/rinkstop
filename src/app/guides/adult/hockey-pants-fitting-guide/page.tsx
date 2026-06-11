@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Pants or a Girdle: A Guide for Adult Players | RinkStop',
+  title: 'How to Fit Hockey Pants or a Girdle: A Guide for Adult Players',
   description: "How to fit hockey pants or a girdle for adult players — pants vs girdle comparison, waistband position, kidney pad coverage, women-specific fit, and when to upgrade.",
   openGraph: {
-    title: 'How to Fit Hockey Pants or a Girdle (Adults) | RinkStop',
+    title: 'How to Fit Hockey Pants or a Girdle (Adults)',
     description: "A guide for adult players — pants vs girdle, fit, women-specific considerations, and when to upgrade.",
     type: 'article',
   },

@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit a Hockey Helmet: A Parent\'s Guide | RinkStop',
+  title: 'How to Fit a Hockey Helmet: A Parent\'s Guide',
   description: "How to fit a hockey helmet for your kid — HECC certification, ASTM F1045 standards, position, shake test, when to replace, and how to verify the helmet is still certified online.",
   openGraph: {
-    title: 'How to Fit a Hockey Helmet | RinkStop',
+    title: 'How to Fit a Hockey Helmet',
     description: "A parent's guide to fitting a hockey helmet — HECC certification, the shake test, sizing, and when to replace.",
     type: 'article',
   },

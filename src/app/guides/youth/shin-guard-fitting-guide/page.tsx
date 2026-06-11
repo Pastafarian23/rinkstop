@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Fit Hockey Shin Guards: A Parent\'s Guide | RinkStop',
+  title: 'How to Fit Hockey Shin Guards: A Parent\'s Guide',
   description: "How to fit hockey shin guards for your kid — knee cup position, shin length, thigh guard overlap, length measurement, sizing, and when to size up.",
   openGraph: {
-    title: 'How to Fit Hockey Shin Guards | RinkStop',
+    title: 'How to Fit Hockey Shin Guards',
     description: "A parent's guide to fitting shin guards — knee cup, shin length, thigh guard, sizing, and when to size up.",
     type: 'article',
   },
