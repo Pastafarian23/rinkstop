@@ -94,6 +94,28 @@ function contentToHtml(content: string): string {
       continue;
     }
 
+    // YouTube embed: a bare line whose entire content is a YouTube URL
+    // (youtube.com/embed/{id}, youtu.be/{id}, or youtube.com/watch?v={id}).
+    // The article-from-highlight pipeline puts a single YouTube URL on its
+    // own line near the top so the video player renders in-article.
+    // Pattern is intentionally strict: must be the whole trimmed line.
+    const ytEmbed = line.match(
+      /^(https?:\/\/(?:www\.)?youtu\.be\/([\w-]{6,15}))[?#\s]*$|^(https?:\/\/(?:www\.)?youtube\.com\/(?:watch\?v=|embed\/)([\w-]{6,15}))[?#\s]*$/i
+    );
+    if (ytEmbed) {
+      const id = (ytEmbed[2] || ytEmbed[4] || '').replace(/[^\w-]/g, '');
+      if (id) {
+        html.push(
+          `<div class="yt-embed" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;margin:1.5rem 0;">` +
+          `<iframe src="https://www.youtube.com/embed/${id}" title="YouTube video" ` +
+          `style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" ` +
+          `allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>` +
+          `</div>`
+        );
+        continue;
+      }
+    }
+
     // Regular paragraph (escape HTML, then apply inline markdown)
     html.push(`<p>${inlineMarkdownToHtml(escapeHtml(line))}</p>`);
   }

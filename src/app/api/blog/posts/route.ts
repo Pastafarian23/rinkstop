@@ -35,6 +35,28 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = 10;
   const offset = (page - 1) * limit;
+  const highlightId = searchParams.get('highlight_id');
+
+  // Single-article lookup by highlight_id (used by the video popup on the
+  // home page, player pages, and any other surface that shows highlights).
+  // Returns only the published article; if no article exists yet, returns
+  // { data: [] } so the client can hide the snippet.
+  if (highlightId) {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('id, slug, title, subtitle, category, reading_time_minutes, author_name, published_at, og_image_url, seo_title, seo_description, content, highlight_id, status')
+      .eq('highlight_id', parseInt(highlightId, 10))
+      .eq('status', 'published')
+      .limit(1);
+    if (error) return jsonResponse({ error: error.message }, 500);
+    const post = (data || [])[0] || null;
+    return jsonResponse({
+      data: post ? [{
+        ...post,
+        excerpt: post.subtitle || (post.content ? post.content.replace(/<[^>]*>/g, '').substring(0, 280).trim() + '…' : ''),
+      }] : [],
+    });
+  }
 
   const { data, error, count } = await supabase
     .from('posts')
