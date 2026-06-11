@@ -25,6 +25,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { spawn } from 'child_process';
+import { getMatchData, normalizeLeague } from './match-data.mjs';
 
 // Load env from the Next.js .env file.
 const envFile = '/root/.openclaw/workspace/rinkstop-platform/.env';
@@ -391,13 +392,12 @@ async function llmWebRecapDraft(highlight) {
 
   const teams = [highlight.home_team_name, highlight.away_team_name].filter(Boolean);
   const date = (highlight.match_date || '').slice(0, 10);
-  const leagueRaw = highlight.league_name;
-  const league = (typeof leagueRaw === 'object' && leagueRaw) ? leagueRaw.name : (leagueRaw || '');
+  const league = normalizeLeague(highlight.league_name);
 
-  // Call Highlightly match-list to confirm score
-  const hlData = await highlightlyMatchData({ teams, date, league });
+  // Call multi-source match lookup (Highlightly first, then NHL.com, HockeyTech, NCAA, KHL)
+  const hlData = await getMatchData({ teams, date, league, apiKey: process.env.HIGHLIGHTLY_API_KEY });
   if (!hlData || !hlData.score) {
-    throw new Error('Highlightly returned no score data for this game');
+    throw new Error('No data source returned score for this game');
   }
 
   const factsBlock = {

@@ -39,6 +39,26 @@ if (existsSync(ENV_FILE) && !process.env.HIGHLIGHTLY_API_KEY) {
 }
 
 /**
+ * Normalize league_name from highlight_backups, which can be:
+ *  - a string like 'NHL'
+ *  - a JSON string like '{"id":49291,"name":"NHL","logo":"..."}'
+ *  - an object {id, name, logo}
+ * Returns just the league name (e.g. 'NHL').
+ */
+export function normalizeLeague(leagueRaw) {
+  if (!leagueRaw) return '';
+  if (typeof leagueRaw === 'object') return leagueRaw.name || '';
+  if (typeof leagueRaw === 'string') {
+    const trimmed = leagueRaw.trim();
+    if (trimmed.startsWith('{')) {
+      try { return JSON.parse(trimmed).name || ''; } catch {}
+    }
+    return trimmed;
+  }
+  return '';
+}
+
+/**
  * Internal: query Highlightly. Returns normalized object or null.
  */
 async function highlightlyMatch(teams, date, apiKey) {
