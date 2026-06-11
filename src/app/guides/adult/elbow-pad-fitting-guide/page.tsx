@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Elbow Pads (Adults)',
     description: "A guide for adult players on fitting elbow pads — cup position, strap order, sizing, and junior sizes.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/adult/elbow-pad-fitting-guide' },
 };

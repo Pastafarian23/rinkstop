@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Equipment for Adult Players',
     description: 'A complete adult-player guide to fitting hockey equipment — every piece, with a women-specific section.',
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/adult/how-to-fit-hockey-equipment' },
 };

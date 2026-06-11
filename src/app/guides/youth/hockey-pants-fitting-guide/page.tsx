@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Pants',
     description: "A parent's guide to fitting hockey pants — waistband, kidney pad, thigh guard, sizing, and when to size up.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/youth/hockey-pants-fitting-guide' },
 };

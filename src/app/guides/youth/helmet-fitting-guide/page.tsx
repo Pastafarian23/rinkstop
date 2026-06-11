@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit a Hockey Helmet',
     description: "A parent's guide to fitting a hockey helmet — HECC certification, the shake test, sizing, and when to replace.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/youth/helmet-fitting-guide' },
 };

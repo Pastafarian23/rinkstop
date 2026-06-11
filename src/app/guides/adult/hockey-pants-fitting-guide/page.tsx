@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Pants or a Girdle (Adults)',
     description: "A guide for adult players — pants vs girdle, fit, women-specific considerations, and when to upgrade.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/adult/hockey-pants-fitting-guide' },
 };

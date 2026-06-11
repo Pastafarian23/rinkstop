@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Equipment',
     description: "A parent's complete guide to fitting hockey equipment — fit tests for every piece, sizing, and when to size up.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/youth/how-to-fit-hockey-equipment' },
 };

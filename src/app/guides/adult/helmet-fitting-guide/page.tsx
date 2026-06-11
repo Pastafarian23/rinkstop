@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit a Hockey Helmet (Adult Players)',
     description: "A guide for adult players on fitting a hockey helmet — HECC and CSA certification, the shake test, and when to replace.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/adult/helmet-fitting-guide' },
 };
