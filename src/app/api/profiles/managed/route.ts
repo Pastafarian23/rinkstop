@@ -30,7 +30,7 @@ interface ManagedProfile {
 // For 'player' profileType: only allowed if the player is a youth (under 18).
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL);
+  const result = await checkRateLimit(ip, RL);
   maybeCleanup();
 
   const userId = await requireUserId();
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
 // Otherwise returns the caller's own managed profiles (requires sign-in).
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL);
+  const result = await checkRateLimit(ip, RL);
   maybeCleanup();
 
   const url = new URL(request.url);

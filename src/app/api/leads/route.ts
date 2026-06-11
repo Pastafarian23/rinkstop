@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { getAdminFromRequest } from '@/lib/admin-auth';
 
 // Rate limit: 5 signups per 10 minutes per IP. Generous for legit users,
 // tight enough to deter spam bots that hammer the endpoint.
@@ -27,7 +28,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(ip, RATE_LIMIT);
   maybeCleanup();
 
   if (!result.allowed) {
@@ -111,9 +112,12 @@ export async function POST(request: NextRequest) {
 }
 
 // GET is for the admin/dashboard only — return counts by source for the last 30 days.
-// Not authenticated because we're behind the Vercel firewall; for prod use
-// we should add a secret header check.
+// Requires admin auth (closes H2 from the 2026-06-11 security audit — the previous
+// "behind the Vercel firewall" comment was incorrect; the route was open to anyone).
 export async function GET() {
+  const admin = await getAdminFromRequest();
+  if ('response' in admin) return admin.response;
+
   const { data, error } = await supabaseAdmin
     .from('leads')
     .select('source')

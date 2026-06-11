@@ -14,7 +14,7 @@ export async function DELETE(
   const { id } = await params;
 
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL);
+  const result = await checkRateLimit(ip, RL);
   maybeCleanup();
 
   const userId = await requireUserId();

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const ip = getClientIP(req);
-  const result = checkRateLimit(`tier-upgrade:${ip}`, RATE_LIMIT);
+  const result = await checkRateLimit(`tier-upgrade:${ip}`, RATE_LIMIT);
   maybeCleanup();
   if (!result.allowed) {
     const res = NextResponse.json(

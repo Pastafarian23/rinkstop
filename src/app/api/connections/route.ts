@@ -18,7 +18,7 @@ const RL_READ    = { maxRequests: 30, windowMs: 60 * 1000 };     // 30/min for r
 // Creates a pending connection request. Caller must be Verified+.
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL_REQUEST);
+  const result = await checkRateLimit(ip, RL_REQUEST);
   maybeCleanup();
 
   const userId = await requireUserId();
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 // Returns the other party's profile (display_name, avatar, tier) for UI rendering.
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL_READ);
+  const result = await checkRateLimit(ip, RL_READ);
   maybeCleanup();
 
   const userId = await requireUserId();
