@@ -94,7 +94,7 @@ export default function GuidesPage() {
       </section>
 
       {/* Equipment & Training Reference (no audience split) */}
-      <section style={{ marginBottom: '2rem' }}>
+      <section style={{ marginBottom: '3rem' }}>
         <div style={{ marginBottom: '1rem' }}>
           <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888' }}>REFERENCE</span>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>EQUIPMENT & TRAINING</h2>
@@ -118,6 +118,43 @@ export default function GuidesPage() {
             }}>
               <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '0.9375rem', color: '#fff', letterSpacing: '0.04em' }}>{g.title}</h3>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Fit each piece — drill-down links to every piece-of-gear guide (both audiences) */}
+      <section style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C8102E' }}>FIT EACH PIECE</span>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>GEAR FITTING GUIDES</h2>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', marginTop: '0.4rem' }}>How to fit every piece of hockey equipment, with separate guides for parents and adult players.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+          {[
+            { piece: 'Helmet', youth: '/guides/youth/helmet-fitting-guide', adult: '/guides/adult/helmet-fitting-guide' },
+            { piece: 'Shoulder Pads', youth: '/guides/youth/shoulder-pad-fitting-guide', adult: '/guides/adult/shoulder-pad-fitting-guide' },
+            { piece: 'Elbow Pads', youth: '/guides/youth/elbow-pad-fitting-guide', adult: '/guides/adult/elbow-pad-fitting-guide' },
+            { piece: 'Hockey Pants / Girdle', youth: '/guides/youth/hockey-pants-fitting-guide', adult: '/guides/adult/hockey-pants-fitting-guide' },
+            { piece: 'Shin Guards', youth: '/guides/youth/shin-guard-fitting-guide', adult: '/guides/adult/shin-guard-fitting-guide' },
+            { piece: 'Hockey Gloves', youth: '/guides/youth/hockey-glove-fitting-guide', adult: '/guides/adult/hockey-glove-fitting-guide' },
+            { piece: 'Jock / Jill', youth: '/guides/youth/jock-jill-fitting-guide', adult: '/guides/adult/jock-jill-fitting-guide' },
+          ].map(g => (
+            <div key={g.piece} style={{
+              background: 'var(--s2)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '1rem 1.25rem',
+            }}>
+              <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>{g.piece}</h3>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <Link href={g.youth} style={{ color: '#C8102E', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>
+                  Youth / Parent →
+                </Link>
+                <Link href={g.adult} style={{ color: 'var(--gold)', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>
+                  Adult / Player →
+                </Link>
+              </div>
+            </div>
           ))}
         </div>
       </section>
