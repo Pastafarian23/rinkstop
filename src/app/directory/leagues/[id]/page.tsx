@@ -13,11 +13,25 @@ export default function LeagueDetail() {
   const [teams, setTeams] = useState([]);
 
   useEffect(() => {
+    const param = String(id);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
     fetch('/api/leagues').then(r => r.json()).then(d => {
-      const l = d.find((x: any) => x.id === id);
-      setLeague(l || null);
+      const list = d || [];
+      // Match by slug first, then fall back to id. This lets the route accept
+      // either /directory/leagues/nhl (slug) or /directory/leagues/<uuid>.
+      const found = list.find((x: any) => x.slug === param) || list.find((x: any) => x.id === param);
+      if (found) {
+        // If we arrived by UUID, redirect to the canonical slug URL.
+        if (isUuid && found.slug && found.slug !== param) {
+          window.location.replace(`/directory/leagues/${found.slug}`);
+          return;
+        }
+        setLeague(found);
+      } else {
+        setLeague(null);
+      }
     });
-    fetch(`/api/teams?leagueId=${id}`).then(r => r.json()).then(d => setTeams(d?.data || []));
+    fetch(`/api/teams?leagueId=${param}`).then(r => r.json()).then(d => setTeams(d?.data || []));
   }, [id]);
 
   useEffect(() => {
@@ -29,7 +43,7 @@ export default function LeagueDetail() {
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
         { '@type': 'ListItem', position: 2, name: 'Leagues', item: `${BASE_URL}/directory/leagues` },
-        { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.id}` },
+        { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.slug || league.id}` },
       ],
     };
 
@@ -38,7 +52,7 @@ export default function LeagueDetail() {
       '@type': 'SportsOrganization',
       name: league.name,
       sport: 'Ice hockey',
-      url: `${BASE_URL}/directory/leagues/${league.id}`,
+      url: `${BASE_URL}/directory/leagues/${league.slug || league.id}`,
       ...(league.alternateName && { alternateName: league.alternateName }),
       ...(league.website_url && { sameAs: [league.website_url] }),
     };
@@ -58,7 +72,7 @@ export default function LeagueDetail() {
       <Breadcrumbs links={[
         { label: 'Directory', href: '/directory' },
         { label: 'Leagues', href: '/directory/leagues' },
-        { label: league.name, href: `/directory/leagues/${league.id}` },
+        { label: league.name, href: `/directory/leagues/${league.slug || league.id}` },
       ]} />
       <Link href="/directory/leagues" className="text-teal-400 text-sm mb-4 inline-block">&larr; Back to Leagues</Link>
       <div className="flex items-center gap-4 mb-6">

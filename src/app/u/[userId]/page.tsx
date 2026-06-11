@@ -156,7 +156,7 @@ export default function UserProfilePage() {
                         {m.profile.name}
                       </Link>
                     ) : (
-                      <Link href={`/leagues/${m.profile.slug || m.profile.id}`} style={{ color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
+                      <Link href={`/directory/leagues/${m.profile.slug || m.profile.id}`} style={{ color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
                         {m.profile.name}
                       </Link>
                     )
