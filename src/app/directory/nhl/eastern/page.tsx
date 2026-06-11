@@ -9,30 +9,30 @@ export const metadata: Metadata = {
 };
 
 const ATLANTIC_TEAMS = [
-  { name: 'Boston Bruins',          id: 'ae6d0878-1ac2-4c13-afc8-890c6647b668', abbr: 'BOS', city: 'Boston'      },
-  { name: 'Buffalo Sabres',          id: '5a510c0e-1058-460d-8237-09855dfa98f4', abbr: 'BUF', city: 'Buffalo'      },
-  { name: 'Detroit Red Wings',        id: 'f3fa0794-ee39-4991-af45-961cb3e8f404', abbr: 'DET', city: 'Detroit'      },
-  { name: 'Florida Panthers',        id: '7772070c-6c9b-4ca0-a442-dfe5b8beabcb', abbr: 'FLA', city: 'Sunrise'      },
-  { name: 'Montreal Canadiens',      id: 'dfa8a4b4-01b9-4f53-9a5d-6ca34302d074', abbr: 'MTL', city: 'Montreal'     },
-  { name: 'Ottawa Senators',          id: 'a1f8b7f1-f7ea-42ee-9861-0eb0addf437d', abbr: 'OTT', city: 'Ottawa'       },
-  { name: 'Toronto Maple Leafs',     id: 'bac49d62-fd43-48f5-8811-090ec8f4c76d', abbr: 'TOR', city: 'Toronto'     },
-  { name: 'Tampa Bay Lightning',    id: '2f4c6364-2139-4e57-97ad-e01dc55418fa', abbr: 'TBL', city: 'Tampa'       },
+  { name: 'Boston Bruins',          slug: 'boston-bruins',         abbr: 'BOS', city: 'Boston'      },
+  { name: 'Buffalo Sabres',         slug: 'buffalo-sabres',        abbr: 'BUF', city: 'Buffalo'      },
+  { name: 'Detroit Red Wings',      slug: 'detroit-red-wings',     abbr: 'DET', city: 'Detroit'      },
+  { name: 'Florida Panthers',       slug: 'florida-panthers',      abbr: 'FLA', city: 'Sunrise'      },
+  { name: 'Montreal Canadiens',     slug: 'montreal-canadiens',    abbr: 'MTL', city: 'Montreal'     },
+  { name: 'Ottawa Senators',        slug: 'ottawa-senators',       abbr: 'OTT', city: 'Ottawa'       },
+  { name: 'Toronto Maple Leafs',    slug: 'toronto-maple-leafs',   abbr: 'TOR', city: 'Toronto'     },
+  { name: 'Tampa Bay Lightning',    slug: 'tampa-bay-lightning',   abbr: 'TBL', city: 'Tampa'       },
 ];
 
 const METRO_TEAMS = [
-  { name: 'Carolina Hurricanes',     id: 'e4977c12-28b3-4756-a788-cf86b40fc237', abbr: 'CAR', city: 'Raleigh'       },
-  { name: 'Columbus Blue Jackets',   id: '6ca5c5f0-3c27-4cd5-8457-78fc3ba45344', abbr: 'CBJ', city: 'Columbus'      },
-  { name: 'New Jersey Devils',       id: '486e6592-5873-48a0-8cdd-8411c8eb1105', abbr: 'NJD', city: 'Newark'        },
-  { name: 'New York Islanders',     id: 'acc8b466-ef9b-4d81-8ea5-6f13fc180d9e', abbr: 'NYI', city: 'Elmont'        },
-  { name: 'New York Rangers',       id: '2869d1cd-d8f4-4ffb-9726-30bdfdbc14d3', abbr: 'NYR', city: 'New York'      },
-  { name: 'Philadelphia Flyers',   id: 'cf53124a-dbb5-4588-9cb2-2f6054918f99', abbr: 'PHI', city: 'Philadelphia'  },
-  { name: 'Pittsburgh Penguins',   id: '4b75202e-b11b-4574-8ae6-7447f962cb55', abbr: 'PIT', city: 'Pittsburgh'    },
-  { name: 'Washington Capitals',     id: '2df72ff0-5a54-4663-91eb-13bb2a2830aa', abbr: 'WSH', city: 'Washington'    },
+  { name: 'Carolina Hurricanes',    slug: 'carolina-hurricanes',   abbr: 'CAR', city: 'Raleigh'       },
+  { name: 'Columbus Blue Jackets',  slug: 'columbus-blue-jackets', abbr: 'CBJ', city: 'Columbus'      },
+  { name: 'New Jersey Devils',      slug: 'new-jersey-devils',     abbr: 'NJD', city: 'Newark'        },
+  { name: 'New York Islanders',     slug: 'new-york-islanders',    abbr: 'NYI', city: 'Elmont'        },
+  { name: 'New York Rangers',       slug: 'new-york-rangers',      abbr: 'NYR', city: 'New York'      },
+  { name: 'Philadelphia Flyers',    slug: 'philadelphia-flyers',   abbr: 'PHI', city: 'Philadelphia'  },
+  { name: 'Pittsburgh Penguins',    slug: 'pittsburgh-penguins',   abbr: 'PIT', city: 'Pittsburgh'    },
+  { name: 'Washington Capitals',    slug: 'washington-capitals',   abbr: 'WSH', city: 'Washington'    },
 ];
 
 function TeamCard({ t, fallback }: { t: typeof ATLANTIC_TEAMS[0]; fallback: string }) {
   return (
-    <Link href={`/directory/teams/${t.id}`} style={{
+    <Link href={`/directory/teams/${t.slug}`} style={{
       display: 'flex', alignItems: 'center', gap: '0.75rem',
       background: 'var(--s2)', border: '1px solid var(--border)',
       borderRadius: '6px', padding: '0.875rem 1rem', textDecoration: 'none',
@@ -88,14 +88,14 @@ export default function NHLEasternPage() {
       <div style={{ marginBottom: '2rem' }}>
         <h2 className="font-sport" style={{ fontSize: '1.125rem', color: '#C8102E', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>ATLANTIC DIVISION</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.625rem' }}>
-          {ATLANTIC_TEAMS.map(t => <TeamCard key={t.id} t={t} fallback="#041E42" />)}
+          {ATLANTIC_TEAMS.map(t => <TeamCard key={t.slug} t={t} fallback="#041E42" />)}
         </div>
       </div>
 
       <div>
         <h2 className="font-sport" style={{ fontSize: '1.125rem', color: '#1E5B9C', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>METROPOLITAN DIVISION</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.625rem' }}>
-          {METRO_TEAMS.map(t => <TeamCard key={t.id} t={t} fallback="#1E3A5F" />)}
+          {METRO_TEAMS.map(t => <TeamCard key={t.slug} t={t} fallback="#1E3A5F" />)}
         </div>
       </div>
 

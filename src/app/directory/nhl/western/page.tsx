@@ -9,29 +9,29 @@ export const metadata: Metadata = {
 };
 
 const CENTRAL_TEAMS = [
-  { name: 'Colorado Avalanche',   id: 'f453fd29-12e4-4897-8f8a-ecf23d6a4122', abbr: 'COL', city: 'Denver'        },
-  { name: 'Dallas Stars',          id: '4c61f05e-8d34-40be-b0a8-adf37e14435c', abbr: 'DAL', city: 'Dallas'        },
-  { name: 'Minnesota Wild',      id: 'd3947cbf-8b3c-4c16-8ab6-b8f8d0f5a1fe', abbr: 'MIN', city: 'Saint Paul'    },
-  { name: 'Nashville Predators',  id: '2d3d8a64-c0d7-4b8e-a327-a1201cc92f72', abbr: 'NSH', city: 'Nashville'     },
-  { name: 'St. Louis Blues',       id: '7efc04e6-6a75-4b1f-a0da-3966d6e7359c', abbr: 'STL', city: 'St. Louis'     },
-  { name: 'Utah Hockey Club',     id: '3b80d876-f931-4740-a47f-0ed15c0e410f', abbr: 'UTA', city: 'Salt Lake City' },
-  { name: 'Winnipeg Jets',       id: '88d85b2b-7a91-4679-b1d4-e45d73e3838f', abbr: 'WPG', city: 'Winnipeg'      },
+  { name: 'Colorado Avalanche',   slug: 'colorado-avalanche',   abbr: 'COL', city: 'Denver'        },
+  { name: 'Dallas Stars',         slug: 'dallas-stars',          abbr: 'DAL', city: 'Dallas'        },
+  { name: 'Minnesota Wild',       slug: 'minnesota-wild',        abbr: 'MIN', city: 'Saint Paul'    },
+  { name: 'Nashville Predators',  slug: 'nashville-predators',   abbr: 'NSH', city: 'Nashville'     },
+  { name: 'St. Louis Blues',      slug: 'st-louis-blues',        abbr: 'STL', city: 'St. Louis'     },
+  { name: 'Utah Hockey Club',     slug: 'utah-hockey-club',      abbr: 'UTA', city: 'Salt Lake City' },
+  { name: 'Winnipeg Jets',        slug: 'winnipeg-jets',         abbr: 'WPG', city: 'Winnipeg'      },
 ];
 
 const PACIFIC_TEAMS = [
-  { name: 'Anaheim Ducks',          id: '219a6bb2-1103-4e27-931e-5de440e59f84', abbr: 'ANA', city: 'Anaheim'      },
-  { name: 'Calgary Flames',         id: '626458da-d2d4-4a4f-816b-f3796b84cfc4', abbr: 'CGY', city: 'Calgary'      },
-  { name: 'Edmonton Oilers',        id: '5b487d74-5e9c-43c8-b104-35185fc93350', abbr: 'EDM', city: 'Edmonton'     },
-  { name: 'Los Angeles Kings',     id: 'df9b5d1e-c5d9-46af-a524-99de500e95bf', abbr: 'LAK', city: 'Los Angeles'  },
-  { name: 'San Jose Sharks',       id: '16c9d078-ecc9-4e7c-8bf3-e1b6e9a6ae10', abbr: 'SJS', city: 'San Jose'    },
-  { name: 'Seattle Kraken',        id: 'bf324536-424b-4a3d-b486-1347aa735aae', abbr: 'SEA', city: 'Seattle'      },
-  { name: 'Vancouver Canucks',   id: 'dc828fd7-65ae-4c1d-92ea-66975eb38fce', abbr: 'VAN', city: 'Vancouver'   },
-  { name: 'Vegas Golden Knights', id: 'cf05f5b0-6605-465f-86f3-a6f1710afc20', abbr: 'VGK', city: 'Las Vegas'    },
+  { name: 'Anaheim Ducks',          slug: 'anaheim-ducks',          abbr: 'ANA', city: 'Anaheim'      },
+  { name: 'Calgary Flames',         slug: 'calgary-flames',         abbr: 'CGY', city: 'Calgary'      },
+  { name: 'Edmonton Oilers',        slug: 'edmonton-oilers',        abbr: 'EDM', city: 'Edmonton'     },
+  { name: 'Los Angeles Kings',     slug: 'los-angeles-kings',      abbr: 'LAK', city: 'Los Angeles'  },
+  { name: 'San Jose Sharks',       slug: 'san-jose-sharks',        abbr: 'SJS', city: 'San Jose'    },
+  { name: 'Seattle Kraken',        slug: 'seattle-kraken',         abbr: 'SEA', city: 'Seattle'      },
+  { name: 'Vancouver Canucks',     slug: 'vancouver-canucks',      abbr: 'VAN', city: 'Vancouver'   },
+  { name: 'Vegas Golden Knights',  slug: 'vegas-golden-knights',   abbr: 'VGK', city: 'Las Vegas'    },
 ];
 
 function TeamCard({ t, fallback }: { t: typeof CENTRAL_TEAMS[0]; fallback: string }) {
   return (
-    <Link href={`/directory/teams/${t.id}`} style={{
+    <Link href={`/directory/teams/${t.slug}`} style={{
       display: 'flex', alignItems: 'center', gap: '0.75rem',
       background: 'var(--s2)', border: '1px solid var(--border)',
       borderRadius: '6px', padding: '0.875rem 1rem', textDecoration: 'none',
@@ -87,14 +87,14 @@ export default function NHLWesternPage() {
       <div style={{ marginBottom: '2rem' }}>
         <h2 className="font-sport" style={{ fontSize: '1.125rem', color: '#C8102E', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>CENTRAL DIVISION</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.625rem' }}>
-          {CENTRAL_TEAMS.map(t => <TeamCard key={t.id} t={t} fallback="#C8102E" />)}
+          {CENTRAL_TEAMS.map(t => <TeamCard key={t.slug} t={t} fallback="#C8102E" />)}
         </div>
       </div>
 
       <div>
         <h2 className="font-sport" style={{ fontSize: '1.125rem', color: '#1E5B9C', letterSpacing: '0.06em', marginBottom: '0.75rem' }}>PACIFIC DIVISION</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.625rem' }}>
-          {PACIFIC_TEAMS.map(t => <TeamCard key={t.id} t={t} fallback="#1E5B9C" />)}
+          {PACIFIC_TEAMS.map(t => <TeamCard key={t.slug} t={t} fallback="#1E5B9C" />)}
         </div>
       </div>
 

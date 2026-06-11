@@ -24,11 +24,23 @@ export default function TeamDetail() {
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
-    fetch(`/api/teams?slug=${slug}`)
+    // Accept both slug and UUID in the URL. UUIDs redirect (via window.location)
+    // to the canonical /directory/teams/{slug} URL so the address bar is always
+    // human-readable and SEO-friendly.
+    const param = String(slug);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
+    const apiUrl = isUuid ? `/api/teams?id=${param}` : `/api/teams?slug=${param}`;
+    fetch(apiUrl)
       .then(r => r.json())
       .then(d => {
-        if (d?.data?.length > 0) {
-          setTeam(d.data[0]);
+        const found = d?.data?.[0];
+        if (found) {
+          // If we arrived by UUID, redirect to the canonical slug URL.
+          if (found.slug && found.slug !== param) {
+            window.location.replace(`/directory/teams/${found.slug}`);
+            return;
+          }
+          setTeam(found);
         }
         setLoading(false);
       })

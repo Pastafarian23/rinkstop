@@ -204,10 +204,20 @@ export default function PlayerDetail({ id }: { id: string }) {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/players?id=${id}&limit=1`)
+    // /api/players accepts UUID, NHL id, and slug. If we arrived by UUID, redirect
+    // to the canonical /directory/players/{slug} URL so the address bar matches
+    // the human-readable identifier.
+    const param = String(id);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
+    fetch(`/api/players?id=${encodeURIComponent(param)}&limit=1`)
       .then(r => r.json())
       .then(d => {
-        setPlayer(d?.data?.[0] || null);
+        const found = d?.data?.[0] || null;
+        if (found && isUuid && found.slug && found.slug !== param) {
+          window.location.replace(`/directory/players/${found.slug}`);
+          return;
+        }
+        setPlayer(found);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -483,7 +493,7 @@ export default function PlayerDetail({ id }: { id: string }) {
                 <>
                   <span style={{ color: '#333', fontSize: '1rem' }}>·</span>
                   <Link
-                    href={`/directory/leagues/${leagueSlug || ''}`}
+                    href={`/directory/leagues/${leagueSlug || 'nhl'}`}
                     style={{
                       display: 'inline-block', fontSize: '0.6875rem', fontWeight: 700,
                       letterSpacing: '0.08em', textTransform: 'uppercase',
