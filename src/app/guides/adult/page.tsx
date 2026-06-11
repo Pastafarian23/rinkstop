@@ -10,6 +10,13 @@ const ADULT_GUIDE_CARDS = [
   { title: 'Hockey Rules for Beginners', cat: 'Beginners', desc: 'Every NHL rule explained in plain language — from icing to penalty shots.', icon: '📋', href: '/guides/hockey-rules' },
   { title: 'Understanding Hockey Positions', cat: 'Beginners', desc: 'Centers, wings, defense, and goalies — what each position does and how they work together.', icon: '🛡️', href: '/guides/hockey-positions' },
   { title: 'How to Fit Hockey Equipment', cat: 'Equipment', desc: 'How to fit every piece as an adult — helmet, shoulder pads, pants vs. girdle, gloves, jock/jill, with a women-specific section.', icon: '🛡️', href: '/guides/adult/how-to-fit-hockey-equipment' },
+  { title: 'How to Fit a Helmet', cat: 'Equipment', desc: 'HECC certification, ASTM F1045/F513 standards, the shake test, and when to replace.', icon: '⛑️', href: '/guides/adult/helmet-fitting-guide' },
+  { title: 'How to Fit Shoulder Pads', cat: 'Equipment', desc: 'Cap over the shoulder, sternum pad centered, sleeve length, and what to look for at a fitting.', icon: '🦾', href: '/guides/adult/shoulder-pad-fitting-guide' },
+  { title: 'How to Fit Elbow Pads', cat: 'Equipment', desc: 'Elbow cup centered, forearm coverage, and how to avoid the gap above the glove.', icon: '💪', href: '/guides/adult/elbow-pad-fitting-guide' },
+  { title: 'How to Fit Pants or a Girdle', cat: 'Equipment', desc: 'Pants vs girdle comparison, waistband position, kidney pad coverage, and women-specific fit.', icon: '👖', href: '/guides/adult/hockey-pants-fitting-guide' },
+  { title: 'How to Fit Shin Guards', cat: 'Equipment', desc: 'Knee cup centered, no gap at the skate, length measurement, and sizing by height.', icon: '🦵', href: '/guides/adult/shin-guard-fitting-guide' },
+  { title: 'How to Fit Hockey Gloves', cat: 'Equipment', desc: 'Palm gap test, finger length, cuff overlap, and stick feel — the most personal piece.', icon: '🧤', href: '/guides/adult/hockey-glove-fitting-guide' },
+  { title: 'How to Fit a Jock or Jill', cat: 'Equipment', desc: 'Jock vs jill, cup or shield position, sock tabs, and women-specific fit.', icon: '🩲', href: '/guides/adult/jock-jill-fitting-guide' },
 ];
 
 export default function AdultGuidesPage() {

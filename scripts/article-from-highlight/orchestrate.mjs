@@ -80,6 +80,8 @@ async function findCandidates() {
   // Filter to YouTube-hosted videos only. The LLM step relies on the
   // YouTube transcript for play-by-play facts. Non-YouTube sources
   // (ESPN, Sportsnet) will be handled in a follow-up path.
+  // Query cap = max(200, LIMIT * 2) so we have headroom after the existing-post filter.
+  const queryCap = Math.max(200, LIMIT * 2);
   const { data: highlights, error } = await sb
     .from('highlight_backups')
     .select('id, title, video_url, source, match_date, home_team_name, away_team_name, league_name, image_url, match_id, description, channel, embed_url')
@@ -87,7 +89,7 @@ async function findCandidates() {
     .not('video_url', 'is', null)
     .ilike('video_url', '%youtube.com%')
     .order('match_date', { ascending: false })
-    .limit(50);
+    .limit(queryCap);
   if (error) throw error;
 
   // Filter out those that already have a post linked.
@@ -609,6 +611,15 @@ async function processHighlight(h) {
     word_count: body.split(/\s+/).length,
   };
   console.log(`  ✓ LLM draft: "${result.steps.llm.title}" (${result.steps.llm.word_count} words)`);
+
+  // Stub detection: LLM returned nothing usable (often the case when both YouTube
+  // transcript and Highlightly match data are unavailable). Don't pollute the DB
+  // with empty drafts — leave the highlight in the candidate pool.
+  if (result.steps.llm.word_count < 150) {
+    result.error = `stub draft: LLM returned only ${result.steps.llm.word_count} words (likely no data sources available)`;
+    console.warn(`  ⚠️  stub draft detected (${result.steps.llm.word_count} words) — skipping insert`);
+    return result;
+  }
 
   // Step 5: insert draft
   try {
