@@ -99,6 +99,53 @@ export const LEAGUE_INFO: Record<string, { league: string; note: string; iihfRan
   'Belarus': { league: 'Extraleague', note: 'Strong regional presence', iihfRank: '#15', firstNhl: '1952' },
 };
 
+// For the 40 placeholder countries with no permanent ice rink, list the
+// closest active hockey markets (geographic + cultural neighbors that have
+// at least 1 open rink in our database). Used to render the "Closest active
+// hockey markets" section on the no-data state.
+export const NEAREST_ACTIVE_HOCKEY: Record<string, string[]> = {
+  'Albania': ['Italy', 'Greece', 'Croatia', 'Serbia'],
+  'Antigua and Barbuda': ['Puerto Rico', 'United States', 'Mexico', 'Costa Rica'],
+  'Bahamas': ['United States', 'Mexico', 'Costa Rica'],
+  'Barbados': ['United States', 'Mexico', 'Costa Rica'],
+  'Belize': ['Mexico', 'United States', 'Costa Rica'],
+  'Bolivia': ['Argentina', 'Brazil', 'Peru', 'Chile'],
+  'Channel Islands (Jersey & Guernsey – UK Crown Dependencies)': ['United Kingdom', 'France'],
+  'Colombia': ['Costa Rica', 'Mexico', 'Venezuela', 'United States'],
+  'Cuba': ['United States', 'Mexico', 'Costa Rica'],
+  'Dominica': ['United States', 'Mexico', 'Costa Rica'],
+  'Dominican Republic': ['United States', 'Puerto Rico', 'Mexico', 'Costa Rica'],
+  'Ecuador': ['Peru', 'Mexico', 'Costa Rica', 'United States'],
+  'El Salvador': ['Mexico', 'Costa Rica', 'United States'],
+  'Faroe Islands (Denmark)': ['Denmark', 'Iceland', 'Norway', 'United Kingdom'],
+  'Gibraltar (UK)': ['United Kingdom', 'Spain', 'Portugal'],
+  'Grenada': ['United States', 'Mexico', 'Costa Rica'],
+  'Guadeloupe': ['France', 'Puerto Rico', 'United States'],
+  'Guatemala': ['Mexico', 'Costa Rica', 'United States'],
+  'Haiti': ['United States', 'Mexico', 'Costa Rica'],
+  'Honduras': ['Mexico', 'Costa Rica', 'United States'],
+  'Isle of Man (UK Crown Dependency)': ['United Kingdom', 'Ireland'],
+  'Jamaica': ['United States', 'Canada', 'Mexico'],
+  'Kosovo': ['Serbia', 'Croatia', 'Hungary', 'Italy'],
+  'Liechtenstein': ['Switzerland', 'Austria', 'Germany'],
+  'Malta': ['Italy', 'Greece'],
+  'Martinique': ['France', 'Puerto Rico', 'United States'],
+  'Monaco': ['France', 'Italy', 'Switzerland'],
+  'Nicaragua': ['Costa Rica', 'Mexico', 'United States'],
+  'North Macedonia': ['Greece', 'Serbia', 'Bulgaria', 'Hungary'],
+  'Panama': ['Mexico', 'Costa Rica', 'United States', 'Puerto Rico'],
+  'Paraguay': ['Argentina', 'Brazil', 'Uruguay'],
+  'Saint Kitts and Nevis': ['United States', 'Puerto Rico', 'Mexico'],
+  'Saint Lucia': ['United States', 'Mexico', 'Costa Rica'],
+  'Saint Vincent and the Grenadines': ['United States', 'Mexico', 'Costa Rica'],
+  'San Marino': ['Italy'],
+  'Trinidad and Tobago': ['United States', 'Mexico', 'Costa Rica'],
+  'Turks and Caicos': ['United States', 'Puerto Rico'],
+  'Uruguay': ['Argentina', 'Brazil', 'Chile'],
+  'US Virgin Islands': ['United States', 'Puerto Rico'],
+  'Vatican City': ['Italy'],
+};
+
 // Country-specific "how to play" notes
 export const HOW_TO_NOTES: Record<string, string> = {
   'United States': 'USA Hockey is the official governing body and runs the national team pipeline. Most learn-to-play programs are run through local rinks and require registration with USA Hockey.',
@@ -154,6 +201,7 @@ export interface CountryPageData {
   hasData: boolean;
   info: { league: string; note: string; iihfRank?: string; firstNhl?: string } | undefined;
   howToNote: string | undefined;
+  nearestHockeyCountries: { name: string; slug: string; rinkCount: number; teamCount: number }[];
 }
 
 export async function getCountryPageData(countryName: string): Promise<CountryPageData> {
@@ -200,6 +248,34 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
 
   const hasData = (rinks && rinks.length > 0) || (teams && teams.length > 0);
 
+  // For no-data countries, compute nearest active hockey markets + their counts.
+  // Only runs when hasData=false (skipped for the 70+ countries with rinks).
+  const nearestNames = !hasData ? (NEAREST_ACTIVE_HOCKEY[countryName] || []) : [];
+  let nearestHockeyCountries: { name: string; slug: string; rinkCount: number; teamCount: number }[] = [];
+  if (nearestNames.length > 0) {
+    const { data: nearestRinks } = await supabase
+      .from('rinks')
+      .select('country')
+      .in('country', nearestNames)
+      .eq('is_active', true)
+      .eq('status', 'open');
+    const { data: nearestTeams } = await supabase
+      .from('teams')
+      .select('country')
+      .in('country', nearestNames)
+      .eq('is_active', true);
+    const rinkByCountry: Record<string, number> = {};
+    (nearestRinks || []).forEach(r => { rinkByCountry[r.country] = (rinkByCountry[r.country] || 0) + 1; });
+    const teamByCountry: Record<string, number> = {};
+    (nearestTeams || []).forEach(t => { teamByCountry[t.country] = (teamByCountry[t.country] || 0) + 1; });
+    nearestHockeyCountries = nearestNames.map(name => ({
+      name,
+      slug: countryToSlug(name),
+      rinkCount: rinkByCountry[name] || 0,
+      teamCount: teamByCountry[name] || 0,
+    }));
+  }
+
   return {
     countryName,
     countrySlug,
@@ -214,6 +290,7 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     hasData,
     info,
     howToNote,
+    nearestHockeyCountries,
   };
 }
 
