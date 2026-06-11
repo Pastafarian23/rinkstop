@@ -14,6 +14,7 @@ export default function CountryPageContent({ data }: Props) {
     teams,
     rinkCount,
     teamCount,
+    leagueCount,
     leagues,
     players,
     finalPosts,
@@ -21,13 +22,18 @@ export default function CountryPageContent({ data }: Props) {
     info,
     howToNote,
     nearestHockeyCountries,
+    iihfMember,
+    nationalTeams,
   } = data;
 
   const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = '#888', textDim = '#555';
   const rinkN = rinkCount;
   const teamN = teamCount;
-  const leagueN = leagues.length;
+  const leagueN = leagueCount;
   const playerN = players.length;
+  // Prefer the live IIHF ranking over the hardcoded LEAGUE_INFO
+  const iihfMensRank = iihfMember?.mens_ranking ? `#${iihfMember.mens_ranking}` : (info?.iihfRank ?? null);
+  const iihfWomensRank = iihfMember?.womens_ranking ? `#${iihfMember.womens_ranking}` : null;
 
   // Build league name list for FAQ
   const topLeagueName = info?.league.split(',')[0] || (leagues?.[0]?.name ?? null);
@@ -74,7 +80,12 @@ export default function CountryPageContent({ data }: Props) {
       {
         '@type': 'Question',
         name: `What is the IIHF ranking of ${countryName}?`,
-        acceptedAnswer: { '@type': 'Answer', text: info?.iihfRank ? `${countryName} is ranked ${info.iihfRank} in the IIHF World Ranking.` : `${countryName} is currently outside the IIHF top division. National program development is ongoing.` },
+        acceptedAnswer: { '@type': 'Answer', text: iihfMember?.mens_ranking ? `${countryName} is ranked #${iihfMember.mens_ranking} in the IIHF Men's World Ranking (as of ${iihfMember.ranking_as_of}).` : iihfMember ? `${countryName} is an IIHF ${iihfMember.iihf_status} member but does not currently hold a top-division ranking.` : `${countryName} is not currently an IIHF member nation.` },
+      },
+      {
+        '@type': 'Question',
+        name: `Does ${countryName} have an ice hockey national team?`,
+        acceptedAnswer: { '@type': 'Answer', text: nationalTeams.length > 0 ? `Yes. ${countryName} fields ${nationalTeams.length} national team${nationalTeams.length === 1 ? '' : 's'} through the IIHF, including ${nationalTeams.slice(0, 2).map(t => t.team_name).join(' and ')}.` : `No IIHF national team record for ${countryName} in the RinkStop directory yet.` },
       },
       {
         '@type': 'Question',
@@ -175,16 +186,28 @@ export default function CountryPageContent({ data }: Props) {
               <div style={{ fontSize: 30, fontWeight: 800, color: red, lineHeight: 1 }}>{playerN}</div>
               <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Players</div>
             </div>
-            {info?.iihfRank && (
+            {iihfMensRank && (
               <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 14px', textAlign: 'center' }}>
-                <div style={{ fontSize: 30, fontWeight: 800, color: red, lineHeight: 1 }}>{info.iihfRank}</div>
-                <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>IIHF Rank</div>
+                <div style={{ fontSize: 30, fontWeight: 800, color: red, lineHeight: 1 }}>{iihfMensRank}</div>
+                <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>IIHF Men&apos;s</div>
+              </div>
+            )}
+            {iihfWomensRank && (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 14px', textAlign: 'center' }}>
+                <div style={{ fontSize: 30, fontWeight: 800, color: red, lineHeight: 1 }}>{iihfWomensRank}</div>
+                <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>IIHF Women&apos;s</div>
               </div>
             )}
             {info?.firstNhl && (
               <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 14px', textAlign: 'center' }}>
                 <div style={{ fontSize: 30, fontWeight: 800, color: red, lineHeight: 1 }}>{info.firstNhl}</div>
                 <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>First NHL Player</div>
+              </div>
+            )}
+            {iihfMember && (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 14px', textAlign: 'center' }}>
+                <div style={{ fontSize: 30, fontWeight: 800, color: red, lineHeight: 1, textTransform: 'capitalize' }}>{iihfMember.iihf_status}</div>
+                <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>IIHF Member</div>
               </div>
             )}
           </div>
@@ -237,7 +260,7 @@ export default function CountryPageContent({ data }: Props) {
           )}
 
           {/* Hockey Ecosystem Snapshot */}
-          {(info || hasData) && (
+          {(info || hasData || iihfMember) && (
             <section style={{ background: card, border: `1px solid ${border}`, borderRadius: 12, padding: '24px 28px', marginBottom: 48 }}>
               <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 22, letterSpacing: '0.04em', color: textMain, marginBottom: 12 }}>
                 Hockey ecosystem in {countryName}
@@ -246,9 +269,57 @@ export default function CountryPageContent({ data }: Props) {
                 {howToNote
                   ? howToNote
                   : hasData
-                    ? `${countryName} has ${rinkN} ice rinks and ${teamN} active teams in the RinkStop directory, spanning ${leagueN} leagues across multiple levels. ${info?.note || ''}`
-                    : `Hockey is an emerging or developing sport in ${countryName}. The page below includes learn-to-play resources and the closest established hockey markets.`
+                    ? `${countryName} has ${rinkN} ice rinks, ${teamN} active teams, and ${leagueN} leagues in the RinkStop directory. ${info?.note || ''}`
+                    : iihfMember
+                      ? `${countryName} is a ${iihfMember.iihf_status} member of the IIHF${iihfMember.date_joined ? `, joining on ${new Date(iihfMember.date_joined).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` : ''}. ${iihfMember.organization ? `The national federation is ${iihfMember.organization}.` : ''} RinkStop lists ${rinkN} ${rinkN === 1 ? 'rink' : 'rinks'} in the country. ${info?.note || ''}`
+                      : `Hockey is an emerging or developing sport in ${countryName}. The page below includes learn-to-play resources and the closest established hockey markets.`
                 }
+              </p>
+            </section>
+          )}
+
+          {/* National Teams Section — visible whenever we have IIHF data */}
+          {iihfMember && nationalTeams.length > 0 && (
+            <section style={{ marginBottom: 48 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, borderLeft: `4px solid ${red}`, paddingLeft: 14 }}>
+                <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 26, letterSpacing: '0.04em', color: textMain, margin: 0 }}>
+                  National Teams in {countryName}
+                </h2>
+                <span style={{ fontSize: 12, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {iihfMember.iihf_status === 'full' ? 'IIHF Full Member' : iihfMember.iihf_status === 'associate' ? 'IIHF Associate Member' : 'IIHF Member'}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+                {nationalTeams.map(t => {
+                  const typeLabel = t.team_type === 'mens' ? "Men's" : t.team_type === 'womens' ? "Women's" : t.team_type === 'mens_u20' ? "Men's U20" : t.team_type === 'mens_u18' ? "Men's U18" : "Women's U18";
+                  return (
+                    <div key={t.id} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 16px' }}>
+                      <div style={{ fontSize: 11, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{typeLabel}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: textMain, marginBottom: 6, lineHeight: 1.3 }}>
+                        {countryName} {typeLabel}
+                      </div>
+                      <div style={{ fontSize: 12, color: t.ranking ? red : textMuted, fontWeight: t.ranking ? 700 : 400 }}>
+                        {t.ranking_label || 'Unranked'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Directory completeness note — shown when rinks exist but teams/leagues are sparse */}
+          {rinkCount > 0 && (teamCount === 0 || leagueCount === 0) && (
+            <section style={{ background: card, border: `1px solid ${border}`, borderRadius: 12, padding: '20px 24px', marginBottom: 48, borderLeft: `4px solid ${red}` }}>
+              <p style={{ color: textMuted, fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+                <strong style={{ color: textMain }}>Directory status:</strong>{' '}
+                RinkStop currently lists {rinkCount} {rinkCount === 1 ? 'rink' : 'rinks'} in {countryName},
+                {' '}{teamCount === 0 ? 'no club teams' : `${teamCount} teams`}
+                {leagueCount > 0 ? `, and ${leagueCount} ${leagueCount === 1 ? 'league' : 'leagues'}` : ', and no leagues yet'}.
+                {' '}Hockey {iihfMember ? `is governed by ${iihfMember.organization || 'the national federation'}` : 'is emerging'} in {countryName}.
+                {' '}{teamCount === 0 || leagueCount === 0 ? (
+                  <>Help us complete this directory — <Link href="/add-listing" style={{ color: red, fontWeight: 700, textDecoration: 'underline' }}>add a team or league in {countryName}</Link>.</>
+                ) : null}
               </p>
             </section>
           )}
