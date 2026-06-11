@@ -355,6 +355,30 @@ export default function HowToFitHockeyEquipmentAdult() {
 
       {/* Related */}
       <section style={{ marginTop: '3rem', padding: '1.5rem', background: 'rgba(200,16,46,0.06)', border: '1px solid rgba(200,16,46,0.15)', borderRadius: '10px' }}>
+        <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>Fit guides for each piece of equipment</p>
+        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+          <Link href="/guides/adult/helmet-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            Helmet →
+          </Link>
+          <Link href="/guides/adult/shoulder-pad-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            Shoulder pads →
+          </Link>
+          <Link href="/guides/adult/elbow-pad-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            Elbow pads →
+          </Link>
+          <Link href="/guides/adult/hockey-pants-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            Pants or girdle →
+          </Link>
+          <Link href="/guides/adult/shin-guard-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            Shin guards →
+          </Link>
+          <Link href="/guides/adult/hockey-glove-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            Gloves →
+          </Link>
+          <Link href="/guides/adult/jock-jill-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            Jock / Jill →
+          </Link>
+        </div>
         <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>Related guides</p>
         <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
           <Link href="/guides/skate-fitting-guide" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
