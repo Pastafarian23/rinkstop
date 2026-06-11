@@ -55,5 +55,7 @@ export async function GET(request: NextRequest) {
     b.team_count + b.rink_count + b.program_count - (a.team_count + a.rink_count + a.program_count)
   );
 
-  return NextResponse.json({ data: countries });
+  const r = NextResponse.json({ data: countries });
+  r.headers.set('Cache-Control', 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400');
+  return r;
 }

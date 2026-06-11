@@ -40,7 +40,10 @@ export async function GET(request: NextRequest, { params }: Props) {
   if (error) return jsonResponse({ error: error.message }, 500);
   if (!data) return jsonResponse({ error: 'Post not found' }, 404);
 
-  return jsonResponse(data);
+  // 2026-06-11: Vercel Hobby limit reduction — blog posts are static-ish, cache 10min
+  const response = jsonResponse(data);
+  response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=600, stale-while-revalidate=7200');
+  return response;
 }
 
 // PUT - Update post

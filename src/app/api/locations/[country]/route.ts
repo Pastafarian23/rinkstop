@@ -92,11 +92,13 @@ export async function GET(
       (a.team_count + a.rink_count + a.program_count)
   );
 
-  return NextResponse.json({
+  const r = NextResponse.json({
     data: {
       country: decodedCountry,
       content: content ?? null,
       cities,
     },
   });
+  r.headers.set('Cache-Control', 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400');
+  return r;
 }

@@ -147,7 +147,9 @@ export async function GET() {
 
     // Duplicate for seamless loop
     const allItems = [...items, ...items];
-    return NextResponse.json(allItems);
+    return NextResponse.json(allItems, {
+      headers: { 'Cache-Control': 'public, max-age=5, s-maxage=10, stale-while-revalidate=30' }
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

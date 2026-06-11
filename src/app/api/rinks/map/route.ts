@@ -109,8 +109,12 @@ export async function GET(request: NextRequest) {
     .filter((rink) => rink.latitude !== null && rink.longitude !== null);
 
   if (country) {
-    return NextResponse.json({ data: enriched.filter((r) => r.country.toLowerCase() === country.toLowerCase()) });
+    const r = NextResponse.json({ data: enriched.filter((rk) => rk.country.toLowerCase() === country.toLowerCase()) });
+    r.headers.set('Cache-Control', 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400');
+    return r;
   }
 
-  return NextResponse.json({ data: enriched });
+  const r = NextResponse.json({ data: enriched });
+  r.headers.set('Cache-Control', 'public, max-age=300, s-maxage=1800, stale-while-revalidate=86400');
+  return r;
 }

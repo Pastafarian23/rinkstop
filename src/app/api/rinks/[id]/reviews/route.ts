@@ -28,9 +28,11 @@ export async function GET(
         )
       : 0;
 
-  return NextResponse.json({
+  const r = NextResponse.json({
     data: reviews,
     average_rating,
     total_reviews,
   });
+  r.headers.set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=1800');
+  return r;
 }

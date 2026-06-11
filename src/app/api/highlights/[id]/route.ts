@@ -93,7 +93,9 @@ export async function GET(
       },
     };
 
-    return NextResponse.json({ highlight });
+    return NextResponse.json({ highlight }, {
+      headers: { 'Cache-Control': 'public, max-age=60, s-maxage=600, stale-while-revalidate=7200' }
+    });
   } catch (error) {
     console.error('Highlight API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
