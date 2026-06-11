@@ -202,6 +202,25 @@ export interface CountryPageData {
   info: { league: string; note: string; iihfRank?: string; firstNhl?: string } | undefined;
   howToNote: string | undefined;
   nearestHockeyCountries: { name: string; slug: string; rinkCount: number; teamCount: number }[];
+  iihfMember: {
+    country: string;
+    iihf_status: 'full' | 'associate' | 'suspended';
+    ioc_code: string | null;
+    date_joined: string | null;
+    organization: string | null;
+    mens_ranking: number | null;
+    womens_ranking: number | null;
+    ranking_as_of: string;
+  } | null;
+  nationalTeams: Array<{
+    id: string;
+    team_name: string;
+    team_type: 'mens' | 'womens' | 'mens_u20' | 'mens_u18' | 'womens_u18';
+    ranking: number | null;
+    ranking_label: string;
+    slug: string;
+  }>;
+  leagueCount: number;
 }
 
 export async function getCountryPageData(countryName: string): Promise<CountryPageData> {
@@ -219,6 +238,9 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     { data: leagues },
     { data: players },
     { data: relatedPosts },
+    { data: iihfMember },
+    { data: nationalTeams },
+    { count: leagueCount },
   ] = await Promise.all([
     supabase.from('rinks').select('id, slug, name, city, address, phone, website_url').eq('country', countryName).eq('is_active', true).order('name').limit(50),
     supabase.from('teams').select('id, name, slug, logo_url, city, league_id').eq('country', countryName).eq('is_active', true).order('name').limit(20),
@@ -229,6 +251,9 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
       ? supabase.from('players').select('id, first_name, last_name, slug, position, nationality, headshot_url, team_id').eq('nationality', iocCode).eq('is_active', true).order('last_name').limit(8)
       : Promise.resolve({ data: null as any }),
     supabase.from('posts').select('id, slug, title, subtitle, category, tags, author_name, reading_time_minutes, published_at').eq('status', 'published').order('published_at', { ascending: false }).limit(30),
+    supabase.from('iihf_member_nations').select('country, iihf_status, ioc_code, date_joined, organization, mens_ranking, womens_ranking, ranking_as_of').eq('country', countryName).maybeSingle(),
+    supabase.from('national_teams').select('id, team_name, team_type, ranking, ranking_label, slug').eq('country', countryName).eq('is_active', true).order('team_type'),
+    supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('country', countryName).eq('is_active', true),
   ]);
 
   // Score related articles by tag overlap
@@ -283,6 +308,7 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     teams: teams || [],
     rinkCount: rinkCount ?? 0,
     teamCount: teamCount ?? 0,
+    leagueCount: leagueCount ?? 0,
     leagues: leagues || [],
     players: players || [],
     relatedPosts: relatedPosts || [],
@@ -291,6 +317,8 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     info,
     howToNote,
     nearestHockeyCountries,
+    iihfMember: iihfMember || null,
+    nationalTeams: nationalTeams || [],
   };
 }
 
