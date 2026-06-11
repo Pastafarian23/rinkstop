@@ -1,32 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
+import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
-const SUPABASE_URL = 'https://placeholder.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SB_SECRET!;
 const SUPPORT_EMAIL = 'support@rinkstop.com';
 
-// Simple in-memory rate limiting (5 submissions per IP per hour)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-function rateLimit(ip: string, max = 5, windowMs = 3600000): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (entry && entry.resetAt > now && entry.count >= max) return false;
-  if (!entry || entry.resetAt <= now) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
-  } else {
-    entry.count++;
-  }
-  return true;
-}
+// Simple in-memory rate limiting (5 submissions per IP per hour).
+// In-memory on Vercel serverless resets per cold start; good enough for a
+// contact form (low volume) until we move to Upstash-backed limiting.
+const RATE_LIMIT = { maxRequests: 5, windowMs: 60 * 60 * 1000 };
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') || 'unknown';
+  const ip = getClientIP(req);
+  const result = await checkRateLimit(ip, RATE_LIMIT);
+  maybeCleanup();
 
-  if (!rateLimit(ip)) {
-    return NextResponse.json(
-      { error: 'Too many submissions. Please try again later.' },
+  if (!result.allowed) {
+    const response = new NextResponse(
+      JSON.stringify({ error: 'Too many submissions. Please try again later.' }),
       { status: 429 }
     );
+    applyRateLimitHeaders(response, result);
+    response.headers.set('Content-Type', 'application/json');
+    return response;
   }
 
   let body: { name: string; email: string; subject?: string; message: string };
@@ -51,9 +46,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Message too long (max 5000 characters).' }, { status: 400 });
   }
 
-  // Save to Supabase
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const { error: dbErr } = await supabase.from('contact_submissions').insert({
+  // Save to Supabase (uses the shared admin client — was previously using a
+  // hardcoded placeholder URL + `process.env.SB_SECRET!` which was a typo and
+  // silently failed. Fixes M6 from the 2026-06-11 security audit.)
+  const { error: dbErr } = await supabaseAdmin.from('contact_submissions').insert({
     name: name.trim(),
     email: email.trim().toLowerCase(),
     subject: subject?.trim() || 'General Inquiry',

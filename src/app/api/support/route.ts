@@ -31,7 +31,7 @@ function isValidSubject(s: unknown): s is Subject {
 // POST /api/support — submit a support ticket
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(ip, RATE_LIMIT);
   maybeCleanup();
 
   const { userId } = await auth();
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 // GET /api/support — list current user's tickets
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(ip, RATE_LIMIT);
   maybeCleanup();
 
   const { userId } = await auth();

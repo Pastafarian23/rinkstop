@@ -11,7 +11,7 @@ const RL = { maxRequests: 60, windowMs: 60 * 1000 };
 // Allowed fields: bio, location.
 export async function PATCH(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL);
+  const result = await checkRateLimit(ip, RL);
   maybeCleanup();
 
   const userId = await requireUserId();
@@ -66,7 +66,7 @@ export async function PATCH(request: NextRequest) {
 // This is the "current user snapshot" used by the dashboard layout to render tier badges, nav, etc.
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL);
+  const result = await checkRateLimit(ip, RL);
   maybeCleanup();
 
   const userId = await requireUserId();

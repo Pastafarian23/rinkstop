@@ -8,7 +8,7 @@ const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
 
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(ip, RATE_LIMIT);
   maybeCleanup();
 
   if (!result.allowed) {

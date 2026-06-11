@@ -27,7 +27,7 @@ function getSourceForType(t: ListingType): string {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL);
+  const result = await checkRateLimit(ip, RL);
   maybeCleanup();
 
   if (!result.allowed) {

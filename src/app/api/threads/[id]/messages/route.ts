@@ -64,7 +64,7 @@ export async function GET(
   const { id } = await params;
 
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL_READ);
+  const result = await checkRateLimit(ip, RL_READ);
   maybeCleanup();
 
   const userId = await requireUserId();
@@ -139,7 +139,7 @@ export async function POST(
   const { id } = await params;
 
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL_SEND);
+  const result = await checkRateLimit(ip, RL_SEND);
   maybeCleanup();
 
   const userId = await requireUserId();

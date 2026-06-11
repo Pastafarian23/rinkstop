@@ -16,7 +16,7 @@ export async function GET(
   const { type, id } = await params;
 
   const ip = getClientIP(request);
-  const result = checkRateLimit(ip, RL);
+  const result = await checkRateLimit(ip, RL);
   maybeCleanup();
 
   const validTypes = ['rink', 'team', 'league', 'player'];

@@ -1,31 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
+import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
-const SUPABASE_URL = 'https://placeholder.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
-
-// Simple in-memory rate limiting (10 submissions per IP per hour)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-function rateLimit(ip: string, max = 10, windowMs = 3600000): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (entry && entry.resetAt > now && entry.count >= max) return false;
-  if (!entry || entry.resetAt <= now) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
-  } else {
-    entry.count++;
-  }
-  return true;
-}
+// Simple in-memory rate limiting (10 submissions per IP per hour).
+const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 60 * 1000 };
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') || 'unknown';
+  const ip = getClientIP(req);
+  const result = await checkRateLimit(ip, RATE_LIMIT);
+  maybeCleanup();
 
-  if (!rateLimit(ip)) {
-    return NextResponse.json(
-      { error: 'Too many submissions. Please try again later.' },
+  if (!result.allowed) {
+    const response = new NextResponse(
+      JSON.stringify({ error: 'Too many submissions. Please try again later.' }),
       { status: 429 }
     );
+    applyRateLimitHeaders(response, result);
+    response.headers.set('Content-Type', 'application/json');
+    return response;
   }
 
   let body: { email: string };
@@ -46,9 +38,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid email address.' }, { status: 400 });
   }
 
-  // Save to Supabase
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const { error: dbErr, data } = await supabase
+  // Save to Supabase (uses the shared admin client — was previously using a
+  // hardcoded placeholder URL that would have broken the endpoint. Fixes L1
+  // from the 2026-06-11 security audit.)
+  const { error: dbErr, data } = await supabaseAdmin
     .from('newsletter_subscribers')
     .upsert(
       { email: email.trim().toLowerCase() },
