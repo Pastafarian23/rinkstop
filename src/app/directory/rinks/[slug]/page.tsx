@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { supabase } from '@/lib/supabase';
@@ -66,12 +66,21 @@ function rinkIndexable(status: string | null | undefined): boolean {
   return status !== 'closed' && status !== 'placeholder';
 }
 
+// The [slug] dynamic segment is named "slug" but the route also accepts the
+// rink's UUID — some legacy internal links (and the /directory/rinks listing
+// page) still use rink.id. Detect UUIDs so we can look up by id and redirect
+// to the canonical slug URL.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(s: string): boolean {
+  return UUID_RE.test(s);
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
     .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email, status')
-    .eq('slug', slug)
+    .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
   if (!rink) return { title: 'Rink Not Found | RinkStop' };
@@ -109,17 +118,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function RinkDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: param } = await params;
 
-  // Fetch rink by slug
+  // Fetch rink by id (if UUID) or by slug. The [slug] folder is just a route
+  // segment name — we accept either, then redirect to the canonical slug URL
+  // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
     .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, is_active, notes, source, status')
-    .eq('slug', slug)
+    .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
   if (error || !rink) {
     notFound();
+  }
+
+  // Canonicalize: if we arrived by UUID, send the user (and crawlers) to the
+  // slug-based URL. 308 preserves the request method and signals a permanent
+  // move, so search engines consolidate link equity on the slug URL.
+  if (rink.slug !== param) {
+    redirect(`/directory/rinks/${rink.slug}`);
   }
 
   // Fetch in parallel: upcoming games, teams in same city, leagues in same country, reviews

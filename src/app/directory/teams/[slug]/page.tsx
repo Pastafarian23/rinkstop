@@ -418,7 +418,7 @@ function TeamRelated({ leagueId, currentTeamId, homeRinkId }: { leagueId: string
       {homeRink && (
         <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', marginBottom: '0.875rem' }}>
           <p style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginBottom: '0.3rem' }}>Home Arena</p>
-          <Link href={`/directory/rinks/${homeRink.id}`} style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem', textDecoration: 'none' }}>{homeRink.name || homeRink.address || 'View Rink'}</Link>
+          <Link href={`/directory/rinks/${homeRink.slug || homeRink.id}`} style={{ fontWeight: 700, color: '#fff', fontSize: '0.9375rem', textDecoration: 'none' }}>{homeRink.name || homeRink.address || 'View Rink'}</Link>
         </div>
       )}
       {league && (

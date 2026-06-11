@@ -347,7 +347,7 @@ export default function CityPage({
             {rinks.map(rink => (
               <Link
                 key={rink.id}
-                href={`/directory/rinks/${rink.id}`}
+                href={`/directory/rinks/${rink.slug || rink.id}`}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',

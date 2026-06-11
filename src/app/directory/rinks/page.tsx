@@ -161,7 +161,7 @@ export default function RinksPage() {
             : filtered.map(rink => (
               <Link
                 key={rink.id}
-                href={`/directory/rinks/${rink.id}`}
+                href={`/directory/rinks/${rink.slug || rink.id}`}
                 style={{
                   display: 'block', textDecoration: 'none',
                   background: rink.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
