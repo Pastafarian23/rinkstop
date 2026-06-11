@@ -51,6 +51,22 @@ const HIGHLIGHT_ID = args['highlight-id'] ? parseInt(String(args['highlight-id']
 const LIMIT = parseInt(String(args.limit ?? '3'), 10);
 const DRY_RUN = !!args['dry-run'];
 const SKIP_LLM = !!args['skip-llm'];
+const USE_WEB_RECAP = !!args['use-web-recap'];
+
+// Resolve the rinkstop-platform dir for spawning kilo (it needs a project context).
+const RINKSTOP_DIR = process.env.RINKSTOP_DIR || '/root/.openclaw/workspace/rinkstop-platform';
+
+// Extract a YouTube video ID from any common URL form.
+function extractVideoId(url) {
+  if (!url) return '';
+  const m1 = url.match(/[?&]v=([\w-]{6,15})/);
+  if (m1) return m1[1];
+  const m2 = url.match(/youtu\.be\/([\w-]{6,15})/);
+  if (m2) return m2[1];
+  const m3 = url.match(/embed\/([\w-]{6,15})/);
+  if (m3) return m3[1];
+  return '';
+}
 
 /**
  * Find candidate highlights: those from the last 24h (or as overridden by
@@ -133,9 +149,9 @@ function fetchVideoData(videoUrl) {
  * Returns the generated markdown. Force-kills at 100s with SIGKILL if SIGTERM
  * doesn't close the process within 5s.
  */
-function llmDraft(factsBlock) {
+function llmDraft(factsBlock, options = {}) {
   return new Promise((resolve, reject) => {
-    const prompt = buildLlmPrompt(factsBlock);
+    const prompt = buildLlmPrompt(factsBlock, options);
     const model = process.env.LLM_MODEL || 'kilo/~openai/gpt-mini-latest';
     const proc = spawn('kilo', ['run', '--auto', '--model', model, prompt], {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -255,7 +271,8 @@ function extractTitleFromBody(body) {
   return title;
 }
 
-function buildLlmPrompt(factsBlock) {
+function buildLlmPrompt(factsBlock, options = {}) {
+  const noTranscript = options.noTranscript === true;
   // Trim the transcript to the most relevant bits for the LLM context.
   // The full transcript can be 30k chars; the LLM only needs the rich parts.
   // For long transcripts we keep the first 2000 (game opening, lineups) +
@@ -270,7 +287,11 @@ function buildLlmPrompt(factsBlock) {
     };
   }
   const videoId = compactFacts.video?.id || '';
+  const noTranscriptNote = noTranscript
+    ? `NO TRANSCRIPT AVAILABLE. You are writing from a score + period breakdown ONLY. DO NOT invent goal scorers, play-by-play, or specific stats. You may write about the final score, period-by-period flow as shown, what the result means in context of standings/series, and the value of the highlight video. Keep the article more conservative (400-600 words) since the play-by-play is unknown.`
+    : '';
   return `Write a hockey game recap article. Facts block below is your ONLY source of truth. If a name/number/score isn't in the block, you cannot use it.
+${noTranscriptNote}
 
 FACTS BLOCK:
 ${JSON.stringify(compactFacts, null, 2)}
@@ -321,6 +342,117 @@ Begin your response with the "---" line. No preamble text.`;
  * Insert the LLM's draft into posts as a draft.
  * Accepts a parsed frontmatter object and the body markdown.
  */
+async function llmWebRecapDraft(highlight) {
+  // Fallback path: when YouTube is rate-limiting us, use the Highlightly
+  // match API to get confirmed score data, then call the LLM with a
+  // conservative "score + period breakdown" facts block. The LLM writes a
+  // box-score style recap that anchors in confirmed data only.
+  //
+  // The user directive: "video is the story" is NOT sufficient. So we DO
+  // not fall back to that. We confirm the score from an independent source
+  // (Highlightly) and let the LLM write a richer article that uses the
+  // score + period breakdown as the anchor. No invented play-by-play.
+
+  const teams = [highlight.home_team_name, highlight.away_team_name].filter(Boolean);
+  const date = (highlight.match_date || '').slice(0, 10);
+  const leagueRaw = highlight.league_name;
+  const league = (typeof leagueRaw === 'object' && leagueRaw) ? leagueRaw.name : (leagueRaw || '');
+
+  // Call Highlightly match-list to confirm score
+  const hlData = await highlightlyMatchData({ teams, date, league });
+  if (!hlData || !hlData.score) {
+    throw new Error('Highlightly returned no score data for this game');
+  }
+
+  const factsBlock = {
+    highlight: {
+      id: highlight.id,
+      title: highlight.title,
+      source: highlight.source,
+      match_date: highlight.match_date,
+      home_team: highlight.home_team_name,
+      away_team: highlight.away_team_name,
+      league: highlight.league_name,
+      video_url: highlight.video_url,
+    },
+    video: { id: extractVideoId(highlight.video_url) },
+    fixtures: [hlData],  // single confirmed fixture
+    recap_source: 'Highlightly match API (no YouTube transcript available — YouTube rate-limited our IP)',
+    note: 'NO TRANSCRIPT AVAILABLE. Final score and period breakdown are confirmed via Highlightly. DO NOT invent goal scorers, play-by-play, or stats that are not in this block. Write a score-anchored recap that respects the verified facts.',
+  };
+
+  // Use the same llmDraft path with a slightly different prompt preamble
+  const llmResult = await llmDraft(factsBlock, {
+    noTranscript: true,
+  });
+  return llmResult.markdown;
+}
+
+async function highlightlyMatchData({ teams, date, league }) {
+  // The hockey endpoint is more complete (NHL playoffs, AHL, WCH, Memorial Cup)
+  // than the NHL endpoint which only covers regular season. Always try both.
+  const endpoints = [
+    { base: 'https://hockey.highlightly.net', host: 'hockey-highlights-api.p.rapidapi.com', label: 'hockey' },
+    { base: 'https://nhl.highlightly.net', host: 'nhl-ncaah-api.p.rapidapi.com', label: 'nhl' },
+  ];
+
+  // Try the dates around the match (in case of timezone drift)
+  const d0 = new Date(date + 'T00:00:00Z');
+  const dayBefore = new Date(d0); dayBefore.setUTCDate(d0.getUTCDate() - 1);
+  const dayAfter = new Date(d0); dayAfter.setUTCDate(d0.getUTCDate() + 1);
+  const dates = [dayBefore.toISOString().slice(0, 10), date, dayAfter.toISOString().slice(0, 10)];
+
+  // Normalize team names: strip "the", lowercase, take last word for matching.
+  // e.g. "Montreal Canadiens" -> "canadiens", "Chicago Blackhawks" -> "blackhawks"
+  const teamKeys = teams.map(t => {
+    const noThe = t.replace(/^the\s+/i, '').toLowerCase().trim();
+    const lastWord = noThe.split(/\s+/).pop();
+    return { full: noThe, last: lastWord };
+  });
+
+  for (const ep of endpoints) {
+    for (const d of dates) {
+    const url = `${ep.base}/matches?date=${d}&limit=20`;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'x-rapidapi-key': process.env.HIGHLIGHTLY_API_KEY || '',
+          'x-rapidapi-host': ep.host,
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) { console.error(`  ⚠️  Highlightly ${d}: HTTP ${res.status}`); continue; }
+      const j = await res.json();
+      const ms = j.data || [];
+      console.error(`  🔍 Highlightly ${d}: ${ms.length} matches`);
+      // Find a match where BOTH teams are in the list
+      for (const m of ms) {
+        const homeName = (m.homeTeam?.name || m.homeTeam?.displayName || '').toLowerCase();
+        const awayName = (m.awayTeam?.name || m.awayTeam?.displayName || '').toLowerCase();
+        const homeHas = teamKeys.some(k => homeName.includes(k.last) || homeName.includes(k.full));
+        const awayHas = teamKeys.some(k => awayName.includes(k.last) || awayName.includes(k.full));
+        if (homeHas && awayHas) {
+          return {
+            id: m.id,
+            date: m.date,
+            home_team: m.homeTeam?.name || m.homeTeam?.displayName,
+            away_team: m.awayTeam?.name || m.awayTeam?.displayName,
+            league: m.league?.name,
+            week: m.week,
+            score: m.state?.score,
+            description: m.state?.description,
+            source_endpoint: ep.label,
+          };
+        }
+      }
+    } catch (e) {
+      // continue
+    }
+    }
+  }
+  return null;
+}
+
 async function insertDraft(highlight, meta, body) {
   // Fall back to extracting title from body if frontmatter didn't have one.
   const title = meta.title || extractTitleFromBody(body) || highlight.title;
@@ -394,11 +526,15 @@ async function processHighlight(h) {
   // LLM has no anchor and will either invent stats or write a mealy
   // "I don't have enough data" stub. Better to skip and let the next run
   // (or a different IP) try again.
-  if (!videoData.transcript?.ok) {
+  if (!videoData.transcript?.ok && !USE_WEB_RECAP) {
     result.error = `no transcript: ${videoData.transcript?.error || 'unknown'}`;
     result.skipped = true;
     console.error(`  ⚠️  no transcript (${videoData.transcript?.error || 'unknown'}); skipping insert`);
     return result;
+  }
+  if (!videoData.transcript?.ok && USE_WEB_RECAP) {
+    console.log(`  ⚠️  no transcript; using web search fallback`);
+    result.steps.video.transcript_skipped = true;
   }
 
   // Step 2: fixtures
@@ -451,8 +587,16 @@ async function processHighlight(h) {
 
   let llmArticle;
   try {
-    const llmResult = await llmDraft(factsBlock);
-    llmArticle = llmResult.markdown; // includes YAML frontmatter
+    if (!videoData.transcript?.ok && USE_WEB_RECAP) {
+      // Web-search recap fallback (used when YouTube is rate-limiting us).
+      // The kilo agent has web_search built in via Exa.
+      const t0 = Date.now();
+      llmArticle = await llmWebRecapDraft(h);
+      result.steps.llm = { source: 'web_recap', elapsed_ms: Date.now() - t0 };
+    } else {
+      const llmResult = await llmDraft(factsBlock);
+      llmArticle = llmResult.markdown; // includes YAML frontmatter
+    }
   } catch (e) {
     result.error = `LLM failed: ${e.message?.slice(0, 300)}`;
     console.error('  ❌ LLM failed:', e.message?.slice(0, 300));
