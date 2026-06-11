@@ -15,6 +15,7 @@ interface Team {
 interface Rink {
   id: string;
   name: string;
+  slug?: string;
   city?: string;
   country?: string;
   address?: string;
