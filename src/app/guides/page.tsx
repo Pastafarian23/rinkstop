@@ -3,20 +3,18 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Hockey Guides | RinkStop',
-  description: 'In-depth hockey guides covering technique, training, equipment buying, and the sport for beginners and experienced players alike.',
+  description: 'In-depth hockey guides covering technique, training, equipment buying, and the sport for beginners and experienced players alike. Separate tracks for youth and adult players.',
 };
 
-const GUIDE_CARDS = [
-  { title: 'How to Choose the Right Stick', cat: 'Equipment', desc: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying your next stick.', icon: '🏒', href: '/guides/hockey-stick-guide' },
-  { title: 'Off-Ice Training for Hockey Players', cat: 'Training', desc: 'The best dryland exercises to build explosive power, edge strength, and durability.', icon: '💪', href: '/guides/off-ice-hockey-training' },
-  { title: 'Understanding Hockey Positions', cat: 'Beginners', desc: 'Centers, wings, defense, and goalies  --  what each position does and how they work together.', icon: '🛡️', href: '/guides/hockey-positions' },
-  { title: 'Skate Fitting Guide', cat: 'Equipment', desc: 'How hockey skates should fit, common sizing mistakes, and what to look for at a fitting.', icon: '⛸️', href: '/guides/skate-fitting-guide' },
-  { title: "Hockey Parent's Handbook", cat: 'Beginners', desc: "What to expect at your kid's first season  --  from equipment to game day etiquette.", icon: '👨‍👩‍👧', href: '/guides/hockey-parents-handbook' },
-  { title: 'Eating for Performance', cat: 'Training', desc: 'Nutrition strategies for hockey players: pre-game meals, hydration, and recovery eating.', icon: '🥗', href: '/guides/hockey-nutrition' },
-  { title: 'Breaking In New Gloves', cat: 'Equipment', desc: 'The best method to soften up new hockey gloves without damaging them.', icon: '🧤', href: '/guides/breaking-in-hockey-gloves' },
-  { title: 'From Youth to Junior Hockey', cat: 'Pathway', desc: 'What it takes to make the jump from youth travel hockey to junior leagues.', icon: '🚀', href: '/guides/youth-to-junior-hockey' },
-  { title: 'Hockey Rules Explained', cat: 'Beginners', desc: 'Every NHL rule explained in plain language  --  from icing to penalty shots.', icon: '📋', href: '/guides/hockey-rules' },
-  { title: 'Hockey Glossary', cat: 'Reference', desc: 'The complete hockey dictionary  --  icing, offsides, one-timers, Corsi, and every term explained.', icon: '📖', href: '/glossary' },
+const YOUTH_PREVIEW = [
+  { title: "Hockey Parent's Handbook", desc: "What to expect at your kid's first season — from equipment to game day etiquette.", href: '/guides/hockey-parents-handbook' },
+  { title: 'House vs Travel Hockey', desc: 'How to choose the right level — recreational house, select, or travel/AAA.', href: '/guides/youth/house-vs-travel-hockey' },
+  { title: "USA Hockey's ADM Explained", desc: 'The American Development Model — what it is and why early specialization hurts.', href: '/guides/youth/usa-hockey-adm-explained' },
+];
+
+const ADULT_PREVIEW = [
+  { title: 'Hockey Rules for Beginners', desc: 'Every NHL rule in plain language — from icing to penalty shots.', href: '/guides/hockey-rules' },
+  { title: 'Understanding Hockey Positions', desc: 'Centers, wings, defense, and goalies — what each position does.', href: '/guides/hockey-positions' },
 ];
 
 export default function GuidesPage() {
@@ -28,33 +26,101 @@ export default function GuidesPage() {
         <span style={{ color: '#A0A0A0' }}>Guides</span>
       </nav>
 
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '2rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
           HOCKEY GUIDES
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          Technique, training, equipment, and everything in between.
+          Technique, training, equipment, and everything in between. Choose the track that fits.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-        {GUIDE_CARDS.map(g => (
-          <Link key={g.title} href={g.href} style={{
-            display: 'block',
-            background: 'var(--s2)',
-            border: '1px solid var(--border)',
-            borderRadius: '8px',
-            padding: '1.25rem',
-            textDecoration: 'none',
-            transition: 'border-color 0.2s',
-          }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.75rem' }}>{g.icon}</div>
-            <span style={{ fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--gold)' }}>{g.cat}</span>
-            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.3rem', marginBottom: '0.5rem' }}>{g.title}</h3>
-            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>{g.desc}</p>
+      {/* Youth Section */}
+      <section style={{ marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C8102E' }}>FOR PARENTS & YOUNG PLAYERS</span>
+            <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>YOUTH HOCKEY</h2>
+          </div>
+          <Link href="/guides/youth" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            See all youth guides →
           </Link>
-        ))}
-      </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+          {YOUTH_PREVIEW.map(g => (
+            <Link key={g.title} href={g.href} style={{
+              display: 'block',
+              background: 'var(--s2)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              textDecoration: 'none',
+              transition: 'border-color 0.2s',
+            }}>
+              <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>{g.title}</h3>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>{g.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Adult Section */}
+      <section style={{ marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--gold)' }}>FOR ADULT NEWCOMERS</span>
+            <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>ADULT HOCKEY</h2>
+          </div>
+          <Link href="/guides/adult" style={{ color: 'var(--gold)', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+            See all adult guides →
+          </Link>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+          {ADULT_PREVIEW.map(g => (
+            <Link key={g.title} href={g.href} style={{
+              display: 'block',
+              background: 'var(--s2)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '1.25rem',
+              textDecoration: 'none',
+              transition: 'border-color 0.2s',
+            }}>
+              <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>{g.title}</h3>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>{g.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Equipment & Training Reference (no audience split) */}
+      <section style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888' }}>REFERENCE</span>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>EQUIPMENT & TRAINING</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+          {[
+            { title: 'Skate Fitting Guide', href: '/guides/skate-fitting-guide' },
+            { title: 'How to Choose the Right Stick', href: '/guides/hockey-stick-guide' },
+            { title: 'Breaking In New Gloves', href: '/guides/breaking-in-hockey-gloves' },
+            { title: 'Off-Ice Training', href: '/guides/off-ice-hockey-training' },
+            { title: 'Eating for Performance', href: '/guides/hockey-nutrition' },
+            { title: 'Hockey Glossary', href: '/glossary' },
+          ].map(g => (
+            <Link key={g.title} href={g.href} style={{
+              display: 'block',
+              background: 'var(--s2)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '1rem 1.25rem',
+              textDecoration: 'none',
+            }}>
+              <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '0.9375rem', color: '#fff', letterSpacing: '0.04em' }}>{g.title}</h3>
+            </Link>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
