@@ -7,6 +7,7 @@ import { SearchIcon, FilterIcon, ChevronRightIcon } from '@/components/icons';
 interface Rink {
   id: string;
   name: string;
+  slug?: string;
   city?: string;
   province_state?: string;
   country?: string;
