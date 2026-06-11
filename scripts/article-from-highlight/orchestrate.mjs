@@ -390,6 +390,17 @@ async function processHighlight(h) {
   }
   console.log(`  ✓ video_id=${videoData.video_id}, oembed ok, transcript snippets=${videoData.transcript?.snippet_count || 0}`);
 
+  // Step 1.5: require a usable transcript. Without play-by-play facts the
+  // LLM has no anchor and will either invent stats or write a mealy
+  // "I don't have enough data" stub. Better to skip and let the next run
+  // (or a different IP) try again.
+  if (!videoData.transcript?.ok) {
+    result.error = `no transcript: ${videoData.transcript?.error || 'unknown'}`;
+    result.skipped = true;
+    console.error(`  ⚠️  no transcript (${videoData.transcript?.error || 'unknown'}); skipping insert`);
+    return result;
+  }
+
   // Step 2: fixtures
   const fixtures = await fixturesForHighlight(h);
   result.steps.fixtures = fixtures ? { found: fixtures.length } : { found: 0 };
