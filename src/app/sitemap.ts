@@ -3,6 +3,14 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 const baseUrl = 'https://rinkstop.com';
 
+// Cache the sitemap for 1 hour. Without this, the sitemap function runs on
+// EVERY request (no static generation), executing 7 Supabase queries in
+// parallel each time Google/Bing/etc. hit /sitemap.xml. That alone was
+// responsible for thousands of function invocations per month on the
+// Vercel Hobby plan. With revalidate=3600, the output is cached for 1h
+// and only regenerated when stale.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Phase 1 SEO filter stats — track effectiveness
   const stats = { teams_total: 0, teams_indexed: 0, rinks_total: 0, rinks_indexed: 0,

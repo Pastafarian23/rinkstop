@@ -38,6 +38,24 @@ const nextConfig = {
           },
         ],
       },
+      // Immutable 1-year cache for static images in /public/images/.
+      // Vercel's CDN serves these directly; without this header, every
+      // crawler request re-fetches the file. With max-age=31536000,
+      // repeat requests are served from edge cache. Saves bandwidth on
+      // Vercel Hobby plan (100GB/mo cap).
+      {
+        source: '/images/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // Also cache the favicon and other static assets for 1 year.
+      {
+        source: '/:path(favicon\\.ico|og-image\\.png|rinkstoplogo\\.png|robots\\.txt)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
     ];
   },
   async redirects() {
