@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 const ADULT_GUIDE_CARDS = [
   { title: 'Hockey Rules for Beginners', cat: 'Beginners', desc: 'Every NHL rule explained in plain language — from icing to penalty shots.', icon: '📋', href: '/guides/hockey-rules' },
   { title: 'Understanding Hockey Positions', cat: 'Beginners', desc: 'Centers, wings, defense, and goalies — what each position does and how they work together.', icon: '🛡️', href: '/guides/hockey-positions' },
+  { title: 'How to Fit Hockey Equipment', cat: 'Equipment', desc: 'How to fit every piece as an adult — helmet, shoulder pads, pants vs. girdle, gloves, jock/jill, with a women-specific section.', icon: '🛡️', href: '/guides/adult/how-to-fit-hockey-equipment' },
 ];
 
 export default function AdultGuidesPage() {
