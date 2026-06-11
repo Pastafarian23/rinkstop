@@ -26,6 +26,7 @@
 import { nhlcomMatchData } from './datasources/nhlcom.mjs';
 import { hockeytechMatchData } from './datasources/hockeytech.mjs';
 import { ncaaMatchData } from './datasources/ncaa.mjs';
+import { khlMatchData } from './datasources/khl.mjs';
 
 /**
  * Internal: query Highlightly. Returns normalized object or null.
@@ -122,7 +123,11 @@ export async function getMatchData({ teams, date, league, apiKey }) {
   const ncaa = await ncaaMatchData({ teams, date, league });
   if (ncaa && ncaa.score) return ncaa;
 
+  // 5. KHL/WHL/MHL (Russian leagues, public mobile API)
+  const khl = await khlMatchData({ teams, date, league });
+  if (khl && khl.score) return khl;
+
   return null;
 }
 
-export { highlightlyMatch, nhlcomMatchData, hockeytechMatchData, ncaaMatchData };
+export { highlightlyMatch, nhlcomMatchData, hockeytechMatchData, ncaaMatchData, khlMatchData };
