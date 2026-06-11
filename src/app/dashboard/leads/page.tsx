@@ -147,7 +147,7 @@ function LeadCard({ inquiry }: { inquiry: any }) {
   const created = inquiry.created_at ? new Date(inquiry.created_at) : null;
   const isUnread = !inquiry.read_at;
   const listingHref = inquiry.listing_type === 'rink'
-    ? `/directory/rinks/${inquiry.listing_id}`  // rinks use slugs but ID lookup works
+    ? `/directory/rinks/${inquiry.listing_id}`  // rink route accepts both slug and UUID; redirects UUID → canonical slug
     : inquiry.listing_type === 'team'
     ? `/directory/teams/${inquiry.listing_id}`
     : '#';
