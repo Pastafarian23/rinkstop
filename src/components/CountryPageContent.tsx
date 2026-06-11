@@ -20,6 +20,7 @@ export default function CountryPageContent({ data }: Props) {
     hasData,
     info,
     howToNote,
+    nearestHockeyCountries,
   } = data;
 
   const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = '#888', textDim = '#555';
@@ -202,6 +203,37 @@ export default function CountryPageContent({ data }: Props) {
                 + Add Hockey in {countryName}
               </Link>
             </div>
+          )}
+
+          {/* Closest active hockey markets (no-data countries only) */}
+          {!hasData && nearestHockeyCountries.length > 0 && (
+            <section style={{ marginBottom: 48 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, borderLeft: `4px solid ${red}`, paddingLeft: 14 }}>
+                <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 26, letterSpacing: '0.04em', color: textMain, margin: 0 }}>
+                  Closest Active Hockey Markets
+                </h2>
+                <span style={{ fontSize: 12, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {countryName} has no permanent rink — the nearest options are below
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+                {nearestHockeyCountries.map(n => (
+                  <Link key={n.slug} href={`/directory/${n.slug}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '16px 18px', textDecoration: 'none', display: 'block', position: 'relative' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: textMain, marginBottom: 8 }}>
+                      <span style={{ position: 'absolute', inset: 0, zIndex: 0 }} aria-hidden="true" />
+                      <span style={{ position: 'relative', zIndex: 1 }}>Hockey in {n.name}</span>
+                    </div>
+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 14, fontSize: 12, color: textMuted }}>
+                      <span style={{ color: red, fontWeight: 700 }}>{n.rinkCount}</span><span>rinks</span>
+                      <span style={{ color: red, fontWeight: 700 }}>{n.teamCount}</span><span>teams</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <p style={{ color: textDim, fontSize: 13, marginTop: 16, lineHeight: 1.5 }}>
+                Most rinks in these countries run public skate sessions, learn-to-play programs, and adult recreational leagues. If you&apos;re traveling to play or coach, contact the rink in advance — many require international federation registration (IIHF transfer) for organized play.
+              </p>
+            </section>
           )}
 
           {/* Hockey Ecosystem Snapshot */}
