@@ -211,6 +211,9 @@ export interface CountryPageData {
     mens_ranking: number | null;
     womens_ranking: number | null;
     ranking_as_of: string;
+    mens_division: string | null;
+    mens_division_rank: number | null;
+    division_as_of: string | null;
   } | null;
   nationalTeams: Array<{
     id: string;
@@ -251,7 +254,7 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
       ? supabase.from('players').select('id, first_name, last_name, slug, position, nationality, headshot_url, team_id').eq('nationality', iocCode).eq('is_active', true).order('last_name').limit(8)
       : Promise.resolve({ data: null as any }),
     supabase.from('posts').select('id, slug, title, subtitle, category, tags, author_name, reading_time_minutes, published_at').eq('status', 'published').order('published_at', { ascending: false }).limit(30),
-    supabase.from('iihf_member_nations').select('country, iihf_status, ioc_code, date_joined, organization, mens_ranking, womens_ranking, ranking_as_of').eq('country', countryName).maybeSingle(),
+    supabase.from('iihf_member_nations').select('country, iihf_status, ioc_code, date_joined, organization, mens_ranking, womens_ranking, ranking_as_of, mens_division, mens_division_rank, division_as_of').eq('country', countryName).maybeSingle(),
     supabase.from('national_teams').select('id, team_name, team_type, ranking, ranking_label, slug').eq('country', countryName).eq('is_active', true).order('team_type'),
     supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('country', countryName).eq('is_active', true),
   ]);

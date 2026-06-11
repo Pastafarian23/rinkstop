@@ -210,6 +210,17 @@ export default function CountryPageContent({ data }: Props) {
                 <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>IIHF Member</div>
               </div>
             )}
+            {iihfMember?.mens_division && (
+              <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 14px', textAlign: 'center' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: red, lineHeight: 1.1 }}>{iihfMember.mens_division}</div>
+                {iihfMember.mens_division_rank && (
+                  <div style={{ fontSize: 11, color: red, fontWeight: 700, marginTop: 2 }}>
+                    Ranked #{iihfMember.mens_division_rank} in division
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: textMuted, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>IIHF Division (2025)</div>
+              </div>
+            )}
           </div>
 
           {/* No data state */}
