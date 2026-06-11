@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Fix fixtures table:
  * 1. Deduplicate by nhl_game_id (keep most recent entry per game)
@@ -6,8 +7,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SB_KEY);
 const NHL_API = 'https://api-web.nhle.com/v1';
 

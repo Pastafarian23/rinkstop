@@ -1,0 +1,95 @@
+#!/bin/bash
+# Pre-commit hook to prevent hardcoded secrets from being committed.
+# This catches the patterns that have leaked in the past.
+#
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Or run: ln -s ../../scripts/pre-commit .git/hooks/pre-commit
+
+set -e
+
+# Patterns to check. Each pattern is a regex.
+PATTERNS=(
+  # Supabase
+  'sb_secret_[A-Za-z0-9_-]{20,}'
+  'sb_publishable_[A-Za-z0-9_-]{20,}'
+  'eyJhbGciOi[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}'
+  # Stripe
+  'sk_live_[A-Za-z0-9]{20,}'
+  'sk_test_[A-Za-z0-9]{20,}'
+  'pk_live_[A-Za-z0-9]{20,}'
+  'pk_test_[A-Za-z0-9]{20,}'
+  'whsec_[A-Za-z0-9]{20,}'
+  'rk_live_[A-Za-z0-9]{20,}'
+  # GitHub
+  'ghp_[A-Za-z0-9]{20,}'
+  'gho_[A-Za-z0-9]{20,}'
+  'ghu_[A-Za-z0-9]{20,}'
+  'ghs_[A-Za-z0-9]{20,}'
+  'ghr_[A-Za-z0-9]{20,}'
+  # Vercel
+  'vck_[A-Za-z0-9]+'
+  # Clerk
+  'sk_live_[A-Za-z0-9]{20,}'
+  'pk_live_[A-Za-z0-9]{20,}'
+  # Maton (v2.6Ih... format)
+  'v2\.[A-Za-z0-9_-]{40,}'
+  # Highlightly specific key value
+  '***REMOVED***'
+  # Supabase service role URL (host + service key)
+  'https://[a-z]+\.supabase\.co.*sb_secret_'
+)
+
+# Files to ALWAYS skip (these are templates, helper files, or the script itself)
+SKIP_FILES=(
+  '.env.example'
+  'scripts/load-secrets.mjs'
+  'scripts/load-secrets.cjs'
+  'scripts/load_secrets.py'
+  'scripts/pre-commit'
+  'SECRETS.md'
+  'package-lock.json'
+  'pnpm-lock.yaml'
+)
+
+# Build a regex exclusion from skip files
+SKIP_REGEX="^($(IFS='|'; echo "${SKIP_FILES[*]}"))$"
+
+# Get staged files (added or modified)
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -vE "$SKIP_REGEX" || true)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+FOUND=0
+for file in $STAGED; do
+  # Skip binary files
+  if file "$file" 2>/dev/null | grep -q "binary"; then
+    continue
+  fi
+  for pattern in "${PATTERNS[@]}"; do
+    MATCHES=$(git show ":$file" 2>/dev/null | grep -nE "$pattern" 2>/dev/null || true)
+    if [ -n "$MATCHES" ]; then
+      echo "❌ Secret pattern detected in $file:"
+      echo "$MATCHES" | sed 's/^/    /'
+      echo "   Pattern: $pattern"
+      echo ""
+      FOUND=1
+    fi
+  done
+done
+
+if [ $FOUND -eq 1 ]; then
+  echo "🚫 Commit blocked: hardcoded secrets detected."
+  echo ""
+  echo "To fix:"
+  echo "  1. Move the secret to an env var (process.env.X)"
+  echo "  2. Add it to .env.local (gitignored)"
+  echo "  3. Reference it via the env var in code"
+  echo ""
+  echo "To bypass this hook (NOT RECOMMENDED):"
+  echo "  git commit --no-verify"
+  exit 1
+fi
+
+exit 0

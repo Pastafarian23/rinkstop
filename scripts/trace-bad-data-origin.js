@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Find when Mikhail Kazakevich (age 50, the obvious bad row) was inserted and which script did it
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

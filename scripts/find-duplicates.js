@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Find all duplicate NHL players (same name + team, multiple rows)
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

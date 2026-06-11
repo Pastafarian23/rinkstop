@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Phase 3: NCAA bio backfill from ESPN + cleanup
 // Idempotent: re-runs are safe (UPDATE based on current state)
 

@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // Build the complete Phase 1 changeset:
 // 1. Update 103 field mismatches

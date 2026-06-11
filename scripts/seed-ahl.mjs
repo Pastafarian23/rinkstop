@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './load-secrets.mjs';
 /**
  * scripts/seed-ahl.mjs
  * Seeds AHL game data from HockeyTech API
@@ -10,8 +11,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SERVICE_KEY  = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const AHL_LEAGUE_ID = 'b05d6d26-d5d6-4cfd-a48b-f5646fa7d611';
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);

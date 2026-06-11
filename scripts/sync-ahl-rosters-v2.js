@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * scripts/sync-ahl-rosters-v2.js
  * Pulls AHL team rosters via direct web scraping of AHL.com team pages.
@@ -50,8 +51,8 @@ const AHL_TEAMS = [
 
 const AHL_BASE = 'https://www.theahl.com/teams';
 const supabase = createClient(
-  'https://yszheonqyyskkjoxoexk.supabase.co',
-  '***REMOVED***'
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 const AHL_LEAGUE_ID = 'b05d6d26-d5d6-4cfd-a48b-f5646fa7d611';
 

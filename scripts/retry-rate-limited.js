@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Re-fetch the 5 rate-limited player IDs and upsert if we get data
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Restore the remaining ~10 NHL playoff games that Highlightly doesn't have.
  * Match against NHL.com by team + score + date ± 1 day.
@@ -5,7 +6,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 
-const supabase = createClient('https://yszheonqyyskkjoxoexk.supabase.co', '***REMOVED***');
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const NHL_LEAGUE_ID = '2b5f2b9d-84b9-4edb-8373-a732b72f4e40';
 const HL_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 

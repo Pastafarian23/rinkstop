@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Re-seed iihf_member_nations + national_teams from authoritative Wikipedia source
 // "List of members of the International Ice Hockey Federation"
 // - Splits rows by section (Full members / Associate members / Affiliate members)

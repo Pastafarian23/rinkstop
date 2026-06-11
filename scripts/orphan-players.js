@@ -1,5 +1,6 @@
+require('./load-secrets.cjs');
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient('https://yszheonqyyskkjoxoexk.supabase.co', '***REMOVED***');
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 async function audit() {
   const { data: orphans } = await supabase.from('players').select('id, first_name, last_name, position, nationality, height_cm, weight_kg, is_active, headshot_url').is('team_id', null);

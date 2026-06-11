@@ -4,12 +4,13 @@ Fix og_image_url on the LONG-SLUG post records (the ones actually used in URLs).
 The page code at src/app/blog/[slug]/page.tsx looks up posts by the long slug
 (the full title slug), not the short one. Our earlier patch hit the short slugs.
 """
-import json
+import load_secrets
+import json, os
 import urllib.request
 
 sb = json.load(open('/root/.openclaw/credentials/supabase.json'))
 key = sb['serviceRoleKey']
-base = 'https://yszheonqyyskkjoxoexk.supabase.co/rest/v1'
+base = os.environ['NEXT_PUBLIC_SUPABASE_URL'] + '/rest/v1'
 
 # Long slugs that are actually used in the blog URLs
 long_slugs = {

@@ -1,9 +1,10 @@
+require('./load-secrets.cjs');
 // Minimal bulk sync - one player at a time, no fancy stuff
 const https = require('https');
-const API_KEY = '***REMOVED***';
+const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 const NHL_BASE = 'nhl.highlightly.net';
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function fetchPlayerStats(id) {
   return new Promise((resolve) => {

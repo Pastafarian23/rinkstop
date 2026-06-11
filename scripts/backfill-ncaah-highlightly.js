@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Backfill NCAAH (NCAA Division I hockey) games from Highlightly.
  * NCAA is on the same endpoint as NHL (nhl.highlightly.net with league=NCAAH).
@@ -9,12 +10,12 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SB_KEY);
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-const API_KEY = '***REMOVED***';
+const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 const API_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 const API_BASE = 'https://nhl.highlightly.net';
 

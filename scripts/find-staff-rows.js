@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Find NHL rows that look like coaches/scouts/staff (not active players)
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

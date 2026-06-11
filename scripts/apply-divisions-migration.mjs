@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Apply a single migration file via Supabase Management API
 import { createClient } from '@supabase/supabase-js';
 

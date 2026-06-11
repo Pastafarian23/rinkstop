@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Check current state of nhl_players table
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

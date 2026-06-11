@@ -1,11 +1,12 @@
+require('./load-secrets.cjs');
 /**
  * RinkStop — Player Data Richness Audit
  * Run: node scripts/audit-players.js
  */
 const { createClient } = require('@supabase/supabase-js');
 
-const URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const KEY = '***REMOVED***';
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(URL, KEY);
 
 async function audit() {

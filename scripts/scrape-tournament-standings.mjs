@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Scrape most-recent IIHF tournament final standings for U20/U18/Women's categories.
 // Source: Wikipedia tournament pages (cached HTML in /tmp).
 // Output: ranking + country name + tournament name -> apply to national_teams table.

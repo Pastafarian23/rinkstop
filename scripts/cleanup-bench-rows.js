@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Find and clean up " Bench" placeholder rows
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

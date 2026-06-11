@@ -1,6 +1,7 @@
+require('./load-secrets.cjs');
 // Check all leagues for duplicates
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient('https://yszheonqyyskkjoxoexk.supabase.co', '***REMOVED***');
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 (async () => {
   const { data: leagues } = await supabase.from('leagues').select('id, slug, name').order('slug');

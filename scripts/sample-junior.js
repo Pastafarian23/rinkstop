@@ -1,6 +1,7 @@
+require('./load-secrets.cjs');
 // Sample WHL/OHL/QMJHL games to see what's in game_data
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient('https://yszheonqyyskkjoxoexk.supabase.co', '***REMOVED***');
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 (async () => {
   for (const slug of ['whl', 'ohl', 'qmjhl']) {

@@ -1,11 +1,12 @@
+require('./load-secrets.cjs');
 /**
  * Supabase Audit — RinkStop Data Inventory
  * Run: node scripts/audit-supabase.js
  */
 const { createClient } = require('@supabase/supabase-js');
 
-const URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const KEY = '***REMOVED***';
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(URL, KEY);
 
 async function audit() {

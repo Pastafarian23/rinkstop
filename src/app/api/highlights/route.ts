@@ -4,11 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 // Highlightly API (used as fallback if backup is empty/stale)
 const NHL_BASE = 'https://nhl.highlightly.net';
 const HOCKEY_BASE = 'https://hockey.highlightly.net';
-const API_KEY = process.env.HIGHLIGHTLY_API_KEY || '***REMOVED***';
+const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
+if (!API_KEY) throw new Error('HIGHLIGHTLY_API_KEY is not set');
 
 // Supabase backup table (PRIMARY source — keeps working even if Highlightly goes down)
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+if (!SUPABASE_URL) throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_SERVICE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 export async function GET(request: NextRequest) {

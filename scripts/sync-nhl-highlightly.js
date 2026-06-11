@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * NHL & NCAAH Data Sync Script
  * Syncs NCAA and NHL teams from Highlightly API to Supabase
@@ -7,9 +8,9 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = '***REMOVED***';
-const HIGHLIGHTLY_API_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 
 // NHL API base URL per official docs
 const NHL_BASE_URL = 'https://nhl.highlightly.net';

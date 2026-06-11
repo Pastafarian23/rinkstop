@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Probe whether the team-roster endpoint returns position data for NCAA teams
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

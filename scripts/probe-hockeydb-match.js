@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Test: do DB Air Force player names match ANY of these public sources?
 // Sources: collegehockeyinc.com/roster25.php, hockeydb.com/0005582025.html, goairforcefalcons.com/roster/2024-25
 const { createClient } = require('@supabase/supabase-js');

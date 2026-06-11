@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Seed NHL rosters from ESPN API into Supabase players table."""
+import load_secrets
 import json, time, urllib.request
 
-SUPABASE_URL = "https://yszheonqyyskkjoxoexk.supabase.co"
-SUPABASE_KEY = "***REMOVED***"  # service role
+SUPABASE_URL = os.environ['NEXT_PUBLIC_SUPABASE_URL']
+SUPABASE_KEY = os.environ['SUPABASE_SERVICE_ROLE_KEY']  # service role
 
 TEAMS = [
     ("Anaheim Ducks",     "ANA", "219a6bb2-1103-4e27-931e-5de440e59f84"),

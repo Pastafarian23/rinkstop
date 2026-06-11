@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 

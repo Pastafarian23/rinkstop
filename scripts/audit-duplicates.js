@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // Phase 1 Dedupe Audit (Strategy B: prefer NHL.com id).
 // For each duplicate group, identify the row to KEEP (7-digit id, NHL.com)

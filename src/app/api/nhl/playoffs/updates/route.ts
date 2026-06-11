@@ -6,7 +6,7 @@ const VALID_TYPES = ['update', 'analysis', 'goal', 'period', 'final', 'trade'];
 export async function GET() {
   try {
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yszheonqyyskkjoxoexk.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
     );
     const { data, error } = await supabase
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
 
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yszheonqyyskkjoxoexk.supabase.co',
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
     );
     const { data, error } = await supabase

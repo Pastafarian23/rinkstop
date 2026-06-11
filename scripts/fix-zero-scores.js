@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Fix NHL games that have home_score=0, away_score=0, status='scheduled'
  * but scheduled_at is in the past (clearly bogus data from earlier bad backfill).
@@ -6,7 +7,7 @@
  */
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient('https://yszheonqyyskkjoxoexk.supabase.co', '***REMOVED***');
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const NHL_LEAGUE_ID = '2b5f2b9d-84b9-4edb-8373-a732b72f4e40';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 

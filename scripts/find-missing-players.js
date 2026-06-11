@@ -1,5 +1,6 @@
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SERVICE_KEY = '***REMOVED***';
+require('./load-secrets.cjs');
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 (async () => {
   // Query with filters for nulls - PostgREST can't easily do OR across columns

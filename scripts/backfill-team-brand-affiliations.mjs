@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Backfill teams.brand_id based on known NHL equipment suppliers.
 // AHL teams inherit equipment from their NHL parent clubs, so this gives
 // 32 of the 32 AHL teams a brand assignment.

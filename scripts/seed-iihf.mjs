@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Generate seed SQL for iihf_member_nations + national_teams
 // Source: Wikipedia scrape (/tmp/iihf-members.json)
 // Re-classified: Table 2 = 62 full members, Table 3 = 22 associates, Table 4 = 11 former/suspended (skipped)

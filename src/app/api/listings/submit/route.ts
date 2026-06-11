@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const MATON_API_KEY = '***REMOVED***';
+const MATON_API_KEY = process.env.MATON_API_KEY;
+if (!MATON_API_KEY) {
+  throw new Error('MATON_API_KEY is not set');
+}
 const ZOHO_ACCOUNT_ID = '2958661000000008002';
 
 async function sendTelegramNotification(submission: {

@@ -1,10 +1,11 @@
+require('./load-secrets.cjs');
 /**
  * Run once to set up dashboard tables in Supabase.
  * Usage: node scripts/setup-dashboard-tables.js
  */
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SERVICE_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function createTable(tableName, sql) {
   console.log(`Creating ${tableName}...`);

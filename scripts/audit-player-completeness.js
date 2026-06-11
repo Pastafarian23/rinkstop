@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Verified audit of nhl_players completeness — no guessing, all queries
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

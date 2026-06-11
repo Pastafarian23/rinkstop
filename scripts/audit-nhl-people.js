@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // STRICT audit: re-classify every NHL-league DB row.
 // For each row, check both current NHL.com AND a 2nd source (ESPN) before classifying.
