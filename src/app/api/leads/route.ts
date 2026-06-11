@@ -28,7 +28,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`leads:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   if (!result.allowed) {

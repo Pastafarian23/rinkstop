@@ -14,7 +14,7 @@ export async function POST(
   const { id } = await params;
 
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RL);
+  const result = await checkRateLimit(`block:${ip}`, RL);
   maybeCleanup();
 
   const userId = await requireUserId();

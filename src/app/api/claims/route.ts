@@ -8,7 +8,7 @@ const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 // POST /api/claims — submit a new claim
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`claims:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   if (!result.allowed) {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 // GET /api/claims — get user's claims
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RATE_LIMIT);
+  const result = await checkRateLimit(`claims:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
   if (!result.allowed) {

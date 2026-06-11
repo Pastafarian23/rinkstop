@@ -10,7 +10,7 @@ const RL = { maxRequests: 30, windowMs: 60 * 1000 };
 // Returns the other party's profile, context profile (if any), and unread count.
 export async function GET(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RL);
+  const result = await checkRateLimit(`threads:${ip}`, RL);
   maybeCleanup();
 
   const userId = await requireUserId();
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
 // Sender must be Verified+. Recipient must be in an accepted connection.
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
-  const result = await checkRateLimit(ip, RL);
+  const result = await checkRateLimit(`threads:${ip}`, RL);
   maybeCleanup();
 
   const userId = await requireUserId();
