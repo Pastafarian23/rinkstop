@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireUserId } from '@/lib/connections';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
@@ -81,8 +82,55 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (!profile) {
-    // The Clerk webhook is eventually consistent — user signed in but profile row not yet created.
-    // Return a synthetic "free" profile so the UI can render.
+    // Lazy-create: the Clerk webhook that bootstraps profile rows is currently
+    // disabled (signature verification was using the wrong format and the
+    // CLERK_WEBHOOK_SECRET was unset in Vercel env). Instead of waiting on
+    // a webhook, we bootstrap a minimal profile row on first API call. Once
+    // a row exists, all subsequent reads skip this path.
+    let display_name: string | null = null;
+    let avatar_url: string | null = null;
+    try {
+      const user = await currentUser();
+      if (user) {
+        display_name =
+          [user.firstName, user.lastName].filter(Boolean).join(' ') || null;
+        avatar_url = user.imageUrl || null;
+      }
+    } catch {
+      // If Clerk lookup fails, fall through with nulls — better than failing the request.
+    }
+
+    const { data: created, error: createErr } = await supabaseAdmin
+      .from('profiles')
+      .upsert(
+        {
+          user_id: userId,
+          display_name,
+          avatar_url,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      )
+      .select('*')
+      .maybeSingle();
+
+    if (createErr) {
+      console.error('[profiles GET] lazy create failed', createErr);
+    } else if (created) {
+      console.log(`[profiles GET] lazy-created profile for ${userId}`);
+    }
+  }
+
+  // Re-read so we get the canonical row (with tier, subscription_status, etc.)
+  // regardless of whether the upsert above ran.
+  const { data: profileFinal } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!profileFinal) {
+    // Both fetch and create failed — return synthetic profile so UI doesn't break.
     return NextResponse.json({
       profile: {
         user_id: userId,
@@ -139,7 +187,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
-    profile,
+    profile: profileFinal,
     managedProfiles: managed || [],
     pendingConnectionCount: pendingConnCount || 0,
     unreadMessageCount,
