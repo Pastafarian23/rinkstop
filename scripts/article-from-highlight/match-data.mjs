@@ -23,10 +23,20 @@
  *   const data = await getMatchData({ teams: ['Maple Leafs', 'Capitals'], date: '2026-04-08', league: 'NHL', apiKey: '...' });
  */
 
+import { readFileSync, existsSync } from 'fs';
 import { nhlcomMatchData } from './datasources/nhlcom.mjs';
 import { hockeytechMatchData } from './datasources/hockeytech.mjs';
 import { ncaaMatchData } from './datasources/ncaa.mjs';
 import { khlMatchData } from './datasources/khl.mjs';
+
+// Load .env if present so callers don't have to pass apiKey explicitly
+const ENV_FILE = '/root/.openclaw/workspace/rinkstop-platform/.env';
+if (existsSync(ENV_FILE) && !process.env.HIGHLIGHTLY_API_KEY) {
+  for (const line of readFileSync(ENV_FILE, 'utf8').split('\n')) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+  }
+}
 
 /**
  * Internal: query Highlightly. Returns normalized object or null.
@@ -103,9 +113,10 @@ async function highlightlyMatch(teams, date, apiKey) {
  */
 export async function getMatchData({ teams, date, league, apiKey }) {
   if (!teams || !teams.length || !date) return null;
+  const effectiveKey = apiKey || process.env.HIGHLIGHTLY_API_KEY;
 
   // 1. Highlightly (best for: NHL, AHL, IIHF, Memorial Cup, QMJHL, OHL, ECHL, partial WHL/KHL)
-  const hl = await highlightlyMatch(teams, date, apiKey);
+  const hl = await highlightlyMatch(teams, date, effectiveKey);
   if (hl && hl.score) return hl;
 
   // 2. NHL.com fallback (full NHL coverage — fills gaps in Highlightly's regular season)
