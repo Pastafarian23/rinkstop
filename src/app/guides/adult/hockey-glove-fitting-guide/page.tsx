@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Gloves (Adults)',
     description: "A guide for adult players on fitting hockey gloves — palm gap, finger length, sizing, and junior sizes.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/adult/hockey-glove-fitting-guide' },
 };

@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Shoulder Pads',
     description: "A parent's guide to fitting shoulder pads — coverage, mobility, sizing, and when to size up.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/youth/shoulder-pad-fitting-guide' },
 };

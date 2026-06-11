@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit Hockey Shin Guards (Adults)',
     description: "A guide for adult players on fitting shin guards — knee cup, shin length, sizing, and when to upgrade.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/adult/shin-guard-fitting-guide' },
 };

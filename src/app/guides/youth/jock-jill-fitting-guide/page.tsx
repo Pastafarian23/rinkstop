@@ -8,6 +8,8 @@ export const metadata: Metadata = {
     title: 'How to Fit a Hockey Jock or Jill',
     description: "A parent's guide to fitting a hockey jock or jill — waist measurement, jock vs jill, sock tabs, and sizing.",
     type: 'article',
+    siteName: 'RinkStop',
+    images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
   alternates: { canonical: 'https://rinkstop.com/guides/youth/jock-jill-fitting-guide' },
 };
