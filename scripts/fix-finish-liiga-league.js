@@ -1,11 +1,12 @@
+require('./load-secrets.cjs');
 /**
  * Fix Finnish Liiga Teams — moves teams from wrong SM-liiga league_id to correct Finnish Liiga league_id
  * Run: node scripts/fix-finish-liiga-league.js
  */
 const { createClient } = require('@supabase/supabase-js');
 
-const URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const KEY = '***REMOVED***';
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(URL, KEY);
 
 const CORRECT_LEAGUE_ID = '59d8bbfc-2010-424b-8022-22d5bb53faaa'; // Finnish Liiga

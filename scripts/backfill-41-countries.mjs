@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Backfill leagues and teams for the 41 countries with rinks but no teams/leagues
 // Source: Wikipedia + International Hockey Wiki + Elite Prospects (curated from research)
 import { createClient } from '@supabase/supabase-js';

@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Verify which NCAA teams are actually affected, how many players, and which data is missing
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

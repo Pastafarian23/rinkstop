@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // VERIFY the DB against NHL.com, don't just import.
 // For every NHL row in the DB with a current_team_abbreviation,

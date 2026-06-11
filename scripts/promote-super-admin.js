@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 /**
  * promote-super-admin.js
@@ -19,8 +20,8 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const email = process.argv[2];
 if (!email) {

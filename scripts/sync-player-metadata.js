@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * scripts/sync-player-metadata.js
  * Fetches height, weight, birth_date, shoots/catches, nationality, headshot
@@ -26,8 +27,8 @@ const SEASON = '20242025';
 const NHL_API = 'https://api-web.nhle.com/v1/roster';
 
 const supabase = createClient(
-  'https://yszheonqyyskkjoxoexk.supabase.co',
-  '***REMOVED***'
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 function posCodeToPosition(code) {

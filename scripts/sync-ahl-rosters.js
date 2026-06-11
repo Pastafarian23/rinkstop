@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * scripts/sync-ahl-rosters.js
  * Pulls AHL team rosters via the NHL.com API.
@@ -76,8 +77,8 @@ const NHL_API = 'https://api-web.nhle.com/v1/roster';
 const SEASON = '20242025';
 
 const supabase = createClient(
-  'https://yszheonqyyskkjoxoexk.supabase.co',
-  '***REMOVED***'
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 const AHL_LEAGUE_ID = 'b05d6d26-d5d6-4cfd-a48b-f5646fa7d611';
 

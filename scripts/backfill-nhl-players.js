@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Backfill nhl_players table with bio data from Highlightly /players/{id}
 // Runs in batches with rate-limiting + resume support
 const { createClient } = require('@supabase/supabase-js');

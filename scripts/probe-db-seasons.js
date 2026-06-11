@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // For each of the top 10 teams, list player names + last_synced + any "season" signal
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

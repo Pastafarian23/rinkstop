@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Final NHL backfill: 11 real games that passed the phantom check
  * but still need their team_id columns set. The phantom-check
@@ -9,8 +10,8 @@
  */
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SB_KEY);
 
 const NHL_LEAGUE_ID = '2b5f2b9d-84b9-4edb-8373-a732b72f4e40';

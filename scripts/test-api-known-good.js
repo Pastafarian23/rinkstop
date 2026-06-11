@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Pick a known-good NHL player from DB and see what the API actually returns
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

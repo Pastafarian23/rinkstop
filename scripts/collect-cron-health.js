@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 /**
  * scripts/collect-cron-health.js
@@ -13,8 +14,8 @@
  */
 
 const { execFileSync } = require('child_process');
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_SERVICE_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function runOpenclaw(args) {
   return execFileSync('openclaw', args, {

@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Phase 2 Import — Leagues + Teams
  * Imports 12 leagues and ~200 teams into Supabase.
@@ -12,8 +13,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SB_KEY);
 
 // ─── League definitions ────────────────────────────────────────────────────────

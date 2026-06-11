@@ -1,5 +1,5 @@
 const NHL_BASE = 'https://nhl.highlightly.net';
-const API_KEY = '***REMOVED***';
+const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 
 async function fetchPlayerStats(id) {
   const url = NHL_BASE + '/players/' + id + '/statistics';

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Seed NCAA Division 1 teams and arenas from Wikipedia data."""
+import load_secrets
 import json, re, urllib.request, time
+import os
 
-SUPABASE_URL = "https://yszheonqyyskkjoxoexk.supabase.co"
-SUPABASE_KEY = "sb_publishable_yLLbqXl_CFS174sL6TRqjg_nej93X4g"
+SUPABASE_URL = os.environ['NEXT_PUBLIC_SUPABASE_URL']
+SUPABASE_KEY = os.environ['NEXT_PUBLIC_SUPABASE_ANON_KEY']
 
 def api(path, method="GET", data=None):
     url = f"{SUPABASE_URL}/rest/v1/{path}"

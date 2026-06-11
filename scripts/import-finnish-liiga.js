@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Finnish Liiga Import — fills the gap in Supabase
  * League ID: 59d8bbfc-2010-424b-8022-22d5bb53faaa
@@ -6,8 +7,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 
-const URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const KEY = '***REMOVED***';
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(URL, KEY);
 
 const LEAGUE_ID = '59d8bbfc-2010-424b-8022-22d5bb53faaa';

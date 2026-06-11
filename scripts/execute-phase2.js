@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Execute Phase 2 migration via Supabase RPC
 // Runs each SQL block as a separate query
 const { createClient } = require('@supabase/supabase-js');

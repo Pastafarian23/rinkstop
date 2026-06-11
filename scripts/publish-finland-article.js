@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // Publish Finland World Championship article to Supabase with backdate to 2026-05-31
 const fs = require('fs');
@@ -10,7 +11,7 @@ for (const line of envFile.split('\n')) {
   if (m) process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
 }
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const articlePath = '/root/.openclaw/workspace/rinkstop-content/articles/011-finland-wins-2026-world-championship.md';

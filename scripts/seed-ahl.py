@@ -4,10 +4,11 @@ scripts/seed-ahl.py
 Seeds AHL game data from HockeyTech API into Supabase.
 """
 
-import urllib.request, json, time, datetime, uuid, re
+import load_secrets
+import os, urllib.request, json, time, datetime, uuid, re
 
-SUPABASE_URL  = 'https://yszheonqyyskkjoxoexk.supabase.co'
-ANON_KEY     = 'sb_publishable_yLLbqXl_CFS174sL6TRqjg_nej93X4g'
+SUPABASE_URL  = os.environ['NEXT_PUBLIC_SUPABASE_URL']
+ANON_KEY     = os.environ['NEXT_PUBLIC_SUPABASE_ANON_KEY']
 AHL_LEAGUE_ID = 'b05d6d26-d5d6-4cfd-a48b-f5646fa7d611'
 SEASON       = '90'
 

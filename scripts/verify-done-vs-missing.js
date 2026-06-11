@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Of the 4681 "done" rows, which ones actually got position_abbreviation written?
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

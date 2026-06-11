@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Scrape IIHF men's senior division assignments for 2025.
 // Source: Wikipedia tournament pages. Each division's Final standings
 // list of teams tells us which countries play at that level.

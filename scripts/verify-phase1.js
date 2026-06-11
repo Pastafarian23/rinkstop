@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Independent verification of Phase 1 results
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

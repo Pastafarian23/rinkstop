@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Find the correct URL slug for each of the top 10 teams on collegehockeyinc.com
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');

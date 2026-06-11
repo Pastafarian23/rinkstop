@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Apply migration via Supabase Management API
 import { readFileSync } from 'node:fs';
 const sql = readFileSync('supabase/migrations/2026-06-11_iihf_national_teams.sql', 'utf-8');

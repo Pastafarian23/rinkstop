@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * scripts/sync-wikipedia-rosters.js
  * Scrapes player rosters from Wikipedia for European leagues.
@@ -13,8 +14,8 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
-  'https://yszheonqyyskkjoxoexk.supabase.co',
-  '***REMOVED***'
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 // League configs

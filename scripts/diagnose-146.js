@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Take the 146 "active, no match" rows and see if they exist on NHL.com under a different team
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

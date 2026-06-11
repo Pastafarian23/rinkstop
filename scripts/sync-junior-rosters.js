@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * scripts/sync-junior-rosters.js
  * Pulls OHL, WHL, QMJHL rosters from Wikipedia using auto-generated slugs.
@@ -9,7 +10,7 @@
 
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient('https://yszheonqyyskkjoxoexk.supabase.co', '***REMOVED***');
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Junior league IDs
 const JUNIOR_LEAGUES = {

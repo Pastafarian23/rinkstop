@@ -1,3 +1,4 @@
+import './load-secrets.mjs';
 // Add more brands to the directory.
 // Picks well-known brands with public knowledge, focusing on categories
 // that are under-represented (helmets, neck guards) or popular (apparel).

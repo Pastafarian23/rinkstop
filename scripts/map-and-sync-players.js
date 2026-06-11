@@ -1,13 +1,14 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // Map RinkStop players to highlightly NHL player IDs
 // Then sync stats for matched players
 
-const API_KEY = '***REMOVED***';
+const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 const RAPIDAPI_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 const NHL_BASE = 'https://nhl.highlightly.net';
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function supabaseFetch(table, params = '') {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, {

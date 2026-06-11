@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Fix Swiss National League — moves teams from misnamed "Swiss National League" league_id
  * to correctly named "National League (Switzerland)" league_id, and deduplicates.
@@ -5,8 +6,8 @@
  */
 const { createClient } = require('@supabase/supabase-js');
 
-const URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const KEY = '***REMOVED***';
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(URL, KEY);
 
 const CORRECT_LEAGUE_ID = '3465d1c5-c7af-4510-bed6-d43d294876a7'; // National League (Switzerland)

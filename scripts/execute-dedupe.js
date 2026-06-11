@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // Execute the dedupe plan: delete 573 duplicate NHL rows.
 // Strategy B: keep the 7-digit (NHL.com) row, delete the 8-digit (Highlightly) row.

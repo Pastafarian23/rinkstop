@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 /**
  * RinkStop Auto-Publish Script — REVIEW-FIRST WORKFLOW
@@ -11,11 +12,11 @@
 const https = require('https');
 
 // ── Config ──────────────────────────────────────────────────────────────────
-const MATON_KEY    = '***REMOVED***';
+const MATON_KEY    = process.env.MATON_API_KEY;
 const DROPBOX_CONN  = '0047d26c-609f-444d-ac51-074b49de5a21';
 const DROPBOX_PATH  = '/RinkStop/Blog Posts';
-const SUPABASE_URL  = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SUPABASE_KEY  = '***REMOVED***';
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RINKSTOP_OPS  = '-5043773858'; // RinkStop Ops Telegram group
 
 const DRY   = process.argv.includes('--dry-run');

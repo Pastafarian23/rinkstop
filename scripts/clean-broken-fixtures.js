@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 /**
  * Clean up broken / phantom fixtures across all leagues.
  *
@@ -15,11 +16,11 @@
  */
 const { createClient } = require('@supabase/supabase-js');
 
-const SUPABASE_URL = 'https://yszheonqyyskkjoxoexk.supabase.co';
-const SB_KEY = '***REMOVED***';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(SUPABASE_URL, SB_KEY);
 
-const HIGHLIGHTLY_KEY = '***REMOVED***';
+const HIGHLIGHTLY_KEY = process.env.HIGHLIGHTLY_API_KEY;
 const HIGHLIGHTLY_NHL_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 const HIGHLIGHTLY_HOCKEY_HOST = 'hockey-highlights-api.p.rapidapi.com';
 

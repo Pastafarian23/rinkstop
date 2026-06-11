@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Check birth_date distribution of all NCAA-incomplete players to identify the era
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

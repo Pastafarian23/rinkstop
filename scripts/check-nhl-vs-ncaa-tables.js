@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Are NCAA players properly identified in the schema? Check if there's a separate ncaa_players table
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

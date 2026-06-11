@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 const fs = require('fs');
 for (const line of fs.readFileSync('.env','utf8').split('\n')) {
   const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);

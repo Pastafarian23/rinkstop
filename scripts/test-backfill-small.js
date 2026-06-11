@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 // Quick test: backfill 10 players to verify pipeline
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');

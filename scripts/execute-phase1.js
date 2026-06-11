@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 #!/usr/bin/env node
 // Execute Phase 1 safe parts:
 //  1. Update 123 field mismatches (NHL only)

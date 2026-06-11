@@ -1,6 +1,7 @@
+require('./load-secrets.cjs');
 // Diagnose the phantoms: are there phantom games on dates that have real NHL games?
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient('https://yszheonqyyskkjoxoexk.supabase.co', '***REMOVED***');
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 const NHL = '2b5f2b9d-84b9-4edb-8373-a732b72f4e40';
 

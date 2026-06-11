@@ -1,3 +1,4 @@
+require('./load-secrets.cjs');
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 for (const line of fs.readFileSync('.env', 'utf8').split('\n')) {
