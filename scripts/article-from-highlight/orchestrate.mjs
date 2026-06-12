@@ -81,11 +81,15 @@ async function findCandidates() {
   // Filter to YouTube-hosted videos only. The LLM step relies on the
   // YouTube transcript for play-by-play facts. Non-YouTube sources
   // (ESPN, Sportsnet) will be handled in a follow-up path.
-  // Query cap = max(200, LIMIT * 2) so we have headroom after the existing-post filter.
-  const queryCap = Math.max(200, LIMIT * 2);
+  // Also filter to highlights with data_available=true (set by
+  // mark-all-unsourceable) so we skip leagues we know we can't source.
+  // Query cap = max(1000, LIMIT * 4) so we have headroom after the
+  // existing-post filter (we've backfilled ~2500 so the first 200 often
+  // return 0 candidates because they're all linked).
+  const queryCap = Math.max(1000, LIMIT * 4);
   const { data: highlights, error } = await sb
     .from('highlight_backups')
-    .select('id, title, video_url, source, match_date, home_team_name, away_team_name, league_name, image_url, match_id, description, channel, embed_url')
+    .select('id, title, video_url, source, match_date, home_team_name, away_team_name, league_name, image_url, match_id, description, channel, embed_url, data_available')
     .gte('match_date', since)
     .not('video_url', 'is', null)
     .ilike('video_url', '%youtube.com%')
@@ -129,7 +133,7 @@ async function findCandidates() {
     const name = (lg && typeof lg === 'object' && lg.name) ? lg.name : (lg || '');
     return LEAGUE_PRIORITY[name] || 99;
   }
-  const filtered = highlights.filter(h => !taken.has(h.id));
+  const filtered = highlights.filter(h => !taken.has(h.id) && (h.data_available !== false));
   filtered.sort((a, b) => {
     const lp = leagueKey(a) - leagueKey(b);
     if (lp !== 0) return lp;
