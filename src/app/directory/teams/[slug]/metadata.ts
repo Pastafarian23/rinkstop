@@ -20,6 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           description: `${team.name} — hockey team on RinkStop.`,
           images: team.logo_url ? [{ url: team.logo_url, width: 400, height: 400 }] : [],
         },
+        alternates: {
+          canonical: `https://rinkstop.com/directory/teams/${team.slug || slug}`,
+        },
       };
     }
   } catch { /* ignore */ }

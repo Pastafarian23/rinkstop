@@ -36,6 +36,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: `${team.name} hockey team page — record, schedule, scores, and roster.`,
       type: 'website',
     },
+    alternates: {
+      canonical: `https://rinkstop.com/directory/nhl/teams/${team.slug}`,
+    },
   };
 }
 
