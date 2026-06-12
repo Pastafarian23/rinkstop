@@ -7,7 +7,7 @@ import { ALL_CONFERENCES, ALL_DIVISIONS, NHL_TEAMS_CANONICAL, NhlTeamCanonical }
 export const revalidate = 3600; // 1 hour
 
 export const metadata: Metadata = {
-  title: 'NHL Standings | RinkStop',
+  title: 'NHL Standings',
   description: 'Current NHL standings by conference and division. Full records, points, goals for/against, and goal differential for all 32 teams.',
 };
 

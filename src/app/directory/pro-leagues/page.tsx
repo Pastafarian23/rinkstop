@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Pro Hockey Leagues | RinkStop',
+  title: 'Pro Hockey Leagues',
   description: 'Explore professional hockey leagues worldwide  --  NHL, PWHL, KHL, AHL, and more. The top professional hockey competitions from around the globe.',
 };
 

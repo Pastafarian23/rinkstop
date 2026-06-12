@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Cookie Policy | RinkStop',
+  title: 'Cookie Policy',
   description: 'Information about how RinkStop uses cookies and similar tracking technologies. Learn about essential, analytics, and advertising cookies.',
   robots: { index: false, follow: false },
 };

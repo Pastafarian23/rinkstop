@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey by Country | RinkStop',
+  title: 'Hockey by Country',
   description: 'Browse ice hockey programs, teams, and rinks by country. From North American powerhouses to emerging markets worldwide.',
 };
 

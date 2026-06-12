@@ -15,7 +15,7 @@ interface Rink {
 }
 
 export const metadata: Metadata = {
-  title: 'Ice Rinks Directory | RinkStop',
+  title: 'Ice Rinks Directory',
   description:
     'Browse 224 ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.',
   alternates: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Ice Rinks Directory | RinkStop',
+    title: 'Ice Rinks Directory',
     description:
       'Browse 224 ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.',
     url: 'https://rinkstop.com/directory/rinks',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ice Rinks Directory | RinkStop',
+    title: 'Ice Rinks Directory',
     description:
       'Browse 224 ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.',
   },

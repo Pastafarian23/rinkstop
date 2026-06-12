@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const data = await getBrandBySlug(slug);
-  if (!data) return { title: 'Brand | RinkStop' };
+  if (!data) return { title: 'Brand' };
 
   const { brand } = data;
   return {

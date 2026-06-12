@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Breadcrumb from '@/components/Breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Learn Hockey - Beginners Guide to Ice Hockey | RinkStop',
+  title: 'Learn Hockey - Beginners Guide to Ice Hockey',
   description: 'Complete beginner guide to hockey: learn hockey rules, positions, skating techniques, and equipment. Everything you need to start playing hockey.',
 };
 

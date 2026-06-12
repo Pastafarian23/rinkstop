@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'International Hockey | RinkStop',
+  title: 'International Hockey',
   description: 'Explore international hockey competitions including the IIHF, World Championships, and Olympics. Complete coverage of national team competitions worldwide.',
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Learn to Play Hockey | RinkStop',
+  title: 'Learn to Play Hockey',
   description: 'Everything you need to know about getting started in hockey. Learn to play programs, first gear, what to expect at first practice, and how to find a program near you.',
 };
 

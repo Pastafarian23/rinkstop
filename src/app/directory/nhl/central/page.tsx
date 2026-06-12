@@ -5,7 +5,7 @@ import { NhlStanding } from '@/lib/nhl-data';
 import DivisionView from '@/components/NhlDivisionView';
 
 export const metadata: Metadata = {
-  title: 'NHL Central Division | Teams, Records, Standings | RinkStop',
+  title: 'NHL Central Division | Teams, Records, Standings',
   description: 'NHL Central Division teams. Current standings and team pages.',
 };
 

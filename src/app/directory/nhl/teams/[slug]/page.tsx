@@ -27,7 +27,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const team = findCanonicalTeam(slug);
-  if (!team) return { title: 'Team Not Found | RinkStop' };
+  if (!team) return { title: 'Team Not Found' };
   return {
     title: `${team.name} | Roster, Schedule, Standings | RinkStop`,
     description: `${team.name} — ${team.city}, ${team.state}. ${team.division} Division, ${team.conference} Conference. Current record, schedule, scores, and roster on RinkStop.`,

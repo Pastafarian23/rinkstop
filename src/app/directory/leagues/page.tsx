@@ -12,7 +12,7 @@ interface League {
 }
 
 export const metadata: Metadata = {
-  title: 'Hockey Leagues Directory | RinkStop',
+  title: 'Hockey Leagues Directory',
   description:
     'Browse 192 hockey leagues from NHL, AHL, KHL, NCAA, IIHF, and youth leagues worldwide.',
   alternates: {
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Leagues Directory | RinkStop',
+    title: 'Hockey Leagues Directory',
     description:
       'Browse 192 hockey leagues from NHL, AHL, KHL, NCAA, IIHF, and youth leagues worldwide.',
     url: 'https://rinkstop.com/directory/leagues',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Leagues Directory | RinkStop',
+    title: 'Hockey Leagues Directory',
     description:
       'Browse 192 hockey leagues from NHL, AHL, KHL, NCAA, IIHF, and youth leagues worldwide.',
   },

@@ -5,7 +5,7 @@ import { findCanonicalTeam } from '@/lib/nhl-teams-canonical';
 import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
-  title: 'NHL Standings | Current Standings by Division | RinkStop',
+  title: 'NHL Standings | Current Standings by Division',
   description: 'Current NHL standings for all 32 teams. Points, wins, losses, OT losses, goals for/against, and division rank. Updated after every game.',
 };
 

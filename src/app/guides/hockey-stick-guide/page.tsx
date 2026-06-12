@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How to Choose a Hockey Stick | RinkStop',
+  title: 'How to Choose a Hockey Stick',
   description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick. The complete guide to finding the right stick for your shot, position, and budget.',
   openGraph: {
-    title: 'How to Choose a Hockey Stick | RinkStop',
+    title: 'How to Choose a Hockey Stick',
     description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick.',
     type: 'article',
   },

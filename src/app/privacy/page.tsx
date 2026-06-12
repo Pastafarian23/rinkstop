@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | RinkStop',
+  title: 'Privacy Policy',
   description: 'How RinkStop collects, uses, and protects your personal information. Learn about cookies, data sharing, and your rights under applicable privacy laws.',
   robots: { index: false, follow: false },
 };

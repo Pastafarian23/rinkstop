@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const rink = await res.json();
 
     if (!rink) {
-      return { title: 'Rink Not Found | RinkStop' };
+      return { title: 'Rink Not Found' };
     }
 
     const fullName = rink.name || 'Unnamed Rink';
@@ -68,6 +68,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch (err) {
     console.error('Rink metadata error:', err);
-    return { title: 'Rink | RinkStop' };
+    return { title: 'Rink' };
   }
 }

@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import Script from 'next/script';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MapRink {
@@ -17,17 +15,24 @@ interface MapRink {
   slug: string;
 }
 
+// Minimal Google Maps type surface (avoids pulling @types/google.maps as a dep)
+type GoogleMap = any;
+type GoogleMarker = any;
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MapPage() {
   const [rinks, setRinks] = useState<MapRink[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [loading, setLoading] = useState(true);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [scriptError, setScriptError] = useState(false);
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<ReturnType<typeof import('leaflet')['map']> | null>(null);
-  const markersRef = useRef<any>(null);
-  const loadedRef = useRef(false);
+  const mapRef = useRef<GoogleMap | null>(null);
+  const markersRef = useRef<GoogleMarker[]>([]);
   const mountedRef = useRef(true);
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';
 
   // Load rink data once on mount
   useEffect(() => {
@@ -44,115 +49,90 @@ export default function MapPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-  // Single effect handles ALL map initialization and marker updates
+  // Init the Google Map once the SDK script is loaded
   useEffect(() => {
-    if (loading || !mapContainerRef.current) return;
+    if (!scriptLoaded || !mapContainerRef.current || mapRef.current) return;
+    if (typeof window === 'undefined' || !window.google?.maps) return;
 
-    import('leaflet').then((leafletModule) => {
-      if (!mountedRef.current || !mapContainerRef.current) return;
-      const L = leafletModule.default;
-
-      // Fix default marker icons
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-      });
-
-      // Initialize map once.
-      // Basemap: OpenStreetMap XYZ tiles (real Leaflet-compatible tile format).
-      // Note: Google Maps does not publish XYZ tile endpoints for Leaflet — its
-      // /maps/vt endpoint is a vector-tile API for the Maps JS SDK and won't
-      // render through L.tileLayer. OSM is free, has no key requirement, and
-      // is the standard Leaflet basemap.
-      if (!mapRef.current) {
-        const tiles = L.tileLayer(
-          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19,
-          }
-        );
-
-        mapRef.current = L.map(mapContainerRef.current, {
-          center: [45, -90],
-          zoom: 4,
-          zoomControl: true,
-          scrollWheelZoom: true,
-        });
-        tiles.addTo(mapRef.current);
-      }
-
-      // Load marker cluster plugin
-      return import('leaflet.markercluster').then((mModule) => {
-        if (!mountedRef.current || !mapRef.current) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const MarkerClusterGroup = (mModule as any).default;
-
-        // Custom cluster icon
-        function createClusterIcon(cluster: { getChildCount: () => number }) {
-          const count = cluster.getChildCount();
-          return L.divIcon({
-            html: `<div style="
-              background:#C8102E;border:3px solid #fff;border-radius:50%;
-              color:#fff;font-weight:800;font-size:13px;
-              display:flex;align-items:center;justify-content:center;
-              width:40px;height:40px;box-shadow:0 2px 12px rgba(200,16,46,0.6);
-            ">${count}</div>`,
-            className: '', iconSize: L.point(40, 40), iconAnchor: L.point(20, 20),
-          });
-        }
-
-        // Filter rinks by country
-        const visibleRinks = selectedCountry
-          ? rinks.filter((r) => r.country.toLowerCase() === selectedCountry.toLowerCase())
-          : rinks;
-
-        // Remove existing markers
-        if (markersRef.current && mapRef.current) {
-          try { mapRef.current.removeLayer(markersRef.current); } catch {}
-        }
-
-        // Create new markers
-        const markers = new MarkerClusterGroup({
-          chunkedLoading: true, maxClusterRadius: 60, spiderfyOnMaxZoom: true,
-          showCoverageOnHover: false, iconCreateFunction: createClusterIcon,
-        });
-
-        visibleRinks.forEach((rink) => {
-          const marker = L.circleMarker([rink.latitude, rink.longitude], {
-            radius: 8, fillColor: '#C8102E', color: '#fff', weight: 2,
-            opacity: 1, fillOpacity: 0.9,
-          });
-          marker.bindPopup(
-            `<div style="background:#041E42;color:#fff;padding:12px 16px;border-radius:8px;min-width:180px;font-family:Inter,sans-serif;">
-              <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${rink.name}</div>
-              <div style="font-size:12px;opacity:0.75;margin-bottom:8px;">${rink.city}${rink.country ? ', ' + rink.country : ''}</div>
-              <a href="/directory/rinks/${rink.slug}" style="color:#C8102E;font-size:12px;font-weight:600;text-decoration:none;">View Rink &rarr;</a>
-            </div>`,
-            { className: 'dark-popup' }
-          );
-          markers.addLayer(marker);
-        });
-
-        mapRef.current.addLayer(markers);
-        markersRef.current = markers;
-
-        // Fit bounds
-        if (visibleRinks.length > 0) {
-          const bounds = L.latLngBounds(
-            visibleRinks.map((r) => [r.latitude, r.longitude] as [number, number])
-          );
-          mapRef.current.fitBounds(bounds, { padding: [40, 40] });
-        }
-      });
+    mapRef.current = new window.google.maps.Map(mapContainerRef.current, {
+      center: { lat: 45, lng: -90 },
+      zoom: 4,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      styles: [
+        { elementType: 'geometry', stylers: [{ color: '#0a2a52' }] },
+        { elementType: 'labels.text.stroke', stylers: [{ color: '#041E42' }] },
+        { elementType: 'labels.text.fill', stylers: [{ color: '#EEF5FF' }] },
+        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#041E42' }] },
+        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#0a2a52' }] },
+        { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#EEF5FF' }] },
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      ],
     });
-  }, [loading, selectedCountry]);
+  }, [scriptLoaded]);
+
+  // Render / re-render markers when rinks, country filter, or map readiness change
+  const renderMarkers = useCallback(() => {
+    if (!mapRef.current || !window.google?.maps) return;
+    const bounds = new window.google.maps.LatLngBounds();
+
+    // Clear previous markers
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+
+    const visibleRinks = selectedCountry
+      ? rinks.filter((r) => r.country.toLowerCase() === selectedCountry.toLowerCase())
+      : rinks;
+
+    visibleRinks.forEach((rink) => {
+      const marker = new window.google.maps.Marker({
+        position: { lat: rink.latitude, lng: rink.longitude },
+        map: mapRef.current,
+        title: rink.name,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          fillColor: '#C8102E',
+          fillOpacity: 0.95,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          scale: 8,
+        },
+      });
+
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="background:#041E42;color:#fff;padding:12px 16px;border-radius:8px;min-width:180px;font-family:Inter,sans-serif;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${escapeHtml(rink.name)}</div>
+            <div style="font-size:12px;opacity:0.75;margin-bottom:8px;">${escapeHtml(rink.city)}${rink.country ? ', ' + escapeHtml(rink.country) : ''}</div>
+            <a href="/directory/rinks/${encodeURIComponent(rink.slug)}" style="color:#C8102E;font-size:12px;font-weight:600;text-decoration:none;">View Rink &rarr;</a>
+          </div>
+        `,
+      });
+      marker.addListener('click', () => infoWindow.open(mapRef.current, marker));
+
+      markersRef.current.push(marker);
+      bounds.extend({ lat: rink.latitude, lng: rink.longitude });
+    });
+
+    if (visibleRinks.length > 0) {
+      mapRef.current.fitBounds(bounds);
+      // Don't zoom in too far for tiny result sets
+      const zoom = mapRef.current.getZoom();
+      if (zoom && zoom > 14) mapRef.current.setZoom(14);
+    }
+  }, [rinks, selectedCountry]);
+
+  useEffect(() => {
+    if (scriptLoaded && rinks.length > 0 && mapRef.current) {
+      renderMarkers();
+    }
+  }, [scriptLoaded, rinks, selectedCountry, renderMarkers]);
 
   const visibleRinks = selectedCountry
     ? rinks.filter((r) => r.country.toLowerCase() === selectedCountry.toLowerCase())
@@ -160,6 +140,13 @@ export default function MapPage() {
 
   return (
     <div style={{ background: '#041E42', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`}
+        strategy="afterInteractive"
+        onLoad={() => setScriptLoaded(true)}
+        onError={() => setScriptError(true)}
+      />
+
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #041E42 0%, #0a2a52 100%)',
@@ -214,7 +201,7 @@ export default function MapPage() {
 
       {/* Map Container */}
       <div style={{ position: 'relative', height: 'calc(100vh - 160px)', minHeight: 500 }}>
-        {loading && (
+        {(loading || !scriptLoaded) && !scriptError && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1000,
             background: '#041E42', display: 'flex',
@@ -226,11 +213,29 @@ export default function MapPage() {
               borderTopColor: '#C8102E',
               animation: 'spin 1s linear infinite',
             }} />
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Loading rink data...</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
+              {loading ? 'Loading rink data...' : 'Loading Google Maps...'}
+            </p>
           </div>
         )}
 
-        {!loading && (
+        {scriptError && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1000,
+            background: '#041E42', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12,
+            padding: 24, textAlign: 'center',
+          }}>
+            <p style={{ color: '#C8102E', fontSize: 18, fontWeight: 700 }}>Map failed to load</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, maxWidth: 480 }}>
+              Google Maps couldn't initialize. Check the API key restrictions in
+              Google Cloud Console and ensure <code style={{color:'#FFB81C'}}>Maps JavaScript API</code> is enabled
+              for key <code style={{color:'#FFB81C'}}>{apiKey ? apiKey.slice(0,12)+'…' : '(missing)'}</code>.
+            </p>
+          </div>
+        )}
+
+        {!loading && !scriptError && (
           <>
             <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
             <div style={{
@@ -257,16 +262,20 @@ export default function MapPage() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        .leaflet-popup-content-wrapper { background: #041E42 !important; border-radius: 8px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important; padding: 0 !important; }
-        .leaflet-popup-content { margin: 0 !important; }
-        .leaflet-popup-tip { background: #041E42 !important; }
-        .leaflet-popup-close-button { color: rgba(255,255,255,0.6) !important; font-size: 18px !important; top: 8px !important; right: 8px !important; }
-        .leaflet-container { background: #041E42 !important; font-family: Inter, sans-serif; }
-        .leaflet-control-attribution { background: rgba(4,30,66,0.8) !important; color: rgba(255,255,255,0.4) !important; font-size: 10px !important; }
-        .leaflet-control-attribution a { color: rgba(200,16,46,0.8) !important; }
-        .leaflet-control-zoom a { background: #041E42 !important; color: #fff !important; border-color: rgba(255,255,255,0.2) !important; }
-        .leaflet-control-zoom a:hover { background: #0a2a52 !important; }
+        .gm-style .gm-style-iw-c { background: #041E42 !important; border-radius: 8px !important; padding: 0 !important; }
+        .gm-style .gm-style-iw-d { overflow: hidden !important; }
+        .gm-style .gm-style-iw-tc::after { background: #041E42 !important; }
+        .gm-style-iw-chr button { color: rgba(255,255,255,0.6) !important; }
+        .gm-style .gm-style-cc { background: rgba(4,30,66,0.7) !important; color: rgba(255,255,255,0.5) !important; }
+        .gm-style .gm-style-cc a { color: #C8102E !important; }
+        .gm-style a { color: #C8102E !important; }
       `}</style>
     </div>
+  );
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c)
   );
 }

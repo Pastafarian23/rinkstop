@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
   } catch { /* ignore */ }
-  return { title: 'League | RinkStop' };
+  return { title: 'League' };
 }
 
 export default LeagueDetail;

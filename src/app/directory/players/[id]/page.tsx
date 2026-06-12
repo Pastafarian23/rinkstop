@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const player = json?.data?.[0];
 
     if (!player) {
-      return { title: 'Player Not Found | RinkStop' };
+      return { title: 'Player Not Found' };
     }
 
     const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
@@ -89,7 +89,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch (err) {
     console.error('Player metadata error:', err);
-    return { title: 'Player | RinkStop' };
+    return { title: 'Player' };
   }
 }
 

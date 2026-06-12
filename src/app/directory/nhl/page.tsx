@@ -7,7 +7,7 @@ import TicketmasterAd from '@/components/TicketmasterAd';
 export const revalidate = 300; // 5 min for today's games; 1 hour for standings via sub-cache
 
 export const metadata: Metadata = {
-  title: 'NHL Hub | Roster, Scores, Standings, Schedule | RinkStop',
+  title: 'NHL Hub | Roster, Scores, Standings, Schedule',
   description: 'The complete NHL hub on RinkStop — live scores, current standings for all 32 teams, today\'s games, schedule, and team directory.',
 };
 

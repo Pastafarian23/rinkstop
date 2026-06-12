@@ -4,10 +4,10 @@ import { Metadata } from 'next';
 import styles from './search.module.css';
 
 export const metadata: Metadata = {
-  title: 'Hockey Search — Find Rinks, Teams & Leagues | RinkStop',
+  title: 'Hockey Search — Find Rinks, Teams & Leagues',
   description: 'Search the complete hockey directory. Find ice rinks by location, browse hockey teams by league, and discover leagues across all countries.',
   openGraph: {
-    title: 'Hockey Search | RinkStop',
+    title: 'Hockey Search',
     description: 'Search ice rinks, hockey teams, and leagues worldwide.',
     type: 'website',
   },

@@ -6,7 +6,7 @@ import { ALL_CONFERENCES, NHL_TEAMS_CANONICAL, teamsByConference } from '@/lib/n
 export const revalidate = 3600; // 1 hour
 
 export const metadata: Metadata = {
-  title: 'Standings | RinkStop',
+  title: 'Standings',
   description: 'Current standings for NHL, AHL, PWHL, and other hockey leagues worldwide. Conference and division breakdowns for every league.',
 };
 

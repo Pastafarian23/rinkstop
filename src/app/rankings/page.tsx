@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Rankings | RinkStop',
+  title: 'Hockey Rankings',
   description: 'Hockey team and player rankings across NHL, international, junior, college, and amateur leagues.',
 };
 

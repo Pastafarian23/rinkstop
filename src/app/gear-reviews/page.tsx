@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Gear Reviews | RinkStop',
+  title: 'Hockey Gear Reviews',
   description: 'Hockey equipment reviews, brand comparisons, and buying guides for skates, sticks, pads, and more.',
 };
 

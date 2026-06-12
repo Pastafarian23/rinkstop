@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Understanding Hockey Positions | RinkStop',
+  title: 'Understanding Hockey Positions',
   description: 'Centers, wings, defense, and goalies  --  what each hockey position does and how they work together. A complete guide for players, parents, and fans.',
   openGraph: {
-    title: 'Understanding Hockey Positions | RinkStop',
+    title: 'Understanding Hockey Positions',
     description: 'Centers, wings, defense, and goalies  --  what each position does and how they work together.',
     type: 'article',
   },

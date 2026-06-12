@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Youth Hockey Tournaments | RinkStop',
+  title: 'Youth Hockey Tournaments',
   description: 'Find youth hockey tournaments for mites, squirts, pee-wee, bantam, and midget levels. Regional and national tournament listings.',
 };
 

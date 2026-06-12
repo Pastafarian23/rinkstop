@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Partner With RinkStop | RinkStop',
+  title: 'Partner With RinkStop',
   description: 'Partner with RinkStop  --  the world\'s hockey directory. Reach a global hockey audience through directory listings, content partnerships, and advertising.',
 };
 

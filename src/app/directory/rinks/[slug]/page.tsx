@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
-  if (!rink) return { title: 'Rink Not Found | RinkStop' };
+  if (!rink) return { title: 'Rink Not Found' };
 
   // Status drives indexability directly — closed/placeholder pages never rank.
   // Other content checks (word count, field count) are still useful for the

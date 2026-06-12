@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { NHL_FRANCHISE_HISTORY } from '@/lib/nhl-franchise-history';
 
 export const metadata = {
-  title: 'NHL Franchise History — Relocations, Renames, and Predecessors | RinkStop',
+  title: 'NHL Franchise History — Relocations, Renames, and Predecessors',
   description:
     'Complete lineage of every NHL franchise that has relocated or rebranded. Find what became of your favorite team — from Hartford Whalers to Carolina Hurricanes, Quebec Nordiques to Colorado Avalanche, and more.',
 };
