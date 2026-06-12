@@ -126,7 +126,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, is_active, notes, source, status')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status')
     .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
@@ -204,7 +204,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         name: rink.name,
         description: blurb,
         url: `${BASE_URL}/directory/rinks/${rink.slug}`,
-        ...(rink.logo_url ? { image: rink.logo_url } : {}),
+        ...(rink.cover_photo_url || rink.logo_url ? { image: rink.cover_photo_url || rink.logo_url } : {}),
         ...(rink.address ? {
           address: {
             '@type': 'PostalAddress',
@@ -323,6 +323,20 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             </>
           );
         })()}
+
+        {/* Cover photo — sourced from Google Places when the rink has no
+            logo_url. Renders above the H1 as the hero image.
+            referrerPolicy="no-referrer" is required: Google Photos URLs
+            (lh3.googleusercontent.com) return 403 if they detect a Referer
+            header from non-Google origins. */}
+        {rink.cover_photo_url ? (
+          <img
+            src={rink.cover_photo_url}
+            alt={rink.name}
+            referrerPolicy="no-referrer"
+            style={{ width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 12, marginBottom: '16px', display: 'block', background: 'rgba(255,255,255,0.04)' }}
+          />
+        ) : null}
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
           {rink.name}
