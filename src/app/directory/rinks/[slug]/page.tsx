@@ -10,6 +10,7 @@ import SaveButton from '@/components/SaveButton';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
+import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -126,7 +127,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url')
     .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
@@ -184,6 +185,12 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   const blurb = buildRinkBlurb(rink);
   const locationLine = [rink.city, rink.province_state, rink.country].filter(Boolean).join(', ');
 
+  // Compute current open/closed state from Google's opening_hours_json.
+  // Server-side so the pill is accurate at request time. Returns
+  // 'unknown' if the rink has no published hours — in that case we
+  // render no pill (no fake "Closed" guesses).
+  const openState = computeOpenState(rink.opening_hours_json as OpeningHoursJson | null);
+
   const BASE_URL = 'https://rinkstop.com';
 
   // Schema for SEO — includes IceCreamStore + SportsActivityLocation + FAQ if we have notes
@@ -218,6 +225,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         ...(rink.capacity ? { maximumAttendeeCapacity: rink.capacity } : {}),
         ...(rink.phone ? { telephone: rink.phone } : {}),
         ...(rink.website_url ? { url: rink.website_url } : {}),
+        ...(rink.google_maps_url ? { hasMap: rink.google_maps_url } : {}),
+        ...(Array.isArray((rink.opening_hours_json as OpeningHoursJson | null)?.periods)
+          ? { openingHoursSpecification: ((): any[] => {
+              const periods = (rink.opening_hours_json as OpeningHoursJson).periods || [];
+              return periods.map((p) => ({
+                '@type': 'OpeningHoursSpecification',
+                dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][p.open.day],
+                opens: `${p.open.time.slice(0, 2)}:${p.open.time.slice(2, 4)}`,
+                closes: `${p.close.time.slice(0, 2)}:${p.close.time.slice(2, 4)}`,
+              }));
+            })() }
+          : {}),
         sport: 'Ice Hockey',
         amenityFeature: rink.ice_size ? [{ '@type': 'LocationFeatureSpecification', name: `${rink.ice_size} ice surface` }] : undefined,
       },
@@ -346,6 +365,76 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         <div style={{ marginBottom: '24px' }}>
           <SaveButton favoriteType="rink" favoriteId={rink.id} entityName={rink.name} size="md" />
         </div>
+
+        {/* LIVE OPEN/CLOSED PILL + GOOGLE CONTACT ROW
+            Driven by rink.opening_hours_json (Google Places data) and
+            rink.google_phone / rink.google_website / rink.google_maps_url.
+            We only render anything if the rink has at least one of these
+            fields — for un-enriched rinks we render nothing (no fake
+            "Closed" pill). */}
+        {(openState.kind !== 'unknown' || rink.google_phone || rink.google_website || rink.google_maps_url) && (
+          <div
+            data-testid="rink-google-info"
+            style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', marginBottom: '24px' }}
+          >
+            {openState.kind === 'open' && (
+              <span
+                title="Hours provided by Google Places"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.4)',
+                  color: '#86efac', fontSize: '13px', fontWeight: 600,
+                  padding: '6px 12px', borderRadius: '999px',
+                }}
+              >
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} aria-hidden="true" />
+                Open now · Closes {openState.closesAtLabel}
+              </span>
+            )}
+            {openState.kind === 'closed' && (
+              <span
+                title="Hours provided by Google Places"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.35)',
+                  color: '#cbd5e1', fontSize: '13px', fontWeight: 600,
+                  padding: '6px 12px', borderRadius: '999px',
+                }}
+              >
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8' }} aria-hidden="true" />
+                Closed · Opens {openState.nextOpenLabel}
+              </span>
+            )}
+            {rink.google_phone && (
+              <a
+                href={`tel:${rink.google_phone.replace(/[^0-9+]/g, '')}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
+              >
+                📞 {rink.google_phone}
+              </a>
+            )}
+            {rink.google_website && (
+              <a
+                href={rink.google_website}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
+              >
+                🌐 Website
+              </a>
+            )}
+            {rink.google_maps_url && (
+              <a
+                href={rink.google_maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
+              >
+                📍 View on Google Maps
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Claimed by (if any) */}
         <ClaimedBy entityType="rink" entityId={rink.id} entityName={rink.name} />
