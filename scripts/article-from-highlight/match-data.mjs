@@ -28,6 +28,7 @@ import { nhlcomMatchData } from './datasources/nhlcom.mjs';
 import { hockeytechMatchData } from './datasources/hockeytech.mjs';
 import { ncaaMatchData } from './datasources/ncaa.mjs';
 import { khlMatchData } from './datasources/khl.mjs';
+import { iihfMatchData } from './datasources/iihf.mjs';
 
 // Load .env if present so callers don't have to pass apiKey explicitly
 const ENV_FILE = '/root/.openclaw/workspace/rinkstop-platform/.env';
@@ -158,7 +159,11 @@ export async function getMatchData({ teams, date, league, apiKey }) {
   const khl = await khlMatchData({ teams, date, league });
   if (khl && khl.score) return khl;
 
+  // 6. IIHF World Championship (fixturedownload.com JSON feed)
+  const iihf = await iihfMatchData({ teams, date, league });
+  if (iihf && iihf.score) return iihf;
+
   return null;
 }
 
-export { highlightlyMatch, nhlcomMatchData, hockeytechMatchData, ncaaMatchData, khlMatchData };
+export { highlightlyMatch, nhlcomMatchData, hockeytechMatchData, ncaaMatchData, khlMatchData, iihfMatchData };
