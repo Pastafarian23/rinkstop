@@ -1,5 +1,36 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
+
+export const metadata: Metadata = {
+  title: 'NCAA Hockey Programs | RinkStop',
+  description:
+    'All NCAA hockey programs across Division 1, Division 3, and ACHA — teams, rosters, conferences, and schedules.',
+  alternates: {
+    canonical: 'https://rinkstop.com/directory/college/ncaa',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'NCAA Hockey Programs | RinkStop',
+    description:
+      'All NCAA hockey programs across Division 1, Division 3, and ACHA — teams, rosters, conferences, and schedules.',
+    url: 'https://rinkstop.com/directory/college/ncaa',
+    siteName: 'RinkStop',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NCAA Hockey Programs | RinkStop',
+    description:
+      'All NCAA hockey programs across Division 1, Division 3, and ACHA.',
+  },
+};
+
+// Always render fresh — directory data changes too often to cache statically.
+export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
   'https://placeholder.supabase.co',
