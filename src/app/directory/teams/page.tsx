@@ -24,6 +24,26 @@ export default function TeamsPage() {
   const [search, setSearch] = useState('');
   const [country, setCountry] = useState('');
 
+  // Inject canonical link tag (fixes Google Search Console
+  // 'Duplicate without user-selected canonical' for /directory/teams).
+  // This is a client component, so metadata.alternates.canonical from
+  // page.metadata.ts is not emitted into the server-rendered HTML.
+  useEffect(() => {
+    const href = 'https://rinkstop.com/directory/teams';
+    let link = document.head.querySelector('link[rel="canonical"][data-seo-canonical="teams-index"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      link.setAttribute('data-seo-canonical', 'teams-index');
+      document.head.appendChild(link);
+    }
+    link.href = href;
+    return () => {
+      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="teams-index"]');
+      if (el && document.head.contains(el)) document.head.removeChild(el);
+    };
+  }, []);
+
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
