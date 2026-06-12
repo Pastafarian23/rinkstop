@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
 export const metadata: Metadata = {
-  title: 'NCHC Hockey | RinkStop',
+  title: 'NCHC Hockey',
   description:
     'National Collegiate Hockey Conference (NCHC) programs, teams, rosters, and schedules.',
   alternates: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'NCHC Hockey | RinkStop',
+    title: 'NCHC Hockey',
     description:
       'National Collegiate Hockey Conference (NCHC) programs, teams, rosters, and schedules.',
     url: 'https://rinkstop.com/directory/college/nchc',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NCHC Hockey | RinkStop',
+    title: 'NCHC Hockey',
     description:
       'National Collegiate Hockey Conference (NCHC) programs, teams, rosters, and schedules.',
   },

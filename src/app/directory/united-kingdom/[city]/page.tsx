@@ -13,7 +13,7 @@ export async function generateMetadata({
   const cityName = slugToTitle(citySlug);
 
   return {
-    title: `${cityName} Hockey - Ice Rinks & Teams | RinkStop`,
+    title: `${cityName} Hockey - Ice Rinks & Teams`,
     description: `Find hockey teams and ice rinks in ${cityName}, United Kingdom. Discover local EIHL teams, NIHL clubs, and skating facilities.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-kingdom/${citySlug}`,

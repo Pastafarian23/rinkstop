@@ -15,13 +15,13 @@ export async function generateMetadata({
   const location = `${cityName}, ${provinceName}`;
 
   return {
-    title: `${location} Hockey - Rinks & Teams | RinkStop`,
+    title: `${location} Hockey - Rinks & Teams`,
     description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs, junior clubs, and adult leagues across the province.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/canada/${provinceSlug}/${citySlug}`,
     },
     openGraph: {
-      title: `${location} Hockey | RinkStop`,
+      title: `${location} Hockey`,
       description: `Hockey in ${location}: teams, rinks, and leagues.`,
       type: 'website',
     },

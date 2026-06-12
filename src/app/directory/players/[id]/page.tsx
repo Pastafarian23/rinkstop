@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       openGraph: {
-        title: `${fullName} | RinkStop`,
+        title: `${fullName}`,
         description,
         type: 'profile',
         firstName: player.first_name,
@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${fullName} | RinkStop`,
+        title: `${fullName}`,
         description,
         ...(player.headshot_url ? { images: [player.headshot_url] } : {}),
       },

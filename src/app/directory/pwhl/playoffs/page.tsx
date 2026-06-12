@@ -40,7 +40,7 @@ interface UpdateEntry {
 }
 
 export const metadata: Metadata = {
-  title: 'PWHL Playoffs | RinkStop',
+  title: 'PWHL Playoffs',
   description:
     'PWHL playoff bracket, scores, and postseason coverage.',
   alternates: {
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'PWHL Playoffs | RinkStop',
+    title: 'PWHL Playoffs',
     description:
       'PWHL playoff bracket, scores, and postseason coverage.',
     url: 'https://rinkstop.com/directory/pwhl/playoffs',
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PWHL Playoffs | RinkStop',
+    title: 'PWHL Playoffs',
     description:
       'PWHL playoff bracket, scores, and postseason coverage.',
   },

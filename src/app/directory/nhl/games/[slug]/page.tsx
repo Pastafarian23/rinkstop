@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const parsed = parseGameSlug(slug);
   if (!parsed) return { title: 'Game Not Found' };
   return {
-    title: `${parsed.awayName} at ${parsed.homeName} | ${parsed.date} | RinkStop`,
+    title: `${parsed.awayName} at ${parsed.homeName} | ${parsed.date}`,
     description: `${parsed.awayName} vs ${parsed.homeName} on ${parsed.date}. Box score, final score, and game details on RinkStop.`,
     openGraph: {
       title: `${parsed.awayName} vs ${parsed.homeName} | ${parsed.date}`,

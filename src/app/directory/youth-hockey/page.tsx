@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Youth Hockey Guide | RinkStop',
+  title: 'Youth Hockey Guide',
   description:
     'How to get started in youth hockey, find a program, and learn the game at every age.',
   alternates: {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Youth Hockey Guide | RinkStop',
+    title: 'Youth Hockey Guide',
     description:
       'How to get started in youth hockey, find a program, and learn the game at every age.',
     url: 'https://rinkstop.com/directory/youth-hockey',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Youth Hockey Guide | RinkStop',
+    title: 'Youth Hockey Guide',
     description:
       'How to get started in youth hockey, find a program, and learn the game at every age.',
   },

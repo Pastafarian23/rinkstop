@@ -24,10 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { brand } = data;
   return {
-    title: `${brand.name} | RinkStop`,
+    title: `${brand.name}`,
     description: `${brand.name} — ${(brand.category || 'hockey equipment brand').replace('_', ' ')} brand${brand.country_of_origin ? ` from ${brand.country_of_origin}` : ''}.`,
     openGraph: {
-      title: `${brand.name} | RinkStop`,
+      title: `${brand.name}`,
       description: `${brand.name} — ${(brand.category || '').replace('_', ' ')} hockey brand${brand.country_of_origin ? ` from ${brand.country_of_origin}` : ''}.`,
       images: brand.logo_url
         ? [{ url: brand.logo_url, width: 400, height: 400 }]

@@ -16,7 +16,7 @@ interface YouthProgram {
 }
 
 export const metadata: Metadata = {
-  title: 'Youth Hockey Programs | RinkStop',
+  title: 'Youth Hockey Programs',
   description:
     'Browse youth hockey programs, learn-to-play clinics, and developmental leagues.',
   alternates: {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Youth Hockey Programs | RinkStop',
+    title: 'Youth Hockey Programs',
     description:
       'Browse youth hockey programs, learn-to-play clinics, and developmental leagues.',
     url: 'https://rinkstop.com/directory/youth-hockey/programs',
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Youth Hockey Programs | RinkStop',
+    title: 'Youth Hockey Programs',
     description:
       'Browse youth hockey programs, learn-to-play clinics, and developmental leagues.',
   },

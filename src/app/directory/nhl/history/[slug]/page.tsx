@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!result) return { title: 'Not Found' };
   const { entry, chain } = result;
   return {
-    title: `${entry.name} (${entry.years}) — Now the ${chain.currentName} | RinkStop`,
+    title: `${entry.name} (${entry.years}) — Now the ${chain.currentName}`,
     description: `The ${entry.name} played in ${entry.city} from ${entry.years}. Today this franchise is the ${chain.currentName}.${entry.notes ? ' ' + entry.notes : ''}`,
   };
 }

@@ -20,10 +20,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city } = await params;
   const cityName = formatCityName(city);
   return {
-    title: `Best Ice Rinks in ${cityName} — Top Hockey Arenas & Public Skating | RinkStop`,
+    title: `Best Ice Rinks in ${cityName} — Top Hockey Arenas & Public Skating`,
     description: `Discover the best ice rinks in ${cityName}. Find hockey arenas, public skating facilities, and learn-to-play programs. Your complete ${cityName} rink guide.`,
     openGraph: {
-      title: `Best Ice Rinks in ${cityName} | RinkStop`,
+      title: `Best Ice Rinks in ${cityName}`,
       description: `Find the top-rated ice rinks and hockey facilities in ${cityName}.`,
       type: 'website',
     },

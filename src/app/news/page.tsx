@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey News | RinkStop',
+    title: 'Hockey News',
     description:
       'Latest hockey news, trades, injuries, and scores from NHL and leagues worldwide.',
     url: 'https://rinkstop.com/news',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey News | RinkStop',
+    title: 'Hockey News',
     description:
       'Latest hockey news, trades, injuries, and scores from NHL and leagues worldwide.',
   },
