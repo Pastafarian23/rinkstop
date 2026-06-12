@@ -42,6 +42,11 @@ export default function Home() {
   const [q, setQ] = useState('');
 
   useEffect(() => {
+    // Set document.title (this is a client component, so Next.js
+    // doesn't emit the static <title> from page metadata). The home page
+    // is the single most important page for SEO — getting its title right
+    // is the highest-leverage fix we can make.
+    document.title = 'RinkStop — The World\u2019s Hockey Directory';
 
     // Recently added rinks
     fetch('/api/rinks?limit=6&sort=recent').then(r => r.json())
@@ -52,6 +57,22 @@ export default function Home() {
     // Upcoming games
     fetch('/api/games?limit=10&status=upcoming').then(r => r.json())
       .then(d => setUpcomingGames((d.data || d.games || d || []).slice(0, 3))).catch(() => {});
+
+    // Inject canonical link tag (this is a client component, so Next.js
+    // doesn't emit metadata.alternates.canonical into the SSR HTML).
+    const href = 'https://rinkstop.com/';
+    let link = document.head.querySelector('link[rel="canonical"][data-seo-canonical="home"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      link.setAttribute('data-seo-canonical', 'home');
+      document.head.appendChild(link);
+    }
+    link.href = href;
+    return () => {
+      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="home"]');
+      if (el && document.head.contains(el)) document.head.removeChild(el);
+    };
   }, []);
 
   const search = (e: React.FormEvent) => {
