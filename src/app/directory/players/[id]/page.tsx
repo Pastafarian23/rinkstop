@@ -22,6 +22,15 @@ const COUNTRY_NAMES: Record<string, string> = {
   POL: 'Poland', HUN: 'Hungary', EST: 'Estonia', LTU: 'Lithuania',
 };
 
+// Defensive BASE_URL: in Vercel production, NEXT_PUBLIC_SITE_URL is the real
+// https://rinkstop.com. In local dev, .env has http://localhost:3456 which
+// would fail server-to-server fetches during tests. Substitute the public
+// URL when the env points to localhost so JSON-LD generation works in both.
+const _RAW = process.env.NEXT_PUBLIC_SITE_URL || '';
+const BASE_URL = _RAW.includes('localhost') || _RAW.includes('127.0.0.1')
+  ? 'https://rinkstop.com'
+  : (_RAW || 'https://rinkstop.com');
+
 function buildPlayerDescription(player: any): string {
   const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim();
   const teamName = player.teams?.name || player.current_team_name || 'their current team';
@@ -48,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com'}/api/players?id=${id}`,
+      `${BASE_URL}/api/players?id=${id}`,
       { cache: 'no-store' }
     );
     const json = await res.json();
@@ -95,5 +104,73 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PlayerPage({ params }: Props) {
   const { id } = await params;
-  return <PlayerDetail id={id} />;
+
+  // Server-side JSON-LD: Person (athlete) + BreadcrumbList.
+  // We re-fetch the player record here so the structured data is in the
+  // initial HTML (Googlebot sees it on first crawl). The client component
+  // re-fetches its own data for the actual UI; this is a duplicate read,
+  // not a coupled one.
+  let playerJsonLd: object | null = null;
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/players?id=${id}`,
+      { cache: 'no-store' }
+    );
+    const json = await res.json();
+    const player = json?.data?.[0];
+    if (player) {
+      const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim();
+      const teamName = player.teams?.name || player.current_team_name;
+      const leagueName = player.teams?.leagues?.name;
+      const position = POSITION_FULL[player.position] || player.position || 'Hockey Player';
+
+      playerJsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'Person',
+            name: fullName,
+            jobTitle: `Professional Ice Hockey Player — ${position}`,
+            sport: 'Ice hockey',
+            url: `${BASE_URL}/directory/players/${id}`,
+            ...(player.headshot_url ? { image: player.headshot_url } : {}),
+            ...(teamName
+              ? { affiliation: { '@type': 'SportsTeam', name: teamName, ...(leagueName ? { memberOf: { '@type': 'SportsOrganization', name: leagueName } } : {}) } }
+              : {}),
+            ...(player.birth_place
+              ? { homeLocation: { '@type': 'Place', name: player.birth_place } }
+              : {}),
+            ...(player.nationality && player.nationality.length <= 3
+              ? { nationality: COUNTRY_NAMES[player.nationality] || player.nationality }
+              : {}),
+            ...(player.height_cm ? { height: { '@type': 'QuantitativeValue', value: player.height_cm, unitCode: 'CMT' } } : {}),
+            ...(player.weight_kg ? { weight: { '@type': 'QuantitativeValue', value: player.weight_kg, unitCode: 'KGM' } } : {}),
+          },
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+              { '@type': 'ListItem', position: 2, name: 'Players', item: `${BASE_URL}/directory/players` },
+              { '@type': 'ListItem', position: 3, name: fullName, item: `${BASE_URL}/directory/players/${id}` },
+            ],
+          },
+        ],
+      };
+    }
+  } catch (err) {
+    // JSON-LD is best-effort. Page must still render.
+    playerJsonLd = null;
+  }
+
+  return (
+    <>
+      {playerJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }}
+        />
+      )}
+      <PlayerDetail id={id} />
+    </>
+  );
 }

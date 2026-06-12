@@ -29,8 +29,40 @@ export default async function BrandHandler({ params }: { params: Params }) {
   if (!data) return <NotFoundBrand />;
   const { brand, teams } = data;
 
+  // JSON-LD: Brand + BreadcrumbList. Server-rendered, no client script injection.
+  const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
+  const brandJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Brand',
+        name: brand.name,
+        ...(brand.description ? { description: brand.description } : {}),
+        ...(brand.logo_url ? { logo: brand.logo_url } : {}),
+        ...(brand.website_url ? { url: brand.website_url } : {}),
+        ...(brand.country_of_origin
+          ? { location: { '@type': 'Place', name: brand.country_of_origin } }
+          : {}),
+        ...(brand.category ? { category: brand.category.replace(/_/g, ' ') } : {}),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Brands', item: `${BASE_URL}/directory/brands` },
+          { '@type': 'ListItem', position: 3, name: brand.name, item: `${BASE_URL}/directory/brands/${id}` },
+        ],
+      },
+    ],
+  };
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(brandJsonLd) }}
+      />
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Link href="/directory/brands" className="text-teal-400 text-sm mb-4 inline-block">
         ← Back to Brands
       </Link>
@@ -131,6 +163,7 @@ export default async function BrandHandler({ params }: { params: Params }) {
         </div>
       )}
     </div>
+    </>
   );
 }
 
