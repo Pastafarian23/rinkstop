@@ -109,7 +109,7 @@ export default async function SubscriptionPage() {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <Link
-              href="/founding-member"
+              href="/pricing"
               style={{
                 background: tier === 'free' ? '#C8102E' : 'rgba(255,255,255,0.08)',
                 color: '#fff',

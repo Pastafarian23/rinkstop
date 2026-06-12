@@ -98,7 +98,7 @@ const ABOUT_LINKS = [
   { href: '/advertise',   label: 'Advertise'       },
   { href: '/partner',     label: 'Partner With Us' },
   { href: '/add-listing', label: 'Add Listing'     },
-  { href: '/founding-member', label: 'Founding Member' },
+  { href: '/pricing', label: 'Pricing' },
 ];
 
 const NAV: never[] = []; // unused, kept to avoid breaking any external references
@@ -214,7 +214,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       ['/advertise','Advertise'],
                       ['/contact','Contact'],
                       ['/add-listing','Add Listing'],
-                      ['/founding-member','Founding Member'],
+                      ['/pricing','Pricing'],
                     ].map(([href,label]) => (
                       <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
                     ))}
@@ -227,7 +227,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Link href="/login" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Sign In</Link>
                     <Link href="/sign-up" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Join Free</Link>
                     <Link href="/dashboard" prefetch={false} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>My Dashboard</Link>
-                    <Link href="/founding-member" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Founding Member</Link>
+                    <Link href="/pricing" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Pricing</Link>
                   </div>
                 </div>
 

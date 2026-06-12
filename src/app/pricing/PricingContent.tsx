@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
 
 type Tier = {
@@ -45,7 +46,7 @@ const TIERS: Tier[] = [
   {
     id: 'supporter',
     label: 'Supporter',
-    price: '$9.99',
+    price: '$19.99',
     period: '/ year',
     tagline: 'I support the site and want the good stuff',
     color: '#FFB81C',
@@ -67,7 +68,7 @@ const TIERS: Tier[] = [
   {
     id: 'verified',
     label: 'Verified',
-    price: '$19.99',
+    price: '$59.99',
     period: '/ year',
     tagline: 'I want to be taken seriously',
     color: '#14B8A6',
@@ -90,7 +91,7 @@ const TIERS: Tier[] = [
   {
     id: 'pro',
     label: 'Pro',
-    price: '$99.99',
+    price: '$299',
     period: '/ year',
     tagline: 'I run a rink, team, or league and want to be found',
     color: '#C8102E',
@@ -108,7 +109,7 @@ const TIERS: Tier[] = [
       'Custom branding on your public profile',
     ],
     footnote:
-      'Pro pays for itself when one parent finds your league through Featured Listing and signs up their kid.',
+      'At $299/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t.',
   },
 ];
 
@@ -155,6 +156,7 @@ export default function FoundingMemberContent() {
   const { isSignedIn, isLoaded } = useUser();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAccountType, setShowAccountType] = useState(false);
 
   async function handleCheckout(tier: Tier) {
     if (!isLoaded) return;
@@ -166,7 +168,7 @@ export default function FoundingMemberContent() {
     }
 
     if (!isSignedIn) {
-      window.location.href = `/sign-up?redirect_url=${encodeURIComponent('/founding-member')}`;
+      window.location.href = `/sign-up?redirect_url=${encodeURIComponent('/pricing')}`;
       return;
     }
 
@@ -217,8 +219,7 @@ export default function FoundingMemberContent() {
           <span style={{ color: '#C8102E' }}>Actually useful</span> for everyone in it.
         </h1>
         <p style={{ fontSize: '1.125rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-          RinkStop is the global directory for hockey rinks, teams, players, and leagues.
-          Free to browse. Built to be claimed, joined, and messaged.
+          RinkStop is the global directory for hockey rinks, teams, players, and leagues. Free to browse. Paid plans unlock claims, verification, DMs, and lead capture.
         </p>
       </section>
 

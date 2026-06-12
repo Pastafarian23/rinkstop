@@ -68,11 +68,11 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Four tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($9.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($19.99/year) adds a verified checkmark, unlimited claims, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($99.99/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, bulk claim, and an analytics dashboard. See /founding-member for the full breakdown.',
+        a: 'Four tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($9.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($19.99/year) adds a verified checkmark, unlimited claims, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($99.99/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, bulk claim, and an analytics dashboard. See /pricing for the full breakdown.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
-        a: 'Go to /founding-member, pick the tier you want, and click the button. You will be sent to Stripe Checkout to enter your card. After payment, you land back in your dashboard and your new tier is active immediately. If you are not signed in, you will be prompted to sign up first.',
+        a: 'Go to /pricing, pick the tier you want, and click the button. You will be sent to Stripe Checkout to enter your card. After payment, you land back in your dashboard and your new tier is active immediately. If you are not signed in, you will be prompted to sign up first.',
       },
       {
         q: 'How do I view my invoices or update my payment method?',
@@ -84,7 +84,7 @@ const sections: Array<{
       },
       {
         q: 'Can I upgrade mid-year?',
-        a: 'Yes. Upgrades (Free to Supporter, Supporter to Verified, Verified to Pro) take effect immediately and the unused portion of your current plan is credited toward the new one. Go to /founding-member and pick the higher tier - the checkout flow handles proration automatically.',
+        a: 'Yes. Upgrades (Free to Supporter, Supporter to Verified, Verified to Pro) take effect immediately and the unused portion of your current plan is credited toward the new one. Go to /pricing and pick the higher tier - the checkout flow handles proration automatically.',
       },
       {
         q: 'What is the Founding Member badge?',

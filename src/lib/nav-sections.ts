@@ -79,11 +79,11 @@ const CONTENT_LINKS: NavItem[] = [
 const ABOUT_LINKS: NavItem[] = [
   { href: '/faq',            label: 'FAQ'             },
   { href: '/about',          label: 'About Us'        },
+  { href: '/pricing',        label: 'Pricing'         },
   { href: '/contact',        label: 'Contact Us'      },
   { href: '/advertise',      label: 'Advertise'       },
   { href: '/partner',        label: 'Partner With Us' },
   { href: '/add-listing',    label: 'Add Listing'     },
-  { href: '/founding-member', label: 'Founding Member'},
 ];
 
 export const NAV_SECTIONS: NavSection[] = [

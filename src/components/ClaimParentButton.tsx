@@ -82,7 +82,7 @@ export default function ClaimParentButton({
   if ((tierRank[myTier] ?? 0) < 2) {
     return (
       <a
-        href="/founding-member"
+        href="/pricing"
         style={{
           display: 'inline-block',
           background: 'rgba(200,16,46,0.1)',

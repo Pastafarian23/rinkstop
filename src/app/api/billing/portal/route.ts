@@ -69,7 +69,7 @@ export async function POST(_req: NextRequest) {
   if (!customerId) {
     // Free user has never been a Stripe customer — create one so the portal works.
     // The portal will show "no subscriptions, no payment history" which is fine;
-    // the user can also re-visit /founding-member to start a subscription.
+    // the user can also re-visit /pricing to start a subscription.
     try {
       const customer = await stripe.customers.create({
         metadata: { clerk_user_id: userId },

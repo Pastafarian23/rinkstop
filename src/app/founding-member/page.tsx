@@ -1,28 +1,12 @@
-import type { Metadata } from 'next';
-import FoundingMemberContent from './FoundingMemberContent';
+import { permanentRedirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Founding Member Program',
-  description:
-    'Be a RinkStop Founding Member — get verified, claim your listing, and unlock premium features.',
-  alternates: { canonical: 'https://rinkstop.com/founding-member' },
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: 'Founding Member Program',
-    description:
-      'Be a RinkStop Founding Member — get verified, claim your listing, and unlock premium features.',
-    url: 'https://rinkstop.com/founding-member',
-    siteName: 'RinkStop',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Founding Member Program',
-    description:
-      'Be a RinkStop Founding Member — get verified, claim your listing, and unlock premium features.',
-  },
-};
+// Deprecated 2026-06-12 — the 8 founding-member entity tiers have been
+// consolidated into the new 3-tier subscription (Free / Supporter / Verified / Pro).
+// All traffic to this path now 308-redirects to the new /pricing page so we
+// preserve SEO and don't break inbound links from social or email campaigns.
+
+export const dynamic = 'force-static';
 
 export default function FoundingMemberPage() {
-  return <FoundingMemberContent />;
+  permanentRedirect('/pricing');
 }

@@ -104,7 +104,7 @@ export default async function DashboardPage() {
                     }}>⭐ Founding</span>
                   )}
                   {profile?.tier === 'free' ? (
-                    <Link href="/founding-member" style={{ fontSize: 11, color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
+                    <Link href="/pricing" style={{ fontSize: 11, color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
                       ✨ Upgrade →
                     </Link>
                   ) : (
@@ -187,7 +187,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <Link
-            href="/founding-member"
+            href="/pricing"
             style={{
               display: 'inline-block',
               background: '#C8102E',
