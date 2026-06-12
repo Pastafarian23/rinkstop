@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface MapRink {
@@ -14,121 +15,155 @@ interface MapRink {
   slug: string;
 }
 
+// Minimal Google Maps type surface (avoids pulling @types/google.maps as a dep)
+type GoogleMap = any;
+type GoogleMarker = any;
+
 interface Props {
   initialRinks: MapRink[];
 }
 
-// Country centroid (lat/lon) for the iframe center. Used when a country is
-// selected, so the iframe shows the right region even though we can't pass
-// per-rink pins through a no-key Google embed.
-const COUNTRY_CENTROIDS: Record<string, { lat: number; lon: number; zoom: number }> = {
-  'United States':        { lat:  39.5,  lon:  -98.5, zoom: 4 },
-  'Canada':               { lat:  56.0,  lon: -106.0, zoom: 4 },
-  'Finland':              { lat:  64.0,  lon:   26.0, zoom: 5 },
-  'Sweden':               { lat:  62.0,  lon:   15.0, zoom: 5 },
-  'Russia':               { lat:  61.0,  lon:   60.0, zoom: 4 },
-  'Czech Republic':       { lat:  49.8,  lon:   15.5, zoom: 7 },
-  'Germany':              { lat:  51.0,  lon:   10.5, zoom: 6 },
-  'Switzerland':          { lat:  46.8,  lon:    8.2, zoom: 8 },
-  'Austria':              { lat:  47.5,  lon:   14.5, zoom: 8 },
-  'Slovakia':             { lat:  48.7,  lon:   19.7, zoom: 8 },
-  'Norway':               { lat:  60.5,  lon:    8.5, zoom: 5 },
-  'Denmark':              { lat:  56.0,  lon:   10.0, zoom: 7 },
-  'France':               { lat:  46.5,  lon:    2.5, zoom: 6 },
-  'United Kingdom':       { lat:  54.0,  lon:   -2.0, zoom: 6 },
-  'Latvia':               { lat:  57.0,  lon:   25.0, zoom: 7 },
-  'Belarus':              { lat:  53.0,  lon:   28.0, zoom: 7 },
-  'Kazakhstan':           { lat:  48.0,  lon:   66.0, zoom: 5 },
-  'Japan':                { lat:  36.0,  lon:  138.0, zoom: 5 },
-  'South Korea':          { lat:  36.0,  lon:  128.0, zoom: 7 },
-  'China':                { lat:  35.0,  lon:  104.0, zoom: 4 },
-  'Australia':            { lat: -25.0,  lon:  133.0, zoom: 4 },
-  'Italy':                { lat:  42.5,  lon:   12.5, zoom: 6 },
-  'Poland':               { lat:  52.0,  lon:   19.0, zoom: 6 },
-  'Hungary':              { lat:  47.0,  lon:   19.5, zoom: 7 },
-  'Ukraine':              { lat:  49.0,  lon:   32.0, zoom: 6 },
-  'Netherlands':          { lat:  52.0,  lon:    5.5, zoom: 7 },
-  'Belgium':              { lat:  50.5,  lon:    4.5, zoom: 7 },
-  'Spain':                { lat:  40.0,  lon:   -3.5, zoom: 6 },
-  'Mexico':               { lat:  23.0,  lon: -102.0, zoom: 5 },
-  'Estonia':              { lat:  59.0,  lon:   26.0, zoom: 7 },
-  'Lithuania':            { lat:  55.0,  lon:   24.0, zoom: 7 },
-  'Romania':              { lat:  46.0,  lon:   25.0, zoom: 6 },
-  'Bulgaria':             { lat:  42.5,  lon:   25.5, zoom: 7 },
-  'Iceland':              { lat:  65.0,  lon:  -19.0, zoom: 6 },
-  'New Zealand':          { lat: -41.0,  lon:  174.0, zoom: 5 },
-  'Slovenia':             { lat:  46.0,  lon:   15.0, zoom: 8 },
-  'Croatia':              { lat:  45.0,  lon:   16.0, zoom: 7 },
-  'Serbia':               { lat:  44.0,  lon:   21.0, zoom: 7 },
-  'Argentina':            { lat: -34.0,  lon:  -64.0, zoom: 4 },
-  'Brazil':               { lat: -10.0,  lon:  -53.0, zoom: 4 },
-  'Israel':               { lat:  31.5,  lon:   35.0, zoom: 7 },
-  'United Arab Emirates': { lat:  24.0,  lon:   54.0, zoom: 6 },
-  'Singapore':            { lat:   1.3,  lon:  103.8, zoom: 11 },
-  'Philippines':          { lat:  13.0,  lon:  122.0, zoom: 6 },
-  'Thailand':             { lat:  15.0,  lon:  101.0, zoom: 5 },
-  'Turkey':               { lat:  39.0,  lon:   35.0, zoom: 5 },
-  'Ireland':              { lat:  53.5,  lon:   -8.0, zoom: 7 },
-  'Chile':                { lat: -33.0,  lon:  -71.0, zoom: 4 },
-};
-
-const DEFAULT_VIEW = { lat: 45, lon: -90, zoom: 3 };
-
-function viewForCountry(country: string) {
-  if (!country) return DEFAULT_VIEW;
-  return COUNTRY_CENTROIDS[country] ?? DEFAULT_VIEW;
-}
-
-function buildEmbedUrl(view: { lat: number; lon: number; zoom: number }): string {
-  return `https://www.google.com/maps?q=${view.lat},${view.lon}&z=${view.zoom}&output=embed`;
-}
-
-function buildDirectionsUrl(view: { lat: number; lon: number }): string {
-  return `https://www.google.com/maps?q=${view.lat},${view.lon}`;
-}
-
+// ─── Client Component ────────────────────────────────────────────────────────
 export default function MapClient({ initialRinks }: Props) {
   const [rinks, setRinks] = useState<MapRink[]>(initialRinks);
   const [countries, setCountries] = useState<string[]>([]);
   const [selectedCountry, setSelectedCountry] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [scriptError, setScriptError] = useState(false);
 
-  // Seed countries from initialRinks for an immediate dropdown.
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<GoogleMap | null>(null);
+  const markersRef = useRef<GoogleMarker[]>([]);
+  const mountedRef = useRef(true);
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';
+
+  // Build country list from initial (server) data, then refresh from API.
   useEffect(() => {
     const countrySet = new Set<string>();
     initialRinks.forEach((rink) => {
       if (rink.country) countrySet.add(rink.country);
     });
-    setCountries((prev) => (prev.length ? prev : Array.from(countrySet).sort()));
-  }, [initialRinks]);
+    setCountries(Array.from(countrySet).sort());
 
-  // Refresh rinks from API in the background.
-  useEffect(() => {
+    setLoading(true);
     fetch('/api/rinks/map')
       .then((r) => r.json())
       .then((d) => {
         const data: MapRink[] = d.data || [];
-        if (data.length) setRinks(data);
-        const countrySet = new Set<string>();
-        (data.length ? data : rinks).forEach((rink) => {
-          if (rink.country) countrySet.add(rink.country);
-        });
-        setCountries(Array.from(countrySet).sort());
+        if (mountedRef.current) {
+          setRinks(data);
+          const refreshed = new Set<string>();
+          data.forEach((rink) => {
+            if (rink.country) refreshed.add(rink.country);
+          });
+          setCountries(Array.from(refreshed).sort());
+          setLoading(false);
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (mountedRef.current) setLoading(false);
+      });
+    return () => {
+      mountedRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const visibleRinks = useMemo(() => {
-    if (!selectedCountry) return rinks;
-    return rinks.filter((r) => r.country.toLowerCase() === selectedCountry.toLowerCase());
+  // Init the Google Map once the SDK script is loaded
+  useEffect(() => {
+    if (!scriptLoaded || !mapContainerRef.current || mapRef.current) return;
+    if (typeof window === 'undefined' || !window.google?.maps) return;
+
+    mapRef.current = new window.google.maps.Map(mapContainerRef.current, {
+      center: { lat: 45, lng: -90 },
+      zoom: 4,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      styles: [
+        { elementType: 'geometry', stylers: [{ color: '#0a2a52' }] },
+        { elementType: 'labels.text.stroke', stylers: [{ color: '#041E42' }] },
+        { elementType: 'labels.text.fill', stylers: [{ color: '#EEF5FF' }] },
+        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#041E42' }] },
+        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#0a2a52' }] },
+        { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#EEF5FF' }] },
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      ],
+    });
+  }, [scriptLoaded]);
+
+  // Render / re-render markers when rinks, country filter, or map readiness change
+  const renderMarkers = useCallback(() => {
+    if (!mapRef.current || !window.google?.maps) return;
+    const bounds = new window.google.maps.LatLngBounds();
+
+    // Clear previous markers
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+
+    const visibleRinks = selectedCountry
+      ? rinks.filter((r) => r.country.toLowerCase() === selectedCountry.toLowerCase())
+      : rinks;
+
+    visibleRinks.forEach((rink) => {
+      const marker = new window.google.maps.Marker({
+        position: { lat: rink.latitude, lng: rink.longitude },
+        map: mapRef.current,
+        title: rink.name,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          fillColor: '#C8102E',
+          fillOpacity: 0.95,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          scale: 8,
+        },
+      });
+
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="background:#041E42;color:#fff;padding:12px 16px;border-radius:8px;min-width:180px;font-family:Inter,sans-serif;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${escapeHtml(rink.name)}</div>
+            <div style="font-size:12px;opacity:0.75;margin-bottom:8px;">${escapeHtml(rink.city)}${rink.country ? ', ' + escapeHtml(rink.country) : ''}</div>
+            <a href="/directory/rinks/${encodeURIComponent(rink.slug)}" style="color:#C8102E;font-size:12px;font-weight:600;text-decoration:none;">View Rink &rarr;</a>
+          </div>
+        `,
+      });
+      marker.addListener('click', () => infoWindow.open(mapRef.current, marker));
+
+      markersRef.current.push(marker);
+      bounds.extend({ lat: rink.latitude, lng: rink.longitude });
+    });
+
+    if (visibleRinks.length > 0) {
+      mapRef.current.fitBounds(bounds);
+      // Don't zoom in too far for tiny result sets
+      const zoom = mapRef.current.getZoom();
+      if (zoom && zoom > 14) mapRef.current.setZoom(14);
+    }
   }, [rinks, selectedCountry]);
 
-  const view = viewForCountry(selectedCountry);
-  const embedUrl = buildEmbedUrl(view);
-  const directionsUrl = buildDirectionsUrl(view);
+  useEffect(() => {
+    if (scriptLoaded && rinks.length > 0 && mapRef.current) {
+      renderMarkers();
+    }
+  }, [scriptLoaded, rinks, selectedCountry, renderMarkers]);
+
+  const visibleRinks = selectedCountry
+    ? rinks.filter((r) => r.country.toLowerCase() === selectedCountry.toLowerCase())
+    : rinks;
 
   return (
     <div style={{ background: '#041E42', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`}
+        strategy="afterInteractive"
+        onLoad={() => setScriptLoaded(true)}
+        onError={() => setScriptError(true)}
+      />
+
+      {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #041E42 0%, #0a2a52 100%)',
         borderBottom: '1px solid rgba(200,16,46,0.3)',
@@ -143,7 +178,7 @@ export default function MapClient({ initialRinks }: Props) {
             GLOBAL HOCKEY RINK MAP
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, marginBottom: 16 }}>
-            Browse {rinks.length} hockey rinks worldwide
+            Click a marker to explore a rink
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
@@ -174,36 +209,56 @@ export default function MapClient({ initialRinks }: Props) {
               borderRadius: 20, padding: '6px 16px', color: '#fff',
               fontSize: 13, fontWeight: 600,
             }}>
-              🏒 {visibleRinks.length} rink{visibleRinks.length !== 1 ? 's' : ''} {selectedCountry ? `in ${selectedCountry}` : 'worldwide'}
+              🏒 {visibleRinks.length} rink{visibleRinks.length !== 1 ? 's' : ''} on map
             </div>
-
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                background: 'rgba(255,184,28,0.15)',
-                border: '1px solid rgba(255,184,28,0.4)',
-                borderRadius: 20, padding: '6px 16px', color: '#FFB81C',
-                fontSize: 13, fontWeight: 600, textDecoration: 'none',
-              }}
-            >
-              Open in Google Maps →
-            </a>
           </div>
         </div>
       </div>
 
+      {/* Map Container */}
       <div style={{ position: 'relative', height: 'calc(100vh - 160px)', minHeight: 500 }}>
-        <iframe
-          key={embedUrl}
-          title="Hockey rink map"
-          src={embedUrl}
-          style={{ border: 0, width: '100%', height: '100%', display: 'block' }}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
-        <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 1000 }}>
+        {(loading || !scriptLoaded) && !scriptError && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1000,
+            background: '#041E42', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16,
+          }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '3px solid rgba(200,16,46,0.3)',
+              borderTopColor: '#C8102E',
+              animation: 'spin 1s linear infinite',
+            }} />
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
+              {loading ? 'Loading rink data...' : 'Loading Google Maps...'}
+            </p>
+          </div>
+        )}
+
+        {scriptError && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1000,
+            background: '#041E42', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12,
+            padding: 24, textAlign: 'center',
+          }}>
+            <p style={{ color: '#C8102E', fontSize: 18, fontWeight: 700 }}>Map failed to load</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, maxWidth: 480 }}>
+              Google Maps couldn't initialize. Check the API key restrictions in
+              Google Cloud Console and ensure <code style={{color:'#FFB81C'}}>Maps JavaScript API</code> is enabled
+              for key <code style={{color:'#FFB81C'}}>{apiKey ? apiKey.slice(0,12)+'…' : '(missing)'}</code>.
+            </p>
+          </div>
+        )}
+
+        {/* Map div is ALWAYS rendered (even during loading) so the ref exists
+            when the Google Maps SDK finishes loading. The loading overlay
+            sits on top of it via z-index. */}
+        <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+        <div style={{
+          position: 'absolute', bottom: 16, left: 16, zIndex: 1000,
+          pointerEvents: 'none',
+        }}>
           <Link
             href="/directory/rinks"
             style={{
@@ -214,6 +269,7 @@ export default function MapClient({ initialRinks }: Props) {
               fontSize: 13, fontWeight: 500,
               backdropFilter: 'blur(8px)',
               display: 'inline-flex', alignItems: 'center', gap: 6,
+              pointerEvents: 'auto',
             }}
           >
             Back to Rinks
@@ -221,45 +277,22 @@ export default function MapClient({ initialRinks }: Props) {
         </div>
       </div>
 
-      {selectedCountry && visibleRinks.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(180deg, #0a2a52 0%, #041E42 100%)',
-          padding: '32px',
-          maxHeight: '40vh',
-          overflowY: 'auto',
-        }}>
-          <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-            <h2 style={{
-              fontFamily: 'Bebas Neue, Impact, sans-serif',
-              fontSize: 24, color: '#fff', letterSpacing: 2,
-              marginBottom: 16,
-            }}>
-              {visibleRinks.length} rink{visibleRinks.length !== 1 ? 's' : ''} in {selectedCountry}
-            </h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-              gap: 12,
-            }}>
-              {visibleRinks.map((rink) => (
-                <Link
-                  key={rink.id}
-                  href={`/directory/rinks/${rink.slug}`}
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 8, padding: '12px 16px',
-                    color: '#fff', textDecoration: 'none',
-                  }}
-                >
-                  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{rink.name}</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{rink.city}</div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .gm-style .gm-style-iw-c { background: #041E42 !important; border-radius: 8px !important; padding: 0 !important; }
+        .gm-style .gm-style-iw-d { overflow: hidden !important; }
+        .gm-style .gm-style-iw-tc::after { background: #041E42 !important; }
+        .gm-style-iw-chr button { color: rgba(255,255,255,0.6) !important; }
+        .gm-style .gm-style-cc { background: rgba(4,30,66,0.7) !important; color: rgba(255,255,255,0.5) !important; }
+        .gm-style .gm-style-cc a { color: #C8102E !important; }
+        .gm-style a { color: #C8102E !important; }
+      `}</style>
     </div>
+  );
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c)
   );
 }
