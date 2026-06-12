@@ -17,7 +17,7 @@ const CATS = [
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
   { label: 'Leagues', href: '/directory/leagues',  count: '192',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17	v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
-  { label: 'Rinks',   href: '/directory/rinks',    count: '224',  color: '#059669', desc: 'Ice arenas in every country',
+  { label: 'Rinks',   href: '/directory/rinks',    count: '224',  color: '#059669', desc: 'Ice arenas in every country', liveKey: 'rinks' as const,
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="12" y1="3" x2="12" y2="21"/></svg> },
   { label: 'Brands',  href: '/directory/brands',   count: '32',    color: '#7C3AED', desc: 'Equipment & gear manufacturers',
     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
@@ -28,10 +28,10 @@ const CATS = [
 ];
 
 const STATS = [
-  { n: '2,116',  l: 'Teams' },
-  { n: '6,352',  l: 'Players' },
-  { n: '192',    l: 'Leagues' },
-  { n: '224',    l: 'Rinks' },
+  { n: '2,116',  l: 'Teams',    liveKey: 'teams' as const },
+  { n: '6,352',  l: 'Players',  liveKey: 'players' as const },
+  { n: '192',    l: 'Leagues',  liveKey: 'leagues' as const },
+  { n: '224',    l: 'Rinks',    liveKey: 'rinks' as const },
 ];
 
 export default function Home() {
@@ -39,7 +39,17 @@ export default function Home() {
   const [recentRinks, setRecentRinks] = useState<Rink[]>([]);
   const [recentTeams, setRecentTeams] = useState<Team[]>([]);
   const [upcomingGames, setUpcomingGames] = useState<Game[]>([]);
+  const [counts, setCounts] = useState<{rinks: number; teams: number; players: number; leagues: number; cities: number; countries: number} | null>(null);
   const [q, setQ] = useState('');
+
+  // Format a number with thousands separator, rounded to a friendly magnitude
+  // for hero text (e.g. 1094 -> "1,000+", 2137 -> "2,100+", 51 -> "50+").
+  const approx = (n: number) => {
+    if (n >= 1000) return `${Math.floor(n/100)*100}+`;
+    if (n >= 100) return `${Math.floor(n/10)*10}+`;
+    if (n >= 10) return `${Math.floor(n/5)*5}+`;
+    return `${n}+`;
+  };
 
   useEffect(() => {
     // Set document.title (this is a client component, so Next.js
@@ -57,6 +67,8 @@ export default function Home() {
     // Upcoming games
     fetch('/api/games?limit=10&status=upcoming').then(r => r.json())
       .then(d => setUpcomingGames((d.data || d.games || d || []).slice(0, 3))).catch(() => {});
+    // Live directory counts (cached server-side for 60s)
+    fetch('/api/counts').then(r => r.json()).then(setCounts).catch(() => {});
 
     // Inject canonical link tag (this is a client component, so Next.js
     // doesn't emit metadata.alternates.canonical into the SSR HTML).
@@ -119,7 +131,14 @@ export default function Home() {
               </h1>
 
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
-                <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong> 800+ cities in 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country.
+                <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong>{' '}
+                {counts ? (
+                  <>{approx(counts.cities)} cities in {counts.countries} countries,{' '}
+                  {approx(counts.rinks)} rinks, {approx(counts.teams)} teams,{' '}
+                  {approx(counts.players)} players, {approx(counts.leagues)} leagues — searchable by city, state, or country.</>
+                ) : (
+                  <>800+ cities in 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country.</>
+                )}
               </p>
 
               {/* Search bar */}
@@ -157,7 +176,7 @@ export default function Home() {
                   textAlign: 'center',
                 }}>
                   <div className="font-sport" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', color: '#C8102E', lineHeight: 1, marginBottom: '0.25rem' }}>
-                    {s.n}
+                    {counts ? counts[s.liveKey].toLocaleString() : s.n}
                   </div>
                   <div style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
                     {s.l}
@@ -191,7 +210,9 @@ export default function Home() {
                   }}>{c.icon}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.2rem', gap: '0.25rem' }}>
                     <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{c.label}</span>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>{c.count}</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>
+                      {c.liveKey && counts ? approx(counts[c.liveKey]) : c.count}
+                    </span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.75rem', lineHeight: 1.5 }}>{c.desc}</p>
                 </div>

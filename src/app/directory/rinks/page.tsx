@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { supabase } from '@/lib/supabase';
 import RinksIndexClient from './RinksIndexClient';
 
 interface Rink {
@@ -14,32 +15,35 @@ interface Rink {
   claimed_by_user_id?: string | null;
 }
 
-export const metadata: Metadata = {
-  title: 'Ice Rinks Directory',
-  description:
-    'Browse 224 ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.',
-  alternates: {
-    canonical: 'https://rinkstop.com/directory/rinks',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  openGraph: {
+async function getRinkCount(): Promise<number> {
+  try {
+    const { count } = await supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    return count || 0;
+  } catch { return 0; }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const n = await getRinkCount();
+  const desc = `Browse ${n.toLocaleString()} ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.`;
+  return {
     title: 'Ice Rinks Directory',
-    description:
-      'Browse 224 ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.',
-    url: 'https://rinkstop.com/directory/rinks',
-    siteName: 'RinkStop',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Ice Rinks Directory',
-    description:
-      'Browse 224 ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.',
-  },
-};
+    description: desc,
+    alternates: { canonical: 'https://rinkstop.com/directory/rinks' },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: 'Ice Rinks Directory',
+      description: desc,
+      url: 'https://rinkstop.com/directory/rinks',
+      siteName: 'RinkStop',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Ice Rinks Directory',
+      description: desc,
+    },
+  };
+}
 
 // Always render fresh — directory data changes too often to cache statically.
 export const dynamic = 'force-dynamic';
