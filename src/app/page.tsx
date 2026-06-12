@@ -1,106 +1,212 @@
-'use client';
-import { useState, useEffect } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 import { Show } from '@clerk/nextjs';
+import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 
-interface Rink    { id: string; name: string; slug: string; city: string; country: string; }
-interface Team   { id: string; name: string; slug: string; league: string; city: string; }
-interface Game   { id: string; date: string; home_team_name: string; away_team_name: string; venue_name: string; }
+export const dynamic = 'force-dynamic';
 
-const CATS = [
-  { label: 'Teams',   href: '/directory/teams',    count: '2,116', color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { label: 'Players', href: '/directory/players',  count: '6,352', color: '#2563EB', desc: 'Profiles, stats & career histories',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
-  { label: 'Leagues', href: '/directory/leagues',  count: '192',    color: '#D97706', desc: 'NHL, AHL, KHL, IIHF & more',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17	v4M7 4H4l1 7a5 5 0 0 0 10 0l1-7h-3"/><line x1="7" y1="4" x2="17" y2="4"/></svg> },
-  { label: 'Rinks',   href: '/directory/rinks',    count: '224',  color: '#059669', desc: 'Ice arenas in every country', liveKey: 'rinks' as const,
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="12" y1="3" x2="12" y2="21"/></svg> },
-  { label: 'Brands',  href: '/directory/brands',   count: '32',    color: '#7C3AED', desc: 'Equipment & gear manufacturers',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-  { label: 'Scores',  href: '/directory/games', count: 'Live',    color: '#C8102E', desc: 'Results, standings & schedules',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-  { label: 'Highlights', href: '/highlights', count: 'Video', color: '#FFB81C', desc: 'Top goals, saves & game recaps',
-    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> },
+export const metadata: Metadata = {
+  title: 'RinkStop — The World’s Hockey Directory',
+  description:
+    'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country. Free directory of ice rinks, pro teams, junior clubs, college programs, and player profiles.',
+  keywords: [
+    'hockey directory',
+    'ice rink directory',
+    'hockey teams',
+    'hockey rinks',
+    'hockey players',
+    'NHL directory',
+    'youth hockey',
+    'hockey leagues',
+    'find a hockey rink',
+    'hockey near me',
+  ],
+  alternates: { canonical: 'https://rinkstop.com/' },
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: 'RinkStop — The World’s Hockey Directory',
+    description:
+      'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues.',
+    url: 'https://rinkstop.com/',
+    siteName: 'RinkStop',
+    type: 'website',
+    locale: 'en_US',
+    images: [
+      {
+        url: 'https://rinkstop.com/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'RinkStop — The World’s Hockey Directory',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'RinkStop — The World’s Hockey Directory',
+    description:
+      'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues.',
+    images: ['https://rinkstop.com/og-image.png'],
+  },
+};
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+const TOP_CITIES = [
+  { name: 'Toronto',   country: 'CA', href: '/directory/canada/ontario/toronto' },
+  { name: 'Montreal',  country: 'CA', href: '/directory/canada/quebec/montreal' },
+  { name: 'Boston',    country: 'US', href: '/directory/united-states/massachusetts/boston' },
+  { name: 'New York',  country: 'US', href: '/directory/united-states/new-york/new-york' },
+  { name: 'Chicago',   country: 'US', href: '/directory/united-states/illinois/chicago' },
+  { name: 'Detroit',   country: 'US', href: '/directory/united-states/michigan/detroit' },
+  { name: 'Pittsburgh',country: 'US', href: '/directory/united-states/pennsylvania/pittsburgh' },
+  { name: 'Edmonton',  country: 'CA', href: '/directory/canada/alberta/edmonton' },
 ];
 
-const STATS = [
-  { n: '2,116',  l: 'Teams',    liveKey: 'teams' as const },
-  { n: '6,352',  l: 'Players',  liveKey: 'players' as const },
-  { n: '192',    l: 'Leagues',  liveKey: 'leagues' as const },
-  { n: '224',    l: 'Rinks',    liveKey: 'rinks' as const },
+const CATEGORIES = [
+  { label: 'Teams',      href: '/directory/teams',  color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide' },
+  { label: 'Players',    href: '/directory/players', color: '#2563EB', desc: 'Profiles, stats & career histories' },
+  { label: 'Leagues',    href: '/directory/leagues', color: '#D97706', desc: 'NHL, AHL, KHL, IIHF, NCAA & more' },
+  { label: 'Rinks',      href: '/directory/rinks',   color: '#059669', desc: 'Ice arenas in every country' },
+  { label: 'Brands',     href: '/directory/brands',  color: '#7C3AED', desc: 'Equipment & gear manufacturers' },
+  { label: 'Scores',     href: '/directory/games',   color: '#C8102E', desc: 'Results, standings & schedules' },
+  { label: 'Highlights', href: '/highlights',        color: '#FFB81C', desc: 'Top goals, saves & game recaps' },
+  { label: 'Staff',      href: '/directory/staff',   color: '#14B8A6', desc: 'Coaches, officials & scouts' },
 ];
 
-export default function Home() {
+function approx(n: number) {
+  if (n >= 1000) return `${Math.floor(n / 100) * 100}+`;
+  if (n >= 100)  return `${Math.floor(n / 10) * 10}+`;
+  if (n >= 10)   return `${Math.floor(n / 5) * 5}+`;
+  return `${n}+`;
+}
 
-  const [recentRinks, setRecentRinks] = useState<Rink[]>([]);
-  const [recentTeams, setRecentTeams] = useState<Team[]>([]);
-  const [upcomingGames, setUpcomingGames] = useState<Game[]>([]);
-  const [counts, setCounts] = useState<{rinks: number; teams: number; players: number; leagues: number; cities: number; countries: number} | null>(null);
-  const [q, setQ] = useState('');
+export default async function Home() {
+  const [
+    { count: rinksCount },
+    { count: teamsCount },
+    { count: playersCount },
+    { count: leaguesCount },
+    citiesResult,
+    countriesResult,
+    recentRinksResult,
+    recentTeamsResult,
+    upcomingGamesResult,
+  ] = await Promise.all([
+    supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('teams').select('id', { count: 'exact', head: true }),
+    supabase.from('players').select('id', { count: 'exact', head: true }),
+    supabase.from('leagues').select('id', { count: 'exact', head: true }),
+    supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
+    supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
+    supabase
+      .from('rinks')
+      .select('id, name, slug, city, country')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    supabase
+      .from('teams')
+      .select('id, name, slug, city, league_id, leagues(name)')
+      .order('created_at', { ascending: false })
+      .limit(3),
+    supabase
+      .from('games')
+      .select('id, date, home_team_name, away_team_name, venue_name')
+      .gte('date', new Date().toISOString().slice(0, 10))
+      .order('date', { ascending: true })
+      .limit(3),
+  ]);
 
-  // Format a number with thousands separator, rounded to a friendly magnitude
-  // for hero text (e.g. 1094 -> "1,000+", 2137 -> "2,100+", 51 -> "50+").
-  const approx = (n: number) => {
-    if (n >= 1000) return `${Math.floor(n/100)*100}+`;
-    if (n >= 100) return `${Math.floor(n/10)*10}+`;
-    if (n >= 10) return `${Math.floor(n/5)*5}+`;
-    return `${n}+`;
+  const citySet = new Set<string>();
+  for (const r of citiesResult.data || []) if (r.city) citySet.add(r.city.trim().toLowerCase());
+  const countrySet = new Set<string>();
+  for (const r of countriesResult.data || []) if (r.country) countrySet.add(r.country);
+
+  const counts = {
+    rinks: rinksCount || 0,
+    teams: teamsCount || 0,
+    players: playersCount || 0,
+    leagues: leaguesCount || 0,
+    cities: citySet.size,
+    countries: countrySet.size,
   };
 
-  useEffect(() => {
-    // Set document.title (this is a client component, so Next.js
-    // doesn't emit the static <title> from page metadata). The home page
-    // is the single most important page for SEO — getting its title right
-    // is the highest-leverage fix we can make.
-    document.title = 'RinkStop — The World\u2019s Hockey Directory';
+  const recentRinks = recentRinksResult.data || [];
+  const recentTeams = recentTeamsResult.data || [];
+  const upcomingGames = upcomingGamesResult.data || [];
 
-    // Recently added rinks
-    fetch('/api/rinks?limit=6&sort=recent').then(r => r.json())
-      .then(d => setRecentRinks((d.data || d || []).slice(0, 3))).catch(() => {});
-    // Recently added teams
-    fetch('/api/teams?limit=6&sort=recent').then(r => r.json())
-      .then(d => setRecentTeams((d.data || d || []).slice(0, 3))).catch(() => {});
-    // Upcoming games
-    fetch('/api/games?limit=10&status=upcoming').then(r => r.json())
-      .then(d => setUpcomingGames((d.data || d.games || d || []).slice(0, 3))).catch(() => {});
-    // Live directory counts (cached server-side for 60s)
-    fetch('/api/counts').then(r => r.json()).then(setCounts).catch(() => {});
-
-    // Inject canonical link tag (this is a client component, so Next.js
-    // doesn't emit metadata.alternates.canonical into the SSR HTML).
-    const href = 'https://rinkstop.com/';
-    let link = document.head.querySelector('link[rel="canonical"][data-seo-canonical="home"]') as HTMLLinkElement | null;
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'canonical';
-      link.setAttribute('data-seo-canonical', 'home');
-      document.head.appendChild(link);
-    }
-    link.href = href;
-    return () => {
-      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="home"]');
-      if (el && document.head.contains(el)) document.head.removeChild(el);
-    };
-  }, []);
-
-  const search = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (q.trim()) window.location.href = `/directory?q=${encodeURIComponent(q)}`;
+  const ldJson = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://rinkstop.com/#website',
+        url: 'https://rinkstop.com/',
+        name: 'RinkStop',
+        description:
+          'The World’s Hockey Directory — searchable database of rinks, teams, players, and leagues worldwide.',
+        inLanguage: 'en-US',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: 'https://rinkstop.com/directory?q={search_term_string}',
+          },
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://rinkstop.com/#organization',
+        name: 'RinkStop',
+        url: 'https://rinkstop.com/',
+        logo: 'https://rinkstop.com/rinkstoplogo.png',
+        sameAs: [
+          'https://twitter.com/rinkstopnews',
+          'https://www.facebook.com/rinkstop',
+          'https://www.instagram.com/rinkstop',
+          'https://www.linkedin.com/company/rinkstop/',
+        ],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'customer support',
+          email: 'support@rinkstop.com',
+          availableLanguage: 'English',
+        },
+      },
+      {
+        '@type': 'ItemList',
+        name: 'Top Hockey Cities',
+        itemListElement: TOP_CITIES.map((c, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: c.name,
+          url: `https://rinkstop.com${c.href}`,
+        })),
+      },
+    ],
   };
 
   return (
     <>
-      {/* ---- HERO ---------------------------------------------------------------------------------------------------------------------- */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }}
+      />
+
+      {/* ---- HERO -------------------------------------------------------------------- */}
       <section style={{
         position: 'relative',
         background: 'linear-gradient(140deg, #041E42 0%, #0A2E5C 55%, #0D1117 100%)',
         overflow: 'hidden',
       }}>
-        {/* Ice rink pattern */}
         <div aria-hidden="true" style={{ position: 'absolute', inset: 0, opacity: 0.04, pointerEvents: 'none' }}>
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -113,13 +219,10 @@ export default function Home() {
             <rect width="100%" height="100%" fill="url(#rink-bg)"/>
           </svg>
         </div>
-        {/* Red left stripe */}
         <div aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#C8102E' }}/>
 
         <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: '3rem', paddingBottom: '3rem' }}>
           <div className="hero-grid">
-
-            {/* Headline + search */}
             <div>
               <div className="label">The Global Hockey Directory</div>
 
@@ -132,30 +235,12 @@ export default function Home() {
 
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
                 <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong>{' '}
-                {counts ? (
-                  <>{approx(counts.cities)} cities in {counts.countries} countries,{' '}
-                  {approx(counts.rinks)} rinks, {approx(counts.teams)} teams,{' '}
-                  {approx(counts.players)} players, {approx(counts.leagues)} leagues — searchable by city, state, or country.</>
-                ) : (
-                  <>800+ cities in 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country.</>
-                )}
+                {approx(counts.cities)} cities in {counts.countries} countries,{' '}
+                {approx(counts.rinks)} rinks, {approx(counts.teams)} teams,{' '}
+                {approx(counts.players)} players, {approx(counts.leagues)} leagues — searchable by city, state, or country.
               </p>
 
-              {/* Search bar */}
-              <form onSubmit={search} className="search-wrap" style={{ marginBottom: '1.5rem' }}>
-                <input
-                  type="search"
-                  className="search-input"
-                  placeholder="Search teams, players, leagues..."
-                  value={q}
-                  onChange={e => setQ(e.target.value)}
-                />
-                <button type="submit" className="search-btn" aria-label="Search">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                  </svg>
-                </button>
-              </form>
+              <HomeSearch />
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href="/directory" className="btn btn-red">Explore Directory</Link>
@@ -165,9 +250,13 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="stats-grid">
-              {STATS.map(s => (
+              {[
+                { n: counts.teams,   l: 'Teams' },
+                { n: counts.players, l: 'Players' },
+                { n: counts.leagues, l: 'Leagues' },
+                { n: counts.rinks,   l: 'Rinks' },
+              ].map(s => (
                 <div key={s.l} style={{
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -176,7 +265,7 @@ export default function Home() {
                   textAlign: 'center',
                 }}>
                   <div className="font-sport" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', color: '#C8102E', lineHeight: 1, marginBottom: '0.25rem' }}>
-                    {counts ? counts[s.liveKey].toLocaleString() : s.n}
+                    {s.n.toLocaleString()}
                   </div>
                   <div style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
                     {s.l}
@@ -188,7 +277,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- CATEGORIES ---------------------------------------------------------------------------------------------------------- */}
+      {/* ---- E-E-A-T INTRO (server-rendered, full HTML, crawlable text) ------------- */}
+      <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+        <div className="container" style={{ maxWidth: '900px' }}>
+          <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', color: '#fff', marginBottom: '0.75rem' }}>
+            THE WORLD’S HOCKEY DIRECTORY
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.7, margin: 0 }}>
+            RinkStop is the largest free, searchable directory of ice hockey rinks, teams, players, and leagues anywhere on the web.
+            Whether you’re looking for a <Link href="/directory/rinks" style={{ color: '#FFB81C', textDecoration: 'underline' }}>hockey rink near you</Link>,
+            scouting <Link href="/directory/teams" style={{ color: '#FFB81C', textDecoration: 'underline' }}>youth and amateur teams</Link> by city or league,
+            tracking <Link href="/directory/players" style={{ color: '#FFB81C', textDecoration: 'underline' }}>player profiles and career stats</Link>,
+            or following your favorite <Link href="/directory/leagues" style={{ color: '#FFB81C', textDecoration: 'underline' }}>league</Link>’s schedule,
+            RinkStop puts the whole hockey world in one place. Browse NHL, AHL, KHL, NCAA, IIHF, PWHL, and hundreds of junior, women’s, and amateur leagues.
+            Every listing is open to the public, free to browse, and free to claim.
+          </p>
+        </div>
+      </section>
+
+      {/* ---- CATEGORIES ------------------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
           <div className="sec-head">
@@ -199,19 +306,22 @@ export default function Home() {
             <Link href="/directory" className="sec-link">View All →</Link>
           </div>
           <div className="cat-grid">
-            {CATS.map(c => (
+            {CATEGORIES.map(c => (
               <Link key={c.href} href={c.href} className="card" style={{ textDecoration: 'none' }}>
                 <div style={{ padding: 'clamp(0.875rem, 2.5vw, 1.375rem)' }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: '8px',
-                    background: `${c.color}20`, color: c.color,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    marginBottom: '0.75rem',
-                  }}>{c.icon}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.2rem', gap: '0.25rem' }}>
                     <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{c.label}</span>
                     <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>
-                      {c.liveKey && counts ? approx(counts[c.liveKey]) : c.count}
+                      {c.href === '/highlights' ? 'Video' :
+                       c.href === '/directory/games' ? 'Live' :
+                       approx(
+                         c.href === '/directory/teams'   ? counts.teams   :
+                         c.href === '/directory/players' ? counts.players :
+                         c.href === '/directory/leagues' ? counts.leagues :
+                         c.href === '/directory/rinks'   ? counts.rinks   :
+                         c.href === '/directory/brands'  ? 32             :
+                         c.href === '/directory/staff'   ? 800            : 0
+                       )}
                     </span>
                   </div>
                   <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.75rem', lineHeight: 1.5 }}>{c.desc}</p>
@@ -225,7 +335,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- TOP HOCKEY CITIES ------------------------------------------------------------------------------------------------- */}
+      {/* ---- TOP HOCKEY CITIES ----------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
           <div className="sec-head">
@@ -237,16 +347,7 @@ export default function Home() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.625rem' }}>
-            {[
-              { name: 'Toronto', country: 'CA', href: '/directory/canada/ontario/toronto', count: 1 },
-              { name: 'Montreal', country: 'CA', href: '/directory/canada/quebec/montreal', count: 1 },
-              { name: 'Boston', country: 'US', href: '/directory/united-states/massachusetts/boston', count: 1 },
-              { name: 'New York', country: 'US', href: '/directory/united-states/new-york/new-york', count: 1 },
-              { name: 'Chicago', country: 'US', href: '/directory/united-states/illinois/chicago', count: 1 },
-              { name: 'Detroit', country: 'US', href: '/directory/united-states/michigan/detroit', count: 1 },
-              { name: 'Pittsburgh', country: 'US', href: '/directory/united-states/pennsylvania/pittsburgh', count: 1 },
-              { name: 'Edmonton', country: 'CA', href: '/directory/canada/alberta/edmonton', count: 1 },
-            ].map(city => (
+            {TOP_CITIES.map(city => (
               <Link
                 key={city.name}
                 href={city.href}
@@ -262,8 +363,6 @@ export default function Home() {
                   textDecoration: 'none',
                   transition: 'border-color 0.15s, background 0.15s',
                 }}
-                onMouseOver={e => { e.currentTarget.style.borderColor = '#C8102E'; e.currentTarget.style.background = 'rgba(200,16,46,0.05)'; }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
               >
                 <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', color: '#C8102E', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                   {city.country}
@@ -275,7 +374,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- LATEST HIGHLIGHTS --------------------------------------------------------------------------------------------- */}
+      {/* ---- LATEST HIGHLIGHTS ----------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
           <HighlightsGrid limit={8} columns={4} title="LATEST HIGHLIGHTS" />
@@ -284,18 +383,16 @@ export default function Home() {
 
       <HomeNewsSection />
 
-      {/* Ticketmaster NHL Banner - 300x250 */}
       <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
         <TicketmasterAd size="300x250" />
       </div>
 
-      {/* ---- RECENT ACTIVITY MODULE ----------------------------------------------------------------------------------------------- */}
+      {/* ---- RECENT ACTIVITY ------------------------------------------------------------- */}
       {(recentRinks.length > 0 || recentTeams.length > 0 || upcomingGames.length > 0) && (
         <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
           <div className="container">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
 
-              {/* Recently Added Rinks */}
               {recentRinks.length > 0 && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -303,10 +400,8 @@ export default function Home() {
                     <Link href="/directory/rinks" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {recentRinks.map(r => (
-                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)', transition: 'border-color 0.15s' }}
-                        onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(200,16,46,0.4)')}
-                        onMouseOut={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)')}>
+                    {recentRinks.map((r: any) => (
+                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{r.name}</div>
                           <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{r.city}, {r.country}</div>
@@ -318,7 +413,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Recently Added Teams */}
               {recentTeams.length > 0 && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -326,13 +420,13 @@ export default function Home() {
                     <Link href="/directory/teams" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {recentTeams.map(t => (
-                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)', transition: 'border-color 0.15s' }}
-                        onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(200,16,46,0.4)')}
-                        onMouseOut={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)')}>
+                    {recentTeams.map((t: any) => (
+                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{t.name}</div>
-                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{t.league}{t.city ? ` · ${t.city}` : ''}</div>
+                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>
+                            {t.leagues?.name || 'Independent'}{t.city ? ` · ${t.city}` : ''}
+                          </div>
                         </div>
                         <span style={{ color: '#2563EB', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
                       </Link>
@@ -341,7 +435,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Upcoming Games */}
               {upcomingGames.length > 0 && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -349,7 +442,7 @@ export default function Home() {
                     <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All Games →</Link>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {upcomingGames.map(g => {
+                    {upcomingGames.map((g: any) => {
                       const d = new Date(g.date + 'T00:00:00');
                       return (
                         <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -371,7 +464,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* ---- CTA BAND -------------------------------------------------------------------------------------------------------------- */}
+      {/* ---- CTA BAND -------------------------------------------------------------------- */}
       <section style={{ background: 'linear-gradient(135deg, #C8102E 0%, #9B0D23 100%)', padding: 'clamp(2rem, 5vw, 3rem) 0' }}>
         <div className="container">
           <div className="cta-flex">
