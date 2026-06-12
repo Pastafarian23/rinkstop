@@ -494,14 +494,16 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
             <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '12px' }}>
               {rink.name} is located at <strong style={{ color: '#fff' }}>{rink.address}</strong>. Public parking is available at the venue, and the rink is accessible by car from the surrounding {rink.city} area. For public transit options to reach the rink, check the local {rink.city} transit authority schedule for the nearest stop to the {rink.province_state || rink.country} venue district.
             </p>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rink.name + ' ' + rink.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'inline-block', color: '#38bdf8', fontSize: '14px', textDecoration: 'none', fontWeight: 600 }}
-            >
-              Get directions on Google Maps →
-            </a>
+            {rink.latitude && rink.longitude && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${rink.latitude},${rink.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-block', color: '#38bdf8', fontSize: '14px', textDecoration: 'none', fontWeight: 600 }}
+              >
+                Get directions on Google Maps →
+              </a>
+            )}
           </section>
         )}
 
@@ -568,10 +570,12 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
               <iframe
                 title={`${rink.name} location`}
                 width="100%"
-                height="200"
+                height="240"
                 loading="lazy"
-                src={`https://www.google.com/maps?q=${rink.latitude},${rink.longitude}&output=embed`}
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.google.com/maps/embed/v1/view?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&center=${rink.latitude},${rink.longitude}&zoom=15&maptype=roadmap`}
                 style={{ border: 0, borderRadius: '8px' }}
+                allowFullScreen
               />
             </div>
           ) : null}
