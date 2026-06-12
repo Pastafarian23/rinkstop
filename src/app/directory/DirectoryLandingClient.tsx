@@ -1,4 +1,6 @@
+'use client';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 const CATS = [
   {
@@ -39,6 +41,7 @@ const CATS = [
     label: 'Rinks',
     href: '/directory/rinks',
     count: '32',
+    liveKey: 'rinks',
     desc: 'NHL arenas with capacity, location, and details',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -87,6 +90,10 @@ const CATS = [
 ];
 
 export default function DirectoryLandingClient() {
+  const [counts, setCounts] = useState<{rinks:number; teams:number; players:number; leagues:number} | null>(null);
+  useEffect(() => {
+    fetch('/api/counts').then(r => r.json()).then(setCounts).catch(() => {});
+  }, []);
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
@@ -156,7 +163,9 @@ export default function DirectoryLandingClient() {
                 background: `${accent}1e`, padding: '0.2rem 0.5rem',
                 borderRadius: '3px', flexShrink: 0, letterSpacing: '0.06em',
               }}>
-                {cat.count}
+                {counts && (cat as { liveKey?: keyof typeof counts }).liveKey
+                  ? (counts[(cat as { liveKey: keyof typeof counts }).liveKey] ?? 0).toLocaleString()
+                  : cat.count}
               </span>
             </div>
             <div>
