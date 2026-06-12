@@ -2,9 +2,37 @@
 // Fetches all brands server-side, no useEffect/useState.
 // Optional ?category= filter via search params.
 
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ExternalLinkIcon } from '@/components/icons';
 import { getBrandList } from '@/lib/brand-page';
+
+export const metadata: Metadata = {
+  title: 'Hockey Equipment Brands | RinkStop',
+  description:
+    'Browse 32 hockey equipment and gear brands — sticks, skates, protective gear, and apparel.',
+  alternates: {
+    canonical: 'https://rinkstop.com/directory/brands',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Hockey Equipment Brands | RinkStop',
+    description:
+      'Browse 32 hockey equipment and gear brands — sticks, skates, protective gear, and apparel.',
+    url: 'https://rinkstop.com/directory/brands',
+    siteName: 'RinkStop',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hockey Equipment Brands | RinkStop',
+    description:
+      'Browse 32 hockey equipment and gear brands — sticks, skates, protective gear, and apparel.',
+  },
+};
 
 const FILTER_CATEGORIES = [
   { key: 'all', label: 'All' },
