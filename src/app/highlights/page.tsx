@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import Head from 'next/head';
 import { useSearchParams } from 'next/navigation';
 
 interface Highlight {
@@ -44,6 +43,58 @@ function HighlightsContent() {
     setActiveLeague(league);
     fetchHighlights(league, 0);
   }, [searchParams]);
+
+  // Inject page metadata on mount. This is a client component, so Next.js
+  // doesn't emit <title>/<meta>/<link> from a static metadata export.
+  useEffect(() => {
+    const title = 'Hockey Highlights | RinkStop';
+    const description =
+      'Watch hockey highlights from NHL, AHL, KHL, NCAA, and leagues worldwide.';
+    const canonical = 'https://rinkstop.com/highlights';
+
+    document.title = title;
+
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+      if (!el) {
+        if (selector.startsWith('meta')) {
+          el = document.createElement('meta');
+          const m = selector.match(/\[(name|property)="([^"]+)"\]/);
+          if (m) el.setAttribute(m[1], m[2]);
+        } else if (selector.startsWith('link')) {
+          el = document.createElement('link');
+          el.setAttribute('rel', 'canonical');
+        }
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+      return el;
+    };
+
+    setMeta('meta[name="description"]', 'content', description);
+    setMeta('meta[property="og:title"]', 'content', title);
+    setMeta('meta[property="og:description"]', 'content', description);
+    setMeta('meta[property="og:url"]', 'content', canonical);
+    setMeta('meta[property="og:site_name"]', 'content', 'RinkStop');
+    setMeta('meta[property="og:type"]', 'content', 'website');
+    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
+    setMeta('meta[name="twitter:title"]', 'content', title);
+    setMeta('meta[name="twitter:description"]', 'content', description);
+
+    let canonicalEl = document.head.querySelector('link[rel="canonical"][data-seo-canonical="highlights"]') as HTMLLinkElement | null;
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.rel = 'canonical';
+      canonicalEl.setAttribute('data-seo-canonical', 'highlights');
+      document.head.appendChild(canonicalEl);
+    }
+    canonicalEl.href = canonical;
+
+    return () => {
+      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="highlights"]');
+      if (el && document.head.contains(el)) document.head.removeChild(el);
+    };
+  }, []);
 
   async function fetchHighlights(league: string, offsetVal: number) {
     setLoading(true);
@@ -120,19 +171,6 @@ function HighlightsContent() {
 
   return (
     <>
-      <Head>
-        <title>Hockey Highlights | Watch NHL & NCAA Videos | RinkStop</title>
-        <meta name="description" content="Watch the latest NHL and NCAA hockey highlights on RinkStop. Full game recaps, top plays, and memorable moments from professional and college hockey." />
-        <meta property="og:title" content="Hockey Highlights | RinkStop" />
-        <meta property="og:description" content="Watch the latest NHL and NCAA hockey highlights." />
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="RinkStop" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Hockey Highlights | RinkStop" />
-        <meta name="twitter:description" content="Watch the latest NHL and NCAA hockey highlights." />
-        <link rel="canonical" href="https://rinkstop.com/highlights" />
-      </Head>
-
       {/* Modal for video embed */}
       {selectedHighlight && (
         <div

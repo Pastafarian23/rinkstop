@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const LISTING_TYPES = [
   { value: 'team', label: 'Team' },
@@ -24,6 +24,54 @@ export default function AddListingPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+
+  // Inject page metadata on mount. This is a client component, so Next.js
+  // doesn't emit <title>/<meta>/<link> from a static metadata export.
+  useEffect(() => {
+    const title = 'Add Your Team, League, or Rink | RinkStop';
+    const description =
+      "Submit your hockey team, league, or rink to the world's hockey directory. Free to add.";
+    const canonical = 'https://rinkstop.com/add-listing';
+
+    document.title = title;
+
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+      if (!el) {
+        el = document.createElement(selector.startsWith('meta') ? 'meta' : 'link');
+        const m = selector.match(/\[(name|property)="([^"]+)"\]/);
+        if (m) el.setAttribute(m[1], m[2]);
+        if (selector.startsWith('link')) el.setAttribute('rel', 'canonical');
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+      return el;
+    };
+
+    setMeta('meta[name="description"]', 'content', description);
+    setMeta('meta[property="og:title"]', 'content', title);
+    setMeta('meta[property="og:description"]', 'content', description);
+    setMeta('meta[property="og:url"]', 'content', canonical);
+    setMeta('meta[property="og:site_name"]', 'content', 'RinkStop');
+    setMeta('meta[property="og:type"]', 'content', 'website');
+    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
+    setMeta('meta[name="twitter:title"]', 'content', title);
+    setMeta('meta[name="twitter:description"]', 'content', description);
+
+    let canonicalEl = document.head.querySelector('link[rel="canonical"][data-seo-canonical="add-listing"]') as HTMLLinkElement | null;
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.rel = 'canonical';
+      canonicalEl.setAttribute('data-seo-canonical', 'add-listing');
+      document.head.appendChild(canonicalEl);
+    }
+    canonicalEl.href = canonical;
+
+    return () => {
+      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="add-listing"]');
+      if (el && document.head.contains(el)) document.head.removeChild(el);
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
