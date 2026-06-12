@@ -46,9 +46,17 @@ const TEAM_NAME_ALIASES = {
   'loko': ['lokomotiv'],
   'sibir': ['sibir novosibirsk'],
   'avangard': ['avangard omsk'],
-  'metallurg magnitogorsk': ['metallurg mgn', 'mmg'],
+  'avangard omsk': ['avangard'],
+  'metallurg magnitogorsk': ['metallurg mgn', 'mmg', 'metallurg mg', 'magnitogorsk'],
+  'magnitogorsk': ['metallurg magnitogorsk', 'metallurg mgn', 'metallurg mg', 'mmg'],
+  'metallurg mgn': ['metallurg magnitogorsk', 'magnitogorsk', 'mmg', 'metallurg mg'],
+  'metallurg mg': ['metallurg magnitogorsk', 'magnitogorsk', 'mmg', 'metallurg mgn'],
+  'mmg': ['metallurg magnitogorsk', 'magnitogorsk', 'metallurg mgn', 'metallurg mg'],
   'salavat yulaev': ['salavat yulaev ufa'],
+  'salavat yulaev ufa': ['salavat yulaev'],
   'torpedo': ['torpedo nn', 'torpedo nizhny novgorod'],
+  'torpedo nn': ['torpedo', 'torpedo nizhny novgorod'],
+  'torpedo nizhny novgorod': ['torpedo', 'torpedo nn'],
   'avtomobilist': ['avtomobilist ekaterinburg'],
   'traktor': ['traktor chelyabinsk'],
   'severstal': ['severstal cherepovets'],
@@ -58,6 +66,8 @@ const TEAM_NAME_ALIASES = {
   'barys': ['barys nur-sultan', 'barys astana'],
   'dinamo': ['dynamo'],
   'mhc dynamo': ['mhc dynamo moscow'],
+  'lokomotiv': ['loko', 'lokomotiv yaroslavl'],
+  'lokomotiv yaroslavl': ['lokomotiv'],
 };
 
 function expandTeamAliases(teamName) {
