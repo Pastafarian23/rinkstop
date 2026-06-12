@@ -160,19 +160,15 @@ export default function MapClient({ initialRinks }: Props) {
   }, []);
 
   // Initialize the Google Map once the SDK script is loaded.
-  // Uses the modern `importLibrary` API to wait for the actual Map class
-  // to be loaded (the bootstrap script only sets up the namespace).
-  const initMap = useCallback(async () => {
+  // The script's `callback=__gmapsInit` fires only after the namespace is
+  // fully bootstrapped, so the Map class is available at this point.
+  const initMap = useCallback(() => {
     if (useFallback) return;
     if (typeof window === 'undefined' || !window.google?.maps) return;
     if (!mapContainerRef.current || mapRef.current) return;
 
     try {
-      // Wait for the maps library to be fully loaded.
-      const { Map } = await window.google.maps.importLibrary('maps');
-      if (!mapContainerRef.current || mapRef.current) return;
-
-      mapRef.current = new Map(mapContainerRef.current, {
+      mapRef.current = new window.google.maps.Map(mapContainerRef.current, {
         center: { lat: DEFAULT_VIEW.lat, lng: DEFAULT_VIEW.lon },
         zoom: DEFAULT_VIEW.zoom,
         mapTypeControl: false,
@@ -201,16 +197,13 @@ export default function MapClient({ initialRinks }: Props) {
   }, [scriptLoaded, useFallback, initMap]);
 
   // Render markers when rinks, country filter, or map readiness change.
-  const renderMarkers = useCallback(async () => {
+  const renderMarkers = useCallback(() => {
     if (useFallback) return;
     if (!mapRef.current || typeof window === 'undefined' || !window.google?.maps) return;
 
     try {
-      // Wait for the marker + places libraries to be ready.
-      const { Marker, InfoWindow, LatLngBounds, SymbolPath } = await window.google.maps.importLibrary('maps');
-      if (!mapRef.current) return;
-
-      const bounds = new LatLngBounds();
+      const maps = window.google.maps;
+      const bounds = new maps.LatLngBounds();
 
       // Clear previous markers + info windows
       markersRef.current.forEach((m) => m.setMap(null));
@@ -226,12 +219,12 @@ export default function MapClient({ initialRinks }: Props) {
         if (typeof rink.latitude !== 'number' || typeof rink.longitude !== 'number') return;
         if (Number.isNaN(rink.latitude) || Number.isNaN(rink.longitude)) return;
 
-        const marker = new Marker({
+        const marker = new maps.Marker({
           position: { lat: rink.latitude, lng: rink.longitude },
           map: mapRef.current,
           title: rink.name,
           icon: {
-            path: SymbolPath.CIRCLE,
+            path: maps.SymbolPath.CIRCLE,
             fillColor: '#C8102E',
             fillOpacity: 0.95,
             strokeColor: '#ffffff',
@@ -260,7 +253,7 @@ export default function MapClient({ initialRinks }: Props) {
         link.textContent = 'View Rink →';
         iwContent.appendChild(link);
 
-        const infoWindow = new InfoWindow({ content: iwContent });
+        const infoWindow = new maps.InfoWindow({ content: iwContent });
         marker.addListener('click', () => {
           infoWindowsRef.current.forEach((iw) => iw.close());
           infoWindow.open(mapRef.current, marker);
@@ -561,12 +554,14 @@ function ScriptInjector({ apiKey, onLoad, onError }: { apiKey: string; onLoad: (
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (document.querySelector('script[data-google-maps-sdk]')) return;
+    // Define a global init callback BEFORE the loader script runs, so the
+    // SDK can call it once the namespace is fully bootstrapped.
+    (window as any).__gmapsInit = () => { onLoad(); };
     const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async&callback=__gmapsInit`;
     s.async = true;
     s.defer = true;
     s.dataset.googleMapsSdk = 'true';
-    s.onload = onLoad;
     s.onerror = onError;
     document.head.appendChild(s);
   }, [apiKey, onLoad, onError]);
