@@ -1,98 +1,94 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import Breadcrumbs from '@/components/Breadcrumbs';
-import LeagueRelated from '@/components/LeagueRelated';
+import type { Metadata } from 'next';
+import LeagueDetailClient from './LeagueDetailClient';
 
-const BASE_URL = 'https://rinkstop.com';
+const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
+const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('127.0.0.1')
+  ? 'https://rinkstop.com'
+  : (RAW_BASE_URL || 'https://rinkstop.com');
 
-export default function LeagueDetail() {
-  const { id } = useParams();
-  const [league, setLeague] = useState<any>(null);
-  const [teams, setTeams] = useState([]);
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const res = await fetch(`${BASE_URL}/api/leagues`, { cache: 'no-store' });
+    const leagues = await res.json();
+    const league = leagues.find((l: any) => l.id === id || l.slug === id);
+    if (league) {
+      return {
+        title: `${league.name}`,
+        description: `${league.name} — ${league.country}. ${(league.level || '').replace(/_/g, ' ')} hockey league on RinkStop.`,
+        openGraph: {
+          title: `${league.name}`,
+          images: league.logo_url
+            ? [{ url: league.logo_url, width: 400, height: 400 }]
+            : [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
+        },
+        alternates: { canonical: `${BASE_URL}/directory/leagues/${league.slug || league.id}` },
+      };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { title: 'League' };
+}
 
-  useEffect(() => {
-    const param = String(id);
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
-    fetch('/api/leagues').then(r => r.json()).then(d => {
-      const list = d || [];
-      // Match by slug first, then fall back to id. This lets the route accept
-      // either /directory/leagues/nhl (slug) or /directory/leagues/<uuid>.
-      const found = list.find((x: any) => x.slug === param) || list.find((x: any) => x.id === param);
-      if (found) {
-        // If we arrived by UUID, redirect to the canonical slug URL.
-        if (isUuid && found.slug && found.slug !== param) {
-          window.location.replace(`/directory/leagues/${found.slug}`);
-          return;
-        }
-        setLeague(found);
-      } else {
-        setLeague(null);
-      }
-    });
-    fetch(`/api/teams?leagueId=${param}`).then(r => r.json()).then(d => setTeams(d?.data || []));
-  }, [id]);
+export default async function LeaguePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
 
-  useEffect(() => {
-    if (!league) return;
-
-    const breadcrumbSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-        { '@type': 'ListItem', position: 2, name: 'Leagues', item: `${BASE_URL}/directory/leagues` },
-        { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.slug || league.id}` },
-      ],
-    };
-
-    const leagueSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'SportsOrganization',
-      name: league.name,
-      sport: 'Ice hockey',
-      url: `${BASE_URL}/directory/leagues/${league.slug || league.id}`,
-      ...(league.alternateName && { alternateName: league.alternateName }),
-      ...(league.website_url && { sameAs: [league.website_url] }),
-    };
-
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.text = JSON.stringify([breadcrumbSchema, leagueSchema]);
-    document.head.appendChild(script);
-    return () => { document.head.removeChild(script); };;
-  }, [league]);
-
-  if (!league) return <p className="text-slate-400">Loading...</p>;
+  // Server-side fetch for JSON-LD. The client component will re-fetch for
+  // its own UI; this duplicate read is the cost of getting structured data
+  // into the initial HTML (Googlebot doesn't run JS for the first crawl).
+  let leagueJsonLd: object | null = null;
+  try {
+    const res = await fetch(`${BASE_URL}/api/leagues`, { cache: 'no-store' });
+    const leagues = await res.json();
+    const league = leagues.find((l: any) => l.id === id || l.slug === id);
+    if (league) {
+      leagueJsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'SportsOrganization',
+            name: league.name,
+            sport: 'Ice hockey',
+            url: `${BASE_URL}/directory/leagues/${league.slug || league.id}`,
+            ...(league.alternateName ? { alternateName: league.alternateName } : {}),
+            ...(league.website_url ? { sameAs: [league.website_url] } : {}),
+            ...(league.logo_url ? { logo: league.logo_url } : {}),
+            ...(league.country ? { address: { '@type': 'PostalAddress', addressCountry: league.country } } : {}),
+          },
+          {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+              { '@type': 'ListItem', position: 2, name: 'Leagues', item: `${BASE_URL}/directory/leagues` },
+              { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.slug || league.id}` },
+            ],
+          },
+        ],
+      };
+    }
+  } catch (err) {
+    console.error(`[leagues/[id]] fetch error:`, err);
+    leagueJsonLd = null;
+  }
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-
-      <Breadcrumbs links={[
-        { label: 'Directory', href: '/directory' },
-        { label: 'Leagues', href: '/directory/leagues' },
-        { label: league.name, href: `/directory/leagues/${league.slug || league.id}` },
-      ]} />
-      <Link href="/directory/leagues" className="text-teal-400 text-sm mb-4 inline-block">&larr; Back to Leagues</Link>
-      <div className="flex items-center gap-4 mb-6">
-        {league.logo_url && <img src={league.logo_url} alt="" className="w-16 h-16 rounded-lg object-contain bg-slate-700" />}
-        <div>
-          <h1 className="text-3xl font-bold text-white">{league.name}</h1>
-          <p className="text-teal-400 capitalize">{league.level?.replace('_', ' ')}</p>
-          <p className="text-slate-400">{league.country}</p>
-        </div>
-      </div>
-      {league.description && <p className="text-slate-300 mb-6">{league.description}</p>}
-      {league.website_url && (
-        <a href={league.website_url} target="_blank" rel="noopener" className="text-teal-400 text-sm mb-6 inline-block hover:underline">
-          {league.website_url}
-        </a>
+    <>
+      {leagueJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(leagueJsonLd) }}
+        />
       )}
-
-      <div style={{ height: '1px', background: 'var(--border)', margin: '2rem 0' }} />
-
-      <LeagueRelated leagueId={league.id} leagueName={league.name} />
-    </div>
+      <LeagueDetailClient id={id} />
+    </>
   );
 }
