@@ -29,10 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const team = findCanonicalTeam(slug);
   if (!team) return { title: 'Team Not Found' };
   return {
-    title: `${team.name} | Roster, Schedule, Standings | RinkStop`,
+    title: `${team.name} | Roster, Schedule, Standings`,
     description: `${team.name} — ${team.city}, ${team.state}. ${team.division} Division, ${team.conference} Conference. Current record, schedule, scores, and roster on RinkStop.`,
     openGraph: {
-      title: `${team.name} | RinkStop`,
+      title: `${team.name}`,
       description: `${team.name} hockey team page — record, schedule, scores, and roster.`,
       type: 'website',
     },

@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'NCAA College Hockey | RinkStop',
+  title: 'NCAA College Hockey',
   description:
     'NCAA Division 1 college hockey teams, players, conferences, and game schedules. Find your favorite college hockey program.',
   alternates: {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'NCAA College Hockey | RinkStop',
+    title: 'NCAA College Hockey',
     description:
       'NCAA Division 1 college hockey teams, players, conferences, and game schedules. Find your favorite college hockey program.',
     url: 'https://rinkstop.com/directory/college',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NCAA College Hockey | RinkStop',
+    title: 'NCAA College Hockey',
     description:
       'NCAA Division 1 college hockey teams, players, conferences, and game schedules.',
   },

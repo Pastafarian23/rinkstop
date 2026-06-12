@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { team } = await params;
   const teamName = formatName(team);
   return {
-    title: `${teamName} | RinkStop`,
+    title: `${teamName}`,
     robots: { index: false, follow: true },
   };
 }

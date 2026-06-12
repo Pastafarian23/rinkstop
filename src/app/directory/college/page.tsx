@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 
 export const metadata: Metadata = {
-  title: 'College Hockey Directory | RinkStop',
+  title: 'College Hockey Directory',
   description:
     'NCAA Division 1, Division 3, and ACHA college hockey teams, players, conferences, and game schedules.',
   alternates: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'College Hockey Directory | RinkStop',
+    title: 'College Hockey Directory',
     description:
       'NCAA Division 1, Division 3, and ACHA college hockey teams, players, conferences, and game schedules.',
     url: 'https://rinkstop.com/directory/college',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'College Hockey Directory | RinkStop',
+    title: 'College Hockey Directory',
     description:
       'NCAA Division 1, Division 3, and ACHA college hockey teams, players, conferences, and game schedules.',
   },

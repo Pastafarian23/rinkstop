@@ -13,10 +13,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const league = leagues.find((l: any) => l.id === id);
     if (league) {
       return {
-        title: `${league.name} | RinkStop`,
+        title: `${league.name}`,
         description: `${league.name} — ${league.country}. ${league.level?.replace('_', ' ')} hockey league on RinkStop.`,
         openGraph: {
-          title: `${league.name} | RinkStop`,
+          title: `${league.name}`,
           images: league.logo_url ? [{ url: league.logo_url, width: 400, height: 400 }] : [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
         },
       };

@@ -56,13 +56,13 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
   const stateName = STATE_NAMES[stateAbbr.toLowerCase()] || stateSlug.replace(/-/g, ' ');
 
   return {
-    title: `${stateName} Hockey - Ice Rinks, Teams & Leagues | RinkStop`,
+    title: `${stateName} Hockey - Ice Rinks, Teams & Leagues`,
     description: `Find every hockey rink, team, and league in ${stateName}. Discover youth programs, adult leagues, and NCAA teams near you.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}`,
     },
     openGraph: {
-      title: `${stateName} Hockey | RinkStop`,
+      title: `${stateName} Hockey`,
       description: `Hockey in ${stateName}: ice rinks, teams, leagues, and youth programs.`,
       type: 'website',
     },

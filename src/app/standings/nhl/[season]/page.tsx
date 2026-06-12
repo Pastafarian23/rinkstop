@@ -15,7 +15,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ season: string }> }): Promise<Metadata> {
   const { season } = await params;
   return {
-    title: `NHL ${formatSeason(season)} Standings | RinkStop`,
+    title: `NHL ${formatSeason(season)} Standings`,
     description: `Final NHL ${formatSeason(season)} standings by conference and division. Records, points, and goal differentials for all 32 teams.`,
   };
 }

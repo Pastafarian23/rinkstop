@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // 'open' case but are not relevant for non-indexable statuses.
   if (!rinkIndexable(rink.status)) {
     return {
-      title: `${rink.name} | RinkStop`,
+      title: `${rink.name}`,
       description: rink.notes || `${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
       robots: { index: false, follow: true },
       openGraph: { title: rink.name, type: 'website' },
@@ -106,11 +106,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb;
 
   return {
-    title: `${rink.name} -- Ice Rink in ${rink.city || ''}${rink.province_state ? ', ' + rink.province_state : ''} | RinkStop`,
+    title: `${rink.name} -- Ice Rink in ${rink.city || ''}${rink.province_state ? ', ' + rink.province_state : ''}`,
     description,
     robots: robotsMeta(decision),
     openGraph: {
-      title: `${rink.name} | RinkStop`,
+      title: `${rink.name}`,
       description,
       type: 'website',
     },

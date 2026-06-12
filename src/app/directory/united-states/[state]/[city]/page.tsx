@@ -15,13 +15,13 @@ export async function generateMetadata({
   const location = `${cityName}, ${stateName}`;
 
   return {
-    title: `${location} Hockey - Rinks & Teams | RinkStop`,
+    title: `${location} Hockey - Rinks & Teams`,
     description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs and adult leagues near you.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}/${citySlug}`,
     },
     openGraph: {
-      title: `${location} Hockey | RinkStop`,
+      title: `${location} Hockey`,
       description: `Hockey in ${location}: ice rinks, teams, and leagues.`,
       type: 'website',
     },
