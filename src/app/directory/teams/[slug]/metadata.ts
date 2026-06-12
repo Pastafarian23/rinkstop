@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import TeamDetail from './page';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -28,5 +27,3 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   } catch { /* ignore */ }
   return { title: 'Team | RinkStop' };
 }
-
-export default TeamDetail;
