@@ -66,6 +66,32 @@ export default function TeamDetail() {
     };
   }, [team, players]);
 
+  // Inject canonical link tag (fixes Google Search Console
+  // 'Duplicate without user-selected canonical' for /directory/teams/*).
+  // This is a client component, so metadata.alternates.canonical from
+  // metadata.ts is not emitted into the server-rendered HTML. We set it
+  // client-side based on the URL once the team is loaded.
+  useEffect(() => {
+    const canonicalSlug = team?.slug || (typeof slug === 'string' ? slug : null);
+    if (!canonicalSlug) return;
+    // Skip UUID-shaped slugs — the UUID-redirect useEffect will replace
+    // the URL with the real slug, after which this effect re-runs.
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(canonicalSlug)) return;
+    const href = `${BASE_URL}/directory/teams/${canonicalSlug}`;
+    let link = document.head.querySelector('link[rel="canonical"][data-seo-canonical="team"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      link.setAttribute('data-seo-canonical', 'team');
+      document.head.appendChild(link);
+    }
+    link.href = href;
+    return () => {
+      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="team"]');
+      if (el && document.head.contains(el)) document.head.removeChild(el);
+    };
+  }, [team, slug]);
+
   useEffect(() => {
     if (!team) return;
     fetch(`/api/players?teamId=${team.id}&limit=60`)
