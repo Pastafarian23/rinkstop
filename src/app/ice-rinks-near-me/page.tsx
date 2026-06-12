@@ -10,6 +10,27 @@ export default function IceRinksNearMe() {
   const [geoAttempted, setGeoAttempted] = useState(false);
 
   useEffect(() => {
+    // Inject document.title and canonical link. This is a client component
+    // (it needs navigator.geolocation), so Next.js can't emit a static
+    // <title> or canonical from a metadata export. The page is the same
+    // regardless of the user's location, so a static title is fine.
+    document.title = 'Ice Rinks Near Me | RinkStop';
+    const href = 'https://rinkstop.com/ice-rinks-near-me';
+    let link = document.head.querySelector('link[rel="canonical"][data-seo-canonical="ice-rinks-near-me"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      link.setAttribute('data-seo-canonical', 'ice-rinks-near-me');
+      document.head.appendChild(link);
+    }
+    link.href = href;
+    return () => {
+      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="ice-rinks-near-me"]');
+      if (el && document.head.contains(el)) document.head.removeChild(el);
+    };
+  }, []);
+
+  useEffect(() => {
     // Try browser geolocation on mount
     if ('geolocation' in navigator) {
       setGeoAttempted(true);
