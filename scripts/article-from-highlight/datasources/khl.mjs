@@ -34,6 +34,43 @@ function matchLeague(leagueRaw) {
   return null;
 }
 
+// Common name aliases for KHL/WHL/MHL teams (e.g. "Ak Bars" vs "Bars Kazan")
+const TEAM_NAME_ALIASES = {
+  'bars kazan': ['ak bars', 'ak-bars', 'akb'],
+  'ak bars': ['bars kazan'],
+  'cska moscow': ['cska'],
+  'ska saint petersburg': ['ska', 'ska st petersburg'],
+  'ska st petersburg': ['ska saint petersburg', 'ska'],
+  'ska': ['ska saint petersburg', 'ska st petersburg'],
+  'dynamo moscow': ['dynamo msk', 'dinamo moscow'],
+  'loko': ['lokomotiv'],
+  'sibir': ['sibir novosibirsk'],
+  'avangard': ['avangard omsk'],
+  'metallurg magnitogorsk': ['metallurg mgn', 'mmg'],
+  'salavat yulaev': ['salavat yulaev ufa'],
+  'torpedo': ['torpedo nn', 'torpedo nizhny novgorod'],
+  'avtomobilist': ['avtomobilist ekaterinburg'],
+  'traktor': ['traktor chelyabinsk'],
+  'severstal': ['severstal cherepovets'],
+  'kunlun': ['kunlun red star', 'kunlun redstar'],
+  'amur': ['amur khabarovsk'],
+  'admiral': ['admiral vladivostok'],
+  'barys': ['barys nur-sultan', 'barys astana'],
+  'dinamo': ['dynamo'],
+  'mhc dynamo': ['mhc dynamo moscow'],
+};
+
+function expandTeamAliases(teamName) {
+  const lower = teamName.toLowerCase();
+  const aliases = new Set([lower]);
+  for (const [key, alts] of Object.entries(TEAM_NAME_ALIASES)) {
+    if (lower.includes(key) || key.includes(lower)) {
+      for (const alt of alts) aliases.add(alt);
+    }
+  }
+  return [...aliases];
+}
+
 // Cache: { [leagueKey]: { events, fetchedAt } }
 const eventsCache = {};
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
@@ -84,7 +121,8 @@ export async function khlMatchData({ teams, date, league }) {
 
   const teamKeys = teams.map(t => {
     const noThe = t.replace(/^the\s+/i, '').toLowerCase().trim();
-    return { full: noThe, last: noThe.split(/\s+/).pop() };
+    const last = noThe.split(/\s+/).pop();
+    return { full: noThe, last, aliases: expandTeamAliases(noThe) };
   });
 
   // Date window
@@ -105,8 +143,16 @@ export async function khlMatchData({ teams, date, league }) {
     if (!dateKeys.includes(eventDate)) continue;
     const homeName = (e.team_a?.name || e.team_a?.location || '').toLowerCase();
     const awayName = (e.team_b?.name || e.team_b?.location || '').toLowerCase();
-    const homeHas = teamKeys.some(k => homeName.includes(k.last) || homeName.includes(k.full));
-    const awayHas = teamKeys.some(k => awayName.includes(k.last) || awayName.includes(k.full));
+    const homeHas = teamKeys.some(k =>
+      homeName.includes(k.last) ||
+      homeName.includes(k.full) ||
+      k.aliases.some(a => homeName.includes(a))
+    );
+    const awayHas = teamKeys.some(k =>
+      awayName.includes(k.last) ||
+      awayName.includes(k.full) ||
+      k.aliases.some(a => awayName.includes(a))
+    );
     if (homeHas && awayHas) {
       // score format: "2:3" (away:home in KHL API since team_a is listed first)
       // But it can be either. We need to determine the actual home/away.
