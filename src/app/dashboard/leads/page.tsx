@@ -83,7 +83,7 @@ export default async function LeadsPage() {
             </p>
           </div>
           <Link
-            href="/founding-member"
+            href="/pricing"
             style={{
               background: '#C8102E',
               color: '#fff',
