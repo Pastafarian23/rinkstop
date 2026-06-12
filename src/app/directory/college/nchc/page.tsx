@@ -1,5 +1,36 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
+
+export const metadata: Metadata = {
+  title: 'NCHC Hockey | RinkStop',
+  description:
+    'National Collegiate Hockey Conference (NCHC) programs, teams, rosters, and schedules.',
+  alternates: {
+    canonical: 'https://rinkstop.com/directory/college/nchc',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'NCHC Hockey | RinkStop',
+    description:
+      'National Collegiate Hockey Conference (NCHC) programs, teams, rosters, and schedules.',
+    url: 'https://rinkstop.com/directory/college/nchc',
+    siteName: 'RinkStop',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NCHC Hockey | RinkStop',
+    description:
+      'National Collegiate Hockey Conference (NCHC) programs, teams, rosters, and schedules.',
+  },
+};
+
+// Always render fresh — directory data changes too often to cache statically.
+export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
   'https://placeholder.supabase.co',

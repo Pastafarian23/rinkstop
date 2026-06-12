@@ -1,5 +1,35 @@
-'use client';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Youth Hockey Guide | RinkStop',
+  description:
+    'How to get started in youth hockey, find a program, and learn the game at every age.',
+  alternates: {
+    canonical: 'https://rinkstop.com/directory/youth-hockey',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Youth Hockey Guide | RinkStop',
+    description:
+      'How to get started in youth hockey, find a program, and learn the game at every age.',
+    url: 'https://rinkstop.com/directory/youth-hockey',
+    siteName: 'RinkStop',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Youth Hockey Guide | RinkStop',
+    description:
+      'How to get started in youth hockey, find a program, and learn the game at every age.',
+  },
+};
+
+// Pure content page — render fresh so editors / future dynamic blocks are safe.
+export const dynamic = 'force-dynamic';
 
 const SECTIONS = [
   {
@@ -257,7 +287,7 @@ const SECTIONS = [
           {
             name: 'Miranda Chen  --  San Jose, California',
             story: 'Founded the first all-girls hockey program at her high school after being the only girl on her school\'s junior team for two seasons. Today she runs girls-only learn-to-play clinics across the Bay Area and consults for USA Hockey on inclusivity programming.',
-            tag: 'Girls\' Hockey',
+            tag: "Girls' Hockey",
           },
         ].map(profile => (
           <div key={profile.name} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.125rem' }}>
@@ -268,7 +298,7 @@ const SECTIONS = [
               </span>
             </div>
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8125rem', lineHeight: 1.7, fontStyle: 'italic' }}>
-              "{profile.story}"
+              &ldquo;{profile.story}&rdquo;
             </p>
           </div>
         ))}
@@ -346,7 +376,7 @@ export default function YouthHockeyPage() {
       </div>
 
       {/* Content Sections */}
-      {SECTIONS.map((section, i) => (
+      {SECTIONS.map((section) => (
         <section
           key={section.id}
           id={section.id}
@@ -388,10 +418,10 @@ export default function YouthHockeyPage() {
         alignItems: 'flex-start',
       }}>
         <h2 className="font-sport" style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', color: '#fff', letterSpacing: '0.03em' }}>
-          KNOW A YOUTH PROGRAM WE DON'T?
+          KNOW A YOUTH PROGRAM WE DON&apos;T?
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', maxWidth: '460px', lineHeight: 1.6 }}>
-          We're building the most complete global directory of youth hockey programs. If you know of one that should be listed, add it  --  it helps the next parent looking.
+          We&apos;re building the most complete global directory of youth hockey programs. If you know of one that should be listed, add it  --  it helps the next parent looking.
         </p>
         <Link href="/directory/youth-hockey/programs" className="btn btn-white" style={{ marginTop: '0.25rem' }}>
           Browse Programs
