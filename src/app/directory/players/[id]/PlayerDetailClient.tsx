@@ -200,6 +200,7 @@ export default function PlayerDetail({ id }: { id: string }) {
   const [otherPlayers, setOtherPlayers] = useState<Player[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
   const [homeArena, setHomeArena] = useState<{ slug: string; name: string; city: string | null; country: string | null } | null>(null);
+  const [teamArticles, setTeamArticles] = useState<any[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -278,6 +279,20 @@ export default function PlayerDetail({ id }: { id: string }) {
       .catch(() => {})
       .finally(() => controller.abort());
   }, [player?.team_id, player?.id]);
+
+  // Fetch articles featuring this player. Per Arnel's directive
+  // 2026-06-12, we try the direct player_id cross-link first; the API
+  // route falls back to team highlights for the player's current team
+  // when no direct player_id matches exist yet.
+  useEffect(() => {
+    if (!player?.id) return;
+    const controller = new AbortController();
+    fetch(`/api/posts?playerId=${player.id}&limit=8`, { signal: controller.signal })
+      .then(r => r.json())
+      .then(d => setTeamArticles((d?.data || []).slice(0, 8)))
+      .catch(() => {})
+      .finally(() => controller.abort());
+  }, [player?.id]);
 
   // Fetch home arena for the player's team (rink page link)
   // Use current_team_abbreviation for NHL players (no team_id in nhl_players)
@@ -836,6 +851,46 @@ export default function PlayerDetail({ id }: { id: string }) {
           </div>
         </div>
       )}
+
+      {/* Player or team highlights (cross-link from rewriter, 2026-06-12).
+          Heading says PLAYER HIGHLIGHTS if any article has the player_id
+          cross-link, else TEAM HIGHLIGHTS for the team-feed fallback. */}
+      {teamArticles.length > 0 && (player || teamName) && (() => {
+        const hasPlayerLinked = teamArticles.some((a: any) => a.player_id === player?.id);
+        const heading = hasPlayerLinked
+          ? `${(player!.first_name || '').toUpperCase()} ${(player!.last_name || '').toUpperCase()} HIGHLIGHTS`.trim()
+          : `${(teamName || '').toUpperCase()} HIGHLIGHTS`;
+        return (
+        <div style={{
+          background: 'var(--s2)',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          padding: '1.5rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>
+              {heading}
+            </h2>
+            <Link href={`/news?team=${teamSlug || player?.team_id}`} style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', textDecoration: 'none' }}>All →</Link>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.625rem' }}>
+            {teamArticles.map((a: any) => (
+              <Link key={a.id} href={`/news/${a.slug}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '6px', overflow: 'hidden', textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
+                {a.og_image_url && (
+                  <div style={{ aspectRatio: '16/9', overflow: 'hidden', background: '#1a2D45' }}>
+                    <img src={a.og_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                  </div>
+                )}
+                <div style={{ padding: '0.625rem 0.875rem' }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fff', lineHeight: 1.3, margin: '0 0 0.25rem' }}>{a.title}</p>
+                  {a.subtitle && <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4, margin: 0 }}>{a.subtitle}</p>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+        );
+      })()}
     </div>
   );
 }

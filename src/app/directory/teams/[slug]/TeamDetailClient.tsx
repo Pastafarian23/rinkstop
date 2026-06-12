@@ -33,12 +33,24 @@ interface PlayerData {
   headshot_url: string | null;
 }
 
+interface ArticleData {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  published_at: string;
+  game_date: string | null;
+  og_image_url: string | null;
+}
+
 export default function TeamDetailClient({
   team,
   players,
+  articles = [],
 }: {
   team: TeamData;
   players: PlayerData[];
+  articles?: ArticleData[];
 }) {
   const staticData = (NHL_TEAM_DATA[team.slug] || {}) as NHLStaticData;
   const hasRichData = Object.keys(staticData).length > 0;
@@ -282,6 +294,31 @@ export default function TeamDetailClient({
           </div>
         )}
       </div>
+
+      {/* Latest articles for this team (cross-link from rewriter, 2026-06-12) */}
+      {articles.length > 0 && (
+        <div style={{ marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
+            <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.25rem', letterSpacing: '0.04em', color: '#fff', margin: 0 }}>Latest Highlights</h2>
+            <Link href={`/news?team=${team.slug}`} style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', textDecoration: 'none' }}>All highlights →</Link>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.625rem' }}>
+            {articles.map((a) => (
+              <Link key={a.id} href={`/news/${a.slug}`} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden', textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
+                {a.og_image_url && (
+                  <div style={{ aspectRatio: '16/9', overflow: 'hidden', background: '#1a2D45' }}>
+                    <img src={a.og_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                  </div>
+                )}
+                <div style={{ padding: '0.625rem 0.875rem' }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fff', lineHeight: 1.3, margin: '0 0 0.25rem' }}>{a.title}</p>
+                  {a.subtitle && <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4, margin: 0 }}>{a.subtitle}</p>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Ticketmaster NHL Banner - 300x250 */}
       <TicketmasterAd size="300x250" />

@@ -91,9 +91,11 @@ export async function hockeytechMatchData({ teams, date, league }) {
     return null;
   }
 
-  // Normalize team names like the other sources do
+  // Normalize team names like the other sources do.
+  // Strip apostrophes since the HockeyTech feed uses "Ottawa 67's" but
+  // highlight titles use "Ottawa 67s".
   const teamKeys = teams.map(t => {
-    const noThe = t.replace(/^the\s+/i, '').toLowerCase().trim();
+    const noThe = t.replace(/^the\s+/i, '').replace(/['']/g, '').toLowerCase().trim();
     return { full: noThe, last: noThe.split(/\s+/).pop() };
   });
 
@@ -117,8 +119,8 @@ export async function hockeytechMatchData({ teams, date, league }) {
   for (const g of schedule) {
     if (!dateKeys.includes((g.date_played || '').slice(0, 10))) continue;
     if (g.final !== '1') continue; // skip unplayed games
-    const homeName = (g.home_team_name || '').toLowerCase();
-    const awayName = (g.visiting_team_name || '').toLowerCase();
+    const homeName = (g.home_team_name || '').replace(/['']/g, '').toLowerCase();
+    const awayName = (g.visiting_team_name || '').replace(/['']/g, '').toLowerCase();
     const homeHas = teamKeys.some(k => homeName.includes(k.last) || homeName.includes(k.full));
     const awayHas = teamKeys.some(k => awayName.includes(k.last) || awayName.includes(k.full));
     if (homeHas && awayHas) {
