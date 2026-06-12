@@ -14,6 +14,7 @@ interface Rink {
   country?: string;
   capacity?: number;
   ice_size?: string;
+  static_map_url?: string | null;
   claimed_by_tier?: string | null;
   claimed_by_user_id?: string | null;
 }
@@ -224,10 +225,13 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.75rem' }}>
         {loading
           ? Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.25rem' }}>
-                <div className="skeleton" style={{ height: '1.125rem', width: '70%', marginBottom: '0.625rem' }} />
-                <div className="skeleton" style={{ height: '0.875rem', width: '50%', marginBottom: '0.5rem' }} />
-                <div className="skeleton" style={{ height: '0.75rem', width: '35%' }} />
+              <div key={i} style={{ display: 'flex', gap: '0.75rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.625rem' }}>
+                <div className="skeleton" style={{ flexShrink: 0, width: 100, height: 100, borderRadius: 8 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="skeleton" style={{ height: '1.125rem', width: '70%', marginBottom: '0.625rem' }} />
+                  <div className="skeleton" style={{ height: '0.875rem', width: '50%', marginBottom: '0.5rem' }} />
+                  <div className="skeleton" style={{ height: '0.75rem', width: '35%' }} />
+                </div>
               </div>
             ))
           : filtered.length === 0
@@ -242,11 +246,11 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
                 key={rink.id}
                 href={`/directory/rinks/${rink.slug || rink.id}`}
                 style={{
-                  display: 'block', textDecoration: 'none',
+                  display: 'flex', alignItems: 'stretch', gap: '0.75rem', textDecoration: 'none',
                   background: rink.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
                   border: `1px solid ${rink.claimed_by_tier === 'pro' ? 'rgba(200,16,46,0.5)' : rink.claimed_by_tier === 'verified' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
                   borderRadius: '6px',
-                  padding: '1.125rem',
+                  padding: '0.625rem',
                   position: 'relative',
                   transition: 'border-color 0.2s, transform 0.2s',
                 }}
@@ -265,24 +269,44 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
                     Verified
                   </div>
                 )}
-                <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff', marginBottom: '0.3rem', paddingRight: rink.claimed_by_tier ? 80 : 0 }}>
-                  {rink.name}
-                </h3>
-                <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: "0.75rem", lineHeight: 1 }}>📍</span>
-                  {formatLocation(rink)}
-                </p>
-                <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                  {rink.ice_size && (
-                    <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(4,30,66,0.7)', color: 'rgba(200,220,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      {rink.ice_size}
-                    </span>
+                {/* Map thumbnail — server-rendered, lazy-loaded, no Google key in src */}
+                <div style={{ flexShrink: 0, width: 100, height: 100, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {rink.static_map_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={rink.static_map_url}
+                      alt=""
+                      width={100}
+                      height={100}
+                      loading="lazy"
+                      style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em' }}>
+                      {rink.name?.charAt(0).toUpperCase() || '?'}
+                    </div>
                   )}
-                  {rink.capacity && (
-                    <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(200,16,46,0.15)', color: 'var(--red)' }}>
-                      {rink.capacity.toLocaleString()}
-                    </span>
-                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff', marginBottom: '0.3rem', paddingRight: rink.claimed_by_tier ? 80 : 0, lineHeight: 1.2 }}>
+                    {rink.name}
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.5rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: "0.75rem", lineHeight: 1 }}>📍</span>
+                    {formatLocation(rink)}
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+                    {rink.ice_size && (
+                      <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(4,30,66,0.7)', color: 'rgba(200,220,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        {rink.ice_size}
+                      </span>
+                    )}
+                    {rink.capacity && (
+                      <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(200,16,46,0.15)', color: 'var(--red)' }}>
+                        {rink.capacity.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Link>
             ))

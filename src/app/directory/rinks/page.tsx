@@ -11,6 +11,7 @@ interface Rink {
   country?: string;
   capacity?: number;
   ice_size?: string;
+  static_map_url?: string | null;
 }
 
 async function getRinkCount(country?: string | null): Promise<number> {
@@ -56,7 +57,7 @@ async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
   try {
     let q = supabase
       .from('rinks')
-      .select('id, name, slug, city, province_state, country, capacity, ice_size')
+      .select('id, name, slug, city, province_state, country, capacity, ice_size, static_map_url')
       .eq('is_active', true)
       .order('name')
       .limit(500);
