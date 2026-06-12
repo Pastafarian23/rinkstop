@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -27,6 +28,39 @@ interface CityData {
 }
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ province: string }>;
+}): Promise<Metadata> {
+  const { province: provinceSlug } = await params;
+  const provinceAbbr = CA_PROVINCES[provinceSlug] || provinceSlug.toUpperCase();
+  const provinceName = PROVINCE_NAMES[provinceAbbr.toLowerCase()] || provinceAbbr;
+  return {
+    title: `Hockey in ${provinceName}`,
+    description: `Hockey teams, rinks, and cities in ${provinceName}, Canada. Browse local hockey listings in this province.`,
+    alternates: {
+      canonical: `https://rinkstop.com/directory/canada/${provinceSlug}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title: `Hockey in ${provinceName}`,
+      description: `Hockey teams, rinks, and cities in ${provinceName}, Canada.`,
+      url: `https://rinkstop.com/directory/canada/${provinceSlug}`,
+      siteName: 'RinkStop',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `Hockey in ${provinceName}`,
+      description: `Hockey teams, rinks, and cities in ${provinceName}, Canada.`,
+    },
+  };
+}
 
 export default async function CanadaProvincePage({
   params,

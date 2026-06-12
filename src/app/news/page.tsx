@@ -1,8 +1,39 @@
 // src/app/news/page.tsx  --  Blog listing page (Server Component)
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const supabase = supabaseAdmin;
+
+export const metadata: Metadata = {
+  title: 'Hockey News',
+  description:
+    'Latest hockey news, trades, injuries, and scores from NHL and leagues worldwide.',
+  alternates: {
+    canonical: 'https://rinkstop.com/news',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Hockey News | RinkStop',
+    description:
+      'Latest hockey news, trades, injuries, and scores from NHL and leagues worldwide.',
+    url: 'https://rinkstop.com/news',
+    siteName: 'RinkStop',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hockey News | RinkStop',
+    description:
+      'Latest hockey news, trades, injuries, and scores from NHL and leagues worldwide.',
+  },
+};
+
+// Always render fresh — news content updates continuously.
+export const dynamic = 'force-dynamic';
 
 interface Post {
   id: string;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 
@@ -155,6 +155,54 @@ export default function FoundingMemberPage() {
   const { isSignedIn, isLoaded } = useUser();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Inject page metadata on mount. This is a client component, so Next.js
+  // doesn't emit <title>/<meta>/<link> from a static metadata export.
+  useEffect(() => {
+    const title = 'Founding Member Program | RinkStop';
+    const description =
+      'Be a RinkStop Founding Member — get verified, claim your listing, and unlock premium features.';
+    const canonical = 'https://rinkstop.com/founding-member';
+
+    document.title = title;
+
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+      if (!el) {
+        el = document.createElement(selector.startsWith('meta') ? 'meta' : 'link');
+        const m = selector.match(/\[(name|property)="([^"]+)"\]/);
+        if (m) el.setAttribute(m[1], m[2]);
+        if (selector.startsWith('link')) el.setAttribute('rel', 'canonical');
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+      return el;
+    };
+
+    setMeta('meta[name="description"]', 'content', description);
+    setMeta('meta[property="og:title"]', 'content', title);
+    setMeta('meta[property="og:description"]', 'content', description);
+    setMeta('meta[property="og:url"]', 'content', canonical);
+    setMeta('meta[property="og:site_name"]', 'content', 'RinkStop');
+    setMeta('meta[property="og:type"]', 'content', 'website');
+    setMeta('meta[name="twitter:card"]', 'content', 'summary_large_image');
+    setMeta('meta[name="twitter:title"]', 'content', title);
+    setMeta('meta[name="twitter:description"]', 'content', description);
+
+    let canonicalEl = document.head.querySelector('link[rel="canonical"][data-seo-canonical="founding-member"]') as HTMLLinkElement | null;
+    if (!canonicalEl) {
+      canonicalEl = document.createElement('link');
+      canonicalEl.rel = 'canonical';
+      canonicalEl.setAttribute('data-seo-canonical', 'founding-member');
+      document.head.appendChild(canonicalEl);
+    }
+    canonicalEl.href = canonical;
+
+    return () => {
+      const el = document.head.querySelector('link[rel="canonical"][data-seo-canonical="founding-member"]');
+      if (el && document.head.contains(el)) document.head.removeChild(el);
+    };
+  }, []);
 
   async function handleCheckout(tier: Tier) {
     if (!isLoaded) return;

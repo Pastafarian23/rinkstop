@@ -1,7 +1,39 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 interface PageProps {
   params: Promise<{ country: string; city: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { country, city } = await params;
+  const cityName = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ');
+  const countryName = country.charAt(0).toUpperCase() + country.slice(1).replace(/-/g, ' ');
+  return {
+    title: `Ice Rinks in ${cityName}`,
+    description: `Hockey venues, ice rinks, and skating facilities in ${cityName}, ${countryName}.`,
+    alternates: {
+      canonical: `https://rinkstop.com/ice-rinks/${country}/${city}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+    openGraph: {
+      title: `Ice Rinks in ${cityName}`,
+      description: `Hockey venues, ice rinks, and skating facilities in ${cityName}, ${countryName}.`,
+      url: `https://rinkstop.com/ice-rinks/${country}/${city}`,
+      siteName: 'RinkStop',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `Ice Rinks in ${cityName}`,
+      description: `Hockey venues, ice rinks, and skating facilities in ${cityName}, ${countryName}.`,
+    },
+  };
 }
 
 export default async function CityRinksPage({ params }: PageProps) {
