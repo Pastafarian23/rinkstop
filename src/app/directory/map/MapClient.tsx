@@ -160,15 +160,19 @@ export default function MapClient({ initialRinks }: Props) {
   }, []);
 
   // Initialize the Google Map once the SDK script is loaded.
-  // If anything throws (e.g., InvalidKey warning during init), we fall
-  // back to the no-key iframe version instead of showing a broken page.
-  useEffect(() => {
-    if (!scriptLoaded || useFallback) return;
+  // Uses the modern `importLibrary` API to wait for the actual Map class
+  // to be loaded (the bootstrap script only sets up the namespace).
+  const initMap = useCallback(async () => {
+    if (useFallback) return;
     if (typeof window === 'undefined' || !window.google?.maps) return;
     if (!mapContainerRef.current || mapRef.current) return;
 
     try {
-      mapRef.current = new window.google.maps.Map(mapContainerRef.current, {
+      // Wait for the maps library to be fully loaded.
+      const { Map } = await window.google.maps.importLibrary('maps');
+      if (!mapContainerRef.current || mapRef.current) return;
+
+      mapRef.current = new Map(mapContainerRef.current, {
         center: { lat: DEFAULT_VIEW.lat, lng: DEFAULT_VIEW.lon },
         zoom: DEFAULT_VIEW.zoom,
         mapTypeControl: false,
@@ -188,15 +192,25 @@ export default function MapClient({ initialRinks }: Props) {
       console.error('Google Maps init failed:', err);
       setUseFallback(true);
     }
-  }, [scriptLoaded, useFallback]);
+  }, [useFallback]);
+
+  useEffect(() => {
+    if (scriptLoaded && !useFallback) {
+      initMap();
+    }
+  }, [scriptLoaded, useFallback, initMap]);
 
   // Render markers when rinks, country filter, or map readiness change.
-  const renderMarkers = useCallback(() => {
+  const renderMarkers = useCallback(async () => {
     if (useFallback) return;
     if (!mapRef.current || typeof window === 'undefined' || !window.google?.maps) return;
 
     try {
-      const bounds = new window.google.maps.LatLngBounds();
+      // Wait for the marker + places libraries to be ready.
+      const { Marker, InfoWindow, LatLngBounds, SymbolPath } = await window.google.maps.importLibrary('maps');
+      if (!mapRef.current) return;
+
+      const bounds = new LatLngBounds();
 
       // Clear previous markers + info windows
       markersRef.current.forEach((m) => m.setMap(null));
@@ -212,12 +226,12 @@ export default function MapClient({ initialRinks }: Props) {
         if (typeof rink.latitude !== 'number' || typeof rink.longitude !== 'number') return;
         if (Number.isNaN(rink.latitude) || Number.isNaN(rink.longitude)) return;
 
-        const marker = new window.google.maps.Marker({
+        const marker = new Marker({
           position: { lat: rink.latitude, lng: rink.longitude },
           map: mapRef.current,
           title: rink.name,
           icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
+            path: SymbolPath.CIRCLE,
             fillColor: '#C8102E',
             fillOpacity: 0.95,
             strokeColor: '#ffffff',
@@ -226,8 +240,7 @@ export default function MapClient({ initialRinks }: Props) {
           },
         });
 
-        // Build InfoWindow content using DOM (no innerHTML template strings,
-        // which can cause hydration issues with embedded values).
+        // Build InfoWindow content using DOM (no innerHTML template strings).
         const iwContent = document.createElement('div');
         iwContent.style.cssText = 'background:#041E42;color:#fff;padding:12px 16px;border-radius:8px;min-width:180px;font-family:Inter,sans-serif;';
 
@@ -247,7 +260,7 @@ export default function MapClient({ initialRinks }: Props) {
         link.textContent = 'View Rink →';
         iwContent.appendChild(link);
 
-        const infoWindow = new window.google.maps.InfoWindow({ content: iwContent });
+        const infoWindow = new InfoWindow({ content: iwContent });
         marker.addListener('click', () => {
           infoWindowsRef.current.forEach((iw) => iw.close());
           infoWindow.open(mapRef.current, marker);
@@ -269,6 +282,7 @@ export default function MapClient({ initialRinks }: Props) {
     }
   }, [rinks, selectedCountry, useFallback]);
 
+  // Re-render markers when the country filter changes.
   useEffect(() => {
     if (scriptLoaded && !useFallback && rinks.length > 0 && mapRef.current) {
       renderMarkers();
