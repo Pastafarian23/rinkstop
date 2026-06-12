@@ -143,9 +143,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   />
                 </Link>
 
-                {/* Desktop right — Sign In/Up or Clerk UserButton on the left, Menu button on the far right */}
+                {/* Desktop right — Sign In/Up or Clerk UserButton on the left, Pricing button, then Menu on the far right */}
                 <div className="nav-right">
                   <NavAuth />
+                  <Link
+                    href="/pricing"
+                    className="nav-pricing-button"
+                    style={{
+                      color: '#FFB81C',
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      textDecoration: 'none',
+                      padding: '0.5rem 0.875rem',
+                      borderRadius: 4,
+                      border: '1px solid #FFB81C',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Pricing
+                  </Link>
                   <NavLinks />
                 </div>
 
