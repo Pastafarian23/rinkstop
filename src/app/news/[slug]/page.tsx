@@ -2,6 +2,17 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
+import { supabaseAdmin } from '@/lib/supabase';
+
+// Defensive base URL — same pattern as the other server pages in this repo.
+// In Vercel production NEXT_PUBLIC_SITE_URL is the real https://rinkstop.com,
+// but during local builds it can be http://localhost:3456 or empty. In every
+// case we want a stable, absolute https URL in the structured data.
+const _RAW_SITE = process.env.NEXT_PUBLIC_SITE_URL || '';
+const BASE_URL =
+  _RAW_SITE.includes('localhost') || _RAW_SITE.includes('127.0.0.1') || !_RAW_SITE
+    ? 'https://rinkstop.com'
+    : _RAW_SITE;
 
 interface Post {
   id: string;
@@ -136,13 +147,76 @@ async function getPost(slug: string): Promise<Post | null> {
   }
 }
 
+interface RelatedPost {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle?: string;
+  category?: string;
+  tags?: string[];
+  published_at?: string;
+  og_image_url?: string;
+  author_name?: string;
+  reading_time_minutes?: number;
+}
+
+/**
+ * Server-side: fetch up to 6 related published posts.
+ *   - same category OR any matching tag
+ *   - exclude the current post
+ *   - order by published_at desc
+ *   - status = 'published' (only count it as related if it's actually live)
+ *
+ * If 3+ rows come back, the page renders a "Related Hockey News" section.
+ * If fewer than 3, we don't render the section at all.
+ */
+async function getRelatedPosts(currentPost: Post, limit: number = 6): Promise<RelatedPost[]> {
+  try {
+    const cat = currentPost.category || null;
+    const tagList: string[] = Array.isArray(currentPost.tags) ? (currentPost.tags as string[]) : [];
+
+    // Build a single query that ORs the category and any tag.
+    // We then filter out the current slug in JS to avoid string-equality gotchas.
+    const orParts: string[] = [];
+    if (cat) orParts.push(`category.eq.${cat}`);
+    for (const t of tagList) {
+      // tags is a text[] column; Supabase's `cs` (contains) operator matches any of the current tags.
+      orParts.push(`tags.cs.{"${t.replace(/"/g, '\\"')}"}`);
+    }
+    const orExpr = orParts.join(',');
+
+    const { data, error } = await supabaseAdmin
+      .from('posts')
+      .select('id, slug, title, subtitle, category, tags, published_at, og_image_url, author_name, reading_time_minutes')
+      .eq('status', 'published')
+      .not('published_at', 'is', null)
+      .or(orExpr)
+      .order('published_at', { ascending: false })
+      .limit(limit + 1); // fetch one extra so we can drop the current post
+
+    if (error || !data) return [];
+
+    const filtered = (data as RelatedPost[])
+      .filter(p => p.slug !== currentPost.slug)
+      .slice(0, limit);
+    return filtered;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error(`[getRelatedPosts] ${currentPost.slug} threw:`, e);
+    return [];
+  }
+}
+
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return notFound();
 
-  const seoTitle = post.seo_title || post.title;
-  const blogTitle = `${seoTitle} | RinkStop Blog`;
+  // Root layout template already appends ' | RinkStop'. The seo_title in the DB
+  // also ends in ' | RinkStop' (legacy pipeline), so strip it to avoid the
+  // double 'X | RinkStop | RinkStop'. Fall back to plain post.title.
+  const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
+  const blogTitle = stripSuffix(post.seo_title || post.title);
   const seoDesc = post.seo_description || post.subtitle || stripHtml(post.content);
   const ogImage = post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`;
 
@@ -176,35 +250,96 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post) return notFound();
 
   const htmlContent = contentToHtml(post.content);
-  const authorName = 'Arnel Larracas';
-  const authorRole = 'Founder';
+  // Prefer the post's own author fields when set (the highlight pipeline sets
+  // author_name = 'RinkStop / Highlight Desk'); fall back to the founder.
+  const authorName = post.author_name || 'Arnel Larracas';
+  const authorRole = post.author_role || 'Founder';
   const date = formatDate(post.published_at || (post as any).created_at);
   const readTime = post.reading_time_minutes || 5;
   const tags = post.tags || [];
   const wordCount = post.content.split(/\s+/).length;
 
+  // Fetch related posts server-side. If 3+ exist, render a cross-link block.
+  const relatedPosts = await getRelatedPosts(post, 6);
+
+  // Per requirements: NewsArticle for the "highlights" category, Article for
+  // everything else (blog, guides, NHL, etc.).
+  const articleType: 'NewsArticle' | 'Article' =
+    (post.category || '').toLowerCase() === 'highlights' ? 'NewsArticle' : 'Article';
+
+  const headline = post.title;
+  const description =
+    post.seo_description || post.subtitle || stripHtml(post.content);
+  const image = post.og_image_url || null;
+  const canonicalUrl = `${BASE_URL}/news/${post.slug}`;
+  const logoUrl = `${BASE_URL}/rinkstoplogo.png`;
+  const tagsCsv = tags.join(', ');
+
+  const articleJsonLd: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': articleType,
+    headline,
+    description,
+    image,
+    datePublished: post.published_at,
+    dateModified: post.updated_at || post.published_at,
+    author: {
+      '@type': 'Person',
+      name: authorName,
+      jobTitle: authorRole,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'RinkStop',
+      logo: {
+        '@type': 'ImageObject',
+        url: logoUrl,
+      },
+    },
+    mainEntityOfPage: canonicalUrl,
+    articleSection: post.category || undefined,
+    keywords: tagsCsv || undefined,
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: `${BASE_URL}/`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'News',
+        item: `${BASE_URL}/news`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: post.title,
+        item: canonicalUrl,
+      },
+    ],
+  };
+
   return (
     <>
-      {/* JSON-LD structured data */}
+      {/* JSON-LD structured data — Article / NewsArticle */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'NewsArticle',
-            headline: post.title,
-            description: post.seo_description || post.subtitle || stripHtml(post.content),
-            image: post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`,
-            datePublished: post.published_at,
-            dateModified: post.updated_at || post.published_at,
-            author: { '@type': 'Person', name: 'Arnel Larracas' },
-            publisher: {
-              '@type': 'Organization',
-              name: 'RinkStop',
-              logo: { '@type': 'ImageObject', url: 'https://rinkstop.com/rinkstoplogo.png' },
-            },
-            mainEntityOfPage: `https://rinkstop.com/news/${post.slug}`,
-          }),
+          __html: JSON.stringify(articleJsonLd).replace(/</g, '\\u003c'),
+        }}
+      />
+      {/* JSON-LD — BreadcrumbList (Home > News > Article) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd).replace(/</g, '\\u003c'),
         }}
       />
 
@@ -395,6 +530,155 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </div>
       </article>
+
+      {/* Internal cross-linking block — Related Hockey News */}
+      {/* Server-rendered, no client JS. Only renders when 3+ related posts exist. */}
+      {relatedPosts.length >= 3 && (
+        <section
+          aria-label="Related hockey news"
+          style={{
+            background: '#0D1117',
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            padding: '3rem 1rem',
+          }}
+        >
+          <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginBottom: '1.5rem',
+            }}>
+              <h2 style={{
+                fontFamily: '"Bebas Neue", Impact, sans-serif',
+                fontSize: '1.75rem',
+                color: '#fff',
+                letterSpacing: '0.04em',
+                margin: 0,
+              }}>
+                Related Hockey News
+              </h2>
+              <Link
+                href="/news"
+                style={{
+                  color: '#FFB81C',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  textDecoration: 'none',
+                }}
+              >
+                See all news →
+              </Link>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: '1.25rem',
+            }}>
+              {relatedPosts.slice(0, 6).map((rp) => (
+                <Link
+                  key={rp.id}
+                  href={`/news/${rp.slug}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: '#041E42',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    textDecoration: 'none',
+                    transition: 'transform 0.18s, border-color 0.18s, box-shadow 0.18s',
+                  }}
+                >
+                  {/* 16:9 image — falls back to the site OG generator when the post has no og_image_url */}
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    aspectRatio: '16 / 9',
+                    background: '#0a1a36',
+                    backgroundImage: `url(${rp.og_image_url || `${BASE_URL}/og?title=${encodeURIComponent(rp.title)}`})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  }}>
+                    {rp.category && (
+                      <span style={{
+                        position: 'absolute',
+                        top: '0.5rem',
+                        left: '0.5rem',
+                        background: '#C8102E',
+                        color: '#fff',
+                        fontSize: '0.625rem',
+                        fontWeight: 800,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '2px',
+                      }}>
+                        {rp.category}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ padding: '0.875rem 1rem 1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{
+                      fontWeight: 700,
+                      fontSize: '0.9375rem',
+                      color: '#fff',
+                      lineHeight: 1.3,
+                      margin: '0 0 0.4rem',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical' as const,
+                      overflow: 'hidden',
+                    }}>
+                      {rp.title}
+                    </h3>
+                    {rp.subtitle && (
+                      <p style={{
+                        color: 'rgba(255,255,255,0.5)',
+                        fontSize: '0.8125rem',
+                        lineHeight: 1.4,
+                        margin: '0 0 0.6rem',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                        overflow: 'hidden',
+                        flex: 1,
+                      }}>
+                        {rp.subtitle}
+                      </p>
+                    )}
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      fontSize: '0.7rem',
+                      color: 'rgba(255,255,255,0.4)',
+                      marginTop: 'auto',
+                    }}>
+                      <span style={{ color: '#FFB81C', fontWeight: 600 }}>
+                        {rp.author_name || 'RinkStop'}
+                      </span>
+                      {rp.published_at && (
+                        <>
+                          <span>·</span>
+                          <span>
+                            {new Date(rp.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }
