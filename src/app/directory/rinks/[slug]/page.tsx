@@ -573,7 +573,7 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
                 height="240"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                src={`https://www.google.com/maps/embed/v1/view?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}&center=${rink.latitude},${rink.longitude}&zoom=15&maptype=roadmap`}
+                src={`https://maps.google.com/maps?q=${rink.latitude},${rink.longitude}&hl=en&z=15&output=embed`}
                 style={{ border: 0, borderRadius: '8px' }}
                 allowFullScreen
               />
