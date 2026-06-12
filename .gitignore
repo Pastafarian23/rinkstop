@@ -42,3 +42,5 @@ tsconfig.tsbuildinfo
 .env.prod.tmp
 .env.development
 .env.production
+.env.bak
+.env.example
