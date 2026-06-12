@@ -58,12 +58,12 @@ const TIERS: Tier[] = [
     features: [
       'Unlimited follows and saves',
       'Founding Member badge on your profile',
-      'Weekly digest — your favorite teams\u2019 games, scores, and new signings',
-      'Claim a single listing (rink, team, or league) for free \u2014 update hours, contacts, socials',
+      'Weekly digest — your favorite teams’ games, scores, and new signings',
+      'Claim a single listing (rink, team, or league) for free — update hours, contacts, socials',
       'Priority email support',
     ],
     footnote:
-      'Founding Member badge is exclusive to the first 500 supporters. After that, the tier stays, the badge doesn\u2019t.',
+      'Founding Member badge is exclusive to the first 500 supporters. After that, the tier stays, the badge doesn’t.',
   },
   {
     id: 'verified',
@@ -81,7 +81,7 @@ const TIERS: Tier[] = [
       'Everything in Supporter',
       'Verified checkmark on your profile and every listing you claim',
       'Unlimited claimed listings',
-      'Public profile page you can share (\u200Brinkstop.com/u/you)',
+      'Public profile page you can share (​rinkstop.com/u/you)',
       'Send and receive DMs with other Verified+ users',
       'Above search results in directory listings',
     ],
@@ -103,9 +103,9 @@ const TIERS: Tier[] = [
     features: [
       'Everything in Verified',
       'Featured Listing rotation in your city (top of directory, every page load)',
-      'Lead capture form on your profile \u2014 visitors can contact you without signing up',
-      'Bulk claim \u2014 claim every team, rink, or league in your organization at once',
-      'Analytics dashboard \u2014 who\u2019s viewing your profile, your listings, your team',
+      'Lead capture form on your profile — visitors can contact you without signing up',
+      'Bulk claim — claim every team, rink, or league in your organization at once',
+      'Analytics dashboard — who’s viewing your profile, your listings, your team',
       'Custom branding on your public profile',
     ],
     footnote:
@@ -119,8 +119,8 @@ const FAQ = [
     a: 'Yes. Supporter, Verified, and Pro are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
   },
   {
-    q: 'What\u2019s a Founding Member badge?',
-    a: 'The first 500 paying members (Supporter or higher) get a Founding Member badge on their profile. It\u2019s a one-time, no-replacement scarcity lever \u2014 once they\u2019re gone, the tier stays but the badge doesn\u2019t come back.',
+    q: 'What’s a Founding Member badge?',
+    a: 'The first 500 paying members (Supporter or higher) get a Founding Member badge on their profile. It’s a one-time, no-replacement scarcity lever — once they’re gone, the tier stays but the badge doesn’t come back.',
   },
   {
     q: 'Can I claim a listing without paying?',
@@ -131,16 +131,16 @@ const FAQ = [
     a: 'Pro, if you want leads. Verified, if you just want to be the verified owner of your rink. Pro pays for itself in one signup.',
   },
   {
-    q: 'I\u2019m a parent of a youth player. Can I claim my kid?',
-    a: 'Yes. The parent signs up (Verified+ to DM) and uses \u201cI\u2019m this player\u2019s parent\u201d on the kid\u2019s profile to claim it. The kid\u2019s profile shows \u201cManaged by [Your Name]\u201d. All DMs go through your account \u2014 one Clerk account, kid as a managed sub-profile.',
+    q: 'I’m a parent of a youth player. Can I claim my kid?',
+    a: 'Yes. The parent signs up (Verified+ to DM) and uses “I’m this player’s parent” on the kid’s profile to claim it. The kid’s profile shows “Managed by [Your Name]”. All DMs go through your account — one Clerk account, kid as a managed sub-profile.',
   },
   {
-    q: 'Can I send DMs as my kid\u2019s parent?',
-    a: 'Yes. The parent\u2019s account sends the DM, the kid\u2019s profile is the context. Coaches and scouts see the kid\u2019s name and stats in the thread, and the parent\u2019s name in the from-line.',
+    q: 'Can I send DMs as my kid’s parent?',
+    a: 'Yes. The parent’s account sends the DM, the kid’s profile is the context. Coaches and scouts see the kid’s name and stats in the thread, and the parent’s name in the from-line.',
   },
   {
     q: 'What if I want to change or cancel my membership?',
-    a: 'Email support@rinkstop.com. We respond within 24 hours and can walk you through your options. Your benefits stay active through the end of your paid period. We don\u2019t bury a cancel button in your account \u2014 we just ask you to talk to us first so we can understand what we could have done better.',
+    a: 'Email support@rinkstop.com. We respond within 24 hours and can walk you through your options. Your benefits stay active through the end of your paid period. We don’t bury a cancel button in your account — we just ask you to talk to us first so we can understand what we could have done better.',
   },
   {
     q: 'Can I upgrade mid-year?',
@@ -148,7 +148,7 @@ const FAQ = [
   },
   {
     q: 'Why no ad-free tier?',
-    a: 'Ads fund the free tier and the low prices on the paid tiers. We don\u2019t pretend otherwise.',
+    a: 'Ads fund the free tier and the low prices on the paid tiers. We don’t pretend otherwise.',
   },
 ];
 
@@ -190,7 +190,7 @@ export default function FoundingMemberContent() {
         setError('Checkout did not return a URL');
       }
     } catch (e) {
-      setError('Network error \u2014 please try again');
+      setError('Network error — please try again');
     } finally {
       setBusy(null);
     }
@@ -212,10 +212,10 @@ export default function FoundingMemberContent() {
           textTransform: 'uppercase',
           marginBottom: '1.5rem',
         }}>
-          Founding Member pricing \u00b7 limited to 500
+          RinkStop pricing · Founding Member badge for the first 500
         </div>
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, lineHeight: 1.1, margin: '0 0 1.25rem' }}>
-          Hockey\u2019s directory. <br />
+          Hockey’s directory. <br />
           <span style={{ color: '#C8102E' }}>Actually useful</span> for everyone in it.
         </h1>
         <p style={{ fontSize: '1.125rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
@@ -279,7 +279,7 @@ export default function FoundingMemberContent() {
                     paddingLeft: '1.25rem',
                     position: 'relative',
                   }}>
-                    <span style={{ position: 'absolute', left: 0, color: tier.color }}>\u2713</span>
+                    <span style={{ position: 'absolute', left: 0, color: tier.color }}>✓</span>
                     {f}
                   </li>
                 ))}
@@ -302,7 +302,7 @@ export default function FoundingMemberContent() {
                   transition: 'transform 0.1s, opacity 0.15s',
                 }}
               >
-                {busy === tier.id ? 'Loading\u2026' : tier.cta}
+                {busy === tier.id ? 'Loading…' : tier.cta}
               </button>
             </div>
           ))}
@@ -339,11 +339,11 @@ export default function FoundingMemberContent() {
             <tbody>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Browse directory</td>
-                {TIERS.map((t) => <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>\u2713</td>)}
+                {TIERS.map((t) => <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>✓</td>)}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Read reviews</td>
-                {TIERS.map((t) => <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>\u2713</td>)}
+                {TIERS.map((t) => <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>✓</td>)}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Saves</td>
@@ -357,7 +357,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Founding Member badge</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'free' ? 'rgba(255,255,255,0.3)' : '#FFB81C' }}>
-                    {t.id === 'free' ? '\u2014' : '\u2713'}
+                    {t.id === 'free' ? '—' : '✓'}
                   </td>
                 ))}
               </tr>
@@ -365,7 +365,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Claim listings</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>
-                    {t.id === 'free' ? '\u2014' : t.id === 'supporter' ? '1' : 'Unlimited'}
+                    {t.id === 'free' ? '—' : t.id === 'supporter' ? '1' : 'Unlimited'}
                   </td>
                 ))}
               </tr>
@@ -373,7 +373,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Verified checkmark</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'verified' || t.id === 'pro' ? '\u2713' : '\u2014'}
+                    {t.id === 'verified' || t.id === 'pro' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
@@ -381,7 +381,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Send and receive DMs</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'verified' || t.id === 'pro' ? '\u2713' : '\u2014'}
+                    {t.id === 'verified' || t.id === 'pro' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
@@ -389,7 +389,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Featured Listing rotation</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' ? '\u2713' : '\u2014'}
+                    {t.id === 'pro' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
@@ -397,7 +397,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Lead capture form</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' ? '\u2713' : '\u2014'}
+                    {t.id === 'pro' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
@@ -405,7 +405,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Analytics dashboard</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' ? '\u2713' : '\u2014'}
+                    {t.id === 'pro' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
@@ -420,7 +420,7 @@ export default function FoundingMemberContent() {
           {[
             { title: 'One price, all features', body: 'Your tier gets you every feature in that tier. No add-ons, no boost packs, no "verified on top of founding" upsells.' },
             { title: 'Your listing, your data', body: 'When you claim a listing, you can edit anything we show. When you leave, your edits stay unless you want them gone.' },
-            { title: 'No daily upsell', body: 'You won\u2019t get a "save 20% if you upgrade today" banner on every page. One price, one ask.' },
+            { title: 'No daily upsell', body: 'You won’t get a "save 20% if you upgrade today" banner on every page. One price, one ask.' },
             { title: 'No ads dressed up as content', body: 'Sponsored rinks in search results are labeled "Sponsored". Always.' },
           ].map((b) => (
             <div key={b.title} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}>
@@ -453,7 +453,7 @@ export default function FoundingMemberContent() {
 
       <section style={{ padding: '2rem 1.5rem 4rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-          Have a question we didn\u2019t answer? Email <a href="mailto:support@rinkstop.com" style={{ color: '#14B8A6', textDecoration: 'none' }}>support@rinkstop.com</a>.
+          Have a question we didn’t answer? Email <a href="mailto:support@rinkstop.com" style={{ color: '#14B8A6', textDecoration: 'none' }}>support@rinkstop.com</a>.
         </p>
         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', margin: '0.5rem 0 0' }}>
           Already a member? <Link href="/dashboard/subscription" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Manage your subscription</Link>.
