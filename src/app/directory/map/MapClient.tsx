@@ -251,29 +251,30 @@ export default function MapClient({ initialRinks }: Props) {
           </div>
         )}
 
-        {!loading && !scriptError && (
-          <>
-            <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
-            <div style={{
-              position: 'absolute', bottom: 16, left: 16, zIndex: 1000,
-            }}>
-              <Link
-                href="/directory/rinks"
-                style={{
-                  background: 'rgba(4,30,66,0.9)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  color: '#fff', textDecoration: 'none',
-                  padding: '8px 16px', borderRadius: 8,
-                  fontSize: 13, fontWeight: 500,
-                  backdropFilter: 'blur(8px)',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}
-              >
-                Back to Rinks
-              </Link>
-            </div>
-          </>
-        )}
+        {/* Map div is ALWAYS rendered (even during loading) so the ref exists
+            when the Google Maps SDK finishes loading. The loading overlay
+            sits on top of it via z-index. */}
+        <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+        <div style={{
+          position: 'absolute', bottom: 16, left: 16, zIndex: 1000,
+          pointerEvents: 'none',
+        }}>
+          <Link
+            href="/directory/rinks"
+            style={{
+              background: 'rgba(4,30,66,0.9)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff', textDecoration: 'none',
+              padding: '8px 16px', borderRadius: 8,
+              fontSize: 13, fontWeight: 500,
+              backdropFilter: 'blur(8px)',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              pointerEvents: 'auto',
+            }}
+          >
+            Back to Rinks
+          </Link>
+        </div>
       </div>
 
       <style>{`
