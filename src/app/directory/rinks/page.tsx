@@ -11,35 +11,39 @@ interface Rink {
   country?: string;
   capacity?: number;
   ice_size?: string;
-  claimed_by_tier?: string | null;
-  claimed_by_user_id?: string | null;
 }
 
-async function getRinkCount(): Promise<number> {
+async function getRinkCount(country?: string | null): Promise<number> {
   try {
-    const { count } = await supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    let q = supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true);
+    if (country) q = q.eq('country', country);
+    const { count } = await q;
     return count || 0;
   } catch { return 0; }
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  const n = await getRinkCount();
-  const desc = `Browse ${n.toLocaleString()} ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.`;
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string }> }): Promise<Metadata> {
+  const { country } = await searchParams;
+  const n = await getRinkCount(country);
+  const desc = country
+    ? `Browse ${n.toLocaleString()} ice rinks and arenas in ${country}. Find public skating, hockey, and curling facilities.`
+    : `Browse ${n.toLocaleString()} ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.`;
+  const title = country ? `Ice Rinks in ${country}` : 'Ice Rinks Directory';
   return {
-    title: 'Ice Rinks Directory',
+    title,
     description: desc,
-    alternates: { canonical: 'https://rinkstop.com/directory/rinks' },
+    alternates: { canonical: country ? `https://rinkstop.com/directory/rinks?country=${encodeURIComponent(country)}` : 'https://rinkstop.com/directory/rinks' },
     robots: { index: true, follow: true },
     openGraph: {
-      title: 'Ice Rinks Directory',
+      title,
       description: desc,
-      url: 'https://rinkstop.com/directory/rinks',
+      url: country ? `https://rinkstop.com/directory/rinks?country=${encodeURIComponent(country)}` : 'https://rinkstop.com/directory/rinks',
       siteName: 'RinkStop',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Ice Rinks Directory',
+      title,
       description: desc,
     },
   };
@@ -48,21 +52,29 @@ export async function generateMetadata(): Promise<Metadata> {
 // Always render fresh — directory data changes too often to cache statically.
 export const dynamic = 'force-dynamic';
 
-async function fetchInitialRinks(): Promise<Rink[]> {
+async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
   try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
-    const res = await fetch(`${base}/api/rinks?sort=tier`, {
-      cache: 'no-store',
-    });
-    const json = await res.json();
-    return Array.isArray(json) ? json : (json?.data || []);
+    let q = supabase
+      .from('rinks')
+      .select('id, name, slug, city, province_state, country, capacity, ice_size')
+      .eq('is_active', true)
+      .order('name')
+      .limit(500);
+    if (country) q = q.eq('country', country);
+    const { data, error } = await q;
+    if (error) {
+      console.error('Rinks initial fetch failed:', error);
+      return [];
+    }
+    return (data || []) as Rink[];
   } catch (err) {
     console.error('Rinks initial fetch failed:', err);
     return [];
   }
 }
 
-export default async function RinksPage() {
-  const initialRinks = await fetchInitialRinks();
-  return <RinksIndexClient initialRinks={initialRinks} />;
+export default async function RinksPage({ searchParams }: { searchParams: Promise<{ country?: string }> }) {
+  const { country } = await searchParams;
+  const initialRinks = await fetchInitialRinks(country);
+  return <RinksIndexClient initialRinks={initialRinks} country={country ?? null} />;
 }
