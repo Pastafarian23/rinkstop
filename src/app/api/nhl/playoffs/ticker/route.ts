@@ -145,9 +145,8 @@ export async function GET() {
       });
     }
 
-    // Duplicate for seamless loop
-    const allItems = [...items, ...items];
-    return NextResponse.json(allItems, {
+    // Return once — the client component duplicates the array for the marquee loop.
+    return NextResponse.json(items, {
       headers: { 'Cache-Control': 'public, max-age=5, s-maxage=10, stale-while-revalidate=30' }
     });
   } catch (e: any) {
