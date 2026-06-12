@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Hockey Map | RinkStop',
+  title: 'Hockey Map',
   description: 'Explore a live map of hockey teams, rinks, and arenas worldwide. Find hockey near you.',
   openGraph: {
     title: 'Hockey Map | RinkStop — The World\'s Hockey Directory',

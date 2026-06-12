@@ -8,7 +8,7 @@ import { ExternalLinkIcon } from '@/components/icons';
 import { getBrandList } from '@/lib/brand-page';
 
 export const metadata: Metadata = {
-  title: 'Hockey Equipment Brands | RinkStop',
+  title: 'Hockey Equipment Brands',
   description:
     'Browse 32 hockey equipment and gear brands — sticks, skates, protective gear, and apparel.',
   alternates: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Equipment Brands | RinkStop',
+    title: 'Hockey Equipment Brands',
     description:
       'Browse 32 hockey equipment and gear brands — sticks, skates, protective gear, and apparel.',
     url: 'https://rinkstop.com/directory/brands',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Equipment Brands | RinkStop',
+    title: 'Hockey Equipment Brands',
     description:
       'Browse 32 hockey equipment and gear brands — sticks, skates, protective gear, and apparel.',
   },

@@ -4,7 +4,7 @@ import TeamLogo from '@/components/TeamLogo';
 import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
-  title: 'NHL Western Conference | RinkStop',
+  title: 'NHL Western Conference',
   description: 'All 16 NHL Western Conference teams  --  Central and Pacific divisions.',
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Adult Hockey Leagues | RinkStop',
+  title: 'Adult Hockey Leagues',
   description: 'Find adult hockey leagues near you  --  from recreational beer leagues to competitive divisions. Playing hockey as an adult has never been more popular.',
 };
 

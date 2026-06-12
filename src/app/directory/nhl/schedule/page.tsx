@@ -5,7 +5,7 @@ import { NhlMatch, buildGameSlug, slugify } from '@/lib/nhl-data';
 import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
-  title: 'NHL Schedule | Games by Date | RinkStop',
+  title: 'NHL Schedule | Games by Date',
   description: 'NHL schedule and scores. Every game by date, with live scores, final scores, and box score links.',
 };
 

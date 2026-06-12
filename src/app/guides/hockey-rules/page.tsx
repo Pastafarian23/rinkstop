@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Rules Explained | RinkStop',
+  title: 'Hockey Rules Explained',
   description: 'Every NHL rule explained in plain language. From icing to offsides, power plays to penalty shots  --  what the refs actually call and why it matters.',
-  openGraph: { title: 'Hockey Rules Explained | RinkStop', description: 'Every NHL rule explained in plain language. From icing to offsides, power plays to penalty shots.', type: 'article' },
+  openGraph: { title: 'Hockey Rules Explained', description: 'Every NHL rule explained in plain language. From icing to offsides, power plays to penalty shots.', type: 'article' },
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-rules' },
 };
 

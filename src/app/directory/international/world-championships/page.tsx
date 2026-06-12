@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'IIHF World Championships | RinkStop',
+  title: 'IIHF World Championships',
   description: 'Coverage of the IIHF Men\'s World Championship, Women\'s World Championship, and age-group tournaments. Annual international hockey competition.',
 };
 

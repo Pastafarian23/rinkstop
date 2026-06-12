@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'USHL  --  United States Hockey League | RinkStop',
+  title: 'USHL  --  United States Hockey League',
   description: 'Coverage of the USHL (United States Hockey League)  --  top junior hockey in the US with 17 teams. Premier development path for NCAA and professional hockey.',
 };
 

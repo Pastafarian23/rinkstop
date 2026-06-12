@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Breaking In New Hockey Gloves | RinkStop',
+  title: 'Breaking In New Hockey Gloves',
   description: 'The best methods to break in new hockey gloves without damaging them. Soften the leather, remove the stiff palm, and get game-ready faster.',
-  openGraph: { title: 'Breaking In New Hockey Gloves | RinkStop', description: 'The best methods to break in new hockey gloves without damaging them.', type: 'article' },
+  openGraph: { title: 'Breaking In New Hockey Gloves', description: 'The best methods to break in new hockey gloves without damaging them.', type: 'article' },
   alternates: { canonical: 'https://rinkstop.com/guides/breaking-in-hockey-gloves' },
 };
 

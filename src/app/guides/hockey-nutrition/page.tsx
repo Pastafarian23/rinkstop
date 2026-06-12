@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Eating for Hockey Performance | RinkStop',
+  title: 'Eating for Hockey Performance',
   description: 'Nutrition strategies for hockey players: pre-game meals, hydration, and recovery eating. How to fuel for explosive shifts and fast recovery.',
-  openGraph: { title: 'Eating for Hockey Performance | RinkStop', description: 'Nutrition strategies for hockey players: pre-game meals, hydration, and recovery eating.', type: 'article' },
+  openGraph: { title: 'Eating for Hockey Performance', description: 'Nutrition strategies for hockey players: pre-game meals, hydration, and recovery eating.', type: 'article' },
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-nutrition' },
 };
 

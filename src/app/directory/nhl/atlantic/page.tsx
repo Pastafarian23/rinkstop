@@ -5,7 +5,7 @@ import { NhlStanding } from '@/lib/nhl-data';
 import DivisionView from '@/components/NhlDivisionView';
 
 export const metadata: Metadata = {
-  title: 'NHL Atlantic Division | Teams, Records, Standings | RinkStop',
+  title: 'NHL Atlantic Division | Teams, Records, Standings',
   description: 'NHL Atlantic Division — Boston, Buffalo, Detroit, Florida, Montreal, Ottawa, Tampa Bay, Toronto. Current standings and team pages.',
 };
 

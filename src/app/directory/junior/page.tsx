@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Junior Hockey | RinkStop',
+  title: 'Junior Hockey',
   description: 'Coverage of junior hockey leagues worldwide  --  OHL, WHL, QMJHL, USHL, and more. The top junior hockey competitions and NHL draft pipelines.',
 };
 

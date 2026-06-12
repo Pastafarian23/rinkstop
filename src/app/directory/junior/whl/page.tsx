@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'WHL  --  Western Hockey League | RinkStop',
+  title: 'WHL  --  Western Hockey League',
   description: 'Coverage of the WHL (Western Hockey League)  --  22 teams across Western Canada and the US Pacific Northwest. Major CHL league and NHL draft pipeline.',
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Travel | RinkStop',
+  title: 'Hockey Travel',
   description: 'Plan your hockey road trip. Arena guides, hotel recommendations near major rinks, and tips for traveling to watch live games.',
 };
 

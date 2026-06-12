@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   // slug format: YYYY-MM-DD-home-slug-vs-away-slug
   const parsed = parseGameSlug(slug);
-  if (!parsed) return { title: 'Game Not Found | RinkStop' };
+  if (!parsed) return { title: 'Game Not Found' };
   return {
     title: `${parsed.awayName} at ${parsed.homeName} | ${parsed.date} | RinkStop`,
     description: `${parsed.awayName} vs ${parsed.homeName} on ${parsed.date}. Box score, final score, and game details on RinkStop.`,

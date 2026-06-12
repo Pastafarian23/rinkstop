@@ -15,7 +15,7 @@ interface Team {
 }
 
 export const metadata: Metadata = {
-  title: 'Hockey Teams Directory | RinkStop',
+  title: 'Hockey Teams Directory',
   description:
     'Browse 2,116 hockey teams from NHL, AHL, KHL, NCAA, junior, and youth leagues worldwide.',
   alternates: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Teams Directory | RinkStop',
+    title: 'Hockey Teams Directory',
     description:
       'Browse 2,116 hockey teams from NHL, AHL, KHL, NCAA, junior, and youth leagues worldwide.',
     url: 'https://rinkstop.com/directory/teams',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Teams Directory | RinkStop',
+    title: 'Hockey Teams Directory',
     description:
       'Browse 2,116 hockey teams from NHL, AHL, KHL, NCAA, junior, and youth leagues worldwide.',
   },

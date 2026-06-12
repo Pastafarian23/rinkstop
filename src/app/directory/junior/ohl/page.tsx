@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'OHL  --  Ontario Hockey League | RinkStop',
+  title: 'OHL  --  Ontario Hockey League',
   description: 'Coverage of the OHL (Ontario Hockey League)  --  top junior hockey league with 20 teams across Ontario, Canada. Premier NHL draft prospect pipeline.',
 };
 

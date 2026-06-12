@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Olympic Ice Hockey | RinkStop',
+  title: 'Olympic Ice Hockey',
   description: 'Coverage of Olympic ice hockey competitions  --  men\'s and women\'s tournaments at the Winter Olympics. NHL players representing their nations.',
 };
 

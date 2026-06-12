@@ -24,7 +24,7 @@ interface Player {
 interface League { id: string; name: string; }
 
 export const metadata: Metadata = {
-  title: 'Hockey Players Directory | RinkStop',
+  title: 'Hockey Players Directory',
   description:
     'Browse 6,352 hockey player profiles. Career stats, draft info, and team history.',
   alternates: {
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Players Directory | RinkStop',
+    title: 'Hockey Players Directory',
     description:
       'Browse 6,352 hockey player profiles. Career stats, draft info, and team history.',
     url: 'https://rinkstop.com/directory/players',
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Players Directory | RinkStop',
+    title: 'Hockey Players Directory',
     description:
       'Browse 6,352 hockey player profiles. Career stats, draft info, and team history.',
   },

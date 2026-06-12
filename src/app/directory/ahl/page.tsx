@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'AHL  --  American Hockey League | RinkStop',
+  title: 'AHL  --  American Hockey League',
   description: 'Coverage of the AHL (American Hockey League)  --  the primary developmental league for the NHL. 32 teams across North America.',
 };
 

@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import GamesIndexClient from './GamesIndexClient';
 
 export const metadata: Metadata = {
-  title: 'Hockey Games & Scores | RinkStop',
+  title: 'Hockey Games & Scores',
   description:
     'Live scores, schedules, and results from hockey games worldwide.',
   alternates: {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Games & Scores | RinkStop',
+    title: 'Hockey Games & Scores',
     description:
       'Live scores, schedules, and results from hockey games worldwide.',
     url: 'https://rinkstop.com/directory/games',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Games & Scores | RinkStop',
+    title: 'Hockey Games & Scores',
     description:
       'Live scores, schedules, and results from hockey games worldwide.',
   },

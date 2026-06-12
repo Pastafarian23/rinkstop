@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'KHL  --  Kontinental Hockey League | RinkStop',
+  title: 'KHL  --  Kontinental Hockey League',
   description: 'Coverage of the KHL (Kontinental Hockey League)  --  top-tier Russian and international hockey with 23 teams across Russia, Belarus, Kazakhstan, and China.',
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | RinkStop',
+  title: 'Terms of Service',
   description: 'The terms and conditions governing your use of the RinkStop website and services. Please read these terms carefully before using our platform.',
   robots: { index: false, follow: false },
 };

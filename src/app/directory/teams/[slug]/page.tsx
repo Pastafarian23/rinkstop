@@ -117,7 +117,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const result = await fetchTeamAndRoster(slug);
     if (!result) {
       return {
-        title: 'Team Not Found | RinkStop',
+        title: 'Team Not Found',
         robots: { index: false, follow: true },
       };
     }
@@ -126,8 +126,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const location = [team.city, team.country].filter(Boolean).join(', ');
     const leagueName = team.leagues?.name;
     const titleBase = leagueName
-      ? `${team.name} Hockey Team | ${leagueName} | RinkStop`
-      : `${team.name} Hockey Team | RinkStop`;
+      ? `${team.name} Hockey Team | ${leagueName}`
+      : `${team.name} Hockey Team`;
     const description = leagueName
       ? `${team.name} (${leagueName}${location ? `, ${location}` : ''}) roster, schedule, home arena, and stats. Follow the team on RinkStop.`
       : `${team.name}${location ? ` (${location})` : ''} roster, schedule, home arena, and stats. Follow the team on RinkStop.`;
@@ -160,7 +160,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   } catch (err) {
     console.error('Team metadata error:', err);
-    return { title: 'Team | RinkStop' };
+    return { title: 'Team' };
   }
 }
 

@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import TryoutGuideForm from '@/components/TryoutGuideForm';
 
 export const metadata: Metadata = {
-  title: 'The Hockey Tryout Survival Guide (Free PDF) | RinkStop',
+  title: 'The Hockey Tryout Survival Guide (Free PDF)',
   description:
     'A 25-page guide for hockey parents. What coaches actually look for, how to prep in 2 weeks, what to say on the car ride home. Free download from a 20-year coach.',
   openGraph: {

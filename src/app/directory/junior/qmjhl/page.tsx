@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'QMJHL  --  Quebec Maritimes Junior Hockey League | RinkStop',
+  title: 'QMJHL  --  Quebec Maritimes Junior Hockey League',
   description: 'Coverage of the QMJHL (Quebec Maritimes Junior Hockey League)  --  18 teams across Quebec and the Atlantic provinces. Top French-language junior hockey.',
 };
 
