@@ -21,7 +21,7 @@
  */
 
 import { readFileSync } from 'fs';
-import { getMatchData, normalizeLeague } from './match-data.mjs';
+import { getMatchData, normalizeLeague, isFinalScore } from './match-data.mjs';
 
 const env = {};
 try {
@@ -60,19 +60,31 @@ function analyzeArticle(title, body, match) {
   const issues = [];
   const fixable = [];
   if (!match) {
-    issues.push('no Highlightly data to verify against');
+    issues.push('no source data to verify against (no API has this game with a final score)');
     return { ok: false, issues, fixable, wasOT: false, expected: '' };
   }
 
-  const expected = match.score || '';
+  // 2026-06-12 hard rule: refuse to verify articles built on a 'Not started'
+  // / 'Scheduled' / 'Live' status string. The previous code treated these
+  // as 'expected scores' and could pass an article that happened to contain
+  // a numeric match for the numbers in the status string, which led to
+  // fabricated SCF articles being published.
+  if (!isFinalScore(match.score)) {
+    issues.push(`source has no final score (status='${match.score}', description='${match.description || ''}') — game is not actually finished per the source`);
+    return { ok: false, issues, fixable, wasOT: false, expected: '' };
+  }
+
+  const expected = match.score;
   // The multi-source match data normalizes these to wasOT/wasSO booleans.
   // Backward compat: derive from overTime if wasOT is missing.
   const wasOT = match.wasOT ?? (match.overTime && match.overTime !== '0 - 0' && match.overTime !== '0-0');
   const wasSO = match.wasSO ?? /shootout|so$|sho/i.test(match.description || '');
 
-  // 1. Score check
+  // 1. Score check — required for the article to be considered verified.
+  // Both directions (home-away and away-home) are accepted, since the
+  // article may frame the score from either team's perspective.
   if (expected) {
-    const [homeS, awayS] = expected.split(/\s*-\s*/);
+    const [homeS, awayS] = expected.split(/\s*[-–—]\s*/);
     const homeW = parseInt(homeS);
     const awayW = parseInt(awayS);
     if (Number.isFinite(homeW) && Number.isFinite(awayW)) {
@@ -231,15 +243,16 @@ async function main() {
 
   let published = 0;
   let fixedAndPublished = 0;
-  let unverifiable = 0;   // kept as draft — no source data to verify, but article is based on the YouTube highlight
-  let rolledBack = 0;     // archived only when real invented facts detected
+  let unverifiable = 0;   // no source data with a final score — archived as per Arnel's 'only facts' rule
+  let rolledBack = 0;     // archived when real invented facts detected
   for (let i = 0; i < drafts.length; i++) {
     const d = drafts[i];
     const h = hlMap.get(d.highlight_id);
     if (!h) {
-      // No highlight record — leave as draft, don't archive.
-      // The article is a draft waiting for human review, not an invented-facts violation.
-      console.log(`  [${i+1}/${drafts.length}] ${d.title} — no highlight record, kept as draft`);
+      // No highlight record — can't verify, archive per Arnel's 'only facts' rule
+      // (2026-06-12: better to archive than publish unverifiable content).
+      console.log(`  [${i+1}/${drafts.length}] ${d.title} — no highlight record, ARCHIVING (cannot verify)`);
+      await sb.from('posts').update({ status: 'archived' }).eq('id', d.id);
       unverifiable++;
       continue;
     }
@@ -248,9 +261,12 @@ async function main() {
     const league = normalizeLeague(h.league_name);
     const match = await highlightlyMatchData(teams, date, league);
     if (!match) {
-      // No Highlightly match — article is based on the YouTube highlight as the source of truth.
-      // Leave as draft for human review, do not archive (no invented facts proven).
-      console.log(`  [${i+1}/${drafts.length}] ${d.title} — no Highlightly match, kept as draft (source: YouTube highlight)`);
+      // No multi-source match with a final score. Per Arnel's 2026-06-12
+      // 'only facts' rule: archive rather than leave as a draft that could
+      // be accidentally published. The YouTube highlight is no longer
+      // accepted as a sole source of truth.
+      console.log(`  [${i+1}/${drafts.length}] ${d.title} — no source has a final score, ARCHIVING (cannot verify)`);
+      await sb.from('posts').update({ status: 'archived' }).eq('id', d.id);
       unverifiable++;
       continue;
     }

@@ -21,9 +21,9 @@ declare global {
         LatLngBounds: any;
         LatLng: any;
         SymbolPath: { CIRCLE: string };
-        importLibrary: (name: string) => Promise<any>;
       };
     };
+    __gmapsInit?: () => void;
   }
 }
 export {};

@@ -123,45 +123,86 @@ async function highlightlyMatch(teams, date, apiKey) {
 }
 
 /**
+ * isFinalScore: a 'score' string is only a usable final score if it parses
+ * as two integers separated by a dash (e.g. '3 - 5', '3-5'). Status strings
+ * like 'Not started', 'Scheduled', 'Live', 'In Progress', 'Postponed',
+ * 'Cancelled' are NOT scores and must be rejected by all consumers.
+ *
+ * Centralizing this check prevents the bug where a stale Highlightly
+ * 'Not started' value was treated as a valid final score (truthy string)
+ * and short-circuited the NHL.com fallback, letting fabricated LLM scores
+ * pass verification.
+ */
+export function isFinalScore(score) {
+  if (typeof score !== 'string' && typeof score !== 'number') return false;
+  const s = String(score).trim();
+  if (!/^\d+\s*[-–—]\s*\d+$/.test(s)) return false;
+  return true;
+}
+
+/**
  * Multi-source match data lookup. Tries each source in priority order.
+ *
+ * Priority (as of 2026-06-12 fix):
+ *   - For NHL: NHL.com is the source of truth. Highlightly has historically
+ *     had stale/wrong data for Stanley Cup Final games (returning "Not started"
+ *     days after the game ended), so we MUST consult NHL.com first.
+ *   - For non-NHL leagues: Highlightly is still tried first (best coverage),
+ *     then league-specific fallbacks.
  *
  * @param {object} opts
  * @param {string[]} opts.teams - [homeTeam, awayTeam] (order doesn't matter for matching)
  * @param {string} opts.date - 'YYYY-MM-DD'
  * @param {string} [opts.league] - 'NHL', 'AHL', etc. (used to skip sources that don't apply)
  * @param {string} [opts.apiKey] - Highlightly API key
- * @returns {Promise<object|null>} normalized match data
+ * @returns {Promise<object|null>} normalized match data with a final numeric score
  */
 export async function getMatchData({ teams, date, league, apiKey }) {
   if (!teams || !teams.length || !date) return null;
   const effectiveKey = apiKey || process.env.HIGHLIGHTLY_API_KEY;
-
-  // 1. Highlightly (best for: NHL, AHL, IIHF, Memorial Cup, QMJHL, OHL, ECHL, partial WHL/KHL)
-  const hl = await highlightlyMatch(teams, date, effectiveKey);
-  if (hl && hl.score) return hl;
-
-  // 2. NHL.com fallback (full NHL coverage — fills gaps in Highlightly's regular season)
   const leagueUpper = (league || '').toUpperCase();
+
+  // 1. For NHL games, NHL.com is the source of truth. Try first.
+  //    This is the change that prevents fabricated scores from passing
+  //    verification when Highlightly returns stale or wrong data.
   if (leagueUpper === 'NHL') {
     const nhl = await nhlcomMatchData(teams, date);
-    if (nhl && nhl.score) return nhl;
+    if (nhl && isFinalScore(nhl.score)) {
+      nhl._primarySource = 'nhl.com';
+      return nhl;
+    }
   }
 
-  // 3. HockeyTech (official stats provider for AHL, ECHL, OHL, WHL, QMJHL, USHL, PWHL)
+  // 2. Highlightly (covers NHL, AHL, IIHF, Memorial Cup, QMJHL, OHL, ECHL, WHL, KHL)
+  //    Skip if it returned a non-numeric status string (e.g. 'Not started').
+  const hl = await highlightlyMatch(teams, date, effectiveKey);
+  if (hl && isFinalScore(hl.score)) return hl;
+
+  // 3. For NHL, if Highlightly didn't return a final score, try NHL.com again
+  //    (it might have data for the date Highlightly didn't).
+  if (leagueUpper === 'NHL') {
+    const nhl = await nhlcomMatchData(teams, date);
+    if (nhl && isFinalScore(nhl.score)) {
+      nhl._primarySource = 'nhl.com (fallback)';
+      return nhl;
+    }
+  }
+
+  // 4. HockeyTech (official stats provider for AHL, ECHL, OHL, WHL, QMJHL, USHL, PWHL)
   const ht = await hockeytechMatchData({ teams, date, league });
-  if (ht && ht.score) return ht;
+  if (ht && isFinalScore(ht.score)) return ht;
 
-  // 4. NCAA (covers icehockey-men/d1 and icehockey-women/d1)
+  // 5. NCAA (covers icehockey-men/d1 and icehockey-women/d1)
   const ncaa = await ncaaMatchData({ teams, date, league });
-  if (ncaa && ncaa.score) return ncaa;
+  if (ncaa && isFinalScore(ncaa.score)) return ncaa;
 
-  // 5. KHL/WHL/MHL (Russian leagues, public mobile API)
+  // 6. KHL/WHL/MHL (Russian leagues, public mobile API)
   const khl = await khlMatchData({ teams, date, league });
-  if (khl && khl.score) return khl;
+  if (khl && isFinalScore(khl.score)) return khl;
 
-  // 6. IIHF World Championship (fixturedownload.com JSON feed)
+  // 7. IIHF World Championship (fixturedownload.com JSON feed)
   const iihf = await iihfMatchData({ teams, date, league });
-  if (iihf && iihf.score) return iihf;
+  if (iihf && isFinalScore(iihf.score)) return iihf;
 
   return null;
 }
