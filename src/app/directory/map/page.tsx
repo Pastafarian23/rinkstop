@@ -64,12 +64,19 @@ export default function MapPage() {
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       });
 
-      // Initialize map once
+      // Initialize map once.
+      // Basemap: OpenStreetMap XYZ tiles (real Leaflet-compatible tile format).
+      // Note: Google Maps does not publish XYZ tile endpoints for Leaflet — its
+      // /maps/vt endpoint is a vector-tile API for the Maps JS SDK and won't
+      // render through L.tileLayer. OSM is free, has no key requirement, and
+      // is the standard Leaflet basemap.
       if (!mapRef.current) {
-        const googleMapsKey = (process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY as string) || '';
         const tiles = L.tileLayer(
-          `https://maps.googleapis.com/maps/vt?key=${googleMapsKey}&hl=en&gl=en&x={x}&y={y}&z={z}`,
-          { attribution: '&copy; Google Maps', subdomains: '0 1 2 3', maxZoom: 20 }
+          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+          }
         );
 
         mapRef.current = L.map(mapContainerRef.current, {
