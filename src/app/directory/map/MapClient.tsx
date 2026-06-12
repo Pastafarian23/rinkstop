@@ -92,21 +92,31 @@ type GoogleMarker = any;
 export default function MapClient({ initialRinks }: Props) {
   const [rinks, setRinks] = useState<MapRink[]>(initialRinks);
   const [countries, setCountries] = useState<string[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(() => {
+    // Read ?country= URL param on mount so filter is shareable / back-button works.
+    if (typeof window === 'undefined') return '';
+    const params = new URLSearchParams(window.location.search);
+    return params.get('country') || '';
+  });
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [scriptError, setScriptError] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
+  const [markersRendered, setMarkersRendered] = useState(0); // for the loading pill
+  const [isRendering, setIsRendering] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<GoogleMap | null>(null);
   const markersRef = useRef<GoogleMarker[]>([]);
   const infoWindowsRef = useRef<any[]>([]);
+  const clustererRef = useRef<any | null>(null);
   const mountedRef = useRef(true);
+  const dataLoadedRef = useRef(false); // for skipping the second fetch
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || '';
 
-  // Seed countries from initialRinks
+  // Seed countries from initialRinks (no re-fetch if we have them already).
   useEffect(() => {
+    if (dataLoadedRef.current) return;
     const countrySet = new Set<string>();
     initialRinks.forEach((rink) => {
       if (rink.country) countrySet.add(rink.country);
@@ -114,12 +124,15 @@ export default function MapClient({ initialRinks }: Props) {
     setCountries(Array.from(countrySet).sort());
   }, [initialRinks]);
 
-  // Refresh from API
+  // Refresh from API in the background. Skip if initialRinks already covers
+  // the API (dataLoadedRef guards against double-fetching on re-mount).
   useEffect(() => {
+    if (dataLoadedRef.current) return;
+    dataLoadedRef.current = true;
     fetch('/api/rinks/map')
       .then((r) => r.json())
       .then((d) => {
-        if (mountedRef.current && Array.isArray(d.data)) {
+        if (mountedRef.current && Array.isArray(d.data) && d.data.length) {
           setRinks(d.data);
           const refreshed = new Set<string>();
           d.data.forEach((rink: MapRink) => {
@@ -131,6 +144,18 @@ export default function MapClient({ initialRinks }: Props) {
       .catch(() => {});
     return () => { mountedRef.current = false; };
   }, []);
+
+  // Keep ?country= URL in sync when the user changes the filter.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (selectedCountry) {
+      url.searchParams.set('country', selectedCountry);
+    } else {
+      url.searchParams.delete('country');
+    }
+    window.history.replaceState(null, '', url.toString());
+  }, [selectedCountry]);
 
   // Global error catch — if anything throws during SDK init or hydration
   // (including the InvalidKey warning tripping Next.js's error boundary),
@@ -197,31 +222,43 @@ export default function MapClient({ initialRinks }: Props) {
   }, [scriptLoaded, useFallback, initMap]);
 
   // Render markers when rinks, country filter, or map readiness change.
+  // Uses Google Maps' built-in MarkerClusterer (loaded lazily) to keep the
+  // map readable at country zoom level where 700 dots would otherwise
+  // overlap.
   const renderMarkers = useCallback(() => {
     if (useFallback) return;
     if (!mapRef.current || typeof window === 'undefined' || !window.google?.maps) return;
 
+    setIsRendering(true);
     try {
       const maps = window.google.maps;
       const bounds = new maps.LatLngBounds();
 
-      // Clear previous markers + info windows
+      // Clear previous markers + info windows + clusterer
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
       infoWindowsRef.current.forEach((iw) => iw.close());
       infoWindowsRef.current = [];
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+        clustererRef.current.setMap(null);
+        clustererRef.current = null;
+      }
 
       const visible = selectedCountry
         ? rinks.filter((r) => r.country.toLowerCase() === selectedCountry.toLowerCase())
         : rinks;
 
-      visible.forEach((rink) => {
-        if (typeof rink.latitude !== 'number' || typeof rink.longitude !== 'number') return;
-        if (Number.isNaN(rink.latitude) || Number.isNaN(rink.longitude)) return;
+      const newMarkers: GoogleMarker[] = [];
+      let rendered = 0;
+
+      // Build all markers first, then commit them in one batch.
+      for (const rink of visible) {
+        if (typeof rink.latitude !== 'number' || typeof rink.longitude !== 'number') continue;
+        if (Number.isNaN(rink.latitude) || Number.isNaN(rink.longitude)) continue;
 
         const marker = new maps.Marker({
           position: { lat: rink.latitude, lng: rink.longitude },
-          map: mapRef.current,
           title: rink.name,
           icon: {
             path: maps.SymbolPath.CIRCLE,
@@ -229,8 +266,9 @@ export default function MapClient({ initialRinks }: Props) {
             fillOpacity: 0.95,
             strokeColor: '#ffffff',
             strokeWeight: 2,
-            scale: 8,
+            scale: 7,
           },
+          // Markers are added to the clusterer, not directly to the map.
         });
 
         // Build InfoWindow content using DOM (no innerHTML template strings).
@@ -261,17 +299,58 @@ export default function MapClient({ initialRinks }: Props) {
 
         markersRef.current.push(marker);
         infoWindowsRef.current.push(infoWindow);
+        newMarkers.push(marker);
         bounds.extend({ lat: rink.latitude, lng: rink.longitude });
-      });
+        rendered++;
+      }
 
-      if (visible.length > 0) {
-        mapRef.current.fitBounds(bounds);
-        const zoom = mapRef.current.getZoom();
-        if (zoom && zoom > 14) mapRef.current.setZoom(14);
+      // Add markers to a clusterer (only when showing > 50 markers, otherwise
+      // direct on map is faster and cleaner).
+      if (newMarkers.length > 50 && !selectedCountry) {
+        const ClustererClass = (window as any).markerClusterer?.MarkerClusterer;
+        if (ClustererClass) {
+          clustererRef.current = new ClustererClass({
+            map: mapRef.current,
+            markers: newMarkers,
+            // Custom renderer: red circle with the count
+            renderer: {
+              render: ({ count, position }: { count: number; position: any }) => {
+                const radius = Math.min(18, 8 + Math.log2(count) * 3);
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="${radius}" fill="#C8102E" fill-opacity="0.9" stroke="#ffffff" stroke-width="2"/><text x="20" y="24" text-anchor="middle" fill="#fff" font-family="Inter,sans-serif" font-weight="700" font-size="13">${count}</text></svg>`;
+                return new maps.Marker({
+                  position,
+                  icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), scaledSize: new maps.Size(40, 40) },
+                  zIndex: 1000 + count,
+                });
+              },
+            },
+          });
+        } else {
+          newMarkers.forEach((m) => m.setMap(mapRef.current));
+        }
+      } else {
+        newMarkers.forEach((m) => m.setMap(mapRef.current));
+      }
+
+      setMarkersRendered(rendered);
+
+      // Smooth fitBounds with animation. Skip on the very first render if
+      // the user has zoomed/panned (don't yank the map around).
+      if (rendered > 0 && bounds.getNorthEast().equals(bounds.getSouthWest()) === false) {
+        mapRef.current.fitBounds(bounds, { top: 80, right: 80, bottom: 80, left: 80 });
+        const z = mapRef.current.getZoom();
+        if (z && z > 14) mapRef.current.setZoom(14);
+      } else if (selectedCountry && COUNTRY_CENTROIDS[selectedCountry]) {
+        // Country filter with no markers in view — pan to the country centroid.
+        const v = COUNTRY_CENTROIDS[selectedCountry];
+        mapRef.current.panTo({ lat: v.lat, lng: v.lon });
+        mapRef.current.setZoom(v.zoom);
       }
     } catch (err) {
       console.error('Render markers failed:', err);
       setUseFallback(true);
+    } finally {
+      setIsRendering(false);
     }
   }, [rinks, selectedCountry, useFallback]);
 
@@ -482,7 +561,9 @@ export default function MapClient({ initialRinks }: Props) {
               borderRadius: 20, padding: '6px 16px', color: '#fff',
               fontSize: 13, fontWeight: 600,
             }}>
-              {visibleRinks.length} rink{visibleRinks.length !== 1 ? 's' : ''} on map
+              {markersRendered > 0
+                ? `${markersRendered.toLocaleString()} pin${markersRendered !== 1 ? 's' : ''}`
+                : `${visibleRinks.length.toLocaleString()} rink${visibleRinks.length !== 1 ? 's' : ''} on map`}
             </div>
           </div>
         </div>
@@ -493,10 +574,17 @@ export default function MapClient({ initialRinks }: Props) {
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1000,
             background: '#041E42', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,255,255,0.5)', fontSize: 14,
+            alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16,
           }}>
-            Loading Google Maps...
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              border: '3px solid rgba(255,255,255,0.15)',
+              borderTopColor: '#C8102E',
+              animation: 'spin 0.9s linear infinite',
+            }} />
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>
+              Loading Google Maps...
+            </div>
           </div>
         )}
 
@@ -512,6 +600,28 @@ export default function MapClient({ initialRinks }: Props) {
               Google Maps couldn't initialize. Check the API key restrictions in Google Cloud
               Console and ensure <strong>Maps JavaScript API</strong> is enabled.
             </p>
+          </div>
+        )}
+
+        {scriptLoaded && !scriptError && isRendering && (
+          <div style={{
+            position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 1000,
+            background: 'rgba(4,30,66,0.92)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: '#fff', padding: '10px 20px', borderRadius: 24,
+            fontSize: 13, fontWeight: 500,
+            display: 'flex', alignItems: 'center', gap: 10,
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+          }}>
+            <div style={{
+              width: 14, height: 14, borderRadius: '50%',
+              border: '2px solid rgba(255,255,255,0.2)',
+              borderTopColor: '#C8102E',
+              animation: 'spin 0.9s linear infinite',
+            }} />
+            Loading {visibleRinks.length} rinks...
           </div>
         )}
 
@@ -564,6 +674,18 @@ function ScriptInjector({ apiKey, onLoad, onError }: { apiKey: string; onLoad: (
     s.dataset.googleMapsSdk = 'true';
     s.onerror = onError;
     document.head.appendChild(s);
+
+    // Also load the MarkerClusterer library (free, from unpkg, no API key).
+    // It's a separate JS bundle that exposes markerClusterer.MarkerClusterer.
+    if (!document.querySelector('script[data-google-maps-clusterer]')) {
+      const c = document.createElement('script');
+      c.src = 'https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js';
+      c.async = true;
+      c.defer = true;
+      c.dataset.googleMapsClusterer = 'true';
+      c.onerror = () => { console.warn('MarkerClusterer failed to load (non-fatal)'); };
+      document.head.appendChild(c);
+    }
   }, [apiKey, onLoad, onError]);
   return null;
 }

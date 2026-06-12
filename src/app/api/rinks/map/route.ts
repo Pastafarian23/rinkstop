@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+// Re-validate the data at most every 5 minutes (matches Cache-Control max-age).
+export const revalidate = 300;
+
 // NHL arena known coordinates: city,country → {lat, lon}
 // Deduplicated — one entry per unique key
 const NHL_ARENA_COORDS: Record<string, { lat: number; lon: number }> = {

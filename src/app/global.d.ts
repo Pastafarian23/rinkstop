@@ -20,10 +20,12 @@ declare global {
         InfoWindow: any;
         LatLngBounds: any;
         LatLng: any;
+        Size: any;
         SymbolPath: { CIRCLE: string };
       };
     };
     __gmapsInit?: () => void;
+    markerClusterer?: { MarkerClusterer: any };
   }
 }
 export {};
