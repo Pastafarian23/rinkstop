@@ -20,33 +20,43 @@ interface Rink {
 
 interface Props {
   initialRinks: Rink[];
+  country?: string | null;
 }
 
-export default function RinksIndexClient({ initialRinks }: Props) {
+export default function RinksIndexClient({ initialRinks, country: initialCountry }: Props) {
   const searchParams = useSearchParams();
   const [rinks, setRinks] = useState<Rink[]>(initialRinks);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [country, setCountry] = useState('');
+  // The server already pre-filtered the list when ?country= is set,
+  // so the initial state is correct. Client also re-reads ?country= on mount
+  // for deep-links and back/forward navigation.
+  const [country, setCountry] = useState<string>(initialCountry || '');
 
-  // Prefill the country filter from the URL (?country=Sweden)
+  // Prefill the country filter from the URL (?country=Sweden) on mount/hydration
   useEffect(() => {
     const c = searchParams.get('country');
-    if (c) setCountry(c);
+    if (c && c !== country) setCountry(c);
   }, [searchParams]);
 
   useEffect(() => {
+    // Re-fetch from the server whenever the country filter changes — the
+    // server pre-filter is authoritative. We do NOT refetch on mount, because
+    // the initial Rink list already reflects the country from the URL.
+    if (country === (initialCountry || '')) return;
     setLoading(true);
-    fetch('/api/rinks?sort=tier')
+    const url = country
+      ? `/api/rinks?country=${encodeURIComponent(country)}&sort=tier`
+      : '/api/rinks?sort=tier';
+    fetch(url)
       .then(r => r.json())
       .then(d => {
-        // API returns {count, data} shape — extract data array
         const list = Array.isArray(d) ? d : (d?.data || []);
         setRinks(list);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [country, initialCountry]);
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const verifiedCount = rinks.filter(r => r.claimed_by_tier === 'verified' || r.claimed_by_tier === 'pro').length;
@@ -144,6 +154,63 @@ export default function RinksIndexClient({ initialRinks }: Props) {
           </button>
         )}
       </div>
+
+      {/* Country filter banner — shows when ?country= set so user knows why they're filtered */}
+      {initialCountry && (
+        <div style={{
+          background: 'rgba(200,16,46,0.08)',
+          border: '1px solid rgba(200,16,46,0.25)',
+          borderRadius: 4,
+          padding: '0.625rem 0.875rem',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)' }}>
+            Showing rinks in <strong style={{ color: '#C8102E' }}>{initialCountry}</strong>{' '}
+            <span style={{ color: 'rgba(255,255,255,0.45)' }}>— {rinks.length.toLocaleString()} total</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => { setCountry(''); setSearch(''); }}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'rgba(255,255,255,0.7)',
+                borderRadius: 3,
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}
+            >
+              ✕ Clear
+            </button>
+            <Link
+              href="/directory/rinks"
+              style={{
+                background: '#C8102E',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 3,
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}
+            >
+              View All Countries →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Results count */}
       {!loading && (

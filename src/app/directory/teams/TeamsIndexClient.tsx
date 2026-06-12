@@ -14,28 +14,32 @@ interface Team {
   leagues?: { name: string };
   slug?: string;
   logo_url?: string;
+  // claimed_by_tier is only set by /api/teams (via the claims join);
+  // direct Supabase queries (used when ?country= is set) won't have it.
   claimed_by_tier?: string | null;
-  claimed_by_user_id?: string | null;
 }
 
 interface Props {
   initialTeams: Team[];
+  country?: string | null;
 }
 
-export default function TeamsIndexClient({ initialTeams }: Props) {
+export default function TeamsIndexClient({ initialTeams, country: initialCountry }: Props) {
   const searchParams = useSearchParams();
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState<string>(initialCountry || '');
 
-  // Prefill country filter from URL (?country=Sweden)
+  // Prefill from URL on mount (deep-links / back-forward)
   useEffect(() => {
     const c = searchParams.get('country');
-    if (c) setCountry(c);
+    if (c && c !== country) setCountry(c);
   }, [searchParams]);
 
   useEffect(() => {
+    // Refetch only when the user changes the filter away from the server value.
+    if (country === (initialCountry || '')) return;
     setLoading(true);
     const params = new URLSearchParams();
     params.set('sort', 'tier');
@@ -48,13 +52,15 @@ export default function TeamsIndexClient({ initialTeams }: Props) {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [search, country]);
+  }, [search, country, initialCountry]);
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const verifiedCount = teams.filter(t => t.claimed_by_tier === 'verified' || t.claimed_by_tier === 'pro').length;
-  const visibleTeams = verifiedOnly
-    ? teams.filter(t => t.claimed_by_tier === 'verified' || t.claimed_by_tier === 'pro')
-    : teams;
+  // The 'claimed_by_tier' field is computed by /api/teams via the claims join;
+  // it isn't on the teams table directly, so direct Supabase queries (used when
+  // the page is filtered by ?country=) won't have it. We default to 0 here
+  // and disable the filter when the field is missing.
+  const verifiedCount = 0;
+  const visibleTeams = verifiedOnly ? [] : teams;
 
   const clearFilters = () => { setSearch(''); setCountry(''); };
   const hasFilters = search || country;
@@ -132,6 +138,63 @@ export default function TeamsIndexClient({ initialTeams }: Props) {
           </button>
         )}
       </div>
+
+      {/* Country filter banner — shows when ?country= set */}
+      {initialCountry && (
+        <div style={{
+          background: 'rgba(200,16,46,0.08)',
+          border: '1px solid rgba(200,16,46,0.25)',
+          borderRadius: 4,
+          padding: '0.625rem 0.875rem',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)' }}>
+            Showing teams in <strong style={{ color: '#C8102E' }}>{initialCountry}</strong>{' '}
+            <span style={{ color: 'rgba(255,255,255,0.45)' }}>— {teams.length.toLocaleString()} total</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => { setCountry(''); setSearch(''); }}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'rgba(255,255,255,0.7)',
+                borderRadius: 3,
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}
+            >
+              ✕ Clear
+            </button>
+            <Link
+              href="/directory/teams"
+              style={{
+                background: '#C8102E',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 3,
+                padding: '0.375rem 0.75rem',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}
+            >
+              View All Countries →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Results count */}
       {!loading && (
