@@ -42,7 +42,7 @@
 import { readFileSync } from 'fs';
 import { createClient } from '@supabase/supabase-js';
 import { fetchNhlGameFacts, renderFactsAsArticle } from './datasources/nhlcom-article-data.mjs';
-import { findNhlGameId } from '../../_build-nhl-matcher.mjs';
+import { findNhlGameId } from './datasources/nhlcom-game-matcher.mjs';
 
 // Load env from the Next.js .env file
 const envFile = '/root/.openclaw/workspace/rinkstop-platform/.env';
@@ -227,9 +227,22 @@ async function main() {
     const gameTypeFromHl = hl.match_round || gameType;
     
     // 6. Update the post
+    // Slug uniqueness: the same NHL game can have multiple archived
+    // posts (different YouTube highlight videos of the same game). All
+    // those posts would try to set the same slug, violating the
+    // posts_slug_key unique constraint. To handle this, we append a
+    // short disambiguator derived from the post id when we detect a
+    // collision.
+    let finalSlug = newSlug;
+    const slugCheck = await sb.from('posts').select('id').eq('slug', finalSlug).neq('id', post.id).limit(1);
+    if (slugCheck.data && slugCheck.data.length > 0) {
+      // Append a 6-char disambiguator from the post id
+      finalSlug = `${newSlug}-${post.id.replace(/-/g, '').slice(0, 6)}`;
+    }
+    
     const update = {
       title: newTitle,
-      slug: newSlug,
+      slug: finalSlug,
       content: newContent,
       subtitle: newSubtitle,
       status: 'published',
@@ -249,7 +262,7 @@ async function main() {
     if (DRY_RUN) {
       console.log(`[${i+1}] ${post.id} → would update:`);
       console.log(`      Title: ${newTitle}`);
-      console.log(`      Slug:  ${newSlug}`);
+      console.log(`      Slug:  ${finalSlug}`);
       console.log(`      Score: ${facts.finalScore}`);
       console.log(`      Cross-link: home=${homeTeamSlug || '?'} (${homeTeamId || 'NULL'}), away=${awayTeamSlug || '?'} (${awayTeamId || 'NULL'})`);
       results.push({ post_id: post.id, status: 'would_update', title: newTitle, gameId: gameIdResult.gameId });

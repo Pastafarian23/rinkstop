@@ -68,6 +68,34 @@ async function fetchTeamBySlugOrId(slug: string): Promise<TeamRow | null> {
  * the server component just pre-loads the data and injects the schema
  * + canonical via generateMetadata.
  */
+interface ArticleRow {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  published_at: string;
+  game_date: string | null;
+  og_image_url: string | null;
+}
+
+async function fetchTeamArticles(teamId: string, limit: number = 12): Promise<ArticleRow[]> {
+  // Latest published articles for this team (home or away).
+  // Uses the partial indexes on posts_team_home_id_published_at_idx and
+  // posts_team_away_id_published_at_idx (added 2026-06-12).
+  const { data, error } = await supabase
+    .from('posts')
+    .select('id, slug, title, subtitle, published_at, game_date, og_image_url')
+    .eq('status', 'published')
+    .or(`team_home_id.eq.${teamId},team_away_id.eq.${teamId}`)
+    .order('published_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error('fetchTeamArticles error:', error);
+    return [];
+  }
+  return (data || []) as ArticleRow[];
+}
+
 async function fetchTeamAndRoster(slug: string): Promise<{ team: TeamRow; players: PlayerRow[] } | null> {
   const isUuid = UUID_RE.test(slug);
   const team = await fetchTeamBySlugOrId(slug);
@@ -167,6 +195,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TeamPage({ params }: Props) {
   const { slug } = await params;
   const result = await fetchTeamAndRoster(slug);
+  const articles = result ? await fetchTeamArticles(result.team.id) : [];
   if (!result) {
     return (
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -208,7 +237,7 @@ export default async function TeamPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <TeamDetailClient team={team} players={players} />
+      <TeamDetailClient team={team} players={players} articles={articles} />
     </>
   );
 }
