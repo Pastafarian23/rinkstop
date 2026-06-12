@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SearchIcon, FilterIcon } from '@/components/icons';
 
@@ -22,10 +23,17 @@ interface Props {
 }
 
 export default function TeamsIndexClient({ initialTeams }: Props) {
+  const searchParams = useSearchParams();
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [country, setCountry] = useState('');
+
+  // Prefill country filter from URL (?country=Sweden)
+  useEffect(() => {
+    const c = searchParams.get('country');
+    if (c) setCountry(c);
+  }, [searchParams]);
 
   useEffect(() => {
     setLoading(true);
