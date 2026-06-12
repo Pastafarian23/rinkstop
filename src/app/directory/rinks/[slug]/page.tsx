@@ -117,8 +117,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function RinkDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function RinkDetailPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ from?: string }> }) {
   const { slug: param } = await params;
+  const { from: fromSlug } = await searchParams;
 
   // Fetch rink by id (if UUID) or by slug. The [slug] folder is just a route
   // segment name — we accept either, then redirect to the canonical slug URL
@@ -296,18 +297,32 @@ export default async function RinkDetailPage({ params }: { params: Promise<{ slu
           );
         })()}
 
-        <Breadcrumbs links={[
-          { label: 'Directory', href: '/directory' },
-          { label: 'Rinks', href: '/directory/rinks' },
-          { label: rink.name, href: `/directory/rinks/${rink.slug}` },
-        ]} />
-
-        <Link
-          href="/directory/rinks"
-          style={{ color: '#38bdf8', fontSize: '14px', marginBottom: '12px', display: 'inline-block', textDecoration: 'none' }}
-        >
-          &larr; Back to Rinks
-        </Link>
+        {(() => {
+          // Honor ?from={countrySlug} so we navigate back to the country page,
+          // not the global rinks directory. We accept the slug and look up
+          // the human name from the COUNTRY_MAP; fall back to a generic title.
+          const backHref = fromSlug ? `/directory/${fromSlug}` : '/directory/rinks';
+          const backLabel = fromSlug
+            ? `← Back to ${(rink.country || fromSlug)}`
+            : '← Back to Rinks';
+          return (
+            <>
+              <Breadcrumbs links={[
+                { label: 'Directory', href: '/directory' },
+                ...(fromSlug
+                  ? [{ label: rink.country || fromSlug, href: `/directory/${fromSlug}` }]
+                  : [{ label: 'Rinks', href: '/directory/rinks' }]),
+                { label: rink.name, href: `/directory/rinks/${rink.slug}` },
+              ]} />
+              <Link
+                href={backHref}
+                style={{ color: '#38bdf8', fontSize: '14px', marginBottom: '12px', display: 'inline-block', textDecoration: 'none' }}
+              >
+                {backLabel}
+              </Link>
+            </>
+          );
+        })()}
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
           {rink.name}
