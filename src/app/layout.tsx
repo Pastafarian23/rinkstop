@@ -14,6 +14,26 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://rinkstop.com'),
+  // Default canonical + robots applied to every page that doesn't override them.
+  // Per-page metadata can set `alternates.canonical` to override the default.
+  // This consolidates ranking signal to the naked domain and removes the
+  // "RinkStop" brand split between www and non-www (per GSC 90d report:
+  // both www.rinkstop.com and rinkstop.com were getting impressions,
+  // which split our ranking signal).
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
   title: {
     default: 'RinkStop  --  The World\'s Hockey Directory',
     template: '%s | RinkStop',
