@@ -165,46 +165,6 @@ export default async function DashboardPage() {
         <QuickActionsGrid links={quickLinks} />
       </div>
 
-      {/* Founding Member upsell — hidden for users who already have full access (founder / founding member / paid tier) */}
-      {!isFounder && !profile?.is_founding_member && (profile?.tier === 'free' || !profile?.tier) && (
-        <div style={{
-          background: 'linear-gradient(135deg, #041E42 0%, #0a2a52 100%)',
-          borderRadius: 12,
-          padding: '1.75rem',
-          border: '1px solid #C8102E',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1.5rem',
-          flexWrap: 'wrap',
-        }}>
-          <div>
-            <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: '#FFB81C', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-              ⚡ UNLOCK THE FULL RINKSTOP EXPERIENCE
-            </h3>
-            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.9rem', margin: 0, maxWidth: 500 }}>
-              Get verified status, priority support, and exclusive features. Become a Founding Member today.
-            </p>
-          </div>
-          <Link
-            href="/pricing"
-            style={{
-              display: 'inline-block',
-              background: '#C8102E',
-              color: 'white',
-              padding: '0.75rem 1.5rem',
-              borderRadius: 6,
-              textDecoration: 'none',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              letterSpacing: '0.03em',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            View Plans →
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

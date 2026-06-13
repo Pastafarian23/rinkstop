@@ -2,17 +2,13 @@
  * Single source of truth for RinkStop subscription tier prices.
  *
  * IMPORTANT: The values here MUST match the live Stripe prices exactly.
- * Run `curl https://rinkstop.com/api/admin/stripe-prices?secret=$ONETIME_SECRET`
- * (gated by ONETIME_SECRET) to verify against Stripe. If you change a price
- * in Stripe, update it here in the same commit and redeploy.
+ * If you change a price in Stripe, update it here in the same commit and
+ * redeploy. The Stripe price IDs are pinned in the comments below.
  *
  * Live Stripe prices (verified 2026-06-13):
  *   - RinkStop Supporter: $19.99 USD/year  (price_1ThcqgCJiUbEZVbnyHLCogTF)
  *   - RinkStop Verified:  $59.99 USD/year  (price_1ThcqhCJiUbEZVbnVfgLCdzu)
  *   - RinkStop Pro:       $299.00 USD/year (price_1ThcqhCJiUbEZVbnHtmWwpAa)
- *
- * Founding tier (closed/inactive): $9.99 / $19.99 / $29.99
- * Player Recruit tier (dormant, not on Stripe): $39 / $99
  */
 
 export type TierName = 'free' | 'supporter' | 'verified' | 'pro';
