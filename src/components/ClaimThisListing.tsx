@@ -1,0 +1,330 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+
+export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';
+
+export type ClaimCtaState =
+  | { kind: 'signed_out' }
+  | { kind: 'claim_form'; entityType: ClaimEntityType; entityId: string; entityName: string }
+  | { kind: 'free' }
+  | { kind: 'at_cap'; tier: string; maxClaims: number }
+  | { kind: 'pending'; tier: string };
+
+const NOOP = (e: React.MouseEvent) => { e.preventDefault(); };
+
+/**
+ * "Claim this listing" CTA. Renders on unclaimed entity pages (rink, team, league, player).
+ *
+ * State is computed server-side in the *Mount wrapper and passed in as `state`:
+ *   - signed_out: Not logged in → "Sign in to claim this rink"
+ *   - claim_form: Logged in, tier has room → "Claim this rink" form
+ *   - free:       Logged in, Free tier → "Upgrade to claim this rink" (Supporter is the entry point)
+ *   - at_cap:     Logged in, paid tier but at the cap → "At cap — upgrade to Pro"
+ *   - pending:    Logged in, paid tier, an unapproved claim exists → "Claim pending review"
+ *
+ * Pairs with the existing `ClaimedBy` component, which renders in the same slot
+ * when a listing IS claimed. The two are mutually exclusive by intent.
+ */
+export default function ClaimThisListing({
+  entityType,
+  entityId,
+  entityName,
+  state,
+}: {
+  entityType: ClaimEntityType;
+  entityName: string;
+  entityId: string;
+  state: ClaimCtaState;
+}) {
+  // Local form state for the inline claim form.
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<
+    | { kind: 'idle' }
+    | { kind: 'success' }
+    | { kind: 'error'; message: string }
+  >({ kind: 'idle' });
+  const [expanded, setExpanded] = useState(false);
+
+  const noun = entityType; // "rink", "team", "league", "player"
+  const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const containerStyle: React.CSSProperties = {
+    marginTop: 12,
+    marginBottom: 12,
+    padding: '1rem 1.25rem',
+    background: 'rgba(255,184,28,0.06)',
+    border: '1px dashed rgba(255,184,28,0.4)',
+    borderRadius: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+  };
+
+  if (result.kind === 'success') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 20 }}>✅</span>
+          <div>
+            <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>
+              Claim submitted for {entityName}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 2 }}>
+              We review claims within 2 business days. You can track the status in your{' '}
+              <Link href="/dashboard/claims" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
+                claim dashboard
+              </Link>
+              .
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // === SIGNED OUT ===
+  if (state.kind === 'signed_out') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>🏒</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+              Own or run this {noun}?
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+              Claim this listing to add your program hours, contact info, and updates — and stop the next stranger from editing it out from under you.
+            </div>
+          </div>
+          <Link
+            href={`/login?redirect_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}
+            onClick={NOOP}
+            style={{
+              background: '#FFB81C',
+              color: '#041E42',
+              padding: '8px 14px',
+              borderRadius: 8,
+              textDecoration: 'none',
+              fontWeight: 700,
+              fontSize: 13,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Sign in to claim
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // === FREE TIER ===
+  if (state.kind === 'free') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>🏒</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+              Run this {noun}? Claim it on RinkStop.
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+              Verified owners can edit hours, post news, capture leads, and respond to reviews. Supporter is $19.99/yr and unlocks 1 claim.
+            </div>
+          </div>
+          <Link
+            href="/pricing"
+            style={{
+              background: '#FFB81C',
+              color: '#041E42',
+              padding: '8px 14px',
+              borderRadius: 8,
+              textDecoration: 'none',
+              fontWeight: 700,
+              fontSize: 13,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            See plans
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // === AT CAP ===
+  if (state.kind === 'at_cap') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>🏒</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+              You've claimed {state.maxClaims} {state.maxClaims === 1 ? 'listing' : 'listings'} on {titleCase(state.tier)}.
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+              Upgrade to Pro to claim unlimited listings — built for rinks, leagues, and multi-team orgs.
+            </div>
+          </div>
+          <Link
+            href="/pricing"
+            style={{
+              background: '#FFB81C',
+              color: '#041E42',
+              padding: '8px 14px',
+              borderRadius: 8,
+              textDecoration: 'none',
+              fontWeight: 700,
+              fontSize: 13,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Upgrade to Pro
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // === PENDING CLAIM ALREADY ===
+  if (state.kind === 'pending') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>⏳</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+              Your claim for {entityName} is pending review.
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+              We usually decide within 2 business days. Track the status in your{' '}
+              <Link href="/dashboard/claims" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
+                claim dashboard
+              </Link>
+              .
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // === CLAIM FORM (paid tier with room) ===
+  const submit = async () => {
+    if (!reason.trim()) {
+      setResult({ kind: 'error', message: 'Tell us why you should own this listing.' });
+      return;
+    }
+    setSubmitting(true);
+    setResult({ kind: 'idle' });
+    try {
+      const res = await fetch('/api/claims', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          claim_type: entityType === 'league' ? 'team' : entityType, // leagues aren't a first-class claim type yet
+          entity_id: entityId,
+          entity_name: entityName,
+          reason: reason.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg =
+          data?.error ||
+          (res.status === 403 && data?.error === 'claim_limit_reached'
+            ? 'You have reached your tier\'s claim limit. Upgrade to Pro for unlimited claims.'
+            : `Claim submission failed (${res.status})`);
+        setResult({ kind: 'error', message: msg });
+        return;
+      }
+      setResult({ kind: 'success' });
+    } catch (err) {
+      setResult({ kind: 'error', message: 'Network error. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={containerStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <span style={{ fontSize: 18 }}>🏒</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+            Own or run {entityName}?
+          </div>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+            Claim this listing to edit the details, post schedule updates, respond to reviews, and unlock the lead-capture form. We review claims within 2 business days.
+          </div>
+        </div>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            background: '#FFB81C',
+            color: '#041E42',
+            border: 0,
+            padding: '8px 14px',
+            borderRadius: 8,
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {expanded ? 'Close' : 'Claim this ' + noun}
+        </button>
+      </div>
+      {expanded && (
+        <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600 }}>
+            Why should we approve your claim?
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={`e.g. I'm the GM of ${entityName} and I run the rink operations. I can verify via ${entityType === 'rink' ? 'the building\'s utility bill' : entityType === 'team' ? 'our league-issued coach credential' : 'my professional bio'}.`}
+            rows={3}
+            disabled={submitting}
+            style={{
+              background: 'rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 6,
+              color: '#fff',
+              padding: '8px 10px',
+              fontSize: 13,
+              fontFamily: 'inherit',
+              resize: 'vertical',
+            }}
+          />
+          {result.kind === 'error' && (
+            <div style={{ color: '#fca5a5', fontSize: 12 }}>{result.message}</div>
+          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              onClick={submit}
+              disabled={submitting}
+              style={{
+                background: submitting ? 'rgba(255,184,28,0.5)' : '#FFB81C',
+                color: '#041E42',
+                border: 0,
+                padding: '8px 16px',
+                borderRadius: 8,
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: submitting ? 'wait' : 'pointer',
+              }}
+            >
+              {submitting ? 'Submitting…' : 'Submit claim'}
+            </button>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
+              We email you when a reviewer responds.
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
