@@ -63,8 +63,9 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
   };
 
   const isUnlimited = maxClaims === -1;
-  const atCap = !isUnlimited && currentCount >= maxClaims;
-  const usagePct = isUnlimited ? 0 : Math.min(100, Math.round((currentCount / Math.max(1, maxClaims)) * 100));
+  const isFree = tier === 'free' || maxClaims === 0;
+  const atCap = !isUnlimited && !isFree && currentCount >= maxClaims;
+  const usagePct = isUnlimited || isFree ? 0 : Math.min(100, Math.round((currentCount / Math.max(1, maxClaims)) * 100));
 
   if (submitted) {
     return (
@@ -119,52 +120,76 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
         </p>
       </div>
 
-      {/* Claim usage meter */}
-      <div style={{
-        background: '#0f0f0f',
-        border: `1px solid ${atCap ? 'rgba(200,16,46,0.4)' : '#1e1e1e'}`,
-        borderRadius: 12,
-        padding: '1.25rem 1.5rem',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-          <span style={{ color: '#888', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Claims used ({tier} tier)
-          </span>
-          <span style={{ color: atCap ? '#C8102E' : '#fff', fontSize: '0.95rem', fontWeight: 700 }}>
-            {currentCount} / {isUnlimited ? '∞' : maxClaims}
-          </span>
-        </div>
-        {!isUnlimited && (
-          <div style={{ height: 6, background: '#1e1e1e', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${usagePct}%`,
-              background: atCap ? '#C8102E' : usagePct > 80 ? '#FFB81C' : '#38bdf8',
-              transition: 'width 0.3s',
-            }} />
+      {/* Claim usage meter - only for paid tiers. Free tier skips the meter and goes straight to the upgrade panel. */}
+      {!isFree && (
+        <div style={{
+          background: '#0f0f0f',
+          border: `1px solid ${atCap ? 'rgba(200,16,46,0.4)' : '#1e1e1e'}`,
+          borderRadius: 12,
+          padding: '1.25rem 1.5rem',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+            <span style={{ color: '#888', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Claims used ({tier} tier)
+            </span>
+            <span style={{ color: atCap ? '#C8102E' : '#fff', fontSize: '0.95rem', fontWeight: 700 }}>
+              {currentCount} / {isUnlimited ? '∞' : maxClaims}
+            </span>
           </div>
-        )}
-        {atCap && (
-          <p style={{ color: '#C8102E', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
-            You've reached the {maxClaims}-claim limit on the {tier} tier.{' '}
-            <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-              Upgrade to Pro
-            </Link>{' '}
-            for unlimited claims and bulk claim.
-          </p>
-        )}
-        {tier === 'free' && (
-          <p style={{ color: '#FFB81C', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
-            The Free tier doesn't include claims.{' '}
-            <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-              See paid plans
-            </Link>{' '}
-            starting at {formatTierPrice('supporter')}/year.
-          </p>
-        )}
-      </div>
+          {!isUnlimited && (
+            <div style={{ height: 6, background: '#1e1e1e', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${usagePct}%`,
+                background: atCap ? '#C8102E' : usagePct > 80 ? '#FFB81C' : '#38bdf8',
+                transition: 'width 0.3s',
+              }} />
+            </div>
+          )}
+          {atCap && (
+            <p style={{ color: '#C8102E', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
+              You've reached the {maxClaims}-claim limit on the {tier} tier.{' '}
+              <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
+                Upgrade to Pro
+              </Link>{' '}
+              for unlimited claims and bulk claim.
+            </p>
+          )}
+        </div>
+      )}
 
-      {atCap ? (
+      {isFree ? (
+        <div style={{
+          background: 'rgba(255,184,28,0.06)',
+          border: '1px solid rgba(255,184,28,0.3)',
+          borderRadius: 12,
+          padding: '2rem 1.5rem',
+          textAlign: 'center',
+        }}>
+          <p style={{ color: '#FFB81C', fontSize: '0.95rem', margin: '0 0 1rem', fontWeight: 600 }}>
+            Upgrade required to claim
+          </p>
+          <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
+            The Free tier doesn't include claims. Supporter is {formatTierPrice('supporter')}/year (1 claim), Verified is {formatTierPrice('verified')}/year (up to 5), Pro is {formatTierPrice('pro')}/year (unlimited + bulk).
+          </p>
+          <Link
+            href="/pricing"
+            style={{
+              display: 'inline-block',
+              background: '#FFB81C',
+              color: '#0a0a0a',
+              borderRadius: 6,
+              padding: '0.75rem 1.5rem',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              letterSpacing: '0.02em',
+            }}
+          >
+            See Plans →
+          </Link>
+        </div>
+      ) : atCap ? (
         <div style={{
           background: 'rgba(200,16,46,0.06)',
           border: '1px solid rgba(200,16,46,0.3)',
@@ -193,37 +218,6 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             }}
           >
             Upgrade to Pro →
-          </Link>
-        </div>
-      ) : tier === 'free' ? (
-        <div style={{
-          background: 'rgba(255,184,28,0.06)',
-          border: '1px solid rgba(255,184,28,0.3)',
-          borderRadius: 12,
-          padding: '2rem 1.5rem',
-          textAlign: 'center',
-        }}>
-          <p style={{ color: '#FFB81C', fontSize: '0.95rem', margin: '0 0 1rem', fontWeight: 600 }}>
-            Upgrade required
-          </p>
-          <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            Claiming listings is part of our paid membership. Supporter is {formatTierPrice('supporter')}/year (1 claim), Verified is {formatTierPrice('verified')}/year (up to 5), Pro is {formatTierPrice('pro')}/year (unlimited + bulk).
-          </p>
-          <Link
-            href="/pricing"
-            style={{
-              display: 'inline-block',
-              background: '#FFB81C',
-              color: '#0a0a0a',
-              borderRadius: 6,
-              padding: '0.75rem 1.5rem',
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              textDecoration: 'none',
-              letterSpacing: '0.02em',
-            }}
-          >
-            See Plans →
           </Link>
         </div>
       ) : (
