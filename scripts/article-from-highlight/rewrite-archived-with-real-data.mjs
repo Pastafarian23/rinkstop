@@ -249,7 +249,14 @@ async function main() {
       published_at: new Date().toISOString(),
       seo_title: `${newTitle} | RinkStop`,
       seo_description: `${newSubtitle} ${facts.away.name} and ${facts.home.name} faced off at ${facts.venue || 'the arena'}. Final score ${facts.finalScore}.`,
-      og_image_url: post.title || `https://rinkstop.com/api/og/game-${gameIdResult.gameId}.png`, // placeholder; will be replaced by image step
+      // og_image_url: prefer the existing image on the post (if one was set
+      // by a prior pipeline step), fall back to the planned /api/og/... route,
+      // and finally to null (the HomeNewsSection renders a gradient fallback
+      // when og_image_url is null — never use a headline string here, that
+      // produces broken <img> tags in the news grid).
+      og_image_url:
+        (post.og_image_url && /^https?:\/\//i.test(post.og_image_url) ? post.og_image_url : null)
+        || (gameIdResult?.gameId ? `https://rinkstop.com/api/og/game-${gameIdResult.gameId}.png` : null),
       team_home_id: homeTeamId,
       team_away_id: awayTeamId,
       league_id: nhlLeagueId,
