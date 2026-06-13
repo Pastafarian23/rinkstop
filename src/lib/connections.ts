@@ -24,6 +24,50 @@ export const TIER_RANK: Record<string, number> = {
 };
 
 /**
+ * Max number of APPROVED claims a user can hold on each tier.
+ *  free: 0 (cannot claim)
+ *  supporter: 1
+ *  verified: 5 (personal-scope: home rink, kid's team, beer-league squad, etc.)
+ *  pro: Infinity (org-scope: rink chains, multi-team orgs, leagues)
+ *
+ * Pending claims don't count against the cap (the user can submit a new one
+ * while a previous one is still being reviewed). The cap applies to
+ * status='approved' rows in the claims table.
+ *
+ * Special case: 'parent_managed' claims (where a parent claims their kid's
+ * player profile) don't count against the cap. They're a separate use case
+ * (declared via the special reason text 'parent_managed:<player_id>') and
+ * route through a different code path on the API side.
+ */
+export const MAX_CLAIMS_PER_TIER: Record<string, number> = {
+  free: 0,
+  supporter: 1,
+  verified: 5,
+  pro: Infinity,
+};
+
+export function getMaxClaimsForTier(tier: string): number {
+  return MAX_CLAIMS_PER_TIER[tier] ?? 0;
+}
+
+/**
+ * Count a user's APPROVED claims. Pending/rejected claims don't count.
+ */
+export async function getUserApprovedClaimCount(userId: string): Promise<number> {
+  const { count, error } = await supabaseAdmin
+    .from('claims')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('status', 'approved');
+
+  if (error) {
+    console.error('getUserApprovedClaimCount error:', error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+/**
  * Get the caller's Clerk userId, or null if not signed in.
  */
 export async function requireUserId(): Promise<string | null> {
