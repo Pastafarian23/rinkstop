@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   // Return only the env keys we need (no broad leak)
   return NextResponse.json({
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ? `${process.env.STRIPE_SECRET_KEY.slice(0, 10)}...` : null,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || null,
     STRIPE_PRICE_TIER_SUPPORTER: process.env.STRIPE_PRICE_TIER_SUPPORTER || null,
     STRIPE_PRICE_TIER_VERIFIED: process.env.STRIPE_PRICE_TIER_VERIFIED || null,
     STRIPE_PRICE_TIER_PRO: process.env.STRIPE_PRICE_TIER_PRO || null,
