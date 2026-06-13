@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { getUserTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
@@ -35,6 +36,31 @@ export async function POST(request: NextRequest) {
 
     if (!['rink', 'team', 'player'].includes(claim_type)) {
       return NextResponse.json({ error: 'Invalid claim type.' }, { status: 400 });
+    }
+
+    // Tier-based claim cap enforcement.
+    // Counts only APPROVED claims (pending claims can be in flight while the user submits more).
+    // Special case: 'parent_managed' claims (parent claims kid's player profile) bypass the cap
+    // because they're a different use case — one parent can manage many kids.
+    const isParentManagedClaim = typeof reason === 'string' && reason.startsWith('parent_managed:');
+    if (!isParentManagedClaim) {
+      const tier = await getUserTier(userId);
+      const maxClaims = getMaxClaimsForTier(tier);
+      if (maxClaims === 0) {
+        return NextResponse.json(
+          { error: `Claiming listings requires a paid membership. Upgrade to Supporter (1 claim), Verified (up to 5), or Pro (unlimited). See /pricing.` },
+          { status: 403 }
+        );
+      }
+      if (maxClaims !== Infinity) {
+        const currentCount = await getUserApprovedClaimCount(userId);
+        if (currentCount >= maxClaims) {
+          return NextResponse.json(
+            { error: `You have reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Pro for unlimited claims. See /pricing.` },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     const { data, error } = await supabaseAdmin

@@ -68,7 +68,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Four tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($9.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($19.99/year) adds a verified checkmark, unlimited claims, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($99.99/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, bulk claim, and an analytics dashboard. See /pricing for the full breakdown.',
+        a: 'Four tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($9.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($19.99/year) adds a verified checkmark, up to 5 claimed listings, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($99.99/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, unlimited claims, bulk claim, and an analytics dashboard. See /pricing for the full breakdown.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -111,7 +111,7 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Verified and Pro tier members can claim an unlimited number of listings. Supporter tier members can claim one listing. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
+        a: 'Supporter tier members can claim 1 listing. Verified tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro tier members can claim an unlimited number of listings, plus bulk claim for orgs that run multiple rinks, teams, or leagues. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
@@ -123,7 +123,7 @@ const sections: Array<{
       },
       {
         q: 'Can I update hours, contacts, and socials for a listing I claimed?',
-        a: 'Yes. Supporter tier includes one claimed listing with editable details. Verified and Pro include unlimited claimed listings, all editable from your dashboard. Rink hours, contact email/phone, website, and social handles are all updatable.',
+        a: 'Yes. Supporter tier includes 1 claimed listing with editable details. Verified tier includes up to 5 claimed listings. Pro includes unlimited claimed listings, all editable from your dashboard. Rink hours, contact email/phone, website, and social handles are all updatable.',
       },
       {
         q: 'How long does listing review take?',

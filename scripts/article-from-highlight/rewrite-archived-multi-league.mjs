@@ -240,7 +240,7 @@ async function main() {
   // Pull highlight info
   const hlIds = [...new Set((posts || []).map(p => p.highlight_id))];
   const { data: hls } = await sb.from('highlight_backups')
-    .select('id, title, home_team_name, away_team_name, match_date, league_name, league_id, country_code, match_round, match_season')
+    .select('id, title, home_team_name, away_team_name, match_date, league_name, league_id, country_code, match_round, match_season, image_url')
     .in('id', hlIds);
   const hlMap = new Map((hls || []).map(h => [h.id, h]));
   
@@ -355,7 +355,13 @@ async function main() {
       published_at: new Date().toISOString(),
       seo_title: `${newTitle} | RinkStop`,
       seo_description: newSubtitle,
-      og_image_url: hl.home_team_logo || matchData.home_team_logo || null,
+      // Prefer the highlight's video thumbnail (ESPN/YouTube/etc. CDN URL
+      // from highlight_backups.image_url). Fall back to a team logo only if
+      // no thumbnail is available. Never use a headline string here.
+      og_image_url:
+        (hl.image_url && /^https?:\/\//i.test(hl.image_url) ? hl.image_url : null)
+        || (matchData?.home_team_logo && /^https?:\/\//i.test(matchData.home_team_logo) ? matchData.home_team_logo : null)
+        || null,
       team_home_id: homeTeam?.id || null,
       team_away_id: awayTeam?.id || null,
       league_id: leagueMap.id || null,

@@ -80,13 +80,13 @@ const TIERS: Tier[] = [
     features: [
       'Everything in Supporter',
       'Verified checkmark on your profile and every listing you claim',
-      'Unlimited claimed listings',
+      'Up to 5 claimed listings (perfect for a personal scope: your home rink, your kid’s team, your beer-league squad)',
       'Public profile page you can share (​rinkstop.com/u/you)',
       'Send and receive DMs with other Verified+ users',
       'Above search results in directory listings',
     ],
     footnote:
-      'Verified is the identity play. It tells the people you DM that you are who you say you are.',
+      'Verified is the identity play. It tells the people you DM that you are who you say you are. If you need to claim more than 5 listings (you run a rink chain, league, or multi-team org), upgrade to Pro.',
   },
   {
     id: 'pro',
@@ -102,6 +102,7 @@ const TIERS: Tier[] = [
     stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
     features: [
       'Everything in Verified',
+      'Unlimited claimed listings (org scope: rinks, teams, leagues — whatever you run)',
       'Featured Listing rotation in your city (top of directory, every page load)',
       'Lead capture form on your profile — visitors can contact you without signing up',
       'Bulk claim — claim every team, rink, or league in your organization at once',
@@ -109,7 +110,7 @@ const TIERS: Tier[] = [
       'Custom branding on your public profile',
     ],
     footnote:
-      'At $299/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t.',
+      'At $299/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t. Built for rinks, rink chains, leagues, and multi-team orgs.',
   },
 ];
 
@@ -124,7 +125,7 @@ const FAQ = [
   },
   {
     q: 'Can I claim a listing without paying?',
-    a: 'Supporter, Verified, and Pro all include claims as part of the membership. One claim on Supporter, unlimited on Verified and Pro. Free accounts can browse but not claim.',
+    a: 'Supporter includes 1 claim. Verified includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro includes unlimited claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Free accounts can browse but not claim.',
   },
   {
     q: 'I manage a rink. Which tier is for me?',
@@ -365,7 +366,7 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Claim listings</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>
-                    {t.id === 'free' ? '—' : t.id === 'supporter' ? '1' : 'Unlimited'}
+                    {t.id === 'free' ? '—' : t.id === 'supporter' ? '1' : t.id === 'verified' ? 'Up to 5' : 'Unlimited'}
                   </td>
                 ))}
               </tr>
