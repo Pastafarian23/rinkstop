@@ -148,17 +148,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <NavAuth />
                   <Link
                     href="/pricing"
-                    className="nav-pricing-button"
+                    className="nav-pricing-link"
                     style={{
-                      color: '#FFB81C',
-                      fontSize: '0.875rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
                       padding: '0.5rem 0.875rem',
-                      borderRadius: 4,
-                      border: '1px solid #FFB81C',
+                      color: 'rgba(255,255,255,0.75)',
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      textDecoration: 'none',
                       whiteSpace: 'nowrap',
                     }}
                   >
