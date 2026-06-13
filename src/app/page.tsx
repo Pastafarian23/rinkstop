@@ -277,24 +277,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ---- E-E-A-T INTRO (server-rendered, full HTML, crawlable text) ------------- */}
-      <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
-        <div className="container" style={{ maxWidth: '900px' }}>
-          <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', color: '#fff', marginBottom: '0.75rem' }}>
-            THE WORLD’S HOCKEY DIRECTORY
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.7, margin: 0 }}>
-            RinkStop is the largest free, searchable directory of ice hockey rinks, teams, players, and leagues anywhere on the web.
-            Whether you’re looking for a <Link href="/directory/rinks" style={{ color: '#FFB81C', textDecoration: 'underline' }}>hockey rink near you</Link>,
-            scouting <Link href="/directory/teams" style={{ color: '#FFB81C', textDecoration: 'underline' }}>youth and amateur teams</Link> by city or league,
-            tracking <Link href="/directory/players" style={{ color: '#FFB81C', textDecoration: 'underline' }}>player profiles and career stats</Link>,
-            or following your favorite <Link href="/directory/leagues" style={{ color: '#FFB81C', textDecoration: 'underline' }}>league</Link>’s schedule,
-            RinkStop puts the whole hockey world in one place. Browse NHL, AHL, KHL, NCAA, IIHF, PWHL, and hundreds of junior, women’s, and amateur leagues.
-            Every listing is open to the public, free to browse, and free to claim.
-          </p>
-        </div>
-      </section>
-
       {/* ---- CATEGORIES ------------------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
@@ -332,6 +314,24 @@ export default async function Home() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0.875rem 0 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <TicketmasterAd size="468x60" />
           </div>
+        </div>
+      </section>
+
+      {/* ---- E-E-A-T INTRO (server-rendered, full HTML, crawlable text) ------------- */}
+      <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+        <div className="container" style={{ maxWidth: '900px' }}>
+          <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', color: '#fff', marginBottom: '0.75rem' }}>
+            THE WORLD’S HOCKEY DIRECTORY
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.7, margin: 0 }}>
+            RinkStop is the largest free, searchable directory of ice hockey rinks, teams, players, and leagues anywhere on the web.
+            Whether you’re looking for a <Link href="/directory/rinks" style={{ color: '#FFB81C', textDecoration: 'underline' }}>hockey rink near you</Link>,
+            scouting <Link href="/directory/teams" style={{ color: '#FFB81C', textDecoration: 'underline' }}>youth and amateur teams</Link> by city or league,
+            tracking <Link href="/directory/players" style={{ color: '#FFB81C', textDecoration: 'underline' }}>player profiles and career stats</Link>,
+            or following your favorite <Link href="/directory/leagues" style={{ color: '#FFB81C', textDecoration: 'underline' }}>league</Link>’s schedule,
+            RinkStop puts the whole hockey world in one place. Browse NHL, AHL, KHL, NCAA, IIHF, PWHL, and hundreds of junior, women’s, and amateur leagues.
+            Every listing is open to the public, free to browse, and free to claim.
+          </p>
         </div>
       </section>
 
