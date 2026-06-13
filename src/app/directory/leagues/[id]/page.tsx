@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import LeagueDetailClient from './LeagueDetailClient';
+import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 
 const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
 const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('127.0.0.1')
@@ -88,6 +89,10 @@ export default async function LeaguePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(leagueJsonLd) }}
         />
       )}
+      {/* Claim this listing — only renders on unclaimed leagues. Renders above
+          the main client component. Note: leagues aren't a first-class claim
+          type in the DB yet, so the CTA is a best-effort gate. */}
+      <ClaimThisListingMount entityType="league" entityId={id} />
       <LeagueDetailClient id={id} />
     </>
   );

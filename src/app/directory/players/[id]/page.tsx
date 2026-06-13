@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import PlayerDetail from './PlayerDetailClient';
+import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -170,6 +171,10 @@ export default async function PlayerPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }}
         />
       )}
+      {/* Claim this listing — only renders on unclaimed players. Renders above
+          the main client component so the CTA is the first thing an unverified
+          visitor sees when they land on the page. */}
+      <ClaimThisListingMount entityType="player" entityId={id} />
       <PlayerDetail id={id} />
     </>
   );
