@@ -8,6 +8,7 @@ import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
 import SaveButton from '@/components/SaveButton';
 import { ClaimedBy } from '@/components/ClaimedBy';
+import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
@@ -438,6 +439,10 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
         {/* Claimed by (if any) */}
         <ClaimedBy entityType="rink" entityId={rink.id} entityName={rink.name} />
+
+        {/* Claim this listing — only renders on unclaimed rinks. Suppressed automatically
+            when an approved claim exists (ClaimedBy is showing instead). */}
+        <ClaimThisListingMount entityType="rink" entityId={rink.id} entityName={rink.name} />
 
         {/* Pro-tier lead capture form */}
         <ListingContactFormMount

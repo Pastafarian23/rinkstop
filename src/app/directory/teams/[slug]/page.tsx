@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import TeamDetailClient from './TeamDetailClient';
+import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import { teamPageDecision } from '@/lib/seo';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -237,6 +238,9 @@ export default async function TeamPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {/* Claim this listing — only renders on unclaimed teams. Renders above the
+          main team header so the CTA is the first thing an unverified visitor sees. */}
+      <ClaimThisListingMount entityType="team" entityId={team.id} entityName={team.name} />
       <TeamDetailClient team={team} players={players} articles={articles} />
     </>
   );
