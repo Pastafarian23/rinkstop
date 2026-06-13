@@ -10,25 +10,6 @@ export default function MobileNav() {
 
   return (
     <nav className="mob-drawer" aria-label="Mobile navigation">
-      <Link
-        href="/pricing"
-        onClick={() => { const cb = document.getElementById('mob-nav') as HTMLInputElement; if (cb) cb.checked = false; setOpen(null); }}
-        className="mob-link"
-        style={{
-          background: 'rgba(255, 184, 28, 0.12)',
-          borderLeft: '3px solid #FFB81C',
-          color: '#FFB81C',
-          fontWeight: 700,
-          fontSize: '0.9375rem',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          textDecoration: 'none',
-          display: 'block',
-          padding: '0.75rem 1rem',
-        }}
-      >
-        Pricing
-      </Link>
       {NAV_SECTIONS.map(sec => (
         <div key={sec.label}>
           <button
