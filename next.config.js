@@ -70,6 +70,20 @@ const nextConfig = {
         destination: '/gear-reviews',
         permanent: true,
       },
+      // www.rinkstop.com → rinkstop.com (301)
+      // Closes the brand-signal split: GSC's 90d report shows both
+      // www.rinkstop.com (6 clicks, 9 impr, pos 1.11) and
+      // rinkstop.com (23 clicks, 72 impr, pos 1.60) getting impressions
+      // for the same queries. Consolidating to the naked domain
+      // doubles our ranking signal for the home page.
+      {
+        source: '/:path*',
+        has: [
+          { type: 'host', value: 'www.rinkstop.com' },
+        ],
+        destination: 'https://rinkstop.com/:path*',
+        permanent: true,
+      },
       {
         source: '/(.*)',
         has: [
