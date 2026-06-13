@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { formatTierPrice } from '@/lib/pricing';
 
 interface ClaimForm {
   claimType: 'rink' | 'team' | 'player';
@@ -158,7 +159,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
               See paid plans
             </Link>{' '}
-            starting at $9.99/year.
+            starting at {formatTierPrice('supporter')}/year.
           </p>
         )}
       </div>
@@ -206,7 +207,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Upgrade required
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            Claiming listings is part of our paid membership. Supporter is $9.99/year (1 claim), Verified is $19.99/year (up to 5), Pro is $299/year (unlimited + bulk).
+            Claiming listings is part of our paid membership. Supporter is {formatTierPrice('supporter')}/year (1 claim), Verified is {formatTierPrice('verified')}/year (up to 5), Pro is {formatTierPrice('pro')}/year (unlimited + bulk).
           </p>
           <Link
             href="/pricing"

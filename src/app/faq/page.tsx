@@ -68,7 +68,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Four tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($9.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($19.99/year) adds a verified checkmark, up to 5 claimed listings, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($99.99/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, unlimited claims, bulk claim, and an analytics dashboard. See /pricing for the full breakdown.',
+        a: 'Four tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($59.99/year) adds a verified checkmark, up to 5 claimed listings, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($299/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, unlimited claims, bulk claim, and an analytics dashboard. See /pricing for the full breakdown.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -92,7 +92,7 @@ const sections: Array<{
       },
       {
         q: 'Is there a free trial?',
-        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Supporter - it is $9.99/year and you can cancel anytime by emailing support.',
+        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Supporter - it is $19.99/year and you can cancel anytime by emailing support.',
       },
     ],
   },

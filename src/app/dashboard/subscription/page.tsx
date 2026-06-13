@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
 import ManageSubscriptionClient from './ManageSubscriptionClient';
+import { formatTierPricePerYear } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,9 +16,9 @@ const TIER_LABELS: Record<string, string> = {
 };
 
 const TIER_PRICES: Record<string, string> = {
-  supporter: '$9.99 / year',
-  verified: '$29.99 / year',
-  pro: '$99.99 / year',
+  supporter: formatTierPricePerYear('supporter'),
+  verified: formatTierPricePerYear('verified'),
+  pro: formatTierPricePerYear('pro'),
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {

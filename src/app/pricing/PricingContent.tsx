@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
+import { formatTierPrice } from '@/lib/pricing';
 
 type Tier = {
   id: 'free' | 'supporter' | 'verified' | 'pro';
@@ -46,7 +47,7 @@ const TIERS: Tier[] = [
   {
     id: 'supporter',
     label: 'Supporter',
-    price: '$19.99',
+    price: formatTierPrice('supporter'),
     period: '/ year',
     tagline: 'I support the site and want the good stuff',
     color: '#FFB81C',
@@ -68,7 +69,7 @@ const TIERS: Tier[] = [
   {
     id: 'verified',
     label: 'Verified',
-    price: '$59.99',
+    price: formatTierPrice('verified'),
     period: '/ year',
     tagline: 'I want to be taken seriously',
     color: '#14B8A6',
@@ -91,7 +92,7 @@ const TIERS: Tier[] = [
   {
     id: 'pro',
     label: 'Pro',
-    price: '$299',
+    price: formatTierPrice('pro'),
     period: '/ year',
     tagline: 'I run a rink, team, or league and want to be found',
     color: '#C8102E',
@@ -110,7 +111,7 @@ const TIERS: Tier[] = [
       'Custom branding on your public profile',
     ],
     footnote:
-      'At $299/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t. Built for rinks, rink chains, leagues, and multi-team orgs.',
+      `At ${formatTierPrice('pro')}/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t. Built for rinks, rink chains, leagues, and multi-team orgs.`,
   },
 ];
 
