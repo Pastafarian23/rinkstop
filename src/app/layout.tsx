@@ -98,7 +98,6 @@ const ABOUT_LINKS = [
   { href: '/advertise',   label: 'Advertise'       },
   { href: '/partner',     label: 'Partner With Us' },
   { href: '/add-listing', label: 'Add Listing'     },
-  { href: '/pricing', label: 'Pricing' },
 ];
 
 const NAV: never[] = []; // unused, kept to avoid breaking any external references
@@ -143,9 +142,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   />
                 </Link>
 
-                {/* Desktop right — Sign In/Up or Clerk UserButton on the left, Pricing button, then Menu on the far right */}
+                {/* Desktop right — Sign In/Up or Clerk UserButton on the left, Menu, then Pricing on the far right */}
                 <div className="nav-right">
                   <NavAuth />
+                  <NavLinks />
                   <Link
                     href="/pricing"
                     className="nav-pricing-link"
@@ -162,7 +162,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   >
                     Pricing
                   </Link>
-                  <NavLinks />
                 </div>
 
                 {/* Mobile right-side controls (profile button + hamburger) */}

@@ -36,6 +36,17 @@ export default function MobileNav() {
           ))}
         </div>
       ))}
+      <Link
+        href="/pricing"
+        className="mob-link"
+        onClick={() => {
+          const cb = document.getElementById('mob-nav') as HTMLInputElement;
+          if (cb) cb.checked = false;
+          setOpen(null);
+        }}
+      >
+        Pricing
+      </Link>
       <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         <Show
           when="signed-out"
