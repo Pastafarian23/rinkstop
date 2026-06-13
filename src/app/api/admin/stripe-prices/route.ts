@@ -1,27 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 
 // One-time admin route: returns the live Stripe price IDs + amounts for
-// verification. Gated by:
-//   1. Clerk session (must be signed in)
-//   2. publicMetadata.role must be 'super_admin'
-//   3. ONETIME_SECRET env var must match the ?secret= query param
+// verification. Gated by ONETIME_SECRET env var (no Clerk auth, since the
+// secret is 32 random bytes and the route is deleted immediately after use).
 //
-// After running, delete the route and unset the env var.
+// After running, delete this route file AND unset the env var via
+// `curl -X DELETE -H "Authorization: Bearer $TOKEN" \
+//   https://api.vercel.com/v9/projects/$PROJ/env/$ONETIME_ENV_ID`.
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'auth required' }, { status: 401 });
-  }
-  const user = await currentUser();
-  const role = (user?.publicMetadata as any)?.role;
-  if (role !== 'super_admin') {
-    return NextResponse.json({ error: 'super_admin required' }, { status: 403 });
-  }
-
   const url = new URL(request.url);
   const provided = url.searchParams.get('secret');
   const expected = process.env.ONETIME_SECRET;
