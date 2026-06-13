@@ -206,7 +206,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Upgrade required
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            Claiming listings is part of our paid membership. Supporter is $9.99/year (1 claim), Verified is $19.99/year (up to 5), Pro is $99.99/year (unlimited + bulk).
+            Claiming listings is part of our paid membership. Supporter is $9.99/year (1 claim), Verified is $19.99/year (up to 5), Pro is $299/year (unlimited + bulk).
           </p>
           <Link
             href="/pricing"
