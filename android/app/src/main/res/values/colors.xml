@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- RinkStop brand colors -->
+    <color name="rinkstopNavy">#041E42</color>
+    <color name="rinkstopRed">#C8102E</color>
+    <color name="rinkstopGold">#FFB81C</color>
+    <color name="rinkstopIce">#EEF5FF</color>
+
+    <!-- App theme colors (used by AppTheme) -->
+    <color name="colorPrimary">#041E42</color>
+    <color name="colorPrimaryDark">#041E42</color>
+    <color name="colorAccent">#C8102E</color>
+</resources>
