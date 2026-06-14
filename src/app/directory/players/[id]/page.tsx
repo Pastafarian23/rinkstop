@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import PlayerDetail from './PlayerDetailClient';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -106,6 +107,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PlayerPage({ params }: Props) {
   const { id } = await params;
 
+  // Social: look up owner + follower count in parallel (cheap, indexed).
+  // Player pages may not have a claimed owner — `owner` is null in that
+  // case and the message button won't render.
+  const [owner, initialFollowersCount] = await Promise.all([
+    getEntityOwner('player', id),
+    getFollowersCount('player', id),
+  ]);
+
   // Server-side JSON-LD: Person (athlete) + BreadcrumbList.
   // We re-fetch the player record here so the structured data is in the
   // initial HTML (Googlebot sees it on first crawl). The client component
@@ -175,7 +184,7 @@ export default async function PlayerPage({ params }: Props) {
           the main client component so the CTA is the first thing an unverified
           visitor sees when they land on the page. */}
       <ClaimThisListingMount entityType="player" entityId={id} />
-      <PlayerDetail id={id} />
+      <PlayerDetail id={id} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} />
     </>
   );
 }

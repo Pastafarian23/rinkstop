@@ -7,6 +7,8 @@ import RinkGames from '@/components/RinkGames';
 import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
 import SaveButton from '@/components/SaveButton';
+import SocialActions from '@/components/SocialActions';
+import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
@@ -186,6 +188,14 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   const blurb = buildRinkBlurb(rink);
   const locationLine = [rink.city, rink.province_state, rink.country].filter(Boolean).join(', ');
 
+  // Social: fetch owner + initial follower count in parallel with the rest of
+  // the page. (Rinks don't always have an owner; pass null to skip the
+  // message button.)
+  const [owner, initialFollowersCount] = await Promise.all([
+    getEntityOwner('rink', rink.id),
+    getFollowersCount('rink', rink.id),
+  ]);
+
   // Compute current open/closed state from Google's opening_hours_json.
   // Server-side so the pill is accurate at request time. Returns
   // 'unknown' if the rink has no published hours — in that case we
@@ -364,7 +374,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
         {/* Actions: Save to favorites */}
         <div style={{ marginBottom: '24px' }}>
-          <SaveButton favoriteType="rink" favoriteId={rink.id} entityName={rink.name} size="md" />
+          <SocialActions
+            followeeType="rink"
+            followeeId={rink.id}
+            followeeName={rink.name}
+            favoriteType="rink"
+            favoriteId={rink.id}
+            favoriteName={rink.name}
+            messageRecipientId={owner?.userId ?? undefined}
+            messageRecipientName={rink.name}
+            initialFollowersCount={initialFollowersCount}
+            size="md"
+          />
         </div>
 
         {/* LIVE OPEN/CLOSED PILL + GOOGLE CONTACT ROW
