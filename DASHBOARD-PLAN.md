@@ -322,6 +322,29 @@ Rink operators, league admins, team admins, and business users need to actually 
 - League ownership has no claim path today. SocialActions on `/directory/leagues/[id]` only renders Follow + Save (no Message).
 - Real-time updates (WebSocket) deferred — existing 5s poll in the messages thread is unchanged.
 
+## Phase 5 — Social Sharing
+
+**Status (2026-06-14):** Phase 5 shipped via PR #18 (squash-merged to main, Vercel production READY). 10 files, +538/-1.
+
+Any user (logged in or public) can share a team/player/rink/league/business to their own social platform in one tap. Two share paths, picked automatically per device:
+- **Web Share API** (`navigator.share`): mobile gets a single Share button that opens the native iOS/Android share sheet
+- **Desktop popover**: deep links to X / Facebook / LinkedIn / WhatsApp / Reddit / Email / Copy link
+
+**What landed:**
+- `src/lib/share.ts` — per-entity share payload builders (rink/team/player/league/business/user) + intent URL generators for 7 platforms
+- `src/components/ShareButton.tsx` — client component, Web Share API detect on mount, dark variant matches the SocialActions toolbar
+- `src/components/SocialActions.tsx` — optional `share` prop renders ShareButton next to Follow / Save / Message
+- Wired into: `/directory/rinks/[slug]`, `/directory/teams/[slug]`, `/directory/players/[id]`, `/directory/leagues/[id]`, `/u/[userId]`, `/businesses/[id]`
+
+**Verified:**
+- `tsc --noEmit`: clean
+- `pnpm build`: 10 changed files compiled, all routes still build
+- Share URL builder tests: 6/6 entity payloads + 7/7 intent URLs
+
+**Known follow-ups:**
+- Per-entity share counts (analytics). Defer — would need a `share_events` table or `share_count` columns.
+- Dynamic OG image generation per entity (Vercel OG cards with the entity name baked in). Existing per-entity images (team logos / player headshots) work for v1.
+
 ---
 
 ## Phase 4 — Polish / Bug Hunt
