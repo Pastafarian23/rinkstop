@@ -93,9 +93,11 @@ export async function fetchNhlGameFacts(gameId) {
     if (!t) continue;
     for (const g of (t.goalies || [])) {
       if (!g.toi || g.toi === '00:00') continue;
+      const goalieName = g.name?.default || null;
+      if (!goalieName) continue;  // skip goalies with no name
       goalies.push({
         team: teamKey === 'homeTeam' ? home.abbrev : away.abbrev,
-        name: g.name?.default || null,
+        name: goalieName,
         jerseyNumber: g.sweaterNumber ?? null,
         position: g.positionCode || 'G',
         toi: g.toi,

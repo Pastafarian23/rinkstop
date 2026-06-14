@@ -8,6 +8,7 @@ import RinkReviews from '@/components/RinkReviews';
 import ReviewForm from './ReviewForm';
 import SaveButton from '@/components/SaveButton';
 import SocialActions from '@/components/SocialActions';
+import EmailCaptureInline from '@/components/EmailCaptureInline';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildRinkShare } from '@/lib/share';
 import { ClaimedBy } from '@/components/ClaimedBy';
@@ -387,6 +388,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             initialFollowersCount={initialFollowersCount}
             share={buildRinkShare(rink)}
             size="md"
+          />
+        </div>
+
+        {/* Soft-signup email capture — shown to anonymous users reading about this rink */}
+        <div style={{ marginBottom: '24px' }}>
+          <EmailCaptureInline
+            pitch={`Get notified when ${rink.name} has new games, schedule changes, or operator updates.`}
+            cta="Email me updates"
+            entityType="rink"
+            entityId={rink.id}
+            entityName={rink.name}
+            intent="email_capture"
           />
         </div>
 
