@@ -4,7 +4,12 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import { FounderBadge } from '@/components/FounderBadge';
-import QuickActionsGrid from '@/components/QuickActionsGrid';
+import AccountTypeBadges from '@/components/AccountTypeBadges';
+import AccountTypePicker from '@/components/AccountTypePicker';
+import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
+import { loadDashboardTypeData } from '@/components/dashboard/dashboardTypeData';
+import { isAccountType } from '@/components/dashboard/dashboardTypes';
+import type { AccountType } from '@/components/dashboard/dashboardTypes';
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -19,7 +24,7 @@ export default async function DashboardPage() {
   // Profile completeness + tier
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('bio, location, tier, is_founding_member, created_at, role')
+    .select('bio, location, tier, is_founding_member, created_at, role, display_name')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -34,23 +39,30 @@ export default async function DashboardPage() {
     ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null;
 
+  // Account types (Phase 0.1 — multi-type).
+  const { data: accountTypeRows } = await supabaseAdmin
+    .from('profile_account_types')
+    .select('account_type, is_primary')
+    .eq('user_id', userId);
+
+  const types: AccountType[] = (accountTypeRows || [])
+    .map((r: { account_type: string }) => r.account_type)
+    .filter(isAccountType);
+  const primaryRow = (accountTypeRows || []).find((r: { is_primary: boolean }) => r.is_primary);
+  const primary = (primaryRow?.account_type && isAccountType(primaryRow.account_type) ? primaryRow.account_type : null) as AccountType | null;
+
+  // Per-type dashboard data. The query is wrapped so a missing table doesn't 500.
+  const typeData = await loadDashboardTypeData(userId);
+
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
-    { field: 'Display name', done: !!firstName, href: '/dashboard/profile', hint: 'Add your first and last name' },
+    { field: 'Display name', done: !!(profile?.display_name || firstName), href: '/dashboard/profile', hint: 'Add your first and last name' },
     { field: 'Avatar', done: !!avatarUrl, href: '/dashboard/profile', hint: 'Upload a profile photo' },
     { field: 'Bio', done: !!profile?.bio, href: '/dashboard/profile', hint: 'Tell people who you are' },
     { field: 'Location', done: !!profile?.location, href: '/dashboard/profile', hint: 'Add your city so people nearby can find you' },
+    { field: 'Account type', done: types.length > 0, href: '/dashboard/profile#account-types', hint: 'Tell us what you do in hockey' },
   ];
   const completenessPct = Math.round((completeness.filter(c => c.done).length / completeness.length) * 100);
   const firstMissing = completeness.find(c => !c.done);
-
-  const quickLinks = [
-    { href: '/dashboard/profile', label: 'Edit Profile', icon: '👤', desc: 'Update your name, avatar & contact info' },
-    { href: `/u/${userId}`, label: 'View Public Profile', icon: '👁️', desc: 'See how your profile appears to others' },
-    { href: '/dashboard/reviews', label: 'My Reviews', icon: '⭐', desc: 'View and manage your submitted reviews' },
-    { href: '/dashboard/favorites', label: 'Saved Items', icon: '❤️', desc: 'Players, teams and rinks you\'ve saved' },
-    { href: '/dashboard/claims', label: 'Claim a Profile', icon: '✅', desc: 'Request ownership of a listing' },
-    { href: '/dashboard/support', label: 'Help & Support', icon: '💬', desc: 'Get help or contact our team' },
-  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -115,6 +127,11 @@ export default async function DashboardPage() {
                 </>
               )}
             </div>
+            {types.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <AccountTypeBadges types={types} primary={primary} size="sm" />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -152,19 +169,105 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Quick links */}
-      <div style={{
-        background: '#0f0f0f',
-        border: '1px solid #1e1e1e',
-        borderRadius: 12,
-        padding: '1.5rem',
-      }}>
-        <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 1.25rem' }}>
-          QUICK ACTIONS
-        </h3>
-        <QuickActionsGrid links={quickLinks} />
-      </div>
+      {/* Onboarding for users who haven't picked an account type yet */}
+      {types.length === 0 && (
+        <div
+          id="account-types"
+          style={{
+            background: 'linear-gradient(135deg, rgba(20,184,166,0.06) 0%, rgba(96,165,250,0.04) 100%)',
+            border: '1px solid rgba(20,184,166,0.25)',
+            borderRadius: 12,
+            padding: '1.75rem',
+          }}
+        >
+          <h3
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: '1.25rem',
+              color: '#fff',
+              letterSpacing: '0.05em',
+              margin: '0 0 0.5rem',
+            }}
+          >
+            WHAT DO YOU DO IN HOCKEY?
+          </h3>
+          <p
+            style={{
+              color: 'rgba(255,255,255,0.65)',
+              fontSize: '0.9rem',
+              margin: '0 0 1.25rem',
+              maxWidth: 640,
+            }}
+          >
+            Pick every role that fits you. We&rsquo;ll show you the right tools and shortcuts for each one.
+          </p>
+          <AccountTypePicker />
+        </div>
+      )}
 
+      {/* Type-aware sections — primary first */}
+      {types.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <h3
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: '1.15rem',
+              color: '#fff',
+              letterSpacing: '0.05em',
+              margin: '0.5rem 0 0',
+            }}
+          >
+            YOUR HOCKEY ROLES
+          </h3>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '1rem',
+            }}
+          >
+            {types.map((t) => (
+              <TypeSectionCard
+                key={t}
+                type={t}
+                primary={primary}
+                data={typeData}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Edit types shortcut — visible to everyone who has at least one type */}
+      {types.length > 0 && (
+        <div
+          id="account-types"
+          style={{
+            background: '#0f0f0f',
+            border: '1px solid #1e1e1e',
+            borderRadius: 12,
+            padding: '1.5rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: '1rem' }}>
+            <h3
+              style={{
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+                fontSize: '1.1rem',
+                color: '#fff',
+                letterSpacing: '0.05em',
+                margin: 0,
+              }}
+            >
+              MANAGE YOUR ROLES
+            </h3>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+              Multi-select is free. Add or remove roles anytime.
+            </span>
+          </div>
+          <AccountTypePicker />
+        </div>
+      )}
     </div>
   );
 }
