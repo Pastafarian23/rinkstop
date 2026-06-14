@@ -248,6 +248,18 @@ Rink operators, league admins, team admins, and business users need to actually 
 
 **Rink/league/team-admin scope deferred** — those are 2.1/2.2/2.3. They edit the existing rinks/teams/leagues rows (separate tables, different write path). Business is the first new listing type because Phase 1's empty state pointed at `/dashboard/listings`. Rink/league/team-admin claim editing is already live via the `ClaimThisListing` CTA + Claims system.
 
+**Status (2026-06-14, update):** Phase 2.5 + 2.1-2.3 shipped via PR #16 (squash-merged, Vercel production READY). 11 files, +1609 lines.
+
+- `/businesses` + `/businesses/[id]` public directory (list + detail)
+- `/api/manage/[type]/[id]` PATCH with field allowlist + per-field validation (rink/team/league)
+- `/dashboard/manage/{rink|team|league}/[id]` edit pages
+- `/dashboard/claims/page.tsx` rewritten to show existing claims (was just the submit form); each approved claim has a Manage button
+- Top-nav Explore: added Businesses; top-nav About: added List Your Business shortcut
+
+**Known limitations:**
+- League ownership is gated by `account_type='league_admin'` only — no `league_claims` table today. When that table is added, swap the `isOwner` branch in `/api/manage/[type]/[id]/route.ts` to a claim check (same pattern as rink/team).
+- `managed_relationships` table referenced by Phase 1's `dashboardTypeData` doesn't exist; the data loader catches the missing table and degrades gracefully (counts fall back to 0, sections show empty states).
+
 ### 2.1 — Rink operator
 - Edit: name, address, hours (per day of week), phone, website, photos (upload to Supabase storage), amenities (checkboxes: parking, pro shop, food, skate rental, lessons, leagues)
 - See incoming leads (`leads` table exists)
