@@ -10,6 +10,7 @@ import NHLShopWidget from '@/components/NHLShopWidget';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import SaveButton from '@/components/SaveButton';
 import SocialActions from '@/components/SocialActions';
+import EmailCaptureInline from '@/components/EmailCaptureInline';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 
@@ -112,6 +113,16 @@ export default function TeamDetailClient({
               />
             </div>
             <ClaimedBy entityType="team" entityId={team.id} entityName={team.name} />
+            <div style={{ marginTop: '1rem' }}>
+              <EmailCaptureInline
+                pitch={`Get notified when ${team.name} has new games, schedule changes, or roster updates.`}
+                cta="Email me updates"
+                entityType="team"
+                entityId={team.id}
+                entityName={team.name}
+                intent="email_capture"
+              />
+            </div>
             <div style={{ marginTop: '1rem' }}>
               <ListingContactFormMount
                 listingType="team"

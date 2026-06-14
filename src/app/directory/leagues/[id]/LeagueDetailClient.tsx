@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import LeagueRelated from '@/components/LeagueRelated';
 import SocialActions from '@/components/SocialActions';
+import EmailCaptureInline from '@/components/EmailCaptureInline';
 import { buildLeagueShare } from '@/lib/share';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -71,6 +72,16 @@ export default function LeagueDetailClient({ id, initialFollowersCount = 0 }: { 
             level: league.level,
           })}
           size="md"
+        />
+      </div>
+      <div className="mb-6">
+        <EmailCaptureInline
+          pitch={`Get notified when ${league.name} has new articles, announcements, or job postings.`}
+          cta="Email me updates"
+          entityType="league"
+          entityId={league.id}
+          entityName={league.name}
+          intent="email_capture"
         />
       </div>
       {league.description && <p className="text-slate-300 mb-6">{league.description}</p>}
