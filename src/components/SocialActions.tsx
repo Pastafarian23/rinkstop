@@ -3,10 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import ShareButton from './ShareButton';
+import type { SharePayload } from '@/lib/share';
 
 type FolloweeType = 'player' | 'team' | 'rink' | 'league' | 'user';
 
 interface SocialActionsProps {
+  // Optional share payload. When present, a Share button is rendered.
+  // The button uses the Web Share API on mobile and a desktop popover
+  // with X / Facebook / LinkedIn / WhatsApp / Reddit / Email / Copy link.
+  share?: SharePayload | null;
   // Where to put a "Message" button. Omit if not applicable (e.g. rinks
   // don't have a person to DM). For entities like rinks, you'd message
   // the owner user — we leave the owner-based wiring for a follow-up.
@@ -45,6 +51,7 @@ export default function SocialActions(props: SocialActionsProps) {
     favoriteType, favoriteId, favoriteName,
     initialFollowersCount = 0,
     layout = 'row', size = 'md',
+    share,
   } = props;
   const { isSignedIn, isLoaded } = useUser();
 
@@ -236,6 +243,12 @@ export default function SocialActions(props: SocialActionsProps) {
           <span style={{ fontSize: iconSize }}>✉</span>
           <span>Message{messageRecipientName ? ` ${messageRecipientName.split(' ')[0]}` : ''}</span>
         </Link>
+      )}
+
+      {share && (
+        <div style={btnFlex}>
+          <ShareButton payload={share} variant="dark" />
+        </div>
       )}
     </div>
   );

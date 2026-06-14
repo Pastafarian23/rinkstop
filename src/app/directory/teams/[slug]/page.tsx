@@ -6,6 +6,7 @@ import TeamDetailClient from './TeamDetailClient';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import { teamPageDecision } from '@/lib/seo';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
+import { buildTeamShare } from '@/lib/share';
 
 const BASE_URL = 'https://rinkstop.com';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -248,7 +249,7 @@ export default async function TeamPage({ params }: Props) {
       {/* Claim this listing — only renders on unclaimed teams. Renders above the
           main team header so the CTA is the first thing an unverified visitor sees. */}
       <ClaimThisListingMount entityType="team" entityId={team.id} entityName={team.name} />
-      <TeamDetailClient team={team} players={players} articles={articles} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} />
+      <TeamDetailClient team={team} players={players} articles={articles} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} share={buildTeamShare(team)} />
     </>
   );
 }

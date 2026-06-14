@@ -9,6 +9,7 @@ import ReviewForm from './ReviewForm';
 import SaveButton from '@/components/SaveButton';
 import SocialActions from '@/components/SocialActions';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
+import { buildRinkShare } from '@/lib/share';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
@@ -384,6 +385,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             messageRecipientId={owner?.userId ?? undefined}
             messageRecipientName={rink.name}
             initialFollowersCount={initialFollowersCount}
+            share={buildRinkShare(rink)}
             size="md"
           />
         </div>
