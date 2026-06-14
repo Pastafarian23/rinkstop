@@ -305,6 +305,23 @@ Rink operators, league admins, team admins, and business users need to actually 
 - Thread view: messages, send box, real-time refresh (poll every 5s, defer WebSocket for later)
 - Block list: deferred to later phase (would need `blocks` table)
 
+**Status (2026-06-14):** Phase 3 shipped via PR #17 (squash-merged to main, Vercel production READY). 17 files, +1196/-131.
+
+- `/api/follow` GET/POST/DELETE — rate-limited, idempotent upsert, returns follower count
+- `/api/favorites` extended to support `league` + `business` (migration: `favorites_favorite_type_check` updated)
+- `src/components/SocialActions.tsx` — client component combining follow + save + message in one toolbar; optimistic toggles, server count reconciliation, sign-in redirect for unauthenticated users
+- `src/lib/ownership.ts` — `getEntityOwner()` + `getFollowersCount()` helpers used by every detail page
+- `src/app/dashboard/favorites/page.tsx` rewritten as a thin server loader + client shell with type filter pills + remove buttons
+- `src/app/dashboard/favorites/FavoritesClient.tsx` — client component (new)
+- `src/app/dashboard/profile/FollowingList.tsx` — "Following" section on the dashboard profile
+- `/directory/{rinks,teams,players,leagues}`: SocialActions wired into each detail page (Follow + Save on all; Message on rink/team/player)
+- `/u/[userId]`: Follow button added next to the existing ConnectButton
+
+**Known follow-ups:**
+- "Message" requires an accepted connection. On rink/team/player/league, the user sees the connection-required error after tapping Message. Adding a "Send connection request" path on the same button is a UX improvement, deferred.
+- League ownership has no claim path today. SocialActions on `/directory/leagues/[id]` only renders Follow + Save (no Message).
+- Real-time updates (WebSocket) deferred — existing 5s poll in the messages thread is unchanged.
+
 ---
 
 ## Phase 4 — Polish / Bug Hunt
