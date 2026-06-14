@@ -9,6 +9,7 @@ import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import ScoreTicker from '@/components/ScoreTicker';
+import IntentBanner from '@/components/IntentBanner';
 import { clerkSignInLocalization, clerkSignUpLocalization } from '@/lib/clerk-appearance';
 import type { Metadata } from 'next';
 
@@ -292,6 +293,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </footer>
         <CookieConsent />
         <FoundersClubPopup />
+        <IntentBanner />
         </body>
       </html>
     </ClerkProvider>
