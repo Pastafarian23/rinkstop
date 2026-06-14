@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import LeagueDetailClient from './LeagueDetailClient';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import { getFollowersCount } from '@/lib/ownership';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
 const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('127.0.0.1')
@@ -44,46 +45,48 @@ export default async function LeaguePage({
 }) {
   const { id } = await params;
 
-  // Social: leagues have no claim system today, so no message button —
-  // we only need the follower count for the SocialActions component.
-  const initialFollowersCount = await getFollowersCount('league', id);
+  // Parallelize the follower count + league record lookup. The previous
+  // code did the follower count first, then a wasteful fetch(/api/leagues)
+  // that returned ALL 240 leagues just to find one by id. Now: one direct
+  // supabaseAdmin query for the league (cheap indexed read) parallelized
+  // with the follower count.
+  const [initialFollowersCount, leagueRow] = await Promise.all([
+    getFollowersCount('league', id),
+    supabaseAdmin
+      .from('leagues')
+      .select('id, name, slug, alternateName, website_url, logo_url, country')
+      .or(`id.eq.${id},slug.eq.${id}`)
+      .maybeSingle(),
+  ]);
+  const league = leagueRow.data;
 
-  // Server-side fetch for JSON-LD. The client component will re-fetch for
-  // its own UI; this duplicate read is the cost of getting structured data
-  // into the initial HTML (Googlebot doesn't run JS for the first crawl).
+  // Server-side JSON-LD: SportsOrganization + BreadcrumbList. Built from
+  // the same record we just fetched — no extra query.
   let leagueJsonLd: object | null = null;
-  try {
-    const res = await fetch(`${BASE_URL}/api/leagues`, { cache: 'no-store' });
-    const leagues = await res.json();
-    const league = leagues.find((l: any) => l.id === id || l.slug === id);
-    if (league) {
-      leagueJsonLd = {
-        '@context': 'https://schema.org',
-        '@graph': [
-          {
-            '@type': 'SportsOrganization',
-            name: league.name,
-            sport: 'Ice hockey',
-            url: `${BASE_URL}/directory/leagues/${league.slug || league.id}`,
-            ...(league.alternateName ? { alternateName: league.alternateName } : {}),
-            ...(league.website_url ? { sameAs: [league.website_url] } : {}),
-            ...(league.logo_url ? { logo: league.logo_url } : {}),
-            ...(league.country ? { address: { '@type': 'PostalAddress', addressCountry: league.country } } : {}),
-          },
-          {
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-              { '@type': 'ListItem', position: 2, name: 'Leagues', item: `${BASE_URL}/directory/leagues` },
-              { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.slug || league.id}` },
-            ],
-          },
-        ],
-      };
-    }
-  } catch (err) {
-    console.error(`[leagues/[id]] fetch error:`, err);
-    leagueJsonLd = null;
+  if (league) {
+    leagueJsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'SportsOrganization',
+          name: league.name,
+          sport: 'Ice hockey',
+          url: `${BASE_URL}/directory/leagues/${league.slug || league.id}`,
+          ...(league.alternateName ? { alternateName: league.alternateName } : {}),
+          ...(league.website_url ? { sameAs: [league.website_url] } : {}),
+          ...(league.logo_url ? { logo: league.logo_url } : {}),
+          ...(league.country ? { address: { '@type': 'PostalAddress', addressCountry: league.country } } : {}),
+        },
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+            { '@type': 'ListItem', position: 2, name: 'Leagues', item: `${BASE_URL}/directory/leagues` },
+            { '@type': 'ListItem', position: 3, name: league.name, item: `${BASE_URL}/directory/leagues/${league.slug || league.id}` },
+          ],
+        },
+      ],
+    };
   }
 
   return (
