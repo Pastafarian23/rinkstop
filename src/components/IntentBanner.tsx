@@ -6,8 +6,7 @@ import Link from 'next/link';
 
 type ViewState =
   | { kind: 'hidden' }                      // not the right surface or dismissed
-  | { kind: 'anon_first' }                   // anonymous, 0-1 views this session
-  | { kind: 'anon_returning' }              // anonymous, 2+ views
+  | { kind: 'anon_returning' }              // anonymous, 2+ counted views this session
   | { kind: 'signed_in_no_favs' };          // signed in, no favorites yet
 
 interface IntentBannerProps {
@@ -16,11 +15,27 @@ interface IntentBannerProps {
   currentPath?: string;
 }
 
-const VIEW_COUNT_KEY = 'rinkstop_directory_views';
+const VIEW_COUNT_KEY = 'rinkstop_directory_views_session';
 const DISMISS_KEY = 'rinkstop_intent_banner_dismissed_v1';
 const DISMISS_HOURS = 6;
 const VIEW_THRESHOLD = 2;       // show "returning" copy after 2+ page views this session
-const FIRST_VIEW_DELAY_MS = 4000; // don't show on first page, give them time to read
+
+// Only count directory pages toward the "you've checked out N listings"
+// copy. Auth/dashboard pages are excluded because:
+// - They're not listings (the copy would be misleading)
+// - The banner is a signup CTA — useless on /sign-up, /login
+// - Dashboard pages are post-signup, the banner should be hidden
+// - /pricing is the comparison page; pitching them to sign up is weird
+// - /blog/* articles count (they're part of the discovery funnel)
+const COUNTED_PREFIXES = ['/directory/', '/blog/'];
+
+// Suppress the banner entirely on these paths. The funnel is past the
+// point where the banner is useful (or already done).
+const SUPPRESS_PREFIXES = [
+  '/sign-up', '/login', '/forgot-password', '/reset-password',
+  '/dashboard', '/onboarding', '/sso-callback',
+  '/api', '/_next',
+];
 
 /**
  * IntentBanner — sticky bottom bar on directory detail pages that surfaces
@@ -53,17 +68,31 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
     }
   }, [currentPathProp]);
 
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
   const [state, setState] = useState<ViewState>({ kind: 'hidden' });
 
   useEffect(() => {
-    // 1. Increment this-session view count
+    // 0. Suppress on auth/dashboard/etc. paths. The banner is a signup
+    // CTA — useless where the user is already in the funnel.
+    const path = currentPathProp || (typeof window !== 'undefined' ? window.location.pathname : '/');
+    if (SUPPRESS_PREFIXES.some(p => path.startsWith(p))) {
+      setState({ kind: 'hidden' });
+      return;
+    }
+
+    // 1. Increment this-session view count, BUT only on counted paths.
+    // The key is suffixed with the session-start timestamp so it auto-
+    // resets when the user closes and reopens the browser.
     let viewCount = 0;
-    try {
-      viewCount = parseInt(localStorage.getItem(VIEW_COUNT_KEY) || '0', 10) || 0;
-      viewCount += 1;
-      localStorage.setItem(VIEW_COUNT_KEY, String(viewCount));
-    } catch { /* localStorage blocked — just keep viewCount in memory */ }
+    const isCountedPage = COUNTED_PREFIXES.some(p => path.startsWith(p));
+    if (isCountedPage) {
+      try {
+        const sessionKey = `${VIEW_COUNT_KEY}_${getSessionId()}`;
+        viewCount = parseInt(localStorage.getItem(sessionKey) || '0', 10) || 0;
+        viewCount += 1;
+        localStorage.setItem(sessionKey, String(viewCount));
+      } catch { /* localStorage blocked — just keep viewCount in memory */ }
+    }
 
     // 2. Check dismissal TTL
     const recentlyDismissed = (() => {
@@ -100,32 +129,22 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
       return;
     }
 
-    // Anonymous path
+    // Anonymous path. Show the banner immediately on the 2nd counted
+    // page view (viewCount starts at 1 for the first counted page in
+    // the session, so we need >= 2 to mean "the user has looked at
+    // 2 listings this session").
     if (viewCount >= VIEW_THRESHOLD) {
       setState({ kind: 'anon_returning' });
     } else {
-      // First view: hide now, then re-evaluate on a delay so the banner
-      // appears AFTER they've had time to read the page (4s). This is
-      // less aggressive than showing immediately.
-      setState({ kind: 'anon_first' });
+      setState({ kind: 'hidden' });
     }
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, currentPathProp]);
 
-  // For anon_first, delay showing by 4s. We re-evaluate when the state changes.
-  useEffect(() => {
-    if (state.kind !== 'anon_first') return;
-    const t = setTimeout(() => {
-      // Re-check view count — user may have navigated away
-      try {
-        const vc = parseInt(localStorage.getItem(VIEW_COUNT_KEY) || '0', 10) || 0;
-        if (vc >= VIEW_THRESHOLD) {
-          setState({ kind: 'anon_returning' });
-        }
-        // Else keep hidden — the next page load will handle it
-      } catch { /* fine */ }
-    }, FIRST_VIEW_DELAY_MS);
-    return () => clearTimeout(t);
-  }, [state.kind]);
+  // (The original spec included a 4-second delay on the first view, but
+  // the banner is more useful as a passive surface that appears on the
+  // second counted view immediately. The original delay logic was dead
+  // code; the new path increments a session-scoped counter on
+  // /directory/* and /blog/* pages only, then shows on view 2+.)
 
   function handleDismiss() {
     try { localStorage.setItem(DISMISS_KEY, Date.now().toString()); } catch {}
@@ -179,6 +198,7 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
         </div>
         <Link
           href={copy.ctaHref}
+          onClick={handleDismiss}
           className="intent-banner-cta"
           style={{
             display: 'inline-flex', alignItems: 'center',
@@ -211,9 +231,11 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
 
 function getCopy(state: Exclude<ViewState, { kind: 'hidden' }>, currentPath: string) {
   if (state.kind === 'anon_returning') {
-    // Try to read view count for the "N rinks" copy
+    // Read this session's view count for the "N listings" copy. The key
+    // is suffixed with the session id so a fresh browser session starts
+    // back at 0 (no more "you've checked out 100 listings" after a year).
     let count = 0;
-    try { count = parseInt(localStorage.getItem(VIEW_COUNT_KEY) || '0', 10) || 0; } catch {}
+    try { count = parseInt(localStorage.getItem(`${VIEW_COUNT_KEY}_${getSessionId()}`) || '0', 10) || 0; } catch {}
     return {
       icon: '🏒',
       message: count > 0
@@ -231,6 +253,26 @@ function getCopy(state: Exclude<ViewState, { kind: 'hidden' }>, currentPath: str
       ctaHref: '/directory/rinks',
     };
   }
-  // anon_first never renders (we delay-evaluate to anon_returning or stay hidden)
   return null;
+}
+
+// Session id — persists for the lifetime of the browser tab, resets on
+// new tab/browser. We use a date-based key so storage is self-cleaning:
+// old session keys just sit there (a few hundred bytes), and a new
+// session gets a new key.
+function getSessionId(): string {
+  if (typeof window === 'undefined') return 'ssr';
+  // The session id is the date the tab was opened. Persists in
+  // sessionStorage (cleared on tab close) and falls back to today if
+  // sessionStorage is blocked.
+  try {
+    let sid = sessionStorage.getItem('rinkstop_session_id');
+    if (!sid) {
+      sid = new Date().toISOString().slice(0, 10) + '_' + Math.random().toString(36).slice(2, 8);
+      sessionStorage.setItem('rinkstop_session_id', sid);
+    }
+    return sid;
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
 }

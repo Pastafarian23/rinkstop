@@ -366,10 +366,19 @@ function UnauthSocialActions(props: {
     if (nudge?.action === 'save') return favoriteId || '';
     return followeeId || '';
   })();
+  // Fallback to a type-aware string ("this rink" / "this team") instead of
+  // the generic "this listing" so the modal copy still reads naturally if
+  // a name is missing. In practice these names are always set on detail
+  // pages, but the fallback matters for error states.
+  const entityTypeLabel = entityType === 'player' ? 'this player'
+    : entityType === 'team' ? 'this team'
+    : entityType === 'league' ? 'this league'
+    : entityType === 'business' ? 'this business'
+    : 'this rink';
   const entityName = (() => {
-    if (nudge?.action === 'message') return followeeName || favoriteName || 'this listing';
-    if (nudge?.action === 'save') return favoriteName || followeeName || 'this listing';
-    return followeeName || favoriteName || 'this listing';
+    if (nudge?.action === 'message') return followeeName || favoriteName || entityTypeLabel;
+    if (nudge?.action === 'save') return favoriteName || followeeName || entityTypeLabel;
+    return followeeName || favoriteName || entityTypeLabel;
   })();
 
   return (
