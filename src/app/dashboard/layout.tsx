@@ -78,6 +78,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (isAdmin) {
     navLinks.push(['/admin', '🛡️ Admin']);
   }
+
+  // Phase 2: Show "Listings" in the nav if the user holds the `business` account
+  // type. Cheaper than a join — one indexed query on profile_account_types.
+  let isBusinessUser = false;
+  try {
+    const { count: bc } = await supabaseAdmin
+      .from('profile_account_types')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('account_type', 'business');
+    isBusinessUser = (bc || 0) > 0;
+  } catch { /* table missing — keep nav as-is */ }
+
   navLinks.push(
     ['/dashboard', 'Overview'],
     ['/dashboard/connections', 'Connections', pendingConnectionCount],
@@ -86,6 +99,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ['/dashboard/favorites', 'Favorites'],
     ['/dashboard/reviews', 'Reviews'],
     ['/dashboard/claims', 'Claims'],
+  );
+  if (isBusinessUser) {
+    navLinks.push(['/dashboard/listings', 'Listings']);
+  }
+  navLinks.push(
     ['/dashboard/leads', 'Leads'],
     ['/dashboard/subscription', 'Subscription'],
     ['/dashboard/support', 'Support'],
