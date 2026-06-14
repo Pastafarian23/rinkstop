@@ -375,6 +375,32 @@ This is the "make sure it works" phase. After 0–3 are done:
 - Favorites list < 1s for 100 items
 - DM thread loads < 1s for 50 messages
 
+**Status (2026-06-14):** Phase 4 partial — PR #19 shipped, follow-up fix on main (commit 7250577). **Bugs found and fixed:**
+- Player page server-side JSON-LD query referenced `birth_place` which doesn't exist on the `players` table — query returned null, structured data lost for all player pages. Fixed by removing `birth_place` from the select.
+- Player page did a 1-RTT self-loop `fetch(/api/players?id=...)` to build Person/BreadcrumbList JSON-LD. Replaced with direct `supabaseAdmin` query — saves one HTTP hop per page load.
+
+**Bugs found and NOT fixed (out of scope for v1):**
+- Directory detail pages (rinks/teams/players/leagues) still 1.5–2.5s — each does 5+ parallel Supabase queries server-side. Below the 2s "3G" target. Tracked as a follow-up.
+- `clerkMiddleware` fails in Vercel Edge runtime (documented in MEMORY.md since 2026-05-26). Real users still hit 500s on certain request paths. Needs investigation.
+
+**Test accounts (10 created, ready for manual QA):**
+- `kiloclaw+phase4-{type}@rinkstop.com` (player, parent, coach, scout, referee, rink_operator, league_admin, team_admin, business, fan)
+- Password: `RinkStopPhase4!2026`
+- Tier distribution: 4 free, 2 supporter, 3 verified, 1 pro
+- Script: `scripts/create-test-accounts.sh`
+
+**Blocked (no browser tool available in current env):**
+- 4.1 visual per-type walkthrough
+- 4.2 mobile viewport tests
+- 4.3 sign-out / session-expired edge cases
+
+**Verified via curl:**
+- All 10 write API endpoints return 401 for unauth with clear error messages
+- All 3 manage APIs (rink/team/league) return 401 for unauth; body validation runs before DB call
+- All 15 dashboard routes return 307 redirect when no auth
+- Tier gates: `tierAtLeast(tier, 'verified')` correctly blocks free users from /api/threads, /api/connections, /api/profiles/managed
+- DB integrity: `follows_no_self_follow` check constraint blocks self-follow
+
 ---
 
 ## What I will NOT do in this plan (and why)
