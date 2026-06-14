@@ -126,7 +126,7 @@ export default async function PlayerPage({ params }: Props) {
   try {
     const { data: player } = await supabaseAdmin
       .from('players')
-      .select('id, first_name, last_name, position, headshot_url, birth_place, nationality, height_cm, weight_kg, teams(name, leagues(name))')
+      .select('id, first_name, last_name, position, headshot_url, nationality, height_cm, weight_kg, teams(name, leagues(name))')
       .eq('id', id)
       .maybeSingle();
     if (player) {
@@ -147,9 +147,6 @@ export default async function PlayerPage({ params }: Props) {
             ...(player.headshot_url ? { image: player.headshot_url } : {}),
             ...(teamName
               ? { affiliation: { '@type': 'SportsTeam', name: teamName, ...(leagueName ? { memberOf: { '@type': 'SportsOrganization', name: leagueName } } : {}) } }
-              : {}),
-            ...(player.birth_place
-              ? { homeLocation: { '@type': 'Place', name: player.birth_place } }
               : {}),
             ...(player.nationality && player.nationality.length <= 3
               ? { nationality: COUNTRY_NAMES[player.nationality] || player.nationality }
