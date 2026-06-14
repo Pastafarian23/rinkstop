@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { CATEGORIES, type Category } from '@/app/dashboard/listings/ListingsManager';
+import ShareButton from '@/components/ShareButton';
+import { buildBusinessShare } from '@/lib/share';
 
 const VALID_CATEGORIES = new Set<Category>(['pro_shop', 'sharpening', 'camp', 'training', 'equipment', 'other']);
 
@@ -106,6 +108,16 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               Visit website ↗
             </a>
           )}
+          <ShareButton
+            payload={buildBusinessShare({
+              id: data.id,
+              business_name: data.business_name,
+              category: data.category,
+              city: data.location?.split(',')?.[0]?.trim() || null,
+              country: data.location?.split(',')?.slice(-1)?.[0]?.trim() || null,
+            })}
+            variant="dark"
+          />
         </div>
       </header>
 

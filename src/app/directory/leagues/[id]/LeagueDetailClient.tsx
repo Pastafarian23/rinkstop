@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import LeagueRelated from '@/components/LeagueRelated';
 import SocialActions from '@/components/SocialActions';
+import { buildLeagueShare } from '@/lib/share';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -62,6 +63,13 @@ export default function LeagueDetailClient({ id, initialFollowersCount = 0 }: { 
           favoriteId={league.id}
           favoriteName={league.name}
           initialFollowersCount={initialFollowersCount}
+          share={buildLeagueShare({
+            id: league.id,
+            name: league.name,
+            slug: league.slug,
+            country: league.country,
+            level: league.level,
+          })}
           size="md"
         />
       </div>
