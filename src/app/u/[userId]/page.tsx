@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
 import { TierBadge, VerifiedCheckmark, FoundingMemberBadge } from '@/components/TierBadge';
+import AccountTypeBadges from '@/components/AccountTypeBadges';
 
 interface Profile {
   user_id: string;
@@ -16,6 +17,11 @@ interface Profile {
   tier_expires_at: string | null;
   is_founding_member: boolean;
   created_at: string | null;
+}
+
+interface AccountTypeRow {
+  account_type: string;
+  is_primary: boolean;
 }
 
 interface ManagedProfile {
@@ -39,6 +45,7 @@ export default function UserProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [managed, setManaged] = useState<ManagedProfile[]>([]);
+  const [accountTypes, setAccountTypes] = useState<AccountTypeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -47,9 +54,10 @@ export default function UserProfilePage() {
     let cancelled = false;
     (async () => {
       try {
-        const [pRes, mRes] = await Promise.all([
+        const [pRes, mRes, aRes] = await Promise.all([
           fetch(`/api/profiles/${userId}`).catch(() => null),
           fetch(`/api/profiles/managed?userId=${userId}`).catch(() => null),
+          fetch(`/api/account-type?userId=${userId}`).catch(() => null),
         ]);
         if (cancelled) return;
         if (pRes && pRes.ok) {
@@ -61,6 +69,10 @@ export default function UserProfilePage() {
         if (mRes && mRes.ok) {
           const data = await mRes.json();
           setManaged(data.managedProfiles || []);
+        }
+        if (aRes && aRes.ok) {
+          const data = await aRes.json();
+          setAccountTypes(data.types || []);
         }
       } catch {
         setNotFound(true);
@@ -130,6 +142,15 @@ export default function UserProfilePage() {
                 </span>
               )}
             </div>
+            {accountTypes.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <AccountTypeBadges
+                  types={accountTypes.map((a) => a.account_type)}
+                  primary={accountTypes.find((a) => a.is_primary)?.account_type || accountTypes[0]?.account_type || null}
+                  size="sm"
+                />
+              </div>
+            )}
             {profile.bio && (
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.5, margin: 0, marginBottom: 12 }}>{profile.bio}</p>
             )}
