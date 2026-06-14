@@ -374,6 +374,7 @@ async function main() {
     
     if (DRY_RUN) {
       console.log(`[${i+1}] ${post.id} → ${newTitle} [DRY] (${leagueMap.name}, player=${featuredPlayer?.fullName || 'none'})`);
+      succeeded++;
     } else {
       const { error: uErr } = await sb.from('posts').update(update).eq('id', post.id);
       if (uErr) { console.log(`[${i+1}] ${post.id} — update failed: ${uErr.message}`); failed++; continue; }
