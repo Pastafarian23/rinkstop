@@ -26,7 +26,7 @@
  *   node scripts/article-from-highlight/audit-published-articles.mjs --execute
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { getMatchData, normalizeLeague, isFinalScore } from './match-data.mjs';
 
 const env = {};
@@ -146,4 +146,37 @@ async function main() {
   }
 }
 
-main().catch(e => { console.error('Fatal:', e); process.exit(1); });
+// Write a JSON result file when the audit finishes (success OR crash).
+// The detached cron wrapper reads this file to report status. Without this
+// the wrapper has to spin up a watcher, which kept the parent shell alive
+// past the cron exec timeout (300s) — fixed 2026-06-14.
+const RESULT_FILE = process.env.FACT_AUDIT_RESULT_FILE;
+const startTs = Date.now();
+
+function writeResult(status, payload = {}) {
+  if (!RESULT_FILE) return;
+  try {
+    const result = {
+      ts: new Date().toISOString(),
+      pid: process.pid,
+      mode: process.argv.includes('--execute') ? '--execute' : 'dry-run',
+      status,
+      duration_ms: Date.now() - startTs,
+      ...payload,
+    };
+    writeFileSync(RESULT_FILE, JSON.stringify(result, null, 2));
+  } catch (e) {
+    console.error('Failed to write result file:', e.message);
+  }
+}
+
+process.on('SIGTERM', () => { writeResult('interrupted'); process.exit(143); });
+process.on('SIGINT',  () => { writeResult('interrupted'); process.exit(130); });
+
+main()
+  .then((totals) => writeResult('ok', { totals }))
+  .catch(e => {
+    console.error('Fatal:', e);
+    writeResult('error', { error: e.message });
+    process.exit(1);
+  });
