@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   // Pull the profile fields editable here (bio + location + tier + founding)
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('bio, location, tier, is_founding_member, display_name')
+    .select('bio, location, tier, is_founding_member, display_name, username')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -85,7 +85,11 @@ export default async function ProfilePage() {
       </div>
 
       {/* Editable profile fields (bio, location) */}
-      <ProfileEditForm initialBio={profile?.bio || ''} initialLocation={profile?.location || ''} />
+      <ProfileEditForm
+        initialBio={profile?.bio || ''}
+        initialLocation={profile?.location || ''}
+        initialUsername={profile?.username ?? null}
+      />
 
       {/* Following list — what the user has chosen to follow */}
       <FollowingList userId={userId} />

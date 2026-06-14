@@ -1,0 +1,34 @@
+Mode: EXECUTE (will archive)
+Loading PUBLISHED articles with highlight_id...
+Found 485 published articles to audit
+  [307/485] Montréal Canadiens top Buffalo Sabres 5-1 — Stanley Cup Playoffs — expected score 3 - 6 not present in any direction [ARCHIVING]
+  [309/485] Montréal Canadiens top Buffalo Sabres 5-1 — Stanley Cup Playoffs — expected score 3 - 6 not present in any direction [ARCHIVING]
+  [310/485] Vegas Golden Knights top Colorado Avalanche 2-1 — Stanley Cup Playoffs — no source has a final score (game is unverified) [ARCHIVING]
+  [314/485] Montréal Canadiens top Buffalo Sabres 5-1 — Stanley Cup Playoffs — expected score 3 - 6 not present in any direction [ARCHIVING]
+  [318/485] Carolina Hurricanes top Montréal Canadiens 6-1 — Stanley Cup Playoffs — no source has a final score (game is unverified) [ARCHIVING]
+  [324/485] Montréal Canadiens top Buffalo Sabres 6-2 — Stanley Cup Playoffs — expected score 2 - 3 not present in any direction [ARCHIVING]
+  [325/485] Buffalo Sabres top Seattle Kraken 3-2 in SO — article claims shootout but source says 3 - 2 [ARCHIVING]
+  [335/485] Buffalo Sabres top Montréal Canadiens 4-2 — Stanley Cup Playoffs — expected score 1 - 5 not present in any direction [ARCHIVING]
+  [338/485] Buffalo Sabres top Montréal Canadiens 4-2 — Stanley Cup Playoffs — expected score 1 - 5 not present in any direction [ARCHIVING]
+  [405/485] Anaheim Ducks top Nashville Predators 5-4 — no source has a final score (game is unverified) [ARCHIVING]
+  [415/485] Montréal Canadiens top Buffalo Sabres 5-1 — Stanley Cup Playoffs — expected score 3 - 6 not present in any direction [ARCHIVING]
+  [424/485] San Jose Sharks top Winnipeg Jets 6-1 — no source has a final score (game is unverified) [ARCHIVING]
+  [429/485] Montréal Canadiens top Buffalo Sabres 6-2 — Stanley Cup Playoffs — expected score 2 - 3 not present in any direction [ARCHIVING]
+  [433/485] Chicago Blackhawks top San Jose Sharks 5-2 — no source has a final score (game is unverified) [ARCHIVING]
+  [444/485] Anaheim Ducks top Edmonton Oilers 5-2 — Stanley Cup Playoffs — expected score 4 - 3 not present in any direction [ARCHIVING]
+  [448/485] St. Louis Blues top Pittsburgh Penguins 7-5 — no source has a final score (game is unverified) [ARCHIVING]
+
+=== Audit Summary ===
+Clean (passed all checks): 469
+Would archive:             16
+Actually archived:         16
+Archived IDs: 16 (first 10: 94dd0223-76ba-4041-aff1-e89345cf2f2d, 94184fa0-96a1-49fe-af16-a4c6dd3c1b36, 90b287e5-0836-4e58-a9cf-4d443d46f42f, 8ba7223d-ec63-4b2a-b0f7-b44eb9f51655, 86c2fd16-4c31-4543-bced-333d2eecf7bc, 82d4c956-41cd-49f9-be0c-90d01a35c2fc, 8238876e-138a-41da-a315-47b2e8c7644a, 77ce6dca-7984-4852-99ec-8744e40510d8, 7409bb7f-94ff-4b23-984c-35145ada305f, 59b1096d-fc59-4eed-9d3d-7c6fe5b18003)
+
+Issue breakdown:
+  6x no source has a final score
+  4x expected score 3 - 6 not present in any direction
+  2x expected score 2 - 3 not present in any direction
+  2x expected score 1 - 5 not present in any direction
+  1x article claims shootout but source says 3 - 2
+  1x expected score 4 - 3 not present in any direction
+Failed to write result file: require is not defined

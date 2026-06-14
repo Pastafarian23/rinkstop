@@ -1,0 +1,68 @@
+Mode: EXECUTE (will archive)
+Loading PUBLISHED articles with highlight_id...
+Found 554 published articles to audit
+Loading 527 unique highlight records (chunked)...
+Loaded 527 highlights
+  [1/554] clean (highlightly): HC Fribourg-Gottéron top Davos 1-0
+  [26/554] clean (highlightly): HC Yugra top Neftyanik Almetievsk 4-0
+  [51/554] clean (highlightly): Everett Silvertips top Kitchener Rangers 6-2
+  [53/554] FAIL: Saginaw Spirit top Kitchener Rangers 4-3 in OT — no source has a final score
+  [76/554] clean (highlightly): Ottawa 67's top Barrie Colts 4-1
+  [101/554] clean (highlightly): Brantford Bulldogs top Barrie Colts 4-3 in OT
+  [126/554] clean (highlightly): Texas Stars top Chicago Wolves 6-1
+  [151/554] clean (highlightly): Chicago Wolves top Grand Rapids Griffins 4-3 in OT
+  [176/554] clean (highlightly): United States top Canada 4-0
+  [201/554] clean (nhl.com): Carolina Hurricanes top Vegas Golden Knights 4-3 in OT — Stanley Cup Playoffs
+  [226/554] clean (nhl.com): Edmonton Oilers top Anaheim Ducks 4-2
+  [251/554] clean (nhl.com): Minnesota Wild top Detroit Red Wings 5-4
+  [276/554] clean (nhl.com): Colorado Avalanche top Edmonton Oilers 2-1 in SO
+  [301/554] clean (nhl.com): Carolina Hurricanes top Ottawa Senators 3-2 in OT — Stanley Cup Playoffs
+  [303/554] FAIL: Vegas Golden Knights top Utah Mammoth 5-1 — Stanley Cup Playoffs — expected score 4-5 not present in any direction
+  [323/554] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — expected score 1-6 not present in any direction
+  [325/554] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — expected score 1-6 not present in any direction
+  [326/554] clean (nhl.com): Colorado Avalanche top Los Angeles Kings 5-1 — Stanley Cup Playoffs
+  [347/554] FAIL: Colorado Avalanche top Minnesota Wild 5-2 — Stanley Cup Playoffs — expected score 3-4 not present in any direction
+  [351/554] clean (nhl.com): Washington Capitals top Columbus Blue Jackets 2-1
+  [359/554] FAIL: Colorado Avalanche top Minnesota Wild 5-2 — Stanley Cup Playoffs — expected score 3-4 not present in any direction
+  [371/554] FAIL: Vegas Golden Knights top Anaheim Ducks 3-2 in OT — Stanley Cup Playoffs — expected score 5-1 not present in any direction
+  [375/554] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — expected score 1-6 not present in any direction
+  [376/554] clean (nhl.com): Montréal Canadiens top Florida Panthers 4-3 in SO
+  [391/554] FAIL: Edmonton Oilers top Anaheim Ducks 4-1 — Stanley Cup Playoffs — expected score 4-7 not present in any direction
+  [393/554] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — expected score 1-6 not present in any direction
+  [401/554] clean (nhl.com): Tampa Bay Lightning top Montréal Canadiens 3-2 — Stanley Cup Playoffs
+  [410/554] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — expected score 2-3 not present in any direction
+  [411/554] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — expected score 2-3 not present in any direction
+  [415/554] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — expected score 2-3 not present in any direction
+  [416/554] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — expected score 2-3 not present in any direction
+  [419/554] FAIL: Vegas Golden Knights top Anaheim Ducks 3-2 in OT — Stanley Cup Playoffs — expected score 6-2 not present in any direction
+  [423/554] FAIL: Philadelphia Flyers top Pittsburgh Penguins 1-0 in OT — Stanley Cup Playoffs — expected score 2-3 not present in any direction
+  [426/554] clean (nhl.com): Montréal Canadiens top New York Islanders 4-1
+  [449/554] FAIL: Minnesota Wild top Dallas Stars 4-2 — Stanley Cup Playoffs — expected score 2-5 not present in any direction
+  [451/554] clean (nhl.com): Montréal Canadiens top Tampa Bay Lightning 3-2 — Stanley Cup Playoffs
+  [476/554] clean (nhl.com): Pittsburgh Penguins top Detroit Red Wings 5-1
+  [478/554] FAIL: Colorado Avalanche top Minnesota Wild 5-2 — Stanley Cup Playoffs — expected score 3-4 not present in any direction
+  [494/554] FAIL: Edmonton Oilers top Anaheim Ducks 4-1 — Stanley Cup Playoffs — expected score 2-5 not present in any direction
+  [501/554] clean (nhl.com): Philadelphia Flyers top Carolina Hurricanes 3-2 in SO
+  [517/554] FAIL: Utah Mammoth top Vegas Golden Knights 3-2 — Stanley Cup Playoffs — expected score 2-4 not present in any direction
+  [526/554] clean (nhl.com): Tampa Bay Lightning top Montréal Canadiens 3-2 — Stanley Cup Playoffs
+  [528/554] FAIL: Vegas Golden Knights top Utah Mammoth 5-4 in OT — Stanley Cup Playoffs — expected score 5-1 not present in any direction
+  [541/554] FAIL: Vegas Golden Knights top Anaheim Ducks 3-2 in OT — Stanley Cup Playoffs — expected score 6-2 not present in any direction
+  [551/554] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — expected score 2-3 not present in any direction
+  [554/554] FAIL: Staal's Two Goals Power Hurricanes Past Golden Knights 5-3 in Game 4 — expected score 2-4 not present in any direction
+
+=== Audit Summary ===
+Clean (passed all checks): 530
+Would archive:             24
+Actually archived:         24
+
+Issue breakdown:
+  6x expected score 2-3 not present in any direction
+  4x expected score 1-6 not present in any direction
+  3x expected score 3-4 not present in any direction
+  2x expected score 5-1 not present in any direction
+  2x expected score 6-2 not present in any direction
+  2x expected score 2-5 not present in any direction
+  2x expected score 2-4 not present in any direction
+  1x no source has a final score
+  1x expected score 4-5 not present in any direction
+  1x expected score 4-7 not present in any direction

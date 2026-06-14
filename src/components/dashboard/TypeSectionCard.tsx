@@ -13,17 +13,19 @@ interface TypeSectionCardProps {
   type: AccountType;
   primary: AccountType | null;
   data: TypeSectionData;
+  username: string | null;
 }
 
 // Each type renders ONE section card. The card has a header (type label + primary star),
 // a 1-2 line headline number (e.g. "12 rinks", "0 followed teams"), a Quick Actions row,
 // and an empty state if applicable. The action set is intentionally small — Phase 1
 // is about visibility, not new features. Phase 2/3 fill in the destinations.
-function getConfig(t: AccountType, data: TypeSectionData): {
+function getConfig(t: AccountType, data: TypeSectionData, username: string | null): {
   headline: string;
   cta: SectionAction[];
   empty: { message: string; cta: { href: string; label: string } } | null;
 } {
+  const profileHref = username ? `/profile/${username}` : '/dashboard/profile';
   switch (t) {
     case 'player':
       return {
@@ -31,7 +33,7 @@ function getConfig(t: AccountType, data: TypeSectionData): {
           ? 'Your player profile is live'
           : 'Your player profile',
         cta: [
-          { href: '/u/me', label: 'View public profile', icon: '👁️' },
+          { href: profileHref, label: 'View public profile', icon: '👁️' },
           { href: '/dashboard/claims', label: 'Claim a record', icon: '✅' },
         ],
         empty: null,
@@ -170,9 +172,9 @@ function getConfig(t: AccountType, data: TypeSectionData): {
   }
 }
 
-export default function TypeSectionCard({ type, primary, data }: TypeSectionCardProps) {
+export default function TypeSectionCard({ type, primary, data, username }: TypeSectionCardProps) {
   const meta = getAccountTypeMeta(type);
-  const cfg = getConfig(type, data);
+  const cfg = getConfig(type, data, username);
   const isPrimary = type === primary;
 
   return (

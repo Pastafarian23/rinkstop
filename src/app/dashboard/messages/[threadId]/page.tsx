@@ -49,7 +49,7 @@ export default function ThreadPage({ params }: { params: Promise<{ threadId: str
   const me = clerkUser?.id;
 
   const [thread, setThread] = useState<Thread | null>(null);
-  const [otherUser, setOtherUser] = useState<{ user_id: string; display_name: string | null; avatar_url: string | null; tier: string } | null>(null);
+  const [otherUser, setOtherUser] = useState<{ user_id: string; display_name: string | null; username: string | null; avatar_url: string | null; tier: string } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [context, setContext] = useState<ContextProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,6 +82,7 @@ export default function ThreadPage({ params }: { params: Promise<{ threadId: str
           setOtherUser({
             user_id: data.otherUserId,
             display_name: prof.profile?.display_name || null,
+            username: prof.profile?.username || null,
             avatar_url: prof.profile?.avatar_url || null,
             tier: prof.profile?.tier || 'free',
           });
@@ -177,7 +178,11 @@ export default function ThreadPage({ params }: { params: Promise<{ threadId: str
           </div>
         )}
         <div style={{ flex: 1 }}>
-          <Link href={`/u/${otherUser?.user_id}`} style={{ color: '#fff', fontWeight: 600, textDecoration: 'none' }}>{otherName}</Link>
+          {otherUser?.username ? (
+            <Link href={`/profile/${otherUser.username}`} style={{ color: '#fff', fontWeight: 600, textDecoration: 'none' }}>{otherName}</Link>
+          ) : (
+            <span style={{ color: '#fff', fontWeight: 600 }}>{otherName}</span>
+          )}
           {otherUser && (
             <span style={{ marginLeft: 8, fontSize: 11, padding: '0.1rem 0.5rem', background: 'rgba(20,184,166,0.1)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.3)', borderRadius: 999 }}>
               {TIER_LABEL[otherUser.tier] || 'Free'}

@@ -14,6 +14,7 @@ interface ConnectionRow {
   otherUser: {
     user_id: string;
     display_name: string | null;
+    username: string | null;
     avatar_url: string | null;
     tier: string;
   };
@@ -133,9 +134,13 @@ export default function ConnectionsPage() {
                   </div>
                 )}
                 <div style={{ flex: 1 }}>
-                  <Link href={`/u/${c.otherUser.user_id}`} style={{ color: '#fff', textDecoration: 'none', fontWeight: 600 }}>
-                    {name}
-                  </Link>
+                  {c.otherUser.username ? (
+                    <Link href={`/profile/${c.otherUser.username}`} style={{ color: '#fff', textDecoration: 'none', fontWeight: 600 }}>
+                      {name}
+                    </Link>
+                  ) : (
+                    <span style={{ color: '#fff', fontWeight: 600 }}>{name}</span>
+                  )}
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
                     {tab === 'accepted' ? 'Connected' : c.isInitiator ? 'Request sent' : 'Wants to connect'}
                   </div>

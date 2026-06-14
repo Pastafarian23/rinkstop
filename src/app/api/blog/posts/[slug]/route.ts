@@ -65,16 +65,30 @@ export async function PUT(request: NextRequest, { params }: Props) {
   return jsonResponse(data);
 }
 
-// DELETE - Archive post
+// DELETE - Archive post (soft delete: status = 'archived')
+// Hard delete is intentionally NOT supported through this endpoint.
+// Use the new /api/admin/articles/[id] DELETE only for permanent removal.
 export async function DELETE(request: NextRequest, { params }: Props) {
   const admin = await verifyAdmin(request);
   if (!admin) return jsonResponse({ error: 'Unauthorized' }, 401);
 
   const { slug } = await params;
-  const { error } = await supabase.from('posts').delete().eq('slug', slug);
+
+  // Soft delete: set status to archived, preserve the row for the rewrite pipeline.
+  // The posts table has no archived_at column — use updated_at as the proxy.
+  const { data, error } = await supabaseAdmin
+    .from('posts')
+    .update({
+      status: 'archived',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('slug', slug)
+    .select('id, slug, status')
+    .single();
 
   if (error) return jsonResponse({ error: error.message }, 500);
-  return jsonResponse({ success: true });
+  if (!data) return jsonResponse({ error: 'Post not found' }, 404);
+  return jsonResponse({ success: true, archived: data });
 }
 
 // OPTIONS - CORS preflight

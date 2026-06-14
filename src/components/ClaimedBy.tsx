@@ -11,6 +11,7 @@ interface ClaimedBy {
   avatar_url: string | null;
   tier: string;
   is_founding_member: boolean;
+  username: string | null;
   claimed_at: string;
 }
 
@@ -67,12 +68,16 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
           Claimed by
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
-          <Link
-            href={`/u/${data.user_id}`}
-            style={{ color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}
-          >
-            {displayName}
-          </Link>
+          {data.username ? (
+            <Link
+              href={`/profile/${data.username}`}
+              style={{ color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}
+            >
+              {displayName}
+            </Link>
+          ) : (
+            <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{displayName}</span>
+          )}
           {isVerified && <VerifiedCheckmark size={14} />}
           <TierBadge tier={data.tier} size="xs" />
         </div>

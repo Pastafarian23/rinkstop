@@ -129,11 +129,11 @@ export async function GET(request: NextRequest) {
     c.user_low === userId ? c.user_high : c.user_low
   );
 
-  let profiles: Record<string, { user_id: string; display_name: string | null; avatar_url: string | null; tier: string }> = {};
+  let profiles: Record<string, { user_id: string; display_name: string | null; username: string | null; avatar_url: string | null; tier: string }> = {};
   if (otherUserIds.length > 0) {
     const { data: profileRows } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, display_name, avatar_url, tier')
+      .select('user_id, display_name, username, avatar_url, tier')
       .in('user_id', otherUserIds);
     for (const p of profileRows || []) {
       profiles[p.user_id] = p as any;
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
     const otherId = c.user_low === userId ? c.user_high : c.user_low;
     return {
       ...c,
-      otherUser: profiles[otherId] || { user_id: otherId, display_name: null, avatar_url: null, tier: 'free' },
+      otherUser: profiles[otherId] || { user_id: otherId, display_name: null, username: null, avatar_url: null, tier: 'free' },
       isInitiator: c.initiated_by === userId,
     };
   });
