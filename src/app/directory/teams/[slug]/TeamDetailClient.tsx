@@ -9,6 +9,7 @@ type NHLStaticData = typeof NHL_TEAM_DATA[string];
 import NHLShopWidget from '@/components/NHLShopWidget';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import SaveButton from '@/components/SaveButton';
+import SocialActions from '@/components/SocialActions';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 
@@ -47,10 +48,14 @@ export default function TeamDetailClient({
   team,
   players,
   articles = [],
+  ownerUserId,
+  initialFollowersCount = 0,
 }: {
   team: TeamData;
   players: PlayerData[];
   articles?: ArticleData[];
+  ownerUserId?: string | null;
+  initialFollowersCount?: number;
 }) {
   const staticData = (NHL_TEAM_DATA[team.slug] || {}) as NHLStaticData;
   const hasRichData = Object.keys(staticData).length > 0;
@@ -90,7 +95,18 @@ export default function TeamDetailClient({
               {team.leagues?.name ? ` · ${team.leagues.name}` : ''}
             </p>
             <div style={{ marginTop: '0.75rem' }}>
-              <SaveButton favoriteType="team" favoriteId={team.id} entityName={team.name} size="sm" />
+              <SocialActions
+                followeeType="team"
+                followeeId={team.id}
+                followeeName={team.name}
+                favoriteType="team"
+                favoriteId={team.id}
+                favoriteName={team.name}
+                messageRecipientId={ownerUserId ?? undefined}
+                messageRecipientName={team.name}
+                initialFollowersCount={initialFollowersCount}
+                size="sm"
+              />
             </div>
             <ClaimedBy entityType="team" entityId={team.id} entityName={team.name} />
             <div style={{ marginTop: '1rem' }}>

@@ -5,12 +5,20 @@ import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from
 
 const RATE_LIMIT = { maxRequests: 30, windowMs: 60 * 1000 };
 
-const VALID_TYPES = ['rink', 'team', 'player'] as const;
+const VALID_TYPES = ['rink', 'team', 'player', 'league', 'business'] as const;
 type FavoriteType = (typeof VALID_TYPES)[number];
 
 function isValidType(s: unknown): s is FavoriteType {
   return typeof s === 'string' && (VALID_TYPES as readonly string[]).includes(s);
 }
+
+const TYPE_TO_TABLE: Record<FavoriteType, string> = {
+  rink: 'rinks',
+  team: 'teams',
+  player: 'players',
+  league: 'leagues',
+  business: 'listings',
+};
 
 // POST /api/favorites — add a favorite
 export async function POST(request: NextRequest) {
@@ -42,9 +50,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify the entity exists before saving (avoids orphan favorites)
-  const table = body.favorite_type === 'rink' ? 'rinks'
-              : body.favorite_type === 'team' ? 'teams'
-              : 'players';
+  const table = TYPE_TO_TABLE[body.favorite_type];
   const { data: entity, error: lookupErr } = await supabaseAdmin
     .from(table)
     .select('id')

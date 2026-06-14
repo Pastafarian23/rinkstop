@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
 import ProfileEditForm from './ProfileEditForm';
+import FollowingList from './FollowingList';
 
 export default async function ProfilePage() {
   const { userId } = await auth();
@@ -85,6 +86,9 @@ export default async function ProfilePage() {
 
       {/* Editable profile fields (bio, location) */}
       <ProfileEditForm initialBio={profile?.bio || ''} initialLocation={profile?.location || ''} />
+
+      {/* Following list — what the user has chosen to follow */}
+      <FollowingList userId={userId} />
 
       {/* Manage via Clerk */}
       <div style={{
