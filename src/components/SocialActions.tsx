@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import ShareButton from './ShareButton';
+import SaveFollowNudge, { isNudgeDismissed, type NudgeAction, type NudgeEntityType } from './SaveFollowNudge';
 import type { SharePayload } from '@/lib/share';
 
 type FolloweeType = 'player' | 'team' | 'rink' | 'league' | 'user';
@@ -112,29 +113,26 @@ export default function SocialActions(props: SocialActionsProps) {
     : { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' };
   const btnFlex: React.CSSProperties = layout === 'column' ? { justifyContent: 'center' } : {};
 
-  // Unauthenticated: render sign-in links
+  // Unauthenticated: render buttons that open the SaveFollowNudge modal
+  // instead of redirecting straight to /login. The old behavior lost ~95%
+  // of intent at the redirect. Now we acknowledge the click, explain the
+  // value, and offer a one-click path to free signup.
   if (isLoaded && !isSignedIn) {
-    const signInHref = `/login?redirect_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/')}`;
-    return (
-      <div style={containerStyle}>
-        {followeeType && followeeId && (
-          <Link href={signInHref} style={baseBtnStyle('outline', sizeStyle, iconSize, btnFlex)}>
-            <span style={{ fontSize: iconSize }}>+</span><span>Follow</span>
-            {followersCount > 0 && <span style={countStyle}>· {followersCount}</span>}
-          </Link>
-        )}
-        {favoriteType && favoriteId && (
-          <Link href={signInHref} style={baseBtnStyle('outline', sizeStyle, iconSize, btnFlex)}>
-            <span style={{ fontSize: iconSize }}>♡</span><span>Save</span>
-          </Link>
-        )}
-        {messageRecipientId && (
-          <Link href={signInHref} style={baseBtnStyle('primary', sizeStyle, iconSize, btnFlex)}>
-            <span style={{ fontSize: iconSize }}>✉</span><span>Message</span>
-          </Link>
-        )}
-      </div>
-    );
+    return <UnauthSocialActions
+      containerStyle={containerStyle}
+      sizeStyle={sizeStyle}
+      iconSize={iconSize}
+      btnFlex={btnFlex}
+      followersCount={followersCount}
+      followeeType={followeeType as Exclude<typeof followeeType, 'user' | undefined>}
+      followeeId={followeeId}
+      followeeName={followeeName}
+      favoriteType={favoriteType}
+      favoriteId={favoriteId}
+      favoriteName={favoriteName}
+      messageRecipientId={messageRecipientId}
+      messageRecipientName={messageRecipientName}
+    />;
   }
 
   async function toggleFollow() {
@@ -292,4 +290,133 @@ function stateBtnStyle(active: boolean, checked: boolean, sizeStyle: React.CSSPr
   return active
     ? { ...base, background: 'rgba(20,184,166,0.18)', borderColor: '#14B8A6', color: '#14B8A6' }
     : { ...base, background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.15)', color: '#e2e8f0' };
+}
+
+/**
+ * UnauthSocialActions — the not-signed-in branch of SocialActions.
+ *
+ * Renders the same Follow / Save / Message buttons, but instead of linking
+ * to /login (which silently drops ~95% of intent), each button opens a
+ * SaveFollowNudge modal that pitches the value of a free account and offers
+ * a one-click path to /sign-up.
+ *
+ * Dismissal is tracked per (action, entityType) in localStorage for 7 days
+ * so a user who clicks "Maybe later" doesn't see the modal again on every
+ * page for the rest of their session.
+ */
+function UnauthSocialActions(props: {
+  containerStyle: React.CSSProperties;
+  sizeStyle: React.CSSProperties;
+  iconSize: number;
+  btnFlex: React.CSSProperties;
+  followersCount: number;
+  followeeType?: 'player' | 'team' | 'rink' | 'league';
+  followeeId?: string;
+  followeeName?: string;
+  favoriteType?: 'rink' | 'team' | 'player' | 'league';
+  favoriteId?: string;
+  favoriteName?: string;
+  messageRecipientId?: string;
+  messageRecipientName?: string;
+}) {
+  const {
+    containerStyle, sizeStyle, iconSize, btnFlex,
+    followersCount,
+    followeeType, followeeId, followeeName,
+    favoriteType, favoriteId, favoriteName,
+    messageRecipientId, messageRecipientName,
+  } = props;
+
+  const [nudge, setNudge] = useState<{ action: NudgeAction } | null>(null);
+
+  // currentPath is captured at click-time so the modal CTA can redirect
+  // back to this exact page after signup.
+  const [currentPath, setCurrentPath] = useState('/');
+  useEffect(() => { setCurrentPath(window.location.pathname); }, []);
+
+  function openNudge(action: NudgeAction) {
+    // Map the action to the right entity type for the dismiss key. For
+    // 'message' the entity is the recipient (a person), so use the
+    // followeeType if present, otherwise default to 'user'.
+    const entityType: NudgeEntityType = (() => {
+      if (action === 'message') return (followeeType as NudgeEntityType) || 'user';
+      if (action === 'save') return (favoriteType as NudgeEntityType) || 'rink';
+      return (followeeType as NudgeEntityType) || 'rink';
+    })();
+
+    if (isNudgeDismissed(action, entityType)) {
+      // Already dismissed in the last 7 days — skip the modal and go
+      // straight to /login. Better than nagging, still keeps the action
+      // available.
+      const path = encodeURIComponent(currentPath);
+      window.location.href = `/login?redirect_url=${path}`;
+      return;
+    }
+    setNudge({ action });
+  }
+
+  // Entity name + id passed to the modal depend on which action fired.
+  const entityType: NudgeEntityType = (() => {
+    if (nudge?.action === 'message') return (followeeType as NudgeEntityType) || 'user';
+    if (nudge?.action === 'save') return (favoriteType as NudgeEntityType) || 'rink';
+    return (followeeType as NudgeEntityType) || 'rink';
+  })();
+  const entityId = (() => {
+    if (nudge?.action === 'message') return messageRecipientId || followeeId || '';
+    if (nudge?.action === 'save') return favoriteId || '';
+    return followeeId || '';
+  })();
+  const entityName = (() => {
+    if (nudge?.action === 'message') return followeeName || favoriteName || 'this listing';
+    if (nudge?.action === 'save') return favoriteName || followeeName || 'this listing';
+    return followeeName || favoriteName || 'this listing';
+  })();
+
+  return (
+    <>
+      <div style={containerStyle}>
+        {followeeType && followeeId && (
+          <button
+            type="button"
+            onClick={() => openNudge('follow')}
+            style={baseBtnStyle('outline', sizeStyle, iconSize, btnFlex)}
+          >
+            <span style={{ fontSize: iconSize }}>+</span><span>Follow</span>
+            {followersCount > 0 && <span style={countStyle}>· {followersCount}</span>}
+          </button>
+        )}
+        {favoriteType && favoriteId && (
+          <button
+            type="button"
+            onClick={() => openNudge('save')}
+            style={baseBtnStyle('outline', sizeStyle, iconSize, btnFlex)}
+          >
+            <span style={{ fontSize: iconSize }}>♡</span><span>Save</span>
+          </button>
+        )}
+        {messageRecipientId && (
+          <button
+            type="button"
+            onClick={() => openNudge('message')}
+            style={baseBtnStyle('primary', sizeStyle, iconSize, btnFlex)}
+          >
+            <span style={{ fontSize: iconSize }}>✉</span><span>Message</span>
+          </button>
+        )}
+      </div>
+
+      {nudge && (
+        <SaveFollowNudge
+          action={nudge.action}
+          entityType={entityType}
+          entityId={entityId}
+          entityName={entityName}
+          messageRecipientName={messageRecipientName}
+          currentPath={currentPath}
+          open={true}
+          onClose={() => setNudge(null)}
+        />
+      )}
+    </>
+  );
 }
