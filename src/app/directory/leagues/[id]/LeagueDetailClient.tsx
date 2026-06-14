@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import LeagueRelated from '@/components/LeagueRelated';
+import SocialActions from '@/components/SocialActions';
 
 const BASE_URL = 'https://rinkstop.com';
 
-export default function LeagueDetailClient({ id }: { id: string }) {
+export default function LeagueDetailClient({ id, initialFollowersCount = 0 }: { id: string; initialFollowersCount?: number }) {
   const [league, setLeague] = useState<any>(null);
   const [teams, setTeams] = useState([]);
   const [articles, setArticles] = useState<any[]>([]);
@@ -51,6 +52,18 @@ export default function LeagueDetailClient({ id }: { id: string }) {
           <p className="text-teal-400 capitalize">{league.level?.replace('_', ' ')}</p>
           <p className="text-slate-400">{league.country}</p>
         </div>
+      </div>
+      <div className="mb-6">
+        <SocialActions
+          followeeType="league"
+          followeeId={league.id}
+          followeeName={league.name}
+          favoriteType="league"
+          favoriteId={league.id}
+          favoriteName={league.name}
+          initialFollowersCount={initialFollowersCount}
+          size="md"
+        />
       </div>
       {league.description && <p className="text-slate-300 mb-6">{league.description}</p>}
       {league.website_url && (

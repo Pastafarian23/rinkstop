@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import LeagueDetailClient from './LeagueDetailClient';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import { getFollowersCount } from '@/lib/ownership';
 
 const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
 const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('127.0.0.1')
@@ -42,6 +43,10 @@ export default async function LeaguePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // Social: leagues have no claim system today, so no message button —
+  // we only need the follower count for the SocialActions component.
+  const initialFollowersCount = await getFollowersCount('league', id);
 
   // Server-side fetch for JSON-LD. The client component will re-fetch for
   // its own UI; this duplicate read is the cost of getting structured data
@@ -93,7 +98,7 @@ export default async function LeaguePage({
           the main client component. Note: leagues aren't a first-class claim
           type in the DB yet, so the CTA is a best-effort gate. */}
       <ClaimThisListingMount entityType="league" entityId={id} />
-      <LeagueDetailClient id={id} />
+      <LeagueDetailClient id={id} initialFollowersCount={initialFollowersCount} />
     </>
   );
 }
