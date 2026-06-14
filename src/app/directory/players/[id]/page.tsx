@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import PlayerDetail from './PlayerDetailClient';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
+import { supabaseAdmin } from '@/lib/supabase';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -116,22 +117,22 @@ export default async function PlayerPage({ params }: Props) {
   ]);
 
   // Server-side JSON-LD: Person (athlete) + BreadcrumbList.
-  // We re-fetch the player record here so the structured data is in the
-  // initial HTML (Googlebot sees it on first crawl). The client component
-  // re-fetches its own data for the actual UI; this is a duplicate read,
-  // not a coupled one.
+  // Query the player record directly via supabaseAdmin (no self-loop HTTP
+  // hop). The client component re-fetches its own data for the actual UI;
+  // this is a duplicate read, not a coupled one — but it goes straight to
+  // the DB now, not through the public /api/players endpoint, which
+  // saves one full round trip per page load.
   let playerJsonLd: object | null = null;
   try {
-    const res = await fetch(
-      `${BASE_URL}/api/players?id=${id}`,
-      { cache: 'no-store' }
-    );
-    const json = await res.json();
-    const player = json?.data?.[0];
+    const { data: player } = await supabaseAdmin
+      .from('players')
+      .select('id, first_name, last_name, position, headshot_url, birth_place, nationality, height_cm, weight_kg, teams(name, leagues(name))')
+      .eq('id', id)
+      .maybeSingle();
     if (player) {
       const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim();
-      const teamName = player.teams?.name || player.current_team_name;
-      const leagueName = player.teams?.leagues?.name;
+      const teamName = (player.teams as any)?.name;
+      const leagueName = (player.teams as any)?.leagues?.name;
       const position = POSITION_FULL[player.position] || player.position || 'Hockey Player';
 
       playerJsonLd = {
