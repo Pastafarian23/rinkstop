@@ -1,8 +1,34 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
-import FavoriteItem from '@/components/FavoriteItem';
+import FavoritesClient from './FavoritesClient';
+
+export const dynamic = 'force-dynamic';
+
+interface Favorite {
+  favorite_type: 'rink' | 'team' | 'player' | 'league' | 'business';
+  favorite_id: string;
+  name: string;
+  href: string;
+  icon: string;
+}
+
+const TYPE_TO_TABLE = {
+  rink: 'rinks', team: 'teams', player: 'players', league: 'leagues', business: 'listings',
+} as const;
+const TYPE_TO_NAME_COL = {
+  rink: 'name', team: 'name', player: 'full_name', league: 'name', business: 'business_name',
+} as const;
+const TYPE_TO_HREF = {
+  rink: (id: string) => `/directory/rinks/${id}`,
+  team: (id: string) => `/directory/teams/${id}`,
+  player: (id: string) => `/directory/players/${id}`,
+  league: (id: string) => `/directory/leagues/${id}`,
+  business: (id: string) => `/businesses/${id}`,
+} as const;
+const TYPE_TO_ICON = {
+  rink: '⛸️', team: '🏆', player: '🏒', league: '🏆', business: '🛒',
+} as const;
 
 export default async function FavoritesPage() {
   const { userId } = await auth();
@@ -10,130 +36,60 @@ export default async function FavoritesPage() {
 
   const { data: favorites } = await supabaseAdmin
     .from('favorites')
-    .select('id, favorite_type, favorite_id, created_at')
+    .select('favorite_type, favorite_id, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  type FavItem = { id: string; favorite_type: string; favorite_id: string; created_at: string };
+  type RawFav = { favorite_type: keyof typeof TYPE_TO_TABLE; favorite_id: string };
+  const items: Favorite[] = [];
 
-  // Fetch names for each favorited item
-  const players: Record<string, string> = {};
-  const teams: Record<string, string> = {};
-  const rinks: Record<string, string> = {};
-
-  const playerIds = (favorites as FavItem[]|null)?.filter(f => f.favorite_type === 'player').map(f => f.favorite_id) || [];
-  const teamIds = (favorites as FavItem[]|null)?.filter(f => f.favorite_type === 'team').map(f => f.favorite_id) || [];
-  const rinkIds = (favorites as FavItem[]|null)?.filter(f => f.favorite_type === 'rink').map(f => f.favorite_id) || [];
-
-  if (playerIds.length) {
-    const { data } = await supabaseAdmin.from('players').select('id, full_name').in('id', playerIds);
-    (data || []).forEach(p => { players[p.id] = p.full_name; });
+  // Resolve names in one pass per type
+  if (favorites && favorites.length > 0) {
+    const groups: Record<string, string[]> = {};
+    for (const f of favorites as RawFav[]) {
+      if (!groups[f.favorite_type]) groups[f.favorite_type] = [];
+      groups[f.favorite_type].push(f.favorite_id);
+    }
+    for (const [type, ids] of Object.entries(groups)) {
+      const t = type as keyof typeof TYPE_TO_TABLE;
+      const table = TYPE_TO_TABLE[t];
+      const nameCol = TYPE_TO_NAME_COL[t];
+      // For rinks/teams/leagues the page uses slug; for players + businesses, id.
+      // The href function takes whatever the existing /directory/* route uses.
+      // We grab both id and slug where available so the href is canonical.
+      const selectCols = t === 'rink' ? 'id, slug, name' : t === 'team' ? 'id, slug, name' : t === 'player' ? 'id, full_name' : t === 'league' ? 'id, name' : 'id, business_name';
+      const { data: rows } = await supabaseAdmin
+        .from(table).select(selectCols).in('id', ids);
+      const map: Record<string, { name: string; slug?: string }> = {};
+      for (const r of ((rows as unknown) as Array<{ id: string; slug?: string; name?: string; full_name?: string; business_name?: string }>) || []) {
+        map[r.id] = { name: r.name || r.full_name || r.business_name || 'Unknown', slug: r.slug };
+      }
+      for (const id of ids) {
+        const row = map[id];
+        const name = row?.name || 'Unknown';
+        const slug = row?.slug;
+        items.push({
+          favorite_type: t,
+          favorite_id: id,
+          name,
+          href: slug && (t === 'rink' || t === 'team') ? TYPE_TO_HREF[t](slug) : TYPE_TO_HREF[t](id),
+          icon: TYPE_TO_ICON[t],
+        });
+      }
+    }
   }
-  if (teamIds.length) {
-    const { data } = await supabaseAdmin.from('teams').select('id, name').in('id', teamIds);
-    (data || []).forEach(t => { teams[t.id] = t.name; });
-  }
-  if (rinkIds.length) {
-    const { data } = await supabaseAdmin.from('rinks').select('id, name').in('id', rinkIds);
-    (data || []).forEach(r => { rinks[r.id] = r.name; });
-  }
-
-  function getName(f: FavItem) {
-    if (f.favorite_type === 'player') return players[f.favorite_id] || 'Unknown Player';
-    if (f.favorite_type === 'team') return teams[f.favorite_id] || 'Unknown Team';
-    return rinks[f.favorite_id] || 'Unknown Rink';
-  }
-
-  function getHref(f: FavItem) {
-    if (f.favorite_type === 'player') return `/directory/players/${f.favorite_id}`;
-    if (f.favorite_type === 'team') return `/directory/teams/${f.favorite_id}`;
-    return `/directory/rinks/${f.favorite_id}`;
-  }
-
-  function getIcon(type: string) {
-    if (type === 'player') return '🏒';
-    if (type === 'team') return '🏆';
-    return '⛸️';
-  }
-
-  const grouped = {
-    rink: (favorites as FavItem[]|null)?.filter(f => f.favorite_type === 'rink') || [],
-    team: (favorites as FavItem[]|null)?.filter(f => f.favorite_type === 'team') || [],
-    player: (favorites as FavItem[]|null)?.filter(f => f.favorite_type === 'player') || [],
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 720 }}>
-
-      <div style={{
-        background: '#0f0f0f',
-        border: '1px solid #1e1e1e',
-        borderRadius: 12,
-        padding: '1.5rem',
-      }}>
+      <div style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.25rem' }}>
           SAVED ITEMS
         </h2>
         <p style={{ color: '#666', fontSize: '0.875rem', margin: 0 }}>
-          {favorites?.length || 0} item{(favorites?.length || 0) !== 1 ? 's' : ''} saved
+          {items.length} item{items.length !== 1 ? 's' : ''} saved
         </p>
       </div>
-
-      {(!favorites || favorites.length === 0) ? (
-        <div style={{
-          background: '#0f0f0f',
-          border: '1px solid #1e1e1e',
-          borderRadius: 12,
-          padding: '3rem 1.5rem',
-          textAlign: 'center',
-        }}>
-          <p style={{ fontSize: '2rem', margin: '0 0 0.75rem' }}>❤️</p>
-          <p style={{ color: '#888', fontSize: '1rem', margin: '0 0 0.5rem' }}>No saved items yet</p>
-          <p style={{ color: '#555', fontSize: '0.875rem', margin: '0 0 1.5rem' }}>
-            Browse rinks, teams, and players and tap the save icon to add them here.
-          </p>
-          <Link
-            href="/directory"
-            style={{
-              display: 'inline-block',
-              background: '#041E42',
-              color: '#fff',
-              padding: '0.625rem 1.25rem',
-              borderRadius: 6,
-              textDecoration: 'none',
-              fontSize: '0.875rem',
-            }}
-          >
-            Browse Directory →
-          </Link>
-        </div>
-      ) : (
-        <>
-          {(['rink', 'team', 'player'] as const).map(type => {
-            const items = grouped[type];
-            if (!items.length) return null;
-            return (
-              <div key={type} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '0.9rem', color: '#666', letterSpacing: '0.08em', margin: '0 0 0.25rem' }}>
-                  {type === 'rink' ? '⛸️ RINKS' : type === 'team' ? '🏆 TEAMS' : '🏒 PLAYERS'} — {items.length}
-                </h3>
-                {items.map(f => (
-                  <FavoriteItem
-                    key={f.id}
-                    favorite={{
-                      id: f.id,
-                      href: getHref(f),
-                      icon: getIcon(f.favorite_type),
-                      name: getName(f),
-                      createdAt: f.created_at,
-                    }}
-                  />
-                ))}
-              </div>
-            );
-          })}
-        </>
-      )}
+      <FavoritesClient initialFavorites={items} />
     </div>
   );
 }

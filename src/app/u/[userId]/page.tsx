@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
+import SocialActions from '@/components/SocialActions';
 import { TierBadge, VerifiedCheckmark, FoundingMemberBadge } from '@/components/TierBadge';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 
@@ -154,7 +155,17 @@ export default function UserProfilePage() {
             {profile.bio && (
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.5, margin: 0, marginBottom: 12 }}>{profile.bio}</p>
             )}
-            <ConnectButton otherUserId={profile.user_id} otherDisplayName={displayName.split(' ')[0] || 'this user'} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <ConnectButton otherUserId={profile.user_id} otherDisplayName={displayName.split(' ')[0] || 'this user'} />
+              <SocialActions
+                followeeType="user"
+                followeeId={profile.user_id}
+                followeeName={displayName}
+                messageRecipientId={profile.user_id}
+                messageRecipientName={displayName}
+                size="sm"
+              />
+            </div>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import SaveButton from '@/components/SaveButton';
+import SocialActions from '@/components/SocialActions';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimParentButton from '@/components/ClaimParentButton';
 import { playerPageDecision, robotsMeta } from '@/lib/seo';
@@ -194,7 +195,7 @@ function StatCard({ label, value, unit }: { label: string; value?: string | numb
 }
 
 // ------ Page --------------------------------------------------------------------------------------------------------------------------------------
-export default function PlayerDetail({ id }: { id: string }) {
+export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 0 }: { id: string; ownerUserId?: string | null; initialFollowersCount?: number }) {
   const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
   const [otherPlayers, setOtherPlayers] = useState<Player[]>([]);
@@ -474,7 +475,18 @@ export default function PlayerDetail({ id }: { id: string }) {
               {player.first_name} {player.last_name}
             </h1>
             <div style={{ marginBottom: '0.75rem', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <SaveButton favoriteType="player" favoriteId={player.id} entityName={`${player.first_name} ${player.last_name}`} size="sm" />
+              <SocialActions
+                followeeType="player"
+                followeeId={player.id}
+                followeeName={`${player.first_name} ${player.last_name}`}
+                favoriteType="player"
+                favoriteId={player.id}
+                favoriteName={`${player.first_name} ${player.last_name}`}
+                messageRecipientId={ownerUserId ?? undefined}
+                messageRecipientName={`${player.first_name} ${player.last_name}`}
+                initialFollowersCount={initialFollowersCount}
+                size="sm"
+              />
               <ClaimParentButton playerId={player.id} playerName={`${player.first_name} ${player.last_name}`} birthDate={player.birth_date || null} />
             </div>
             <ClaimedBy entityType="player" entityId={player.id} entityName={`${player.first_name} ${player.last_name}`} />
