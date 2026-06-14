@@ -20,13 +20,14 @@ export interface NavSection {
 }
 
 const EXPLORE: NavItem[] = [
-  { href: '/directory/teams',    label: 'Teams'   },
-  { href: '/directory/players',  label: 'Players' },
-  { href: '/directory/coaches',  label: 'Coaches' },
-  { href: '/directory/scouts',   label: 'Scouts'  },
-  { href: '/directory/leagues',  label: 'Leagues' },
-  { href: '/directory/rinks',    label: 'Rinks'   },
-  { href: '/directory/games',    label: 'Games'   },
+  { href: '/directory/teams',    label: 'Teams'      },
+  { href: '/directory/players',  label: 'Players'    },
+  { href: '/directory/coaches',  label: 'Coaches'    },
+  { href: '/directory/scouts',   label: 'Scouts'     },
+  { href: '/directory/leagues',  label: 'Leagues'    },
+  { href: '/directory/rinks',    label: 'Rinks'      },
+  { href: '/businesses',         label: 'Businesses' },
+  { href: '/directory/games',    label: 'Games'      },
 ];
 
 const PRO_HOCKEY: NavItem[] = [
@@ -83,6 +84,7 @@ const ABOUT_LINKS: NavItem[] = [
   { href: '/advertise',      label: 'Advertise'       },
   { href: '/partner',        label: 'Partner With Us' },
   { href: '/add-listing',    label: 'Add Listing'     },
+  { href: '/dashboard/listings', label: 'List Your Business' },
 ];
 
 export const NAV_SECTIONS: NavSection[] = [
