@@ -5,12 +5,14 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
 import SocialActions from '@/components/SocialActions';
+import { buildUserShare } from '@/lib/share';
 import { TierBadge, VerifiedCheckmark, FoundingMemberBadge } from '@/components/TierBadge';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 
 interface Profile {
   user_id: string;
   display_name: string | null;
+  username?: string | null;
   bio: string | null;
   avatar_url: string | null;
   location: string | null;
@@ -163,6 +165,11 @@ export default function UserProfilePage() {
                 followeeName={displayName}
                 messageRecipientId={profile.user_id}
                 messageRecipientName={displayName}
+                share={buildUserShare({
+                  user_id: profile.user_id,
+                  display_name: profile.display_name,
+                  username: profile.username,
+                })}
                 size="sm"
               />
             </div>

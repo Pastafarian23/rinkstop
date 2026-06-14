@@ -8,6 +8,7 @@ import SocialActions from '@/components/SocialActions';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimParentButton from '@/components/ClaimParentButton';
 import { playerPageDecision, robotsMeta } from '@/lib/seo';
+import { buildPlayerShare } from '@/lib/share';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -485,6 +486,12 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                 messageRecipientId={ownerUserId ?? undefined}
                 messageRecipientName={`${player.first_name} ${player.last_name}`}
                 initialFollowersCount={initialFollowersCount}
+                share={buildPlayerShare({
+                  id: player.id,
+                  full_name: `${player.first_name} ${player.last_name}`,
+                  position: player.position || undefined,
+                  team_name: teamName || undefined,
+                })}
                 size="sm"
               />
               <ClaimParentButton playerId={player.id} playerName={`${player.first_name} ${player.last_name}`} birthDate={player.birth_date || null} />
