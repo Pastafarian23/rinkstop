@@ -50,12 +50,14 @@ export default function TeamDetailClient({
   articles = [],
   ownerUserId,
   initialFollowersCount = 0,
+  share,
 }: {
   team: TeamData;
   players: PlayerData[];
   articles?: ArticleData[];
   ownerUserId?: string | null;
   initialFollowersCount?: number;
+  share?: import('@/lib/share').SharePayload | null;
 }) {
   const staticData = (NHL_TEAM_DATA[team.slug] || {}) as NHLStaticData;
   const hasRichData = Object.keys(staticData).length > 0;
@@ -105,6 +107,7 @@ export default function TeamDetailClient({
                 messageRecipientId={ownerUserId ?? undefined}
                 messageRecipientName={team.name}
                 initialFollowersCount={initialFollowersCount}
+                share={share}
                 size="sm"
               />
             </div>
