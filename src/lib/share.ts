@@ -147,6 +147,8 @@ export function buildBusinessShare(listing: {
 
 /**
  * Build a share payload for a user profile.
+ * Prefers the public username-based URL; falls back to a search-by-name URL
+ * if the user has not yet claimed a username.
  */
 export function buildUserShare(user: {
   display_name?: string | null;
@@ -154,10 +156,15 @@ export function buildUserShare(user: {
   user_id: string;
 }): SharePayload {
   const name = user.display_name || user.username || 'Hockey profile';
+  const url = user.username
+    ? `${BASE_URL}/profile/${user.username}`
+    : `${BASE_URL}/directory/users?q=${encodeURIComponent(name)}`;
   return {
     title: `${name} — ${SITE_NAME}`,
-    text: `${name} on ${SITE_NAME} — the global hockey directory.`,
-    url: `${BASE_URL}/u/${user.user_id}`,
+    text: user.username
+      ? `${name} (@${user.username}) on ${SITE_NAME} — the global hockey directory.`
+      : `${name} on ${SITE_NAME} — the global hockey directory.`,
+    url,
   };
 }
 

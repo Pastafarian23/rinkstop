@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import { FounderBadge } from '@/components/FounderBadge';
+import UsernameBanner from '@/components/UsernameBanner';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
@@ -24,7 +25,7 @@ export default async function DashboardPage() {
   // Profile completeness + tier
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('bio, location, tier, is_founding_member, created_at, role, display_name')
+    .select('bio, location, tier, is_founding_member, created_at, role, display_name, username')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -66,6 +67,13 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+      {profile?.username ? null : (
+        <UsernameBanner
+          displayName={profile?.display_name || firstName || 'RinkStop Member'}
+          onComplete={() => null}
+        />
+      )}
 
       {/* Welcome card */}
       <div style={{
@@ -232,6 +240,7 @@ export default async function DashboardPage() {
                 type={t}
                 primary={primary}
                 data={typeData}
+                username={profile?.username ?? null}
               />
             ))}
           </div>

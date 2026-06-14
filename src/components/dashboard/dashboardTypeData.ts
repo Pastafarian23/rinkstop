@@ -42,7 +42,7 @@ const EMPTY: TypeSectionData = {
 export async function loadDashboardTypeData(userId: string): Promise<TypeSectionData> {
   const data: TypeSectionData = { ...EMPTY };
 
-  // PLAYER: profile_views is logged on /u/[userId]; use 0 for now (no view-logging
+  // PLAYER: profile_views is logged on /profile/[username]; use 0 for now (no view-logging
   // table yet). Once views are tracked, swap to: count from profile_views.
   data.player.loaded = true;
 

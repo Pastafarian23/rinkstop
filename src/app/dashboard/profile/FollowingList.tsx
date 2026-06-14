@@ -15,7 +15,7 @@ const TYPE_TO_TABLE = {
   team:   { table: 'teams',   name: 'name',      href: (id: string) => `/directory/teams/${id}`,   icon: '🏆' },
   rink:   { table: 'rinks',   name: 'name',      href: (id: string) => `/directory/rinks/${id}`,   icon: '⛸️' },
   league: { table: 'leagues', name: 'name',      href: (id: string) => `/directory/leagues/${id}`, icon: '🏆' },
-  user:   { table: 'profiles',name: 'display_name',href: (id: string) => `/u/${id}`,            icon: '👤' },
+  user:   { table: 'profiles',name: 'display_name',href: (id: string, username?: string | null) => username ? `/profile/${username}` : '#', icon: '👤' },
 } as const;
 
 export default async function FollowingList({ userId }: { userId: string }) {
@@ -52,19 +52,20 @@ export default async function FollowingList({ userId }: { userId: string }) {
     const t = type as keyof typeof TYPE_TO_TABLE;
     const cfg = TYPE_TO_TABLE[t];
     const ids = rows.map((r) => r.id);
-    const selectCols = t === 'user' ? 'user_id, display_name' : `id, ${cfg.name}`;
+    const selectCols = t === 'user' ? 'user_id, display_name, username' : `id, ${cfg.name}`;
     const { data: entities } = await supabaseAdmin.from(cfg.table).select(selectCols).in(t === 'user' ? 'user_id' : 'id', ids);
-    const byId: Record<string, string> = {};
-    for (const e of (entities || []) as Array<{ id?: string; user_id?: string; full_name?: string; name?: string; display_name?: string }>) {
+    const byId: Record<string, { name: string; username: string | null }> = {};
+    for (const e of (entities || []) as Array<{ id?: string; user_id?: string; full_name?: string; name?: string; display_name?: string; username?: string | null }>) {
       const id = (e.id || e.user_id || '') as string;
-      byId[id] = e.full_name || e.name || e.display_name || 'Unknown';
+      byId[id] = { name: e.full_name || e.name || e.display_name || 'Unknown', username: e.username ?? null };
     }
     for (const row of rows) {
+      const entry = byId[row.id];
       items.push({
         followee_type: t,
         followee_id: row.id,
-        name: byId[row.id] || 'Unknown',
-        href: cfg.href(row.id),
+        name: entry?.name || 'Unknown',
+        href: t === 'user' ? cfg.href(row.id, entry?.username) : cfg.href(row.id),
         icon: cfg.icon,
         followed_at: row.created_at,
       });

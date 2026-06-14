@@ -1,0 +1,12 @@
+{
+  "ts": "20260613T115147Z",
+  "pid": 5437,
+  "mode": "--execute",
+  "status": "error",
+  "log": "/root/.openclaw/workspace/rinkstop-platform/logs/fact-audit/audit-20260613T115147Z.log",
+  "totals": {
+    "clean": ,
+    "would_archive": ,
+    "archived": 
+  }
+}

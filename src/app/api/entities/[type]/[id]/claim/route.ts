@@ -62,7 +62,7 @@ export async function GET(
   // Look up the claimer's public profile
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('user_id, display_name, avatar_url, tier, is_founding_member')
+    .select('user_id, display_name, avatar_url, tier, is_founding_member, username')
     .eq('user_id', claim.user_id)
     .maybeSingle();
 
@@ -79,6 +79,7 @@ export async function GET(
       avatar_url: profile.avatar_url,
       tier: profile.tier,
       is_founding_member: profile.is_founding_member,
+      username: profile.username,
       claimed_at: claim.created_at,
     },
   });

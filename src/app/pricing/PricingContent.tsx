@@ -82,7 +82,7 @@ const TIERS: Tier[] = [
       'Everything in Supporter',
       'Verified checkmark on your profile and every listing you claim',
       'Up to 5 claimed listings (perfect for a personal scope: your home rink, your kid’s team, your beer-league squad)',
-      'Public profile page you can share (​rinkstop.com/u/you)',
+      'Public profile page you can share (​rinkstop.com/profile/you)',
       'Send and receive DMs with other Verified+ users',
       'Above search results in directory listings',
     ],

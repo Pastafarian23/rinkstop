@@ -420,3 +420,29 @@ This is the "make sure it works" phase. After 0–3 are done:
 - New bugs found during Phase 4 get added as items under 4.x.
 
 Last updated: 2026-06-13
+
+---
+
+## Play 1 — Soft Signup Funnel (Approved 2026-06-14)
+
+**Goal:** Convert anonymous directory browsers to signed-in users using intent-triggered soft signups. Directory pages stay 100% public for SEO.
+
+### Components
+
+| # | Component | Status | Notes |
+|---|-----------|--------|-------|
+| 1 | SaveFollowNudge modal | ✅ Shipped | anon clicks Follow/Save/Message → modal |
+| 2 | IntentBanner bottom bar | ✅ Shipped | 2+ page views → sticky bar |
+| 3 | EmailCaptureInline | ✅ Shipped | inline form on rink/team/league pages |
+
+### Migration required
+`supabase/migrations/2026-06-14-email-captures.sql` — must be applied manually in Supabase dashboard SQL editor (management API blocked by Cloudflare 403/1010).
+
+### What Play 1 does NOT include (deferred)
+- Email digest / newsletter sending (needs Resend/SendGrid)
+- Push notifications
+- Post-signup intent recovery (continue to the entity they were viewing)
+- Welcome email on account creation
+- Lead export / email campaign UI
+
+Last updated: 2026-06-14

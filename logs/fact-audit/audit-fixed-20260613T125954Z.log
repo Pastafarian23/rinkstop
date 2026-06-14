@@ -1,0 +1,101 @@
+Mode: DRY RUN (no changes)
+Loading PUBLISHED articles with highlight_id...
+Found 544 published articles to audit
+Loading 519 unique highlight records (chunked)...
+Loaded 519 highlights
+  [1/544] FAIL: Vegas Golden Knights top Colorado Avalanche 3-1 — Stanley Cup Playoffs — no source has a final score
+  [2/544] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — no source has a final score
+  [3/544] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — no source has a final score
+  [4/544] FAIL: Colorado Avalanche top Minnesota Wild 5-2 — Stanley Cup Playoffs — expected score 4 - 3 not present in any direction
+  [5/544] FAIL: Colorado Avalanche top Minnesota Wild 5-2 — Stanley Cup Playoffs — expected score 4 - 3 not present in any direction
+  [7/544] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — no source has a final score
+  [8/544] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — no source has a final score
+  [9/544] FAIL: Minnesota Wild top Dallas Stars 4-2 — Stanley Cup Playoffs — expected score 5 - 2 not present in any direction
+  [10/544] FAIL: Colorado Avalanche top Minnesota Wild 5-2 — Stanley Cup Playoffs — expected score 4 - 3 not present in any direction
+  [26/544] clean (highlightly): Metallurg Novokuznetsk top Khimik 3-2
+  [51/544] clean (highlightly): Adler Mannheim top Eisbären Berlin 5-1
+  [76/544] clean (highlightly): North Bay Battalion top Brantford Bulldogs 8-1
+  [88/544] FAIL: Kitchener Rangers top Soo Greyhounds 4-2 — expected score 5 - 1 not present in any direction
+  [99/544] FAIL: Atlanta Gladiators top South Carolina Stingrays 3-2 — expected score 3 - 4 not present in any direction
+  [101/544] clean (highlightly): Cleveland Monsters top Syracuse Crunch 4-1
+  [106/544] FAIL: Windsor Spitfires top Kitchener Rangers 2-1 — expected score 4 - 2 not present in any direction
+  [107/544] FAIL: Windsor Spitfires top Kitchener Rangers 2-1 — expected score 4 - 2 not present in any direction
+  [126/544] clean (highlightly): Brantford Bulldogs top Barrie Colts 4-3 in OT
+  [128/544] FAIL: Grand Rapids Griffins top Manitoba Moose 1-0 — expected score 0 - 2 not present in any direction
+  [135/544] FAIL: Brantford Bulldogs top Barrie Colts 5-0 — no source has a final score
+  [148/544] FAIL: Prince Albert Raiders top Everett Silvertips 5-2 — expected score 2 - 7 not present in any direction
+  [151/544] clean (highlightly): Ak Bars top Lokomotiv 2-1
+  [176/544] FAIL: Slovenia top Denmark 4-0 — no source has a final score
+  [201/544] clean (highlightly): Anaheim Ducks top Vegas Golden Knights 4-3 — Stanley Cup Playoffs
+  [208/544] FAIL: Vegas Golden Knights top Colorado Avalanche 2-1 — Stanley Cup Playoffs — no source has a final score
+  [211/544] FAIL: San Jose Sharks top Nashville Predators 3-2 — no source has a final score
+  [226/544] clean (nhl.com): New Jersey Devils top Washington Capitals 7-3
+  [227/544] FAIL: Los Angeles Kings top Seattle Kraken 5-3 — no source has a final score
+  [235/544] FAIL: Vegas Golden Knights top Utah Mammoth 5-1 — Stanley Cup Playoffs — no source has a final score
+  [237/544] FAIL: Anaheim Ducks top Edmonton Oilers 5-2 — Stanley Cup Playoffs — expected score 4 - 3 not present in any direction
+  [251/544] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — no source has a final score
+  [253/544] FAIL: Vegas Golden Knights top Utah Mammoth 5-1 — Stanley Cup Playoffs — no source has a final score
+  [254/544] FAIL: Colorado Avalanche top Calgary Flames 3-1 — no source has a final score
+  [276/544] clean (nhl.com): Pittsburgh Penguins top Philadelphia Flyers 3-2 — Stanley Cup Playoffs
+  [289/544] FAIL: Colorado Avalanche top Edmonton Oilers 2-1 in SO — no source has a final score
+  [301/544] clean (highlightly): Vegas Golden Knights top Colorado Avalanche 3-1 — Stanley Cup Playoffs
+  [305/544] FAIL: Carolina Hurricanes top Philadelphia Flyers 3-2 in OT — Stanley Cup Playoffs — expected score 3 - 0 not present in any direction
+  [310/544] FAIL: Vegas Golden Knights top Colorado Avalanche 2-1 — Stanley Cup Playoffs — no source has a final score
+  [312/544] FAIL: Utah Mammoth top Vegas Golden Knights 3-2 — Stanley Cup Playoffs — expected score 4 - 2 not present in any direction
+  [322/544] FAIL: Colorado Avalanche top Los Angeles Kings 5-1 — Stanley Cup Playoffs — no source has a final score
+  [326/544] FAIL: Colorado Avalanche top Seattle Kraken 2-0 — no source has a final score
+  [342/544] FAIL: Vegas Golden Knights top Colorado Avalanche 2-1 — Stanley Cup Playoffs — no source has a final score
+  [350/544] FAIL: Carolina Hurricanes top Montréal Canadiens 6-1 — Stanley Cup Playoffs — no source has a final score
+  [351/544] clean (nhl.com): Florida Panthers top Boston Bruins 2-1
+  [375/544] FAIL: Vegas Golden Knights top Colorado Avalanche 2-1 — Stanley Cup Playoffs — no source has a final score
+  [376/544] clean (nhl.com): Ottawa Senators top Carolina Hurricanes 6-3
+  [381/544] FAIL: Carolina Hurricanes top Montréal Canadiens 6-1 — Stanley Cup Playoffs — no source has a final score
+  [387/544] FAIL: Carolina Hurricanes top Montréal Canadiens 6-1 — Stanley Cup Playoffs — no source has a final score
+  [388/544] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — no source has a final score
+  [401/544] clean (nhl.com): Buffalo Sabres top Montréal Canadiens 4-2 — Stanley Cup Playoffs
+  [410/544] FAIL: Carolina Hurricanes top Montréal Canadiens 6-1 — Stanley Cup Playoffs — no source has a final score
+  [414/544] FAIL: Vegas Golden Knights top Anaheim Ducks 5-1 — Stanley Cup Playoffs — no source has a final score
+  [426/544] FAIL: Vegas Golden Knights top Seattle Kraken 4-1 — no source has a final score
+  [428/544] FAIL: Anaheim Ducks top Edmonton Oilers 4-3 in OT — Stanley Cup Playoffs — no source has a final score
+  [433/544] FAIL: St. Louis Blues top Minnesota Wild 6-3 — no source has a final score
+  [442/544] FAIL: Minnesota Wild top Dallas Stars 3-2 in OT — Stanley Cup Playoffs — expected score 3 - 4 not present in any direction
+  [443/544] FAIL: Vegas Golden Knights top Winnipeg Jets 6-2 — no source has a final score
+  [444/544] FAIL: Vancouver Canucks top Los Angeles Kings 4-3 in OT — no source has a final score
+  [447/544] FAIL: Buffalo Sabres top Chicago Blackhawks 5-1 — no source has a final score
+  [451/544] clean (nhl.com): Ottawa Senators top Tampa Bay Lightning 6-2
+  [456/544] FAIL: Anaheim Ducks top Nashville Predators 5-4 — no source has a final score
+  [471/544] FAIL: Anaheim Ducks top Vegas Golden Knights 3-1 — Stanley Cup Playoffs — no source has a final score
+  [475/544] FAIL: San Jose Sharks top Winnipeg Jets 6-1 — no source has a final score
+  [476/544] clean (nhl.com): Florida Panthers top Detroit Red Wings 8-1
+  [482/544] FAIL: Vegas Golden Knights top Colorado Avalanche 2-1 — Stanley Cup Playoffs — no source has a final score
+  [484/544] FAIL: Chicago Blackhawks top San Jose Sharks 5-2 — no source has a final score
+  [495/544] FAIL: Anaheim Ducks top Edmonton Oilers 5-2 — Stanley Cup Playoffs — no source has a final score
+  [497/544] FAIL: Anaheim Ducks top Edmonton Oilers 6-4 — Stanley Cup Playoffs — no source has a final score
+  [499/544] FAIL: St. Louis Blues top Pittsburgh Penguins 7-5 — no source has a final score
+  [501/544] clean (nhl.com): Philadelphia Flyers top New York Islanders 4-1
+  [503/544] FAIL: Anaheim Ducks top Vegas Golden Knights 4-3 — Stanley Cup Playoffs — no source has a final score
+  [507/544] FAIL: Utah Mammoth top Winnipeg Jets 5-3 — no source has a final score
+  [517/544] FAIL: Minnesota Wild top Anaheim Ducks 3-2 — no source has a final score
+  [522/544] FAIL: Calgary Flames top Los Angeles Kings 3-1 — no source has a final score
+  [523/544] FAIL: Edmonton Oilers top Vancouver Canucks 6-1 — no source has a final score
+  [525/544] FAIL: Colorado Avalanche top Minnesota Wild 4-3 in OT — Stanley Cup Playoffs — no source has a final score
+  [526/544] clean (nhl.com): Ottawa Senators top New York Islanders 3-0
+  [534/544] FAIL: Carolina Hurricanes top Montréal Canadiens 6-1 — Stanley Cup Playoffs — no source has a final score
+  [539/544] FAIL: Carolina Hurricanes top Montréal Canadiens 4-0 — Stanley Cup Playoffs — no source has a final score
+  [543/544] FAIL: Vegas Golden Knights top Utah Mammoth 5-4 in OT — Stanley Cup Playoffs — no source has a final score
+
+=== Audit Summary ===
+Clean (passed all checks): 481
+Would archive:             63
+Actually archived:         0
+
+Issue breakdown:
+  49x no source has a final score
+  4x expected score 4 - 3 not present in any direction
+  3x expected score 4 - 2 not present in any direction
+  2x expected score 3 - 4 not present in any direction
+  1x expected score 5 - 2 not present in any direction
+  1x expected score 5 - 1 not present in any direction
+  1x expected score 0 - 2 not present in any direction
+  1x expected score 2 - 7 not present in any direction
+  1x expected score 3 - 0 not present in any direction

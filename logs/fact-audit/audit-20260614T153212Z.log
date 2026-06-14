@@ -1,0 +1,14 @@
+Mode: EXECUTE (will archive)
+Loading PUBLISHED articles with highlight_id...
+Found 469 published articles to audit
+  [229/469] Buffalo Sabres top Montréal Canadiens 3-2 — Stanley Cup Playoffs — expected score 3 - 8 not present in any direction [ARCHIVING]
+
+=== Audit Summary ===
+Clean (passed all checks): 468
+Would archive:             1
+Actually archived:         1
+Archived IDs: 1 (first 10: e0a7a0c8-02ae-4b21-bce3-4ac10d7bd971)
+
+Issue breakdown:
+  1x expected score 3 - 8 not present in any direction
+Failed to write result file: require is not defined
