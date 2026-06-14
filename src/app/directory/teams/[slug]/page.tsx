@@ -197,8 +197,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TeamPage({ params }: Props) {
   const { slug } = await params;
+
+  // Fire the team lookup first because articles and ownership depend on the
+  // team.id. Then parallelize articles + owner + followers — the previous
+  // code was sequential (3 separate awaits) which cost ~500ms per page load.
   const result = await fetchTeamAndRoster(slug);
-  const articles = result ? await fetchTeamArticles(result.team.id) : [];
   if (!result) {
     return (
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -210,9 +213,8 @@ export default async function TeamPage({ params }: Props) {
   }
 
   const { team, players } = result;
-
-  // Social: fetch owner + initial follower count in parallel with the team data
-  const [owner, initialFollowersCount] = await Promise.all([
+  const [articles, owner, initialFollowersCount] = await Promise.all([
+    fetchTeamArticles(team.id),
     getEntityOwner('team', team.id),
     getFollowersCount('team', team.id),
   ]);

@@ -146,8 +146,11 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     redirect(`/directory/rinks/${rink.slug}`);
   }
 
-  // Fetch in parallel: upcoming games, teams in same city, leagues in same country, reviews
-  const [gamesRes, teamsRes, leaguesRes, reviewsRes] = await Promise.all([
+  // Fire all 6 secondary queries in parallel with each other. The previous
+  // code split them into 2 sequential `Promise.all` blocks which cost ~700ms
+  // per page load. One big `Promise.all` makes TTFB = max(query times) instead
+  // of sum, which is the whole point of parallel I/O.
+  const [gamesRes, teamsRes, leaguesRes, reviewsRes, owner, initialFollowersCount] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -176,6 +179,12 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(10),
+    // Social: owner lookup. Rinks don't always have an owner; this returns
+    // null in that case and the SocialActions just skips the Message button.
+    getEntityOwner('rink', rink.id),
+    // Social: initial follower count so the SocialActions doesn't show 0
+    // then jump to 247 after hydration.
+    getFollowersCount('rink', rink.id),
   ]);
 
   const games = gamesRes.data || [];
@@ -188,14 +197,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
   const blurb = buildRinkBlurb(rink);
   const locationLine = [rink.city, rink.province_state, rink.country].filter(Boolean).join(', ');
-
-  // Social: fetch owner + initial follower count in parallel with the rest of
-  // the page. (Rinks don't always have an owner; pass null to skip the
-  // message button.)
-  const [owner, initialFollowersCount] = await Promise.all([
-    getEntityOwner('rink', rink.id),
-    getFollowersCount('rink', rink.id),
-  ]);
 
   // Compute current open/closed state from Google's opening_hours_json.
   // Server-side so the pill is accurate at request time. Returns
