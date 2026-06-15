@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import BulkActionBar from '@/components/admin/BulkActionBar';
 
 interface Rink {
   id: string;
@@ -29,6 +30,7 @@ export default function RinksTable({ initialRinks, states, initialSearch, initia
   const [rinks] = useState<Rink[]>(initialRinks);
   const [search, setSearch] = useState(initialSearch);
   const [state, setState] = useState(initialState);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   function updateUrl(next: { search?: string; state?: string }) {
     const params = new URLSearchParams(sp);
@@ -91,6 +93,24 @@ export default function RinksTable({ initialRinks, states, initialSearch, initia
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-800 bg-slate-900/50">
+              <th className="text-left py-3 px-4 w-8">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && filtered.every((r) => selected.has(r.id))}
+                  onChange={() => {
+                    const allSelected = filtered.every((r) => selected.has(r.id));
+                    const next = new Set(selected);
+                    if (allSelected) {
+                      filtered.forEach((r) => next.delete(r.id));
+                    } else {
+                      filtered.forEach((r) => next.add(r.id));
+                    }
+                    setSelected(next);
+                  }}
+                  className="rounded border-slate-700"
+                  title="Select all visible"
+                />
+              </th>
               <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Rink</th>
               <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Location</th>
               <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Geocoded</th>
@@ -101,13 +121,30 @@ export default function RinksTable({ initialRinks, states, initialSearch, initia
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-500">
+                <td colSpan={6} className="py-12 text-center text-slate-500">
                   No rinks match your filters.
                 </td>
               </tr>
             ) : (
               filtered.map((r) => (
-                <tr key={r.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                <tr
+                  key={r.id}
+                  className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
+                  style={selected.has(r.id) ? { background: 'rgba(45,212,191,0.06)' } : undefined}
+                >
+                  <td className="py-3 px-4">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(r.id)}
+                      onChange={() => {
+                        const next = new Set(selected);
+                        if (next.has(r.id)) next.delete(r.id);
+                        else next.add(r.id);
+                        setSelected(next);
+                      }}
+                      className="rounded border-slate-700"
+                    />
+                  </td>
                   <td className="py-3 px-4">
                     <div className="font-medium text-white">{r.name}</div>
                     {r.slug && <div className="text-xs text-slate-500 font-mono">/{r.slug}</div>}
@@ -141,6 +178,13 @@ export default function RinksTable({ initialRinks, states, initialSearch, initia
           </tbody>
         </table>
       </div>
+
+      <BulkActionBar
+        entity="rinks"
+        selected={selected}
+        onClear={() => setSelected(new Set())}
+        onComplete={() => window.location.reload()}
+      />
 
       <div className="mt-4 text-xs text-slate-500 text-right">
         Showing {filtered.length} of {rinks.length} rinks
