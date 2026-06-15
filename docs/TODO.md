@@ -11,6 +11,7 @@
 - [x] Phase 6: Schema markup — SportsActivityLocation, SportsTeam, SportsOrganization on all entity pages
 - [x] API enhancements — city param on /api/rinks, sort=recent on /api/rinks and /api/teams
 - [x] Clean post slugs — slug-builder module, orchestrate integration, middleware redirect lookup, backfill + verify scripts. Spec: docs/CLEAN-POST-SLUGS-SPEC.md. Migration pending manual apply.
+- [x] Post-slug review queue — /admin/blog/needs-review page with filters, live SlugPreviewBanner in review page, Skip button for non-game articles. Spec: docs/POST-SLUG-REVIEW-QUEUE-SPEC.md. 562 posts flagged for review.
 
 ## In Progress
 - [ ] Monitor Phase 4A deploy — verify homepage Recent Activity Module loads correctly
