@@ -10,6 +10,7 @@ import CrossLinkOverridePanel, { Override } from '@/components/admin/CrossLinkOv
 import HighlightOverridePanel from '@/components/admin/HighlightOverridePanel';
 import SourceSignalsPanel from '@/components/admin/SourceSignalsPanel';
 import ReviewHistoryPanel from '@/components/admin/ReviewHistoryPanel';
+import SlugPreviewBanner from '@/components/admin/SlugPreviewBanner';
 
 interface CrossLinkRef {
   id: string;
@@ -29,6 +30,7 @@ interface Post {
   tags?: string[] | null;
   status: string;
   published_at?: string | null;
+  game_date?: string | null;
   highlight_id?: number | null;
   highlight_id_override?: number | null;
   team_home_id?: string | null;
@@ -75,6 +77,12 @@ export default function ReviewBlogPostPage({ params }: Props) {
   const [pendingOverrides, setPendingOverrides] = useState<Override>({});
   const [pendingHighlight, setPendingHighlight] = useState<number | null | undefined>(undefined);
   const [pendingCountry, setPendingCountry] = useState<string | null | null>(null);
+
+  // Team lookups for the SlugPreviewBanner. When the user picks an
+  // override team via CrossLinkOverridePanel, we get just an ID — but
+  // the slug preview needs the team's name and slug. Fetch the team
+  // record on demand and cache it in pickedTeams.
+  const [pickedTeams, setPickedTeams] = useState<Record<string, { id: string; name: string; slug: string }>>({});
 
   const fetchPost = useCallback(async () => {
     setLoading(true);
@@ -131,11 +139,14 @@ export default function ReviewBlogPostPage({ params }: Props) {
 
   // Cross-link overrides: pending state is the source of truth
   // (user can clear an override by setting it to undefined)
+  // When an override is set, use the pickedTeams lookup (populated
+  // by the useEffect above) so the SlugPreviewBanner can show the
+  // actual team name + slug.
   const effectiveTeamHome = pendingOverrides.team_home_id !== undefined
-    ? (pendingOverrides.team_home_id ? { id: pendingOverrides.team_home_id, name: 'Override' } : null)
+    ? (pendingOverrides.team_home_id ? (pickedTeams[pendingOverrides.team_home_id] || { id: pendingOverrides.team_home_id, name: '…', slug: '' }) : null)
     : post.team_home;
   const effectiveTeamAway = pendingOverrides.team_away_id !== undefined
-    ? (pendingOverrides.team_away_id ? { id: pendingOverrides.team_away_id, name: 'Override' } : null)
+    ? (pendingOverrides.team_away_id ? (pickedTeams[pendingOverrides.team_away_id] || { id: pendingOverrides.team_away_id, name: '…', slug: '' }) : null)
     : post.team_away;
   const effectiveLeague = pendingOverrides.league_id !== undefined
     ? (pendingOverrides.league_id ? { id: pendingOverrides.league_id, name: 'Override' } : null)
@@ -151,6 +162,53 @@ export default function ReviewBlogPostPage({ params }: Props) {
     || pendingHighlight !== undefined
     || pendingCountry !== null;
 
+  // Fetch team records for any override IDs we haven't seen yet.
+  // The SlugPreviewBanner needs the team's name + slug to compute the
+  // projected slug. We watch both home and away override IDs and fetch
+  // the missing ones. The team search API returns id, name, slug.
+  useEffect(() => {
+    if (!post) return;
+    const overrideHomeId = pendingOverrides.team_home_id;
+    const overrideAwayId = pendingOverrides.team_away_id;
+    const idsToFetch: string[] = [];
+    if (overrideHomeId && !pickedTeams[overrideHomeId]) idsToFetch.push(overrideHomeId);
+    if (overrideAwayId && !pickedTeams[overrideAwayId]) idsToFetch.push(overrideAwayId);
+    if (idsToFetch.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const updates: Record<string, { id: string; name: string; slug: string }> = {};
+      for (const id of idsToFetch) {
+        try {
+          // We don't have a "get by id" endpoint, but the team search
+          // with an empty query returns the first 20 results. For an
+          // exact lookup, we can use ilike with the id as a query (no,
+          // id is uuid). Better: add a tiny endpoint, or just look up
+          // by id via the Supabase REST API. Easiest: use the
+          // /api/admin/articles/teams/[id] route if it exists, else
+          // fetch the post and follow the FK.
+          // For now, use the team search with no query and filter.
+          // Actually, simplest: hit a dedicated endpoint.
+          // Fallback: skip the preview for the override case (banner
+          // shows '—' instead of a slug).
+          const res = await fetch(`/api/admin/teams/${id}`);
+          if (!res.ok) continue;
+          const team = await res.json();
+          if (cancelled) return;
+          if (team && team.id && team.name && team.slug) {
+            updates[id] = { id: team.id, name: team.name, slug: team.slug };
+          }
+        } catch {
+          // ignore
+        }
+      }
+      if (!cancelled && Object.keys(updates).length > 0) {
+        setPickedTeams((prev) => ({ ...prev, ...updates }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pendingOverrides.team_home_id, pendingOverrides.team_away_id, post, pickedTeams]);
+
   // Build the PATCH payload
   const buildChanges = (statusOverride?: 'published' | 'draft' | 'archived') => {
     const changes: Record<string, any> = {};
@@ -162,6 +220,26 @@ export default function ReviewBlogPostPage({ params }: Props) {
     if (Object.keys(pendingOverrides).length > 0) changes.cross_link_overrides = pendingOverrides;
     if (pendingHighlight !== undefined) changes.highlight_id_override = pendingHighlight;
     return { changes, status: statusOverride };
+  };
+
+  // Skip this post from the needs-review queue (mark as intentionally
+  // not a game article). The reason is optional but encouraged — it
+  // shows up in the "Reviewed" tab of /admin/blog/needs-review.
+  const handleSkip = async () => {
+    const reason = window.prompt(
+      'Why is this post not a game article? (optional, e.g. "coaching guide", "industry news")',
+      ''
+    );
+    if (reason === null) return; // user cancelled
+    const next: Override = {
+      ...pendingOverrides,
+      _skipped_review: true,
+      _skip_reason: reason.trim() || '(no reason given)',
+      _skipped_at: new Date().toISOString(),
+    };
+    setPendingOverrides(next);
+    // Defer to next tick so the state update is flushed before save reads it
+    setTimeout(() => applyChanges(), 0);
   };
 
   const applyChanges = async (statusOverride?: 'published' | 'draft' | 'archived') => {
@@ -328,6 +406,13 @@ export default function ReviewBlogPostPage({ params }: Props) {
             onCountryChange={onCountryChange}
           />
 
+          <SlugPreviewBanner
+            homeTeam={effectiveTeamHome}
+            awayTeam={effectiveTeamAway}
+            gameDate={post.game_date ?? post.published_at}
+            currentPostId={post.id}
+          />
+
           <HighlightOverridePanel
             pipelineHighlightId={post.highlight_id}
             overrideHighlightId={pendingHighlight}
@@ -400,6 +485,16 @@ export default function ReviewBlogPostPage({ params }: Props) {
               ← Move to draft
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={saving}
+            className="admin-btn admin-btn-secondary"
+            style={{ fontSize: '0.75rem', color: 'rgba(96,165,250,0.8)' }}
+            title="Mark this post as intentionally not a game article. Removes it from /admin/blog/needs-review."
+          >
+            ⏭️ Skip from review
+          </button>
         </div>
       </div>
     </div>

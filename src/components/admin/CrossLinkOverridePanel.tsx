@@ -9,6 +9,11 @@ export interface Override {
   team_away_id?: string | null;
   league_id?: string | null;
   player_id?: string | null;
+  // Internal flags for the /admin/blog/needs-review queue
+  // (see POST-SLUG-REVIEW-QUEUE-SPEC.md)
+  _skipped_review?: boolean;
+  _skip_reason?: string;
+  _skipped_at?: string;
 }
 
 interface PipelineRef {

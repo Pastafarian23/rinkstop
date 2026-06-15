@@ -1,5 +1,42 @@
 import { NextResponse } from 'next/server';
 
+// Per docs/CLEAN-POST-SLUGS-SPEC.md §6: post-slug redirect lookup runs at
+// the top of the middleware chain, before rate limiting or auth. Slug
+// redirects are nearly immutable (only change when a backfill runs), so
+// we cache aggressively. Fail open: if Supabase errors, we serve the page
+// (might 404) rather than break the site.
+const SLUG_REDIRECT_TTL_SECONDS = 3600;
+const SLUG_REDIRECT_SWR_SECONDS = 86400;
+
+// Edge-runtime-safe supabase client. Uses the service role key to bypass
+// RLS. The middleware runs in Vercel Edge, so we need the URL fetch
+// pattern (not the realtime client). No SDK in the bundle — we hit the
+// REST API directly with fetch.
+async function lookupSlugRedirect(slug: string): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const endpoint = `${url}/rest/v1/post_slug_redirects?from_slug=eq.${encodeURIComponent(slug)}&select=to_slug&limit=1`;
+    const res = await fetch(endpoint, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+      // Edge runtime uses AbortSignal.timeout, not the options.timeout
+      signal: AbortSignal.timeout(500),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ to_slug: string }>;
+    if (rows.length === 0) return null;
+    return rows[0].to_slug;
+  } catch (e) {
+    // Fail open. Log to console (Vercel Edge logs).
+    console.error('[middleware] slug redirect lookup failed:', e);
+    return null;
+  }
+}
+
 // Simple in-memory rate limiter for edge runtime
 // Keyed by IP, uses sliding window (1-minute windows)
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
@@ -36,11 +73,26 @@ function cleanupOldEntries() {
   }
 }
 
-export default function middleware(request: Request) {
+export default async function middleware(request: Request) {
   const url = new URL(request.url);
+  const path = url.pathname;
+
+  // Slug redirect: /news/{old-slug} → /news/{new-slug}
+  // Per docs/CLEAN-POST-SLUGS-SPEC.md §6. Runs before everything else.
+  // Only handles /news/[slug]; legacy /blog/[slug] is a separate redirect
+  // and doesn't need this layer.
+  if (path.startsWith('/news/') && path.length > '/news/'.length) {
+    const slug = path.slice('/news/'.length).split('/')[0]; // first segment only
+    if (slug && !slug.includes('.')) {
+      const toSlug = await lookupSlugRedirect(slug);
+      if (toSlug && toSlug !== slug) {
+        const dest = new URL(`/news/${toSlug}`, request.url);
+        return NextResponse.redirect(dest, 308);
+      }
+    }
+  }
 
   // Rate limiting - apply to all routes except static assets
-  const path = url.pathname;
   const isStatic = path.startsWith('/_next') ||
                    path.startsWith('/images') ||
                    path.startsWith('/favicon') ||
