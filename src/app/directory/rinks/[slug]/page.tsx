@@ -73,6 +73,18 @@ function rinkIndexable(status: string | null | undefined): boolean {
   return status !== 'closed' && status !== 'placeholder';
 }
 
+/**
+ * Extract the "Formerly known as: X" line from the notes.
+ * Returns the previous name(s), or null if no alias is recorded.
+ * The alias is preserved in the notes for SEO + historical reference.
+ */
+function extractFormerName(notes: string | null | undefined): string | null {
+  if (!notes) return null;
+  const m = notes.match(/Formerly known as:\s*([^|]+?)(?:\s*\||\s*$)/i);
+  if (m && m[1]) return m[1].trim();
+  return null;
+}
+
 // The [slug] dynamic segment is named "slug" but the route also accepts the
 // rink's UUID — some legacy internal links (and the /directory/rinks listing
 // page) still use rink.id. Detect UUIDs so we can look up by id and redirect
@@ -196,6 +208,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
   const blurb = buildRinkBlurb(rink);
   const locationLine = [rink.city, rink.province_state, rink.country].filter(Boolean).join(', ');
+  const formerName = extractFormerName(rink.notes);
 
   // Social: fetch owner + initial follower count in parallel with the rest of
   // the page. (Rinks don't always have an owner; pass null to skip the
@@ -510,6 +523,14 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             {locationLine && (
               <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}>
                 📍 {locationLine}
+              </span>
+            )}
+            {formerName && (
+              <span
+                title={`This arena was previously known as ${formerName}. We preserve the historical name for SEO and reference.`}
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}
+              >
+                🏷️ Also known as: {formerName}
               </span>
             )}
             {rink.ice_size && (
