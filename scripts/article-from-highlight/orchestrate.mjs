@@ -26,6 +26,7 @@ import { readFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { spawn } from 'child_process';
 import { getMatchData, normalizeLeague } from './match-data.mjs';
+import { buildAndCheckSlug, SlugCollisionError, SlugValidationError, lookupTeamIdByName } from './slug-builder.mjs';
 
 // Load env from the Next.js .env file.
 const envFile = '/root/.openclaw/workspace/rinkstop-platform/.env';
@@ -504,12 +505,47 @@ async function insertDraft(highlight, meta, body) {
   const reading_time_minutes = meta.reading_time_minutes || Math.max(1, Math.round(body.split(/\s+/).length / 200));
   const source_cite = meta.source_cite || highlight.source || 'YouTube broadcast';
 
-  const slugBase = (seo_title || title).toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-  const { data: slugTaken } = await sb.from('posts').select('id').eq('slug', slugBase).limit(1);
-  const slug = slugTaken && slugTaken.length > 0 ? `${slugBase}-${highlight.id}` : slugBase;
+  // Build the slug from team + game_date. Per docs/CLEAN-POST-SLUGS-SPEC.md,
+  // the highlight row doesn't have team FKs, so we look them up by name.
+  // If a team isn't in the teams table, we fall back to slugifying the raw
+  // name (with a warning logged via slug-builder).
+  let slug;
+  let slugSource;
+  let slugWarnings = [];
+  try {
+    const homeTeamId = await lookupTeamIdByName(sb, highlight.home_team_name);
+    const awayTeamId = await lookupTeamIdByName(sb, highlight.away_team_name);
+    const built = await buildAndCheckSlug(sb, {
+      homeTeamId,
+      awayTeamId,
+      homeTeamName: highlight.home_team_name,
+      awayTeamName: highlight.away_team_name,
+      gameDate: highlight.match_date,
+    });
+    slug = built.slug;
+    slugSource = built.source;
+    slugWarnings = built.warnings;
+    for (const w of slugWarnings) console.error(`  ⚠️  ${w}`);
+  } catch (e) {
+    if (e instanceof SlugCollisionError) {
+      // Per spec §4.4: refuse, don't auto-dedupe. Surface to caller.
+      throw e;
+    }
+    if (e instanceof SlugValidationError) {
+      // Fallback to old behavior so the article can still be inserted.
+      // This keeps the pipeline running even if team data is missing.
+      console.error(`  ⚠️  slug validation failed (${e.message.slice(0, 100)}); falling back to old slug format`);
+      const slugBase = (seo_title || title).toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80);
+      const { data: slugTaken } = await sb.from('posts').select('id').eq('slug', slugBase).limit(1);
+      slug = slugTaken && slugTaken.length > 0 ? `${slugBase}-${highlight.id}` : slugBase;
+      slugSource = 'legacy-fallback';
+    } else {
+      throw e;
+    }
+  }
 
   // Append a source-cite footer to the body so the article is self-citing.
   // Strip any existing trailing *Source:* line from the LLM, then add ours.
@@ -666,6 +702,25 @@ async function processHighlight(h) {
     result.steps.insert = { id: post.id, slug: post.slug };
     console.log(`  ✓ inserted draft: ${post.slug}`);
   } catch (e) {
+    if (e instanceof SlugCollisionError) {
+      // Per docs/CLEAN-POST-SLUGS-SPEC.md §4.4: same teams on same day
+      // = refuse, surface, don't auto-dedupe. Surface with full context
+      // so Arnel can manually decide.
+      result.error = `slug collision: ${e.message}`;
+      result.skipped = true;
+      result.collision = {
+        proposed_slug: e.proposedSlug,
+        existing: e.existing,
+        highlight_id: h.id,
+        home_team: h.home_team_name,
+        away_team: h.away_team_name,
+        match_date: h.match_date,
+      };
+      console.error(`  ⛔ slug collision: "${e.proposedSlug}" already exists on post ${e.existing.id}`);
+      console.error(`     highlight: ${h.home_team_name} vs ${h.away_team_name} on ${h.match_date}`);
+      console.error(`     existing post: highlight_id=${e.existing.highlight_id} published_at=${e.existing.published_at}`);
+      return result;
+    }
     result.error = `insert failed: ${e.message?.slice(0, 300)}`;
     console.error('  ❌ insert failed:', e.message?.slice(0, 300));
     return result;
