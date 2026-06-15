@@ -2,8 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Gear Reviews',
-  description: 'Hockey equipment reviews, brand comparisons, and buying guides for skates, sticks, pads, and more.',
+  title: 'Hockey Equipment & Gear Brands | Reviews, Comparisons, Buying Guides',
+  description: 'Hockey equipment and gear brand directory. Reviews of Bauer, CCM, Warrior, True, and Easton for skates, sticks, pads, helmets, and protective gear. Buying guides for 2026.',
+  alternates: {
+    canonical: 'https://rinkstop.com/gear-reviews',
+  },
+  openGraph: {
+    title: 'Hockey Equipment & Gear Brands | RinkStop',
+    description: 'Hockey equipment reviews, brand comparisons, and buying guides for skates, sticks, pads, and more.',
+    type: 'website',
+    url: 'https://rinkstop.com/gear-reviews',
+  },
 };
 
 export default function GearBrandsPage() {
@@ -41,7 +50,7 @@ export default function GearBrandsPage() {
         {[
           { brand: 'Bauer', category: 'Skates & Equipment', lineup: 'Nexus • Vapor • Supreme', note: 'The largest hockey equipment brand in the world. Three distinct last shapes across product lines.', color: '#1E4D8C' },
           { brand: 'CCM', category: 'Skates & Equipment', lineup: 'JetSpeed • Ribcor • Tacks', note: 'Second-largest hockey brand. Known for the Super Tacks line and strong skate heat-molding tech.', color: '#C8102E' },
-          { brand: 'Easton', category: 'Sticks & Equipment', lineup: 'M5 • M3 • Rival', note: 'Syn碳 fiber stick technology pioneer. Now focused on value-oriented sticks and protective gear.', color: '#FFB81C' },
+          { brand: 'Easton', category: 'Sticks & Equipment', lineup: 'M5 • M3 • Rival', note: 'Carbon fiber stick technology pioneer. Now focused on value-oriented sticks and protective gear.', color: '#FFB81C' },
           { brand: 'Warrior', category: 'Sticks & Equipment', lineup: 'Dolomit • Alpha • Ritual', note: 'Grew fast in the stick market with theCoil/Weave technology. Strong protective gear lineup too.', color: '#FF6600' },
           { brand: 'True', category: 'Sticks & Skates', lineup: 'A6.0 S1 • A6.0 S2', note: 'Direct-to-consumer brand that bypassed traditional retailers. Known for adjustability and feel.', color: '#00A3A3' },
           { brand: 'Bauer Re-Akt', category: 'Protective', lineup: 'Re-Akt 200 • Re-Akt 150', note: 'Security shell technology in helmets and shoulder pads. Popular at junior and college levels.', color: '#1E4D8C' },
@@ -70,6 +79,54 @@ export default function GearBrandsPage() {
           </div>
         ))}
       </div>
+
+      {/* Editorial section — added 2026-06-15 to lift position on
+          "hockey equipment" type queries. 250+ words, with h2s that
+          Google can extract featured snippets from. */}
+      <section style={{ marginTop: '2.5rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          What hockey equipment do you actually need?
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          The short answer: a helmet, skates, a stick, and protective gear for the body.
+          Everything else is optional. New players often buy full sets before they know what fits
+          them, then end up with skates that pinch or a stick that is the wrong flex. The safer
+          move is to start with the non-negotiables, get used to them, and add the rest as your
+          game develops.
+        </p>
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          The four big hockey equipment brands
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Bauer</strong> and <strong>CCM</strong> dominate the player gear market and
+          together account for the majority of NHL equipment sales. Both make skates, sticks,
+          helmets, gloves, and full protective lines. <strong>Warrior</strong> built a strong
+          reputation in sticks and is now a full-line brand under the New Balance Hockey parent
+          company. <strong>True</strong> is the disruptor, selling direct-to-consumer to cut
+          retail markup and offering adjustable skate systems that grow with the player.
+        </p>
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          How much does hockey equipment cost in 2026?
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          A full player set (helmet, skates, stick, gloves, shoulder pads, elbow pads, shin
+          guards, hockey pants, and a bag) ranges from around $400 for a youth starter package
+          to $1,500-plus for senior-level gear. Skates are the single biggest line item and
+          the one piece that should never be bought on price alone. A good pair of skates will
+          outlast three or four sticks, so spending more up front usually pays off.
+        </p>
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          Where to buy hockey equipment
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          Pro shops at your local rink are the best place to start because the staff can measure
+          your foot and watch you skate before recommending boots. Big-box retailers and online
+          stores like Pure Hockey, HockeyMonkey, and the brand direct-to-consumer sites (Bauer,
+          CCM, True, Warrior) carry the same gear, often at lower prices, but you lose the
+          fitting help. For used equipment, usedhockeyequipment.com and rink pro shops are
+          worth a look, especially for kids who outgrow gear every season.
+        </p>
+      </section>
     </main>
   );
 }
