@@ -121,10 +121,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Log stats so we can track filter effectiveness over time.
 
   function isHighQualityTeam(t: any): boolean {
-    // Team must have: slug + country + at least 1 of (city, league, division, logo, website)
-    // Excludes the 1,439 teams with NULL country field (known data quality issue)
-    if (!t.slug || !t.country) return false;
-    return !!(t.city || t.league_id || t.division || t.logo_url || t.website_url);
+    // Team must have: slug + at least 1 of (country, city, league, division, logo, website).
+    // Country alone is not required: many real teams (Savannah Ghost Pirates,
+    // Seattle Thunderbirds, Slovenia national team) have NULL country but real
+    // league + logo, and Google is indexing them. We do still require SOME
+    // quality signal so we don't add 1,439 placeholder rows to the sitemap.
+    if (!t.slug) return false;
+    return !!(t.country || t.city || t.league_id || t.division || t.logo_url || t.website_url);
   }
   function isHighQualityRink(r: any): boolean {
     return !!(r.slug && r.city && r.country);
