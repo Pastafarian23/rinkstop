@@ -237,8 +237,8 @@ export default function CountryPageContent({ data }: Props) {
                 Hockey in {countryName}
               </h2>
               <p style={{ marginBottom: '0.875rem' }}>
-                {countryName} has {rinkN} ice rink{rinkN === 1 ? '' : 's'}, {teamN} active hockey team{teamN === 1 ? '' : 's'}, {leagueN} league{leagueN === 1 ? '' : 's'}, and {playerN} player{playerN === 1 ? '' : 's'} on file in the RinkStop directory.
-                {iihfMember ? ` ${countryName} is ${iihfMember.iihf_status ? `an ${iihfMember.iihf_status}` : 'a member'} of the International Ice Hockey Federation (IIHF)${iihfMensRank ? ` and the men\u2019s national team is currently ranked ${iihfMensRank} in the world` : ''}${iihfWomensRank ? `, with the women\u2019s national team at ${iihfWomensRank}` : ''}.` : ''}
+                {countryName} has {rinkN} ice rink{rinkN === 1 ? '' : 's'}, {teamN} active hockey team{teamN === 1 ? '' : 's'}, {leagueN} league{leagueN === 1 ? '' : 's'} and {playerN} player{playerN === 1 ? '' : 's'} on file in the RinkStop directory.
+                {iihfMember ? ` ${countryName} is ${iihfMember.iihf_status ? `a ${iihfMember.iihf_status} member` : 'a member'} of the International Ice Hockey Federation (IIHF)${iihfMensRank ? ` and the men\u2019s national team is currently ranked ${iihfMensRank} in the world` : ''}${iihfWomensRank ? `, with the women\u2019s national team at ${iihfWomensRank}` : ''}.` : ''}
               </p>
               <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, color: textMain, marginTop: '1rem', marginBottom: '0.5rem' }}>
                 Finding hockey in {countryName}
