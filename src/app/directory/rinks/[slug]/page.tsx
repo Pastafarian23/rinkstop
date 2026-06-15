@@ -16,7 +16,6 @@ import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
-import { CANONICAL_URL } from '@/lib/constants';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -100,9 +99,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: `${rink.name}`,
       description: rink.notes || `${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
       robots: { index: false, follow: true },
-      alternates: {
-        canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
-      },
       openGraph: { title: rink.name, type: 'website' },
     };
   }
@@ -119,9 +115,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${rink.name} -- Ice Rink in ${rink.city || ''}${rink.province_state ? ', ' + rink.province_state : ''}`,
     description,
     robots: robotsMeta(decision),
-    alternates: {
-      canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
-    },
     openGraph: {
       title: `${rink.name}`,
       description,
