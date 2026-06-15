@@ -275,3 +275,38 @@ export async function buildAndCheckSlug(sb, {
 
   return built;
 }
+
+/* ------------------------------------------------------------------ */
+/* Team-by-name lookup (for orchestrate path)                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Look up a team's UUID by matching its name. The teams table stores both
+ * the canonical name (e.g. "Carolina Hurricanes") and the slug, but
+ * matching by name from highlight metadata is fuzzy — the highlight
+ * may use abbreviations, alternate names, etc.
+ *
+ * Strategy:
+ *   1. Exact case-insensitive match on name
+ *   2. If no exact match, return null (caller falls back to slugifying
+ *      the raw name with a warning).
+ *
+ * The fuzzy-match case is intentionally NOT handled here. Doing so
+ * silently is dangerous (could match the wrong team). Better to log a
+ * warning and use the raw name slug.
+ */
+export async function lookupTeamIdByName(sb, teamName) {
+  if (!teamName || typeof teamName !== 'string') return null;
+  try {
+    const { data, error } = await sb
+      .from('teams')
+      .select('id, name, slug')
+      .ilike('name', teamName.trim())
+      .maybeSingle();
+    if (error || !data) return null;
+    return data.id;
+  } catch (e) {
+    console.error('[lookupTeamIdByName] failed:', e);
+    return null;
+  }
+}
