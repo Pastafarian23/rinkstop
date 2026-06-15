@@ -194,6 +194,7 @@ export interface CountryPageData {
   teams: any[];
   rinkCount: number;
   teamCount: number;
+  playerCount: number;
   leagues: any[];
   players: any[];
   relatedPosts: any[];
@@ -244,6 +245,7 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     { data: iihfMember },
     { data: nationalTeams },
     { count: leagueCount },
+    { count: playerCount },
   ] = await Promise.all([
     supabase.from('rinks').select('id, slug, name, city, address, phone, website_url').eq('country', countryName).eq('is_active', true).order('name').limit(50),
     supabase.from('teams').select('id, name, slug, logo_url, city, league_id').eq('country', countryName).eq('is_active', true).order('name').limit(20),
@@ -256,7 +258,10 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     supabase.from('posts').select('id, slug, title, subtitle, category, tags, author_name, reading_time_minutes, published_at').eq('status', 'published').order('published_at', { ascending: false }).limit(30),
     supabase.from('iihf_member_nations').select('country, iihf_status, ioc_code, date_joined, organization, mens_ranking, womens_ranking, ranking_as_of, mens_division, mens_division_rank, division_as_of').eq('country', countryName).maybeSingle(),
     supabase.from('national_teams').select('id, team_name, team_type, ranking, ranking_label, slug').eq('country', countryName).eq('is_active', true).order('team_type'),
-    supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('country', countryName).eq('is_active', true),
+    supabase.from('leagues').select('*', { count: 'exact', head: true }).or(`country.eq.${countryName},country.ilike.%${countryName}%`).eq('is_active', true),
+    iocCode
+      ? supabase.from('players').select('*', { count: 'exact', head: true }).eq('nationality', iocCode).eq('is_active', true)
+      : Promise.resolve({ count: 0 } as any),
   ]);
 
   // Score related articles by tag overlap
@@ -312,6 +317,7 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     rinkCount: rinkCount ?? 0,
     teamCount: teamCount ?? 0,
     leagueCount: leagueCount ?? 0,
+    playerCount: playerCount ?? 0,
     leagues: leagues || [],
     players: players || [],
     relatedPosts: relatedPosts || [],
