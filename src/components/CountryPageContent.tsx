@@ -16,6 +16,7 @@ export default function CountryPageContent({ data }: Props) {
     rinkCount,
     teamCount,
     leagueCount,
+    playerCount,
     leagues,
     players,
     finalPosts,
@@ -31,7 +32,7 @@ export default function CountryPageContent({ data }: Props) {
   const rinkN = rinkCount;
   const teamN = teamCount;
   const leagueN = leagueCount;
-  const playerN = players.length;
+  const playerN = playerCount;
   // Prefer the live IIHF ranking over the hardcoded LEAGUE_INFO
   const iihfMensRank = iihfMember?.mens_ranking ? `#${iihfMember.mens_ranking}` : (info?.iihfRank ?? null);
   const iihfWomensRank = iihfMember?.womens_ranking ? `#${iihfMember.womens_ranking}` : null;
