@@ -60,6 +60,9 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ s
       <div className="flex items-center gap-4 mb-8">
         <Link href="/admin/blog" className="text-slate-400 hover:text-teal-400 text-sm">← Back to Posts</Link>
         <h1 className="text-2xl font-bold text-white">Edit: {post.title}</h1>
+        <Link href={`/admin/blog/${post.slug}/review`} className="admin-btn admin-btn-secondary" style={{ marginLeft: 'auto', fontSize: '0.8rem' }}>
+          🔍 Review
+        </Link>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
