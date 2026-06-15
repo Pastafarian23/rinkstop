@@ -74,7 +74,7 @@ A dedicated admin page that lists all posts with bad team FKs. Features:
 
 ### 3.2 Enhancement to the review page (`/admin/blog/[slug]/review`)
 
-Three small additions, all behind the `?returnTo=` query param (so they only appear when you came from the queue):
+One small addition, shown only when the page is opened with `?returnTo=/admin/blog/needs-review` (so it only appears when you came from the queue):
 
 1. **Live slug preview banner** at the top of the page:
    - Computes the clean slug based on currently-selected `team_home` + `team_away` + `game_date`
@@ -83,17 +83,13 @@ Three small additions, all behind the `?returnTo=` query param (so they only app
    - If the resulting slug collides with another post, show a red warning: `⚠️ Slug collision with post <id>`
    - Implementation: import the `buildSlug` from `scripts/article-from-highlight/slug-builder.mjs` — but the script is `.mjs` and Next.js client components can't import directly. Solution: replicate the slug-builder logic in `src/lib/slug-builder.ts` (a small TypeScript port — pure function, no Supabase calls). Or expose a `/api/slug-preview` endpoint. **Recommended: TypeScript port in `src/lib/slug-builder.ts` for client-side live preview.**
 
-2. **"Save & Next" button** in the save bar:
-   - Saves the current post (existing save flow)
-   - On success, navigates to the next unfixed post in the queue
-   - The next post is determined by reading the same needs-review query, filtering out posts that have been touched in this session
-   - "Session" is in-memory (lost on page refresh) — acceptable for a focused review session
-   - Queue position counter: "Reviewing post 5 of 562"
-
-3. **"Mark as Reviewed" button** (alternative to fixing):
+2. **"Mark as Reviewed (Not a Game)" button** (optional path for non-game posts):
    - Marks the post as intentionally left with stale FKs (e.g., a hand-written guide post)
-   - Filters it out of the needs-review list
+   - Filters it out of the "needs review" tab and into the "Reviewed" tab
    - Stored as `posts.cross_link_overrides = { _skipped_review: true, _skip_reason: "..." }` — keeps the audit trail in one place
+   - Writes a `post_review_edits` row with `action = 'skip'` for history
+
+**No "Save & Next" button** (per Q3, Arnel picks the next post manually from the main list).
 
 ### 3.3 No changes to the existing `/admin/blog` list
 
@@ -124,15 +120,15 @@ Arnel visits /admin/blog/needs-review
   → Sees live slug preview: "New slug will be: [tbd - waiting for team selection]"
   → CrossLinkOverridePanel: picks "North Bay Battalion" for home, "Brantford Bulldogs" for away
   → Slug preview updates in real-time: "north-bay-battalion-brantford-bulldogs-2026-04-08"
-  → Clicks "Save & Next"
+  → Saves the post (existing save flow)
   → POSTs team_home_id, team_away_id to /api/admin/articles/[id]
-  → Post's team FKs are now valid
-  → Page navigates to the next unfixed post
+  → Post's team FKs are now valid (logged in post_review_edits)
+  → Returns to /admin/blog (or stays on the review page)
+  → Arnel picks the next post from /admin/blog/needs-review
   → ...
-  → Arnel finishes the queue
-  → Runs `node backfill-clean-slugs.mjs --apply`
-  → Backfill sees 562 (or whatever's left) posts with valid FKs
-  → All 562 (or as many as possible) get clean slugs + 308 redirects
+  → Arnel reviews at his own pace, over days or weeks
+  → When ready, runs `node backfill-clean-slugs.mjs --apply`
+  → Backfill sees the now-valid FKs and updates slugs + 308 redirects
 ```
 
 ---
@@ -145,63 +141,64 @@ Arnel visits /admin/blog/needs-review
 - `src/components/admin/SlugPreviewBanner.tsx` — the live preview component, used inside the review page
 
 **Modified files (2):**
-- `src/app/admin/blog/[slug]/review/page.tsx` — add SlugPreviewBanner + "Save & Next" button
+- `src/app/admin/blog/[slug]/review/page.tsx` — add SlugPreviewBanner (no "Save & Next" per Q3; existing save flow unchanged)
 - `src/app/admin/blog/page.tsx` — add a "Needs Review (562)" link at the top (small, not the primary entry point)
 
 **No new migration.** No new tables. No changes to the backfill or middleware.
 
 **Estimated effort:**
 - 1.5–2 hours of coding
-- 30–60 minutes of Arnel's review time per 50 posts (searching the team picker, picking, saving)
-- 562 posts × ~30s = 4-5 hours of review work (spread over multiple sessions, the "Save & Next" makes it easy to resume)
+- Review is at Arnel's pace, spread over sessions of his choosing
 
 ---
 
-## 6. Design decisions for sign-off
+## 6. Design decisions — Arnel's sign-off (2026-06-15)
 
-### Q1: Scope — handle all 562 in one go, or batch by difficulty?
+### Q1: Scope — all 562 in one queue. **DECIDED.**
 
-**Recommendation:** All 562 in one go. The queue page filters by category, so Arnel can work through them in any order (or skip the harder ones). The hardest cases (null FKs with non-standard team names) are still in the queue but can be tackled last.
+Arnel: "A. Scope is full 562. Add a note indicating why the article was flagged."
 
-**Alternatives:**
-- 1a. Just 405 stale FKs (skip the 121 partial-FK and 36 null-FK)
-- 1b. Stale FKs first, then partial, then null (sequential campaign)
+Action: Each row in the needs-review queue will show a clear reason flag: "Stale FK (UUID not in teams)", "Missing FK (both null)", or "Partial FK (one null)". The filter tabs group by reason so Arnel can prioritize.
 
-**Arnel's call:** ____
+### Q2: Slug preview — live in the review page. **DECIDED.**
 
-### Q2: Slug preview — TypeScript port or API endpoint?
+Arnel: "B. Yes add the preview."
 
-**Recommendation:** TypeScript port in `src/lib/slug-builder.ts`. The slug-builder is a pure function (no I/O), the TS port is ~50 lines, and it lets the preview update in real-time as you pick teams (zero latency). An API endpoint would add 100-300ms per keystroke, which feels laggy.
+Action: Build SlugPreviewBanner (commit 3). Use the TypeScript port of slug-builder (commit 2) for real-time updates as teams are picked. Show the collision warning (Q8) inline.
 
-**Alternative:** API endpoint at `/api/slug-preview` that takes `{ home_team_id, away_team_id, game_date }` and returns `{ slug, collision }`. More network, slower UX, but keeps the slug-builder as the single source of truth.
+### Q3: Save & Next — manual selection, no auto-advance. **DECIDED.**
 
-**Arnel's call:** ____
+Arnel: "C. Save only, I will select the article I want to do next from main."
 
-### Q3: "Save & Next" — auto-advance, or manual next?
+Action: **Remove the "Save & Next" button from the design.** The review page saves and returns to the post (existing behavior). Arnel navigates back to `/admin/blog/needs-review` or `/admin/blog` and picks the next post himself. This is slower per click but matches how Arnel wants to work.
 
-**Recommendation:** Auto-advance. The "Save & Next" button saves and navigates to the next unfixed post. This is the fastest path through 562 posts. If Arnel wants to revisit one, the queue page has a "Reviewed" tab and the post is still editable from the main list.
+Side effect: no "queue position counter" needed.
 
-**Alternative:** Just save. Arnel clicks "Back to Queue" and picks the next one manually. More clicks, more deliberate, less efficient.
+### Q4: Time budget — review is ongoing, not blocking. **DECIDED.**
 
-**Arnel's call:** ____
+Arnel: "E. I will be auditing and editing articles at my convenience, it won't be done right away."
 
-### Q4: Time budget — do the partial backfill of 160 posts now, or wait for the full review?
+Action: The `feat/clean-post-slugs` branch ships in its current state (backfill ready, middleware live in preview, but **not applied to production**). The needs-review queue ships as a feature Arnel can use at his own pace. **No "ship 160 now, do 562 later" partial backfill** — the backfill only runs after Arnel has reviewed enough posts to make the bulk slug update worthwhile (his call on timing).
 
-**Recommendation:** **Wait.** Arnel's directive is "no shortcuts, accuracy first." Doing a partial backfill of 160 posts (the clean ones) and then later doing the other 562 means two rounds of slug changes for the redirects. If we do the full review first, there's one round of changes — cleaner from an SEO perspective (Google sees one big canonicalization, not two).
+Side effects:
+- The middleware in `src/middleware.ts` is already live in the preview. It does nothing until `post_slug_redirects` table exists + has rows. Safe to keep in preview.
+- The migration `2026-06-15-post-slug-redirects.sql` is still pending manual apply. Arnel applies it whenever he wants the backfill to be able to write redirect rows.
+- The backfill script stays dry-run by default. Arnel runs `--apply` when he's ready.
+- The merge to main can happen independently of when Arnel finishes the review — the code is feature-complete and the review queue is the operator workflow.
 
-The 160 currently-clean posts are not time-sensitive. The `feat/clean-post-slugs` branch is on hold pending the review queue. The merge to main is also on hold.
+### Q5: Audit trail — keep a "Reviewed" section. **DECIDED.**
 
-**Alternative:** Ship the 160 partial backfill now (apply on production), build the review queue in parallel, finish the 562 in a follow-up. Pro: production gets 160 clean URLs immediately. Con: two rounds of 308s for users hitting the 562 affected posts.
+Arnel: "D. Please keep a separate reviewed for audit trail."
 
-**Arnel's call:** ____
+Action: The needs-review queue has a "Reviewed" tab. Posts in this tab are ones that:
+- Had their team FKs set (or re-set) via the review page **and** the change is logged in `post_review_edits`
+- OR were explicitly skipped via the "Mark as Reviewed (Not a Game)" button (sets `cross_link_overrides._skipped_review = true` and writes to `post_review_edits`)
 
-### Q5: Skip button — when a post is intentionally not a game article (e.g., a coaching guide), how do we mark it?
+The Reviewed tab shows who reviewed, when, and what the previous vs. new FKs were (read from `post_review_edits`). This is a permanent audit trail — once a post is in Reviewed, it stays in Reviewed even if the FKs are later changed again (the latest review shows; the history is in the `post_review_edits` table).
 
-**Recommendation:** "Mark as Reviewed (Not a Game)" button on the review page. Sets `posts.cross_link_overrides._skipped_review = true` and writes to `post_review_edits` for audit. The needs-review query excludes posts with this flag.
+### Q8: Slug collision in preview — show red warning but allow save. **INHERITED.**
 
-**Alternative:** Just leave them in the queue forever. Bad UX — Arnel has to remember which ones are intentionally skipped.
-
-**Arnel's call:** ____
+Action: SlugPreviewBanner shows a red warning if the computed slug collides with another post. Allow save anyway. The collision is information for Arnel to decide, not a hard block.
 
 ---
 
@@ -234,9 +231,10 @@ No data changes. No migration to undo. Safe to ship and roll back.
 1. Build the needs-review page (commit 1)
 2. Port slug-builder to TypeScript (commit 2)
 3. Add SlugPreviewBanner to the review page (commit 3)
-4. Add "Save & Next" + skip buttons (commit 4)
+4. Add "Mark as Reviewed (Not a Game)" button to the review page (commit 4)
 5. Add the queue link to the main /admin/blog list (commit 5)
 6. Smoke test in preview
-7. Arnel starts the review session
-8. After review, run the backfill --apply
-9. Merge to main
+7. Merge `feat/clean-post-slugs` to main (backfill is dry-run safe; middleware is no-op until migration is applied; queue is the new feature)
+8. Arnel reviews articles at his own pace — 562 posts total, queue is the workflow
+9. After enough posts are reviewed, Arnel applies the migration and runs the backfill --apply
+10. Existing 308 redirect infrastructure handles the rest
