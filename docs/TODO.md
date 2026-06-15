@@ -1,6 +1,6 @@
 # RinkStop SEO Platform — TODO
 
-**Last updated: 2026-05-29**
+**Last updated: 2026-06-15 (evening)**
 
 ## Completed ✅
 - [x] Phase 1: Content depth — country/city/rink pages with rich contextual content
@@ -10,6 +10,7 @@
 - [x] Phase 5: Programmatic pages — /best-ice-rinks/[city], /ice-rinks-near-me
 - [x] Phase 6: Schema markup — SportsActivityLocation, SportsTeam, SportsOrganization on all entity pages
 - [x] API enhancements — city param on /api/rinks, sort=recent on /api/rinks and /api/teams
+- [x] Clean post slugs — slug-builder module, orchestrate integration, middleware redirect lookup, backfill + verify scripts. Spec: docs/CLEAN-POST-SLUGS-SPEC.md. Migration pending manual apply.
 
 ## In Progress
 - [ ] Monitor Phase 4A deploy — verify homepage Recent Activity Module loads correctly
