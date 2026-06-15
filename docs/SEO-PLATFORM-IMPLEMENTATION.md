@@ -131,5 +131,5 @@
 - [x] Phase 4: Freshness — Last Updated timestamps + Recent Activity Module on homepage
 - [x] Phase 5: Programmatic pages — Best Rinks (/best-ice-rinks/[city]), Near Me (/ice-rinks-near-me)
 - [x] Phase 6: Schema markup — SportsActivityLocation, SportsTeam, SportsOrganization on all entity pages
-- [ ] Phase 7: Article funnel — content distribution engine (blog → city → rink funnel)
+- [x] Phase 7: Article funnel — content distribution engine (blog → city → rink funnel)
 - [ ] Phase 8: Homepage repositioning — hero messaging + featured content blocks
