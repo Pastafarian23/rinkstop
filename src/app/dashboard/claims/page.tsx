@@ -48,7 +48,7 @@ export default async function ClaimsPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <TierBadge tier={tier} size="xs" />
           {actualMax === Infinity ? (
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Unlimited claims</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Custom claims</span>
           ) : (
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
               {currentCount} / {actualMax} approved

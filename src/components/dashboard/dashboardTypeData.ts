@@ -76,6 +76,7 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
       .select('id', { count: 'exact', head: true })
       .eq('follower_user_id', userId)
       .eq('followee_type', 'player');
+    if (!wl) throw new Error('missing scout watchlist count');
     data.scout.followedPlayers = wl || 0;
     // Watchlist isn't a separate table yet; treat follows as the watchlist surface.
     data.scout.watchlist = wl || 0;
@@ -157,6 +158,7 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
       .select('id', { count: 'exact', head: true })
       .eq('follower_user_id', userId)
       .eq('followee_type', 'player');
+    if (!teams || !players) throw new Error('missing fan follow counts');
     data.fan.followedTeams = teams || 0;
     data.fan.followedPlayers = players || 0;
     data.fan.loaded = true;

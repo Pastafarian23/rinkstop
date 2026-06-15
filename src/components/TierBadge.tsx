@@ -2,13 +2,14 @@
 
 import React from 'react';
 
-export type TierId = 'free' | 'supporter' | 'verified' | 'pro';
+export type TierId = 'free' | 'supporter' | 'verified' | 'pro' | 'enterprise';
 
 const TIER_STYLES: Record<TierId, { bg: string; border: string; text: string; label: string }> = {
-  free:      { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.15)', text: 'rgba(255,255,255,0.6)', label: 'Free' },
-  supporter: { bg: 'rgba(255,184,28,0.12)',  border: 'rgba(255,184,28,0.4)',   text: '#FFB81C',                label: 'Supporter' },
-  verified:  { bg: 'rgba(20,184,166,0.12)',  border: 'rgba(20,184,166,0.4)',   text: '#14B8A6',                label: 'Verified' },
-  pro:       { bg: 'rgba(200,16,46,0.12)',   border: 'rgba(200,16,46,0.4)',    text: '#C8102E',                label: 'Pro' },
+  free:       { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.15)', text: 'rgba(255,255,255,0.6)', label: 'Free' },
+  supporter:  { bg: 'rgba(255,184,28,0.12)',  border: 'rgba(255,184,28,0.4)',   text: '#FFB81C',                label: 'Supporter' },
+  verified:   { bg: 'rgba(20,184,166,0.12)',  border: 'rgba(20,184,166,0.4)',   text: '#14B8A6',                label: 'Verified' },
+  pro:        { bg: 'rgba(200,16,46,0.12)',   border: 'rgba(200,16,46,0.4)',    text: '#C8102E',                label: 'Pro' },
+  enterprise: { bg: 'linear-gradient(135deg, rgba(17,24,39,0.9), rgba(0,0,0,0.9))', border: 'rgba(255,255,255,0.4)', text: '#fff', label: 'Enterprise' },
 };
 
 export function TierBadge({ tier, size = 'sm' }: { tier: TierId | string; size?: 'xs' | 'sm' | 'md' }) {

@@ -68,7 +68,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Four tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($59.99/year) adds a verified checkmark, up to 5 claimed listings, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($299/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, unlimited claims, bulk claim, and an analytics dashboard. See /pricing for the full breakdown.',
+        a: 'Four self-serve tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($59.99/year) adds a verified checkmark, up to 5 claimed listings, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($299/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. See /pricing for the full breakdown.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -111,11 +111,11 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Supporter tier members can claim 1 listing. Verified tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro tier members can claim an unlimited number of listings, plus bulk claim for orgs that run multiple rinks, teams, or leagues. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
+        a: 'Supporter tier members can claim 1 listing. Verified tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro tier members can claim up to 25 listings, plus bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for leagues, brands, federations, or organizations that need more than 25 claims. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Pro is built for you. The Featured Listing rotation puts your rink/team/league at the top of your city\'s directory on every page load. The lead-capture form lets visitors contact you without signing up. Bulk claim lets you claim every team in your league in one request. The analytics dashboard shows who is viewing your profile. If you just need to be the verified owner, Verified is enough.',
+        a: 'Pro is built for you if you need up to 25 claims. Enterprise is the right fit for organizations that need more than 25. The Featured Listing rotation puts your rink/team/league at the top of your city\'s directory on every page load. The lead-capture form lets visitors contact you without signing up. Bulk claim lets you claim every team in your league in one request. The analytics dashboard shows who is viewing your profile. If you need more than 25 claims, Enterprise is the right fit.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
@@ -123,7 +123,7 @@ const sections: Array<{
       },
       {
         q: 'Can I update hours, contacts, and socials for a listing I claimed?',
-        a: 'Yes. Supporter tier includes 1 claimed listing with editable details. Verified tier includes up to 5 claimed listings. Pro includes unlimited claimed listings, all editable from your dashboard. Rink hours, contact email/phone, website, and social handles are all updatable.',
+        a: 'Yes. Supporter tier includes 1 claimed listing with editable details. Verified tier includes up to 5 claimed listings. Pro includes up to 25 claimed listings, all editable from your dashboard. Enterprise covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
       },
       {
         q: 'How long does listing review take?',
