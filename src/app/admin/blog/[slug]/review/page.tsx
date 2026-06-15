@@ -222,6 +222,26 @@ export default function ReviewBlogPostPage({ params }: Props) {
     return { changes, status: statusOverride };
   };
 
+  // Skip this post from the needs-review queue (mark as intentionally
+  // not a game article). The reason is optional but encouraged — it
+  // shows up in the "Reviewed" tab of /admin/blog/needs-review.
+  const handleSkip = async () => {
+    const reason = window.prompt(
+      'Why is this post not a game article? (optional, e.g. "coaching guide", "industry news")',
+      ''
+    );
+    if (reason === null) return; // user cancelled
+    const next: Override = {
+      ...pendingOverrides,
+      _skipped_review: true,
+      _skip_reason: reason.trim() || '(no reason given)',
+      _skipped_at: new Date().toISOString(),
+    };
+    setPendingOverrides(next);
+    // Defer to next tick so the state update is flushed before save reads it
+    setTimeout(() => applyChanges(), 0);
+  };
+
   const applyChanges = async (statusOverride?: 'published' | 'draft' | 'archived') => {
     const { changes, status } = buildChanges(statusOverride);
     if (Object.keys(changes).length === 0 && !status) return;
@@ -465,6 +485,16 @@ export default function ReviewBlogPostPage({ params }: Props) {
               ← Move to draft
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={saving}
+            className="admin-btn admin-btn-secondary"
+            style={{ fontSize: '0.75rem', color: 'rgba(96,165,250,0.8)' }}
+            title="Mark this post as intentionally not a game article. Removes it from /admin/blog/needs-review."
+          >
+            ⏭️ Skip from review
+          </button>
         </div>
       </div>
     </div>
