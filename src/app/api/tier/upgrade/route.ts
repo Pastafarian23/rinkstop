@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  let body: { tier?: string };
+  let body: { tier?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -59,7 +59,16 @@ export async function POST(req: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  const tier = body.tier as TierId;
+  const requestedTier = typeof body.tier === 'string' ? body.tier : '';
+  if (requestedTier === 'enterprise') {
+    const res = NextResponse.json(
+      { error: 'enterprise_contact_sales', url: '/partner?source=tier-upgrade-api' },
+      { status: 303 }
+    );
+    return applyRateLimitHeaders(res, result);
+  }
+
+  const tier = requestedTier as TierId;
   if (!tier || !(tier in TIER_TO_PRICE_ENV)) {
     const res = NextResponse.json(
       { error: 'invalid_tier', allowed: Object.keys(TIER_TO_PRICE_ENV) },

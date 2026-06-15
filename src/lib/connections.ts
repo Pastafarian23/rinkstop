@@ -21,6 +21,7 @@ export const TIER_RANK: Record<string, number> = {
   supporter: 1,
   verified: 2,
   pro: 3,
+  enterprise: 4,
 };
 
 /**
@@ -28,7 +29,8 @@ export const TIER_RANK: Record<string, number> = {
  *  free: 0 (cannot claim)
  *  supporter: 1
  *  verified: 5 (personal-scope: home rink, kid's team, beer-league squad, etc.)
- *  pro: Infinity (org-scope: rink chains, multi-team orgs, leagues)
+ *  pro: 25 (org-scope: rinks, teams, leagues, and multi-club programs)
+ *  enterprise: Infinity (custom org-scope: national leagues, brands, federations, and large data partners)
  *
  * Pending claims don't count against the cap (the user can submit a new one
  * while a previous one is still being reviewed). The cap applies to
@@ -43,7 +45,8 @@ export const MAX_CLAIMS_PER_TIER: Record<string, number> = {
   free: 0,
   supporter: 1,
   verified: 5,
-  pro: Infinity,
+  pro: 25,
+  enterprise: Infinity,
 };
 
 export function getMaxClaimsForTier(tier: string): number {

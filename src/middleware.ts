@@ -1,4 +1,3 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
 // Simple in-memory rate limiter for edge runtime
@@ -37,25 +36,19 @@ function cleanupOldEntries() {
   }
 }
 
-const isProtected = createRouteMatcher([
-  '/dashboard(.*)',
-  '/account(.*)',
-  '/admin(.*)',
-]);
-
-export default clerkMiddleware(async (auth, request) => {
-  const { nextUrl } = request;
+export default function middleware(request: Request) {
+  const url = new URL(request.url);
 
   // Rate limiting - apply to all routes except static assets
-  const path = nextUrl.pathname;
-  const isStatic = path.startsWith('/_next') || 
-                   path.startsWith('/images') || 
+  const path = url.pathname;
+  const isStatic = path.startsWith('/_next') ||
+                   path.startsWith('/images') ||
                    path.startsWith('/favicon') ||
                    path.includes('.'); // file extensions = static files
 
   if (!isStatic) {
     // Get client IP (handle proxies)
-    const ip = (request as any).ip || 
+    const ip = (request as any).ip ||
                request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
                request.headers.get('x-real-ip') ||
                'unknown';
@@ -80,21 +73,11 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  // Protected route check (existing auth logic)
-  if (isProtected(request)) {
-    const session = await auth();
-    if (!session.userId) {
-      return session.redirectToSignIn({ returnBackUrl: request.url });
-    }
-  }
-
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|images|.*\\..*).*)',
-    '/dashboard/:path*',
-    '/account/:path*',
   ],
 };

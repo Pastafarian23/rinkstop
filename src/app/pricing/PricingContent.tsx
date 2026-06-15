@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
 
 type Tier = {
-  id: 'free' | 'supporter' | 'verified' | 'pro';
+  id: 'free' | 'supporter' | 'verified' | 'pro' | 'enterprise';
   label: string;
   price: string;
   period: string;
@@ -103,7 +103,7 @@ const TIERS: Tier[] = [
     stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
     features: [
       'Everything in Verified',
-      'Unlimited claimed listings (org scope: rinks, teams, leagues — whatever you run)',
+      'Up to 25 claimed listings (org scope: rinks, teams, leagues — whatever you run)',
       'Featured Listing rotation in your city (top of directory, every page load)',
       'Lead capture form on your profile — visitors can contact you without signing up',
       'Bulk claim — claim every team, rink, or league in your organization at once',
@@ -111,7 +111,29 @@ const TIERS: Tier[] = [
       'Custom branding on your public profile',
     ],
     footnote:
-      `At ${formatTierPrice('pro')}/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t. Built for rinks, rink chains, leagues, and multi-team orgs.`,
+      `At ${formatTierPrice('pro')}/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t. Built for rinks, rink chains, leagues, and multi-team orgs up to 25 claims.`,
+  },
+  {
+    id: 'enterprise',
+    label: 'Enterprise',
+    price: 'Custom',
+    period: '',
+    tagline: 'For leagues, brands, federations, and organizations with more than 25 claims',
+    color: '#111827',
+    bgColor: 'rgba(255,255,255,0.06)',
+    borderColor: 'rgba(255,255,255,0.22)',
+    popular: false,
+    cta: 'Contact Enterprise',
+    stripePriceEnv: null,
+    features: [
+      'Everything in Pro',
+      'More than 25 claimed listings',
+      'Bulk claim and data onboarding support',
+      'Priority support for leagues, brands, federations, and multi-team orgs',
+      'Custom reporting, API access, or partnership packaging when needed',
+    ],
+    footnote:
+      'Need more than 25 claims? Contact us and we’ll scope it with you before you pay.',
   },
 ];
 
@@ -126,11 +148,11 @@ const FAQ = [
   },
   {
     q: 'Can I claim a listing without paying?',
-    a: 'Supporter includes 1 claim. Verified includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro includes unlimited claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Free accounts can browse but not claim.',
+    a: 'Supporter includes 1 claim. Verified includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
   },
   {
-    q: 'I manage a rink. Which tier is for me?',
-    a: 'Pro, if you want leads. Verified, if you just want to be the verified owner of your rink. Pro pays for itself in one signup.',
+    q: 'I manage a rink, team, league, or organization. Which tier is for me?',
+    a: 'Pro, if you want leads and need up to 25 claims. Enterprise, if you need more than 25 claims. Verified, if you just want to be the verified owner of your rink.',
   },
   {
     q: 'I’m a parent of a youth player. Can I claim my kid?',
@@ -146,7 +168,7 @@ const FAQ = [
   },
   {
     q: 'Can I upgrade mid-year?',
-    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Supporter to Verified, or Verified to Pro, at any time from your dashboard.',
+    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Supporter to Verified, or Verified to Pro, at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
   },
   {
     q: 'Why no ad-free tier?',
@@ -166,6 +188,11 @@ export default function FoundingMemberContent() {
 
     if (tier.id === 'free') {
       window.location.href = isSignedIn ? '/directory' : '/sign-up';
+      return;
+    }
+
+    if (tier.id === 'enterprise') {
+      window.location.href = '/partner?source=enterprise-pricing';
       return;
     }
 
@@ -293,8 +320,8 @@ export default function FoundingMemberContent() {
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
-                  background: tier.id === 'free' ? 'transparent' : tier.color,
-                  color: tier.id === 'free' ? '#fff' : '#0a0a0a',
+                  background: tier.id === 'enterprise' ? 'linear-gradient(135deg, #111827, #000)' : tier.id === 'free' ? 'transparent' : tier.color,
+                  color: tier.id === 'free' || tier.id === 'enterprise' ? '#fff' : '#0a0a0a',
                   border: tier.id === 'free' ? '1px solid rgba(255,255,255,0.2)' : 'none',
                   borderRadius: 6,
                   fontSize: '0.9rem',
@@ -367,47 +394,47 @@ export default function FoundingMemberContent() {
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Claim listings</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>
-                    {t.id === 'free' ? '—' : t.id === 'supporter' ? '1' : t.id === 'verified' ? 'Up to 5' : 'Unlimited'}
+                    {t.id === 'free' ? '—' : t.id === 'supporter' ? '1' : t.id === 'verified' ? 'Up to 5' : t.id === 'pro' ? 'Up to 25' : 'Custom'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Verified checkmark</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'verified' || t.id === 'pro' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Send and receive DMs</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'verified' || t.id === 'pro' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Featured Listing rotation</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Lead capture form</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Analytics dashboard</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>

@@ -8,11 +8,37 @@ export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';
 export type ClaimCtaState =
   | { kind: 'signed_out' }
   | { kind: 'claim_form'; entityType: ClaimEntityType; entityId: string; entityName: string }
-  | { kind: 'free' }
-  | { kind: 'at_cap'; tier: string; maxClaims: number }
+  | { kind: 'free'; recommendedTier?: 'supporter' | 'verified' | 'pro' }
+  | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'pro' | 'enterprise' }
   | { kind: 'pending'; tier: string };
 
 const NOOP = (e: React.MouseEvent) => { e.preventDefault(); };
+
+async function openCheckout(tier: 'supporter' | 'verified' | 'pro', context: string) {
+  try {
+    const res = await fetch('/api/tier/upgrade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier, context }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status === 401) {
+        window.location.href = `/login?redirect_url=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        return;
+      }
+      window.location.href = `/pricing?tier=${tier}`;
+      return;
+    }
+    if (data.url) window.location.href = data.url;
+  } catch {
+    window.location.href = `/pricing?tier=${tier}`;
+  }
+}
+
+function contactEnterprise() {
+  window.location.href = '/partner?source=enterprise-claims';
+}
 
 /**
  * "Claim this listing" CTA. Renders on unclaimed entity pages (rink, team, league, player).
@@ -131,24 +157,26 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Verified owners can edit hours, post news, capture leads, and respond to reviews. Supporter is $19.99/yr and unlocks 1 claim.
+              Claim it now — Supporter unlocks 1 claim, Verified unlocks up to 5, Pro unlocks up to 25, and Enterprise covers larger orgs.
             </div>
           </div>
-          <Link
-            href="/pricing"
+          <button
+            onClick={() => openCheckout(state.recommendedTier || 'supporter', 'inline-claim-free')}
             style={{
               background: '#FFB81C',
               color: '#041E42',
               padding: '8px 14px',
               borderRadius: 8,
+              border: 'none',
               textDecoration: 'none',
               fontWeight: 700,
               fontSize: 13,
               whiteSpace: 'nowrap',
+              cursor: 'pointer',
             }}
           >
-            See plans
-          </Link>
+            Unlock claim →
+          </button>
         </div>
       </div>
     );
@@ -162,27 +190,29 @@ export default function ClaimThisListing({
           <span style={{ fontSize: 18 }}>🏒</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
-              You've claimed {state.maxClaims} {state.maxClaims === 1 ? 'listing' : 'listings'} on {titleCase(state.tier)}.
+              {state.recommendedTier === 'enterprise' ? `You've reached the 25-claim Pro limit. Enterprise covers larger organizations.` : `You've claimed ${state.maxClaims} ${state.maxClaims === 1 ? 'listing' : 'listings'} on ${titleCase(state.tier)}.`}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Upgrade to Pro to claim unlimited listings — built for rinks, leagues, and multi-team orgs.
+              Pro covers up to 25 claims. For leagues, brands, or organizations that need more, contact us for Enterprise.
             </div>
           </div>
-          <Link
-            href="/pricing"
+          <button
+            onClick={() => state.recommendedTier === 'enterprise' ? contactEnterprise() : openCheckout('pro', 'inline-claim-cap')}
             style={{
-              background: '#FFB81C',
-              color: '#041E42',
+              background: '#C8102E',
+              color: '#fff',
               padding: '8px 14px',
               borderRadius: 8,
+              border: 'none',
               textDecoration: 'none',
               fontWeight: 700,
               fontSize: 13,
               whiteSpace: 'nowrap',
+              cursor: 'pointer',
             }}
           >
-            Upgrade to Pro
-          </Link>
+            {state.recommendedTier === 'enterprise' ? 'Contact Enterprise →' : 'Upgrade to Pro →'}
+          </button>
         </div>
       </div>
     );
@@ -235,7 +265,7 @@ export default function ClaimThisListing({
         const msg =
           data?.error ||
           (res.status === 403 && data?.error === 'claim_limit_reached'
-            ? 'You have reached your tier\'s claim limit. Upgrade to Pro for unlimited claims.'
+            ? 'You have reached your tier\'s claim limit. Pro covers up to 25 claims; Enterprise is available for larger organizations.'
             : `Claim submission failed (${res.status})`);
         setResult({ kind: 'error', message: msg });
         return;

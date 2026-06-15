@@ -153,7 +153,7 @@ export default async function ClaimThisListingMount({
         entityType={entityType}
         entityId={entityId}
         entityName={displayName}
-        state={{ kind: 'at_cap', tier, maxClaims: max === Infinity ? -1 : max }}
+        state={{ kind: 'at_cap', tier, maxClaims: max === Infinity ? -1 : max, recommendedTier: tier === 'pro' ? 'enterprise' : tier === 'enterprise' ? 'enterprise' : 'pro' }}
       />
     );
   }
