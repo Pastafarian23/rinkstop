@@ -21,6 +21,7 @@ const NAV = [
   { href: '/admin/cron-health', label: 'Cron Health', icon: '⏰' },
   { href: '/admin/blog', label: 'Blog', icon: '✍️' },
   { href: '/admin/stats', label: 'Stats', icon: '📈' },
+  { href: '/admin/intake', label: 'Intake', icon: '📥' },
 ];
 
 interface AdminShellProps {

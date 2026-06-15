@@ -23,6 +23,7 @@ interface TeamData {
   league_id: string | null;
   home_rink_id: string | null;
   logo_url: string | null;
+  division: string | null;
   leagues?: { name: string } | null;
 }
 
@@ -133,6 +134,37 @@ export default function TeamDetailClient({
           </div>
         </div>
       </div>
+
+      {/* About this team — autogen description for thin teams.
+          Renders ONLY when no rich NHL_TEAM_DATA is available. Uses only
+          fields the DB actually has (league, country, division) so we never
+          invent facts. Gives Google real sentences to index and gives the
+          page a claim CTA so the real team manager can fill in the rest. */}
+      {!hasRichData && (
+        <section data-testid="team-about" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.625rem' }}>
+            ABOUT {team.name.toUpperCase()}
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75, maxWidth: '720px', marginBottom: '0.875rem', borderLeft: '3px solid var(--red)', paddingLeft: '1rem' }}>
+            {team.name}
+            {team.country ? ` is a hockey team based in ${team.country}` : ' is a hockey team'}
+            {team.leagues?.name ? `, competing in the ${team.leagues.name}` : ''}
+            {team.division ? ` (${team.division} division)` : ''}
+            {team.country ? '.' : ' — location and arena to be confirmed.'}
+            {' '}Follow this team on RinkStop for roster updates, schedule, and stats.
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', maxWidth: '720px' }}>
+            Manage this team?{' '}
+            <Link
+              href={`/directory/teams/${team.slug}#claim`}
+              style={{ color: 'var(--red)', textDecoration: 'underline', fontWeight: 600 }}
+            >
+              Claim this listing
+            </Link>
+            {' '}to add your arena, roster, and schedule.
+          </p>
+        </section>
+      )}
 
       {/* Ticketmaster NHL Banner - 468x60 */}
       <TicketmasterAd size="468x60" />

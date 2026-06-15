@@ -25,7 +25,7 @@ export default function NewBlogPostPage() {
 
     const res = await fetch('/api/blog/posts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer admin' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...formData,
         tags: formData.tags.split(',').map((t: string) => t.trim()).filter(Boolean),
