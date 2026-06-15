@@ -1,10 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import BulkActionBar from '@/components/admin/BulkActionBar';
 
 export default function AdminBrands() {
-  const [brands, setBrands] = useState([]);
+  const [brands, setBrands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch('/api/brands').then(r => r.json()).then(d => { setBrands(d || []); setLoading(false); });
@@ -13,7 +15,7 @@ export default function AdminBrands() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this brand?')) return;
     await fetch(`/api/brands?id=${id}`, { method: 'DELETE' });
-    setBrands(brands.filter((b: any) => b.id !== id));
+    setBrands(brands.filter((b) => b.id !== id));
   };
 
   return (
@@ -29,14 +31,48 @@ export default function AdminBrands() {
         <div className="admin-card">
           <table className="w-full text-sm">
             <thead><tr>
+              <th className="text-left py-3 px-4 w-8">
+                <input
+                  type="checkbox"
+                  checked={brands.length > 0 && brands.every((b) => selected.has(b.id))}
+                  onChange={() => {
+                    const allSelected = brands.every((b) => selected.has(b.id));
+                    const next = new Set(selected);
+                    if (allSelected) {
+                      brands.forEach((b) => next.delete(b.id));
+                    } else {
+                      brands.forEach((b) => next.add(b.id));
+                    }
+                    setSelected(next);
+                  }}
+                  className="rounded border-slate-700"
+                  title="Select all"
+                />
+              </th>
               <th className="text-left py-3 px-4">Name</th>
               <th className="text-left py-3 px-4">Category</th>
               <th className="text-left py-3 px-4">Origin</th>
               <th className="text-right py-3 px-4">Actions</th>
             </tr></thead>
             <tbody>
-              {brands.map((b: any) => (
-                <tr key={b.id}>
+              {brands.map((b) => (
+                <tr
+                  key={b.id}
+                  style={selected.has(b.id) ? { background: 'rgba(45,212,191,0.06)' } : undefined}
+                >
+                  <td className="py-3 px-4">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(b.id)}
+                      onChange={() => {
+                        const next = new Set(selected);
+                        if (next.has(b.id)) next.delete(b.id);
+                        else next.add(b.id);
+                        setSelected(next);
+                      }}
+                      className="rounded border-slate-700"
+                    />
+                  </td>
                   <td className="py-3 px-4 font-semibold text-white">{b.name}</td>
                   <td className="py-3 px-4 text-slate-400">{b.category}</td>
                   <td className="py-3 px-4 text-slate-400">{b.country_of_origin}</td>
@@ -50,6 +86,13 @@ export default function AdminBrands() {
           </table>
         </div>
       )}
+
+      <BulkActionBar
+        entity="brands"
+        selected={selected}
+        onClear={() => setSelected(new Set())}
+        onComplete={() => window.location.reload()}
+      />
     </div>
   );
 }
