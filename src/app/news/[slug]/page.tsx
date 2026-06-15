@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
 import NewsTeamsChips from '@/components/news/NewsTeamsChips';
+import NewsRelatedRinks from '@/components/news/NewsRelatedRinks';
 import { getNewsTeams, getNewsRelatedRinks, getNewsCity } from '@/lib/news-related';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
@@ -185,7 +186,7 @@ export default async function BlogPostPage({ params }: Props) {
   // returns [] or null on any error, so a single failure here never breaks
   // the page. Per spec: these are all server-side to avoid the self-loop
   // perf issue we fixed in Phase 4.
-  const [newsTeams] = await Promise.all([
+  const [newsTeams, newsRelatedRinks, newsCity] = await Promise.all([
     getNewsTeams(post),
     getNewsRelatedRinks(post, 3),
     getNewsCity(post),
@@ -462,6 +463,12 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </div>
       </article>
+
+      {/* Phase 7 Block B: Related Rinks grid. Server-rendered. Renders nothing if no rinks found. */}
+      <NewsRelatedRinks
+        rinks={newsRelatedRinks}
+        cityLabel={newsCity?.city}
+      />
 
       {/* Internal cross-linking block — Related Hockey News */}
       {/* Server-rendered, no client JS. Only renders when 3+ related posts exist. */}
