@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
 // Per docs/CLEAN-POST-SLUGS-SPEC.md §6: post-slug redirect lookup runs at
 // the top of the middleware chain, before rate limiting or auth. Slug
@@ -73,7 +74,7 @@ function cleanupOldEntries() {
   }
 }
 
-export default async function middleware(request: Request) {
+export default clerkMiddleware(async (auth, request) => {
   const url = new URL(request.url);
   const path = url.pathname;
 
@@ -126,7 +127,7 @@ export default async function middleware(request: Request) {
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [
