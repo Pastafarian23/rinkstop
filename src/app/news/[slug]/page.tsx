@@ -2,10 +2,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
-import NewsTeamsChips from '@/components/news/NewsTeamsChips';
-import NewsRelatedRinks from '@/components/news/NewsRelatedRinks';
-import NewsCityCTA from '@/components/news/NewsCityCTA';
-import { getNewsTeams, getNewsRelatedRinks, getNewsCity } from '@/lib/news-related';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 
@@ -182,16 +178,6 @@ export default async function BlogPostPage({ params }: Props) {
 
   // Fetch related posts server-side. If 3+ exist, render a cross-link block.
   const relatedPosts = await getRelatedPosts(post, 6);
-
-  // Phase 7: parallel-fetch the three cross-link data sets. Each helper
-  // returns [] or null on any error, so a single failure here never breaks
-  // the page. Per spec: these are all server-side to avoid the self-loop
-  // perf issue we fixed in Phase 4.
-  const [newsTeams, newsRelatedRinks, newsCity] = await Promise.all([
-    getNewsTeams(post),
-    getNewsRelatedRinks(post, 3),
-    getNewsCity(post),
-  ]);
 
   // Per requirements: NewsArticle for the "highlights" category, Article for
   // everything else (blog, guides, NHL, etc.).
@@ -385,12 +371,6 @@ export default async function BlogPostPage({ params }: Props) {
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
 
-              {/* Phase 7 Block A: Teams in this article. Renders nothing if no team columns set. */}
-              <NewsTeamsChips teams={newsTeams} />
-
-              {/* Phase 7 Block C: City CTA banner. Gated internally on counts.rinks >= 3. */}
-              <NewsCityCTA cityData={newsCity} />
-
               {/* Share */}
               <div style={{
                 marginTop: '2.5rem',
@@ -467,12 +447,6 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </div>
       </article>
-
-      {/* Phase 7 Block B: Related Rinks grid. Server-rendered. Renders nothing if no rinks found. */}
-      <NewsRelatedRinks
-        rinks={newsRelatedRinks}
-        cityLabel={newsCity?.city}
-      />
 
       {/* Internal cross-linking block — Related Hockey News */}
       {/* Server-rendered, no client JS. Only renders when 3+ related posts exist. */}
