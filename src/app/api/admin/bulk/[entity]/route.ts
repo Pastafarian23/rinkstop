@@ -24,6 +24,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logAdminEvent } from '@/lib/admin-audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +47,7 @@ export async function POST(
 ) {
   const auth = await getAdminFromRequest();
   if ('response' in auth) return auth.response;
+  const adminCtx = auth.admin;
 
   const { entity } = await params;
   if (!VALID_ENTITIES.includes(entity as Entity)) {
@@ -117,6 +119,13 @@ export async function POST(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    await logAdminEvent({
+      admin: adminCtx,
+      request,
+      action: 'bulk_delete',
+      entityType: e,
+      params: { ids, count: ids.length },
+    });
     return NextResponse.json({ ok: true, entity: e, action, count: ids.length });
   }
 
@@ -128,6 +137,14 @@ export async function POST(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await logAdminEvent({
+    admin: adminCtx,
+    request,
+    action: `bulk_${action}`,
+    entityType: e,
+    params: { ids, count: ids.length, update },
+  });
 
   return NextResponse.json({ ok: true, entity: e, action, count: ids.length, update });
 }

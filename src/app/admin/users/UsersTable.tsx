@@ -63,6 +63,26 @@ export default function UsersTable({ users: initialUsers, currentUserId, isSuper
       return;
     }
 
+    // Look up the current role for the confirm message + audit context
+    const target = users.find((u) => u.clerkId === userId);
+    const oldRole = target?.role || 'user';
+    if (oldRole === newRole) return; // no-op, don't even ask
+
+    // Confirm prompt. Role changes are destructive (especially demotions
+    // and the reverse — accidentally promoting a random user to
+    // super_admin gives them full control). Always require an explicit
+    // "Are you sure?" before the request fires.
+    const targetLabel = target ? `${target.name} (${target.email})` : userId;
+    const direction = newRole === 'super_admin' ? 'promote to super admin'
+                    : newRole === 'admin' ? 'promote to admin'
+                    : 'demote to user';
+    const confirmed = window.confirm(
+      `Change role for ${targetLabel}?\n\n` +
+      `${oldRole} → ${newRole} (${direction})\n\n` +
+      `This is logged in the admin audit log and cannot be undone from this page.`
+    );
+    if (!confirmed) return;
+
     setError(null);
     setUpdatingId(userId);
     try {
