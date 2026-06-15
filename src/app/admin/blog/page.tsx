@@ -467,6 +467,14 @@ function PostRow({ post, isPending, onPromote, onArchive, onDemote }: {
             </button>
           )}
           <Link
+            href={`/admin/blog/${post.slug}/review`}
+            className="admin-btn admin-btn-secondary"
+            style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
+            title="Review screen — body viewer, cross-link overrides, promote with edits"
+          >
+            🔍 Review
+          </Link>
+          <Link
             href={`/admin/blog/${post.slug}`}
             className="admin-btn admin-btn-secondary"
             style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}

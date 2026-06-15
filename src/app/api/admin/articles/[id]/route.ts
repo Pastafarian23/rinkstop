@@ -11,6 +11,7 @@ interface Props {
 /**
  * GET /api/admin/articles/[id]
  * Get a single article by id (admin view — no status filter).
+ * Returns the post plus joined cross-link references.
  */
 export async function GET(_req: NextRequest, { params }: Props) {
   const auth = await getAdminFromRequest();
@@ -35,19 +36,28 @@ export async function GET(_req: NextRequest, { params }: Props) {
 
 /**
  * PATCH /api/admin/articles/[id]
- * Update fields on a single article. Common uses:
- *   - status transitions: { status: 'draft' | 'published' | 'archived' }
- *   - title / content / tags edits
- *   - cross-link adjustments
  *
- * Setting status to 'published' for the first time sets published_at = now().
- * Setting status to 'archived' sets a `archived_at` value if the column
- * exists (fall back to updated_at if not).
+ * Two update paths:
+ *   1) Review path — atomic "promote with edits" via review_post_with_edits RPC.
+ *      Triggered when body contains any of:
+ *        title, subtitle, content, tags, category,
+ *        cross_link_overrides, highlight_id_override
+ *      AND/OR when status transitions to/from published with content edits.
+ *      Writes diff rows to post_review_edits and sets reviewed_by/reviewed_at.
+ *
+ *   2) Legacy path — flat column updates for fields outside the review set
+ *      (seo_title, seo_description, slug, is_featured, og_image_url, etc.).
+ *      Does not write to post_review_edits.
+ *
+ * Status-only changes (no content edits) are routed through the legacy path
+ * to keep queue actions (promote/archive) snappy and to not create
+ * "noisy" diff rows for routine status flips.
  */
 export async function PATCH(req: NextRequest, { params }: Props) {
   const auth = await getAdminFromRequest();
   if ('response' in auth) return auth.response;
   const { id } = await params;
+  const adminCtx = auth.admin;
 
   let body: Record<string, any>;
   try {
@@ -56,8 +66,87 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  // Whitelist which fields can be updated through this endpoint.
-  // Adding fields here is a security decision — anything not listed is rejected.
+  // ============================================================
+  // Path 1: review (content edits + status change, atomic with diff)
+  // ============================================================
+  const REVIEW_FIELDS = [
+    'title', 'subtitle', 'content', 'tags', 'category',
+    'cross_link_overrides', 'highlight_id_override',
+  ];
+
+  const reviewChanges: Record<string, any> = {};
+  for (const key of REVIEW_FIELDS) {
+    if (key in body) reviewChanges[key] = body[key];
+  }
+
+  const hasReviewChanges = Object.keys(reviewChanges).length > 0;
+  const hasStatusChange = 'status' in body;
+
+  if (hasReviewChanges) {
+    // Route through the RPC. This atomically updates the post + writes
+    // diff rows to post_review_edits.
+    const statusToSet = hasStatusChange ? body.status : null;
+
+    const { data, error } = await supabaseAdmin.rpc('review_post_with_edits', {
+      p_post_id: id,
+      p_reviewer_id: adminCtx.userId,
+      p_changes: reviewChanges,
+      p_set_status: statusToSet,
+    });
+
+    if (error) {
+      // Translate known errors to friendly HTTP codes
+      if (error.message?.includes('article_not_found')) {
+        return NextResponse.json({ error: 'article_not_found' }, { status: 404 });
+      }
+      if (error.message?.includes('field_not_editable')) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      if (error.message?.includes('invalid_status')) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // If the request also had non-review fields (e.g. SEO tweaks), apply
+    // them in a follow-up update. The RPC is the source of truth for the
+    // review-tracked fields.
+    const LEGACY_FIELDS = [
+      'seo_title', 'seo_description', 'slug',
+      'is_featured', 'og_image_url', 'reading_time_minutes',
+      'author_name', 'author_role',
+      'team_home_id', 'team_away_id', 'league_id', 'player_id', 'country_slug',
+      'highlight_id',
+    ];
+    const legacy: Record<string, any> = {};
+    for (const key of LEGACY_FIELDS) {
+      if (key in body) legacy[key] = body[key];
+    }
+    if (Object.keys(legacy).length > 0) {
+      legacy.updated_at = new Date().toISOString();
+      const { data: postLegacy, error: legacyErr } = await supabaseAdmin
+        .from('posts')
+        .update(legacy)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
+      if (legacyErr) {
+        // RPC succeeded but legacy update failed — return the RPC data
+        // with a warning. The review changes are persisted; SEO tweak is lost.
+        return NextResponse.json({
+          ...(data as any),
+          _warning: `Review changes saved, but legacy update failed: ${legacyErr.message}`,
+        });
+      }
+      return NextResponse.json(postLegacy);
+    }
+
+    return NextResponse.json(data);
+  }
+
+  // ============================================================
+  // Path 2: legacy flat update (status-only, SEO, etc.)
+  // ============================================================
   const ALLOWED_FIELDS = [
     'title', 'subtitle', 'content', 'content_html',
     'seo_title', 'seo_description', 'slug',
