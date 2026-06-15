@@ -63,6 +63,10 @@ export default function BlogPostsAdmin() {
     all: 0, published: 0, draft: 0, archived: 0,
   });
 
+  // Count of posts needing team-FK review (from /api/admin/articles/needs-review).
+  // Surfaced as a "Needs Review (N)" link in the header.
+  const [needsReviewCount, setNeedsReviewCount] = useState<number | null>(null);
+
   const [actionInFlight, setActionInFlight] = useState<Record<string, boolean>>({});
 
   const fetchCounts = useCallback(async () => {
@@ -120,6 +124,22 @@ export default function BlogPostsAdmin() {
     fetchCounts();
   }, [fetchCounts]);
 
+  // Fetch the needs-review count (1 call, very small). Used to display
+  // a "Needs Review (N)" link in the page header.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/admin/articles/needs-review?pageSize=1')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (cancelled) return;
+        if (data && typeof data.stats?.total === 'number') {
+          setNeedsReviewCount(data.stats.total);
+        }
+      })
+      .catch(() => { /* silent — count is non-critical */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
@@ -171,6 +191,21 @@ export default function BlogPostsAdmin() {
           </p>
         </div>
         <Link href="/admin/blog/new" className="admin-btn admin-btn-primary">+ New Post</Link>
+        {needsReviewCount !== null && needsReviewCount > 0 && (
+          <Link
+            href="/admin/blog/needs-review"
+            className="admin-btn admin-btn-secondary"
+            style={{
+              background: 'rgba(248,113,113,0.1)',
+              borderColor: 'rgba(248,113,113,0.4)',
+              color: '#F87171',
+              fontWeight: 600,
+            }}
+            title="Posts whose team FKs are stale, missing, or partial"
+          >
+            ⚠️ Needs Review ({needsReviewCount.toLocaleString()})
+          </Link>
+        )}
       </div>
 
       {/* Status filter pills */}
