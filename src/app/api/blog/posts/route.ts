@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAdminFromRequest } from '@/lib/admin-auth';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_SITE_URL || '*',
@@ -22,11 +23,12 @@ function jsonResponse(data: any, status: number = 200): Response {
   });
 }
 
-// Verify admin auth from request
-async function verifyAdmin(request: NextRequest) {
-  const apiSecret = request.headers.get('x-api-secret');
-  if (!apiSecret) return null;
-  return { id: 'admin', role: 'super_admin' };
+// Admin auth via Clerk session (same pattern as /api/admin/articles/[id]).
+// Returns the admin context, or a 401 Response if not signed in / not admin.
+async function verifyAdmin(_request: NextRequest) {
+  const auth = await getAdminFromRequest();
+  if ('response' in auth) return auth.response;
+  return auth.admin;
 }
 
 // GET - List posts
@@ -80,8 +82,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create post
 export async function POST(request: NextRequest) {
-  const admin = await verifyAdmin(request);
-  if (!admin) return jsonResponse({ error: 'Unauthorized' }, 401);
+  const adminOrResp = await verifyAdmin(request);
+  if (adminOrResp instanceof Response) return adminOrResp;
+  const admin = adminOrResp;
 
   const body = await request.json();
   const { title, slug, content, category, tags, status, seo_title, seo_description, subtitle } = body;
@@ -112,8 +115,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update post
 export async function PUT(request: NextRequest) {
-  const admin = await verifyAdmin(request);
-  if (!admin) return jsonResponse({ error: 'Unauthorized' }, 401);
+  const adminOrResp = await verifyAdmin(request);
+  if (adminOrResp instanceof Response) return adminOrResp;
+  const admin = adminOrResp;
 
   const slug = request.nextUrl.pathname.replace(/\/api\/blog\/posts\//, '') || '';
   if (!slug) return jsonResponse({ error: 'Slug required' }, 400);
@@ -132,8 +136,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Archive post
 export async function DELETE(request: NextRequest) {
-  const admin = await verifyAdmin(request);
-  if (!admin) return jsonResponse({ error: 'Unauthorized' }, 401);
+  const adminOrResp = await verifyAdmin(request);
+  if (adminOrResp instanceof Response) return adminOrResp;
+  const admin = adminOrResp;
 
   const slug = request.nextUrl.pathname.replace(/\/api\/blog\/posts\//, '') || '';
   if (!slug) return jsonResponse({ error: 'Slug required' }, 400);
