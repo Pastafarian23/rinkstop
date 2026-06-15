@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logAdminEvent } from '@/lib/admin-audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -201,10 +202,18 @@ export async function PATCH(req: NextRequest, { params }: Props) {
  * Hard delete. Use PATCH with {status: 'archived'} for soft delete.
  * Kept for completeness — the admin UI defaults to archive.
  */
-export async function DELETE(_req: NextRequest, { params }: Props) {
+export async function DELETE(req: NextRequest, { params }: Props) {
   const auth = await getAdminFromRequest();
   if ('response' in auth) return auth.response;
   const { id } = await params;
+
+  // Capture slug + title before the row goes away so the audit log can
+  // show what was deleted, not just the id.
+  const { data: existing } = await supabaseAdmin
+    .from('posts')
+    .select('id, slug, title')
+    .eq('id', id)
+    .maybeSingle();
 
   const { error } = await supabaseAdmin
     .from('posts')
@@ -212,5 +221,15 @@ export async function DELETE(_req: NextRequest, { params }: Props) {
     .eq('id', id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAdminEvent({
+    admin: auth.admin,
+    request: req,
+    action: 'article_delete',
+    entityType: 'post',
+    entityId: id,
+    entityName: existing?.title || existing?.slug || null,
+  });
+
   return NextResponse.json({ success: true });
 }

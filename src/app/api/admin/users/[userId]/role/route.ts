@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logAdminEvent } from '@/lib/admin-audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'You cannot demote yourself' }, { status: 400 });
   }
 
+  // Capture old role from the Supabase profile (or 'user' if no row yet)
+  // so the audit log can show the transition.
+  const { data: oldProfile } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const oldRole = (oldProfile?.role as string) || 'user';
+
   // Update Clerk publicMetadata
   if (CLERK_SECRET_KEY) {
     const r = await fetch(`https://api.clerk.com/v1/users/${userId}/metadata`, {
@@ -70,6 +80,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (dbError) {
     return NextResponse.json({ error: `Supabase update failed: ${dbError.message}` }, { status: 500 });
   }
+
+  await logAdminEvent({
+    admin: admin,
+    request,
+    action: 'role_change',
+    entityType: 'user',
+    entityId: userId,
+    diff: { from: oldRole, to: role },
+  });
 
   return NextResponse.json({ success: true, userId, role });
 }

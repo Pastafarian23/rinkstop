@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logAdminEvent } from '@/lib/admin-audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,5 +55,18 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Audit log: also log what was in the submission for context (intent
+  // type + name). Helps reconstruct the decision later.
+  await logAdminEvent({
+    admin: auth.admin,
+    request,
+    action: `listing_submission_${body.status}`,
+    entityType: 'listing_submission',
+    entityId: id,
+    entityName: (data as any)?.name || null,
+    params: { intent: (data as any)?.intent || null, notes: body.notes || null },
+  });
+
   return NextResponse.json({ ok: true, submission: data });
 }
