@@ -224,6 +224,39 @@ export default function CountryPageContent({ data }: Props) {
             )}
           </div>
 
+          {/* SEO editorial section — added 2026-06-15.
+              Server-rendered, appears on every country page. Targets
+              the kind of queries people actually search for country
+              pages: "hockey in {country}", "ice rinks in {country}",
+              "hockey teams in {country}", etc. Renders between the
+              stats grid and the data sections so it shows up early
+              in the page HTML and Google can extract snippets. */}
+          {hasData && (
+            <section style={{ marginBottom: 48, color: textMuted, fontSize: '0.9375rem', lineHeight: 1.7, background: card, border: `1px solid ${border}`, borderRadius: 12, padding: '24px 28px' }}>
+              <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.5rem', color: textMain, marginBottom: '0.75rem', letterSpacing: '0.04em' }}>
+                Hockey in {countryName}
+              </h2>
+              <p style={{ marginBottom: '0.875rem' }}>
+                {countryName} has {rinkN} ice rink{rinkN === 1 ? '' : 's'}, {teamN} active hockey team{teamN === 1 ? '' : 's'}, {leagueN} league{leagueN === 1 ? '' : 's'}, and {playerN} player{playerN === 1 ? '' : 's'} on file in the RinkStop directory.
+                {iihfMember ? ` ${countryName} is ${iihfMember.iihf_status ? `an ${iihfMember.iihf_status}` : 'a member'} of the International Ice Hockey Federation (IIHF)${iihfMensRank ? ` and the men\u2019s national team is currently ranked ${iihfMensRank} in the world` : ''}${iihfWomensRank ? `, with the women\u2019s national team at ${iihfWomensRank}` : ''}.` : ''}
+              </p>
+              <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, color: textMain, marginTop: '1rem', marginBottom: '0.5rem' }}>
+                Finding hockey in {countryName}
+              </h3>
+              <p style={{ marginBottom: '0.875rem' }}>
+                The teams listed on this page are organized by league. {topLeagueName ? `The top professional league is the ${topLeagueName}.` : 'There are multiple leagues competing at different levels.'}
+                {leagues && leagues.length > 1 ? ` Below you can browse ${leagues.length} league${leagues.length === 1 ? '' : 's'} from professional to amateur, including ${womenLeague ? `women\u2019s hockey in the ${womenLeague.name}` : `women\u2019s programs where available`}.` : ''}
+                Each team has a roster page with arena info, the league they play in, and a link to the team\u2019s official site.
+              </p>
+              <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, color: textMain, marginTop: '1rem', marginBottom: '0.5rem' }}>
+                Where to play hockey in {countryName}
+              </h3>
+              <p>
+                New players should start with a learn-to-skate program at one of the {rinkN} rink{rinkN === 1 ? '' : 's'} on this page. Most rinks also run learn-to-play hockey clinics for both kids and adults. Registration with {iihfMember ? `the national federation` : 'your local rink'} is typically required before joining a team. The \u201cHow to play\u201d section below has a step-by-step pathway from first-time skater to league play.
+              </p>
+            </section>
+          )}
+
           {/* No data state */}
           {!hasData && (
             <div style={{ textAlign: 'center', padding: '60px 24px', background: card, border: `1px solid ${border}`, borderRadius: 12, marginBottom: 48 }}>
