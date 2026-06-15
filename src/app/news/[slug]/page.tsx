@@ -4,6 +4,7 @@ import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
 import NewsTeamsChips from '@/components/news/NewsTeamsChips';
 import NewsRelatedRinks from '@/components/news/NewsRelatedRinks';
+import NewsCityCTA from '@/components/news/NewsCityCTA';
 import { getNewsTeams, getNewsRelatedRinks, getNewsCity } from '@/lib/news-related';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
@@ -386,6 +387,9 @@ export default async function BlogPostPage({ params }: Props) {
 
               {/* Phase 7 Block A: Teams in this article. Renders nothing if no team columns set. */}
               <NewsTeamsChips teams={newsTeams} />
+
+              {/* Phase 7 Block C: City CTA banner. Gated internally on counts.rinks >= 3. */}
+              <NewsCityCTA cityData={newsCity} />
 
               {/* Share */}
               <div style={{
