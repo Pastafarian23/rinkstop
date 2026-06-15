@@ -29,6 +29,7 @@ export default function FavoritesClient({ initialFavorites }: { initialFavorites
 
   const remove = useCallback(async (fav: Favorite) => {
     const key = `${fav.favorite_type}:${fav.favorite_id}`;
+    if (!confirm(`Remove ${fav.name} from your saved items?`)) return;
     setRemoving(key);
     // Optimistic
     setFavorites((cur) => cur.filter((f) => !(f.favorite_type === fav.favorite_type && f.favorite_id === fav.favorite_id)));

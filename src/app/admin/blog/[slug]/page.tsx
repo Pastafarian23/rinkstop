@@ -39,7 +39,7 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ s
 
     const res = await fetch(`/api/blog/posts/${slug}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer admin' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(post),
     });
 

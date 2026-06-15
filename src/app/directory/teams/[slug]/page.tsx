@@ -24,6 +24,7 @@ interface TeamRow {
   league_id: string | null;
   home_rink_id: string | null;
   logo_url: string | null;
+  division: string | null;
   leagues?: { name: string } | null;
 }
 

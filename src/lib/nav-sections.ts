@@ -70,11 +70,12 @@ const YOUTH_AMATEUR: NavItem[] = [
 ];
 
 const CONTENT_LINKS: NavItem[] = [
-  { href: '/news',           label: 'News'         },
-  { href: '/guides',         label: 'Guides'       },
-  { href: '/rankings',       label: 'Rankings'     },
-  { href: '/hockey-travel',  label: 'Hockey Travel'},
-  { href: '/gear-reviews',   label: 'Gear'         },
+  { href: '/blog',           label: 'All Articles'  },
+  { href: '/news',           label: 'News'          },
+  { href: '/guides',         label: 'Guides'        },
+  { href: '/rankings',       label: 'Rankings'      },
+  { href: '/hockey-travel',  label: 'Hockey Travel' },
+  { href: '/gear-reviews',   label: 'Gear'          },
 ];
 
 const ABOUT_LINKS: NavItem[] = [

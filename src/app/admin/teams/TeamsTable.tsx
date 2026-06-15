@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import BulkActionBar from '@/components/admin/BulkActionBar';
 
 interface Team {
   id: string;
@@ -37,6 +38,7 @@ export default function TeamsTable({ initialTeams, leagues, initialSearch, initi
   const [leagueId, setLeagueId] = useState(initialLeagueId);
   const [wrongLeague, setWrongLeague] = useState(initialWrongLeague);
   const [auditError, setAuditError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   // Live search/filter — push to URL so admin can share/bookmark
   function updateUrl(next: { search?: string; leagueId?: string; wrongLeague?: boolean }) {
@@ -122,6 +124,24 @@ export default function TeamsTable({ initialTeams, leagues, initialSearch, initi
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-800 bg-slate-900/50">
+              <th className="text-left py-3 px-4 w-8">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && filtered.every((t) => selected.has(t.id))}
+                  onChange={() => {
+                    const allSelected = filtered.every((t) => selected.has(t.id));
+                    const next = new Set(selected);
+                    if (allSelected) {
+                      filtered.forEach((t) => next.delete(t.id));
+                    } else {
+                      filtered.forEach((t) => next.add(t.id));
+                    }
+                    setSelected(next);
+                  }}
+                  className="rounded border-slate-700"
+                  title="Select all visible"
+                />
+              </th>
               <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Team</th>
               <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">League</th>
               <th className="text-left py-3 px-4 text-slate-500 font-medium uppercase text-xs tracking-wider">Location</th>
@@ -132,13 +152,30 @@ export default function TeamsTable({ initialTeams, leagues, initialSearch, initi
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-500">
+                <td colSpan={6} className="py-12 text-center text-slate-500">
                   No teams match your filters.
                 </td>
               </tr>
             ) : (
               filtered.map((t) => (
-                <tr key={t.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                <tr
+                  key={t.id}
+                  className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
+                  style={selected.has(t.id) ? { background: 'rgba(45,212,191,0.06)' } : undefined}
+                >
+                  <td className="py-3 px-4">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(t.id)}
+                      onChange={() => {
+                        const next = new Set(selected);
+                        if (next.has(t.id)) next.delete(t.id);
+                        else next.add(t.id);
+                        setSelected(next);
+                      }}
+                      className="rounded border-slate-700"
+                    />
+                  </td>
                   <td className="py-3 px-4">
                     <div className="font-medium text-white">{t.name}</div>
                     {t.slug && <div className="text-xs text-slate-500 font-mono">/{t.slug}</div>}
@@ -172,6 +209,13 @@ export default function TeamsTable({ initialTeams, leagues, initialSearch, initi
           </tbody>
         </table>
       </div>
+
+      <BulkActionBar
+        entity="teams"
+        selected={selected}
+        onClear={() => setSelected(new Set())}
+        onComplete={() => window.location.reload()}
+      />
 
       <div className="mt-4 text-xs text-slate-500 text-right">
         Showing {filtered.length} of {teams.length} teams

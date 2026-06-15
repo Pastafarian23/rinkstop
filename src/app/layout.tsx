@@ -245,6 +245,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Company</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {[
+                      ['/blog','Blog'],
+                      ['/news','News'],
+                      ['/guides','Guides'],
                       ['/faq','FAQ'],
                       ['/about','About'],
                       ['/advertise','Advertise'],
