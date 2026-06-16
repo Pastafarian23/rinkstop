@@ -116,14 +116,78 @@ function splitLeagueTeam(raw) {
     }
     return true;
   });
+
+  // Pre-fetch all existing rinks for slug disambiguation (paginated!)
+  let allRinks = [];
+  let page = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error: pageErr } = await sb.from('rinks')
+      .select('id, slug, name, city, country, province_state')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+    if (pageErr) { console.error('❌ fetch all rinks:', pageErr.message); process.exit(1); }
+    if (!data || data.length === 0) break;
+    allRinks = allRinks.concat(data);
+    if (data.length < pageSize) break;
+    page++;
+    if (page > 50) break; // safety
+  }
+  console.log(`   ${allRinks.length} total rinks globally (for slug disambiguation)`);
+  const slugMap = new Map();
+  for (const r of allRinks) {
+    if (r.slug) {
+      if (!slugMap.has(r.slug)) slugMap.set(r.slug, []);
+      slugMap.get(r.slug).push(r);
+    }
+  }
+  function disambiguateSlug(slug, city, country, province) {
+    // If slug is unique, use it
+    const existing = slugMap.get(slug);
+    if (!existing || existing.length === 0) {
+      slugMap.set(slug, [{ slug, name: 'NEW', city, country, province_state: province }]);
+      return slug;
+    }
+    // If an existing slug entry is the same country+province+city, treat as same rink
+    const sameLocation = existing.find(r => r.country === country && r.province_state === province && r.city === city);
+    if (sameLocation) {
+      // Same location, same slug — it's a match (will be handled by dedupe logic)
+      return slug;
+    }
+    // Different location: append disambiguator
+    // Try -2, -3, ...; or city-based: slug-ut, slug-calgary, etc.
+    for (let i = 2; i < 100; i++) {
+      const candidate = `${slug}-${i}`;
+      if (!slugMap.has(candidate)) {
+        slugMap.set(candidate, [{ slug: candidate, name: 'NEW', city, country, province_state: province }]);
+        return candidate;
+      }
+    }
+    // Fallback: append city
+    const candidate = `${slug}-${slugify(city || 'other')}`;
+    if (!slugMap.has(candidate)) {
+      slugMap.set(candidate, [{ slug: candidate, name: 'NEW', city, country, province_state: province }]);
+      return candidate;
+    }
+    return slug; // last resort
+  }
   console.log(`   ${cleanRows.length} data rows\n`);
 
-  // Fetch existing US rinks
-  const { data: existing, error: exErr } = await sb.from('rinks')
-    .select('id, name, slug, city, province_state, country, address, is_active')
-    .eq('country', COUNTRY);
-  if (exErr) { console.error('❌ fetch existing:', exErr.message); process.exit(1); }
-  console.log(`   ${existing?.length || 0} existing US rinks in DB`);
+  // Fetch existing US rinks (paginated)
+  let existing = [];
+  page = 0;
+  while (true) {
+    const { data, error: exErr } = await sb.from('rinks')
+      .select('id, name, slug, city, province_state, country, address, is_active')
+      .eq('country', COUNTRY)
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+    if (exErr) { console.error('❌ fetch existing:', exErr.message); process.exit(1); }
+    if (!data || data.length === 0) break;
+    existing = existing.concat(data);
+    if (data.length < pageSize) break;
+    page++;
+    if (page > 50) break;
+  }
+  console.log(`   ${existing.length} existing US rinks in DB`);
 
   const bySlug = new Map();
   const byNormName = new Map();
@@ -148,7 +212,9 @@ function splitLeagueTeam(raw) {
     const leagueTeam = r[col.league] || null;
     const note = r[col.notes] || null;
     const website = r[col.website] || null;
-    const slug = slugify(rawName);
+    const baseSlug = slugify(rawName);
+    // Use disambiguated slug if baseSlug already exists in a different location
+    const slug = disambiguateSlug(baseSlug, city, COUNTRY, STATE_CODE);
     const { league, home_team } = splitLeagueTeam(leagueTeam);
     const notesParts = [];
     if (league) notesParts.push(`League: ${league}`);
@@ -159,11 +225,19 @@ function splitLeagueTeam(raw) {
     // Find match
     let match = null;
     if (bySlug.has(slug) && !usedIds.has(bySlug.get(slug).id)) {
-      match = bySlug.get(slug);
+      // Verify the existing row is the same rink (same country + state)
+      const existing = bySlug.get(slug);
+      if (existing.country === COUNTRY && existing.province_state === STATE_CODE) {
+        match = existing;
+      } else {
+        console.log(`   ℹ️  slug "${slug}" already used by ${existing.country}/${existing.province_state}/${existing.name} (diff location) — will disambiguate`);
+      }
     } else {
       const nn = normName(rawName);
       const candidate = byNormName.get(nn);
-      if (candidate && !usedIds.has(candidate.id)) match = candidate;
+      if (candidate && !usedIds.has(candidate.id) && candidate.country === COUNTRY && candidate.province_state === STATE_CODE) {
+        match = candidate;
+      }
     }
     if (!match && address) {
       const na = normAddr(address);
@@ -175,6 +249,7 @@ function splitLeagueTeam(raw) {
       if (baseIn) {
         for (const ev of existing) {
           if (usedIds.has(ev.id)) continue;
+          if (ev.country !== COUNTRY || ev.province_state !== STATE_CODE) continue;
           const baseEx = normName(stripParens(ev.name));
           if (baseEx && baseIn === baseEx) { match = ev; break; }
         }
@@ -201,6 +276,7 @@ function splitLeagueTeam(raw) {
         if (upErr) { failed++; failures.push({ name: rawName, error: upErr.message }); console.log(`   ✗ ${rawName} update: ${upErr.message}`); }
         else { updated++; console.log(`   ↻ ${rawName} (id=${match.id.slice(0,8)}) updated: ${Object.keys(patch).join(', ')}`); }
       } else {
+        console.log(`   📝 inserting with slug="${slug}" name="${rawName}"`);
         const { error: insErr } = await sb.from('rinks').insert({
           name: rawName,
           slug,
