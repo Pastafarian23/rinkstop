@@ -176,7 +176,17 @@ const FAQ = [
   },
 ];
 
-export default function FoundingMemberContent() {
+export default function FoundingMemberContent({
+  foundingClaimed = 0,
+  foundingCap = 500,
+  currentUserId = null,
+  currentUserTier = null,
+}: {
+  foundingClaimed?: number;
+  foundingCap?: number;
+  currentUserId?: string | null;
+  currentUserTier?: string | null;
+} = {}) {
   const { isSignedIn, isLoaded } = useUser();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -203,6 +213,25 @@ export default function FoundingMemberContent() {
 
     setBusy(tier.id);
     try {
+      // Best-effort analytics beacon before checkout. Fire-and-forget so a
+      // dropped network call can't block the checkout flow.
+      try {
+        navigator.sendBeacon?.(
+          '/api/track',
+          new Blob(
+            [
+              JSON.stringify({
+                name: 'checkout_started',
+                props: { tier: tier.id, from: 'pricing_page' },
+              }),
+            ],
+            { type: 'application/json' }
+          )
+        );
+      } catch {
+        // ignore
+      }
+
       const res = await fetch('/api/tier/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -241,8 +270,31 @@ export default function FoundingMemberContent() {
           textTransform: 'uppercase',
           marginBottom: '1.5rem',
         }}>
-          RinkStop pricing · Founding Member badge for the first 500
+          RinkStop pricing · Founding Member badge for the first {foundingCap}
         </div>
+        {foundingClaimed < foundingCap ? (
+          <div
+            data-testid="founding-urgency"
+            style={{
+              marginTop: 12,
+              fontSize: 14,
+              color: 'rgba(255,255,255,0.6)',
+            }}
+          >
+            <span style={{ color: '#FFB81C', fontWeight: 700 }}>{foundingClaimed}</span> of {foundingCap} Founding Member badges already claimed
+            {' · '}
+            <span style={{ color: '#FFB81C', fontWeight: 700 }}>{Math.max(foundingCap - foundingClaimed, 0)}</span> remaining
+          </div>
+        ) : (
+          <div style={{ marginTop: 12, fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>
+            All {foundingCap} Founding Member badges have been claimed. The Supporter tier stays — only the badge is gone.
+          </div>
+        )}
+        {currentUserId && currentUserTier && currentUserTier !== 'free' ? (
+          <div style={{ marginTop: 12, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+            You’re on the <span style={{ color: '#FFB81C', fontWeight: 600 }}>{currentUserTier}</span> tier. Use the cards below to upgrade.
+          </div>
+        ) : null}
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, lineHeight: 1.1, margin: '0 0 1.25rem' }}>
           Hockey’s directory. <br />
           <span style={{ color: '#C8102E' }}>Actually useful</span> for everyone in it.

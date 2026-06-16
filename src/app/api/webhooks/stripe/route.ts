@@ -108,6 +108,28 @@ export async function POST(req: NextRequest) {
           }
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
           await updateUserTier(metadata.clerk_user_id, metadata.tier, subscriptionId, customerId, subscription.status, expiresAt);
+
+          // Funnel event: the user completed checkout. Correlate to the
+          // pricing_viewed + checkout_started events via user_id + session.id.
+          console.log('[analytics]', JSON.stringify({
+            name: 'checkout_completed',
+            userId: metadata.clerk_user_id,
+            pathname: '/pricing',
+            props: { tier: metadata.tier, sessionId: session.id },
+            ts: new Date().toISOString(),
+          }));
+          // Best-effort Supabase insert via getSupabase().
+          try {
+            const _supa = getSupabase() as any;
+            await _supa.from('analytics_events').insert({
+              name: 'checkout_completed',
+              user_id: metadata.clerk_user_id,
+              pathname: '/pricing',
+              props: { tier: metadata.tier, sessionId: session.id },
+            });
+          } catch {
+            // ignore — console log is the durable record
+          }
           break;
         }
 
@@ -181,6 +203,29 @@ export async function POST(req: NextRequest) {
               ? (metadata.tier || null) // keep tier during dunning — user paid, we just haven't collected yet
               : null; // canceled / unpaid → downgrade
           await updateUserTier(metadata.clerk_user_id, tier, subscription.id, subscription.customer, subscription.status, expiresAt);
+
+          // Funnel event: the user's subscription went live (or transitioned).
+          // We only count first-time activations for the conversion rate.
+          if (isLiveStatus) {
+            console.log('[analytics]', JSON.stringify({
+              name: 'subscription_active',
+              userId: metadata.clerk_user_id,
+              pathname: '/pricing',
+              props: { tier, subscriptionId: subscription.id, status: subscription.status },
+              ts: new Date().toISOString(),
+            }));
+            try {
+              const _supa = getSupabase() as any;
+              await _supa.from('analytics_events').insert({
+                name: 'subscription_active',
+                user_id: metadata.clerk_user_id,
+                pathname: '/pricing',
+                props: { tier, subscriptionId: subscription.id, status: subscription.status },
+              });
+            } catch {
+              // ignore
+            }
+          }
           break;
         }
 
