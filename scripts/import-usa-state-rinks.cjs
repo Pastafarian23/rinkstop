@@ -108,6 +108,12 @@ function splitLeagueTeam(raw) {
     // Must have a name in the name column
     const name = r[col.name];
     if (!name || !String(name).trim()) return false;
+    // Skip editorial placeholders (states with no rinks)
+    const nameStr = String(name).toLowerCase();
+    if (nameStr.startsWith('no permanent') || nameStr.startsWith('no ') && nameStr.includes('rink')) {
+      console.log(`   ⏭️  skipping editorial placeholder: ${name}`);
+      return false;
+    }
     return true;
   });
   console.log(`   ${cleanRows.length} data rows\n`);
