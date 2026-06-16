@@ -229,11 +229,22 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                 <span style={{ marginRight: 4 }}>←</span>
                 <span>Back to Site</span>
               </Link>
-              {/* UserButton: avatar dropdown with sign-out + manage account. "Manage account" routes to our in-app profile page (no Clerk portal redirect). */}
-              <UserButton
-                appearance={userButtonAppearance}
-                userProfileUrl="/dashboard/profile"
-              />
+              {/* TEMP: UserButton replaced with simple fallback to isolate the dashboard 500.
+                  If this fixes the 500, the issue is UserButton. Original:
+                  <UserButton appearance={userButtonAppearance} userProfileUrl="/dashboard/profile" /> */}
+              <Link
+                href="/dashboard/profile"
+                title="My Profile (UserButton temporarily disabled)"
+                style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: '#C8102E', color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
+                  border: '2px solid #C8102E',
+                }}
+              >
+                {(firstName?.[0] || '?').toUpperCase()}
+              </Link>
             </div>
           </div>
 
