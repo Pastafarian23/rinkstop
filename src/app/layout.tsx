@@ -8,6 +8,7 @@ import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
+import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
 import ScoreTicker from '@/components/ScoreTicker';
 import IntentBanner from '@/components/IntentBanner';
 import { clerkSignInLocalization, clerkSignUpLocalization } from '@/lib/clerk-appearance';
@@ -296,6 +297,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </footer>
         <CookieConsent />
         <FoundersClubPopup />
+        {/* Post-login upgrade nudge — shows once to free users on the dashboard or homepage.
+            Higher z-index than FoundersClubPopup so they don't double up. */}
+        <UpgradeNudgePopup showOnPaths={['/dashboard', '/']} />
         <IntentBanner />
         </body>
       </html>

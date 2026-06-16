@@ -152,6 +152,11 @@ export async function POST(req: NextRequest) {
     allow_promotion_codes: true,
   });
 
+  // Conversion tracking — structured log line so we can grep it later
+  // or pipe to a real analytics service. Format: parseable key=value pairs
+  // in a single line so it doesn't fragment in log aggregators.
+  console.log(`[conversion] checkout_started user_id=${userId} tier=${tier} customer_id=${customerId} session_id=${session.id}`);
+
   const res = NextResponse.json({ url: session.url, sessionId: session.id, tier });
   return applyRateLimitHeaders(res, result);
 }
