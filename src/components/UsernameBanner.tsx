@@ -5,7 +5,16 @@ import UsernamePromptModal from './UsernamePromptModal';
 
 interface Props {
   displayName: string;
-  onComplete: () => void;
+  /**
+   * Optional callback fired after the user successfully sets a username.
+   * Server components cannot pass functions to client components, so this
+   * is only callable when the parent is also a client component, OR when
+   * the parent uses a server action pattern.
+   *
+   * Omit it when rendering from a Server Component — the page just
+   * re-renders on its own after the modal sets the cookie.
+   */
+  onComplete?: () => void;
 }
 
 /**
@@ -49,7 +58,14 @@ export default function UsernameBanner({ displayName, onComplete }: Props) {
           displayName={displayName}
           onComplete={() => {
             setShowModal(false);
-            onComplete();
+            onComplete?.();
+            // Force a re-render of the server-rendered parent so it picks
+            // up the new username from the server-side profile row. Router
+            // refresh is the recommended pattern for client components to
+            // trigger server component re-renders.
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            }
           }}
           onSkip={() => setShowModal(false)}
         />
