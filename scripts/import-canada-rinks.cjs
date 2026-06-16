@@ -53,12 +53,21 @@ const PROVINCE_ABBR = {
   'Newfoundland and Labrador': 'NL', 'Prince Edward Island': 'PE',
   'Northwest Territories': 'NT', 'Northwest_Territories': 'NT', Nunavut: 'NU', Yukon: 'YT',
   Territories: null, // sentinel: rows have their own province col
+  // Accept underscore-separated forms (some CAN_*.xlsx files use these)
+  'New_Brunswick': 'NB',
+  'Newfoundland_and_Labrador': 'NL',
+  'Prince_Edward_Island': 'PE',
+  'Northwest_Territories': 'NT',
+  'British_Columbia': 'BC',
 };
 function abbrFor(p) {
   if (p == null) return null;
   const norm = String(p).trim();
   if (PROVINCE_ABBR[norm] === null) return null; // 'Territories' = read from row
   if (!PROVINCE_ABBR[norm]) {
+    // Be tolerant: try replacing underscores with spaces as a fallback
+    const spaceForm = norm.replace(/_/g, ' ');
+    if (PROVINCE_ABBR[spaceForm]) return PROVINCE_ABBR[spaceForm];
     console.error(`Unknown province "${p}" — add to PROVINCE_ABBR map.`);
     process.exit(1);
   }
@@ -135,6 +144,25 @@ async function main() {
     .eq('country', COUNTRY);
   if (exErr) { console.error('Fetch existing failed:', exErr); process.exit(1); }
   console.log(`Existing ${COUNTRY} rinks in DB: ${existing.length}`);
+
+  // Fetch ALL slugs (not just country) for insert-time collision detection.
+  // The rinks table has a global unique constraint on slug, so a Canada rink
+  // named 'Thompson Arena' can collide with a USA rink of the same name.
+  // Paginate: Supabase's default row limit is 1000.
+  const takenSlugs = new Set();
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data: page, error: slugErr } = await sb
+      .from('rinks')
+      .select('slug')
+      .not('slug', 'is', null)
+      .range(from, from + pageSize - 1);
+    if (slugErr) { console.error('Fetch all slugs warning:', slugErr); break; }
+    for (const r of page || []) if (r.slug) takenSlugs.add(r.slug);
+    if (!page || page.length < pageSize) break;
+    from += pageSize;
+  }
 
   // For per-row files, group existing by province. For single-province files, just filter once.
   const existingByProv = new Map();
@@ -230,7 +258,15 @@ async function main() {
       }
     } else {
       action = 'insert';
-      patchOrRow = { ...baseFields, notes, source: SOURCE };
+      // Disambiguate slug: if the slug is already taken by a non-Canada rink
+      // (e.g. "Thompson Arena" exists in NH, USA), append the city slug so
+      // the new rink has a unique slug while keeping the name.
+      let finalSlug = slug;
+      if (takenSlugs.has(slug)) {
+        const citySlugPart = slugify(city || rowProvAbbr);
+        finalSlug = `${slug}-${citySlugPart}`.slice(0, 100);
+      }
+      patchOrRow = { ...baseFields, slug: finalSlug, notes, source: SOURCE };
       willInsert++;
     }
 
