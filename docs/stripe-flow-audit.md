@@ -77,13 +77,13 @@ state).
 1. Card fails → Stripe sends `invoice.payment_failed`
 2. Webhook sets `subscription_status='past_due'`, **tier is preserved**
 3. User sees a banner on /dashboard/subscription saying their payment failed
-4. Stripe retries the card 4 times over ~3 weeks
-5. If all 4 retries fail → Stripe sends `customer.subscription.deleted`
+4. Stripe retries the card 8 times over 2 weeks (Smart Retries default — see [Stripe docs](https://docs.stripe.com/billing/revenue-recovery/smart-retries))
+5. If all 8 retries fail → Stripe sends `customer.subscription.deleted`
 6. Webhook sets `tier=null`, `subscription_status='cancelled'`
 
 **Before this fix:** step 2 would have set `tier=null` immediately, wiping the
 user's Pro tier after a single failed payment. Now the user keeps Pro for the
-full 3-week dunning window.
+full 2-week dunning window (Stripe Smart Retries default).
 
 **No email notification is sent on payment_failed** — that's a manual TODO
 (we don't have a transactional email system wired up yet). The dashboard

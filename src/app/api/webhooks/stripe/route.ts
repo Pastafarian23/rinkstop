@@ -145,6 +145,24 @@ export async function POST(req: NextRequest) {
 
         if (metadata.clerk_user_id) {
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+          // ───────────────────────────────────────────────────────────────────
+          // DUNNING POLICY (decision 2026-06-16, user-approved):
+          //
+          // Stripe's recommended Smart Retries default = 8 retries over 2 weeks.
+          // Source: https://docs.stripe.com/billing/revenue-recovery/smart-retries
+          //
+          // Behavior: a user who paid for the year keeps their tier for the full
+          // 2-week dunning window (status=active|trialing|past_due|incomplete|
+          // incomplete_expired). The tier is only nulled on a TRUE cancellation
+          // (status=canceled|unpaid) which fires when Stripe has exhausted retries.
+          //
+          // This means: one failed payment = user keeps Pro for 2 weeks while
+          // Stripe retries the card. If all 8 retries fail, Stripe sends
+          // customer.subscription.deleted, which nulls the tier.
+          //
+          // If you change this, also update docs/stripe-flow-audit.md and the
+          // MEMORY.md dunning policy note.
+          // ───────────────────────────────────────────────────────────────────
           // Smart tier resolution: only DOWNGRADE the tier on a true cancellation
           // (status='canceled' or 'unpaid'). For temporary dunning states
           // (past_due, incomplete, incomplete_expired), KEEP the existing tier
@@ -216,9 +234,10 @@ export async function POST(req: NextRequest) {
 
         if (userProfile) {
           // CRITICAL: do NOT downgrade tier on a single failed payment. Just
-          // set status to past_due. Stripe will retry 4 times over ~3 weeks
-          // before sending customer.subscription.deleted. Until then, the user
-          // keeps their tier.
+          // set status to past_due. Stripe's recommended Smart Retries default
+          // is 8 retries over 2 weeks (see customer.subscription.updated case
+          // for full policy + docs link). Until Stripe exhausts those retries
+          // and sends customer.subscription.deleted, the user keeps their tier.
           //
           // The tier will be wiped when customer.subscription.deleted fires
           // (handled in the case above), not here.
