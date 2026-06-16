@@ -6,6 +6,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import DashboardNav from '@/components/DashboardNav';
 import { userButtonAppearance, signInAppearance } from '@/lib/clerk-appearance';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { userId } = await auth();
   if (!userId) redirect('/login');
