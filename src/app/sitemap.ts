@@ -106,7 +106,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult, caRinksResult, ukRinksResult] = await Promise.all([
     // Phase 1 SEO: select fields needed for quality filter. See isHighQualityTeam() below.
     supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true),
-    supabaseAdmin.from('rinks').select('slug, updated_at, city, country').eq('is_active', true),
+    supabaseAdmin.from('rinks').select('slug, updated_at, city, country, province_state').eq('is_active', true),
     supabaseAdmin.from('leagues').select('slug, updated_at, country, level, website_url').eq('is_active', true),
     supabaseAdmin.from('posts').select('slug, updated_at').eq('status', 'published'),
     supabaseAdmin.from('players').select('id, updated_at, first_name, last_name, position, team_id, nationality, headshot_url').eq('is_active', true).order('updated_at', { ascending: false }).limit(500),
@@ -219,6 +219,72 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // US city subroutes: /directory/united-states/{state_slug}/{city_slug}
+  // These complement the US state pages and the universal locations routes.
+  // Only emit a URL for rinks that have a real province_state so we can
+  // resolve the state slug.
+  const usStateAbbrToSlug: Record<string, string> = {
+    AL: 'alabama', AK: 'alaska', AZ: 'arizona', AR: 'arkansas', CA: 'california',
+    CO: 'colorado', CT: 'connecticut', DE: 'delaware', FL: 'florida', GA: 'georgia',
+    HI: 'hawaii', ID: 'idaho', IL: 'illinois', IN: 'indiana', IA: 'iowa',
+    KS: 'kansas', KY: 'kentucky', LA: 'louisiana', ME: 'maine', MD: 'maryland',
+    MA: 'massachusetts', MI: 'michigan', MN: 'minnesota', MS: 'mississippi', MO: 'missouri',
+    MT: 'montana', NE: 'nebraska', NV: 'nevada', NH: 'new-hampshire', NJ: 'new-jersey',
+    NM: 'new-mexico', NY: 'new-york', NC: 'north-carolina', ND: 'north-dakota', OH: 'ohio',
+    OK: 'oklahoma', OR: 'oregon', PA: 'pennsylvania', RI: 'rhode-island', SC: 'south-carolina',
+    SD: 'south-dakota', TN: 'tennessee', TX: 'texas', UT: 'utah', VT: 'vermont',
+    VA: 'virginia', WA: 'washington', WV: 'west-virginia', WI: 'wisconsin', WY: 'wyoming',
+    DC: 'district-of-columbia',
+  };
+  const usCities = new Set<string>();
+  (filteredRinks || []).forEach((r: { country: string; city: string; province_state?: string }) => {
+    if (r.country !== 'United States' || !r.city || !r.province_state) return;
+    const stateSlug = usStateAbbrToSlug[r.province_state];
+    if (!stateSlug) return;
+    const citySlug = r.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!citySlug) return;
+    usCities.add(`/directory/united-states/${stateSlug}/${citySlug}`);
+  });
+  const usCityUrls: MetadataRoute.Sitemap = [...usCities].map(path => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  // Universal city subroutes: /directory/locations/{country_slug}/{city_slug}
+  // This is the broadest SEO net — covers every (country, city) combo in the DB,
+  // including non-US/CA/UK countries that don't have a dedicated /country/{city} route.
+  // We use the country slug from the existing /directory/{country} pattern.
+  const COUNTRY_SLUG_OVERRIDES: Record<string, string> = {
+    'United States': 'united-states',
+    'United Kingdom': 'united-kingdom',
+    'United Arab Emirates': 'united-arab-emirates',
+    'New Zealand': 'new-zealand',
+    'South Korea': 'south-korea',
+    'Czech Republic': 'czechia',
+    'Russian Federation': 'russia',
+    'Russian Federation (Russia)': 'russia',
+  };
+  function countryToSlug(name: string): string {
+    if (COUNTRY_SLUG_OVERRIDES[name]) return COUNTRY_SLUG_OVERRIDES[name];
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+  const universalCities = new Set<string>();
+  (filteredRinks || []).forEach((r: { country: string; city: string }) => {
+    if (!r.country || !r.city) return;
+    const countrySlug = countryToSlug(r.country);
+    const citySlug = r.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!citySlug || !countrySlug) return;
+    universalCities.add(`/directory/locations/${countrySlug}/${citySlug}`);
+  });
+  const universalCityUrls: MetadataRoute.Sitemap = [...universalCities].map(path => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.55,
+  }));
+
   // US state pages
   const usStates = [
     'alabama','alaska','arizona','arkansas','california','colorado','connecticut','delaware','florida','georgia',
@@ -234,7 +300,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
+  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...usCityUrls, ...universalCityUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
 
   // Log filter effectiveness — Vercel picks this up in logs
   console.log('[sitemap] Phase 1 SEO filter:', JSON.stringify({
@@ -243,6 +309,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     excluded_rinks: stats.rinks_total - stats.rinks_indexed,
     excluded_countries: stats.countries_total - stats.countries_indexed,
     total_urls: all.length,
+    us_cities: usCities.size,
+    ca_cities: caCities.size,
+    uk_cities: ukCities.size,
+    universal_cities: universalCities.size,
     percent_kept: ((all.length / 2966) * 100).toFixed(1) + '%',
   }));
 
