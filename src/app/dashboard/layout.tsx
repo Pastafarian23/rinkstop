@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import DashboardNav from '@/components/DashboardNav';
-import SignOutButton from '@/components/SignOutButton';
+import UserMenu from '@/components/UserMenu';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,13 +107,12 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
     // Silently degrade — nav still works, just no badges.
   }
 
-  // Admin tab appears FIRST in the nav (gold-accented) so it's never scrolled
-  // off the right edge of the horizontal nav. The header also has a prominent
-  // gold Admin button for desktop users.
+  // Admin link intentionally NOT in the user-dashboard nav. Per Arnel
+  // (2026-06-16): the gold shield in the header is enough. Including 'Admin'
+  // in the user-dashboard nav made it look pre-highlighted as if it were
+  // the current section, which is confusing. The header shield is the
+  // single, dedicated entry point to /admin.
   const navLinks: Array<[string, string, number?]> = [];
-  if (isAdmin) {
-    navLinks.push(['/admin', '🛡️ Admin']);
-  }
 
   // Phase 2: Show "Listings" in the nav if the user holds the `business` account
   // type. Cheaper than a join — one indexed query on profile_account_types.
@@ -189,26 +188,23 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                   href="/admin"
                   data-testid="header-admin-link"
                   className="dashboard-header-admin"
+                  title="Open admin dashboard"
                   style={{
                     background: 'linear-gradient(135deg, #FFB81C 0%, #e6a318 100%)',
                     color: '#041E42',
-                    padding: '0.5rem 0.85rem',
-                    borderRadius: 6,
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    fontSize: '1.05rem',
                     textDecoration: 'none',
-                    border: '1px solid #FFB81C',
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
+                    border: '2px solid #FFB81C',
+                    boxShadow: '0 2px 8px rgba(255,184,28,0.25)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.35rem',
-                    boxShadow: '0 2px 8px rgba(255,184,28,0.25)',
-                    whiteSpace: 'nowrap',
+                    justifyContent: 'center',
                   }}
                 >
                   <span aria-hidden="true">🛡️</span>
-                  <span>Admin</span>
                 </Link>
               ) : null}
               <Link
@@ -228,26 +224,18 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                 <span style={{ marginRight: 4 }}>←</span>
                 <span>Back to Site</span>
               </Link>
-              {/* SignOutButton: replaces Clerk's <UserButton> which was throwing
-                  during the dashboard layout's server-side render. We hit this
-                  on 2026-06-16 (digest 1026421780). SignOutButton is a Client
-                  Component, so it never runs on the server. To open the user
-                  profile (avatar, name, security, etc.) we also link to
-                  /dashboard/profile. */}
-              <Link
-                href="/dashboard/profile"
-                title="Manage profile"
-                style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: '#C8102E', color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
-                  border: '2px solid #C8102E',
-                }}
-              >
-                {(firstName?.[0] || '?').toUpperCase()}
-              </Link>
-              <SignOutButton initials={firstName?.[0] || '?'} size={36} />
+              {/* UserMenu: replaces the two-ambiguous-A-circles pattern. Single
+                  avatar button that opens a labeled popover (Edit profile,
+                  Subscription, Help, Sign out). Replaces both <UserButton>
+                  (which threw during RSC) and the previous SignOutButton +
+                  standalone Link to /dashboard/profile. */}
+              <UserMenu
+                initials={firstName?.[0] || '?'}
+                displayName={`${firstName || 'RinkStop'}${lastName ? ' ' + lastName : ''}`}
+                email={email}
+                avatarUrl={avatarUrl}
+                size={40}
+              />
             </div>
           </div>
 
