@@ -295,7 +295,7 @@ async function main() {
   // Fetch all existing country rinks for matching.
   const { data: existing, error: exErr } = await sb
     .from('rinks')
-    .select('id, name, slug, address, city, capacity, notes, source')
+    .select('id, name, slug, address, city, capacity, notes, source, league')
     .eq('country', COUNTRY);
   if (exErr) { console.error('Fetch existing failed:', exErr); process.exit(1); }
   console.log(`Existing ${COUNTRY} rinks in DB: ${existing.length}`);
@@ -406,6 +406,16 @@ async function main() {
         }
       }
     }
+    // Spreadsheet dedupe: a duplicate row in the xlsx (same slug, name, address)
+    // should resolve to the same match as the earlier row, not insert a new one.
+    // Strategy: if no unused match, but the would-be slug already belongs to a
+    // used row whose name normalizes to the same value, re-use that row.
+    if (!match && bySlug.has(slug)) {
+      const used = bySlug.get(slug);
+      if (usedIds.has(used.id) && normName(used.name) === normName(rawName)) {
+        match = used;
+      }
+    }
 
     const baseFields = {
       name: rawName,
@@ -415,6 +425,7 @@ async function main() {
       city: city || null,
       province_state: province || null,
       capacity: capacity,
+      league: league,
     };
 
     try {
@@ -425,9 +436,16 @@ async function main() {
         if (!match.city && city) patch.city = city;
         if (!match.province_state && province) patch.province_state = province;
         if (!match.capacity && capacity) patch.capacity = capacity;
+        if (!match.league && league) patch.league = league;
         if (!match.notes && notes) patch.notes = notes;
         if (!match.source) patch.source = effectiveSource;
-        if (!match.slug || match.slug !== slug) patch.slug = slug;
+        // Slug update: only set patch.slug if the new slug isn't taken by another row.
+        // Without this check, a normalized-name match can produce a slug that
+        // collides with a different row (e.g. Borås Ishall: 'bor-s-ishall' →
+        // 'boras-ishall' collides with the existing 'boras-ishall' row).
+        if ((!match.slug || match.slug !== slug) && !bySlug.has(slug)) {
+          patch.slug = slug;
+        }
         if (Object.keys(patch).length === 0) {
           skipped++;
           continue;

@@ -28,7 +28,7 @@ type LocalLeague = { id: string; name: string; slug: string; country: string; le
  * Falls back to a synthetic paragraph derived from name + city + country
  * + capacity + ice_size so every rink has at least 80-120 unique words.
  */
-function buildRinkBlurb(rink: { name: string; city: string | null; country: string | null; notes: string | null; capacity: number | null; ice_size: string | null; surface_type: string | null; }): string {
+function buildRinkBlurb(rink: { name: string; city: string | null; country: string | null; notes: string | null; capacity: number | null; ice_size: string | null; surface_type: string | null; league?: string | null; }): string {
   if (rink.notes && rink.notes.trim().length > 30) {
     return rink.notes.trim();
   }
@@ -38,6 +38,9 @@ function buildRinkBlurb(rink: { name: string; city: string | null; country: stri
     parts.push(`The arena seats ${rink.capacity.toLocaleString()} spectators, making it one of the larger hockey venues in the region${rink.city ? ' and a fixture of the ' + rink.city + ' sports scene' : ''}.`);
   } else if (rink.capacity) {
     parts.push(`With a ${rink.capacity.toLocaleString()}-seat capacity, ${rink.name} is an intimate community rink that hosts local hockey, figure skating, and public skate sessions.`);
+  }
+  if (rink.league) {
+    parts.push(`It serves as a home venue for ${rink.league} competition.`);
   }
   if (rink.ice_size === 'NHL') {
     parts.push('The rink is built to NHL dimensions and regularly hosts professional, junior, and high-level amateur hockey.');
@@ -153,7 +156,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league')
     .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
@@ -549,6 +552,11 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             {rink.capacity && (
               <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}>
                 👥 {rink.capacity.toLocaleString()} seats
+              </span>
+            )}
+            {rink.league && (
+              <span style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '20px', padding: '4px 12px', color: '#cbd5e1' }}>
+                🏆 {rink.league}
               </span>
             )}
           </div>
