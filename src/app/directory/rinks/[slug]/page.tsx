@@ -17,6 +17,7 @@ import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
 import { CANONICAL_URL } from '@/lib/constants';
+import { provinceDisplayName } from '@/lib/ca-provinces';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -126,9 +127,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const blurb = buildRinkBlurb(rink);
   const description = blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb;
+  const provinceLabel = provinceDisplayName(rink.province_state);
 
   return {
-    title: `${rink.name} -- Ice Rink in ${rink.city || ''}${rink.province_state ? ', ' + rink.province_state : ''}`,
+    title: `${rink.name} -- Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}`,
     description,
     robots: robotsMeta(decision),
     alternates: {
@@ -207,7 +209,8 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     : 0;
 
   const blurb = buildRinkBlurb(rink);
-  const locationLine = [rink.city, rink.province_state, rink.country].filter(Boolean).join(', ');
+  const provinceLabel = provinceDisplayName(rink.province_state);
+  const locationLine = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
   const formerName = extractFormerName(rink.notes);
 
   // Social: fetch owner + initial follower count in parallel with the rest of
@@ -249,7 +252,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           address: {
             '@type': 'PostalAddress',
             addressLocality: rink.city,
-            addressRegion: rink.province_state,
+            addressRegion: provinceDisplayName(rink.province_state) || rink.province_state,
             addressCountry: rink.country,
             streetAddress: rink.address,
           },
@@ -679,7 +682,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               Getting to {rink.name}
             </h2>
             <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '12px' }}>
-              {rink.name} is located at <strong style={{ color: '#fff' }}>{rink.address}</strong>. Public parking is available at the venue, and the rink is accessible by car from the surrounding {rink.city} area. For public transit options to reach the rink, check the local {rink.city} transit authority schedule for the nearest stop to the {rink.province_state || rink.country} venue district.
+              {rink.name} is located at <strong style={{ color: '#fff' }}>{rink.address}</strong>. Public parking is available at the venue, and the rink is accessible by car from the surrounding {rink.city} area. For public transit options to reach the rink, check the local {rink.city} transit authority schedule for the nearest stop to the {provinceLabel || rink.country} venue district.
             </p>
             {rink.latitude && rink.longitude && (
               <a

@@ -10,6 +10,8 @@
 // Entity detail pages call `buildSharePayload(...)` server-side and pass
 // the result to <SocialActions share={...} />, which renders <ShareButton>.
 
+import { provinceDisplayName } from './ca-provinces';
+
 export type SharePlatform =
   | 'twitter'
   | 'facebook'
@@ -48,7 +50,7 @@ export function buildRinkShare(rink: {
   const path = rink.slug
     ? `/directory/rinks/${rink.slug}`
     : `/directory/rinks/${rink.id}`;
-  const where = [rink.city, rink.province_state, rink.country].filter(Boolean).join(', ');
+  const where = [rink.city, provinceDisplayName(rink.province_state), rink.country].filter(Boolean).join(', ');
   return {
     title: `${rink.name} — ${SITE_NAME}`,
     text: where

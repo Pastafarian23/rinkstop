@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SearchIcon, FilterIcon } from '@/components/icons';
+import { provinceDisplayName } from '@/lib/ca-provinces';
 
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
 interface Rink {
@@ -73,7 +74,7 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
   const hasFilters = search || country;
 
   const formatLocation = (r: Rink) => {
-    const parts = [r.city, r.province_state, r.country].filter(Boolean);
+    const parts = [r.city, provinceDisplayName(r.province_state), r.country].filter(Boolean);
     return parts.join(', ');
   };
 
