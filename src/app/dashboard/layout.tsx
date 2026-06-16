@@ -10,6 +10,41 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
+  // Hard safety net: any error inside the dashboard chrome render must NOT 500
+  // the user. Instead, render a minimal shell with the children (the page's own
+  // safety net will catch errors inside the page) and a sign-out link so they
+  // can recover. The real error is logged server-side (Vercel) for diagnosis.
+  try {
+    return await renderDashboardLayout(userId, children);
+  } catch (err) {
+    console.error('[dashboard layout] render failed:', err);
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
+        <header style={{ background: '#041E42', borderBottom: '3px solid #C8102E' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: 'white', letterSpacing: '0.05em', margin: 0 }}>
+              MY RINKSTOP
+            </h1>
+            <Link href="/" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', padding: '0.5rem 0.85rem', borderRadius: 6, fontSize: '0.8rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.1)' }}>
+              Back to Site
+            </Link>
+          </div>
+        </header>
+        <div style={{ maxWidth: 720, margin: '4rem auto', padding: '0 1.5rem' }}>
+          <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.5rem', color: '#fff', margin: '0 0 0.75rem' }}>
+            Dashboard chrome hit a snag
+          </h2>
+          <p style={{ color: '#aaa', fontSize: '0.95rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
+            The page below should still load. If you see a second error card, the issue is in the page itself — try signing out and back in, or come back in a few minutes.
+          </p>
+          <main>{children}</main>
+        </div>
+      </div>
+    );
+  }
+}
+
+async function renderDashboardLayout(userId: string, children: React.ReactNode) {
   const user = await currentUser();
   const firstName = user?.firstName || '';
   const lastName = user?.lastName || '';
