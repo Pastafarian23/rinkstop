@@ -36,12 +36,23 @@ export async function GET(req: NextRequest) {
 
   // Validate inputs to prevent injection or bad queries
   const ALLOWED_SORTS = ['created_at', 'published_at', 'view_count', 'title'];
-  const ALLOWED_STATUSES = ['all', 'published', 'draft', 'archived'];
+  // 8-value state machine (2026-06-16). The 'all' option is the unfiltered default.
+  const ALLOWED_STATUSES = [
+    'all',
+    // Original 3
+    'published', 'draft', 'archived',
+    // State machine additions
+    'needs_review', 'verified',
+    'needs_rewrite', 'rewriting', 'manually_approved',
+  ];
   const safeSort = ALLOWED_SORTS.includes(sort) ? sort : 'created_at';
   const safeStatus = ALLOWED_STATUSES.includes(status) ? status : 'all';
 
   // Build base select. Join teams + leagues + players + countries so the
   // admin can see cross-link context (e.g. "Team A vs Team B", "NHL", "Connor McDavid").
+  // State machine columns (2026-06-16): verified_at, verified_rounds, next_check_at,
+  // last_issue_summary, source_data_status, rewrite_fails. These power the
+  // /admin/blog/queue UI so the admin can see WHY a post is in each state.
   let query = supabaseAdmin
     .from('posts')
     .select(
@@ -49,6 +60,8 @@ export async function GET(req: NextRequest) {
        created_at, published_at, updated_at, is_featured, highlight_id,
        reading_time_minutes, seo_title, seo_description, author_name,
        team_home_id, team_away_id, league_id, player_id, country_slug,
+       verified_at, verified_rounds, next_check_at, last_issue_summary,
+       source_data_status, rewrite_fails,
        team_home:teams!posts_team_home_id_fkey(id, name, slug),
        team_away:teams!posts_team_away_id_fkey(id, name, slug),
        league:leagues!posts_league_id_fkey(id, name, slug),
