@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { COUNTRY_CONTENT } from '@/lib/location-content';
 import CityPageClient from './CityPageClient';
@@ -123,6 +124,14 @@ export default async function CityPage({
   const countryName = decodeURIComponent(country);
   const cityName = decodeURIComponent(city);
   const { teams, rinks, programs, leagues } = await fetchCityData(countryName, cityName);
+
+  // If the city has no rinks, teams, or programs, return 404 so we don't
+  // ship empty/thin pages to Google. Programmatic SEO only works if the
+  // pages have real content. Empty city pages are a footgun, not an asset.
+  if (teams.length === 0 && rinks.length === 0 && programs.length === 0) {
+    notFound();
+  }
+
   return (
     <CityPageClient
       countryName={countryName}

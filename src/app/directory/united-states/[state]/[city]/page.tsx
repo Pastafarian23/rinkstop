@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getCityPageData, resolveUSState, slugToTitle } from '@/lib/city-page';
 import CityPageContent from '@/components/CityPageContent';
 
@@ -46,6 +47,11 @@ export default async function USStateCityPage({
     regionSlug: stateSlug,
     regionAbbr: stateAbbr,
   });
+
+  // Skip empty city pages — don't ship thin content to Google.
+  if (data.teamCount + data.rinkCount === 0) {
+    notFound();
+  }
 
   return <CityPageContent data={data} />;
 }
