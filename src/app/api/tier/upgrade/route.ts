@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/dashboard?upgraded=1&tier=${tier}`,
+    success_url: `${origin}/dashboard/welcome?tier=${tier}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/pricing?cancelled=1`,
     metadata: { clerk_user_id: userId, tier },
     subscription_data: { metadata: { clerk_user_id: userId, tier } },
