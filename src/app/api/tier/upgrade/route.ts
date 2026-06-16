@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { supabaseAdmin } from '@/lib/supabase';
+import { trackEvent } from '@/lib/analytics';
 
 const RATE_LIMIT = { maxRequests: 5, windowMs: 10 * 60 * 1000 };
 
@@ -91,6 +92,18 @@ export async function POST(req: NextRequest) {
     );
     return applyRateLimitHeaders(res, result);
   }
+
+  // Server-side funnel event: user reached the Stripe checkout start.
+  // We capture this here (not just on the client) so a dropped
+  // navigator.sendBeacon can't lose the event. The actual purchase
+  // is captured by the Stripe webhook (checkout.session.completed)
+  // and the invoice.paid handler, both in /api/webhooks/stripe.
+  await trackEvent({
+    name: 'checkout_started',
+    userId,
+    pathname: '/pricing',
+    props: { tier, priceEnv },
+  });
 
   // Look up or create a Stripe customer for this Clerk user
   const { data: profile, error: profileErr } = await supabaseAdmin
