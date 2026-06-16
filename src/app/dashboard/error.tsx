@@ -45,6 +45,15 @@ export default function DashboardError({
             Ref: {error.digest}
           </p>
         ) : null}
+        {(error as any)?.message ? (
+          <details style={{ margin: '0 0 1rem' }}>
+            <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', cursor: 'pointer' }}>Error details</summary>
+            <pre style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', margin: '0.5rem 0 0', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'auto', maxHeight: 200 }}>
+{(error as any).name}: {(error as any).message}
+{(error as any).stack}
+            </pre>
+          </details>
+        ) : null}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={reset}
