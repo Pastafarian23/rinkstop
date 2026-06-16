@@ -82,6 +82,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to submit claim.' }, { status: 500 });
     }
 
+    // Track claim_submitted server-side. Best-effort, never throws.
+    try {
+      const { trackEvent } = await import('@/lib/analytics');
+      await trackEvent({
+        name: 'claim_submitted',
+        userId,
+        pathname: '/dashboard/claims',
+        props: {
+          claim_type: body.claim_type,
+          entity_id: body.entity_id || null,
+          entity_name: body.entity_name,
+        },
+      });
+    } catch {
+      // ignore
+    }
+
     return NextResponse.json({ success: true, claim: data }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });

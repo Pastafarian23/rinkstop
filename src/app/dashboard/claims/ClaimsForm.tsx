@@ -99,6 +99,49 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Submit Another Claim
           </button>
         </div>
+
+        {/* Why upgrade? prompt — shown only to free users after their first claim. */}
+        {tier === 'free' && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, rgba(255,184,28,0.06) 100%)',
+            border: '1px solid rgba(255,184,28,0.3)',
+            borderRadius: 12,
+            padding: '1.5rem 1.75rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.85rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>⭐</span>
+              <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.1rem', color: '#FFB81C', letterSpacing: '0.04em', margin: 0 }}>
+                CLAIM YOUR LISTING IS FREE — BUT HERE&apos;S WHAT YOU GET FOR $19.99/YR
+              </h3>
+            </div>
+            <ul style={{ margin: 0, padding: '0 0 0 1.25rem', color: '#d1d5db', fontSize: '0.9rem', lineHeight: 1.7 }}>
+              <li><strong style={{ color: '#fff' }}>Founding Member badge</strong> — limited to first 500 paid members</li>
+              <li><strong style={{ color: '#fff' }}>24-hour claim review</strong> (vs 2 business days for free)</li>
+              <li><strong style={{ color: '#fff' }}>Unlimited claims</strong> for your organization (free = 1)</li>
+              <li><strong style={{ color: '#fff' }}>Weekly digest</strong> of activity on your listings</li>
+            </ul>
+            <Link
+              href="/pricing?tier=supporter"
+              style={{
+                background: '#C8102E',
+                color: '#fff',
+                padding: '0.7rem 1.5rem',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                textAlign: 'center',
+                marginTop: '0.25rem',
+                letterSpacing: '0.02em',
+              }}
+            >
+              Become a Founding Member →
+            </Link>
+          </div>
+        )}
       </div>
     );
   }
