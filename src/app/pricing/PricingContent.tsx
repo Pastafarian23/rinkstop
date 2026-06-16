@@ -181,11 +181,13 @@ export default function FoundingMemberContent({
   foundingCap = 500,
   currentUserId = null,
   currentUserTier = null,
+  cancelled = false,
 }: {
   foundingClaimed?: number;
   foundingCap?: number;
   currentUserId?: string | null;
   currentUserTier?: string | null;
+  cancelled?: boolean;
 } = {}) {
   const { isSignedIn, isLoaded } = useUser();
   const [busy, setBusy] = useState<string | null>(null);
@@ -256,6 +258,27 @@ export default function FoundingMemberContent({
 
   return (
     <main style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff' }}>
+      {/* Cancelled-checkout recovery banner — only renders if the user came
+          back from a Stripe Checkout "back" click. Doesn't penalize them,
+          doesn't nag. Just acknowledges and offers to make it easy. */}
+      {cancelled && (
+        <div
+          data-testid="checkout-cancelled-banner"
+          style={{
+            background: 'rgba(255,184,28,0.08)',
+            borderBottom: '1px solid rgba(255,184,28,0.3)',
+            padding: '0.75rem 1.5rem',
+            textAlign: 'center',
+            color: '#FFB81C',
+            fontSize: '0.875rem',
+          }}
+        >
+          You bailed on checkout — no problem. Founding-member pricing is still live.{' '}
+          <a href="#tiers" style={{ color: '#FFB81C', fontWeight: 700, textDecoration: 'underline', marginLeft: 4 }}>
+            Jump back to plans
+          </a>
+        </div>
+      )}
       <section style={{ padding: '5rem 1.5rem 3rem', textAlign: 'center', maxWidth: 760, margin: '0 auto' }}>
         <div style={{
           display: 'inline-block',

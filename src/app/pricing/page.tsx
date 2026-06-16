@@ -28,8 +28,15 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function FoundingMemberPage() {
+export default async function FoundingMemberPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cancelled?: string; tier?: string }>;
+}) {
   const { userId } = await auth();
+  const params = await searchParams;
+  const cancelled = params.cancelled === '1';
+  const utmTier = params.tier || null;
   const pathname = '/pricing';
 
   // Track pricing page view + sign the user in so we can correlate downstream
@@ -38,7 +45,20 @@ export default async function FoundingMemberPage() {
     name: 'pricing_viewed',
     userId,
     pathname,
+    props: { cancelled, utmTier },
   });
+
+  // If they came back from a cancelled Stripe checkout, log the abandonment
+  // server-side. Stripe sends users to /pricing?cancelled=1 when they hit
+  // the "back" button on the checkout page. This is a true funnel event
+  // — they reached the checkout start but did not complete.
+  if (cancelled) {
+    await trackEvent({
+      name: 'checkout_abandoned',
+      userId,
+      pathname,
+    });
+  }
 
   // Count how many of the first 500 founding-member slots are taken so
   // we can show a live "N of 500 claimed" urgency lever on the page.
@@ -68,6 +88,7 @@ export default async function FoundingMemberPage() {
       foundingCap={500}
       currentUserId={userId}
       currentUserTier={userTier}
+      cancelled={cancelled}
     />
   );
 }
