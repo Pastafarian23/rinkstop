@@ -189,22 +189,34 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                   data-testid="header-admin-link"
                   className="dashboard-header-admin"
                   title="Open admin dashboard"
+                  aria-label="Open admin dashboard"
                   style={{
                     background: 'linear-gradient(135deg, #FFB81C 0%, #e6a318 100%)',
-                    color: '#041E42',
                     width: 40,
                     height: 40,
                     borderRadius: '50%',
-                    fontSize: '1.05rem',
                     textDecoration: 'none',
                     border: '2px solid #FFB81C',
                     boxShadow: '0 2px 8px rgba(255,184,28,0.25)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    justifyItems: 'center',
+                    lineHeight: 1,
+                    overflow: 'hidden',
                   }}
                 >
-                  <span aria-hidden="true">🛡️</span>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      fontSize: '1.25rem',
+                      lineHeight: 1,
+                      display: 'block',
+                      fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Segoe UI Symbol", sans-serif',
+                    }}
+                  >
+                    🛡️
+                  </span>
                 </Link>
               ) : null}
               <Link
