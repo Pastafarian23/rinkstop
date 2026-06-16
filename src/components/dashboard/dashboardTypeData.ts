@@ -36,6 +36,17 @@ const EMPTY: TypeSectionData = {
  * the whole dashboard. Result is keyed by type; the consumer picks the types the
  * user actually holds.
  *
+ * Schema notes (2026-06-08 onwards):
+ *   - `managed_relationships` was renamed to `managed_profiles`
+ *   - `managed_profiles.user_id` was renamed to `manager_user_id`
+ *   - `managed_profiles.relationship` is restricted to
+ *     ('parent', 'guardian', 'spouse', 'self') — it no longer carries
+ *     team_admin / league_admin / rink_operator / coach roles.
+ *   - Team / league / rink ownership lives elsewhere (Clerk publicMetadata,
+ *     the `team_owners` table, or role on the parent record). The dashboard
+ *     renders a CTA for those types until that data is wired up.
+ *   - `leads` no longer has `owner_user_id` — it has `clerk_user_id`.
+ *
  * NOTE: this is intentionally lean — just counts. The actual "drill into your
  * data" pages are out of scope for Phase 1.
  */
@@ -46,39 +57,39 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
   // table yet). Once views are tracked, swap to: count from profile_views.
   data.player.loaded = true;
 
-  // PARENT: managed_relationships where relationship includes 'parent' or 'parent_managed'.
-  // The public profile page already reads from /api/profiles/managed; use the same source.
+  // PARENT: managed_profiles where relationship IN ('parent', 'guardian', 'spouse', 'self').
+  // Counts player profiles this user manages.
   try {
     const { count } = await supabaseAdmin
-      .from('managed_relationships')
+      .from('managed_profiles')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .or("relationship.ilike.'parent',relationship.ilike.'parent_managed'");
+      .eq('manager_user_id', userId)
+      .eq('profile_type', 'player')
+      .in('relationship', ['parent', 'guardian', 'spouse', 'self']);
     data.parent.linkedPlayers = count || 0;
     data.parent.loaded = true;
   } catch { /* table missing — keep loaded=false */ }
 
-  // COACH: teams they manage (relationship = 'head_coach' / 'assistant_coach').
+  // COACH: team_admin is a separate concept (see team_admin below). The relationship
+  // values for coach aren't tracked in `managed_profiles` (it's a people→profile table,
+  // not a people→team table). For now, count teams the user has claimed.
   try {
     const { count } = await supabaseAdmin
-      .from('managed_relationships')
+      .from('team_owners')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .in('relationship', ['head_coach', 'assistant_coach']);
+      .eq('user_id', userId);
     data.coach.teamsManaged = count || 0;
     data.coach.loaded = true;
-  } catch { /* keep */ }
+  } catch { /* team_owners may not exist — keep loaded=false */ }
 
-  // SCOUT: watchlist + followed players
+  // SCOUT: watchlist = follows of players
   try {
     const { count: wl } = await supabaseAdmin
       .from('follows')
       .select('id', { count: 'exact', head: true })
       .eq('follower_user_id', userId)
       .eq('followee_type', 'player');
-    if (!wl) throw new Error('missing scout watchlist count');
     data.scout.followedPlayers = wl || 0;
-    // Watchlist isn't a separate table yet; treat follows as the watchlist surface.
     data.scout.watchlist = wl || 0;
     data.scout.loaded = true;
   } catch { /* keep */ }
@@ -87,42 +98,42 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
   // as the only action. loaded=true so the section renders.
   data.referee.loaded = true;
 
-  // TEAM_ADMIN: teams where relationship = 'team_manager' or 'team_admin'.
+  // TEAM_ADMIN: teams where this user is the owner/manager.
+  // `team_owners` table (Phase 1) — fall back to 0 if it doesn't exist yet.
   try {
     const { count } = await supabaseAdmin
-      .from('managed_relationships')
+      .from('team_owners')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .in('relationship', ['team_manager', 'team_admin']);
+      .eq('user_id', userId);
     data.team_admin.teamCount = count || 0;
     data.team_admin.loaded = true;
   } catch { /* keep */ }
 
-  // LEAGUE_ADMIN: leagues where relationship = 'league_admin'.
+  // LEAGUE_ADMIN: leagues where this user is the owner/admin.
+  // `league_owners` table (Phase 1) — fall back to 0 if it doesn't exist yet.
   try {
     const { count } = await supabaseAdmin
-      .from('managed_relationships')
+      .from('league_owners')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('relationship', 'league_admin');
+      .eq('user_id', userId);
     data.league_admin.leagueCount = count || 0;
     data.league_admin.loaded = true;
   } catch { /* keep */ }
 
-  // RINK_OPERATOR: rinks where relationship = 'rink_operator' or 'rink_owner'.
+  // RINK_OPERATOR: rinks where this user is the operator/owner.
+  // `rink_operators` table (Phase 1) — fall back to 0 if it doesn't exist yet.
   try {
     const { count } = await supabaseAdmin
-      .from('managed_relationships')
+      .from('rink_operators')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .in('relationship', ['rink_operator', 'rink_owner']);
+      .eq('user_id', userId);
     data.rink_operator.rinkCount = count || 0;
-    // Leads table may or may not exist.
+    // Leads associated with this user's rinks (clerk_user_id is the new column).
     try {
       const { count: lc } = await supabaseAdmin
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .eq('owner_user_id', userId);
+        .eq('clerk_user_id', userId);
       data.rink_operator.leads = lc || 0;
     } catch { /* no leads table — keep 0 */ }
     data.rink_operator.loaded = true;
@@ -140,7 +151,7 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
       const { count: lc } = await supabaseAdmin
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .eq('owner_user_id', userId);
+        .eq('clerk_user_id', userId);
       data.business.leads = lc || 0;
     } catch { /* no leads table */ }
     data.business.loaded = true;
@@ -158,7 +169,6 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
       .select('id', { count: 'exact', head: true })
       .eq('follower_user_id', userId)
       .eq('followee_type', 'player');
-    if (!teams || !players) throw new Error('missing fan follow counts');
     data.fan.followedTeams = teams || 0;
     data.fan.followedPlayers = players || 0;
     data.fan.loaded = true;
