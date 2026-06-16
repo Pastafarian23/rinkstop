@@ -45,40 +45,42 @@ async function searchRinks(query: string): Promise<RinkResult[]> {
   // We use ilike with %query% — fast for ~2K row tables, no need for FTS.
   const { data, error } = await supabaseAdmin
     .from('rinks')
-    .select(
-      `
-      id,
-      slug,
-      name,
-      city,
-      state,
-      country,
-      is_active,
-      claims!left ( id, status, claim_type )
-    `
-    )
+    .select('id, slug, name, city, state, country, is_active')
     .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
     .eq('is_active', true)
     .limit(20);
 
   if (error || !data) return [];
 
-  // Normalize: pick the most recent claim (any status) per rink
-  return (data as any[]).map((r) => {
-    const claimList = (r.claims as any[]) || [];
-    const rinkClaim = claimList.find((c: any) => c.claim_type === 'rink');
-    return {
-      id: r.id,
-      slug: r.slug,
-      name: r.name,
-      city: r.city,
-      state: r.state,
-      country: r.country,
-      is_active: r.is_active,
-      has_claim: !!rinkClaim,
-      claim_status: rinkClaim?.status || null,
-    };
-  });
+  // Get the claim status for each returned rink.
+  // claims table has no FK to rinks (uses generic entity_id), so we can't join.
+  // Two queries: rinks first, then claims for the matching ids.
+  const rinkIds = data.map((r) => r.id);
+  const { data: claims } = await supabaseAdmin
+    .from('claims')
+    .select('entity_id, status, claim_type')
+    .eq('claim_type', 'rink')
+    .in('entity_id', rinkIds);
+
+  const claimByRinkId = new Map<string, string>();
+  for (const c of claims || []) {
+    // Keep the first claim we find per rink. Could be any status.
+    if (!claimByRinkId.has(c.entity_id)) {
+      claimByRinkId.set(c.entity_id, c.status);
+    }
+  }
+
+  return data.map((r) => ({
+    id: r.id,
+    slug: r.slug,
+    name: r.name,
+    city: r.city,
+    state: r.state,
+    country: r.country,
+    is_active: r.is_active,
+    has_claim: claimByRinkId.has(r.id),
+    claim_status: claimByRinkId.get(r.id) || null,
+  }));
 }
 
 export default async function ClaimYourListingPage({
