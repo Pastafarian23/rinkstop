@@ -1,10 +1,9 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
 import { supabaseAdmin } from '@/lib/supabase';
 import DashboardNav from '@/components/DashboardNav';
-import { userButtonAppearance, signInAppearance } from '@/lib/clerk-appearance';
+import SignOutButton from '@/components/SignOutButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -229,12 +228,15 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                 <span style={{ marginRight: 4 }}>←</span>
                 <span>Back to Site</span>
               </Link>
-              {/* TEMP: UserButton replaced with simple fallback to isolate the dashboard 500.
-                  If this fixes the 500, the issue is UserButton. Original:
-                  <UserButton appearance={userButtonAppearance} userProfileUrl="/dashboard/profile" /> */}
+              {/* SignOutButton: replaces Clerk's <UserButton> which was throwing
+                  during the dashboard layout's server-side render. We hit this
+                  on 2026-06-16 (digest 1026421780). SignOutButton is a Client
+                  Component, so it never runs on the server. To open the user
+                  profile (avatar, name, security, etc.) we also link to
+                  /dashboard/profile. */}
               <Link
                 href="/dashboard/profile"
-                title="My Profile (UserButton temporarily disabled)"
+                title="Manage profile"
                 style={{
                   width: 36, height: 36, borderRadius: '50%',
                   background: '#C8102E', color: '#fff',
@@ -245,6 +247,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
               >
                 {(firstName?.[0] || '?').toUpperCase()}
               </Link>
+              <SignOutButton initials={firstName?.[0] || '?'} size={36} />
             </div>
           </div>
 
