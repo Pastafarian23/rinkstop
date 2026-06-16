@@ -155,7 +155,6 @@ async function renderDashboard(userId: string) {
       {profile?.username ? null : (
         <UsernameBanner
           displayName={profile?.display_name || firstName || 'RinkStop Member'}
-          onComplete={() => null}
         />
       )}
 
