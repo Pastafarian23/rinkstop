@@ -1,25 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect, notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-
-// Canadian province abbreviations and full names
-const CA_PROVINCES: Record<string, string> = {
-  'alberta': 'AB', 'british-columbia': 'BC', 'manitoba': 'MB',
-  'new-brunswick': 'NB', 'newfoundland-and-labrador': 'NL', 'nova-scotia': 'NS',
-  'northwest-territories': 'NT', 'nunavut': 'NU', 'ontario': 'ON',
-  'prince-edward-island': 'PE', 'quebec': 'QC', 'saskatchewan': 'SK', 'yukon': 'YT',
-  'ab': 'AB', 'bc': 'BC', 'mb': 'MB',
-  'nb': 'NB', 'nl': 'NL', 'ns': 'NS',
-  'nt': 'NT', 'nu': 'NU', 'on': 'ON',
-  'pe': 'PE', 'qc': 'QC', 'sk': 'SK', 'yt': 'YT',
-};
-
-const PROVINCE_NAMES: Record<string, string> = {
-  'ab': 'Alberta', 'bc': 'British Columbia', 'mb': 'Manitoba',
-  'nb': 'New Brunswick', 'nl': 'Newfoundland and Labrador', 'ns': 'Nova Scotia',
-  'nt': 'Northwest Territories', 'nu': 'Nunavut', 'on': 'Ontario',
-  'pe': 'Prince Edward Island', 'qc': 'Quebec', 'sk': 'Saskatchewan', 'yt': 'Yukon',
-};
+import { PROVINCE_FROM_SLUG_OR_ABBR, PROVINCE_FULL_NAMES, PROVINCE_SLUGS, type ProvinceAbbr } from '@/lib/ca-provinces';
 
 interface CityData {
   city: string;
@@ -29,19 +12,27 @@ interface CityData {
 
 export const dynamic = 'force-dynamic';
 
+/** Resolve the URL segment (slug or abbr) to the province abbr + canonical slug. */
+function resolveProvince(segment: string): { abbr: ProvinceAbbr; slug: string } | null {
+  const abbr = PROVINCE_FROM_SLUG_OR_ABBR[segment.toLowerCase()];
+  if (!abbr) return null;
+  return { abbr, slug: PROVINCE_SLUGS[abbr] };
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ province: string }>;
 }): Promise<Metadata> {
-  const { province: provinceSlug } = await params;
-  const provinceAbbr = CA_PROVINCES[provinceSlug] || provinceSlug.toUpperCase();
-  const provinceName = PROVINCE_NAMES[provinceAbbr.toLowerCase()] || provinceAbbr;
+  const { province: provinceSegment } = await params;
+  const resolved = resolveProvince(provinceSegment);
+  if (!resolved) return { title: 'Province not found' };
+  const provinceName = PROVINCE_FULL_NAMES[resolved.abbr];
   return {
     title: `Hockey in ${provinceName}`,
     description: `Hockey teams, rinks, and cities in ${provinceName}, Canada. Browse local hockey listings in this province.`,
     alternates: {
-      canonical: `https://rinkstop.com/directory/canada/${provinceSlug}`,
+      canonical: `https://rinkstop.com/directory/canada/${resolved.slug}`,
     },
     robots: {
       index: true,
@@ -50,7 +41,7 @@ export async function generateMetadata({
     openGraph: {
       title: `Hockey in ${provinceName}`,
       description: `Hockey teams, rinks, and cities in ${provinceName}, Canada.`,
-      url: `https://rinkstop.com/directory/canada/${provinceSlug}`,
+      url: `https://rinkstop.com/directory/canada/${resolved.slug}`,
       siteName: 'RinkStop',
       type: 'website',
     },
@@ -67,11 +58,16 @@ export default async function CanadaProvincePage({
 }: {
   params: Promise<{ province: string }>;
 }) {
-  const { province: provinceSlug } = await params;
+  const { province: provinceSegment } = await params;
   
-  // Convert slug to province abbreviation
-  const provinceAbbr = CA_PROVINCES[provinceSlug] || provinceSlug.toUpperCase();
-  const provinceName = PROVINCE_NAMES[provinceAbbr.toLowerCase()] || provinceAbbr;
+  const resolved = resolveProvince(provinceSegment);
+  if (!resolved) return notFound();
+  // 301 redirect from abbr form (e.g. /directory/canada/ns) to full-name form (/directory/canada/nova-scotia)
+  if (provinceSegment.toLowerCase() !== resolved.slug) {
+    redirect(`/directory/canada/${resolved.slug}`);
+  }
+  const provinceAbbr = resolved.abbr;
+  const provinceName = PROVINCE_FULL_NAMES[provinceAbbr];
 
   // Get rinks in this province
   const { data: rinks } = await supabase
@@ -147,7 +143,7 @@ export default async function CanadaProvincePage({
           return (
             <Link
               key={city}
-              href={`/directory/canada/${provinceAbbr.toLowerCase()}/${citySlug}`}
+              href={`/directory/canada/${resolved.slug}/${citySlug}`}
               style={{
                 display: 'block',
                 padding: '1.25rem',

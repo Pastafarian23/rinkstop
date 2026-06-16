@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { provinceDisplayName } from '@/lib/ca-provinces';
 
 export default function IceRinksNearMe() {
   const [city, setCity] = useState('');
@@ -160,7 +161,7 @@ export default function IceRinksNearMe() {
                         <Link href={`/directory/rinks/${rink.slug}`} style={{ color: '#fff', textDecoration: 'none' }}>{rink.name}</Link>
                       </h3>
                       {rink.address && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', marginBottom: '0.25rem' }}>📍 {rink.address}</p>}
-                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8125rem' }}>{rink.city}{rink.province_state ? `, ${rink.province_state}` : ''}</p>
+                      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8125rem' }}>{rink.city}{rink.province_state ? `, ${provinceDisplayName(rink.province_state)}` : ''}</p>
                     </div>
                     <Link href={`/directory/rinks/${rink.slug}`} style={{ padding: '0.375rem 0.875rem', background: '#C8102E', color: '#fff', borderRadius: '4px', fontWeight: 600, fontSize: '0.75rem', textDecoration: 'none', flexShrink: 0 }}>
                       View Details

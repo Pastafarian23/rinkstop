@@ -167,9 +167,12 @@ export function resolveUSState(stateSlug: string): { abbr: string; name: string 
 
 /**
  * Resolve Canadian province slug to abbreviation + full name.
+ * Returns `null` if the input doesn't match a known province.
  */
-export function resolveCAProvince(provinceSlug: string): { abbr: string; name: string } {
-  const abbr = CA_PROVINCES[provinceSlug] || provinceSlug.toUpperCase();
+export function resolveCAProvince(provinceSlug: string): { abbr: string; name: string } | null {
+  const abbr = CA_PROVINCES[provinceSlug] || CA_PROVINCES[provinceSlug.toLowerCase()] || provinceSlug.toUpperCase();
+  // Verify the result is actually a known province (uppercase, 2 letters, in our map)
+  if (abbr.length !== 2 || !PROVINCE_NAMES[abbr.toLowerCase()]) return null;
   const name = PROVINCE_NAMES[abbr.toLowerCase()] || abbr;
   return { abbr, name };
 }

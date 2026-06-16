@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { supabaseAdmin } from '@/lib/supabase';
+import { provinceSlug } from '@/lib/ca-provinces';
 
 const baseUrl = 'https://rinkstop.com';
 
@@ -195,7 +196,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const caCities = new Set<string>();
   (caRinksResult.data || []).forEach((r: { city: string; province_state: string }) => {
     const citySlug = r.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    const provSlug = r.province_state.toLowerCase();
+    const provSlug = provinceSlug(r.province_state);
     caCities.add(`/directory/canada/${provSlug}/${citySlug}`);
   });
   const caCityUrls: MetadataRoute.Sitemap = [...caCities].map(path => ({

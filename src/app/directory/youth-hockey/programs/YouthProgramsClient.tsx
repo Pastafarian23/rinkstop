@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { SearchIcon, FilterIcon, ExternalLinkIcon } from '@/components/icons';
+import { provinceDisplayName } from '@/lib/ca-provinces';
 
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
 interface YouthProgram {
@@ -229,7 +230,7 @@ export default function YouthProgramsClient({ initialPrograms, initialCountry }:
 
               {/* Location */}
               <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem' }}>
-                {[program.city, program.province_state, program.country].filter(Boolean).join(', ') || program.country}
+                {[program.city, provinceDisplayName(program.province_state), program.country].filter(Boolean).join(', ') || program.country}
               </p>
 
               {/* Age range */}
