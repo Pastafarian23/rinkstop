@@ -162,16 +162,45 @@ export async function PATCH(req: NextRequest, { params }: Props) {
     if (key in body) update[key] = body[key];
   }
 
-  // Status transition side-effects
-  if (update.status === 'published') {
-    // Only set published_at if it isn't already set (preserve original publish date on re-publish)
+  // Status transition side-effects (state machine, 2026-06-16)
+  // The RPC path is the preferred route for any status change that needs
+  // audit log entries — it writes a diff row to post_review_edits AND
+  // applies the time side effects in one transaction. The legacy path
+  // applies side effects directly (no audit row) for quick admin actions
+  // like the queue buttons on /admin/blog/queue.
+  if (update.status) {
     const { data: existing } = await supabaseAdmin
       .from('posts')
-      .select('published_at')
+      .select('status, published_at')
       .eq('id', id)
       .maybeSingle();
-    if (!existing?.published_at) {
-      update.published_at = new Date().toISOString();
+    if (existing && existing.status !== update.status) {
+      // First-time publish: set published_at only if it's not already set
+      if (update.status === 'published' && !existing.published_at) {
+        update.published_at = new Date().toISOString();
+      }
+      // State machine time side effects: verified_at + next_check_at
+      const now = new Date().toISOString();
+      switch (update.status) {
+        case 'published':
+        case 'verified':
+          update.verified_at = now;
+          update.next_check_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          update.verified_rounds = 0;
+          update.last_issue_summary = null;
+          break;
+        case 'manually_approved':
+          update.verified_at = now;
+          update.next_check_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+          update.verified_rounds = 0;
+          update.last_issue_summary = null;
+          break;
+        case 'archived':
+          update.next_check_at = null;
+          update.rewrite_fails = 0;
+          break;
+        // needs_review, needs_rewrite, rewriting, draft — no time side effects
+      }
     }
   }
   // Note: we use updated_at as the archive timestamp proxy.
