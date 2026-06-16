@@ -114,7 +114,7 @@ async function fetchForLeague({ teams, date, leagueMap }) {
     primary = await withTimeout(thesportsdbMatchData({ teams, date, league: leagueShort }));
   }
   // Step 2: League-specific primary (HockeyTech/IIHF/NCAA) for leagues
-  // that have a dedicated adapter — used as secondary verification.
+  // that have a dedicated adapter - used as secondary verification.
   let secondary = null;
   if (leagueMap.source === 'hockeytech') {
     secondary = await withTimeout(hockeytechMatchData({ teams, date, league: leagueShort }));
@@ -221,44 +221,48 @@ function findTeamId(teamByName, teamName) {
 
 async function main() {
   console.log(`Mode: ${DRY_RUN ? 'DRY RUN' : 'EXECUTE'} | League filter: ${LEAGUE || 'all'} | Limit: ${LIMIT}`);
-  
+
   const { teamByName, leagueSlugToUuid, teamCount, leagueCount } = await buildTeamAndLeagueCaches();
   console.log(`Cached ${teamCount} teams and ${leagueCount} leagues`);
-  
-  // Pull all archived posts with highlight_id
+
+  // Pull all posts that need rewriting (state machine: needs_rewrite)
+  // State machine (2026-06-16): the rewrite-architect only picks up
+  // 'needs_rewrite' (queued by verify-and-fix-all or audit-published).
+  // Old behavior was to pick up 'archived' (now terminal — used only for
+  // articles that cannot be auto-rewritten at all).
   let q = sb.from('posts')
-    .select('id, title, content, subtitle, slug, highlight_id')
-    .eq('status', 'archived')
+    .select('id, title, content, subtitle, slug, highlight_id, last_issue_summary, rewrite_fails, verified_rounds, published_at, created_at')
+    .eq('status', 'needs_rewrite')
     .not('highlight_id', 'is', null)
     .order('created_at', { ascending: true })
     .limit(LIMIT);
   if (START_ID) q = q.gt('id', START_ID);
   const { data: posts, error } = await q;
   if (error) { console.error('Posts fetch error:', error); return; }
-  console.log(`Found ${posts?.length || 0} archived posts to process`);
-  
+  console.log(`Found ${posts?.length || 0} posts needing rewrite (status='needs_rewrite')`);
+
   // Pull highlight info
   const hlIds = [...new Set((posts || []).map(p => p.highlight_id))];
   const { data: hls } = await sb.from('highlight_backups')
     .select('id, title, home_team_name, away_team_name, match_date, league_name, league_id, country_code, match_round, match_season, image_url')
     .in('id', hlIds);
   const hlMap = new Map((hls || []).map(h => [h.id, h]));
-  
+
   let succeeded = 0, skippedNoData = 0, skippedWrongLeague = 0, failed = 0;
   const results = [];
-  
+
   for (let i = 0; i < (posts || []).length; i++) {
     const post = posts[i];
     const hl = hlMap.get(post.highlight_id);
-    if (!hl) { console.log(`[${i+1}] ${post.id} — no highlight record`); skippedNoData++; continue; }
-    
+    if (!hl) { console.log(`[${i+1}] ${post.id} - no highlight record`); skippedNoData++; continue; }
+
     // Map the highlight's league to our internal mapping
     const leagueMap = mapHighlightLeague(hl.league_name);
-    if (!leagueMap) { 
-      console.log(`[${i+1}] ${post.id} — unrecognized league: ${normalizeLeague(hl.league_name)}`); 
-      skippedWrongLeague++; continue; 
+    if (!leagueMap) {
+      console.log(`[${i+1}] ${post.id} - unrecognized league: ${normalizeLeague(hl.league_name)}`);
+      skippedWrongLeague++; continue;
     }
-    
+
     // Filter by --league=NAME if specified
     if (LEAGUE) {
       const matches = (
@@ -270,26 +274,26 @@ async function main() {
         continue;
       }
     }
-    
-    // Strategy: 
-    //   - NHL: use NHL.com direct (existing path) — already covered by
+
+    // Strategy:
+    //   - NHL: use NHL.com direct (existing path) - already covered by
     //     the previous rewriter. Here we skip NHL unless the new path
     //     finds a better source.
     //   - All others: use getMatchData() (which tries the right adapter)
     if (leagueMap.source === 'nhlcom') {
-      // Skip NHL — already done
+      // Skip NHL - already done
       skippedWrongLeague++;
       continue;
     }
-    
+
     const teams = [hl.home_team_name, hl.away_team_name].filter(Boolean);
     const date = (hl.match_date || '').slice(0, 10);
     if (!teams[0] || !teams[1] || !date) {
-      console.log(`[${i+1}] ${post.id} — missing team/date data`);
+      console.log(`[${i+1}] ${post.id} - missing team/date data`);
       skippedNoData++;
       continue;
     }
-    
+
     // Fetch from the right adapter (use the league mapper to pick
     // the source directly, NOT the central getMatchData router, because
     // Highlightly is rate-limited and we don't want to wait for it on
@@ -310,49 +314,104 @@ async function main() {
         }).eq('id', post.id);
       }
       console.log(`[${i+1}] ${post.id} — no source data, teams-linked (${leagueMap.name}: ${hl.away_team_name} @ ${hl.home_team_name} ${date})`);
+      // State machine: if no source data for rewrite, this is a permanent
+      // failure. Increment the rewrite-fail counter; after 3 failures
+      // the article goes to 'archived' (terminal) so it stops blocking
+      // the rewrite queue.
+      if (!DRY_RUN) {
+        const failCount = (post.rewrite_fails || 0) + 1;
+        if (failCount >= 3) {
+          await sb.from('posts').update({
+            status: 'archived',
+            last_issue_summary: `rewrite failed ${failCount}x — no source data found in any adapter`,
+            next_check_at: null,
+            rewrite_fails: 0,
+          }).eq('id', post.id);
+          console.log(`        → archived after ${failCount} failed rewrites`);
+          failed++;
+        } else {
+          // Keep status='needs_rewrite' but record the failure
+          await sb.from('posts').update({
+            rewrite_fails: failCount,
+            last_issue_summary: `rewrite attempt ${failCount} failed: no source data`,
+          }).eq('id', post.id);
+          console.log(`        → still needs_rewrite (fail ${failCount}/3)`);
+        }
+      }
       skippedNoData++;
       continue;
     }
-    
+
     // Render the article (generic path)
     const article = renderGenericArticle({ match: matchData, league: leagueMap });
-    if (!article) { console.log(`[${i+1}] ${post.id} — render returned null`); failed++; continue; }
-    
+    if (!article) {
+      console.log(`[${i+1}] ${post.id} — render returned null`);
+      // State machine: render failure → count it, archive after 3
+      if (!DRY_RUN) {
+        const failCount = (post.rewrite_fails || 0) + 1;
+        if (failCount >= 3) {
+          await sb.from('posts').update({
+            status: 'archived',
+            last_issue_summary: `rewrite failed ${failCount}x — renderer returned null`,
+            next_check_at: null,
+            rewrite_fails: 0,
+          }).eq('id', post.id);
+          console.log(`        → archived after ${failCount} failed rewrites`);
+        } else {
+          await sb.from('posts').update({
+            rewrite_fails: failCount,
+            last_issue_summary: `rewrite attempt ${failCount} failed: render returned null`,
+          }).eq('id', post.id);
+          console.log(`        → still needs_rewrite (fail ${failCount}/3)`);
+        }
+      }
+      failed++;
+      continue;
+    }
+
     // Build title/slug
     const newTitle = article.split('\n')[0].replace(/^#\s*/, '').trim();
     const newSubtitle = article.split('\n').find(l => l.startsWith('*') && l.endsWith('*'))?.replace(/^\*|\*$/g, '') || '';
     const newSlug = buildGenericSlug({ match: matchData, league: leagueMap, postId: post.id });
-    
+
     // Cross-link teams
     const homeTeam = findTeamId(teamByName, matchData.home);
     const awayTeam = findTeamId(teamByName, matchData.away);
-    
+
     // Match featured player (if specified in title)
     const featuredPlayer = await findPlayerInTitle(
       sb, hl.title || post.title,
       homeTeam?.id, awayTeam?.id
     );
-    
+
     // Slug uniqueness
     let finalSlug = newSlug;
     const slugCheck = await sb.from('posts').select('id').eq('slug', finalSlug).neq('id', post.id).limit(1);
     if (slugCheck.data && slugCheck.data.length > 0) {
       finalSlug = `${newSlug}-${post.id.replace(/-/g, '').slice(0, 6)}`;
     }
-    
+
     const gameDate = (matchData.startTimeUTC || date || '').slice(0, 10);
     const gameSeason = parseInt((gameDate || '0000-00-00').slice(0, 4), 10);
     const gameType = (hl.match_round || '').toLowerCase().includes('playoff') || (hl.match_round || '').toLowerCase().includes('post')
       ? 'playoff'
       : 'regular';
-    
+
     const update = {
       title: newTitle,
       slug: finalSlug,
       content: article,
       subtitle: newSubtitle,
+      // State machine: rewrite-architect publishes directly (no separate
+      // verified step for rewrites — the rewrite IS the verification).
       status: 'published',
       published_at: new Date().toISOString(),
+      // Set verified_at = now(), next_check_at = +7d. verified_rounds
+      // resets to 0 because the article is "new" again.
+      verified_at: new Date().toISOString(),
+      verified_rounds: 0,
+      next_check_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      last_issue_summary: null,
       seo_title: `${newTitle} | RinkStop`,
       seo_description: newSubtitle,
       // Prefer the highlight's video thumbnail (ESPN/YouTube/etc. CDN URL
@@ -371,7 +430,7 @@ async function main() {
       game_season: gameSeason,
       player_id: featuredPlayer?.playerId || null,
     };
-    
+
     if (DRY_RUN) {
       console.log(`[${i+1}] ${post.id} → ${newTitle} [DRY] (${leagueMap.name}, player=${featuredPlayer?.fullName || 'none'})`);
       succeeded++;
@@ -383,10 +442,10 @@ async function main() {
     }
     results.push({ id: post.id, title: newTitle, league: leagueMap.name, player: featuredPlayer?.fullName });
   }
-  
+
   console.log('\n=== Summary ===');
   console.log(`Total: ${posts.length} | Published: ${succeeded} | No source data: ${skippedNoData} | Wrong league: ${skippedWrongLeague} | Failed: ${failed}`);
-  if (DRY_RUN) console.log('(DRY RUN — no posts updated. Re-run with --execute to commit.)');
+  if (DRY_RUN) console.log('(DRY RUN - no posts updated. Re-run with --execute to commit.)');
 }
 
 main().catch(e => { console.error('FATAL:', e); process.exit(1); });

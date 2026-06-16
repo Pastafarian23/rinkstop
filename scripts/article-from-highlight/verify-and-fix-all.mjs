@@ -249,10 +249,20 @@ async function main() {
     const d = drafts[i];
     const h = hlMap.get(d.highlight_id);
     if (!h) {
-      // No highlight record — can't verify, archive per Arnel's 'only facts' rule
-      // (2026-06-12: better to archive than publish unverifiable content).
-      console.log(`  [${i+1}/${drafts.length}] ${d.title} — no highlight record, ARCHIVING (cannot verify)`);
-      await sb.from('posts').update({ status: 'archived' }).eq('id', d.id);
+      // No highlight record — can't verify, route to needs_review (human eyes)
+      // State machine (2026-06-16): needs_review replaces "archive unverifiable"
+      // for the case where the article COULD still be valid but we can't confirm.
+      // The previous behavior of archiving unverifiable drafts was too aggressive:
+      // some articles are correct (e.g. famous games everyone knows about) and
+      // archiving them just because the source API lacks the score wastes human work.
+      // needs_review posts the article to the daily digest so Arnel can decide.
+      const issue = 'no highlight record found in highlight_backups';
+      console.log(`  [${i+1}/${drafts.length}] ${d.title} — ${issue} → needs_review`);
+      await sb.from('posts').update({
+        status: 'needs_review',
+        last_issue_summary: issue,
+        source_data_status: 'no_source',
+      }).eq('id', d.id);
       unverifiable++;
       continue;
     }
@@ -261,23 +271,41 @@ async function main() {
     const league = normalizeLeague(h.league_name);
     const match = await highlightlyMatchData(teams, date, league);
     if (!match) {
-      // No multi-source match with a final score. Per Arnel's 2026-06-12
-      // 'only facts' rule: archive rather than leave as a draft that could
-      // be accidentally published. The YouTube highlight is no longer
-      // accepted as a sole source of truth.
-      console.log(`  [${i+1}/${drafts.length}] ${d.title} — no source has a final score, ARCHIVING (cannot verify)`);
-      await sb.from('posts').update({ status: 'archived' }).eq('id', d.id);
+      // No multi-source match with a final score. State machine:
+      // → needs_review (was: archived). The YouTube highlight is no longer
+      // accepted as a sole source of truth, but the article might still be
+      // valid; route to Arnel for human judgment.
+      const issue = 'no source has a final score (game not in Highlightly / NHL.com / HockeyTech / NCAA / KHL / IIHF)';
+      console.log(`  [${i+1}/${drafts.length}] ${d.title} — ${issue} → needs_review`);
+      await sb.from('posts').update({
+        status: 'needs_review',
+        last_issue_summary: issue,
+        source_data_status: 'no_source',
+      }).eq('id', d.id);
       unverifiable++;
       continue;
     }
     const check = analyzeArticle(d.title, d.content, match);
     if (check.issues.length > 0) {
-      // Real issues — roll back
-      console.log(`  [${i+1}/${drafts.length}] ${d.title} — ${check.issues.join('; ')} — ROLLBACK`);
-      await sb.from('posts').update({ status: 'archived' }).eq('id', d.id);
+      // Real invented facts → needs_rewrite (rewrite-architect will pick it up)
+      // State machine: needs_rewrite replaces "archive + later rewrite picks up"
+      // (the old archived path is now terminal and reserved for things that
+      // truly cannot be auto-rewritten).
+      const issue = check.issues.join('; ');
+      console.log(`  [${i+1}/${drafts.length}] ${d.title} — ${issue} → needs_rewrite`);
+      await sb.from('posts').update({
+        status: 'needs_rewrite',
+        last_issue_summary: issue,
+        source_data_status: 'has_source',
+      }).eq('id', d.id);
       rolledBack++;
     } else if (check.fixable.length > 0) {
-      // Fixable (e.g., false OT claim) — fix and publish
+      // Fixable (e.g., false OT claim) — fix the body, then auto-publish.
+      // Per Arnel's 2026-06-10 directive "auto-publish is OK if verified",
+      // we still auto-publish from this single-step verify script. The
+      // state transition is: draft → verified → published (both in one
+      // update). verified_at is set, next_check_at is set to +7d so the
+      // nightly fact-audit re-checks it.
       const fixed = fixArticle(d.title, d.content, check.fixable);
       const { error: updErr } = await sb.from('posts').update({
         title: fixed.title,
@@ -287,10 +315,16 @@ async function main() {
         console.error(`  ❌ fix failed for ${d.id}:`, updErr);
         continue;
       }
-      // Now publish
+      const now = new Date().toISOString();
+      const nextCheck = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const { error: pubErr } = await sb.from('posts').update({
         status: 'published',
-        published_at: new Date().toISOString(),
+        published_at: now,
+        verified_at: now,
+        verified_rounds: 0,
+        next_check_at: nextCheck,
+        source_data_status: 'has_source',
+        last_issue_summary: null,
       }).eq('id', d.id);
       if (pubErr) {
         console.error(`  ❌ publish failed for ${d.id}:`, pubErr);
@@ -299,10 +333,17 @@ async function main() {
       fixedAndPublished++;
       console.log(`  [${i+1}/${drafts.length}] 🔧 ✓ FIXED+PUBLISHED: ${fixed.title}`);
     } else {
-      // Already clean — publish
+      // Already clean — auto-publish
+      const now = new Date().toISOString();
+      const nextCheck = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const { error: pubErr } = await sb.from('posts').update({
         status: 'published',
-        published_at: new Date().toISOString(),
+        published_at: now,
+        verified_at: now,
+        verified_rounds: 0,
+        next_check_at: nextCheck,
+        source_data_status: 'has_source',
+        last_issue_summary: null,
       }).eq('id', d.id);
       if (pubErr) {
         console.error(`  ❌ publish failed for ${d.id}:`, pubErr);
@@ -317,9 +358,9 @@ async function main() {
   console.log(`\n=== Summary ===`);
   console.log(`Verified clean, published: ${published}`);
   console.log(`Fixed false claims + published: ${fixedAndPublished}`);
-  console.log(`Rolled back (invented facts): ${rolledBack}`);
-  console.log(`Unverifiable (no Highlightly data, rolled back): ${unverifiable}`);
-  console.log(`Total: ${drafts.length}`);
+  console.log(`Failed verification (→ needs_rewrite): ${rolledBack}`);
+  console.log(`No source data (→ needs_review): ${unverifiable}`);
+  console.log(`Total drafts processed: ${drafts.length}`);
 }
 
 main().catch(e => { console.error('Fatal:', e); process.exit(1); });
