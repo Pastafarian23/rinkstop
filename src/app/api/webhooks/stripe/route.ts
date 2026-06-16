@@ -94,7 +94,18 @@ export async function POST(req: NextRequest) {
         if (metadata.clerk_user_id && metadata.tier) {
           const subscriptionId = session.subscription as string;
           const customerId = session.customer as string;
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          // The subscription object on a session.completed event is the string ID,
+          // not a hydrated object — we need to fetch it. Wrap in try/catch so a
+          // transient Stripe API hiccup doesn't 500 the whole webhook (Stripe
+          // will retry, but we want max resilience).
+          let subscription: any;
+          try {
+            subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          } catch (e: any) {
+            console.error(`[Webhook] subscriptions.retrieve failed for ${subscriptionId} (will retry on Stripe retry):`, e.message);
+            // Re-throw so Stripe retries the whole webhook
+            throw e;
+          }
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
           await updateUserTier(metadata.clerk_user_id, metadata.tier, subscriptionId, customerId, subscription.status, expiresAt);
           break;
@@ -134,7 +145,23 @@ export async function POST(req: NextRequest) {
 
         if (metadata.clerk_user_id) {
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
-          const tier = subscription.status === 'active' || subscription.status === 'trialing' ? (metadata.tier || null) : null;
+          // Smart tier resolution: only DOWNGRADE the tier on a true cancellation
+          // (status='canceled' or 'unpaid'). For temporary dunning states
+          // (past_due, incomplete, incomplete_expired), KEEP the existing tier
+          // but update the status. Otherwise a single failed payment would wipe
+          // the user's Pro tier instantly, which is wrong.
+          //
+          // Resolution:
+          //   - active / trialing → keep the existing tier (use metadata.tier)
+          //   - past_due / incomplete / incomplete_expired → KEEP tier, update status + expires_at
+          //   - canceled / unpaid → tier=null (user truly lost access)
+          const isLiveStatus = subscription.status === 'active' || subscription.status === 'trialing';
+          const isDunning = subscription.status === 'past_due' || subscription.status === 'incomplete' || subscription.status === 'incomplete_expired';
+          const tier: string | null = isLiveStatus
+            ? (metadata.tier || null)
+            : isDunning
+              ? (metadata.tier || null) // keep tier during dunning — user paid, we just haven't collected yet
+              : null; // canceled / unpaid → downgrade
           await updateUserTier(metadata.clerk_user_id, tier, subscription.id, subscription.customer, subscription.status, expiresAt);
           break;
         }
@@ -183,15 +210,23 @@ export async function POST(req: NextRequest) {
         const supabase = getSupabase() as any;
         const { data: userProfile } = await supabase
           .from('profiles')
-          .select('user_id')
+          .select('user_id, tier, stripe_subscription_id')
           .eq('stripe_customer_id', customerId)
           .maybeSingle();
 
         if (userProfile) {
+          // CRITICAL: do NOT downgrade tier on a single failed payment. Just
+          // set status to past_due. Stripe will retry 4 times over ~3 weeks
+          // before sending customer.subscription.deleted. Until then, the user
+          // keeps their tier.
+          //
+          // The tier will be wiped when customer.subscription.deleted fires
+          // (handled in the case above), not here.
           await supabase
             .from('profiles')
             .update({ subscription_status: 'past_due' })
             .eq('user_id', userProfile.user_id);
+          console.log(`[Webhook] payment_failed for user ${userProfile.user_id} - marked past_due, tier=${userProfile.tier} kept`);
           break;
         }
 
@@ -206,6 +241,51 @@ export async function POST(req: NextRequest) {
             .from('players')
             .update({ subscription_status: 'past_due' })
             .eq('id', player.id);
+        }
+        break;
+      }
+
+      case 'invoice.paid': {
+        // Confirms a successful renewal. The subscription.updated event usually
+        // fires with current_period_end refreshed, but invoice.paid is a stronger
+        // signal that the renewal actually cleared. We use it as a backstop to
+        // refresh tier_expires_at — if Stripe sends the renewal webhook out of
+        // order, we still get the right expires_at.
+        const invoice = event.data.object as any;
+        const customerId = invoice.customer as string;
+        const subscriptionId = invoice.subscription as string | null;
+        if (!subscriptionId) break;
+
+        const stripe = getStripe();
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const metadata = subscription.metadata || {};
+        const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+
+        if (metadata.clerk_user_id) {
+          // Only refresh expires_at — do NOT touch the tier. The user is paid up.
+          const supabase = getSupabase() as any;
+          const { error } = await supabase
+            .from('profiles')
+            .update({
+              tier_expires_at: expiresAt,
+              subscription_status: subscription.status,
+            })
+            .eq('user_id', metadata.clerk_user_id);
+          if (error) {
+            console.error('[Webhook] invoice.paid failed to update expires_at', error);
+          } else {
+            console.log(`[Webhook] invoice.paid refreshed expires_at for ${metadata.clerk_user_id} to ${expiresAt}`);
+          }
+          break;
+        }
+
+        const { playerId } = metadata;
+        if (playerId) {
+          const supabase = getSupabase() as any;
+          await supabase
+            .from('players')
+            .update({ subscription_expires_at: expiresAt, subscription_status: subscription.status })
+            .eq('id', playerId);
         }
         break;
       }
