@@ -8,7 +8,9 @@ import UsernameBanner from '@/components/UsernameBanner';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
+import InboxCard from '@/components/dashboard/InboxCard';
 import { loadDashboardTypeData } from '@/components/dashboard/dashboardTypeData';
+import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
 
@@ -139,6 +141,11 @@ async function renderDashboard(userId: string) {
   // Per-type dashboard data. The query is wrapped so a missing table doesn't 500.
   const typeData = await loadDashboardTypeData(userId);
 
+  // Inbox data for the overview's InboxCard. Same shape as /api/threads
+  // returns, but trimmed to top-3 + counts. Server-rendered so it's
+  // visible on first paint (no client-side fetch on dashboard load).
+  const inbox = await loadInboxSummary(userId);
+
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
     { field: 'Display name', done: !!(profile?.display_name || firstName), href: '/dashboard/profile', hint: 'Add your first and last name' },
     { field: 'Avatar', done: !!avatarUrl, href: '/dashboard/profile', hint: 'Upload a profile photo' },
@@ -259,6 +266,12 @@ async function renderDashboard(userId: string) {
           </div>
         </div>
       )}
+
+      {/* Inbox widget — shows recent threads or empty-state discover CTAs.
+          Always visible so the user has a single place to see new messages
+          and start conversations. Loaded server-side via
+          loadInboxSummary. */}
+      <InboxCard data={inbox} />
 
       {/* Onboarding for users who haven't picked an account type yet */}
       {types.length === 0 && (
