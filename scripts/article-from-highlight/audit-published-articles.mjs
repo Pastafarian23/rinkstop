@@ -82,17 +82,34 @@ function analyzeArticle(title, body, match) {
   return { ok: issues.length === 0, issues, expected };
 }
 
+/**
+ * Backoff schedule for periodic re-checks.
+ * rounds=0 → 7d, 1 → 14d, 2 → 30d, 3+ → 90d.
+ * This makes high-quality articles get re-checked less often, saving compute.
+ * Articles in 'manually_approved' always use 30d (slower, Arnel's choice).
+ */
+function nextCheckDelayMs(rounds, isManuallyApproved) {
+  if (isManuallyApproved) return 30 * 24 * 60 * 60 * 1000;
+  if (rounds >= 3) return 90 * 24 * 60 * 60 * 1000;
+  if (rounds === 2) return 30 * 24 * 60 * 60 * 1000;
+  if (rounds === 1) return 14 * 24 * 60 * 60 * 1000;
+  return 7 * 24 * 60 * 60 * 1000;
+}
+
 async function main() {
   console.log(`Mode: ${execute ? 'EXECUTE (will archive)' : 'DRY RUN (no changes)'}`);
-  console.log('Loading PUBLISHED articles with highlight_id...');
+  console.log('Loading PUBLISHED articles with highlight_id that are DUE for re-check...');
+  // State machine (2026-06-16): only re-check articles whose next_check_at has passed.
+  // The index posts_published_due_for_check_idx makes this fast.
   const { data: posts, error } = await sb
     .from('posts')
-    .select('id, highlight_id, title, content, published_at, created_at')
+    .select('id, highlight_id, title, content, published_at, created_at, verified_rounds')
     .eq('status', 'published')
     .not('highlight_id', 'is', null)
+    .or('next_check_at.is.null,next_check_at.lte.' + new Date().toISOString())
     .order('published_at', { ascending: false });
   if (error) { console.error(error); return; }
-  console.log(`Found ${posts.length} published articles to audit`);
+  console.log(`Found ${posts.length} published articles due for re-check (out of all published)`);
 
   const hlIds = [...new Set(posts.map(p => p.highlight_id).filter(Boolean))];
   const { data: hls } = await sb
@@ -113,7 +130,15 @@ async function main() {
       console.log(`  [${i+1}/${posts.length}] ${p.title} — no highlight record`);
       reasons['no_highlight'] = (reasons['no_highlight'] || 0) + 1;
       wouldArchive++;
-      if (execute) { await sb.from('posts').update({ status: 'archived' }).eq('id', p.id); archived++; archived_ids.push(p.id); }
+      if (execute) {
+        // State machine: no highlight record → needs_review (was: archived)
+        await sb.from('posts').update({
+          status: 'needs_review',
+          last_issue_summary: 'no highlight record found in highlight_backups',
+          source_data_status: 'no_source',
+        }).eq('id', p.id);
+        archived++; archived_ids.push(p.id);
+      }
       continue;
     }
     const teams = [h.home_team_name, h.away_team_name].filter(Boolean);
@@ -123,23 +148,45 @@ async function main() {
     const check = analyzeArticle(p.title, p.content || '', match);
     if (check.ok) {
       clean++;
+      // State machine: clean → bump rounds, push next_check_at out per backoff
+      if (execute) {
+        const newRounds = (p.verified_rounds || 0) + 1;
+        const nextCheck = new Date(Date.now() + nextCheckDelayMs(newRounds, false)).toISOString();
+        await sb.from('posts').update({
+          verified_at: new Date().toISOString(),
+          verified_rounds: newRounds,
+          next_check_at: nextCheck,
+          source_data_status: 'has_source',
+          last_issue_summary: null,
+        }).eq('id', p.id);
+      }
       continue;
     }
-    console.log(`  [${i+1}/${posts.length}] ${p.title} — ${check.issues.join('; ')} ${execute ? '[ARCHIVING]' : '[would archive]'}`);
+    console.log(`  [${i+1}/${posts.length}] ${p.title} — ${check.issues.join('; ')} ${execute ? '[NEEDS REWRITE]' : '[would archive]'}`);
     for (const r of check.issues) {
       const k = r.match(/^[^(]+/)?.[0]?.trim() || r;
       reasons[k] = (reasons[k] || 0) + 1;
     }
     wouldArchive++;
-    if (execute) { await sb.from('posts').update({ status: 'archived' }).eq('id', p.id); archived++; archived_ids.push(p.id); }
+    if (execute) {
+      // State machine: invented facts → needs_rewrite (was: archived).
+      // The rewrite-architect cron (7am) picks up needs_rewrite and tries
+      // again. After 3 failed rewrites, the article goes to archived.
+      await sb.from('posts').update({
+        status: 'needs_rewrite',
+        last_issue_summary: check.issues.join('; '),
+        source_data_status: 'has_source',
+      }).eq('id', p.id);
+      archived++; archived_ids.push(p.id);
+    }
     await new Promise(r => setTimeout(r, 100));
   }
 
   console.log(`\n=== Audit Summary ===`);
   console.log(`Clean (passed all checks): ${clean}`);
-  console.log(`Would archive:             ${wouldArchive}`);
-  console.log(`Actually archived:         ${archived}`);
-  if (execute) console.log(`Archived IDs: ${archived_ids.length} (first 10: ${archived_ids.slice(0, 10).join(', ')})`);
+  console.log(`Would mark for rewrite:    ${wouldArchive}`);
+  console.log(`Actually marked:          ${archived}`);
+  if (execute) console.log(`Marked IDs: ${archived_ids.length} (first 10: ${archived_ids.slice(0, 10).join(', ')})`);
   console.log(`\nIssue breakdown:`);
   for (const [k, v] of Object.entries(reasons).sort((a, b) => b[1] - a[1])) {
     console.log(`  ${v}x ${k}`);
