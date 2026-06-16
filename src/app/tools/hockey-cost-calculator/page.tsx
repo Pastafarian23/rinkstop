@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { auth } from '@clerk/nextjs/server';
 import HockeyCostCalculatorClient from './HockeyCostCalculatorClient';
+import { trackPageView } from '@/lib/analytics';
 
 export const metadata: Metadata = {
   title: 'Youth Hockey Cost Calculator (2026) — Free Estimate by Level & State',
@@ -23,6 +25,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HockeyCostCalculatorPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function HockeyCostCalculatorPage() {
+  const { userId } = await auth();
+  await trackPageView({
+    name: 'tool_viewed',
+    userId,
+    pathname: '/tools/hockey-cost-calculator',
+    props: { tool: 'hockey_cost_calculator' },
+  });
   return <HockeyCostCalculatorClient />;
 }

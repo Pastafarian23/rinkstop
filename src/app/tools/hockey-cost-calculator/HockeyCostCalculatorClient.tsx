@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 
 type Level = 'house' | 'a' | 'aa' | 'aaa' | 'junior' | 'adult';
@@ -135,6 +135,33 @@ export default function HockeyCostCalculatorClient() {
   const [age, setAge] = useState<number>(10);
   const [newEquipment, setNewEquipment] = useState<boolean>(true);
 
+  // Fire a 'calculator_used' event the first time the user touches any input.
+  // We use a ref to make sure it only fires once per page load, not on
+  // every change. This is the conversion event — distinguishes 'viewed'
+  // (bounced) from 'used' (engaged).
+  const interactionTrackedRef = useRef(false);
+  function trackInteraction(action: string) {
+    if (interactionTrackedRef.current) return;
+    interactionTrackedRef.current = true;
+    try {
+      navigator.sendBeacon?.(
+        '/api/track',
+        new Blob(
+          [
+            JSON.stringify({
+              name: 'calculator_used',
+              pathname: '/tools/hockey-cost-calculator',
+              props: { action, initialLevel: level, initialRegion: region, initialAge: age },
+            }),
+          ],
+          { type: 'application/json' }
+        )
+      );
+    } catch {
+      // ignore
+    }
+  }
+
   const cost = useMemo(() => calculateCost(level, region, age, newEquipment), [level, region, age, newEquipment]);
   const levelInfo = LEVEL_LABELS[level];
 
@@ -194,7 +221,7 @@ export default function HockeyCostCalculatorClient() {
               <select
                 id="level"
                 value={level}
-                onChange={(e) => setLevel(e.target.value as Level)}
+                onChange={(e) => { trackInteraction('level_changed'); setLevel(e.target.value as Level); }}
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.75rem',
@@ -223,7 +250,7 @@ export default function HockeyCostCalculatorClient() {
               <select
                 id="region"
                 value={region}
-                onChange={(e) => setRegion(e.target.value as Region)}
+                onChange={(e) => { trackInteraction('region_changed'); setRegion(e.target.value as Region); }}
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.75rem',
@@ -255,7 +282,7 @@ export default function HockeyCostCalculatorClient() {
                 min={6}
                 max={20}
                 value={age}
-                onChange={(e) => setAge(parseInt(e.target.value))}
+                onChange={(e) => { trackInteraction('age_changed'); setAge(parseInt(e.target.value)); }}
                 style={{ width: '100%', accentColor: '#C8102E' }}
               />
               <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: 6 }}>
