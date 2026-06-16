@@ -16,6 +16,78 @@ export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
+  // Hard safety net: any error inside the dashboard render must NOT 500 the user.
+  // Instead, show a minimal fallback that tells them the dashboard hit a snag and
+  // lets them back out. The real error is logged server-side (Vercel) for diagnosis.
+  // This protects against e.g. a new migration dropping a column the page reads,
+  // a transient Supabase hiccup, or a malformed Clerk session payload.
+  try {
+    return await renderDashboard(userId);
+  } catch (err) {
+    console.error('[dashboard] render failed:', err);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div
+          style={{
+            background: '#0f0f0f',
+            border: '1px solid #1e1e1e',
+            borderRadius: 12,
+            padding: '1.75rem',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: '1.5rem',
+              color: '#fff',
+              letterSpacing: '0.04em',
+              margin: '0 0 0.5rem',
+            }}
+          >
+            Dashboard hit a snag
+          </h2>
+          <p style={{ color: '#aaa', fontSize: '0.9rem', margin: '0 0 1rem' }}>
+            We couldn&rsquo;t load your dashboard just now. Your account and data
+            are safe — try refreshing in a minute, or head back to the home page
+            in the meantime.
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link
+              href="/dashboard"
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#C8102E',
+                color: '#fff',
+                borderRadius: 6,
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+              }}
+            >
+              Retry
+            </Link>
+            <Link
+              href="/"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.8)',
+                borderRadius: 6,
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+              }}
+            >
+              Back to home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+async function renderDashboard(userId: string) {
   const user = await currentUser();
   const firstName = user?.firstName || '';
   const lastName = user?.lastName || '';
@@ -23,11 +95,17 @@ export default async function DashboardPage() {
   const avatarUrl = user?.imageUrl || '';
 
   // Profile completeness + tier
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('bio, location, tier, is_founding_member, created_at, role, display_name, username')
-    .eq('user_id', userId)
-    .maybeSingle();
+  let profile: any = null;
+  try {
+    const { data } = await supabaseAdmin
+      .from('profiles')
+      .select('bio, location, tier, is_founding_member, created_at, role, display_name, username')
+      .eq('user_id', userId)
+      .maybeSingle();
+    profile = data;
+  } catch (e) {
+    console.error('[dashboard] profiles query failed:', e);
+  }
 
   const isSuperAdmin = profile?.role === 'super_admin';
   const isFounder = isSuperAdmin;
@@ -41,10 +119,16 @@ export default async function DashboardPage() {
     : null;
 
   // Account types (Phase 0.1 — multi-type).
-  const { data: accountTypeRows } = await supabaseAdmin
-    .from('profile_account_types')
-    .select('account_type, is_primary')
-    .eq('user_id', userId);
+  let accountTypeRows: Array<{ account_type: string; is_primary: boolean }> = [];
+  try {
+    const { data } = await supabaseAdmin
+      .from('profile_account_types')
+      .select('account_type, is_primary')
+      .eq('user_id', userId);
+    accountTypeRows = data || [];
+  } catch (e) {
+    console.error('[dashboard] profile_account_types query failed:', e);
+  }
 
   const types: AccountType[] = (accountTypeRows || [])
     .map((r: { account_type: string }) => r.account_type)
