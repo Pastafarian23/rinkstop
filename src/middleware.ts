@@ -93,6 +93,31 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
+  // Route protection (Phase 4.2, 2026-06-16): /dashboard/* requires auth.
+  // Previously the auth check was inside dashboard/layout.tsx (a server-side
+  // `if (!userId) redirect('/login')`). This worked, but the redirect didn't
+  // carry the original destination — so a user clicking a deep link like
+  // /dashboard/manage/team/abc123 from an email landed on /login, then on
+  // /dashboard (the hard-coded fallback), losing the original target.
+  //
+  // Fix: protect /dashboard/* at the middleware layer, where the URL is
+  // available, and pass it as `?redirect_url=...` to the login page. The login
+  // page reads that param and forwards it to Clerk's SignIn (so after auth,
+  // the user lands on the original target, not /dashboard).
+  //
+  // Note: the in-layout auth check is kept as a defense-in-depth fallback.
+  if (path.startsWith('/dashboard')) {
+    const { userId } = await auth();
+    if (!userId) {
+      const loginUrl = new URL('/login', request.url);
+      // Use the full pathname + query so deep links survive the round trip.
+      // The login page validates this is a relative path before using it.
+      const returnTo = path + (url.search || '');
+      loginUrl.searchParams.set('redirect_url', returnTo);
+      return NextResponse.redirect(loginUrl, 307);
+    }
+  }
+
   // Rate limiting - apply to all routes except static assets
   const isStatic = path.startsWith('/_next') ||
                    path.startsWith('/images') ||
