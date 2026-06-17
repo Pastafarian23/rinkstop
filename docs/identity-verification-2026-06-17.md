@@ -58,8 +58,10 @@ This is opt-in for v1. Required only when marketplace v2 launches, with the same
 ```sql
 -- New column on profiles table
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS identity_verified_at TIMESTAMPTZ;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS identity_verification_method TEXT;
-  -- values: 'didit_passport' | 'didit_id_card' | 'didit_selfie_only' | null
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS identity_verification_method TEXT
+  CHECK (identity_verification_method IS NULL OR
+         identity_verification_method IN ('didit_passport', 'didit_id_card', 'didit_selfie_only'));
+  -- CHECK constraint prevents typos in code (e.g. 'didit_paspport') from silently failing badge logic.
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS didit_session_id UUID;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS identity_expires_at TIMESTAMPTZ;
   -- = identity_verified_at + interval '2 years'. Cron flags expired rows as
@@ -71,9 +73,9 @@ CREATE TABLE didit_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
   session_id UUID NOT NULL UNIQUE,             -- Didit's session_id
-  session_kind TEXT NOT NULL,                  -- 'user' | 'business'
+  session_kind TEXT NOT NULL CHECK (session_kind IN ('user', 'business')),
   workflow_id UUID NOT NULL,                   -- Didit's workflow_id
-  status TEXT NOT NULL,                        -- 'not_started' | 'in_progress' | 'approved' | 'declined' | 'in_review'
+  status TEXT NOT NULL CHECK (status IN ('not_started', 'in_progress', 'approved', 'declined', 'in_review', 'abandoned', 'resubmitted'))
   decision JSONB,                              -- full V3 decision payload
   started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   completed_at TIMESTAMPTZ,
@@ -112,6 +114,43 @@ CREATE INDEX profiles_identity_expires_idx
   WHERE identity_verified_at IS NOT NULL;
 ```
 
+#### Data retention & PII handling (added during 2026-06-17 audit)
+
+The Didit `decision` JSONB contains PII (document_number, personal_number, full_name, email_address, phone_address, birth_date, address, portrait_image URL, signature_image URL, chip_data). Storing this permanently creates GDPR Article 17 / CCPA deletion issues, especially the biometric portrait_image (GDPR Article 9 special category data).
+
+**Decision: scrub PII on insert. Store only non-PII audit fields.**
+
+**Fields we KEEP in `didit_sessions.decision` JSONB:**
+- `status` (Approved/Declined/In Review)
+- `id_verifications[].document_type` (Passport, Identity Card — category, not specific)
+- `id_verifications[].issuing_country` (3-letter country code)
+- `liveness_checks[].status`, `liveness_checks[].method` (PASSIVE, ACTIVE_3D)
+- `liveness_checks[].score` (e.g. 95.4 — numeric, not biometric)
+- `face_matches[].status`, `face_matches[].score` (numeric, not biometric)
+- `aml_screenings[].status` (clear/flagged)
+- `cost_cents` (from Didit's billing metadata)
+- `features[]` (which checks were run)
+
+**Fields we DROP (PII):**
+- `id_verifications[].document_number` ❌
+- `id_verifications[].personal_number` ❌
+- `id_verifications[].full_name` ❌
+- `id_verifications[].email_address` ❌
+- `id_verifications[].phone_number` ❌
+- `id_verifications[].birth_date` ❌
+- `id_verifications[].address` ❌
+- `id_verifications[].portrait_image` ❌ (presigned URL, also biometric)
+- `id_verifications[].signature_image` ❌
+- `id_verifications[].chip_data` ❌ (full PII dump)
+- `id_verifications[].authenticity` ❌ (contains certificate serial)
+- `id_verifications[].certificate_summary` ❌ (certificate details)
+
+**GDPR Article 17 handling:** user can request deletion. We null out our scrubbed `didit_sessions.decision` JSONB (set to `{}`) and null out `profiles.identity_verified_at`. We do NOT ask Didit to delete (the original still lives in their system per their retention policy — that's their problem, not ours). The badge disappears. The user re-verifies if they want it back.
+
+**Why not store the scrubbed fields as separate columns?** Schema churn. If Didit adds a new field to `id_verifications[]` that we want to keep, we don't have to do a migration. JSONB is flexible; we just update the scrubber.
+
+**Scrubber implementation:** a `src/lib/didit-scrubber.ts` module with a `scrubDecision(decision: any): ScrubbedDecision` function. Unit-tested with sample Didit payloads. Called from `/api/webhooks/didit` BEFORE the `UPDATE didit_sessions SET decision = ...` write.
+
 #### API routes
 
 | Route | Method | Purpose | Auth |
@@ -127,7 +166,7 @@ CREATE INDEX profiles_identity_expires_idx
 src/lib/didit.ts                          [new]  - SDK client + helper functions
 src/lib/didit-webhook-verify.ts           [new]  - HMAC-SHA256 X-Signature-V2 verifier
 src/lib/pricing.ts                        [mod]  - add isIdentityVerified() helper
-src/lib/listingTier.ts                    [mod]  - add tierAtLeastPro() if needed
+src/lib/connections.ts                    [use]  - tierAtLeast() and getUserTier() already exist; reuse from @/lib/connections
 src/app/dashboard/identity/page.tsx       [new]  - main UX page
 src/app/dashboard/identity/IdentityClient.tsx  [new]  - the actual UI
 src/app/api/identity/verify/start/route.ts    [new]
@@ -145,7 +184,7 @@ scripts/cron-check-identity-expiry.mjs    [new]  - daily 09:00 UTC, prompts re-v
 
 - **Tier gate:** `tierAtLeast(tier, 'pro')` (Pro $59.99/yr, Premium $299/yr, Enterprise by contact). Starter ($19.99) and Free are not eligible.
 - **Branding:** `didit.me` (Didit-hosted page). No white-label config.
-- **Retention:** Full retention of `decision JSONB` and `didit_sessions` rows. No purge job.
+- **Retention:** Full retention of **non-PII** audit fields (status, document_type, country, features, cost_cents, timestamps). The raw `decision JSONB` from Didit is scrubbed of PII before insert (we drop: document_number, personal_number, full_name, email_address, phone_number, birth_date, address, portrait_image URL, signature_image URL). The unsanitized original lives in Didit's system, not ours. GDPR Article 17 deletion requests are honored by nulling our scrubbed audit row, not by asking Didit to delete. **CCPA / GDPR legal basis:** legitimate interest (compliance with marketplace v2 KYC/KYB requirements, regulatory record-keeping). No biometric data (portrait_image) is stored on our side — only the Didit-side reference ID. See "Data retention & PII handling" section below for full implementation.
 - **Re-verify cadence:** 2 years. `identity_expires_at = identity_verified_at + interval '2 years'`. Cron prompts user at T-30, T-7, T-1 days before expiry, and at T+0 (expired) blocks new claims / message sends until re-verified.
 
 #### Webhook flow
@@ -161,11 +200,15 @@ scripts/cron-check-identity-expiry.mjs    [new]  - daily 09:00 UTC, prompts re-v
 4. User completes ID + selfie on Didit
 5. Didit redirects to our callback URL with ?verificationSessionId=<id>&status=Approved
    - Note: status in URL is untrusted UI hint, used for spinner/polling only
-6. Didit POSTs webhook to /api/webhooks/didit with X-Signature-V2
-   - Server: verify HMAC-SHA256, dedupe on event_id
+6. Didit POSTs webhook to /api/webhooks/didit with X-Signature-V2 + X-Timestamp + X-Event-Id
+   - Server: validate `abs(now - X-Timestamp) < 300s` (replay protection)
+   - Server: re-serialize parsed JSON with sorted keys + Unicode-preserved compact JSON, then HMAC-SHA256 with DIDIT_WEBHOOK_SECRET, timingSafeEqual against X-Signature-V2
+   - Server: dedupe on event_id (insert into webhook_events on success, check before processing; Didit reuses event_id on retries)
    - Server: parse session_id, lookup our didit_sessions row
-   - Server: if status == 'approved', set profiles.identity_verified_at = now()
-   - Server: respond 200 within 5s (Didit retries on slower)
+   - Server: scrub PII from decision (drop document_number, personal_number, full_name, email_address, phone_number, birth_date, address, portrait_image URL, signature_image URL — keep status, document_type, country, features, cost_cents, liveness_score, face_match_score, aml_status)
+   - Server: if status == 'approved', set profiles.identity_verified_at = now() and identity_expires_at = now() + interval '2 years'
+   - Server: if DB update fails, throw to trigger Didit retry (do NOT return 200)
+   - Server: respond 200 within 5s on success (Didit retries on slower or non-2xx)
 7. Client: poll /api/identity/status until identity_verified_at set
 8. UI: "Verified by RinkStop" badge appears
 ```
@@ -173,9 +216,11 @@ scripts/cron-check-identity-expiry.mjs    [new]  - daily 09:00 UTC, prompts re-v
 #### What it does NOT do (intentional v1)
 
 - ❌ Does NOT gate any current feature on verification
-- ❌ Does NOT display "Verified" badge on public profiles (no FOMO gaming, no "show off your ID" culture)
 - ❌ Does NOT collect SSN/EIN — just a government photo ID + selfie match
 - ❌ Does NOT auto-approve claims (verification is badge-only, not a claim-skip)
+- ❌ Does NOT make verification required for any tier (always opt-in, never blocks sign-in)
+
+**Note on public profile badge:** The /profile/[slug] page does show "Identity verified" if the user opted in and the verification is active. This was confirmed during audit — the original "no public display" bullet was the v1 plan, but the locked decisions and the files-to-modify list both show the badge on the public profile. This is intentional. Re-verification every 2 years means the badge can disappear if the user doesn't re-verify, which is the natural reason to keep it visible.
 
 ### Phase 2 — Opt-in business verification (3-4 days, $0)
 
@@ -239,11 +284,11 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 
 ## Migration order (when build starts)
 
-1. **Add Vercel env vars** (no user-facing changes): `DIDIT_API_KEY`, `DIDIT_WORKFLOW_KYC_ID`, `DIDIT_WEBHOOK_SECRET`
+1. **Add Vercel env vars** (no user-facing changes): `DIDIT_API_KEY`, `DIDIT_WORKFLOW_ID` (single KYC workflow for Phase 1), `DIDIT_WEBHOOK_SECRET`
 2. **DB migration** (additive, no breaking): `2026-06-17_didit_identity.sql`
 3. **SDK + lib helpers** (server-side only, no UI): `src/lib/didit.ts`, `src/lib/didit-webhook-verify.ts`
-4. **API routes** (server-side, can be tested with curl): `start`, `decision`, `webhook`, `status`
-5. **Webhooks** (test with Didit sandbox): webhook destination created in Didit console, HMAC verified
+4. **API routes** (server-side, can be tested with curl): `start`, `decision`, `webhook`, `status`. The `webhook` handler scrubs PII from the decision JSONB before insert (see Data retention section).
+5. **Webhooks** (test with Didit sandbox): webhook destination created in Didit console, X-Signature-V2 + X-Timestamp verified (canonical JSON algorithm, not raw bytes)
 6. **Dashboard page** (UI, gated to Pro+): `/dashboard/identity`
 7. **Profile + welcome** (light touch): badge + prompt
 8. **Cron job** (daily at 09:00 UTC): `scripts/cron-check-identity-expiry.mjs` — finds verifications expiring within 30 days, sends in-app notification banner prompt for re-verify
@@ -258,7 +303,7 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 |---|---|---|---|
 | 1 | Tier gate? | **Pro+** (`tierAtLeast(tier, 'pro')`) | Starter and Free are not eligible. |
 | 2 | White-label? | **No** (use Didit-hosted) | `didit.me` URL stays. Revisit if Didit imposes a cost increase. |
-| 3 | Data retention? | **Full retention** (no purge) | All decision JSONB + sessions kept permanently. Storage is cheap; audit trail is non-negotiable. |
+| 3 | Data retention? | **Full retention of non-PII audit fields, scrub PII on insert** | Audit trail is permanent for the non-PII fields. Raw decision JSONB is scrubbed of PII before insert (see Data retention section). Full retention of scrubbed data only. |
 | 4 | Re-verify cadence? | **2 years** | `identity_expires_at = identity_verified_at + interval '2 years'`. Cron prompts re-verify at T-30, T-7, T-1 days, and T+0 (expired). |
 
 **No outstanding decisions. Ready to build when Arnel says ship.**
@@ -272,6 +317,14 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 | Verification creates user expectation of "premium treatment" | Badge is opt-in, no other features gated on it; copy on `/dashboard/identity` sets expectations |
 | Phase 3 changes Didit's role | Decide now: Didit is for the badge, Stripe is for marketplace receiving-party KYC. No conflict. |
 | Country coverage gaps (PH, MX) | Didit covers 220 countries including PH. Verify list before shipping Phase 1. |
+| GDPR Article 17 deletion request | Scrubber drops PII on insert. Deletion request: null the scrubbed `decision` JSONB + `identity_verified_at`. Badge disappears. User can re-verify. |
+| Biometric data (portrait_image) leak | We do not store portrait_image URL. Reference to Didit's stored image is dropped on insert. |
+| Didit webhook replay attack | X-Timestamp header rejected if `abs(now - ts) > 300s`. |
+| Didit webhook signature false-positive on re-encoded body | X-Signature-V2 is over canonical JSON (sorted keys, compact, Unicode preserved), not raw bytes. Survives Next.js middleware re-encoding. |
+| DB CHECK constraint missing on tier-method column | Added CHECK constraint to `identity_verification_method` and `didit_sessions.status` + `session_kind`. |
+| TierAtLeast duplicate in 2nd module | Reuses existing `tierAtLeast()` and `getUserTier()` from `src/lib/connections.ts`. No new helper. |
+| Doc self-contradiction (badge NOT on profile vs. badge IS on profile) | "What it does NOT do" list updated. Profile badge is the intended UX. |
+| Webhook re-throw on DB failure not documented | Doc now says: throw to trigger Didit retry on DB failure, do NOT return 200. |
 
 ## What I'm NOT doing yet
 
@@ -290,10 +343,4 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 - Set up Didit sandbox account (if Arnel signs up; or I do with Arnel's approval)
 - Estimate hosting cost for full retention: 100 verified users = ~50MB JSONB total. 1,000 users = ~500MB. Supabase free tier covers 500MB. **Full retention cost: $0 until 1,000+ verified users.**
 
-## What I CAN do without code
 
-- Map the existing profile code to the changes needed (DONE in this doc)
-- Sketch the `/dashboard/identity` page wireframe (DONE in this doc)
-- Estimate Phase 1 build time: **5-7 days** (3 days for API + DB + webhook, 2 days for UI, 1 day for testing, 1 day buffer)
-- Write the SDK wrapper that I can drop in when we start building
-- Set up Didit sandbox account (if Arnel signs up; or I do with Arnel's approval)
