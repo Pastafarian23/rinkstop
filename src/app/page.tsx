@@ -529,7 +529,7 @@ export default async function Home() {
               PICK THE PLAN THAT FITS
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6 }}>
-              Free is free, forever. Starter, Pro, and Premium unlock claims, the verified checkmark, and a public profile — annual plans, cancel any time. Enterprise is for national leagues, brands, and federations.
+              Free is free, forever. Starter, Pro, and Premium unlock claims, public profiles, and DMs (Pro+) — annual plans, cancel any time. Enterprise is for national leagues, brands, and federations. Identity verification is a separate opt-in flow for Pro+ members.
             </p>
           </div>
 

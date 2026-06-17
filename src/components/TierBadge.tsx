@@ -36,39 +36,13 @@ export function TierBadge({ tier, size = 'sm' }: { tier: TierId | string; size?:
   );
 }
 
-export function VerifiedCheckmark({ size = 18, title = 'Verified' }: { size?: number; title?: string }) {
-  return (
-    <span
-      title={title}
-      aria-label={title}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-        background: '#14B8A6',
-        borderRadius: '50%',
-        marginLeft: 6,
-        verticalAlign: 'middle',
-        flexShrink: 0,
-      }}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{ width: size * 0.6, height: size * 0.6 }}
-      >
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    </span>
-  );
-}
+// VerifiedCheckmark component is gone as of 2026-06-17 (Arnel directive).
+// The teal checkmark was previously awarded by tier (Pro/Premium/Enterprise
+// all got it), which conflated "paid for tier" with "verified identity."
+// The replacement is <IdentityVerified /> in src/components/IdentityVerified.tsx
+// — a navy check that appears ONLY when a user has passed Didit's
+// government-ID + selfie KYC and the verification has not expired.
+// Tier pills (this file's <TierBadge />) are text-only, no check.
 
 export function FoundingMemberBadge({ size = 'sm' }: { size?: 'sm' | 'md' }) {
   const padding = size === 'md' ? '0.35rem 0.85rem' : '0.2rem 0.65rem';

@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
 import SocialActions from '@/components/SocialActions';
-import { TierBadge, VerifiedCheckmark, FoundingMemberBadge } from '@/components/TierBadge';
+import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
+import { IdentityVerified } from '@/components/IdentityVerified';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -148,7 +149,21 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold">{displayName}</h1>
-              <VerifiedCheckmark />
+              {(() => {
+                // Identity verification is the ONLY check. Tier is shown as
+                // a text pill below this row. The previous teal check on
+                // every Pro+ profile is removed.
+                const verifiedAt = (profile as any).identity_verified_at as string | null;
+                const expiresAt = (profile as any).identity_expires_at as string | null;
+                const isActive = !!verifiedAt && !!expiresAt && new Date(expiresAt) > new Date();
+                if (!isActive) return null;
+                return (
+                  <IdentityVerified
+                    verifiedAt={verifiedAt!}
+                    expiresAt={expiresAt!}
+                  />
+                );
+              })()}
               <FoundingMemberBadge />
             </div>
             <p className="text-white/60 mb-2">@{profile.username}</p>

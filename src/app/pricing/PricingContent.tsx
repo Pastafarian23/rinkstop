@@ -49,7 +49,7 @@ const TIERS: Tier[] = [
     label: 'Starter',
     price: formatTierPrice('starter'),
     period: '/ year',
-    tagline: 'I want a verified profile and 1 claim',
+    tagline: 'I want to claim 1 listing, get a Founding Member badge, and follow teams',
     color: '#FFB81C',
     bgColor: 'rgba(255,184,28,0.06)',
     borderColor: 'rgba(255,184,28,0.3)',
@@ -71,7 +71,7 @@ const TIERS: Tier[] = [
     label: 'Pro',
     price: formatTierPrice('pro'),
     period: '/ year',
-    tagline: 'I run a rink, team, or league and want to be verified',
+    tagline: 'I run a rink, team, or league and want claims, DMs, and a public profile',
     color: '#14B8A6',
     bgColor: 'rgba(20,184,166,0.06)',
     borderColor: 'rgba(20,184,166,0.4)',
@@ -80,12 +80,12 @@ const TIERS: Tier[] = [
     stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
     features: [
       'Everything in Starter',
-      'Verified checkmark on your profile and every listing you claim',
-      'Up to 5 claimed listings (perfect for a personal scope: your home rink, your kid’s team, your beer-league squad)',
+      'Up to 5 claimed listings (your home rink, your kid’s team, your beer-league squad)',
       'Lead capture form on every claimed listing — visitors can contact you without signing up',
       'Public profile page you can share (rinkstop.com/profile/you)',
       'Send and receive DMs with other Pro+ users',
       'Above search results in directory listings',
+      'Optional: earn the verified check on your profile by passing a 60-second ID check (government ID + selfie, free)',
     ],
     footnote:
       `Pro is the identity play for orgs. It tells the people you DM that you are who you say you are — and gives you up to 5 claims, business profile, and DMs. If you need more than 5 claims (you run a rink chain, league, or multi-team org), upgrade to Premium.`,
@@ -558,9 +558,9 @@ export default function FoundingMemberContent({
                 ))}
               </tr>
               <tr>
-                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Verified checkmark</td>
+                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Optional identity check<br /><span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Government ID + selfie, free, re-verify every 2 years</span></td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '#FFB81C' : 'rgba(255,255,255,0.3)' }}>
                     {t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}

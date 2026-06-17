@@ -62,7 +62,7 @@ export async function GET(
   // Look up the claimer's public profile
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('user_id, display_name, avatar_url, tier, is_founding_member, username')
+    .select('user_id, display_name, avatar_url, tier, is_founding_member, username, identity_verified_at, identity_expires_at')
     .eq('user_id', claim.user_id)
     .maybeSingle();
 
@@ -81,6 +81,11 @@ export async function GET(
       is_founding_member: profile.is_founding_member,
       username: profile.username,
       claimed_at: claim.created_at,
+      // Identity verification (populated after Phase 1 build). Returns null
+      // for users who haven't completed the Didit flow. The component
+      // checks identity_expires_at > now() to decide whether to render.
+      identity_verified_at: (profile as any).identity_verified_at ?? null,
+      identity_expires_at: (profile as any).identity_expires_at ?? null,
     },
   });
   return applyRateLimitHeaders(res, result);
