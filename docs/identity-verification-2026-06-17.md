@@ -378,3 +378,98 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 **Sandbox vs production:** the key returns real prices ($0.33, $0.65) and real workflow IDs, not test fixtures. **This is the live key, not sandbox.** Sandbox applications have different key prefixes and `sandbox` in the workflow URLs. We are running against production data — the first real verification will be charged to Arnel's Didit account.
 
 
+
+## User flow audit — visibility of identity verification (2026-06-17 18:30 UTC)
+
+**Arnel pushed back hard: "I want you to run through the user flow and experience and make sure verification is optimized, and the option is visible to users."**
+
+**Audit result: zero surface currently promotes or links to identity verification.** A Pro+ user would have to:
+1. Know verification exists (it doesn't appear anywhere on the site)
+2. Know it gives them an additional "Identity verified" badge (no mention)
+3. Know the URL `/dashboard/identity` (it doesn't exist yet)
+4. Know the tier gate is Pro+ (no mention on pricing or subscription)
+
+**The two checkmarks are different things — a naming/source-of-truth issue:**
+
+| Badge | Source | Tier required | What it proves |
+|---|---|---|---|
+| `VerifiedCheckmark` (teal #14B8A6) | `profiles.tier IN ('pro','premium','enterprise')` | Pro+ | User paid for Pro+ |
+| `IdentityVerified` (NEW) | `profiles.identity_verified_at IS NOT NULL AND identity_expires_at > now()` | Pro+ opt-in | User verified their government ID with Didit |
+
+**The teal checkmark is already a strong social signal** (used in `ClaimedBy.tsx`, profile page, welcome page). The identity badge should be a **differentiated visual** to avoid confusing the two. My proposal: **a small "ID" pill or shield icon**, not another checkmark. Maybe a navy/blue checkmark with "ID" or "ID Verified" tooltip, sitting next to the teal tier checkmark.
+
+### Promotion surfaces (the 12 places to add visibility)
+
+**Tier gate = Pro+.** Free/Starter users should see "Identity verification is a Pro feature" but the button should be disabled with an upsell link to /pricing.
+
+#### 1. Dashboard nav (global, always visible)
+Add `/dashboard/identity` to `DashboardNav`. **Only show for Pro+ users** (tier-gated link in `src/app/dashboard/layout.tsx`). Position: after `Subscription` so it doesn't compete with the primary nav. Label: **"Verification"** (clearer than "Identity" which could mean Clerk's user identity).
+
+#### 2. Dashboard overview tile (post-login landing)
+`/dashboard` page should have a "Get verified" tile for Pro+ users who haven't verified yet. For already-verified users: "Identity verified" status with "View details" link. For expired users: red "Re-verify now" CTA.
+
+#### 3. /dashboard/welcome next-steps (post-Stripe-checkout)
+The `NEXT_STEPS` map for `pro` and `premium` tiers should include identity verification as a follow-up action. Place it as the **#1 next step for Pro** (above "verified checkmark is now live") because identity verification is a stronger trust signal than the tier-based one.
+
+#### 4. /dashboard/subscription "What's next for your tier" panel
+Currently the subscription page just shows the Stripe manage-subscription form. Add a "Get the most from your Pro" panel below it that links to:
+- Claim a listing
+- Verify your identity
+- Set up your public profile
+
+#### 5. /pricing comparison table
+Add an "Identity verification" row to the pricing comparison table. **Show as "—" for free/starter, "✓" for pro/premium/enterprise**. This is the FIRST place users will see the feature exists. Could be the conversion lever for free → pro.
+
+#### 6. Pricing page FAQ
+Add a FAQ entry: "What is identity verification?" explaining the government ID + selfie, 500/month free, opt-in only, re-verify every 2 years, badge appears on profile.
+
+#### 7. /pricing "What you get with Pro" (pro tier detail panel)
+The pro tier's tagline + features list should mention identity verification explicitly. Current copy: *"Pro is the identity play for orgs. It tells the people you DM that you are who you say you are — and gives you up to 5 claims, business profile, and DMs."* Replace "identity" with "ID-verified" and link to the FAQ.
+
+#### 8. Public profile page (badge appears here)
+Already designed — `IdentityVerified` component next to `VerifiedCheckmark`. Will show as a small navy "ID" shield. On hover: "Identity verified by RinkStop with government ID + selfie match. Last verified {date}, expires {date}."
+
+#### 9. /dashboard/messages thread header (sender's verification status)
+When viewing a DM thread, the OTHER person's name should show their identity-verified badge if they have it. This is the highest-impact placement: "the person messaging you is who they say they are" — exactly what the badge is for.
+
+#### 10. /claim-your-listing flow (operator onboarding)
+When a Pro+ user claims a rink, after the claim succeeds, show a follow-up prompt: "Boost your claim's credibility — verify your identity." This is the operator's first move on the platform and identity verification makes the most sense right there.
+
+#### 11. Directory listing cards (ClaimedBy badge area)
+The `ClaimedBy.tsx` component shows the teal tier checkmark. Add a tiny "ID" indicator next to it for identity-verified users. Visible on every listing they claim — this is the passive "free impressions" surface.
+
+#### 12. Homepage "Why RinkStop" or "For operators" section
+If there's a section that pitches operators to claim, mention identity verification as a credibility signal. Optional — depends on whether the homepage already has that section.
+
+#### 13. (Bonus) Footer/utility link
+Not in nav, but add a quiet "How verification works" link in the dashboard footer or /faq that links to a full explanation page. Could be a sub-page of /faq.
+
+### Suggested implementation order (build sequence)
+
+1. **Core feature first** (the actual verification flow): `src/app/dashboard/identity/page.tsx`, API routes, webhook, DB migration
+2. **Dashboard nav link** (the entry point): #1 from the list above
+3. **Public profile badge** (the visible result): #8 from the list above
+4. **Welcome next-steps** (post-payment moment): #3 from the list above
+5. **Pricing page row** (pre-payment discovery): #5 from the list above
+6. **Directory listing badge** (passive impressions): #11 from the list above
+7. **Subscription page panel** (engaged-user moment): #4 from the list above
+8. **Messages thread badge** (the high-trust surface): #9 from the list above
+9. **Claim-your-listing follow-up** (operator moment): #10 from the list above
+10. **FAQ entry** (research-surfaced): #6, #13 from the list above
+11. **Homepage mention** (if applicable): #12 from the list above
+12. **Dashboard overview tile** (post-login moment): #2 from the list above
+
+**Total surface touches: 12** (counting both 1 and 2 as separate nav vs. tile entries). Build effort: items 1-7 are required, 8-12 are polish. The 6-8 day Phase 1 estimate covers items 1-7. Items 8-12 add 1-2 days.
+
+### One visual decision: badge style
+
+**Recommendation: navy/blue "ID" shield, not another checkmark.**
+
+Reasoning: the site already has a teal checkmark for the tier-based verified status. Adding another checkmark (even a different color) for identity would create "what's the difference?" confusion. A small **shield with "ID" inside**, navy color (matches brand), makes the difference obvious at a glance:
+
+- Teal checkmark = "Paid for Pro+ tier"
+- Navy ID shield = "Verified identity with government ID"
+
+The two are independent — you can have one without the other. A Pro+ user with no ID verification shows the teal check only. A Pro+ user with ID verification shows both: "I'm a Pro member (teal) AND I've verified my ID (navy)."
+
+**This needs Arnel's sign-off** because it's a brand decision. If Arnel wants two checkmarks (one teal, one navy), we do that. If Arnel wants the ID shield, we do that. The visual style is in the design doc, not committed yet.
