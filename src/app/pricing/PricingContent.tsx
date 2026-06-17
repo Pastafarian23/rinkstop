@@ -60,7 +60,7 @@ const TIERS: Tier[] = [
       'Unlimited follows and saves',
       'Founding Member badge on your profile',
       'Weekly digest — your favorite teams’ games, scores, and new signings',
-      'Claim a single listing (rink, team, or league) for free — update hours, contacts, socials',
+      'Claim a single listing (rink, team, or league) for free — update hours, contacts, socials, and unlock the lead-capture form',
       'Priority email support',
     ],
     footnote:
@@ -82,6 +82,7 @@ const TIERS: Tier[] = [
       'Everything in Supporter',
       'Verified checkmark on your profile and every listing you claim',
       'Up to 5 claimed listings (perfect for a personal scope: your home rink, your kid’s team, your beer-league squad)',
+      'Lead capture form on every claimed listing — visitors can contact you without signing up',
       'Public profile page you can share (​rinkstop.com/profile/you)',
       'Send and receive DMs with other Verified+ users',
       'Above search results in directory listings',
@@ -105,13 +106,12 @@ const TIERS: Tier[] = [
       'Everything in Verified',
       'Up to 25 claimed listings (org scope: rinks, teams, leagues — whatever you run)',
       'Featured Listing rotation in your city (top of directory, every page load)',
-      'Lead capture form on your profile — visitors can contact you without signing up',
       'Bulk claim — claim every team, rink, or league in your organization at once',
       'Analytics dashboard — who’s viewing your profile, your listings, your team',
       'Custom branding on your public profile',
     ],
     footnote:
-      `At ${formatTierPrice('pro')}/year, Pro pays for itself with a single signup. Featured Listing, lead capture, and analytics give you the lead pipeline that free listings can’t. Built for rinks, rink chains, leagues, and multi-team orgs up to 25 claims.`,
+      `At ${formatTierPrice('pro')}/year, Pro pays for itself with a single signup. Featured Listing rotation, 25 claims, and analytics give you the lead pipeline that smaller plans can’t. Built for rinks, rink chains, leagues, and multi-team orgs up to 25 claims. Lead capture is included on every claimed listing regardless of tier.`,
   },
   {
     id: 'enterprise',
@@ -137,6 +137,27 @@ const TIERS: Tier[] = [
   },
 ];
 
+type Role = 'player' | 'coach' | 'org';
+
+/**
+ * Role-based value props shown above the tier grid. Per SPEC 2026-06-17,
+ * different users have different needs: a player cares about following
+ * teams, a coach cares about messaging rinks, an org cares about being
+ * found. Tabs let each user see the value prop that fits, without
+ * changing the underlying tiers.
+ */
+const ROLES: { id: Role; label: string; icon: string; color: string }[] = [
+  { id: 'player', label: 'Player / Parent', icon: '🏒', color: '#FFB81C' },
+  { id: 'coach', label: 'Coach / Manager', icon: '🎯', color: '#14B8A6' },
+  { id: 'org', label: 'Rink / League / Org', icon: '🏟️', color: '#C8102E' },
+];
+
+const ROLE_VALUE_PROPS: Record<Role, string> = {
+  player: "Find rinks near you, follow your kid's team, claim your player profile. $19.99 covers most personal use.",
+  coach: 'Manage your team, message rinks for ice time, claim multiple teams. $59.99 covers most coaches.',
+  org: 'Get found by every team searching for ice in your city. Lead capture, featured placement, and analytics. $299 covers most rinks.',
+};
+
 const FAQ = [
   {
     q: 'Is this a subscription?',
@@ -152,7 +173,7 @@ const FAQ = [
   },
   {
     q: 'I manage a rink, team, league, or organization. Which tier is for me?',
-    a: 'Pro, if you want leads and need up to 25 claims. Enterprise, if you need more than 25 claims. Verified, if you just want to be the verified owner of your rink.',
+    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Supporter ($19.99) gets the same lead pipeline as a 25-listing Pro ($299). The difference is scale: Supporter covers 1 claim, Verified covers up to 5, Pro covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
   },
   {
     q: 'I’m a parent of a youth player. Can I claim my kid?',
@@ -193,6 +214,7 @@ export default function FoundingMemberContent({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAccountType, setShowAccountType] = useState(false);
+  const [role, setRole] = useState<Role>('player');
 
   async function handleCheckout(tier: Tier) {
     if (!isLoaded) return;
@@ -323,7 +345,69 @@ export default function FoundingMemberContent({
           <span style={{ color: '#C8102E' }}>Actually useful</span> for everyone in it.
         </h1>
         <p style={{ fontSize: '1.125rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-          RinkStop is the global directory for hockey rinks, teams, players, and leagues. Free to browse. Paid plans unlock claims, verification, DMs, and lead capture.
+          RinkStop is the global directory for hockey rinks, teams, players, and leagues. Free to browse. Pick what fits below.
+        </p>
+      </section>
+
+      {/* Role-based value prop tabs. Default to 'player' — the broadest
+          audience. Switching roles changes the value-prop paragraph above the
+          tier grid without changing the tiers themselves. Per SPEC 2026-06-17,
+          tiers stay the same; the framing is what adapts. */}
+      <section style={{ padding: '0 1.5rem 1rem', maxWidth: 760, margin: '0 auto' }}>
+        <div
+          role="tablist"
+          aria-label="Choose what you're here for"
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            flexWrap: 'wrap',
+            marginBottom: '1.25rem',
+          }}
+        >
+          {ROLES.map((r) => {
+            const selected = role === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                data-testid={`role-tab-${r.id}`}
+                onClick={() => setRole(r.id)}
+                style={{
+                  padding: '0.55rem 1.1rem',
+                  background: selected ? r.color : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${selected ? r.color : 'rgba(255,255,255,0.15)'}`,
+                  borderRadius: 999,
+                  color: selected ? '#0a0a0a' : 'rgba(255,255,255,0.85)',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+                }}
+              >
+                <span style={{ marginRight: 6 }}>{r.icon}</span>
+                {r.label}
+              </button>
+            );
+          })}
+        </div>
+        <p
+          key={role}
+          data-testid={`role-value-prop-${role}`}
+          style={{
+            fontSize: '1.05rem',
+            color: 'rgba(255,255,255,0.78)',
+            lineHeight: 1.55,
+            margin: 0,
+            textAlign: 'center',
+            maxWidth: 620,
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+        >
+          {ROLE_VALUE_PROPS[role]}
         </p>
       </section>
 
@@ -498,10 +582,10 @@ export default function FoundingMemberContent({
                 ))}
               </tr>
               <tr>
-                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Lead capture form</td>
+                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Lead capture form on each claim</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'free' ? 'rgba(255,255,255,0.3)' : '#FFB81C' }}>
+                    {t.id === 'free' ? '—' : '✓'}
                   </td>
                 ))}
               </tr>

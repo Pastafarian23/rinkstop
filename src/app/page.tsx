@@ -538,7 +538,7 @@ export default async function Home() {
               { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, and read the directory.', cta: 'Join Free', href: '/sign-up', ctaStyle: 'btn btn-ghost' },
               { tier: 'supporter', label: 'Supporter', price: '$19.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Unlimited follows, claim 1 listing, weekly digest.', cta: 'Become a Supporter', href: '/pricing?tier=supporter', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
               { tier: 'verified', label: 'Verified', price: '$59.99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.4)', tagline: 'Verified checkmark, claim up to 5, public profile, DMs.', cta: 'Get Verified', href: '/pricing?tier=verified', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff', popular: true },
-              { tier: 'pro', label: 'Pro', price: '$299', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.4)', tagline: 'Claim up to 25, featured rotation, lead capture, analytics.', cta: 'Go Pro', href: '/pricing?tier=pro', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
+              { tier: 'pro', label: 'Pro', price: '$299', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.4)', tagline: 'Claim up to 25, featured rotation, analytics.', cta: 'Go Pro', href: '/pricing?tier=pro', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
             ].map((t) => (
               <div key={t.tier} style={{
                 position: 'relative',

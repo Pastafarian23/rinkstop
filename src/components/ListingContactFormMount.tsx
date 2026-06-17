@@ -12,24 +12,26 @@ interface Props {
 }
 
 /**
- * Renders the lead capture form ONLY if the listing's active claimer is Pro tier.
- * - On server-rendered pages (rink, league) pass `forceShow={true}` after a server-side
- *   `getEntityClaimTier()` returns tier === 'pro'.
- * - On client-rendered pages (team), leave `forceShow` unset and this component will
- *   fetch the tier client-side via the public claim endpoint.
+ * Renders the lead capture form for any listing with an active claim.
+ * Lead capture is activity-gated (any active claim), not tier-gated
+ * (was previously Pro-only per SPEC 2026-06-17).
+ * - On server-rendered pages (rink, league) pass `forceShow={true}` if
+ *   the server has already verified an active claim exists.
+ * - On client-rendered pages (team), leave `forceShow` unset and this
+ *   component will fetch the claim status client-side.
  *
- * Avoids showing the form on unclaimed / Free / Supporter / Verified listings.
+ * Avoids showing the form on unclaimed listings.
  */
 export default function ListingContactFormMount({ listingType, listingId, listingName, forceShow }: Props) {
-  const [tier, setTier] = useState<'pro' | 'verified' | 'supporter' | 'free' | null | 'loading'>(
-    forceShow ? 'pro' : 'loading'
+  const [hasClaim, setHasClaim] = useState<boolean | 'loading'>(
+    forceShow ? true : 'loading'
   );
 
   useEffect(() => {
-    if (forceShow) return; // already know it's pro
+    if (forceShow) return; // server already verified
     if (listingType === 'league') {
       // Leagues aren't a first-class claim type today — never show the form.
-      setTier(null);
+      setHasClaim(false);
       return;
     }
     let cancelled = false;
@@ -37,15 +39,15 @@ export default function ListingContactFormMount({ listingType, listingId, listin
       try {
         const res = await fetch(`/api/entities/${listingType}/${listingId}/claim`, { cache: 'no-store' });
         if (!res.ok) {
-          if (!cancelled) setTier(null);
+          if (!cancelled) setHasClaim(false);
           return;
         }
         const data = await res.json();
         if (!cancelled) {
-          setTier(data?.claim?.tier ?? null);
+          setHasClaim(Boolean(data?.claim));
         }
       } catch {
-        if (!cancelled) setTier(null);
+        if (!cancelled) setHasClaim(false);
       }
     })();
     return () => {
@@ -53,7 +55,7 @@ export default function ListingContactFormMount({ listingType, listingId, listin
     };
   }, [listingType, listingId, forceShow]);
 
-  if (tier === 'loading') {
+  if (hasClaim === 'loading') {
     // Reserve a small space so the page doesn't jump when the form loads.
     return (
       <div
@@ -69,7 +71,7 @@ export default function ListingContactFormMount({ listingType, listingId, listin
     );
   }
 
-  if (tier !== 'pro') return null;
+  if (!hasClaim) return null;
 
   return (
     <div style={{ marginBottom: '24px' }}>

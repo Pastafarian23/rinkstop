@@ -68,7 +68,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Four self-serve tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing. Verified ($59.99/year) adds a verified checkmark, up to 5 claimed listings, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($299/year) is for rinks, teams, and leagues - it adds a Featured Listing rotation in your city, a lead-capture form on your profile, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. See /pricing for the full breakdown.',
+        a: 'Four self-serve tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing with a lead-capture form on the profile. Verified ($59.99/year) adds a verified checkmark, up to 5 claimed listings, each with its own lead-capture form, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($299/year) is for rinks, teams, and leagues that need more scale - it adds a Featured Listing rotation in your city, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier. See /pricing for the full breakdown.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -115,7 +115,7 @@ const sections: Array<{
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Pro is built for you if you need up to 25 claims. Enterprise is the right fit for organizations that need more than 25. The Featured Listing rotation puts your rink/team/league at the top of your city\'s directory on every page load. The lead-capture form lets visitors contact you without signing up. Bulk claim lets you claim every team in your league in one request. The analytics dashboard shows who is viewing your profile. If you need more than 25 claims, Enterprise is the right fit.',
+        a: 'Pro is built for you if you need up to 25 claims, want featured placement at the top of your city\'s directory on every page load, or need bulk claim to claim every team in your league in one request. Enterprise is the right fit for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier, so a single-rink Supporter ($19.99/yr) gets the same lead pipeline as a 25-listing Pro. The analytics dashboard is included on Pro and Enterprise. If you need more than 25 claims, Enterprise is the right fit.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',

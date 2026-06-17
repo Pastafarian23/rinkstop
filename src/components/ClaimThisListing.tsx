@@ -120,7 +120,7 @@ export default function ClaimThisListing({
             color: '#d1d5db',
             lineHeight: 1.5,
           }}>
-            <strong style={{ color: '#FFB81C' }}>Want a verified checkmark, lead capture, and featured rotation?</strong>{' '}
+            <strong style={{ color: '#FFB81C' }}>Want a verified checkmark, featured placement, and up to 25 claims?</strong>{' '}
             <Link href="/pricing?tier=verified" style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
               See tier benefits →
             </Link>

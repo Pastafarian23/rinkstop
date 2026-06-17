@@ -35,7 +35,7 @@ const NEXT_STEPS: Record<TierId, string[]> = {
   pro: [
     'Claim up to 25 listings — if you run a rink chain, league, or multi-team org, you can now bulk-claim everything.',
     'Your Featured Listing rotation is live in your city. Top of the directory on page load.',
-    'A lead-capture form is now on your profile — visitors can contact you without signing up. Check the Leads tab in your dashboard.',
+    'A lead-capture form is now on every claimed listing — visitors can contact you without signing up. Check the Leads tab in your dashboard.',
     'Open the Analytics dashboard to see who is viewing your profile, your listings, and your team.',
     'Custom branding on your public profile is available in /dashboard/profile.',
   ],
@@ -46,7 +46,7 @@ const NEXT_STEPS: Record<TierId, string[]> = {
 const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: string; reason: string }> = {
   free: { id: 'supporter', label: 'Supporter', price: formatTierPricePerYear('supporter'), reason: 'Unlimited follows, claim 1 listing, weekly digest' },
   supporter: { id: 'verified', label: 'Verified', price: formatTierPricePerYear('verified'), reason: 'Verified checkmark, claim up to 5, public profile, DMs' },
-  verified: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Claim up to 25, featured rotation, lead capture, analytics' },
+  verified: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Claim up to 25, featured rotation, analytics' },
   pro: { id: null, label: '—', price: '—', reason: 'You’ve got every feature. Check Enterprise if you need more than 25 claims.' },
 };
 
