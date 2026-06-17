@@ -194,14 +194,33 @@ export default function DirectoryLandingClient() {
         alignItems: 'flex-start',
       }}>
         <h2 className="font-sport" style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', color: '#fff', letterSpacing: '0.03em' }}>
-          DON&apos;T SEE YOUR TEAM?
+          SEE YOUR LISTING? CLAIM IT.
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', maxWidth: '460px', lineHeight: 1.6 }}>
-          RinkStop grows through community submissions. Add your team, league, rink, or brand and reach hockey fans worldwide.
+        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9375rem', maxWidth: '500px', lineHeight: 1.6 }}>
+          Already on RinkStop? Operators can claim their rink, team, or league to edit details,
+          reply to messages, and unlock verified badges. Not listed yet? You can add it.
         </p>
-        <Link href="/admin/teams/new" className="btn btn-white" style={{ marginTop: '0.25rem' }}>
-          + Sign Up Free
-        </Link>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+          <Link href="/claim-your-listing" className="btn btn-white">
+            Claim Your Listing
+          </Link>
+          <Link
+            href="/add-listing"
+            style={{
+              display: 'inline-block',
+              padding: '0.65rem 1.25rem',
+              background: 'transparent',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.45)',
+              borderRadius: '6px',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            + Add a New Listing
+          </Link>
+        </div>
       </div>
     </div>
   );

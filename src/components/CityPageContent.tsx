@@ -201,9 +201,13 @@ export default function CityPageContent({ data }: Props) {
                 </strong>.
               </>
             )}
-            {' '}Browse listings below or{' '}
+            {' '}Browse listings below,{' '}
+            <Link href="/claim-your-listing" style={{ color: red, fontWeight: 600 }}>
+              claim your listing
+            </Link>{' '}
+            if you&apos;re listed, or{' '}
             <Link href="/add-listing" style={{ color: red, fontWeight: 600 }}>
-              add a listing
+              add a new listing
             </Link>{' '}
             if we&apos;re missing something.
           </p>
@@ -635,21 +639,39 @@ export default function CityPageContent({ data }: Props) {
             <p style={{ fontSize: '1rem', color: textMuted, marginBottom: '1.5rem', maxWidth: '500px', margin: '0 auto 1.5rem' }}>
               Help us build out the {cityName} directory! If you know of a team or rink in this area, add a listing.
             </p>
-            <Link
-              href="/add-listing"
-              style={{
-                display: 'inline-block',
-                padding: '0.75rem 1.5rem',
-                background: red,
-                color: '#fff',
-                borderRadius: '8px',
-                fontSize: '0.9375rem',
-                fontWeight: 700,
-                textDecoration: 'none',
-              }}
-            >
-              Add a listing →
-            </Link>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Link
+                href="/add-listing"
+                style={{
+                  display: 'inline-block',
+                  padding: '0.75rem 1.5rem',
+                  background: red,
+                  color: '#fff',
+                  borderRadius: '8px',
+                  fontSize: '0.9375rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Add a listing →
+              </Link>
+              <Link
+                href="/claim-your-listing"
+                style={{
+                  display: 'inline-block',
+                  padding: '0.75rem 1.5rem',
+                  background: 'transparent',
+                  color: red,
+                  border: `1px solid ${red}`,
+                  borderRadius: '8px',
+                  fontSize: '0.9375rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Claim a listing →
+              </Link>
+            </div>
           </section>
         )}
       </div>
