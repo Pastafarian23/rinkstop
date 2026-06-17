@@ -39,7 +39,7 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
 
   if (loading || !data) return null;
 
-  const isVerified = data.tier === 'verified' || data.tier === 'pro';
+  const isVerified = data.tier === 'pro' || data.tier === 'premium' || data.tier === 'enterprise';
   const displayName = data.display_name || 'Verified Owner';
 
   return (

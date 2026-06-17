@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
 
     // Lead capture is activity-gated, not tier-gated: any active claim renders
     // the form and accepts inquiries. Per SPEC 2026-06-17, we removed the
-    // "Pro tier required" gate so a $19.99 Supporter running a single rink
-    // gets the same lead pipeline as a $299 Pro running 25 listings.
+    // "Pro tier required" gate so a $19.99 Starter running a single rink
+    // gets the same lead pipeline as a $299 Premium running 25 listings.
 
     // Get listing name for denormalized display
     const listingTable = listing_type === 'rink' ? 'rinks' : 'teams';

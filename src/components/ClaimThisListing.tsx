@@ -8,13 +8,13 @@ export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';
 export type ClaimCtaState =
   | { kind: 'signed_out' }
   | { kind: 'claim_form'; entityType: ClaimEntityType; entityId: string; entityName: string }
-  | { kind: 'free'; recommendedTier?: 'supporter' | 'verified' | 'pro' }
+  | { kind: 'free'; recommendedTier?: 'starter' | 'pro' | 'premium' }
   | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'pro' | 'enterprise' }
   | { kind: 'pending'; tier: string };
 
 const NOOP = (e: React.MouseEvent) => { e.preventDefault(); };
 
-async function openCheckout(tier: 'supporter' | 'verified' | 'pro', context: string) {
+async function openCheckout(tier: 'starter' | 'pro' | 'premium', context: string) {
   try {
     const res = await fetch('/api/tier/upgrade', {
       method: 'POST',
@@ -121,7 +121,7 @@ export default function ClaimThisListing({
             lineHeight: 1.5,
           }}>
             <strong style={{ color: '#FFB81C' }}>Want a verified checkmark, featured placement, and up to 25 claims?</strong>{' '}
-            <Link href="/pricing?tier=verified" style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
+            <Link href="/pricing?tier=pro" style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
               See tier benefits →
             </Link>
           </div>
@@ -176,11 +176,11 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Claim it now — Supporter unlocks 1 claim, Verified unlocks up to 5, Pro unlocks up to 25, and Enterprise covers larger orgs.
+              Claim it now — Verified unlocks 1 claim, Pro unlocks up to 5, Premium unlocks up to 25, and Enterprise covers larger orgs.
             </div>
           </div>
           <button
-            onClick={() => openCheckout(state.recommendedTier || 'supporter', 'inline-claim-free')}
+            onClick={() => openCheckout(state.recommendedTier || 'starter', 'inline-claim-free')}
             style={{
               background: '#FFB81C',
               color: '#041E42',

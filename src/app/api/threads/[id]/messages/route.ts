@@ -155,9 +155,9 @@ export async function POST(
 
   // Tier check.
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'verified')) {
+  if (!tierAtLeast(tier, 'pro')) {
     return NextResponse.json(
-      { error: 'Verified or Pro membership required to send messages.', currentTier: tier },
+      { error: 'Pro or Premium membership required to send messages.', currentTier: tier },
       { status: 403 }
     );
   }

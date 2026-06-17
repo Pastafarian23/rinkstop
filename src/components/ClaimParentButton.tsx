@@ -78,7 +78,7 @@ export default function ClaimParentButton({
   }
 
   // Verified+ required.
-  const tierRank: Record<string, number> = { free: 0, supporter: 1, verified: 2, pro: 3, enterprise: 4 };
+  const tierRank: Record<string, number> = { free: 0, starter: 1, pro: 2, premium: 3, enterprise: 4 };
   if ((tierRank[myTier] ?? 0) < 2) {
     return (
       <a

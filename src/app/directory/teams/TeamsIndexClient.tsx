@@ -227,7 +227,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                 style={{
                   display: 'block', textDecoration: 'none',
                   background: team.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
-                  border: `1px solid ${team.claimed_by_tier === 'pro' ? 'rgba(200,16,46,0.5)' : team.claimed_by_tier === 'verified' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  border: `1px solid ${team.claimed_by_tier === 'premium' ? 'rgba(200,16,46,0.5)' : team.claimed_by_tier === 'pro' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
                   borderRadius: '6px',
                   padding: '1.125rem',
                   position: 'relative',
@@ -242,7 +242,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                     ⭐ Featured
                   </div>
                 )}
-                {team.claimed_by_tier === 'verified' && (
+                {team.claimed_by_tier === 'pro' && (
                   <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Verified

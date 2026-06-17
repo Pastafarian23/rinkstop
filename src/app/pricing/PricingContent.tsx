@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
 
 type Tier = {
-  id: 'free' | 'supporter' | 'verified' | 'pro' | 'enterprise';
+  id: 'free' | 'starter' | 'pro' | 'premium' | 'enterprise';
   label: string;
   price: string;
   period: string;
@@ -45,17 +45,17 @@ const TIERS: Tier[] = [
     footnote: 'For people just checking the site out. No card, no upsell. Browse and leave.',
   },
   {
-    id: 'supporter',
-    label: 'Supporter',
-    price: formatTierPrice('supporter'),
+    id: 'starter',
+    label: 'Starter',
+    price: formatTierPrice('starter'),
     period: '/ year',
-    tagline: 'I support the site and want the good stuff',
+    tagline: 'I want a verified profile and 1 claim',
     color: '#FFB81C',
     bgColor: 'rgba(255,184,28,0.06)',
     borderColor: 'rgba(255,184,28,0.3)',
     popular: false,
-    cta: 'Become a Supporter',
-    stripePriceEnv: 'STRIPE_PRICE_TIER_SUPPORTER',
+    cta: 'Become a Member',
+    stripePriceEnv: 'STRIPE_PRICE_TIER_STARTER',
     features: [
       'Unlimited follows and saves',
       'Founding Member badge on your profile',
@@ -64,46 +64,46 @@ const TIERS: Tier[] = [
       'Priority email support',
     ],
     footnote:
-      'Founding Member badge is exclusive to the first 500 supporters. After that, the tier stays, the badge doesn’t.',
-  },
-  {
-    id: 'verified',
-    label: 'Verified',
-    price: formatTierPrice('verified'),
-    period: '/ year',
-    tagline: 'I want to be taken seriously',
-    color: '#14B8A6',
-    bgColor: 'rgba(20,184,166,0.06)',
-    borderColor: 'rgba(20,184,166,0.4)',
-    popular: true,
-    cta: 'Get Verified',
-    stripePriceEnv: 'STRIPE_PRICE_TIER_VERIFIED',
-    features: [
-      'Everything in Supporter',
-      'Verified checkmark on your profile and every listing you claim',
-      'Up to 5 claimed listings (perfect for a personal scope: your home rink, your kid’s team, your beer-league squad)',
-      'Lead capture form on every claimed listing — visitors can contact you without signing up',
-      'Public profile page you can share (​rinkstop.com/profile/you)',
-      'Send and receive DMs with other Verified+ users',
-      'Above search results in directory listings',
-    ],
-    footnote:
-      'Verified is the identity play. It tells the people you DM that you are who you say you are. If you need to claim more than 5 listings (you run a rink chain, league, or multi-team org), upgrade to Pro.',
+      'Founding Member badge is exclusive to the first 500 paid members. After that, the tier stays, the badge doesn’t.',
   },
   {
     id: 'pro',
     label: 'Pro',
     price: formatTierPrice('pro'),
     period: '/ year',
-    tagline: 'I run a rink, team, or league and want to be found',
+    tagline: 'I run a rink, team, or league and want to be verified',
+    color: '#14B8A6',
+    bgColor: 'rgba(20,184,166,0.06)',
+    borderColor: 'rgba(20,184,166,0.4)',
+    popular: true,
+    cta: 'Go Pro',
+    stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
+    features: [
+      'Everything in Starter',
+      'Verified checkmark on your profile and every listing you claim',
+      'Up to 5 claimed listings (perfect for a personal scope: your home rink, your kid’s team, your beer-league squad)',
+      'Lead capture form on every claimed listing — visitors can contact you without signing up',
+      'Public profile page you can share (rinkstop.com/profile/you)',
+      'Send and receive DMs with other Pro+ users',
+      'Above search results in directory listings',
+    ],
+    footnote:
+      `Pro is the identity play for orgs. It tells the people you DM that you are who you say you are — and gives you up to 5 claims, business profile, and DMs. If you need more than 5 claims (you run a rink chain, league, or multi-team org), upgrade to Premium.`,
+  },
+  {
+    id: 'premium',
+    label: 'Premium',
+    price: formatTierPrice('premium'),
+    period: '/ year',
+    tagline: 'I run a regional chain or multi-team org and want featured placement',
     color: '#C8102E',
     bgColor: 'rgba(200,16,46,0.06)',
     borderColor: 'rgba(200,16,46,0.4)',
     popular: false,
-    cta: 'Go Pro',
-    stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
+    cta: 'Go Premium',
+    stripePriceEnv: 'STRIPE_PRICE_TIER_PREMIUM',
     features: [
-      'Everything in Verified',
+      'Everything in Pro',
       'Up to 25 claimed listings (org scope: rinks, teams, leagues — whatever you run)',
       'Featured Listing rotation in your city (top of directory, every page load)',
       'Bulk claim — claim every team, rink, or league in your organization at once',
@@ -111,7 +111,7 @@ const TIERS: Tier[] = [
       'Custom branding on your public profile',
     ],
     footnote:
-      `At ${formatTierPrice('pro')}/year, Pro pays for itself with a single signup. Featured Listing rotation, 25 claims, and analytics give you the lead pipeline that smaller plans can’t. Built for rinks, rink chains, leagues, and multi-team orgs up to 25 claims. Lead capture is included on every claimed listing regardless of tier.`,
+      `At ${formatTierPrice('premium')}/year, Premium pays for itself with a single signup. Featured Listing rotation, 25 claims, and analytics give you the lead pipeline that smaller plans can’t. Built for rinks, rink chains, leagues, and multi-team orgs up to 25 claims. Lead capture is included on every claimed listing regardless of tier.`,
   },
   {
     id: 'enterprise',
@@ -126,7 +126,7 @@ const TIERS: Tier[] = [
     cta: 'Contact Enterprise',
     stripePriceEnv: null,
     features: [
-      'Everything in Pro',
+      'Everything in Premium',
       'More than 25 claimed listings',
       'Bulk claim and data onboarding support',
       'Priority support for leagues, brands, federations, and multi-team orgs',
@@ -161,23 +161,23 @@ const ROLE_VALUE_PROPS: Record<Role, string> = {
 const FAQ = [
   {
     q: 'Is this a subscription?',
-    a: 'Yes. Supporter, Verified, and Pro are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
+    a: 'Yes. Verified, Pro, and Premium are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
   },
   {
     q: 'What’s a Founding Member badge?',
-    a: 'The first 500 paying members (Supporter or higher) get a Founding Member badge on their profile. It’s a one-time, no-replacement scarcity lever — once they’re gone, the tier stays but the badge doesn’t come back.',
+    a: 'The first 500 paying members (Verified or higher) get a Founding Member badge on their profile. It’s a one-time, no-replacement scarcity lever — once they’re gone, the tier stays but the badge doesn’t come back.',
   },
   {
     q: 'Can I claim a listing without paying?',
-    a: 'Supporter includes 1 claim. Verified includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
+    a: 'Verified includes 1 claim. Pro includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Premium includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
   },
   {
     q: 'I manage a rink, team, league, or organization. Which tier is for me?',
-    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Supporter ($19.99) gets the same lead pipeline as a 25-listing Pro ($299). The difference is scale: Supporter covers 1 claim, Verified covers up to 5, Pro covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
+    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Verified ($19.99) gets the same lead pipeline as a 25-listing Premium ($299). The difference is scale: Verified covers 1 claim, Pro covers up to 5, Premium covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
   },
   {
     q: 'I’m a parent of a youth player. Can I claim my kid?',
-    a: 'Yes. The parent signs up (Verified+ to DM) and uses “I’m this player’s parent” on the kid’s profile to claim it. The kid’s profile shows “Managed by [Your Name]”. All DMs go through your account — one Clerk account, kid as a managed sub-profile.',
+    a: 'Yes. The parent signs up (Pro+ to DM) and uses “I’m this player’s parent” on the kid’s profile to claim it. The kid’s profile shows “Managed by [Your Name]”. All DMs go through your account — one Clerk account, kid as a managed sub-profile.',
   },
   {
     q: 'Can I send DMs as my kid’s parent?',
@@ -189,7 +189,7 @@ const FAQ = [
   },
   {
     q: 'Can I upgrade mid-year?',
-    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Supporter to Verified, or Verified to Pro, at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
+    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Verified to Pro, or Pro to Premium, at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
   },
   {
     q: 'Why no ad-free tier?',
@@ -332,7 +332,7 @@ export default function FoundingMemberContent({
           </div>
         ) : (
           <div style={{ marginTop: 12, fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>
-            All {foundingCap} Founding Member badges have been claimed. The Supporter tier stays — only the badge is gone.
+            All {foundingCap} Founding Member badges have been claimed. The Verified tier stays — only the badge is gone.
           </div>
         )}
         {currentUserId && currentUserTier && currentUserTier !== 'free' ? (
@@ -553,23 +553,23 @@ export default function FoundingMemberContent({
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Claim listings</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>
-                    {t.id === 'free' ? '—' : t.id === 'supporter' ? '1' : t.id === 'verified' ? 'Up to 5' : t.id === 'pro' ? 'Up to 25' : 'Custom'}
+                    {t.id === 'free' ? '—' : t.id === 'starter' ? '1' : t.id === 'pro' ? 'Up to 5' : t.id === 'premium' ? 'Up to 25' : 'Custom'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Verified checkmark</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Send and receive DMs</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'verified' || t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>

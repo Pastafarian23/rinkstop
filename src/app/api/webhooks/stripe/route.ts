@@ -31,7 +31,7 @@ async function updateUserTier(clerkUserId: string, tier: string | null, subscrip
   if (expiresAtIso) update.tier_expires_at = expiresAtIso;
 
   // Founding Member scarcity lever: award is_founding_member=true to the first 500
-  // paying members (Supporter or higher), only on the first time they become a paid tier.
+  // paying members (Starter or higher), only on the first time they become a paid tier.
   // Once the cap is hit, no more are awarded.
   if (tier && tier !== 'free' && status === 'active') {
     const { data: existing } = await supabase
@@ -49,7 +49,7 @@ async function updateUserTier(clerkUserId: string, tier: string | null, subscrip
         update.is_founding_member = true;
         console.log(`[Webhook] Awarded Founding Member status to ${clerkUserId} (cap: 500, current: ${count})`);
       } else {
-        console.log(`[Webhook] Founding Member cap of 500 reached; ${clerkUserId} gets Supporter without founding badge`);
+        console.log(`[Webhook] Founding Member cap of 500 reached; ${clerkUserId} gets Starter without founding badge`);
       }
     }
   }

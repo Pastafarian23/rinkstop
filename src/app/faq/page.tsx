@@ -45,7 +45,7 @@ const sections: Array<{
       },
       {
         q: 'What is a "public profile" and where does it live?',
-        a: 'Every RinkStop account has a public profile page at /u/[your-user-id]. Other users can see your display name, avatar, bio, location, and membership tier. Verified and Pro tiers get a "verified" checkmark; Founding Members get a special badge. You control what appears in your bio and location - everything else (avatar, name) is set via the Clerk UserButton.',
+        a: 'Every RinkStop account has a public profile page at /u/[your-user-id]. Other users can see your display name, avatar, bio, location, and membership tier. Pro, Premium, and Enterprise tiers get a "verified" checkmark; Founding Members get a special badge. You control what appears in your bio and location - everything else (avatar, name) is set via the Clerk UserButton.',
       },
       {
         q: 'How do I edit my bio and location?',
@@ -68,7 +68,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Four self-serve tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Supporter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing with a lead-capture form on the profile. Verified ($59.99/year) adds a verified checkmark, up to 5 claimed listings, each with its own lead-capture form, a public profile page, DM access with other Verified+ users, and above-search-result placement. Pro ($299/year) is for rinks, teams, and leagues that need more scale - it adds a Featured Listing rotation in your city, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier. See /pricing for the full breakdown.',
+        a: 'Four self-serve tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Verified ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing with a lead-capture form on the profile. Pro ($59.99/year) adds a verified checkmark, up to 5 claimed listings, each with its own lead-capture form, a public profile page, DM access with other Pro+ users, and above-search-result placement. Premium ($299/year) is for rinks, teams, and leagues that need more scale - it adds a Featured Listing rotation in your city, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier. See /pricing for the full breakdown.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -84,15 +84,15 @@ const sections: Array<{
       },
       {
         q: 'Can I upgrade mid-year?',
-        a: 'Yes. Upgrades (Free to Supporter, Supporter to Verified, Verified to Pro) take effect immediately and the unused portion of your current plan is credited toward the new one. Go to /pricing and pick the higher tier - the checkout flow handles proration automatically.',
+        a: 'Yes. Upgrades (Free to Verified, Verified to Pro, Pro to Premium) take effect immediately and the unused portion of your current plan is credited toward the new one. Go to /pricing and pick the higher tier - the checkout flow handles proration automatically.',
       },
       {
         q: 'What is the Founding Member badge?',
-        a: 'The first 500 paying members (Supporter tier or higher) get a permanent Founding Member badge on their profile. After 500, the tier stays available, but the badge does not come back. The badge marks the people who backed the site early.',
+        a: 'The first 500 paying members (Verified tier or higher) get a permanent Founding Member badge on their profile. After 500, the tier stays available, but the badge does not come back. The badge marks the people who backed the site early.',
       },
       {
         q: 'Is there a free trial?',
-        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Supporter - it is $19.99/year and you can cancel anytime by emailing support.',
+        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Verified - it is $19.99/year and you can cancel anytime by emailing support.',
       },
     ],
   },
@@ -111,11 +111,11 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Supporter tier members can claim 1 listing. Verified tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Pro tier members can claim up to 25 listings, plus bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for leagues, brands, federations, or organizations that need more than 25 claims. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
+        a: 'Verified tier members can claim 1 listing. Pro tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Premium tier members can claim up to 25 listings, plus bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for leagues, brands, federations, or organizations that need more than 25 claims. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Pro is built for you if you need up to 25 claims, want featured placement at the top of your city\'s directory on every page load, or need bulk claim to claim every team in your league in one request. Enterprise is the right fit for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier, so a single-rink Supporter ($19.99/yr) gets the same lead pipeline as a 25-listing Pro. The analytics dashboard is included on Pro and Enterprise. If you need more than 25 claims, Enterprise is the right fit.',
+        a: 'Premium is built for you if you need up to 25 claims, want featured placement at the top of your city\'s directory on every page load, or need bulk claim to claim every team in your league in one request. Enterprise is the right fit for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier, so a single-rink Verified ($19.99/yr) gets the same lead pipeline as a 25-listing Premium. The analytics dashboard is included on Premium and Enterprise. If you need more than 25 claims, Enterprise is the right fit.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
@@ -123,7 +123,7 @@ const sections: Array<{
       },
       {
         q: 'Can I update hours, contacts, and socials for a listing I claimed?',
-        a: 'Yes. Supporter tier includes 1 claimed listing with editable details. Verified tier includes up to 5 claimed listings. Pro includes up to 25 claimed listings, all editable from your dashboard. Enterprise covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
+        a: 'Yes. Verified tier includes 1 claimed listing with editable details. Pro tier includes up to 5 claimed listings. Premium includes up to 25 claimed listings, all editable from your dashboard. Enterprise covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
       },
       {
         q: 'How long does listing review take?',
@@ -150,7 +150,7 @@ const sections: Array<{
       },
       {
         q: 'How do I save a team, player, or rink?',
-        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save up to 3; Supporter and above can save unlimited.',
+        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save up to 3; Verified and above can save unlimited.',
       },
       {
         q: 'How do rink reviews work?',
@@ -177,7 +177,7 @@ const sections: Array<{
     qa: [
       {
         q: 'How do I send a direct message (DM) to another user?',
-        a: 'Verified and Pro tier members can DM each other. Free and Supporter tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
+        a: 'Pro and Premium tier members can DM each other. Free and Verified tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
       },
       {
         q: 'Why do I need a Verified tier to DM?',
@@ -204,7 +204,7 @@ const sections: Array<{
     qa: [
       {
         q: 'How can my league or team get featured on RinkStop?',
-        a: 'Reach out at /partner or email support@rinkstop.com with your story. Pro tier members get automatic Featured Listing rotation in their city. Non-Pro members can be considered for editorial coverage in /highlights.',
+        a: 'Reach out at /partner or email support@rinkstop.com with your story. Premium tier members get automatic Featured Listing rotation in their city. Non-Premium members can be considered for editorial coverage in /highlights.',
       },
       {
         q: 'How do I advertise on RinkStop?',

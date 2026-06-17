@@ -10,15 +10,17 @@ export const dynamic = 'force-dynamic';
 
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  supporter: 'Supporter',
-  verified: 'Verified',
+  starter: 'Starter',
   pro: 'Pro',
+  premium: 'Premium',
+  enterprise: 'Enterprise',
 };
 
 const TIER_PRICES: Record<string, string> = {
-  supporter: formatTierPricePerYear('supporter'),
-  verified: formatTierPricePerYear('verified'),
+  starter: formatTierPricePerYear('starter'),
   pro: formatTierPricePerYear('pro'),
+  premium: formatTierPricePerYear('premium'),
+  enterprise: formatTierPricePerYear('enterprise'),
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
