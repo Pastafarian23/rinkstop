@@ -7,55 +7,63 @@ import { formatTierPricePerYear } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
-type TierId = 'free' | 'supporter' | 'verified' | 'pro';
+type TierId = 'free' | 'starter' | 'pro' | 'premium' | 'enterprise';
+// Tier rename 2026-06-17: was free/supporter/verified/pro → free/starter/pro/premium/enterprise.
 
-// Lower number = lower tier; 0 is free, 3 is pro
+// Lower number = lower tier; 0 is free, 4 is enterprise
 const TIER_RANK: Record<TierId, number> = {
   free: 0,
-  supporter: 1,
-  verified: 2,
-  pro: 3,
+  starter: 1,
+  pro: 2,
+  premium: 3,
+  enterprise: 4,
 };
 
 // What each tier just unlocked — kept short and concrete so the user knows
 // exactly what to do with their new membership.
 const NEXT_STEPS: Record<TierId, string[]> = {
-  supporter: [
+  starter: [
     'Claim 1 listing (your home rink, your kid’s team, your beer-league squad) — just click any rink/team/league and tap "Claim".',
     'Opt in to the weekly digest from your account settings to get your favorite teams’ games, scores, and new signings in one email.',
     'Your Founding Member badge is now live on your profile. (First 500 paying members only — it stays after that.)',
   ],
-  verified: [
+  pro: [
     'Your verified checkmark is now live on your profile and every listing you claim.',
     'Claim up to 5 listings — the next step is to claim your second, third, etc. Each one shows the checkmark.',
-    'You can now send DMs to other Verified+ users. Try the Connections tab on a profile.',
+    'You can now send DMs to other Pro+ users. Try the Connections tab on a profile.',
     'Your profile page is public at rinkstop.com/profile/yourusername — share it anywhere.',
     'Above the search results in directory listings — your claimed rink/team now ranks higher in the city.',
   ],
-  pro: [
+  premium: [
     'Claim up to 25 listings — if you run a rink chain, league, or multi-team org, you can now bulk-claim everything.',
     'Your Featured Listing rotation is live in your city. Top of the directory on page load.',
     'A lead-capture form is now on every claimed listing — visitors can contact you without signing up. Check the Leads tab in your dashboard.',
     'Open the Analytics dashboard to see who is viewing your profile, your listings, and your team.',
     'Custom branding on your public profile is available in /dashboard/profile.',
   ],
+  enterprise: [
+    'Welcome to Enterprise. Your account has been configured for unlimited claims.',
+    'Your dedicated success contact has been notified — they’ll reach out within 24 hours to scope data onboarding and API access.',
+  ],
   free: [],
 };
 
-// What to upsell to (or "you’ve got everything" for pro/enterprise)
+// What to upsell to (or "you’ve got everything" for premium/enterprise)
 const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: string; reason: string }> = {
-  free: { id: 'supporter', label: 'Supporter', price: formatTierPricePerYear('supporter'), reason: 'Unlimited follows, claim 1 listing, weekly digest' },
-  supporter: { id: 'verified', label: 'Verified', price: formatTierPricePerYear('verified'), reason: 'Verified checkmark, claim up to 5, public profile, DMs' },
-  verified: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Claim up to 25, featured rotation, analytics' },
-  pro: { id: null, label: '—', price: '—', reason: 'You’ve got every feature. Check Enterprise if you need more than 25 claims.' },
+  free: { id: 'starter', label: 'Starter', price: formatTierPricePerYear('starter'), reason: 'Unlimited follows, claim 1 listing, weekly digest, verified badge' },
+  starter: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Claim up to 5, public profile, DMs' },
+  pro: { id: 'premium', label: 'Premium', price: formatTierPricePerYear('premium'), reason: 'Claim up to 25, featured rotation, analytics' },
+  premium: { id: 'enterprise', label: 'Enterprise', price: 'Contact', reason: 'You’ve got every self-serve feature. Enterprise is for national leagues, brands, and federations with custom needs.' },
+  enterprise: { id: null, label: '—', price: '—', reason: 'You’ve got every feature. Reach out to your success contact for anything else.' },
 };
 
 // Tier color (matches TierBadge)
 const TIER_COLOR: Record<TierId, string> = {
   free: '#9CA3AF',
-  supporter: '#FFB81C',
-  verified: '#14B8A6',
-  pro: '#C8102E',
+  starter: '#FFB81C',
+  pro: '#14B8A6',
+  premium: '#C8102E',
+  enterprise: '#FFFFFF',
 };
 
 export default async function WelcomePage({
@@ -71,7 +79,7 @@ export default async function WelcomePage({
   // checkout.session.completed), but we tolerate a slight race by preferring
   // the profile's actual current tier.
   const params = await searchParams;
-  const urlTier = (params.tier || 'supporter') as TierId;
+  const urlTier = (params.tier || 'starter') as TierId;
   const sessionId = params.session_id || null;
 
   const { data: profile } = await supabaseAdmin
@@ -87,8 +95,8 @@ export default async function WelcomePage({
   const tier = upgraded ? actualTier : urlTier;
   const color = TIER_COLOR[tier] || '#FFB81C';
   const isFounding = profile?.is_founding_member || false;
-  const nextSteps = NEXT_STEPS[tier] || NEXT_STEPS.supporter;
-  const nextTier = NEXT_TIER[tier] || NEXT_TIER.supporter;
+  const nextSteps = NEXT_STEPS[tier] || NEXT_STEPS.starter;
+  const nextTier = NEXT_TIER[tier] || NEXT_TIER.starter;
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
@@ -117,9 +125,10 @@ export default async function WelcomePage({
           {isFounding && <FoundingMemberBadge />}
         </div>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', maxWidth: 480, margin: '0 auto' }}>
-          {tier === 'pro' && 'Pro is unlocked. Lead capture, featured rotation, analytics — it’s all live.'}
-          {tier === 'verified' && 'You’re verified. Your checkmark is showing on your profile and every listing you claim.'}
-          {tier === 'supporter' && 'You’re a Founding-tier Supporter. The badge is live, your one free claim is ready.'}
+          {tier === 'premium' && 'Premium is unlocked. Lead capture, featured rotation, analytics — it’s all live.'}
+          {tier === 'pro' && 'You’re Pro. Your checkmark is showing on your profile and every listing you claim.'}
+          {tier === 'starter' && 'You’re a Member. Your one free claim is ready — start with a rink or team you manage.'}
+          {tier === 'enterprise' && 'You’re on Enterprise. Your success contact will reach out within 24 hours to scope onboarding.'}
         </p>
         {!upgraded && (
           <div style={{ marginTop: 12, fontSize: '0.8125rem', color: '#FFB81C' }}>
@@ -189,7 +198,7 @@ export default async function WelcomePage({
           <span style={{ fontSize: '1.5rem' }}>👤</span>
           <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>My Profile</span>
         </Link>
-        {tier !== 'pro' && nextTier.id && (
+        {nextTier.id && (
           <Link
             href={`/pricing?tier=${nextTier.id}`}
             style={{
@@ -220,14 +229,14 @@ export default async function WelcomePage({
             Want more?
           </div>
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
-            <strong style={{ color: '#fff' }}>{nextTier.label}</strong> ({nextTier.price}/year) — {nextTier.reason}.
+            <strong style={{ color: '#fff' }}>{nextTier.label}</strong> ({nextTier.price}) — {nextTier.reason}.
           </p>
           <Link
             href={`/pricing?tier=${nextTier.id}`}
             className="btn"
             style={{ background: '#FFB81C', color: '#041E42' }}
           >
-            Upgrade to {nextTier.label} →
+            {nextTier.id === 'enterprise' ? `Contact ${nextTier.label} →` : `Upgrade to ${nextTier.label} →`}
           </Link>
         </div>
       ) : (

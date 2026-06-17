@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
 
   // Tier check: must be Verified+ to claim/manage a profile.
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'verified')) {
+  if (!tierAtLeast(tier, 'pro')) {
     return NextResponse.json(
-      { error: 'Verified or Pro membership required to manage a profile.', currentTier: tier },
+      { error: 'Pro or Premium membership required to manage a profile.', currentTier: tier },
       { status: 403 }
     );
   }

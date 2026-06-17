@@ -8,10 +8,11 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any })
   : null;
 
-const PRICE_TO_TIER: Record<string, 'supporter' | 'verified' | 'pro'> = {
-  [process.env.STRIPE_PRICE_TIER_SUPPORTER || '']: 'supporter',
-  [process.env.STRIPE_PRICE_TIER_VERIFIED || '']: 'verified',
+// Tier rename 2026-06-17: was supporter/verified/pro → starter/pro/premium.
+const PRICE_TO_TIER: Record<string, 'starter' | 'pro' | 'premium'> = {
+  [process.env.STRIPE_PRICE_TIER_STARTER || '']: 'starter',
   [process.env.STRIPE_PRICE_TIER_PRO || '']: 'pro',
+  [process.env.STRIPE_PRICE_TIER_PREMIUM || '']: 'premium',
 };
 
 /**

@@ -27,7 +27,7 @@ interface MeResponse {
  * (or whatever showOnPaths lists) — never on the pricing page itself.
  *
  * Tier-aware:
- *  - If user is already on a paid tier (supporter/verified/pro), show nothing
+ *  - If user is already on a paid tier (starter/pro/premium), show nothing
  *  - If user is founding member, show nothing
  *  - If user just dismissed, show nothing until cooldown
  *
@@ -210,7 +210,7 @@ export default function UpgradeNudgePopup({
             </div>
           </div>
           <Link
-            href="/pricing?tier=supporter"
+            href="/pricing?tier=starter"
             onClick={dismiss}
             className="btn"
             style={{
@@ -222,7 +222,7 @@ export default function UpgradeNudgePopup({
               whiteSpace: 'nowrap',
             }}
           >
-            Become a Supporter →
+            Become Verified →
           </Link>
         </div>
 

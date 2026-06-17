@@ -1,18 +1,23 @@
 // Tier rank used to sort listings in directory pages.
-// Lower = higher in the list. Pro is always on top when claimed.
+// Lower = higher in the list. Premium is always on top when claimed.
 // Listings without an active claim are sorted alphabetically within the "unclaimed" bucket.
+//
+// Tier rename 2026-06-17: was free/supporter/verified/pro → free/starter/pro/premium/enterprise.
 export const TIER_RANK: Record<string, number> = {
-  pro: 1,
-  verified: 2,
-  supporter: 3,
+  enterprise: 0,
+  premium: 1,
+  pro: 2,
+  starter: 3,
   free: 4,
 };
 
+// Display labels for each tier (consumer-facing). Single source of truth.
 export const TIER_LABELS: Record<string, string> = {
-  pro: 'Featured',
-  verified: 'Verified',
-  supporter: 'Supporter',
   free: 'Free',
+  starter: 'Starter',
+  pro: 'Pro',
+  premium: 'Premium',
+  enterprise: 'Enterprise',
 };
 
 export function rankForTier(tier: string | null | undefined): number {
@@ -67,8 +72,8 @@ export async function enrichEntitiesWithClaimTier(
 }
 
 // Single-entity lookup. Used by entity detail pages to decide whether to
-// render the Pro-tier-only ListingContactForm. Returns null if unclaimed
-// or no approved claim exists.
+// render the ListingContactForm (lead capture, activity-gated since
+// 2026-06-17). Returns null if unclaimed or no approved claim exists.
 // Leagues are not a first-class claim type today → returns null for leagues.
 export async function getEntityClaimTier(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

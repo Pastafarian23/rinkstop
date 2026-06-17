@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       const maxClaims = getMaxClaimsForTier(tier);
       if (maxClaims === 0) {
         return NextResponse.json(
-          { error: `Claiming listings requires a paid membership. Upgrade to Supporter (1 claim), Verified (up to 5), Pro (up to 25), or Enterprise for more. See /pricing.` },
+          { error: `Claiming listings requires a paid membership. Upgrade to Starter (1 claim), Pro (up to 5), Premium (up to 25), or Enterprise for more. See /pricing.` },
           { status: 403 }
         );
       }

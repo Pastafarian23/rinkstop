@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 // DEPRECATED 2026-06-12 — replaced by /api/tier/upgrade
 //
 // The 8 founding-member entity types (fan, player, coach, scout, business, team,
-// league, rink) have been consolidated into a single 3-tier subscription model:
-// Free / Supporter / Verified / Pro. See /pricing for the new offering.
+// league, rink) have been consolidated into a single subscription model:
+// Free / Verified / Pro / Premium (Enterprise by contact). See /pricing.
 //
 // Any old links, social posts, or cached redirects that still hit this endpoint
 // will get a clear 410 Gone. The pricing page is the new entry point.

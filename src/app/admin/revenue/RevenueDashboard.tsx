@@ -23,16 +23,18 @@ interface Props {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  supporter: 'text-slate-300',
-  verified: 'text-teal-400',
-  pro: 'text-amber-400',
+  starter: 'text-slate-300',
+  pro: 'text-teal-400',
+  premium: 'text-amber-400',
+  enterprise: 'text-rose-400',
   other: 'text-slate-500',
 };
 
 const TIER_BG: Record<string, string> = {
-  supporter: 'bg-slate-700',
-  verified: 'bg-teal-500',
-  pro: 'bg-amber-500',
+  starter: 'bg-slate-700',
+  pro: 'bg-teal-500',
+  premium: 'bg-amber-500',
+  enterprise: 'bg-rose-500',
   other: 'bg-slate-800',
 };
 
@@ -112,7 +114,7 @@ export default function RevenueDashboard({ initial }: Props) {
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 mb-6">
         <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-4">Subscribers by Tier</h3>
         <div className="space-y-3">
-          {(['supporter', 'verified', 'pro', 'other'] as const).map((tier) => {
+          {(['starter', 'pro', 'premium', 'enterprise', 'other'] as const).map((tier) => {
             const count = data.tierCounts[tier] || 0;
             const max = Math.max(...Object.values(data.tierCounts), 1);
             const pct = (count / max) * 100;

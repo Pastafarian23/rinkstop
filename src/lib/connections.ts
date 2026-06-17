@@ -16,20 +16,21 @@ export interface Connection {
   accepted_at: string | null;
 }
 
+// Tier rename 2026-06-17: was free/supporter/verified/pro/enterprise → free/starter/pro/premium/enterprise.
 export const TIER_RANK: Record<string, number> = {
   free: 0,
-  supporter: 1,
-  verified: 2,
-  pro: 3,
+  starter: 1,
+  pro: 2,
+  premium: 3,
   enterprise: 4,
 };
 
 /**
  * Max number of APPROVED claims a user can hold on each tier.
  *  free: 0 (cannot claim)
- *  supporter: 1
- *  verified: 5 (personal-scope: home rink, kid's team, beer-league squad, etc.)
- *  pro: 25 (org-scope: rinks, teams, leagues, and multi-club programs)
+ *  starter: 1 (personal: home rink, kid's team)
+ *  pro: 5 (multi-purpose: rinks, teams, leagues under one operator)
+ *  premium: 25 (org-scope: regional chains, multi-team programs)
  *  enterprise: Infinity (custom org-scope: national leagues, brands, federations, and large data partners)
  *
  * Pending claims don't count against the cap (the user can submit a new one
@@ -43,9 +44,9 @@ export const TIER_RANK: Record<string, number> = {
  */
 export const MAX_CLAIMS_PER_TIER: Record<string, number> = {
   free: 0,
-  supporter: 1,
-  verified: 5,
-  pro: 25,
+  starter: 1,
+  pro: 5,
+  premium: 25,
   enterprise: Infinity,
 };
 

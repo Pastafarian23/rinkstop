@@ -42,9 +42,9 @@ export async function POST(request: NextRequest) {
 
   // Tier check: caller must be Verified+ to send connection requests (so DMs are gated).
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'verified')) {
+  if (!tierAtLeast(tier, 'pro')) {
     return NextResponse.json(
-      { error: 'Verified or Pro membership required to send connection requests.', currentTier: tier },
+      { error: 'Pro or Premium membership required to send connection requests.', currentTier: tier },
       { status: 403 }
     );
   }

@@ -191,9 +191,9 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
           )}
           {atCap && (
             <p style={{ color: '#C8102E', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
-              {tier === 'pro' ? `You've reached the 25-claim Pro limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
+              {tier === 'pro' ? `You've reached the 25-claim Premium limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
               <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-                {tier === 'pro' ? 'Contact Enterprise' : 'Upgrade to Pro'}
+                {tier === 'pro' ? 'Contact Enterprise' : 'Upgrade to Premium'}
               </Link>{' '}
               {tier === 'pro' ? 'for custom claim volume, bulk claim, and Featured Listing rotation.' : 'for up to 25 claims and bulk claim. If you need more, contact Enterprise.'}
             </p>
@@ -213,7 +213,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Upgrade required to claim
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            The Free tier doesn't include claims. Supporter is {formatTierPrice('supporter')}/year (1 claim), Verified is {formatTierPrice('verified')}/year (up to 5), Pro is {formatTierPrice('pro')}/year (up to 25 + bulk), and Enterprise is custom for larger organizations.
+            The Free tier doesn't include claims. Starter is {formatTierPrice('starter')}/year (1 claim), Pro is {formatTierPrice('pro')}/year (up to 5), Premium is {formatTierPrice('premium')}/year (up to 25 + bulk), and Enterprise is custom for larger organizations.
           </p>
           <Link
             href="/pricing"
@@ -244,7 +244,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Claim limit reached
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            {tier === 'pro' ? `You've used all 25 Pro claim slots. Contact Enterprise for custom volume, bulk claim, and Featured Listing rotation.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade to Pro for up to 25 claims, bulk claim, and Featured Listing rotation. For more than 25, contact Enterprise.`}
+            {tier === 'pro' ? `You've used all 25 Premium claim slots. Contact Enterprise for custom volume, bulk claim, and Featured Listing rotation.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade to Premium for up to 25 claims, bulk claim, and Featured Listing rotation. For more than 25, contact Enterprise.`}
           </p>
           <Link
             href="/pricing"

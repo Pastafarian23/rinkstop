@@ -15,18 +15,19 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any })
   : null;
 
-type TierId = 'supporter' | 'verified' | 'pro';
+// Tier rename 2026-06-17: was supporter/verified/pro → starter/pro/premium.
+type TierId = 'starter' | 'pro' | 'premium';
 
 const TIER_RANK: Record<TierId, number> = {
-  supporter: 1,
-  verified: 2,
-  pro: 3,
+  starter: 1,
+  pro: 2,
+  premium: 3,
 };
 
 const TIER_TO_PRICE_ENV: Record<TierId, string> = {
-  supporter: 'STRIPE_PRICE_TIER_SUPPORTER',
-  verified: 'STRIPE_PRICE_TIER_VERIFIED',
+  starter: 'STRIPE_PRICE_TIER_STARTER',
   pro: 'STRIPE_PRICE_TIER_PRO',
+  premium: 'STRIPE_PRICE_TIER_PREMIUM',
 };
 
 export async function POST(req: NextRequest) {
