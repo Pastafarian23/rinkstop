@@ -463,13 +463,34 @@ Not in nav, but add a quiet "How verification works" link in the dashboard foote
 
 ### One visual decision: badge style
 
-**Recommendation: navy/blue "ID" shield, not another checkmark.**
+**Arnel's directive (2026-06-17):** "The tiers should be indicated by text with tier level, not checks or shields. Verification is its own entity and that is the only way to get a verified check."
 
-Reasoning: the site already has a teal checkmark for the tier-based verified status. Adding another checkmark (even a different color) for identity would create "what's the difference?" confusion. A small **shield with "ID" inside**, navy color (matches brand), makes the difference obvious at a glance:
+**Final design — shipped in commit 6414147:**
 
-- Teal checkmark = "Paid for Pro+ tier"
-- Navy ID shield = "Verified identity with government ID"
+- **Tiers are TEXT ONLY** (Free / Starter / Pro / Premium / Enterprise as colored pills, no check or shield)
+- **One check on a profile or claim = identity verification only**
+- The teal check on every Pro+ profile is GONE
+- A new `<IdentityVerified />` component is the only check in the codebase
+- Visual: navy circle (#041E42) with a gold check (#FFB81C) and gold border, on dark backgrounds
 
-The two are independent — you can have one without the other. A Pro+ user with no ID verification shows the teal check only. A Pro+ user with ID verification shows both: "I'm a Pro member (teal) AND I've verified my ID (navy)."
+**Two independent signals, no conflation:**
 
-**This needs Arnel's sign-off** because it's a brand decision. If Arnel wants two checkmarks (one teal, one navy), we do that. If Arnel wants the ID shield, we do that. The visual style is in the design doc, not committed yet.
+| Profile state | Tier pill | Identity check |
+|---|---|---|
+| Pro+ member, not ID-verified | "Pro" pill (teal) | none |
+| Pro+ member, ID-verified | "Pro" pill (teal) | navy + gold check |
+| Free user, ID-verified (impossible — Pro+ only) | "Free" pill (gray) | none |
+| Expired verification | tier pill | none (badge gone) |
+
+**Where the check appears (post-Phase 1):**
+- `/profile/[slug]` header (next to the display name)
+- `ClaimedBy` component (on rink/team/league detail pages)
+- `/dashboard/messages/[threadId]` thread header (sender's verification status)
+- Anywhere else: text-only tier pill, no check
+
+**Where it does NOT appear:**
+- Tier pills themselves (no check)
+- The pricing page comparison table (the check is opt-in, not a feature)
+- The pricing page tier detail lists (clarified as 'Optional identity check' on Pro)
+- The welcome page (next-step, not a granted state)
+- The homepage tier section (claims + DMs are the Pro+ features, not the check)
