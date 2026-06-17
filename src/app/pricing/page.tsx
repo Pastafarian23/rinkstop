@@ -7,13 +7,13 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const metadata: Metadata = {
   title: 'Pricing — RinkStop',
   description:
-    'RinkStop pricing — Free, Supporter, Verified, and Pro plans for the global hockey directory. Founding Member badge available for the first 500 paid members.',
+    'RinkStop pricing — Free, Starter, Pro, Premium, and Enterprise plans for the global hockey directory. Founding Member badge available for the first 500 paid members.',
   alternates: { canonical: 'https://rinkstop.com/pricing' },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Supporter, Verified, and Pro plans for the global hockey directory. Founding Member badge available for the first 500 paid members.',
+      'RinkStop pricing — Free, Starter, Pro, Premium, and Enterprise plans for the global hockey directory. Founding Member badge available for the first 500 paid members.',
     url: 'https://rinkstop.com/pricing',
     siteName: 'RinkStop',
     type: 'website',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Supporter, Verified, and Pro plans for the global hockey directory. Founding Member badge available for the first 500 paid members.',
+      'RinkStop pricing — Free, Starter, Pro, Premium, and Enterprise plans for the global hockey directory. Founding Member badge available for the first 500 paid members.',
   },
 };
 

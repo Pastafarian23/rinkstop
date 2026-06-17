@@ -176,7 +176,7 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Claim it now — Verified unlocks 1 claim, Pro unlocks up to 5, Premium unlocks up to 25, and Enterprise covers larger orgs.
+              Claim it now — Starter unlocks 1 claim, Pro unlocks up to 5, Premium unlocks up to 25, and Enterprise covers larger orgs.
             </div>
           </div>
           <button

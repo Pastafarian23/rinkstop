@@ -161,19 +161,19 @@ const ROLE_VALUE_PROPS: Record<Role, string> = {
 const FAQ = [
   {
     q: 'Is this a subscription?',
-    a: 'Yes. Verified, Pro, and Premium are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
+    a: 'Yes. Starter, Pro, and Premium are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
   },
   {
     q: 'What’s a Founding Member badge?',
-    a: 'The first 500 paying members (Verified or higher) get a Founding Member badge on their profile. It’s a one-time, no-replacement scarcity lever — once they’re gone, the tier stays but the badge doesn’t come back.',
+    a: 'The first 500 paying members (any paid tier) get a Founding Member badge on their profile. It’s a one-time, no-replacement scarcity lever — once they’re gone, the tier stays but the badge doesn’t come back.',
   },
   {
     q: 'Can I claim a listing without paying?',
-    a: 'Verified includes 1 claim. Pro includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Premium includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
+    a: 'Starter includes 1 claim. Pro includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Premium includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
   },
   {
     q: 'I manage a rink, team, league, or organization. Which tier is for me?',
-    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Verified ($19.99) gets the same lead pipeline as a 25-listing Premium ($299). The difference is scale: Verified covers 1 claim, Pro covers up to 5, Premium covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
+    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Starter ($19.99) gets the same lead pipeline as a 25-listing Premium ($299). The difference is scale: Starter covers 1 claim, Pro covers up to 5, Premium covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
   },
   {
     q: 'I’m a parent of a youth player. Can I claim my kid?',
@@ -189,7 +189,7 @@ const FAQ = [
   },
   {
     q: 'Can I upgrade mid-year?',
-    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Verified to Pro, or Pro to Premium, at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
+    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Starter to Pro, or Pro to Premium, at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
   },
   {
     q: 'Why no ad-free tier?',
@@ -332,7 +332,7 @@ export default function FoundingMemberContent({
           </div>
         ) : (
           <div style={{ marginTop: 12, fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>
-            All {foundingCap} Founding Member badges have been claimed. The Verified tier stays — only the badge is gone.
+            All {foundingCap} Founding Member badges have been claimed. The paid tiers stay — only the badge is gone.
           </div>
         )}
         {currentUserId && currentUserTier && currentUserTier !== 'free' ? (
