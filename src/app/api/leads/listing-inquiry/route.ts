@@ -110,24 +110,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This listing is not currently accepting inquiries.' }, { status: 404 });
     }
 
-    // Verify claimer is Pro tier
-    const { data: profile, error: profileErr } = await supabaseAdmin
-      .from('profiles')
-      .select('tier')
-      .eq('user_id', claimRow.user_id)
-      .maybeSingle();
-
-    if (profileErr) {
-      console.error('listing-inquiry POST: profile lookup failed', profileErr);
-      return NextResponse.json({ error: 'Failed to verify listing.' }, { status: 500 });
-    }
-
-    if (!profile || profile.tier !== 'pro') {
-      // The lead capture form is a Pro-tier promise. Don't accept inquiries for
-      // Free/Supporter/Verified listings — the form shouldn't render there, but
-      // defend at the API too.
-      return NextResponse.json({ error: 'This listing is not currently accepting inquiries.' }, { status: 403 });
-    }
+    // Lead capture is activity-gated, not tier-gated: any active claim renders
+    // the form and accepts inquiries. Per SPEC 2026-06-17, we removed the
+    // "Pro tier required" gate so a $19.99 Supporter running a single rink
+    // gets the same lead pipeline as a $299 Pro running 25 listings.
 
     // Get listing name for denormalized display
     const listingTable = listing_type === 'rink' ? 'rinks' : 'teams';

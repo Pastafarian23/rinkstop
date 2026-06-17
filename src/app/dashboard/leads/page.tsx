@@ -76,10 +76,10 @@ export default async function LeadsPage() {
         }}>
           <div>
             <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', margin: '0 0 0.25rem' }}>
-              ⭐ Lead capture forms are a Pro perk
+              Want featured placement + more listings?
             </p>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.85rem', margin: 0 }}>
-              You&apos;re on the <TierBadge tier={claimantTier as any} size="sm" /> plan. Upgrade to Pro to put a contact form on your claimed listings.
+              You&apos;re on the <TierBadge tier={claimantTier as any} size="sm" /> plan. Lead capture works on every claimed listing. Upgrade to Pro for featured placement in your city and up to 25 claims.
             </p>
           </div>
           <Link
@@ -96,7 +96,7 @@ export default async function LeadsPage() {
               whiteSpace: 'nowrap',
             }}
           >
-            UPGRADE TO PRO →
+            SEE PLANS →
           </Link>
         </div>
       )}
@@ -127,9 +127,9 @@ export default async function LeadsPage() {
             No leads yet
           </p>
           <p style={{ fontSize: '0.9rem', margin: 0 }}>
-            {claimantTier === 'pro'
-              ? 'When someone contacts you through a listing, you\'ll see it here.'
-              : 'Once you upgrade to Pro, the contact form on your listings will start collecting leads here.'}
+            {claimantTier === 'free'
+              ? 'Claim a listing to put a contact form on your profile. Anyone can fill it out and you\'ll see the inquiry here.'
+              : 'When someone contacts you through a listing, you\'ll see it here.'}
           </p>
         </div>
       ) : (

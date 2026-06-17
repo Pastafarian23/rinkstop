@@ -55,6 +55,42 @@ export const TIERS: Record<TierName, TierInfo> = {
   },
 };
 
+/**
+ * Budget knobs per tier. Tier is a budget ceiling — features beyond the
+ * budget are gated by activity (e.g. lead capture is available to anyone
+ * with an active listing, not gated by Pro). See SPEC 2026-06-17 for the
+ * rationale: tier-as-budget decouples features from user archetypes, so
+ * a $19.99 Supporter running one rink gets the same lead capture as a
+ * $299 Pro running 25 listings.
+ */
+export interface TierLimits {
+  /** Max approved claims a user can hold. */
+  maxClaims: number;
+  /** Max active marketplace listings (ice slots, programs, etc.). */
+  maxListings: number;
+  /** Outbound marketplace messages per calendar month. Infinity = uncapped. */
+  monthlyOutboundMessages: number;
+}
+
+export const TIER_LIMITS: Record<TierName, TierLimits> = {
+  free: { maxClaims: 0, maxListings: 0, monthlyOutboundMessages: 0 },
+  supporter: { maxClaims: 1, maxListings: 1, monthlyOutboundMessages: 25 },
+  verified: { maxClaims: 5, maxListings: 5, monthlyOutboundMessages: 100 },
+  pro: { maxClaims: 25, maxListings: 25, monthlyOutboundMessages: Infinity },
+};
+
+/** Convenience: monthly outbound message cap for a tier, defaulting to 0 for unknown tiers. */
+export function getMonthlyOutboundMessages(tier: TierName | string | null | undefined): number {
+  if (!tier) return 0;
+  return TIER_LIMITS[tier as TierName]?.monthlyOutboundMessages ?? 0;
+}
+
+/** Convenience: max active listings for a tier. */
+export function getMaxListingsForTier(tier: TierName | string | null | undefined): number {
+  if (!tier) return 0;
+  return TIER_LIMITS[tier as TierName]?.maxListings ?? 0;
+}
+
 /** Format a tier's price for display. '$0' for free, '$19.99' for paid, '$299' for whole dollars. */
 export function formatTierPrice(tier: TierName): string {
   const p = TIERS[tier].priceUsd;
