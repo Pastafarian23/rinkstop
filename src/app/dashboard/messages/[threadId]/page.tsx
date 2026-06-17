@@ -38,9 +38,10 @@ interface ContextProfile {
 
 const TIER_LABEL: Record<string, string> = {
   free: 'Free',
-  supporter: 'Supporter',
-  verified: 'Verified',
+  starter: 'Starter',
   pro: 'Pro',
+  premium: 'Premium',
+  enterprise: 'Enterprise',
 };
 
 export default function ThreadPage({ params }: { params: Promise<{ threadId: string }> }) {

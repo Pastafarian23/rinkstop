@@ -46,7 +46,7 @@ function contactEnterprise() {
  * State is computed server-side in the *Mount wrapper and passed in as `state`:
  *   - signed_out: Not logged in → "Sign in to claim this rink"
  *   - claim_form: Logged in, tier has room → "Claim this rink" form
- *   - free:       Logged in, Free tier → "Upgrade to claim this rink" (Supporter is the entry point)
+ *   - free:       Logged in, Free tier → "Upgrade to claim this rink" (Starter is the entry point)
  *   - at_cap:     Logged in, paid tier but at the cap → "At cap — upgrade to Pro"
  *   - pending:    Logged in, paid tier, an unapproved claim exists → "Claim pending review"
  *
