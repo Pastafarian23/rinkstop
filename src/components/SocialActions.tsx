@@ -32,6 +32,10 @@ interface SocialActionsProps {
   // Layout
   layout?: 'row' | 'column';
   size?: 'sm' | 'md';
+  // Visual style for the share button. Defaults to 'dark' for entity
+  // detail pages; pass 'brand' for the public profile page so the
+  // share button matches the navy/gold RinkStop branding.
+  shareVariant?: 'light' | 'dark' | 'brand';
 }
 
 // SocialActions — combines Follow + Save + Message into a single toolbar
@@ -52,7 +56,7 @@ export default function SocialActions(props: SocialActionsProps) {
     favoriteType, favoriteId, favoriteName,
     initialFollowersCount = 0,
     layout = 'row', size = 'md',
-    share,
+    share, shareVariant,
   } = props;
   const { isSignedIn, isLoaded } = useUser();
 
@@ -245,7 +249,7 @@ export default function SocialActions(props: SocialActionsProps) {
 
       {share && (
         <div style={btnFlex}>
-          <ShareButton payload={share} variant="dark" />
+          <ShareButton payload={share} variant={shareVariant ?? 'dark'} />
         </div>
       )}
     </div>
