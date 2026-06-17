@@ -21,7 +21,7 @@ interface MeResponse {
 
 /**
  * Post-login upgrade nudge. Shows once to free users (or weekly if frequency='weekly')
- * with a single, clear ask: "Become a Supporter".
+ * with a single, clear ask: "Become a Starter".
  *
  * Mounted in the root layout, but only shows on the dashboard / homepage
  * (or whatever showOnPaths lists) — never on the pricing page itself.
@@ -31,7 +31,7 @@ interface MeResponse {
  *  - If user is founding member, show nothing
  *  - If user just dismissed, show nothing until cooldown
  *
- * Idempotency: stores localStorage keys per-tier ("rinkstop_upgrade_nudge_seen_supporter"),
+ * Idempotency: stores localStorage keys per-tier ("rinkstop_upgrade_nudge_seen_starter"),
  * not per-user. If the user clears cookies, the popup shows again — that's fine,
  * it's a free user on a clean device, not a power user with storage they care about.
  */
