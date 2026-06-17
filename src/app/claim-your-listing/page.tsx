@@ -4,22 +4,22 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { trackPageView } from '@/lib/analytics';
 
 export const metadata: Metadata = {
-  title: 'Claim Your Rink Listing on RinkStop — Free',
+  title: 'Claim Your Listing on RinkStop',
   description:
-    "Search for your rink's RinkStop listing and claim it for free. Manage your hours, photos, and team info. Verified rinks get a checkmark, lead capture, and featured rotation.",
+    "Search for your rink's RinkStop listing and claim it. Verified rinks get a checkmark, lead capture, and featured rotation. Claiming requires a RinkStop membership.",
   alternates: { canonical: 'https://rinkstop.com/claim-your-listing' },
   robots: { index: true, follow: true },
   openGraph: {
-    title: 'Claim Your Rink Listing on RinkStop — Free',
-    description: 'Search for your rink and claim your free listing. Manage your hours, photos, and team info.',
+    title: 'Claim Your Listing on RinkStop',
+    description: "Search for your rink and claim your listing. Verified rinks get a checkmark, lead capture, and featured rotation.",
     url: 'https://rinkstop.com/claim-your-listing',
     siteName: 'RinkStop',
     type: 'website',
   },
   twitter: {
     card: 'summary',
-    title: 'Claim Your Rink Listing on RinkStop — Free',
-    description: 'Search for your rink and claim your free listing.',
+    title: 'Claim Your Listing on RinkStop',
+    description: 'Search for your rink and claim your listing.',
   },
 };
 
@@ -131,19 +131,19 @@ export default async function ClaimYourListingPage({
               lineHeight: 1.1,
             }}
           >
-            Claim Your Rink Listing
+            Claim Your Listing
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '1.05rem', marginTop: '0.75rem', lineHeight: 1.5 }}>
-            Search for your rink below. Claiming is <strong style={{ color: '#fff' }}>free</strong> and gives you control over your hours, photos, and team info.
+            Search for your rink below. Verified operators get a checkmark, lead capture, and featured placement. Claiming requires a{' '}
+            <Link href="/pricing" style={{ color: '#FFB81C', fontWeight: 600, textDecoration: 'underline' }}>
+              RinkStop membership
+            </Link>
+            .
           </p>
         </div>
 
         {/* Search box */}
-        <form
-          action="/claim-your-listing"
-          method="GET"
-          style={{ marginBottom: '2rem' }}
-        >
+        <form action="/claim-your-listing" method="GET" style={{ marginBottom: '2rem' }}>
           <div
             style={{
               display: 'flex',
@@ -241,11 +241,28 @@ export default async function ClaimYourListingPage({
             Why Claim Your Listing?
           </h2>
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <BenefitRow icon="✅" text="Free to claim — control your hours, photos, and team info" />
             <BenefitRow icon="📍" text="Appear in search results for your city, state, and country" />
             <BenefitRow icon="📩" text="Receive direct messages from coaches, parents, and players" />
-            <BenefitRow icon="🚀" text="Optional upgrades: featured placement, lead capture, analytics" />
+            <BenefitRow icon="🚀" text="Featured placement, lead capture, and analytics on paid tiers" />
+            <BenefitRow icon="✅" text="Verified checkmark builds trust with players and parents" />
           </ul>
+          <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #1e1e1e' }}>
+            <Link
+              href="/pricing"
+              style={{
+                display: 'inline-block',
+                padding: '0.6rem 1.1rem',
+                background: '#FFB81C',
+                color: '#041E42',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                borderRadius: '6px',
+                textDecoration: 'none',
+              }}
+            >
+              See Membership Plans →
+            </Link>
+          </div>
         </div>
       </div>
     </div>
