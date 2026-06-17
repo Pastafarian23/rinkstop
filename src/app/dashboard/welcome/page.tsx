@@ -28,10 +28,9 @@ const NEXT_STEPS: Record<TierId, string[]> = {
     'Your Founding Member badge is now live on your profile. (First 500 paying members only — it stays after that.)',
   ],
   pro: [
-    'Your verified checkmark is now live on your profile and every listing you claim.',
-    'Claim up to 5 listings — the next step is to claim your second, third, etc. Each one shows the checkmark.',
-    'You can now send DMs to other Pro+ users. Try the Connections tab on a profile.',
-    'Your profile page is public at rinkstop.com/profile/yourusername — share it anywhere.',
+    'Your Pro tier is live — claim up to 5 listings, get a public profile at rinkstop.com/profile/yourusername, and DM other Pro+ users.',
+    'Verify your identity (optional, 60 seconds) to earn the only check on RinkStop. Visit /dashboard/identity. The check shows on your profile and every listing you claim. Re-verify every 2 years.',
+    'Claim your first listing — click any rink/team/league and tap "Claim".',
     'Above the search results in directory listings — your claimed rink/team now ranks higher in the city.',
   ],
   premium: [
@@ -50,7 +49,7 @@ const NEXT_STEPS: Record<TierId, string[]> = {
 
 // What to upsell to (or "you’ve got everything" for premium/enterprise)
 const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: string; reason: string }> = {
-  free: { id: 'starter', label: 'Starter', price: formatTierPricePerYear('starter'), reason: 'Unlimited follows, claim 1 listing, weekly digest, verified badge' },
+  free: { id: 'starter', label: 'Starter', price: formatTierPricePerYear('starter'), reason: 'Unlimited follows, claim 1 listing, weekly digest' },
   starter: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Claim up to 5, public profile, DMs' },
   pro: { id: 'premium', label: 'Premium', price: formatTierPricePerYear('premium'), reason: 'Claim up to 25, featured rotation, analytics' },
   premium: { id: 'enterprise', label: 'Enterprise', price: 'Contact', reason: 'You’ve got every self-serve feature. Enterprise is for national leagues, brands, and federations with custom needs.' },

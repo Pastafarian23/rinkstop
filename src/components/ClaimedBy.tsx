@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { VerifiedCheckmark, TierBadge } from './TierBadge';
+import { TierBadge } from './TierBadge';
+import { IdentityVerified } from './IdentityVerified';
 
 interface ClaimedBy {
   claim_id: string;
@@ -13,6 +14,9 @@ interface ClaimedBy {
   is_founding_member: boolean;
   username: string | null;
   claimed_at: string;
+  // Identity verification (added 2026-06-17, requires Phase 1 build to populate)
+  identity_verified_at: string | null;
+  identity_expires_at: string | null;
 }
 
 export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'rink' | 'team' | 'league' | 'player'; entityId: string; entityName: string }) {
@@ -39,8 +43,14 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
 
   if (loading || !data) return null;
 
-  const isVerified = data.tier === 'pro' || data.tier === 'premium' || data.tier === 'enterprise';
-  const displayName = data.display_name || 'Verified Owner';
+  // Identity verification is the ONLY signal that earns a check on RinkStop.
+  // Tier is shown as a text pill (Starter / Pro / Premium / Enterprise).
+  // Tier alone is NOT a verification signal.
+  const isIdentityVerified =
+    !!data.identity_verified_at &&
+    !!data.identity_expires_at &&
+    new Date(data.identity_expires_at) > new Date();
+  const displayName = data.display_name || 'Owner';
 
   return (
     <div
@@ -49,8 +59,8 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
         alignItems: 'center',
         gap: 12,
         padding: '0.75rem 1rem',
-        background: isVerified ? 'rgba(20,184,166,0.08)' : 'rgba(255,255,255,0.04)',
-        border: `1px solid ${isVerified ? 'rgba(20,184,166,0.3)' : 'rgba(255,255,255,0.1)'}`,
+        background: isIdentityVerified ? 'rgba(4,30,66,0.08)' : 'rgba(255,255,255,0.04)',
+        border: `1px solid ${isIdentityVerified ? 'rgba(4,30,66,0.3)' : 'rgba(255,255,255,0.1)'}`,
         borderRadius: 8,
         marginTop: 12,
         marginBottom: 12,
@@ -78,7 +88,13 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
           ) : (
             <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{displayName}</span>
           )}
-          {isVerified && <VerifiedCheckmark size={14} />}
+          {isIdentityVerified && (
+            <IdentityVerified
+              size={14}
+              verifiedAt={data.identity_verified_at ?? undefined}
+              expiresAt={data.identity_expires_at ?? undefined}
+            />
+          )}
           <TierBadge tier={data.tier} size="xs" />
         </div>
       </div>
