@@ -14,8 +14,10 @@ interface ShareButtonProps {
   /** When true, render as a compact icon-only button (for toolbars). */
   compact?: boolean;
   /** Visual variant. 'light' (default) is the standard white button. 'dark'
-   * matches the SocialActions dark toolbar (used inside detail pages). */
-  variant?: 'light' | 'dark';
+   * matches the SocialActions dark toolbar (used inside detail pages).
+   * 'brand' matches the RinkStop navy/gold site branding (used on
+   * public-facing pages like /profile/[slug]). */
+  variant?: 'light' | 'dark' | 'brand';
   /** Optional className passthrough. */
   className?: string;
 }
@@ -62,6 +64,21 @@ export default function ShareButton({ payload, compact = false, variant = 'light
   async function handlePrimary() {
     if (hasWebShare) {
       try {
+        // Track the native share attempt. The actual platform is hidden by
+        // the OS, so we log it as 'native' to distinguish from desktop popover clicks.
+        try {
+          void fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: 'outbound_share_clicked',
+              props: { platform: 'native', url: payload.url },
+            }),
+            keepalive: true,
+          });
+        } catch {
+          // silent
+        }
         await navigator.share({
           title: payload.title,
           text: payload.text,
@@ -77,6 +94,22 @@ export default function ShareButton({ payload, compact = false, variant = 'light
   }
 
   function handlePlatform(p: SharePlatform) {
+    // Best-effort analytics. Never blocks the share. The 'outbound_share_clicked'
+    // event is allowlisted in /api/track so a 400 from a stale deploy doesn't
+    // prevent the share.
+    try {
+      void fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'outbound_share_clicked',
+          props: { platform: p, url: payload.url },
+        }),
+        keepalive: true,
+      });
+    } catch {
+      // silent
+    }
     if (p === 'copy') {
       void copyToClipboard();
       return;
@@ -121,15 +154,7 @@ export default function ShareButton({ payload, compact = false, variant = 'light
         type="button"
         onClick={handlePrimary}
         className={
-          (compact
-            ? variant === 'dark'
-              ? 'inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-white/10'
-              : 'inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
-            : variant === 'dark'
-              ? 'inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10'
-              : 'inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50') +
-          ' ' +
-          className
+          shareButtonClass(variant, compact) + ' ' + className
         }
         aria-label="Share this page"
         aria-haspopup={!hasWebShare}
@@ -143,7 +168,7 @@ export default function ShareButton({ payload, compact = false, variant = 'light
       {open && !hasWebShare && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md border border-slate-200 bg-white shadow-lg"
+          className={sharePopoverClass(variant)}
           data-testid="share-popover"
         >
           <ul className="py-1">
@@ -153,10 +178,10 @@ export default function ShareButton({ payload, compact = false, variant = 'light
                   type="button"
                   role="menuitem"
                   onClick={() => handlePlatform(p)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                  className={popoverItemClass(variant)}
                   data-testid={`share-option-${p}`}
                 >
-                  <PlatformIcon platform={p} className="h-4 w-4 text-slate-500" />
+                  <PlatformIcon platform={p} className={platformIconClass(variant)} />
                   <span className="flex-1">
                     {p === 'copy' && copied ? 'Copied!' : PLATFORM_LABELS[p]}
                   </span>
@@ -239,4 +264,48 @@ function PlatformIcon({ platform, className = '' }: { platform: SharePlatform; c
         </svg>
       );
   }
+}
+
+// ---------- style helpers ----------
+
+function shareButtonClass(variant: 'light' | 'dark' | 'brand', compact: boolean): string {
+  if (variant === 'brand') {
+    // RinkStop branding: navy bg, gold border, white text, ice hover.
+    // Used on the public profile page so the share button matches
+    // the rest of the brand.
+    return compact
+      ? 'inline-flex items-center gap-1.5 rounded-md border border-[#FFB81C]/40 bg-[#0A2A5E] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#113C8C] hover:border-[#FFB81C]/70 transition-colors'
+      : 'inline-flex items-center gap-2 rounded-md border border-[#FFB81C]/40 bg-[#0A2A5E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#113C8C] hover:border-[#FFB81C]/70 transition-colors';
+  }
+  if (variant === 'dark') {
+    return compact
+      ? 'inline-flex items-center gap-1.5 rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-white/10'
+      : 'inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-white/10';
+  }
+  // 'light' default
+  return compact
+    ? 'inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50'
+    : 'inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50';
+}
+
+function sharePopoverClass(variant: 'light' | 'dark' | 'brand'): string {
+  if (variant === 'brand') {
+    // Brand popover: white card, gold-bordered options, navy hover.
+    return 'absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md border border-[#FFB81C]/30 bg-white shadow-xl';
+  }
+  return 'absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md border border-slate-200 bg-white shadow-lg';
+}
+
+function platformIconClass(variant: 'light' | 'dark' | 'brand'): string {
+  if (variant === 'brand') {
+    return 'h-4 w-4 text-[#041E42]';
+  }
+  return 'h-4 w-4 text-slate-500';
+}
+
+function popoverItemClass(variant: 'light' | 'dark' | 'brand'): string {
+  if (variant === 'brand') {
+    return 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#041E42] font-medium hover:bg-[#EEF5FF]';
+  }
+  return 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50';
 }

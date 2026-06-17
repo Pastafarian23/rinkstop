@@ -249,3 +249,72 @@ export const PLATFORM_LABELS: Record<SharePlatform, string> = {
   email: 'Email',
   copy: 'Copy link',
 };
+
+/**
+ * Build a share payload for a news/blog article.
+ * Used by /news/[slug] and /blog.
+ */
+export function buildArticleShare(post: {
+  title: string;
+  slug: string;
+  summary?: string | null;
+  excerpt?: string | null;
+  imageUrl?: string | null;
+}): SharePayload {
+  const blurb = post.summary || post.excerpt;
+  return {
+    title: `${post.title} — ${SITE_NAME}`,
+    text: blurb
+      ? `${post.title} — ${blurb}`
+      : post.title,
+    url: `${BASE_URL}/news/${post.slug}`,
+  };
+}
+
+/**
+ * Build a share payload for a tool page (calculator, etc.).
+ * Used by /tools/[slug].
+ */
+export function buildToolShare(opts: {
+  slug: string;
+  name: string;
+  description?: string | null;
+}): SharePayload {
+  return {
+    title: `${opts.name} — ${SITE_NAME}`,
+    text: opts.description || opts.name,
+    url: `${BASE_URL}/tools/${opts.slug}`,
+  };
+}
+
+/**
+ * Build a share payload for a game/match page.
+ * Works for both /directory/games/[id] and /directory/nhl/games/[slug].
+ */
+export function buildGameShare(game: {
+  homeName: string;
+  awayName: string;
+  date: string;
+  slug?: string | null;
+  id?: string | null;
+  league?: string | null;
+  final?: string | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+}): SharePayload {
+  const path = game.slug
+    ? `/directory/nhl/games/${game.slug}`
+    : `/directory/games/${game.id}`;
+  const when = game.date
+    ? new Date(game.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : '';
+  const lg = game.league ? ` (${game.league})` : '';
+  const score = game.final ?? (game.homeScore != null && game.awayScore != null ? `Final ${game.homeScore}-${game.awayScore}` : '');
+  const scorePart = score ? ` — ${score}` : '';
+  return {
+    title: `${game.awayName} at ${game.homeName}${scorePart}${lg} | ${SITE_NAME}`,
+    text:
+      `${game.awayName} vs ${game.homeName}${scorePart}${when ? ' — ' + when : ''} on ${SITE_NAME}.`,
+    url: `${BASE_URL}${path}`,
+  };
+}

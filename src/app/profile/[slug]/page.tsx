@@ -146,8 +146,8 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
             </div>
           )}
 
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
               <h1 className="text-2xl font-bold">{displayName}</h1>
               {(() => {
                 // Identity verification is the ONLY check. Tier is shown as
@@ -166,7 +166,9 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               })()}
               <FoundingMemberBadge />
             </div>
-            <p className="text-white/60 mb-2">@{profile.username}</p>
+            <p className="text-white/50 text-sm mb-3 -mt-0.5">
+              <span className="text-white/30">@</span>{profile.username}
+            </p>
 
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span
@@ -187,7 +189,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               <p className="text-sm text-white/50 mb-2">📍 {profile.location}</p>
             )}
 
-            <div className="flex gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3">
               <ConnectButton otherUserId={profile.user_id} otherDisplayName={displayName.split(' ')[0] || 'this user'} />
               <SocialActions
                 share={{
@@ -196,6 +198,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                   url: profileUrl,
                 }}
                 messageRecipientId={profile.user_id}
+                shareVariant="brand"
               />
             </div>
           </div>

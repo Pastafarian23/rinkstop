@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { getNhlGameById, getNhlGamesByDate, slugify, NhlMatch } from '@/lib/nhl-data';
 import { findCanonicalTeam } from '@/lib/nhl-teams-canonical';
 import TicketmasterAd from '@/components/TicketmasterAd';
+import ShareButton from '@/components/ShareButton';
+import { buildGameShare } from '@/lib/share';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -112,6 +114,24 @@ export default async function GamePage({ params }: Props) {
         </div>
       ) : (
         <>
+          {/* Share — full popover (X, FB, LI, WhatsApp, Reddit, Email, Copy).
+              Server-rendered with the parsed match data. Mobile uses native share sheet. */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+            <ShareButton
+              payload={buildGameShare({
+                homeName: match.home_team_name,
+                awayName: match.away_team_name,
+                date: (match as any).start_time ?? match.date,
+                slug,
+                league: 'NHL',
+                final: match.status.startsWith('Finished') && match.home_score !== null && match.away_score !== null
+                  ? `Final ${match.away_score}-${match.home_score}`
+                  : null,
+              })}
+              variant="brand"
+            />
+          </div>
+
           {(() => {
             const si = statusInfo(match.status);
             const isFinished = match.status.startsWith('Finished');
