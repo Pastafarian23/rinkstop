@@ -2,8 +2,10 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
+import ShareButton from '@/components/ShareButton';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
+import { buildArticleShare } from '@/lib/share';
 
 // Defensive base URL — same pattern as the other server pages in this repo.
 // In Vercel production NEXT_PUBLIC_SITE_URL is the real https://rinkstop.com,
@@ -371,31 +373,26 @@ export default async function BlogPostPage({ params }: Props) {
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
 
-              {/* Share */}
+              {/* Share — full popover (X, Facebook, LinkedIn, WhatsApp, Reddit, Email, Copy).
+                  On mobile, ShareButton uses the native share sheet. */}
               <div style={{
                 marginTop: '2.5rem',
                 paddingTop: '1.5rem',
                 borderTop: '1px solid #eee',
                 display: 'flex',
                 gap: '0.75rem',
-                alignItems: 'center'
+                alignItems: 'center',
+                flexWrap: 'wrap'
               }}>
                 <span style={{ color: '#666', fontSize: '0.8125rem', fontWeight: 600 }}>Share:</span>
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=https://rinkstop.com/news/${post.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    background: '#1DA1F2',
-                    color: '#fff',
-                    padding: '0.4rem 0.875rem',
-                    borderRadius: '3px',
-                    fontSize: '0.8125rem',
-                    textDecoration: 'none'
-                  }}
-                >
-                  Post to X
-                </a>
+                <ShareButton
+                  payload={buildArticleShare({
+                    title: post.title,
+                    slug: post.slug,
+                    excerpt: post.subtitle ?? null,
+                  })}
+                  variant="brand"
+                />
               </div>
 
               {/* Author bio */}
