@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import DashboardNav from '@/components/DashboardNav';
 import UserMenu from '@/components/UserMenu';
+import { getUserTier, tierAtLeast } from '@/lib/connections';
 
 export const dynamic = 'force-dynamic';
 
@@ -138,6 +139,14 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   if (isBusinessUser) {
     navLinks.push(['/dashboard/listings', 'Listings']);
   }
+  // Identity verification nav: gated to Starter+ (per design, 2026-06-17).
+  // Free users see the /pricing upsell instead of this link.
+  try {
+    const currentTier = await getUserTier(userId);
+    if (tierAtLeast(currentTier, 'starter')) {
+      navLinks.push(['/dashboard/identity', 'Verification']);
+    }
+  } catch { /* best-effort — don't break the layout if Supabase is down */ }
   navLinks.push(
     ['/dashboard/leads', 'Leads'],
     ['/dashboard/subscription', 'Subscription'],
