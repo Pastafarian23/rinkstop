@@ -1,8 +1,14 @@
 # Identity & Business Verification (2026-06-17)
 
-> **Status:** Design (no code yet). Awaiting green light to begin Phase 1.
+> **Status:** Design LOCKED (no code yet). Awaiting green light to begin Phase 1.
 > **Owner:** KiloClaw (planning + build) / Arnel (Stripe Connect when Phase 3 lands)
 > **Vendor:** Didit.me (Path C — confirmed 2026-06-17 16:51 CDT)
+>
+> **Locked decisions (Arnel, 2026-06-17 16:55 CDT):**
+> 1. **Tier gate:** Pro+ (`tierAtLeast(tier, 'pro')` — $59.99/yr and up)
+> 2. **Branding:** Didit-hosted page stays as `didit.me` (no white-label; revisit if Didit imposes a prohibitive cost — to be confirmed at signup)
+> 3. **Data retention:** Full retention, no purge. Audit trail is permanent.
+> 4. **Re-verification cadence:** Every 2 years. Cron job flags expired verifications and prompts user to re-verify.
 
 ## Why we're doing this
 
@@ -55,6 +61,10 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS identity_verified_at TIMESTAMPTZ;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS identity_verification_method TEXT;
   -- values: 'didit_passport' | 'didit_id_card' | 'didit_selfie_only' | null
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS didit_session_id UUID;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS identity_expires_at TIMESTAMPTZ;
+  -- = identity_verified_at + interval '2 years'. Cron flags expired rows as
+  -- 'expired' (via the profile_identity_status view) and prompts re-verify.
+  -- On successful re-verify, this is bumped +2y from the new verification date.
 
 -- New table: didit_sessions
 CREATE TABLE didit_sessions (
@@ -73,6 +83,33 @@ CREATE TABLE didit_sessions (
 );
 CREATE INDEX didit_sessions_user_id_idx ON didit_sessions (user_id);
 CREATE INDEX didit_sessions_status_idx ON didit_sessions (status);
+
+-- Helper view: identity status (single source of truth for UI + cron checks)
+-- A verification is considered "active" if identity_verified_at is set
+-- AND identity_expires_at > now().
+CREATE OR REPLACE VIEW profile_identity_status AS
+SELECT
+  user_id,
+  identity_verified_at,
+  identity_expires_at,
+  identity_verification_method,
+  CASE
+    WHEN identity_verified_at IS NULL THEN 'never_verified'
+    WHEN identity_expires_at > now() THEN 'active'
+    WHEN identity_verified_at IS NOT NULL AND identity_expires_at <= now() THEN 'expired'
+    ELSE 'never_verified'
+  END AS status,
+  CASE
+    WHEN identity_expires_at IS NOT NULL THEN
+      EXTRACT(DAYS FROM (identity_expires_at - now()))::int
+    ELSE NULL
+  END AS days_until_expiry
+FROM profiles;
+
+-- Cron-friendly index: find expired / soon-to-expire verifications fast
+CREATE INDEX profiles_identity_expires_idx
+  ON profiles (identity_expires_at)
+  WHERE identity_verified_at IS NOT NULL;
 ```
 
 #### API routes
@@ -101,7 +138,15 @@ src/app/dashboard/layout.tsx              [mod]  - add "Identity" nav item
 src/app/dashboard/welcome/page.tsx        [mod]  - show "Verify identity" prompt if Pro+ and unverified
 src/app/profile/[slug]/page.tsx           [mod]  - small "Identity verified" line if flag set
 supabase/migrations/2026-06-17_didit_identity.sql  [new]
+scripts/cron-check-identity-expiry.mjs    [new]  - daily 09:00 UTC, prompts re-verify
 ```
+
+#### Phase 1 constraints (locked)
+
+- **Tier gate:** `tierAtLeast(tier, 'pro')` (Pro $59.99/yr, Premium $299/yr, Enterprise by contact). Starter ($19.99) and Free are not eligible.
+- **Branding:** `didit.me` (Didit-hosted page). No white-label config.
+- **Retention:** Full retention of `decision JSONB` and `didit_sessions` rows. No purge job.
+- **Re-verify cadence:** 2 years. `identity_expires_at = identity_verified_at + interval '2 years'`. Cron prompts user at T-30, T-7, T-1 days before expiry, and at T+0 (expired) blocks new claims / message sends until re-verified.
 
 #### Webhook flow
 
@@ -201,15 +246,22 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 5. **Webhooks** (test with Didit sandbox): webhook destination created in Didit console, HMAC verified
 6. **Dashboard page** (UI, gated to Pro+): `/dashboard/identity`
 7. **Profile + welcome** (light touch): badge + prompt
+8. **Cron job** (daily at 09:00 UTC): `scripts/cron-check-identity-expiry.mjs` — finds verifications expiring within 30 days, sends in-app notification banner prompt for re-verify
 
-**Total Phase 1 time estimate:** 5-7 days, including Didit sandbox testing, webhook signature verification, and end-to-end flow testing.
+**Total Phase 1 time estimate:** 5-7 days, including Didit sandbox testing, webhook signature verification, and end-to-end flow testing. **Plus 1 day for the cron job (day 7).** Total: 6-8 days.
 
 ## Open questions for Arnel
 
-1. **What tier to gate verification on?** Plan says Pro+ (any paid tier). Alternative: any tier including Free (more data, less revenue impact, but more abuse risk).
-2. **White-label or Didit-branded?** Didit supports white-label hosted flow. White-label costs more per check (?). Confirm whether hosted page can show "RinkStop" branding.
-3. **Data retention.** Plan keeps `decision JSONB` for audit. Alternative: store only the high-level fields, drop the rest after 90 days. (Stripe Connect would still need the audit trail for compliance disputes.)
-4. **Re-verification cadence.** Plan says re-verify on demand (user clicks). Alternative: re-verify every 2 years (industry standard for KYC). Need to know before we ship.
+**All four open questions resolved 2026-06-17 16:55 CDT.**
+
+| # | Question | Decision | Effect |
+|---|---|---|---|
+| 1 | Tier gate? | **Pro+** (`tierAtLeast(tier, 'pro')`) | Starter and Free are not eligible. |
+| 2 | White-label? | **No** (use Didit-hosted) | `didit.me` URL stays. Revisit if Didit imposes a cost increase. |
+| 3 | Data retention? | **Full retention** (no purge) | All decision JSONB + sessions kept permanently. Storage is cheap; audit trail is non-negotiable. |
+| 4 | Re-verify cadence? | **2 years** | `identity_expires_at = identity_verified_at + interval '2 years'`. Cron prompts re-verify at T-30, T-7, T-1 days, and T+0 (expired). |
+
+**No outstanding decisions. Ready to build when Arnel says ship.**
 
 ## Risks
 
@@ -228,6 +280,15 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 - ❌ Adding verification badges to marketing copy (will follow after Phase 1 ships)
 - ❌ Phase 2/3 work (depends on Phase 1 outcome)
 - ❌ OpenCorporates evaluation (rejected — $2,800/yr min for commercial use is non-starter)
+
+## What I CAN do without code (still)
+
+- Map the existing profile code to the changes needed (DONE in this doc)
+- Sketch the `/dashboard/identity` page wireframe (DONE in this doc)
+- Estimate Phase 1 build time: **5-7 days + 1 day for cron = 6-8 days total**
+- Write the SDK wrapper that I can drop in when we start building
+- Set up Didit sandbox account (if Arnel signs up; or I do with Arnel's approval)
+- Estimate hosting cost for full retention: 100 verified users = ~50MB JSONB total. 1,000 users = ~500MB. Supabase free tier covers 500MB. **Full retention cost: $0 until 1,000+ verified users.**
 
 ## What I CAN do without code
 
