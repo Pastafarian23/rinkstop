@@ -343,4 +343,38 @@ supabase/migrations/2026-06-17_business_kyb.sql  [new]
 - Set up Didit sandbox account (if Arnel signs up; or I do with Arnel's approval)
 - Estimate hosting cost for full retention: 100 verified users = ~50MB JSONB total. 1,000 users = ~500MB. Supabase free tier covers 500MB. **Full retention cost: $0 until 1,000+ verified users.**
 
+## Didit account state (verified 2026-06-17 17:13 UTC)
+
+**API key:** live and authenticated against `https://verification.didit.me/v3/workflows/`. HTTP 200, 3 workflows returned.
+
+**Existing workflows (all `status: draft`, none `published`):**
+
+| workflow_id | label | type | features | max price | is_default |
+|---|---|---|---|---|---|
+| `92721743-26e8-4d7e-9db2-c4c48c5bec08` | Biometric Authentication | biometric_authentication | LIVENESS + FACE_MATCH + IP_ANALYSIS | $0.13 | no |
+| `e953ec7d-226a-41c1-8ee8-64eb1c008152` | KYC + AML | kyc | OCR + LIVENESS + FACE_MATCH + AML + IP_ANALYSIS | $0.65 | no |
+| `016971f7-2a4a-47ba-9201-24a1a9d25d47` | Free KYC | kyc | OCR + LIVENESS + FACE_MATCH + IP_ANALYSIS | $0.33 | **yes** |
+
+**Naming clarification:** "Free KYC" is the label on the workflow, NOT a free verification. The $0.33 max is the per-check price (with $0.00 min — IP analysis is sometimes free). The label reflects the default configuration that ships with new Didit applications.
+
+**White-label status:** `is_white_label_enabled: false` on all 3. No extra cost concern (matches Arnel's decision).
+
+**For Phase 1:** we use the "Free KYC" default workflow `016971f7-2a4a-47ba-9201-24a1a9d25d47` (KYC: OCR + LIVENESS + FACE_MATCH + IP_ANALYSIS, $0.33 max per check). This matches the design's stated $0.33/verification cost.
+
+**For Phase 2 (business KYB):** use the "KYC + AML" workflow `e953ec7d-226a-41c1-8ee8-64eb1c008152` (KYC + AML, $0.65 max per check). Note: this includes AML screening, which is required for marketplace v2 receiving parties. The "Biometric Authentication" workflow is for re-verification only (no document scan) — not used in Phase 1 or 2.
+
+**All 3 workflows need to be `published` before any session can be created against them.** This is a blocker that requires Arnel (or me with his permission) to:
+1. Log into the Didit Business Console at https://business.didit.me
+2. For each workflow, click "Publish"
+3. Confirm the price threshold and other settings
+
+**Webhook destinations:** 0 exist. Need to create `POST /v3/webhook/destinations/` with:
+- `url`: `https://rinkstop.com/api/webhooks/didit`
+- `subscribed_events`: `["session.completed"]` (and others as we discover them)
+- Returns `secret_shared_key` in response — this goes into Vercel env as `DIDIT_WEBHOOK_SECRET`
+
+**Key handling security note:** the API key was sent over Telegram (chat channel, not encrypted at rest in the client). **Recommend rotating the key after Phase 1 ships** since the live key is in the chat log. Will note in MEMORY.md.
+
+**Sandbox vs production:** the key returns real prices ($0.33, $0.65) and real workflow IDs, not test fixtures. **This is the live key, not sandbox.** Sandbox applications have different key prefixes and `sandbox` in the workflow URLs. We are running against production data — the first real verification will be charged to Arnel's Didit account.
+
 
