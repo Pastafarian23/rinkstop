@@ -135,6 +135,15 @@ async function loadBadWords(): Promise<{ word: string; severity: 'hard' | 'soft'
  * 1. Brand prefix check → returns `soft_review` with reason='brand_prefix'
  * 2. Bad-words check    → hard block (auto-reject) or soft queue
  * 3. Empty (no flags)   → ok
+ *
+ * Matcher design (Arnel, 2026-06-17):
+ *   - Substring inclusion in the leet-normalized slug is the primary check.
+ *     Catches "sh1t" → "shit" (leet), "f.uck" → "fuck" (stripped).
+ *   - We do NOT use skeleton matching. It produces too many false
+ *     positives (e.g. "fck" matching "fuck" skeleton would also match
+ *     "fake" if you allow missing letters). Instead, common evasion
+ *     abbreviations (fck, fvck, fcuk, phuck, sht, biatch, etc.) are
+ *     added as explicit rows in the bad_words table.
  */
 export async function moderateUsername(slug: string): Promise<ModerationResult> {
   const normalized = normalizeForModeration(slug);
@@ -149,14 +158,16 @@ export async function moderateUsername(slug: string): Promise<ModerationResult> 
     };
   }
 
-  // 2. Bad words
+  // 2. Bad words (substring match in leet-normalized + stripped slug)
   const words = await loadBadWords();
   if (words.length === 0) {
     return { ok: true };
   }
+  // Also check a punctuation-stripped version so "f.uck" matches "fuck"
+  const stripped = normalized.replace(/[^a-z0-9]/g, '');
   const matchedSoft: string[] = [];
   for (const w of words) {
-    if (normalized.includes(w.word)) {
+    if (normalized.includes(w.word) || stripped.includes(w.word)) {
       if (w.severity === 'hard') {
         return { ok: false, hard_block: w.word };
       }
