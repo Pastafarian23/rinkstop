@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import ShareButton from '@/components/ShareButton';
+import { buildToolShare } from '@/lib/share';
 
 type Level = 'house' | 'a' | 'aa' | 'aaa' | 'junior' | 'adult';
 type Region = 'sunless' | 'hockey_belt' | 'northeast' | 'west' | 'midatlantic' | 'south' | 'canada' | 'europe';
@@ -362,6 +364,23 @@ export default function HockeyCostCalculatorClient() {
           <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', marginTop: 12 }}>
             For {levelInfo.name.toLowerCase()} hockey in {REGION_LABELS[region].toLowerCase()} at age {age}
           </div>
+        </div>
+
+        {/* Share — full popover (X, Facebook, LinkedIn, WhatsApp, Reddit, Email, Copy).
+            Sits right under the total so the user can share the moment they see it. */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: '1.5rem',
+        }}>
+          <ShareButton
+            payload={buildToolShare({
+              slug: 'hockey-cost-calculator',
+              name: 'Youth Hockey Cost Calculator',
+              description: `How much does youth hockey really cost? Free calculator with real 2026 data.`,
+            })}
+            variant="brand"
+          />
         </div>
 
         {/* Breakdown */}

@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import ShareButton from '@/components/ShareButton';
+import { type SharePayload } from '@/lib/share';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -170,6 +172,23 @@ export default function GamePage() {
         {game.venue_details?.name && (
           <p style={{ fontSize: '0.75rem', color: '#444', marginTop: '0.25rem' }}>@{game.venue_details.name}</p>
         )}
+
+        {/* Share — full popover (X, FB, LI, WhatsApp, Reddit, Email, Copy).
+            Built from the loaded game state. Mobile uses native share sheet.
+            This is the generic /directory/games/[id] page (not NHL); the
+            share URL points back here, not to /directory/nhl/games/[slug]. */}
+        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+          <ShareButton
+            payload={{
+              title: `${awayName} at ${homeName} — RinkStop`,
+              text: game.status === 'completed' && game.home_score !== null && game.away_score !== null
+                ? `${awayName} at ${homeName} — Final ${game.away_score}-${game.home_score}.`
+                : `${awayName} at ${homeName} on RinkStop.`,
+              url: `${typeof window !== 'undefined' ? window.location.origin : 'https://rinkstop.com'}/directory/games/${game.id}`,
+            } satisfies SharePayload}
+            variant="brand"
+          />
+        </div>
       </div>
 
       {/* Period Scores */}
