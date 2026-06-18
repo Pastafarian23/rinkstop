@@ -146,6 +146,27 @@ async function renderDashboard(userId: string) {
   // visible on first paint (no client-side fetch on dashboard load).
   const inbox = await loadInboxSummary(userId);
 
+  // Private team workspaces the user is a member of (Day 3 team hub).
+  // Wrapped in try/catch so a missing table doesn't 500 the whole dashboard.
+  let myTeams: Array<{ id: string; slug: string; name: string; short_name: string | null; country_code: string | null; role: string }> = [];
+  try {
+    const { data } = await supabaseAdmin
+      .from('team_members')
+      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code )')
+      .eq('user_id', userId)
+      .is('left_at', null)
+      .order('joined_at', { ascending: false })
+      .limit(10);
+    myTeams = (data || [])
+      .map((row: any) => ({
+        ...(row.team_workspaces || {}),
+        role: row.role,
+      }))
+      .filter((t: any) => t.id && t.slug);
+  } catch (e) {
+    console.error('[dashboard] team_members query failed:', e);
+  }
+
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
     { field: 'Display name', done: !!(profile?.display_name || firstName), href: '/dashboard/profile', hint: 'Add your first and last name' },
     { field: 'Avatar', done: !!avatarUrl, href: '/dashboard/profile', hint: 'Upload a profile photo' },
@@ -373,6 +394,93 @@ async function renderDashboard(userId: string) {
           <AccountTypePicker />
         </div>
       )}
+
+      {/* My Teams (Day 3 — private team workspaces) */}
+      <div
+        id="my-teams"
+        style={{
+          background: '#0f0f0f',
+          border: '1px solid #1e1e1e',
+          borderRadius: 12,
+          padding: '1.25rem 1.5rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: '0.875rem' }}>
+          <h3
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: '1.1rem',
+              color: '#fff',
+              letterSpacing: '0.05em',
+              margin: 0,
+            }}
+          >
+            🏒 MY TEAMS
+          </h3>
+          <Link
+            href="/dashboard/team/new"
+            style={{
+              fontSize: '0.8rem',
+              color: '#14B8A6',
+              textDecoration: 'none',
+              fontWeight: 600,
+            }}
+          >
+            + Create a team
+          </Link>
+        </div>
+        {myTeams.length === 0 ? (
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
+            You&rsquo;re not on any teams yet. Start your own or ask a coach for an invite code.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {myTeams.map((t) => {
+              const flag = t.country_code === 'PH' ? '🇵🇭' : t.country_code === 'US' ? '🇺🇸' : t.country_code === 'CA' ? '🇨🇦' : t.country_code === 'GB' ? '🇬🇧' : '🏒';
+              return (
+                <Link
+                  key={t.id}
+                  href={`/dashboard/team/${t.slug}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.625rem 0.875rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid #1e1e1e',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    color: '#fff',
+                    transition: 'background 120ms',
+                  }}
+                >
+                  <span style={{ fontSize: '1.25rem' }} aria-hidden>{flag}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.name}</div>
+                    {t.short_name && (
+                      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>{t.short_name}</div>
+                    )}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      padding: '0.15rem 0.5rem',
+                      background: 'rgba(20,184,166,0.12)',
+                      color: '#14B8A6',
+                      border: '1px solid rgba(20,184,166,0.3)',
+                      borderRadius: 999,
+                      fontWeight: 600,
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {t.role.replace(/_/g, ' ')}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
