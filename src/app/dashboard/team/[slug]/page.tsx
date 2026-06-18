@@ -140,6 +140,10 @@ export default async function TeamHubPage({ params }: PageProps) {
         homeCity={team.home_city}
         homeCountry={team.home_country}
         ageCategory={team.age_category}
+        ageLabel={team.age_label}
+        ageMin={team.age_min}
+        ageMax={team.age_max}
+        parentOrg={team.parent_org}
         seasonLabel={team.season_label}
         level={team.level}
         slug={team.slug}
