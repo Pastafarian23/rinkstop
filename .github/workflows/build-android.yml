@@ -98,27 +98,36 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Next.js needs Supabase / Clerk / Google Maps env vars at BUILD time
-      # (not just runtime). These are read via process.env.NEXT_PUBLIC_* during
-      # page-data collection. We write .env.local from secrets so the build
-      # doesn't fail with "NEXT_PUBLIC_SUPABASE_URL is not set".
+      # Next.js needs ALL these env vars at BUILD time (not just runtime).
+      # They're read via process.env.* during page-data collection.
+      # We write .env.local from GitHub secrets so the build doesn't fail
+      # with "X is not set" errors.
       #
-      # To add these secrets (one-time, Arnel does it):
-      #   https://github.com/Pastafarian23/rinkstop/settings/secrets/actions
-      #   Add: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      #        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, NEXT_PUBLIC_GOOGLE_MAPS_KEY,
-      #        CLERK_SECRET_KEY
+      # All 18 secrets are pre-populated in the repo (set via API from
+      # local .env). If you need to rotate a value, update it in
+      # https://github.com/Pastafarian23/rinkstop/settings/secrets/actions
       - name: Write .env.local for Next.js build
         if: always()
         run: |
           cat > .env.local <<EOF
-          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_GOOGLE_MAPS_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_KEY }}
+          ADMIN_API_KEY=${{ secrets.ADMIN_API_KEY }}
+          ADMIN_SECRET=${{ secrets.ADMIN_SECRET }}
+          API_SECRET=${{ secrets.API_SECRET }}
+          CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+          HIGHLIGHTLY_API_KEY=${{ secrets.HIGHLIGHTLY_API_KEY }}
+          MATON_API_KEY=${{ secrets.MATON_API_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
+          NEXT_PUBLIC_GOOGLE_MAPS_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_KEY }}
+          NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          STRIPE_PRICE_TIER_PRO=${{ secrets.STRIPE_PRICE_TIER_PRO }}
+          STRIPE_PRICE_TIER_SUPPORTER=${{ secrets.STRIPE_PRICE_TIER_SUPPORTER }}
+          STRIPE_PRICE_TIER_VERIFIED=${{ secrets.STRIPE_PRICE_TIER_VERIFIED }}
           STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           EOF
           echo "Wrote .env.local"
           cat .env.local | sed 's/=.*/=<redacted>/'
