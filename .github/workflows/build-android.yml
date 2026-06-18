@@ -98,6 +98,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Next.js needs Supabase / Clerk / Google Maps env vars at BUILD time
+      # (not just runtime). These are read via process.env.NEXT_PUBLIC_* during
+      # page-data collection. We write .env.local from secrets so the build
+      # doesn't fail with "NEXT_PUBLIC_SUPABASE_URL is not set".
+      #
+      # To add these secrets (one-time, Arnel does it):
+      #   https://github.com/Pastafarian23/rinkstop/settings/secrets/actions
+      #   Add: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      #        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, NEXT_PUBLIC_GOOGLE_MAPS_KEY,
+      #        CLERK_SECRET_KEY
+      - name: Write .env.local for Next.js build
+        if: always()
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_GOOGLE_MAPS_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_KEY }}
+          CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}
+          EOF
+          echo "Wrote .env.local"
+          cat .env.local | sed 's/=.*/=<redacted>/'
+
       - name: Build Next.js
         run: pnpm run build
 
