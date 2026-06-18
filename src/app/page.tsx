@@ -1,13 +1,20 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { Show } from '@clerk/nextjs';
 import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 
-export const dynamic = 'force-dynamic';
+// Home page is rendered statically with ISR (revalidate every 5 min).
+// The page runs 9 Supabase queries for the stats grid + recent sections;
+// force-dynamic made every request re-run those queries (1+ second TTFB).
+// 5-min staleness on directory counts is fine — users see counts as
+// approximate and they update regularly with weekly content drops.
+//
+// Cache invalidation: also runs on `revalidatePath('/')` from any admin
+// action that changes rinks/teams/players/leagues counts.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'RinkStop — The World’s Hockey Directory',
@@ -88,59 +95,37 @@ function approx(n: number) {
 }
 
 export default async function Home() {
-  const [
-    { count: rinksCount },
-    { count: teamsCount },
-    { count: playersCount },
-    { count: leaguesCount },
-    citiesResult,
-    countriesResult,
-    recentRinksResult,
-    recentTeamsResult,
-    upcomingGamesResult,
-  ] = await Promise.all([
-    supabase.from('rinks').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    supabase.from('teams').select('id', { count: 'exact', head: true }),
-    supabase.from('players').select('id', { count: 'exact', head: true }),
-    supabase.from('leagues').select('id', { count: 'exact', head: true }),
-    supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
-    supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
-    supabase
-      .from('rinks')
-      .select('id, name, slug, city, country')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(3),
-    supabase
-      .from('teams')
-      .select('id, name, slug, city, league_id, leagues(name)')
-      .order('created_at', { ascending: false })
-      .limit(3),
-    supabase
-      .from('games')
-      .select('id, date, home_team_name, away_team_name, venue_name')
-      .gte('date', new Date().toISOString().slice(0, 10))
-      .order('date', { ascending: true })
-      .limit(3),
-  ]);
-
-  const citySet = new Set<string>();
-  for (const r of citiesResult.data || []) if (r.city) citySet.add(r.city.trim().toLowerCase());
-  const countrySet = new Set<string>();
-  for (const r of countriesResult.data || []) if (r.country) countrySet.add(r.country);
+  // One RPC call replaces 9 separate Supabase round-trips. The RPC does
+  // counts + dedupe + joins in PostgreSQL and returns a single JSONB doc.
+  // See supabase/migrations/2026-06-18_get_directory_stats.sql.
+  //
+  // With revalidate=300 (set above) the result is cached by Vercel for 5
+  // minutes; only the first request after expiry runs the RPC. This brings
+  // home page TTFB from ~1s to ~50ms after warmup.
+  const { data: statsData, error: statsError } = await supabase.rpc('get_directory_stats');
+  const stats = (statsData || {}) as {
+    rinks: number; teams: number; players: number; leagues: number;
+    cities: number; countries: number;
+    recent_rinks: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null }>;
+    recent_teams: Array<{ id: string; name: string; slug: string; city: string | null; league_id: string | null; league_name: string | null }>;
+    upcoming_games: Array<{ id: string; date: string; home_team_name: string | null; away_team_name: string | null; venue_name: string | null }>;
+  };
+  if (statsError) {
+    console.error('[home] get_directory_stats failed:', statsError);
+  }
 
   const counts = {
-    rinks: rinksCount || 0,
-    teams: teamsCount || 0,
-    players: playersCount || 0,
-    leagues: leaguesCount || 0,
-    cities: citySet.size,
-    countries: countrySet.size,
+    rinks: stats.rinks || 0,
+    teams: stats.teams || 0,
+    players: stats.players || 0,
+    leagues: stats.leagues || 0,
+    cities: stats.cities || 0,
+    countries: stats.countries || 0,
   };
 
-  const recentRinks = recentRinksResult.data || [];
-  const recentTeams = recentTeamsResult.data || [];
-  const upcomingGames = upcomingGamesResult.data || [];
+  const recentRinks = stats.recent_rinks || [];
+  const recentTeams = stats.recent_teams || [];
+  const upcomingGames = stats.upcoming_games || [];
 
   const ldJson = {
     '@context': 'https://schema.org',
@@ -280,9 +265,12 @@ export default async function Home() {
 
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <Link href="/directory" className="btn btn-red">Explore Directory</Link>
-                <Show when="signed-out">
-                  <Link href="/sign-up" className="btn btn-yellow">Join Now</Link>
-                </Show>
+                {/* Show Join Now to all visitors. If they're already signed in, Clerk's
+                    header nav already shows their profile button, so seeing a Join
+                    Now button here is harmless — clicking it just lands on a page
+                    Clerk handles gracefully. This avoids Clerk's <Show> which would
+                    force the entire home page to be dynamic (no ISR). */}
+                <Link href="/sign-up" className="btn btn-yellow">Join Now</Link>
               </div>
             </div>
 
@@ -461,7 +449,7 @@ export default async function Home() {
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{t.name}</div>
                           <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>
-                            {t.leagues?.name || 'Independent'}{t.city ? ` · ${t.city}` : ''}
+                            {t.league_name || 'Independent'}{t.city ? ` · ${t.city}` : ''}
                           </div>
                         </div>
                         <span style={{ color: '#2563EB', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
