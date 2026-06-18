@@ -147,12 +147,18 @@ async function renderDashboard(userId: string) {
   const inbox = await loadInboxSummary(userId);
 
   // Private team workspaces the user is a member of (Day 3 team hub).
+  // v2: also fetches age_label, age_min, age_max, parent_org for grouping.
   // Wrapped in try/catch so a missing table doesn't 500 the whole dashboard.
-  let myTeams: Array<{ id: string; slug: string; name: string; short_name: string | null; country_code: string | null; role: string }> = [];
+  let myTeams: Array<{
+    id: string; slug: string; name: string; short_name: string | null;
+    country_code: string | null; age_label: string | null;
+    age_min: number | null; age_max: number | null; parent_org: string | null;
+    role: string;
+  }> = [];
   try {
     const { data } = await supabaseAdmin
       .from('team_members')
-      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code )')
+      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, parent_org )')
       .eq('user_id', userId)
       .is('left_at', null)
       .order('joined_at', { ascending: false })
@@ -434,53 +440,106 @@ async function renderDashboard(userId: string) {
             You&rsquo;re not on any teams yet. Start your own or ask a coach for an invite code.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {myTeams.map((t) => {
-              const flag = t.country_code === 'PH' ? '🇵🇭' : t.country_code === 'US' ? '🇺🇸' : t.country_code === 'CA' ? '🇨🇦' : t.country_code === 'GB' ? '🇬🇧' : '🏒';
-              return (
-                <Link
-                  key={t.id}
-                  href={`/dashboard/team/${t.slug}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.625rem 0.875rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid #1e1e1e',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    color: '#fff',
-                    transition: 'background 120ms',
-                  }}
-                >
-                  <span style={{ fontSize: '1.25rem' }} aria-hidden>{flag}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.name}</div>
-                    {t.short_name && (
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>{t.short_name}</div>
-                    )}
-                  </div>
-                  <span
-                    style={{
-                      fontSize: '0.7rem',
-                      padding: '0.15rem 0.5rem',
-                      background: 'rgba(20,184,166,0.12)',
-                      color: '#14B8A6',
-                      border: '1px solid rgba(20,184,166,0.3)',
-                      borderRadius: 999,
-                      fontWeight: 600,
-                      textTransform: 'capitalize',
-                    }}
-                  >
-                    {t.role.replace(/_/g, ' ')}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+          <TeamList myTeams={myTeams} />
         )}
       </div>
+    </div>
+  );
+}
+
+function TeamList({ myTeams }: { myTeams: any[] }) {
+  // Group by parent_org (NULL → "Unaffiliated")
+  const groups = new Map<string, any[]>();
+  for (const t of myTeams) {
+    const key = t.parent_org || '__unaffiliated__';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(t);
+  }
+  // Sort: named orgs first (alphabetical), then Unaffiliated
+  const sortedKeys = Array.from(groups.keys()).sort((a, b) => {
+    if (a === '__unaffiliated__') return 1;
+    if (b === '__unaffiliated__') return -1;
+    return a.localeCompare(b);
+  });
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {sortedKeys.map((key) => {
+        const teams = groups.get(key)!;
+        const isUnaffiliated = key === '__unaffiliated__';
+        return (
+          <div key={key}>
+            {!isUnaffiliated && (
+              <div
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color: 'rgba(255,255,255,0.45)',
+                  marginBottom: '0.4rem',
+                  paddingLeft: '0.25rem',
+                }}
+              >
+                🏛️ {key} <span style={{ color: 'rgba(255,255,255,0.3)' }}>· {teams.length} team{teams.length === 1 ? '' : 's'}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {teams.map((t) => {
+                const flag = t.country_code === 'PH' ? '🇵🇭' : t.country_code === 'US' ? '🇺🇸' : t.country_code === 'CA' ? '🇨🇦' : t.country_code === 'GB' ? '🇬🇧' : '🏒';
+                const trimmedLabel = t.age_label?.trim() ?? '';
+                const ageSub = trimmedLabel
+                  ? t.age_min != null && t.age_max != null
+                    ? `${trimmedLabel} (${t.age_min}–${t.age_max})`
+                    : trimmedLabel
+                  : null;
+                return (
+                  <Link
+                    key={t.id}
+                    href={`/dashboard/team/${t.slug}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.625rem 0.875rem',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid #1e1e1e',
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      color: '#fff',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.25rem' }} aria-hidden>{flag}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginTop: 2, display: 'flex', gap: '0.5rem' }}>
+                        {ageSub && <span>{ageSub}</span>}
+                        {t.short_name && ageSub && <span>·</span>}
+                        {t.short_name && <span>{t.short_name}</span>}
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        padding: '0.15rem 0.5rem',
+                        background: 'rgba(20,184,166,0.12)',
+                        color: '#14B8A6',
+                        border: '1px solid rgba(20,184,166,0.3)',
+                        borderRadius: 999,
+                        fontWeight: 600,
+                        textTransform: 'capitalize',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {t.role.replace(/_/g, ' ')}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

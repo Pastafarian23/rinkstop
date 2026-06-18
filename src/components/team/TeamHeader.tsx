@@ -8,6 +8,10 @@ export interface TeamHeaderProps {
   homeCity?: string | null;
   homeCountry?: string | null;
   ageCategory: string;
+  ageLabel?: string | null;
+  ageMin?: number | null;
+  ageMax?: number | null;
+  parentOrg?: string | null;
   seasonLabel?: string | null;
   level?: string | null;
   slug: string;
@@ -22,6 +26,10 @@ export function TeamHeader({
   homeCity,
   homeCountry,
   ageCategory,
+  ageLabel,
+  ageMin,
+  ageMax,
+  parentOrg,
   seasonLabel,
   level,
   slug,
@@ -94,7 +102,20 @@ export function TeamHeader({
           )}
           {location && <span>📍 {location}</span>}
           <span>👥 {memberCount} member{memberCount === 1 ? '' : 's'}</span>
-          <span>{formatAgeCategory(ageCategory)}</span>
+          {ageLabel && ageLabel.trim() ? (
+            <span>
+              {ageLabel.trim()}
+              {ageMin != null && ageMax != null && ` (${ageMin}–${ageMax})`}
+            </span>
+          ) : (
+            <span>{formatAgeCategory(ageCategory)}</span>
+          )}
+          {parentOrg && (
+            <span>
+              🏛️{' '}
+              <span style={{ color: 'rgba(255,255,255,0.55)' }}>{parentOrg}</span>
+            </span>
+          )}
           {seasonLabel && <span>🏆 {seasonLabel}</span>}
           {level && <span>Level: {level}</span>}
         </div>

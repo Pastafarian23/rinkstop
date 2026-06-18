@@ -99,6 +99,10 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
   const [countryCode, setCountryCode] = useState('');
   const [countryTouched, setCountryTouched] = useState(false);
   const [ageCat, setAgeCat] = useState('youth');
+  const [ageLabel, setAgeLabel] = useState('');
+  const [ageMin, setAgeMin] = useState('');
+  const [ageMax, setAgeMax] = useState('');
+  const [parentOrg, setParentOrg] = useState('');
   const [season, setSeason] = useState('');
   const [level, setLevel] = useState('');
   const [description, setDescription] = useState('');
@@ -136,6 +140,12 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
         p_short_name: shortName.trim() || null,
         p_season: season.trim() || null,
         p_level: level.trim() || null,
+        p_age_label: ageLabel.trim() || null,
+        // IMPORTANT: use `trim() !== ''` not truthy check — age 0 is valid
+        // (Mites players) but is falsy and would become NULL otherwise.
+        p_age_min: ageMin.trim() !== '' && !isNaN(Number(ageMin)) ? parseInt(ageMin, 10) : null,
+        p_age_max: ageMax.trim() !== '' && !isNaN(Number(ageMax)) ? parseInt(ageMax, 10) : null,
+        p_parent_org: parentOrg.trim() || null,
       });
       if (error) {
         setError(error.message);
@@ -288,6 +298,53 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
           <option value="adult">Adult (18+)</option>
           <option value="mixed">Mixed (youth + adult)</option>
         </select>
+      </Field>
+
+      <Field label="Age label" hint="Custom name for the age group, e.g. 'U12', 'Bantam AAA', 'Overage'. Shown on the team hub.">
+        <input
+          type="text"
+          value={ageLabel}
+          onChange={(e) => setAgeLabel(e.target.value)}
+          maxLength={30}
+          placeholder="U12"
+          style={inputStyle}
+        />
+      </Field>
+
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <Field label="Min age" hint="Optional. Lower bound for filtering.">
+          <input
+            type="number"
+            value={ageMin}
+            onChange={(e) => setAgeMin(e.target.value)}
+            min={0}
+            max={99}
+            placeholder="8"
+            style={inputStyle}
+          />
+        </Field>
+        <Field label="Max age" hint="Optional. Upper bound. Use 99 for open-ended.">
+          <input
+            type="number"
+            value={ageMax}
+            onChange={(e) => setAgeMax(e.target.value)}
+            min={0}
+            max={99}
+            placeholder="12"
+            style={inputStyle}
+          />
+        </Field>
+      </div>
+
+      <Field label="Parent org / Club" hint="Optional. If this is one of several teams in the same club, name the club here. Dashboard groups by club.">
+        <input
+          type="text"
+          value={parentOrg}
+          onChange={(e) => setParentOrg(e.target.value)}
+          maxLength={100}
+          placeholder="Cebu Ice Datus"
+          style={inputStyle}
+        />
       </Field>
 
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
