@@ -435,4 +435,103 @@ GRANT EXECUTE ON FUNCTION revoke_team_invite(UUID) TO authenticated;
 COMMENT ON FUNCTION revoke_team_invite IS
   'Admin revokes an invite. Sets revoked_at = now(). Future claim attempts get invite_revoked.';
 
+-- ============================================================
+-- F. Update create_team_workspace to denormalize home_city + home_country
+-- ============================================================
+-- When a rink is selected, we copy city + country from rinks into the
+-- team_workspaces row. This makes the team hub page render the team
+-- location without an extra join to rinks. UI form can also use
+-- country from rink to auto-fill the country field.
+
+CREATE OR REPLACE FUNCTION create_team_workspace(
+  p_name        TEXT,
+  p_slug        TEXT,
+  p_country     CHAR(2) DEFAULT NULL,
+  p_age_cat     TEXT    DEFAULT 'youth',
+  p_rink_id     UUID    DEFAULT NULL,
+  p_short_name  TEXT    DEFAULT NULL,
+  p_season      TEXT    DEFAULT NULL,
+  p_level       TEXT    DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions, pg_temp
+AS $$
+DECLARE
+  v_user_id   TEXT;
+  v_team      team_workspaces%ROWTYPE;
+  v_identity  BOOLEAN;
+  v_slug_ok   BOOLEAN;
+  v_rink_city    TEXT;
+  v_rink_country TEXT;
+BEGIN
+  v_user_id := current_user_id();
+  IF v_user_id IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'not_authenticated');
+  END IF;
+
+  v_slug_ok := p_slug ~ '^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$';
+  IF NOT v_slug_ok THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'invalid_slug',
+      'message', 'Slug must be 3-50 chars, lowercase letters, digits, hyphens.');
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM profile_identity_status
+    WHERE user_id = v_user_id AND status = 'active'
+  ) INTO v_identity;
+  IF NOT v_identity THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'identity_required',
+      'message', 'Verify your identity via /dashboard/identity before creating a team.');
+  END IF;
+
+  IF p_age_cat NOT IN ('youth','adult','mixed') THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'invalid_age_category');
+  END IF;
+
+  -- If a rink is provided, pull city + country from it for denormalized columns
+  IF p_rink_id IS NOT NULL THEN
+    SELECT city, country INTO v_rink_city, v_rink_country
+    FROM rinks
+    WHERE id = p_rink_id AND is_active = true;
+    IF NOT FOUND THEN
+      RETURN jsonb_build_object('ok', false, 'error', 'invalid_rink',
+        'message', 'The selected rink is not active or does not exist.');
+    END IF;
+  END IF;
+
+  INSERT INTO team_workspaces (
+    slug, name, short_name, country_code, age_category,
+    home_rink_id, home_city, home_country, season_label, level, created_by
+  ) VALUES (
+    p_slug, p_name, p_short_name, p_country, p_age_cat,
+    p_rink_id, v_rink_city, v_rink_country, p_season, p_level, v_user_id
+  )
+  RETURNING * INTO v_team;
+
+  INSERT INTO team_members (team_id, user_id, role)
+  VALUES (v_team.id, v_user_id, 'head_coach');
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'team_id', v_team.id,
+    'team_slug', v_team.slug,
+    'team_name', v_team.name,
+    'currency', v_team.currency
+  );
+
+EXCEPTION
+  WHEN unique_violation THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'slug_taken',
+      'message', 'That slug is already in use. Try another.');
+  WHEN OTHERS THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'unexpected',
+      'message', SQLERRM);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION create_team_workspace(TEXT, TEXT, CHAR, TEXT, UUID, TEXT, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION create_team_workspace(TEXT, TEXT, CHAR, TEXT, UUID, TEXT, TEXT, TEXT) TO authenticated;
+
 COMMIT;
