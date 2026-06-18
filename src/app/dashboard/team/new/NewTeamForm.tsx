@@ -141,8 +141,10 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
         p_season: season.trim() || null,
         p_level: level.trim() || null,
         p_age_label: ageLabel.trim() || null,
-        p_age_min: ageMin ? parseInt(ageMin, 10) : null,
-        p_age_max: ageMax ? parseInt(ageMax, 10) : null,
+        // IMPORTANT: use `trim() !== ''` not truthy check — age 0 is valid
+        // (Mites players) but is falsy and would become NULL otherwise.
+        p_age_min: ageMin.trim() !== '' && !isNaN(Number(ageMin)) ? parseInt(ageMin, 10) : null,
+        p_age_max: ageMax.trim() !== '' && !isNaN(Number(ageMax)) ? parseInt(ageMax, 10) : null,
         p_parent_org: parentOrg.trim() || null,
       });
       if (error) {

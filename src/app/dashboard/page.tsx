@@ -487,10 +487,11 @@ function TeamList({ myTeams }: { myTeams: any[] }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               {teams.map((t) => {
                 const flag = t.country_code === 'PH' ? '🇵🇭' : t.country_code === 'US' ? '🇺🇸' : t.country_code === 'CA' ? '🇨🇦' : t.country_code === 'GB' ? '🇬🇧' : '🏒';
-                const ageSub = t.age_label
+                const trimmedLabel = t.age_label?.trim() ?? '';
+                const ageSub = trimmedLabel
                   ? t.age_min != null && t.age_max != null
-                    ? `${t.age_label} (${t.age_min}–${t.age_max})`
-                    : t.age_label
+                    ? `${trimmedLabel} (${t.age_min}–${t.age_max})`
+                    : trimmedLabel
                   : null;
                 return (
                   <Link
