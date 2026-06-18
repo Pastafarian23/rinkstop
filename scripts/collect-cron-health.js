@@ -1,5 +1,5 @@
-require('./load-secrets.cjs');
 #!/usr/bin/env node
+require('./load-secrets.cjs');
 /**
  * scripts/collect-cron-health.js
  *
