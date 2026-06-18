@@ -17,12 +17,15 @@ export default async function TeamHubPage({ params }: PageProps) {
   if (!userId) redirect('/login');
 
   const { slug } = await params;
+  // Slugs are forced lowercase at the form, but be forgiving if a user
+  // types the URL with capitals or extra whitespace.
+  const normalizedSlug = (slug || '').toLowerCase().trim();
 
   // Fetch the team
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
     .select('*')
-    .eq('slug', slug)
+    .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
 
