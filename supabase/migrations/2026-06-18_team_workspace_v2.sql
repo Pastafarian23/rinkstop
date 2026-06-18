@@ -57,6 +57,13 @@ CREATE INDEX IF NOT EXISTS team_workspaces_age_range_idx
 -- B. Update create_team_workspace to accept new fields
 -- --------------------------------------------------------
 
+-- Drop old overloads (8-param version from prior migration) so callers can't
+-- hit the "function is not unique" error. The v2 (12-param) version is the
+-- canonical one going forward.
+DROP FUNCTION IF EXISTS create_team_workspace(
+  TEXT, TEXT, CHAR(2), TEXT, UUID, TEXT, TEXT, TEXT
+) CASCADE;
+
 CREATE OR REPLACE FUNCTION create_team_workspace(
   p_name        TEXT,
   p_slug        TEXT,

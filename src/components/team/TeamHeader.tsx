@@ -102,9 +102,9 @@ export function TeamHeader({
           )}
           {location && <span>📍 {location}</span>}
           <span>👥 {memberCount} member{memberCount === 1 ? '' : 's'}</span>
-          {ageLabel ? (
+          {ageLabel && ageLabel.trim() ? (
             <span>
-              {ageLabel}
+              {ageLabel.trim()}
               {ageMin != null && ageMax != null && ` (${ageMin}–${ageMax})`}
             </span>
           ) : (
