@@ -131,6 +131,8 @@ export default function JoinForm({
         autoFocus
         autoComplete="off"
         spellCheck={false}
+        autoCapitalize="characters"
+        autoCorrect="off"
       />
 
       {error && (
