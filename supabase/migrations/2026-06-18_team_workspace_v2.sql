@@ -96,10 +96,13 @@ BEGIN
     RETURN jsonb_build_object('ok', false, 'error', 'not_authenticated');
   END IF;
 
-  v_slug_ok := p_slug ~ '^[a-z0-9]([a-z0-9-]{1,48}[a-z0-9])?$';
+  -- BUG #8 FIX: regex now enforces 3-50 chars consistently with the message.
+  -- Previous regex allowed 1-char slugs but rejected 2-char, contradicting
+  -- the '3-50 chars' error message.
+  v_slug_ok := p_slug ~ '^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$';
   IF NOT v_slug_ok THEN
     RETURN jsonb_build_object('ok', false, 'error', 'invalid_slug',
-      'message', 'Slug must be 3-50 chars, lowercase letters, digits, hyphens.');
+      'message', 'Slug must be 3-50 chars, lowercase letters, digits, hyphens. Must start and end with a letter or digit.');
   END IF;
 
   SELECT EXISTS (

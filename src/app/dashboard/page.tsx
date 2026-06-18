@@ -158,17 +158,20 @@ async function renderDashboard(userId: string) {
   try {
     const { data } = await supabaseAdmin
       .from('team_members')
-      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, parent_org )')
+      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, parent_org, is_active )')
       .eq('user_id', userId)
       .is('left_at', null)
       .order('joined_at', { ascending: false })
       .limit(10);
+    // BUG #15 FIX: Filter out teams with is_active=false (deactivated teams
+    // should not show in the user's dashboard). Matches the filter applied
+    // in /dashboard/team/[slug]/page.tsx.
     myTeams = (data || [])
       .map((row: any) => ({
         ...(row.team_workspaces || {}),
         role: row.role,
       }))
-      .filter((t: any) => t.id && t.slug);
+      .filter((t: any) => t.id && t.slug && t.is_active);
   } catch (e) {
     console.error('[dashboard] team_members query failed:', e);
   }
