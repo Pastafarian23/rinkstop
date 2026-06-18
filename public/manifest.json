@@ -1,0 +1,46 @@
+{
+  "name": "RinkStop",
+  "short_name": "RinkStop",
+  "description": "The world's hockey directory. Teams, players, leagues, news, and scores.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#041E42",
+  "theme_color": "#041E42",
+  "categories": ["sports", "news", "social"],
+  "icons": [
+    {
+      "src": "/rinkstoplogo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Directory",
+      "short_name": "Directory",
+      "url": "/directory",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "News",
+      "short_name": "News",
+      "url": "/blog",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Scores",
+      "short_name": "Scores",
+      "url": "/scores",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}

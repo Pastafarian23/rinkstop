@@ -44,3 +44,23 @@ tsconfig.tsbuildinfo
 .env.production
 .env.bak
 .env.example
+
+# Android / Capacitor build artifacts
+/android/app/build/
+/android/build/
+/android/.gradle/
+/android/local.properties
+/android/captures/
+/android/.idea/
+/android/app/release/
+/rinkstop-v1-debug.apk
+
+# Build cache (regenerable, do not commit)
+/.next/
+/android/app/src/main/assets/public/
+
+# Local-only items (per 2026-06-18 cleanup decision)
+/logs/
+/memory/
+/scripts/_parse.cjs
+/scripts/import-rinks-v2.mjs
