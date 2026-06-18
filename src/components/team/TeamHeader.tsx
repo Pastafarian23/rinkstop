@@ -121,22 +121,27 @@ export function TeamHeader({
         </div>
       </div>
       {isAdmin && (
-        <Link
-          href={`/dashboard/team/${slug}/settings`}
+        // BUG #18 FIX: The /settings route doesn't exist yet (Day 4 feature).
+        // Render as a disabled-looking button with a "Coming soon" tooltip
+        // instead of a 404 link. Will be re-enabled when the route is built.
+        <span
+          title="Team settings coming in Day 4"
           style={{
             padding: '0.5rem 1rem',
-            background: 'rgba(255,255,255,0.08)',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.04)',
+            color: 'rgba(255,255,255,0.45)',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 6,
             textDecoration: 'none',
             fontSize: '0.8rem',
             fontWeight: 600,
             flexShrink: 0,
+            cursor: 'not-allowed',
           }}
+          aria-disabled
         >
           ⚙️ Settings
-        </Link>
+        </span>
       )}
     </div>
   );

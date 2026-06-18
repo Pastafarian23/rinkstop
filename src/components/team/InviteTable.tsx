@@ -195,7 +195,12 @@ export function InviteTable({
                   min={1}
                   max={100}
                   value={genMaxUses}
-                  onChange={(e) => setGenMaxUses(parseInt(e.target.value, 10) || 1)}
+                  // BUG #10 FIX: `parseInt(x, 10) || 1` silently coerced 0 to 1
+                  // (since 0 is falsy). Now check for NaN explicitly and clamp.
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    setGenMaxUses(Number.isNaN(n) ? 1 : Math.max(1, Math.min(100, n)));
+                  }}
                   style={inputStyle}
                   disabled={busy}
                 />
@@ -207,7 +212,10 @@ export function InviteTable({
                   min={1}
                   max={365}
                   value={genExpiresDays}
-                  onChange={(e) => setGenExpiresDays(parseInt(e.target.value, 10) || 7)}
+                  onChange={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    setGenExpiresDays(Number.isNaN(n) ? 7 : Math.max(1, Math.min(365, n)));
+                  }}
                   style={inputStyle}
                   disabled={busy}
                 />

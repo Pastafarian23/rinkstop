@@ -125,6 +125,25 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
       setError('Please fill in team name, slug, and age category.');
       return;
     }
+    // BUG #6 FIX: catch invalid numeric input before submitting.
+    // "abc" or other non-numeric strings used to silently become NULL because
+    // !isNaN(Number("abc")) is false — the user got no feedback that their
+    // input was lost. Now we surface a friendly error.
+    if (ageMin.trim() !== '' && !/^\d+$/.test(ageMin.trim())) {
+      setError('Min age must be a whole number 0-99.');
+      return;
+    }
+    if (ageMax.trim() !== '' && !/^\d+$/.test(ageMax.trim())) {
+      setError('Max age must be a whole number 0-99.');
+      return;
+    }
+    // BUG (age range sanity): catch min > max client-side for a clearer message.
+    const minN = ageMin.trim() !== '' ? parseInt(ageMin, 10) : null;
+    const maxN = ageMax.trim() !== '' ? parseInt(ageMax, 10) : null;
+    if (minN != null && maxN != null && minN > maxN) {
+      setError(`Min age (${minN}) can't be greater than Max age (${maxN}).`);
+      return;
+    }
     setBusy(true);
     try {
       const sb = createClient(
@@ -141,10 +160,10 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
         p_season: season.trim() || null,
         p_level: level.trim() || null,
         p_age_label: ageLabel.trim() || null,
-        // IMPORTANT: use `trim() !== ''` not truthy check — age 0 is valid
-        // (Mites players) but is falsy and would become NULL otherwise.
-        p_age_min: ageMin.trim() !== '' && !isNaN(Number(ageMin)) ? parseInt(ageMin, 10) : null,
-        p_age_max: ageMax.trim() !== '' && !isNaN(Number(ageMax)) ? parseInt(ageMax, 10) : null,
+        // IMPORTANT: use regex check, not isNaN — "0" is valid but "abc" must error.
+        // Regex /^\d+$/ requires the string to be entirely digits.
+        p_age_min: ageMin.trim() !== '' ? parseInt(ageMin, 10) : null,
+        p_age_max: ageMax.trim() !== '' ? parseInt(ageMax, 10) : null,
         p_parent_org: parentOrg.trim() || null,
       });
       if (error) {

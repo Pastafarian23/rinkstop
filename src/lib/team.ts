@@ -125,11 +125,21 @@ export function formatAgeCategory(cat: string): string {
 /**
  * Generate a slug from a team name. Lowercase, replace non-alphanumerics with
  * hyphens, collapse hyphens, trim. Used to auto-suggest slugs in the form.
+ *
+ * Bug #7 fix: if the name is entirely non-Latin (e.g. Cyrillic, CJK), the
+ * regex strips every char and leaves an empty string. The DB then rejects it
+ * with `invalid_slug`. Fall back to a numeric placeholder so the user gets
+ * a hint to type their own.
  */
 export function suggestSlug(name: string): string {
-  return name
+  const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 50);
+  if (slug.length === 0) {
+    // Non-Latin name — let user type their own
+    return '';
+  }
+  return slug;
 }
