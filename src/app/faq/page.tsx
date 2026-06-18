@@ -45,7 +45,15 @@ const sections: Array<{
       },
       {
         q: 'What is a "public profile" and where does it live?',
-        a: 'Every RinkStop account has a public profile page at /u/[your-user-id]. Other users can see your display name, avatar, bio, location, and membership tier. Pro, Premium, and Enterprise tiers get a "verified" checkmark; Founding Members get a special badge. You control what appears in your bio and location - everything else (avatar, name) is set via the Clerk UserButton.',
+        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Starter / Pro / Premium / Enterprise). An identity-verified checkmark — a navy-and-gold mark separate from your tier — means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
+      },
+      {
+        q: 'What are the username rules?',
+        a: 'Usernames must be 1–30 characters, lowercase letters and numbers only (a–z, 0–9), with optional periods and underscores. Dashes, spaces, and special characters are not allowed. All usernames are case-insensitive — /profile/CoachSmith and /profile/coachsmith go to the same page. You can change your username once every 14 days; the old username is held for 14 days before becoming available again. A number of slugs are reserved: system routes (/admin, /dashboard, /login, etc.), brand terms (rinkstop, hockey, ice, rink, puck), and account-type words (team, league, player, coach, referee).',
+      },
+      {
+        q: 'What is the username review queue?',
+        a: 'When you sign up, your username passes through three automated checks. Layer 1 validates the format (allowed characters, length, no reserved slugs). Layer 2 flags any username starting with a brand-protected prefix (e.g. rinkstop, kiloclaw) for human review — the account is created but the username is held until an admin approves or rejects it. Layer 3 checks against a profanity and inappropriate-word list; matches are either hard-blocked (clear slurs, auto-rejected with a polite message) or soft-queued (borderline terms, reviewed by an admin). You are notified by email once your username is decided. If you believe your username was rejected in error, contact support@rinkstop.com.',
       },
       {
         q: 'How do I edit my bio and location?',
@@ -53,7 +61,15 @@ const sections: Array<{
       },
       {
         q: 'How do I delete my account?',
-        a: 'Email support@rinkstop.com from the email address on your account and ask for account deletion. We will permanently remove your profile, saved favorites, reviews, claims, and connections within 5 business days. Your public profile page (/u/your-id) will return 404 after deletion. Listings you claimed are released back to unclaimed status.',
+        a: 'Email support@rinkstop.com from the email address on your account and ask for account deletion. We will permanently remove your profile, saved favorites, reviews, claims, and connections within 5 business days. Your public profile page (/profile/username) will return 404 after deletion. Listings you claimed are released back to unclaimed status.',
+      },
+      {
+        q: 'What is identity verification and how does it work?',
+        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier — you can be verified at any paid tier (Starter, Pro, Premium, or Enterprise). Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. The verification uses a government ID document and a live selfie, processed by our vendor Didit. The check is valid for two years before a re-verification is prompted. Starter members and above can start the process at /dashboard/identity.',
+      },
+      {
+        q: 'Why would I verify my identity?',
+        a: 'Verification is required to hold certain roles on RinkStop — including coach, referee, scorekeeper, team manager, rink operator, and federation admin — because those roles involve youth hockey, financial transactions, or organizational trust. Even when not required for a role, verification builds credibility: other users, league admins, and clients see the checkmark and know you are a real, identified person.',
       },
       {
         q: 'I never got my email verification code. What do I do?',
@@ -68,7 +84,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Five tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Starter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing with a lead-capture form on the profile. Pro ($59.99/year) adds up to 5 claimed listings, each with its own lead-capture form, a public profile page, DM access with other Pro+ users, and above-search-result placement. Premium ($299/year) is for rinks, teams, and leagues that need more scale - it adds a Featured Listing rotation in your city, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier. Identity verification (a check on your profile, government ID + selfie) is a separate opt-in flow available to Pro+ members — it is not a tier perk, it is its own action you take. See /pricing for the full breakdown.',
+        a: 'Five tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Starter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing with a lead-capture form on the profile. Pro ($59.99/year) adds up to 5 claimed listings, each with its own lead-capture form, a public profile page, DM access with other Pro+ users, and above-search-result placement. Premium ($299/year) is for rinks, teams, and leagues that need more scale - it adds a Featured Listing rotation in your city, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier. Identity verification (a government ID + selfie check) is a separate opt-in flow available to Starter members and above — it is not tied to your tier level, it is its own action you take once. See /dashboard/identity to start the process. Verified accounts show a navy-and-gold checkmark on their public profile.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -181,7 +197,7 @@ const sections: Array<{
       },
       {
         q: 'Why do I need a Pro tier to DM?',
-        a: 'Identity. Anyone can sign up for Free and post listings, but DMs require a paid identity (Pro or higher) so the person on the other end knows you are a real person, not a burner account. Pro+ profiles show a checkmark, which means we have confirmed your email and payment method.',
+        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Pro or higher) so the person on the other end knows they are dealing with a real account, not a throwaway. Pro, Premium, and Enterprise tiers can all DM.',
       },
       {
         q: 'How do connection requests work?',
@@ -235,7 +251,15 @@ const sections: Array<{
       },
       {
         q: 'Is there a mobile app?',
-        a: 'Not yet. RinkStop is a mobile-responsive website that works on phones and tablets. A native iOS and Android app is on the roadmap. There is no PWA install option at this time.',
+        a: 'Not yet. RinkStop is a mobile-responsive website that works on phones and tablets. Native iOS and Android apps are on the roadmap. There is no PWA install option at this time.',
+      },
+      {
+        q: 'How do I use the Hockey Cost Calculator?',
+        a: 'The Hockey Cost Calculator at /tools/hockey-cost-calculator estimates how much hockey costs per year in the United States. Enter the player\'s age, your state, and hockey level (House/Rec, Travel A/AA, or AAA), and the calculator returns a breakdown covering registration fees, equipment, ice time, tournaments, travel, and other costs — all based on 2026 data. No sign-up is required. The calculator is free to use and the results are shareable.',
+      },
+      {
+        q: 'How do I find out if a rink, team, or league is already on RinkStop?',
+        a: 'Use the search bar on the homepage or go to /claim-your-listing and type the name. If the listing appears, it\'s already in our directory. If it does not appear, you can submit a new listing from /add-listing or claim it once you have a Starter or higher membership.',
       },
       {
         q: 'How do I delete a review I left?',
