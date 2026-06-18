@@ -60,11 +60,11 @@ jobs:
           restore-keys: |
             pnpm-${{ runner.os }}-
 
-      - name: Setup Java 17
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # Install Android SDK manually (more reliable than third-party actions)
       # Source: official Google's Android cmdline-tools
