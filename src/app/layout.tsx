@@ -4,6 +4,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
+import MobileBottomTabBar from '@/components/MobileBottomTabBar';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
@@ -144,6 +145,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap"
             rel="stylesheet"
           />
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta name="apple-mobile-web-app-title" content="RinkStop" />
+          <link rel="apple-touch-icon" href="/rinkstoplogo.png" />
         </head>
         <body>
 
@@ -206,6 +212,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* ---- Page Content ---------------------------------------------------------------------------------------------- */}
           <main>{children}</main>
+
+          {/* ---- Mobile Bottom Tab Bar ------------------------------------------------------------------------------------ */}
+          <MobileBottomTabBar />
 
           {/* ---- Footer ---------------------------------------------------------------------------------------------------------- */}
           <footer style={{ background: '#041E42', borderTop: '3px solid #C8102E', marginTop: '3rem', padding: '2.5rem 0 1.5rem' }}>

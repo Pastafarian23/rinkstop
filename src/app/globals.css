@@ -1203,3 +1203,80 @@ img  { max-width: 100%; display: block; }
 /* Group hover variants (used in some card components) */
 [data-admin] .group:hover .group-hover\:text-white { color: #fff !important; }
 [data-admin] .group:hover .group-hover\:text-teal-400 { color: var(--admin-gold) !important; }
+
+/* ============================================================
+   Mobile Bottom Tab Bar
+   - Hidden on desktop (>= 769px)
+   - Fixed to bottom, brand-styled
+   - Adds body padding so content isn't covered
+   ============================================================ */
+.mob-bottom-tabbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mob-bottom-tabbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    background: #041E42;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    height: calc(60px + env(safe-area-inset-bottom, 0));
+  }
+  body { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0)); }
+  .mob-bottom-tabbar + script { display: none; }
+}
+
+.mob-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  position: relative;
+  transition: color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+  padding: 6px 2px;
+}
+
+.mob-tab:active { color: #fff; }
+.mob-tab:hover { color: rgba(255, 255, 255, 0.85); }
+
+.mob-tab-active {
+  color: #fff;
+}
+.mob-tab-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 25%;
+  right: 25%;
+  height: 3px;
+  background: #C8102E;
+  border-radius: 0 0 3px 3px;
+}
+
+.mob-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.mob-tab-label {
+  line-height: 1;
+  font-family: 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
