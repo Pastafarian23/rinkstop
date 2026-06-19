@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import Link from 'next/link';
 import styles from './admin.module.css';
+import ActivityFeed, { ActivityEvent } from './ActivityFeed';
 
 interface LeagueCoverage {
   league: string;
@@ -105,8 +106,166 @@ function coverageClass(pct: number): string {
   return styles.coverageFillBad;
 }
 
+async function getActivityFeed(): Promise<ActivityEvent[]> {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const events: ActivityEvent[] = [];
+
+  // Run all 6 queries in parallel
+  const [whRes, twRes, newsRes, schedRes, resRes, invRes] = await Promise.allSettled([
+    supabaseAdmin
+      .from('stripe_webhook_events')
+      .select('id, event_type, status, created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from('team_workspaces')
+      .select('id, name, slug, created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from('team_news')
+      .select('id, team_id, headline, published_at')
+      .eq('is_published', true)
+      .not('published_at', 'is', null)
+      .gte('published_at', since)
+      .order('published_at', { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from('team_schedule')
+      .select('id, team_id, title, event_type, event_date, created_at')
+      .eq('is_published', true)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from('team_results')
+      .select('id, team_id, opponent_name, result_date, score_for, score_against')
+      .gte('result_date', since)
+      .order('result_date', { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from('team_invites')
+      .select('id, team_id, role, created_at, accepted_by, label')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ]);
+
+  // Webhooks
+  if (whRes.status === 'fulfilled') {
+    for (const w of whRes.value.data || []) {
+      const isFail = w.status === 'failed';
+      events.push({
+        id: w.id,
+        occurred_at: w.created_at,
+        type: isFail ? 'webhook_failed' : 'webhook_received',
+        icon: isFail ? '⚠️' : '💳',
+        title: `${w.event_type} — ${w.status}`,
+        detail: `Stripe event processed (${(w.status || 'unknown').toUpperCase()})`,
+        href: '/admin/webhooks',
+        tone: isFail ? 'danger' : 'info',
+      });
+    }
+  }
+
+  // Team workspaces created
+  if (twRes.status === 'fulfilled') {
+    for (const t of twRes.value.data || []) {
+      events.push({
+        id: t.id,
+        occurred_at: t.created_at,
+        type: 'team_created',
+        icon: '🏒',
+        title: `New team: ${t.name}`,
+        detail: 'User-created workspace added to directory',
+        href: `/directory/teams/${t.slug}`,
+        tone: 'success',
+      });
+    }
+  }
+
+  // News published
+  if (newsRes.status === 'fulfilled') {
+    for (const n of newsRes.value.data || []) {
+      events.push({
+        id: n.id,
+        occurred_at: n.published_at || '',
+        type: 'news_published',
+        icon: '📰',
+        title: n.headline,
+        detail: 'News article published to public profile',
+        tone: 'info',
+      });
+    }
+  }
+
+  // Schedule events
+  if (schedRes.status === 'fulfilled') {
+    for (const s of schedRes.value.data || []) {
+      events.push({
+        id: s.id,
+        occurred_at: s.created_at,
+        type: 'schedule_published',
+        icon: '📅',
+        title: s.title,
+        detail: `Schedule event: ${s.event_type || 'general'}${s.event_date ? ` on ${new Date(s.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`,
+        tone: 'info',
+      });
+    }
+  }
+
+  // Results
+  if (resRes.status === 'fulfilled') {
+    for (const r of resRes.value.data || []) {
+      events.push({
+        id: r.id,
+        occurred_at: r.result_date,
+        type: 'result_added',
+        icon: '🏆',
+        title: `Result: ${r.score_for ?? '?'}-${r.score_against ?? '?'} vs ${r.opponent_name || 'opponent'}`,
+        detail: 'Game result posted',
+        tone: 'success',
+      });
+    }
+  }
+
+  // Invites
+  if (invRes.status === 'fulfilled') {
+    for (const i of invRes.value.data || []) {
+      const accepted = (i.accepted_by || []).length;
+      if (accepted > 0) {
+        events.push({
+          id: `${i.id}-redeem`,
+          occurred_at: i.created_at,
+          type: 'invite_redeemed',
+          icon: '🎟️',
+          title: `Invite redeemed (${i.role})`,
+          detail: `${i.label || 'Invite'} — ${accepted} accepted`,
+          tone: 'success',
+        });
+      } else {
+        events.push({
+          id: `${i.id}-create`,
+          occurred_at: i.created_at,
+          type: 'invite_created',
+          icon: '✉️',
+          title: `Invite created (${i.role})`,
+          detail: i.label || 'Team invite',
+          tone: 'muted',
+        });
+      }
+    }
+  }
+
+  // Sort by occurred_at desc, cap at 20
+  events.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
+  return events.slice(0, 20);
+}
+
 export default async function AdminOverview() {
-  const data = await getCoverage();
+  const [data, activity] = await Promise.all([getCoverage(), getActivityFeed()]);
   const { summary, coverage } = data;
 
   const stats = [
@@ -163,6 +322,7 @@ export default async function AdminOverview() {
       </div>
 
       {/* Quick links */}
+      <ActivityFeed events={activity} />
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h2 className={styles.cardTitle}>Quick Actions</h2>
