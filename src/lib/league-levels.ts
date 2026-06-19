@@ -55,6 +55,7 @@ export const LEAGUE_LEVELS: Record<string, Level> = {
 
   // College
   'NCAA Division 1 Men\u2019s Hockey': 'college',
+  'NCAA': 'college',                              // alternate name
   'U SPORTS': 'college',
 
   // International
