@@ -147,14 +147,15 @@ function NewsForm({ teamSlug, post, onSaved, onCancel }: NewsFormProps) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, publish: boolean) {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
     setSaving(true); setMsg(null);
     const method = post ? 'PATCH' : 'POST';
+    const isPublished = publish ? true : post ? post.is_published : false;
     const payload: Record<string, unknown> = post
-      ? { type: 'news', id: post.id, title: title.trim(), body: body.trim() }
-      : { type: 'news', title: title.trim(), body: body.trim() };
+      ? { type: 'news', id: post.id, title: title.trim(), body: body.trim(), is_published: isPublished }
+      : { type: 'news', title: title.trim(), body: body.trim(), is_published: isPublished };
     try {
       const r = await fetch(`/api/team/${encodeURIComponent(teamSlug)}/posts`, {
         method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
@@ -166,9 +167,10 @@ function NewsForm({ teamSlug, post, onSaved, onCancel }: NewsFormProps) {
     finally { setSaving(false); }
   }
 
+  const isDraft = post && !post.is_published;
   const disabled = saving || !title.trim() || !body.trim();
   return (
-    <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+    <form onSubmit={e => submit(e, true)} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
       <Field label="Headline *" hint={`${title.length}/160`}>
         <input type="text" value={title} onChange={e => setTitle(e.target.value)} required maxLength={160} placeholder="e.g. Season opener against Cebu Ice Dragons — 4-2 win" style={inputStyle} />
       </Field>
@@ -176,9 +178,12 @@ function NewsForm({ teamSlug, post, onSaved, onCancel }: NewsFormProps) {
         <textarea value={body} onChange={e => setBody(e.target.value)} required maxLength={8000} placeholder="Share a recap, announcement, or update..." rows={5} style={{ ...inputStyle, resize: 'vertical' }} />
       </Field>
       {msg && <StatusMsg {...msg} />}
-      <div style={{ display: 'flex', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <button type="submit" disabled={disabled} style={{ padding: '0.55rem 1.25rem', background: disabled ? 'rgba(20,184,166,0.3)' : '#14B8A6', color: '#041E42', border: 'none', borderRadius: 6, fontSize: '0.875rem', fontWeight: 700, cursor: disabled ? 'wait' : 'pointer' }}>
-          {saving ? 'Saving…' : post ? 'Save changes' : 'Post news'}
+          {saving ? 'Saving…' : (post && isDraft) ? 'Publish draft' : (post ? 'Save changes' : 'Post now')}
+        </button>
+        <button type="button" onClick={e => submit(e as any, false)} disabled={disabled} style={{ padding: '0.55rem 1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+          {post ? 'Save as draft' : 'Save draft'}
         </button>
         {post && (
           <button type="button" onClick={onCancel} style={{ padding: '0.55rem 1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>
@@ -267,14 +272,15 @@ function ScheduleForm({ teamSlug, post, onSaved, onCancel }: ScheduleFormProps) 
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent, publish: boolean) {
     e.preventDefault();
     if (!scheduledAt || !kind) return;
     setSaving(true); setMsg(null);
     const method = post ? 'PATCH' : 'POST';
+    const isPublished = publish ? true : post ? (post as any).is_published : false;
     const payload: Record<string, unknown> = post
-      ? { type: 'schedule', id: post.id, scheduled_at: new Date(scheduledAt).toISOString(), opponent: opponent.trim() || null, kind, venue: venue.trim() || null, home_away: kind === 'practice' || kind === 'meeting' || kind === 'other' ? null : homeAway, notes: notes.trim() || null }
-      : { type: 'schedule', scheduled_at: new Date(scheduledAt).toISOString(), opponent: opponent.trim() || null, kind, venue: venue.trim() || null, home_away: kind === 'practice' || kind === 'meeting' || kind === 'other' ? null : homeAway, notes: notes.trim() || null };
+      ? { type: 'schedule', id: post.id, scheduled_at: new Date(scheduledAt).toISOString(), opponent: opponent.trim() || null, kind, venue: venue.trim() || null, home_away: kind === 'practice' || kind === 'meeting' || kind === 'other' ? null : homeAway, notes: notes.trim() || null, is_published: isPublished }
+      : { type: 'schedule', scheduled_at: new Date(scheduledAt).toISOString(), opponent: opponent.trim() || null, kind, venue: venue.trim() || null, home_away: kind === 'practice' || kind === 'meeting' || kind === 'other' ? null : homeAway, notes: notes.trim() || null, is_published: isPublished };
     try {
       const r = await fetch(`/api/team/${encodeURIComponent(teamSlug)}/posts`, {
         method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
@@ -287,9 +293,10 @@ function ScheduleForm({ teamSlug, post, onSaved, onCancel }: ScheduleFormProps) 
   }
 
   const isPracticeOrMeeting = kind === 'practice' || kind === 'meeting' || kind === 'other';
+  const isDraft = post && !(post as any).is_published;
   const disabled = saving || !scheduledAt;
   return (
-    <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+    <form onSubmit={e => submit(e, true)} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
       <TwoCol>
         <Field label="Date & time *"><input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} required style={inputStyle} /></Field>
         <Field label="Type *">
@@ -311,9 +318,12 @@ function ScheduleForm({ teamSlug, post, onSaved, onCancel }: ScheduleFormProps) 
       <Field label="Venue / Location (optional)"><input type="text" value={venue} onChange={e => setVenue(e.target.value)} maxLength={200} placeholder="e.g. Cebu Ice Arena, IT Park" style={inputStyle} /></Field>
       {!isPracticeOrMeeting && <Field label="Notes (optional)"><textarea value={notes} onChange={e => setNotes(e.target.value)} maxLength={2000} rows={2} style={{ ...inputStyle, resize: 'vertical' }} /></Field>}
       {msg && <StatusMsg {...msg} />}
-      <div style={{ display: 'flex', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <button type="submit" disabled={disabled} style={{ padding: '0.55rem 1.25rem', background: disabled ? 'rgba(20,184,166,0.3)' : '#14B8A6', color: '#041E42', border: 'none', borderRadius: 6, fontSize: '0.875rem', fontWeight: 700, cursor: disabled ? 'wait' : 'pointer' }}>
-          {saving ? 'Saving…' : post ? 'Save changes' : 'Add to schedule'}
+          {saving ? 'Saving…' : (post && isDraft) ? 'Publish schedule' : (post ? 'Save changes' : 'Add to schedule')}
+        </button>
+        <button type="button" onClick={e => submit(e as any, false)} disabled={disabled} style={{ padding: '0.55rem 1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+          {post ? 'Save as draft' : 'Save draft'}
         </button>
         {post && (
           <button type="button" onClick={onCancel} style={{ padding: '0.55rem 1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}>
