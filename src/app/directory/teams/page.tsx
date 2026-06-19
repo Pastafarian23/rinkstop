@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import TeamsIndexClient, { type Team } from './TeamsIndexClient';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string }> }): Promise<Metadata> {
@@ -37,24 +37,59 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 export const dynamic = 'force-dynamic';
 
 async function fetchInitialTeams(country?: string | null): Promise<Team[]> {
-  try {
-    let q = supabase
-      .from('teams')
-      .select('id, name, slug, logo_url, city, country, league_id')
-      .eq('is_active', true)
-      .order('name')
-      .limit(500);
-    if (country) q = q.eq('country', country);
-    const { data, error } = await q;
-    if (error) {
-      console.error('Teams initial fetch failed:', error);
-      return [];
-    }
-    return (data || []) as Team[];
-  } catch (err) {
-    console.error('Teams initial fetch failed:', err);
-    return [];
+  // Fetch both NHL-imported teams AND user-created teams (team_workspaces)
+  // in parallel so the SSR HTML includes user-created teams from the start.
+  // Previously only NHL teams were SSR'd and user teams only appeared after
+  // a client-side filter change — a real shipping bug found 2026-06-19 during
+  // the public posts end-to-end test.
+  let nhlQuery = supabase
+    .from('teams')
+    .select('id, name, slug, logo_url, city, country, league_id')
+    .eq('is_active', true)
+    .order('name')
+    .limit(500);
+  if (country) nhlQuery = nhlQuery.eq('country', country);
+
+  let userQuery = supabaseAdmin
+    .from('team_workspaces')
+    .select('id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, parent_org')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (country) {
+    userQuery = userQuery.or(
+      `country_code.ilike.%${country}%,home_country.ilike.%${country}%`
+    );
   }
+
+  const [nhlRes, userRes] = await Promise.all([nhlQuery, userQuery]);
+
+  if (nhlRes.error) console.error('Teams initial fetch failed:', nhlRes.error);
+  if (userRes.error) console.error('User teams initial fetch failed:', userRes.error);
+
+  const nhlTeams = (nhlRes.data || []) as Team[];
+  const userTeams = ((userRes.data || []) as any[]).map(t => ({
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    city: t.home_city || null,
+    country: t.home_country || null,
+    country_code: t.country_code || null,
+    source: 'user' as const,
+    league_or_org: t.parent_org || null,
+    level: t.level || null,
+    age_label: t.age_label || null,
+    age_category: t.age_category || null,
+    description: t.description || null,
+    season_label: t.season_label || null,
+    claimed_by_tier: null,
+  }));
+
+  // Dedup by id (user teams may collide with NHL teams by name; id is unique)
+  const merged = [...nhlTeams, ...userTeams].filter(
+    (t, i, arr) => arr.findIndex(x => x.id === t.id) === i
+  );
+  return merged;
 }
 
 export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string }> }) {
