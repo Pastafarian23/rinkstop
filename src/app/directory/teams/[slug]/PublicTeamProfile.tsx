@@ -77,6 +77,8 @@ interface Props {
   claimed: boolean;
   claimedByUserId: string | null;
   seasonRecord: SeasonRecord;
+  viewerIsAdmin: boolean;
+  teamSlug: string;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -234,6 +236,8 @@ export default function PublicTeamProfile({
   admins,
   claimed,
   seasonRecord,
+  viewerIsAdmin,
+  teamSlug,
 }: Props) {
   const flag = countryFlag(team.country_code);
   const levelLabel = team.level ? (LEVEL_LABELS[team.level] ?? team.level) : null;
@@ -264,6 +268,46 @@ export default function PublicTeamProfile({
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <span style={{ color: '#A0A0A0' }}>{team.name}</span>
       </nav>
+
+      {/* Admin banner: shown only to viewers who manage this team. */}
+      {viewerIsAdmin && (
+        <div
+          style={{
+            background: 'rgba(255,184,28,0.08)',
+            border: '1px solid rgba(255,184,28,0.3)',
+            borderRadius: 8,
+            padding: '0.75rem 1rem',
+            marginBottom: '1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)' }}>
+            <strong style={{ color: '#FFB81C' }}>You manage this team.</strong>
+            <span style={{ color: 'rgba(255,255,255,0.6)', marginLeft: '0.5rem' }}>
+              This is your public profile — what visitors see when they look you up.
+            </span>
+          </div>
+          <a
+            href={`/dashboard/team/${teamSlug}`}
+            style={{
+              padding: '0.45rem 0.9rem',
+              background: '#FFB81C',
+              color: '#041E42',
+              textDecoration: 'none',
+              borderRadius: 6,
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Manage team →
+          </a>
+        </div>
+      )}
 
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <section style={{ marginBottom: '2rem' }}>
@@ -374,7 +418,20 @@ export default function PublicTeamProfile({
             </div>
 
             {recentResults.length === 0 ? (
-              <EmptyState icon="📊" message="No results posted yet." />
+              <EmptyState
+                icon="📊"
+                message="No results posted yet."
+                hint={
+                  viewerIsAdmin
+                    ? 'Record your game results so fans and families can follow your season.'
+                    : 'When the team posts results from their games, they’ll appear here with W/L/T badges.'
+                }
+                cta={
+                  viewerIsAdmin
+                    ? { label: 'Post a result', href: `/dashboard/team/${teamSlug}` }
+                    : undefined
+                }
+              />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {recentResults.map((r) => (
@@ -391,7 +448,20 @@ export default function PublicTeamProfile({
             </h2>
 
             {upcomingGames.length === 0 ? (
-              <EmptyState icon="📅" message="No upcoming games scheduled." />
+              <EmptyState
+                icon="📅"
+                message="No upcoming games scheduled."
+                hint={
+                  viewerIsAdmin
+                    ? 'Add games, practices, and tournaments so families know when to show up.'
+                    : 'When the team schedules their next game, it’ll appear here with date, venue, and home/away.'
+                }
+                cta={
+                  viewerIsAdmin
+                    ? { label: 'Add to schedule', href: `/dashboard/team/${teamSlug}` }
+                    : undefined
+                }
+              />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {upcomingGames.map((g) => (
@@ -412,7 +482,20 @@ export default function PublicTeamProfile({
             </h2>
 
             {news.length === 0 ? (
-              <EmptyState icon="📰" message="No news posted yet." />
+              <EmptyState
+                icon="📰"
+                message="No news posted yet."
+                hint={
+                  viewerIsAdmin
+                    ? 'Share tryout dates, roster announcements, recaps, and team stories. Manually drafted — your voice, not a feed.'
+                    : 'Game recaps, announcements, and stories from the team. Posted by coaches and admins.'
+                }
+                cta={
+                  viewerIsAdmin
+                    ? { label: 'Post news', href: `/dashboard/team/${teamSlug}` }
+                    : undefined
+                }
+              />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {news.slice(0, 5).map((n) => (
@@ -503,7 +586,17 @@ export default function PublicTeamProfile({
 
 // ── Card components ────────────────────────────────────────────────────────────
 
-function EmptyState({ icon, message }: { icon: string; message: string }) {
+function EmptyState({
+  icon,
+  message,
+  hint,
+  cta,
+}: {
+  icon: string;
+  message: string;
+  hint?: string;
+  cta?: { label: string; href: string };
+}) {
   return (
     <div
       style={{
@@ -517,7 +610,30 @@ function EmptyState({ icon, message }: { icon: string; message: string }) {
       }}
     >
       <div style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>{icon}</div>
-      {message}
+      <div>{message}</div>
+      {hint && (
+        <div style={{ fontSize: '0.78rem', marginTop: '0.5rem', color: 'rgba(255,255,255,0.3)', lineHeight: 1.5 }}>
+          {hint}
+        </div>
+      )}
+      {cta && (
+        <a
+          href={cta.href}
+          style={{
+            display: 'inline-block',
+            marginTop: '0.75rem',
+            padding: '0.45rem 0.9rem',
+            background: 'var(--navy, #041E42)',
+            color: '#fff',
+            textDecoration: 'none',
+            borderRadius: 6,
+            fontSize: '0.8rem',
+            fontWeight: 600,
+          }}
+        >
+          {cta.label}
+        </a>
+      )}
     </div>
   );
 }
