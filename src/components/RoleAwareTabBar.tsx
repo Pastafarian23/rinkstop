@@ -164,11 +164,16 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
     let set = TABS_BY_ROLE[role] || DEFAULT_TABS;
     // Tier gating: paid profiles (starter+) don't see Browse/News/Directory tabs
     // unless they're specifically the role's working tool.
-    if (tier && tier !== 'free') {
+    // EXCEPTION: if the user hasn't picked an account_type yet (accountTypes is
+    // empty), don't tier-gate — they need every tab to navigate and find their
+    // way to /dashboard/welcome. This prevents the '2 tabs only' UX when
+    // account_types hasn't been set yet (Arnel hit this 2026-06-18).
+    const hasPickedRole = accountTypes.length > 0;
+    if (tier && tier !== 'free' && hasPickedRole) {
       set = set.filter(t => !FREE_TIER_ONLY_KEYS.has(t.iconKey));
     }
     return set.slice(0, 4);
-  }, [role, tier]);
+  }, [role, tier, accountTypes.length]);
 
   // Don't render if signed-out (per Arnel's design — public users get a clean
   // directory experience, no tab bar clutter).
