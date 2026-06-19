@@ -40,28 +40,41 @@ export type Team = NHLTeam | UserTeam;
 interface Props {
   initialTeams: Team[];
   country?: string | null;
+  level?: string | null;
+  league?: string | null;
 }
 
-export default function TeamsIndexClient({ initialTeams, country: initialCountry }: Props) {
+export default function TeamsIndexClient({ initialTeams, country: initialCountry, level: initialLevel, league: initialLeague }: Props) {
   const searchParams = useSearchParams();
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [country, setCountry] = useState<string>(initialCountry || '');
+  const [level, setLevel] = useState<string>(initialLevel || '');
+  const [league, setLeague] = useState<string>(initialLeague || '');
 
   // Prefill from URL on mount (deep-links / back-forward)
   useEffect(() => {
     const c = searchParams.get('country');
+    const l = searchParams.get('level');
+    const lg = searchParams.get('league');
     if (c && c !== country) setCountry(c);
+    if (l && l !== level) setLevel(l);
+    if (lg && lg !== league) setLeague(lg);
   }, [searchParams]);
 
   useEffect(() => {
-    // Refetch only when the user changes the filter away from the server value.
-    if (country === (initialCountry || '')) return;
+    // Refetch only when the user changes filters away from server values.
+    const serverCountry = initialCountry || '';
+    const serverLevel = initialLevel || '';
+    const serverLeague = initialLeague || '';
+    if (country === serverCountry && level === serverLevel && league === serverLeague) return;
     setLoading(true);
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (country) params.set('country', country);
+    if (level) params.set('level', level);
+    if (league) params.set('league', league);
 
     // Fetch both NHL (or directory) teams + user-created teams in parallel.
     Promise.all([
@@ -77,7 +90,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
       setTeams(merged);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [search, country, initialCountry]);
+  }, [search, country, level, league, initialCountry, initialLevel, initialLeague]);
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   // The 'claimed_by_tier' field is computed by /api/teams via the claims join;
@@ -87,8 +100,23 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
   const verifiedCount = 0;
   const visibleTeams = verifiedOnly ? [] : teams;
 
-  const clearFilters = () => { setSearch(''); setCountry(''); };
-  const hasFilters = search || country;
+  const clearFilters = () => { setSearch(''); setCountry(''); setLevel(''); setLeague(''); };
+  const hasFilters = search || country || level || league;
+
+  // Sync filter changes to URL so the view is shareable and back/forward works.
+  const updateUrl = (next: { country?: string; level?: string; league?: string; search?: string }) => {
+    const params = new URLSearchParams();
+    const c = next.country !== undefined ? next.country : country;
+    const l = next.level !== undefined ? next.level : level;
+    const lg = next.league !== undefined ? next.league : league;
+    const s = next.search !== undefined ? next.search : search;
+    if (c) params.set('country', c);
+    if (l) params.set('level', l);
+    if (lg) params.set('league', lg);
+    const qs = params.toString();
+    const url = qs ? `/directory/teams?${qs}` : '/directory/teams';
+    window.history.replaceState({}, '', url);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -121,7 +149,93 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
-        <div style={{ position: 'relative', flex: '1 1 180px' }}>
+
+        {/* Level chip */}
+        <div style={{ position: 'relative', flex: '0 0 auto' }}>
+          <select
+            value={level}
+            onChange={e => { setLevel(e.target.value); updateUrl({ level: e.target.value }); }}
+            className="input-field"
+            aria-label="Filter by level"
+            style={{
+              paddingRight: '1.75rem',
+              minWidth: 130,
+              cursor: 'pointer',
+              fontSize: '0.8125rem',
+              fontWeight: level ? 700 : 400,
+              color: level ? '#FFB81C' : 'rgba(255,255,255,0.75)',
+              border: `1.5px solid ${level ? '#FFB81C' : 'rgba(255,255,255,0.15)'}`,
+            }}
+          >
+            <option value="">All levels</option>
+            <option value="pro">Pro</option>
+            <option value="junior">Junior</option>
+            <option value="college">College</option>
+            <option value="international">International</option>
+            <option value="adult">Adult</option>
+          </select>
+        </div>
+
+        {/* League chip */}
+        <div style={{ position: 'relative', flex: '0 0 auto' }}>
+          <input
+            type="text"
+            list="league-options"
+            placeholder="League"
+            value={league}
+            onChange={e => { setLeague(e.target.value); updateUrl({ league: e.target.value }); }}
+            className="input-field"
+            style={{ width: 200, fontSize: '0.8125rem' }}
+          />
+          <datalist id="league-options">
+            <option value="National Hockey League" />
+            <option value="American Hockey League" />
+            <option value="ECHL" />
+            <option value="Kontinental Hockey League" />
+            <option value="Finnish Liiga" />
+            <option value="Swedish Hockey League" />
+            <option value="DEL" />
+            <option value="Professional Women's Hockey League" />
+            <option value="Ontario Hockey League" />
+            <option value="Western Hockey League" />
+            <option value="Quebec Major Junior Hockey League" />
+            <option value="United States Hockey League" />
+            <option value="NCAA Division 1 Men's Hockey" />
+            <option value="IIHF World Championships" />
+            <option value="Elite League" />
+          </datalist>
+        </div>
+
+        {/* Country chip */}
+        <div style={{ position: 'relative', flex: '0 0 auto' }}>
+          <input
+            type="text"
+            list="country-options"
+            placeholder="Country"
+            value={country}
+            onChange={e => { setCountry(e.target.value); updateUrl({ country: e.target.value }); }}
+            className="input-field"
+            style={{ width: 180, fontSize: '0.8125rem' }}
+          />
+          <datalist id="country-options">
+            <option value="United States" />
+            <option value="Canada" />
+            <option value="Sweden" />
+            <option value="Finland" />
+            <option value="Russia" />
+            <option value="Germany" />
+            <option value="Czech Republic" />
+            <option value="Switzerland" />
+            <option value="United Kingdom" />
+            <option value="Norway" />
+            <option value="Denmark" />
+            <option value="Austria" />
+            <option value="Slovakia" />
+          </datalist>
+        </div>
+
+        {/* Search */}
+        <div style={{ position: 'relative', flex: '1 1 180px', minWidth: 180 }}>
           <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
             <SearchIcon className="w-4 h-4" />
           </div>
@@ -131,17 +245,10 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="input-field"
-            style={{ paddingLeft: '2.25rem' }}
+            style={{ paddingLeft: '2.25rem', fontSize: '0.8125rem' }}
           />
         </div>
-        <input
-          type="text"
-          placeholder="Country"
-          value={country}
-          onChange={e => setCountry(e.target.value)}
-          className="input-field"
-          style={{ flex: '0 0 150px' }}
-        />
+
         <button
           onClick={() => setVerifiedOnly(v => !v)}
           style={{
@@ -165,7 +272,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
       </div>
 
       {/* Country filter banner — shows when ?country= set */}
-      {initialCountry && (
+      {(initialCountry || initialLevel || initialLeague) && (
         <div style={{
           background: 'rgba(200,16,46,0.08)',
           border: '1px solid rgba(200,16,46,0.25)',
@@ -179,12 +286,20 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
           flexWrap: 'wrap',
         }}>
           <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)' }}>
-            Showing teams in <strong style={{ color: '#C8102E' }}>{initialCountry}</strong>{' '}
+            Showing {initialLevel && <><strong style={{ color: '#C8102E' }}>{initialLevel}</strong> </>}
+            {initialLevel && (initialCountry || initialLeague) && '· '}
+            {initialLeague && <><strong style={{ color: '#C8102E' }}>{initialLeague}</strong> </>}
+            {initialLeague && initialCountry && '· '}
+            {initialCountry && <>teams in <strong style={{ color: '#C8102E' }}>{initialCountry}</strong></>}
+            {!initialCountry && !initialLeague && initialLevel && ' teams'}
+            {initialLevel && initialLeague && ' teams'}
+            {!initialLevel && initialLeague && ' teams'}
+            {' '}
             <span style={{ color: 'rgba(255,255,255,0.45)' }}>— {teams.length.toLocaleString()} total</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
-              onClick={() => { setCountry(''); setSearch(''); }}
+              onClick={() => { setCountry(''); setLevel(''); setLeague(''); setSearch(''); }}
               style={{
                 background: 'transparent',
                 border: '1px solid rgba(255,255,255,0.2)',
