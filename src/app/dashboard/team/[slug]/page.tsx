@@ -6,6 +6,7 @@ import { RosterTable, RosterMember } from '@/components/team/RosterTable';
 import { InviteTable, InviteRow } from '@/components/team/InviteTable';
 import { isAdminRole } from '@/lib/team';
 import JoinWithCodeForm from './JoinWithCodeForm';
+import AdminPostPanel from './AdminPostPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -209,6 +210,11 @@ export default async function TeamHubPage({ params }: PageProps) {
           </div>
           <InviteTable teamId={team.id} invites={invites} teamSlug={team.slug} />
         </section>
+      )}
+
+      {/* Public Posts — admin-only: news, results, schedule */}
+      {isAdmin && (
+        <AdminPostPanel teamSlug={team.slug} teamId={team.id} />
       )}
 
       {/* Events placeholder (Day 4) */}
