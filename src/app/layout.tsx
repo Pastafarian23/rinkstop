@@ -1,10 +1,12 @@
 import './globals.css';
 import Link from 'next/link';
 import { ClerkProvider } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
 import MobileBottomTabBar from '@/components/MobileBottomTabBar';
+import RoleAwareTabBar from '@/components/RoleAwareTabBar';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
@@ -12,6 +14,8 @@ import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
 import ScoreTicker from '@/components/ScoreTicker';
 import IntentBanner from '@/components/IntentBanner';
+import { supabaseAdmin } from '@/lib/supabase';
+import { getUserTier } from '@/lib/connections';
 import { clerkSignInLocalization, clerkSignUpLocalization } from '@/lib/clerk-appearance';
 import type { Metadata } from 'next';
 
@@ -128,7 +132,36 @@ const NAV: never[] = []; // unused, kept to avoid breaking any external referenc
 
 
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Fetch user role + tier for the bottom tab bar. This runs once per page
+  // render in the root layout. On pages with `revalidate` (home, /blog etc.),
+  // the result is cached so we don't query Supabase on every anonymous hit.
+  // On dynamic pages (dashboard, /standings/[id]), we re-fetch each render.
+  let userId: string | null = null;
+  let signedIn = false;
+  let accountTypes: Array<{ account_type: string; is_primary: boolean }> = [];
+  let tier = 'free';
+  try {
+    const auth_ = await auth();
+    if (auth_?.userId) {
+      userId = auth_.userId;
+      signedIn = true;
+      const { data } = await supabaseAdmin
+        .from('profile_account_types')
+        .select('account_type, is_primary')
+        .eq('user_id', userId);
+      accountTypes = (data || []) as Array<{ account_type: string; is_primary: boolean }>;
+      try {
+        tier = await getUserTier(userId);
+      } catch {
+        tier = 'free';
+      }
+    }
+  } catch {
+    // best-effort: if auth() or Supabase fails, fall through with empty data
+    // and the tab bar will fall back to fan/default tabs (only visible if signed in)
+  }
+
   return (
     <ClerkProvider
       publishableKey={clerkPublishableKey}
@@ -214,6 +247,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main>{children}</main>
 
           {/* ---- Mobile Bottom Tab Bar ------------------------------------------------------------------------------------ */}
+          {/* Day 4: RoleAwareTabBar replaces the generic 4-tab bar. It hides for
+              signed-out users (per Arnel's design — RinkStop = directory/news site
+              for public visitors), and shows role-specific tabs for signed-in users
+              based on profile_account_types.primary. Fallback: MobileBottomTabBar
+              renders only if RoleAwareTabBar returns null (which it does for
+              signed-out users, but we keep it as a safety net for old browsers
+              without localStorage). */}
+          <RoleAwareTabBar
+            userId={userId}
+            signedIn={signedIn}
+            accountTypes={accountTypes}
+            tier={tier}
+          />
           <MobileBottomTabBar />
 
           {/* ---- Footer ---------------------------------------------------------------------------------------------------------- */}
