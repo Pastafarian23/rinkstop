@@ -100,6 +100,45 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     patch.name = name;
   }
 
+  // Slug change — validate format, check uniqueness, write a redirect row
+  // so old links (e.g. shared invites) keep working.
+  const newSlug = asStringOrNull(body.slug);
+  if (newSlug !== undefined) {
+    if (typeof newSlug !== 'string') {
+      return NextResponse.json({ error: 'invalid_slug' }, { status: 400 });
+    }
+    // Format: lowercase a-z 0-9 hyphen, 2-60 chars, can't start/end with hyphen
+    if (!/^[a-z0-9](?:[a-z0-9-]{0,58}[a-z0-9])?$/.test(newSlug)) {
+      return NextResponse.json(
+        {
+          error: 'invalid_slug_format',
+          message: 'Slug must be 2-60 chars, lowercase a-z/0-9/- only, no leading or trailing hyphens.',
+        },
+        { status: 400 },
+      );
+    }
+    if (newSlug === team.slug) {
+      // No-op — user submitted same slug
+    } else {
+      // Check uniqueness
+      const { data: collision } = await supabaseAdmin
+        .from('team_workspaces')
+        .select('id')
+        .eq('slug', newSlug)
+        .neq('id', team.id)
+        .maybeSingle();
+      if (collision) {
+        return NextResponse.json(
+          { error: 'slug_taken', message: 'That slug is already in use. Try another.' },
+          { status: 409 },
+        );
+      }
+      patch.slug = newSlug;
+      // Mark for redirect insert (after the workspace update succeeds)
+      (patch as any)._old_slug_for_redirect = team.slug;
+    }
+  }
+
   const shortName = asStringOrNull(body.short_name);
   if (shortName !== undefined) {
     if (typeof shortName !== 'string' || shortName.length > 40) {
@@ -286,6 +325,21 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       { error: 'update_failed', detail: updateErr?.message ?? null },
       { status: 500 }
     );
+  }
+
+  // If slug changed, write a redirect row so old links keep working.
+  const oldSlug = (patch as any)._old_slug_for_redirect as string | undefined;
+  if (oldSlug && updated.slug !== oldSlug) {
+    // Best-effort — don't fail the whole request if the redirect insert fails
+    try {
+      await supabaseAdmin.from('team_slug_redirects').upsert(
+        { from_slug: oldSlug, to_slug: updated.slug, team_id: team.id },
+        { onConflict: 'from_slug', ignoreDuplicates: false },
+      );
+    } catch {
+      // swallow — redirect is a nice-to-have, not critical
+    }
+    delete (patch as any)._old_slug_for_redirect;
   }
 
   // Track the edit
