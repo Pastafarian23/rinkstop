@@ -5,6 +5,7 @@ import { TeamHeader } from '@/components/team/TeamHeader';
 import { RosterTable, RosterMember } from '@/components/team/RosterTable';
 import { InviteTable, InviteRow } from '@/components/team/InviteTable';
 import { isAdminRole } from '@/lib/team';
+import JoinWithCodeForm from './JoinWithCodeForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +70,7 @@ export default async function TeamHubPage({ params }: PageProps) {
             ← Back to dashboard
           </a>
         </div>
+        <JoinWithCodeForm teamSlug={team.slug} teamName={team.name} />
       </div>
     );
   }
