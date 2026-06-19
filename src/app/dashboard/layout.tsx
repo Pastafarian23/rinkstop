@@ -118,6 +118,8 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   // Phase 2: Show "Listings" in the nav if the user holds the `business` account
   // type. Cheaper than a join — one indexed query on profile_account_types.
   let isBusinessUser = false;
+  let accountTypes: Array<{ account_type: string; is_primary: boolean }> = [];
+  let activeRole: string | null = null;
   try {
     const { count: bc } = await supabaseAdmin
       .from('profile_account_types')
@@ -125,6 +127,19 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
       .eq('user_id', userId)
       .eq('account_type', 'business');
     isBusinessUser = (bc || 0) > 0;
+
+    // Day 4: fetch ALL account types for the role-switcher in the avatar menu.
+    const { data: typesData } = await supabaseAdmin
+      .from('profile_account_types')
+      .select('account_type, is_primary')
+      .eq('user_id', userId);
+    accountTypes = (typesData || []) as Array<{ account_type: string; is_primary: boolean }>;
+
+    // activeRole is read client-side from localStorage; we can't read it server-side.
+    // Pass a hint to the UserMenu so it shows which one is "current" by default:
+    // the primary role (or the first one if no primary set).
+    const primary = accountTypes.find(t => t.is_primary)?.account_type;
+    activeRole = primary || accountTypes[0]?.account_type || null;
   } catch { /* table missing — keep nav as-is */ }
 
   navLinks.push(
@@ -256,6 +271,8 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                 email={email}
                 avatarUrl={avatarUrl}
                 size={40}
+                accountTypes={accountTypes}
+                activeRole={activeRole}
               />
             </div>
           </div>

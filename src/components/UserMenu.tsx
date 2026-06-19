@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { ACCOUNT_TYPE_META, getAccountTypeMeta } from './AccountTypeBadges';
 
 interface UserMenuProps {
   initials: string;
@@ -11,6 +12,13 @@ interface UserMenuProps {
   email: string;
   avatarUrl: string | null;
   size?: number;
+  /**
+   * Account types from profile_account_types. Used to render a role-switcher
+   * in the menu (Day 4 — Instagram-style multi-profile switching).
+   */
+  accountTypes?: Array<{ account_type: string; is_primary: boolean }>;
+  /** Currently active role (drives the tab bar). */
+  activeRole?: string | null;
 }
 
 /**
@@ -39,11 +47,23 @@ export default function UserMenu({
   email,
   avatarUrl,
   size = 40,
+  accountTypes = [],
+  activeRole = null,
 }: UserMenuProps) {
   const { signOut } = useClerk();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  function switchRole(role: string) {
+    try {
+      window.localStorage.setItem('rinkstop_active_role', role);
+    } catch { /* noop */ }
+    setOpen(false);
+    // Reload the page so RoleAwareTabBar re-reads localStorage and re-renders.
+    // router.refresh() alone won't work because localStorage is read on mount.
+    window.location.reload();
+  }
   const wrapRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -258,6 +278,87 @@ export default function UserMenu({
             <span aria-hidden="true" style={{ fontSize: 16 }}>🛟</span>
             <span>Help &amp; support</span>
           </Link>
+
+          {/* Day 4: Role switcher (Instagram-style profile switching). */}
+          {accountTypes.length > 1 && (
+            <>
+              <div
+                style={{
+                  height: 1,
+                  background: '#1e1e1e',
+                  margin: '0.375rem 0',
+                }}
+              />
+              <p
+                style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  padding: '0.5rem 0.75rem 0.25rem',
+                  margin: 0,
+                }}
+              >
+                Switch role
+              </p>
+              {accountTypes.map(t => {
+                const meta = getAccountTypeMeta(t.account_type);
+                const isActive = (activeRole || t.account_type) === t.account_type;
+                return (
+                  <button
+                    key={t.account_type}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => switchRole(t.account_type)}
+                    disabled={isActive}
+                    data-testid={`user-menu-role-${t.account_type}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '0.55rem 0.75rem',
+                      color: isActive ? 'rgba(255,255,255,0.45)' : '#fff',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 6,
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      cursor: isActive ? 'default' : 'pointer',
+                      width: '100%',
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <span aria-hidden="true" style={{ fontSize: 16 }}>{meta.emoji}</span>
+                    <span style={{ flex: 1 }}>{meta.label}</span>
+                    {t.is_primary && (
+                      <span
+                        style={{
+                          fontSize: '0.6rem',
+                          fontWeight: 700,
+                          color: '#FFB81C',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                        }}
+                      >
+                        Primary
+                      </span>
+                    )}
+                    {isActive && (
+                      <span aria-hidden="true" style={{ fontSize: 14, color: '#FFB81C' }}>✓</span>
+                    )}
+                  </button>
+                );
+              })}
+            </>
+          )}
 
           <div
             style={{
