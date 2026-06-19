@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminRole } from '@/lib/team';
 import { trackEvent } from '@/lib/analytics';
+import { fanOutTeamNotification } from '@/lib/team-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const { data } = await baseQuery(
       supabaseAdmin
         .from('team_schedule')
-        .select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled, created_at')
+        .select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled, is_published, published_at, created_at')
     );
     return NextResponse.json({ data: data || [] });
   }
@@ -105,7 +106,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   const [news, results, schedule] = await Promise.all([
     baseQuery(supabaseAdmin.from('team_news').select('id, title, body, published_at, is_published, created_at')),
     baseQuery(supabaseAdmin.from('team_results').select('id, game_date, opponent, home_away, our_score, their_score, outcome, notes, created_at')),
-    baseQuery(supabaseAdmin.from('team_schedule').select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled, created_at')),
+    baseQuery(supabaseAdmin.from('team_schedule').select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled, is_published, published_at, created_at')),
   ]);
 
   return NextResponse.json({ news: news.data || [], results: results.data || [], schedule: schedule.data || [] });
@@ -180,6 +181,19 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         props: { team_id: team.id, team_slug: team.slug, post_id: data.id },
       });
     } catch {}
+    // Fan out to team members (only when published)
+    if (body.is_published !== false) {
+      void fanOutTeamNotification({
+        team_id: team.id,
+        actor_user_id: userId,
+        kind: 'news',
+        entity_id: data.id,
+        title,
+        body: newsBody.length > 200 ? newsBody.slice(0, 200) + '…' : newsBody,
+        payload: { team_slug: team.slug, post_id: data.id },
+        pref: 'notify_news',
+      });
+    }
     return NextResponse.json({ ok: true, data });
   }
 
@@ -225,6 +239,23 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         props: { team_id: team.id, team_slug: team.slug, result_id: data.id },
       });
     } catch {}
+    void fanOutTeamNotification({
+      team_id: team.id,
+      actor_user_id: userId,
+      kind: 'result',
+      entity_id: data.id,
+      title: `${data.outcome} vs ${data.opponent} ${data.our_score}–${data.their_score}`,
+      payload: {
+        team_slug: team.slug,
+        result_id: data.id,
+        outcome: data.outcome,
+        opponent: data.opponent,
+        our_score: data.our_score,
+        their_score: data.their_score,
+        game_date: data.game_date,
+      },
+      pref: 'notify_results',
+    });
     return NextResponse.json({ ok: true, data });
   }
 
@@ -254,6 +285,8 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         home_away: homeAway,
         notes: asStr(body.notes, 2000),
         is_cancelled: body.is_cancelled === true,
+        is_published: body.is_published !== false,
+        published_at: body.is_published !== false ? new Date().toISOString() : null,
       })
       .select('id, scheduled_at, opponent, kind, venue')
       .single();
@@ -267,6 +300,26 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         props: { team_id: team.id, team_slug: team.slug, schedule_id: data.id },
       });
     } catch {}
+    if (body.is_published !== false) {
+      const opp = asStr(body.opponent, 120);
+      const ven = asStr(body.venue, 200);
+      void fanOutTeamNotification({
+        team_id: team.id,
+        actor_user_id: userId,
+        kind: 'schedule',
+        entity_id: data.id,
+        title: `New ${kind}${opp ? `: ${opp}` : ''}${ven ? ` @ ${ven}` : ''}`,
+        payload: {
+          team_slug: team.slug,
+          schedule_id: data.id,
+          kind,
+          opponent: opp,
+          venue: ven,
+          scheduled_at: data.scheduled_at,
+        },
+        pref: 'notify_schedule',
+      });
+    }
     return NextResponse.json({ ok: true, data });
   }
 
@@ -390,6 +443,12 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
     if (body.is_cancelled !== undefined) {
       patch.is_cancelled = body.is_cancelled === true;
+    }
+    if (body.is_published !== undefined) {
+      const wantPublished = body.is_published === true;
+      patch.is_published = wantPublished;
+      // Set published_at on first publish; leave it alone on subsequent edits.
+      if (wantPublished) patch.published_at = new Date().toISOString();
     }
 
     if (Object.keys(patch).length === 0) {
