@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { countryFlag } from '@/lib/team';
 import PublicTeamProfile from './PublicTeamProfile';
@@ -199,6 +200,28 @@ export default async function PublicTeamPage({ params }: PageProps) {
     .limit(1)
     .maybeSingle<{ id: string; status: string; user_id: string }>();
 
+  // Viewer check: is the current Clerk user an admin/member of this team?
+  // Used to surface "post your first…" CTAs on empty states without
+  // breaking the anonymous public-profile flow.
+  let viewerIsAdmin = false;
+  try {
+    const { userId } = await auth();
+    if (userId) {
+      const { data: viewerMember } = await supabaseAdmin
+        .from('team_members')
+        .select('role')
+        .eq('team_id', team.id)
+        .eq('user_id', userId)
+        .is('left_at', null)
+        .maybeSingle<{ role: string }>();
+      viewerIsAdmin = ['head_coach', 'assistant_coach', 'goalie_coach', 'skills_coach', 'manager', 'team_staff'].includes(
+        viewerMember?.role ?? '',
+      );
+    }
+  } catch {
+    // Anonymous or auth error — leave viewerIsAdmin false, no CTAs.
+  }
+
   // Build season record from results
   const seasonRecord = results.reduce(
     (acc, r) => {
@@ -221,6 +244,8 @@ export default async function PublicTeamPage({ params }: PageProps) {
       claimed={!!claimRow}
       claimedByUserId={claimRow?.user_id ?? null}
       seasonRecord={seasonRecord}
+      viewerIsAdmin={viewerIsAdmin}
+      teamSlug={team.slug}
     />
   );
 }
