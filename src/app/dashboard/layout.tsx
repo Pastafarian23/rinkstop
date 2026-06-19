@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import DashboardNav from '@/components/DashboardNav';
 import UserMenu from '@/components/UserMenu';
 import NotificationBell from '@/components/NotificationBell';
+import TeamSwitcher from '@/components/TeamSwitcher';
 import { getUserTier, tierAtLeast } from '@/lib/connections';
 
 export const dynamic = 'force-dynamic';
@@ -209,6 +210,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <NotificationBell />
+              <TeamSwitcher />
               {isAdmin ? (
                 <Link
                   href="/admin"
