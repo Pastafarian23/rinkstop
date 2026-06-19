@@ -1,256 +1,226 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
-import TeamDetailClient from './TeamDetailClient';
-import ClaimThisListingMount from '@/components/ClaimThisListingMount';
-import { teamPageDecision } from '@/lib/seo';
-import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
-import { buildTeamShare } from '@/lib/share';
+import { supabaseAdmin, supabase } from '@/lib/supabase';
+import { countryFlag } from '@/lib/team';
+import PublicTeamProfile from './PublicTeamProfile';
 
-const BASE_URL = 'https://rinkstop.com';
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const dynamic = 'force-dynamic';
 
-interface Props {
+interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 interface TeamRow {
   id: string;
-  slug: string | null;
-  name: string;
-  city: string | null;
-  country: string | null;
-  league_id: string | null;
-  home_rink_id: string | null;
-  logo_url: string | null;
-  division: string | null;
-  leagues?: { name: string } | null;
-}
-
-interface PlayerRow {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  position: string | null;
-  jersey_number: number | null;
-  headshot_url: string | null;
-}
-
-/**
- * Fetch team by slug or UUID. If the URL has a UUID, the team may not
- * have a slug yet — we 301-redirect to the canonical /directory/teams/{slug}
- * URL so the address bar is human-readable and SEO-friendly.
- *
- * Uses Supabase directly (not the /api/teams self-call) so we don't burn
- * a serverless roundtrip in the metadata function.
- */
-async function fetchTeamBySlugOrId(slug: string): Promise<TeamRow | null> {
-  const isUuid = UUID_RE.test(slug);
-  if (isUuid) {
-    const { data, error } = await supabase
-      .from('teams')
-      .select('*, leagues(name)')
-      .eq('id', slug)
-      .maybeSingle();
-    if (error || !data) return null;
-    return data as TeamRow;
-  }
-  const { data, error } = await supabase
-    .from('teams')
-    .select('*, leagues(name)')
-    .eq('slug', slug)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data as TeamRow;
-}
-
-/**
- * Fetch the team + roster in parallel. Returns null if the team is missing
- * (caller should redirect or notFound). The page body is rendered as a
- * client component for the interactive parts (favorites, contact form);
- * the server component just pre-loads the data and injects the schema
- * + canonical via generateMetadata.
- */
-interface ArticleRow {
-  id: string;
   slug: string;
+  name: string;
+  short_name: string | null;
+  parent_org: string | null;
+  country_code: string | null;
+  home_city: string | null;
+  home_country: string | null;
+  age_category: string;
+  age_label: string | null;
+  age_min: number | null;
+  age_max: number | null;
+  level: string | null;
+  season_label: string | null;
+  description: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  visibility: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface NewsRow {
+  id: string;
   title: string;
-  subtitle: string | null;
+  body: string;
+  author_user_id: string;
   published_at: string;
-  game_date: string | null;
-  og_image_url: string | null;
 }
 
-async function fetchTeamArticles(teamId: string, limit: number = 12): Promise<ArticleRow[]> {
-  // Latest published articles for this team (home or away).
-  // Uses the partial indexes on posts_team_home_id_published_at_idx and
-  // posts_team_away_id_published_at_idx (added 2026-06-12).
-  const { data, error } = await supabase
-    .from('posts')
-    .select('id, slug, title, subtitle, published_at, game_date, og_image_url')
-    .eq('status', 'published')
-    .or(`team_home_id.eq.${teamId},team_away_id.eq.${teamId}`)
-    .order('published_at', { ascending: false })
-    .limit(limit);
-  if (error) {
-    console.error('fetchTeamArticles error:', error);
-    return [];
-  }
-  return (data || []) as ArticleRow[];
+interface ResultRow {
+  id: string;
+  game_date: string;
+  opponent: string;
+  home_away: 'home' | 'away' | 'neutral';
+  our_score: number;
+  their_score: number;
+  outcome: 'W' | 'L' | 'T';
+  notes: string | null;
 }
 
-async function fetchTeamAndRoster(slug: string): Promise<{ team: TeamRow; players: PlayerRow[] } | null> {
-  const isUuid = UUID_RE.test(slug);
-  const team = await fetchTeamBySlugOrId(slug);
-  if (!team) return null;
+interface ScheduleRow {
+  id: string;
+  scheduled_at: string;
+  opponent: string | null;
+  kind: 'game' | 'practice' | 'tournament' | 'meeting' | 'other';
+  venue: string | null;
+  home_away: 'home' | 'away' | 'neutral' | null;
+  notes: string | null;
+  is_cancelled: boolean;
+}
 
-  // If the URL was a UUID, redirect to the canonical slug. This is the
-  // server-side equivalent of the previous client-side UUID redirect.
-  if (isUuid && team.slug && team.slug !== slug) {
-    redirect(`/directory/teams/${team.slug}`);
-  }
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const normalizedSlug = (slug || '').toLowerCase().trim();
 
-  const { data: playersData } = await supabase
-    .from('players')
-    .select('id, first_name, last_name, position, jersey_number, headshot_url')
-    .eq('team_id', team.id)
+  const { data: team } = await supabaseAdmin
+    .from('team_workspaces')
+    .select('name, description, home_city, home_country, country_code, age_label, level')
+    .eq('slug', normalizedSlug)
     .eq('is_active', true)
-    .order('jersey_number', { ascending: true, nullsFirst: false })
-    .limit(60);
+    .maybeSingle();
 
-  return { team, players: (playersData || []) as PlayerRow[] };
-}
-
-/**
- * Estimate the unique word count the page will render. This is used by
- * generateMetadata to decide whether to apply noindex for thin pages.
- * Server-side — we can't actually count React tree words, so we
- * approximate from data: the rich static copy + the roster.
- */
-function estimateTeamUniqueWordCount(team: TeamRow, players: PlayerRow[]): number {
-  // Each player contributes ~5 unique words (name + position)
-  const playerWords = players.length * 5;
-  // Baseline always-rendered sections: header, location, roster header
-  const baseline = 30;
-  // City/country/captain/etc. add a small amount each
-  const fieldBonus =
-    (team.city ? 2 : 0) +
-    (team.country ? 2 : 0) +
-    (team.league_id ? 3 : 0) +
-    (team.logo_url ? 1 : 0);
-  return playerWords + baseline + fieldBonus;
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
-
-  try {
-    const result = await fetchTeamAndRoster(slug);
-    if (!result) {
-      return {
-        title: 'Team Not Found',
-        robots: { index: false, follow: true },
-      };
-    }
-    const { team, players } = result;
-
-    const location = [team.city, team.country].filter(Boolean).join(', ');
-    const leagueName = team.leagues?.name;
-    const titleBase = leagueName
-      ? `${team.name} Hockey Team | ${leagueName}`
-      : `${team.name} Hockey Team`;
-    const description = leagueName
-      ? `${team.name} (${leagueName}${location ? `, ${location}` : ''}) roster, schedule, home arena, and stats. Follow the team on RinkStop.`
-      : `${team.name}${location ? ` (${location})` : ''} roster, schedule, home arena, and stats. Follow the team on RinkStop.`;
-
-    // Phase 1b SEO: noindex for thin team pages
-    const fields = ['city', 'country', 'league_id', 'home_rink_id', 'logo_url'];
-    const fieldCount = fields.filter(f => (team as any)[f] != null && (team as any)[f] !== '').length;
-    const uniqueWordCount = estimateTeamUniqueWordCount(team, players);
-    const decision = teamPageDecision(fieldCount, uniqueWordCount);
-
+  if (!team) {
     return {
-      title: titleBase,
-      description,
-      alternates: {
-        canonical: `${BASE_URL}/directory/teams/${team.slug || slug}`,
-      },
-      robots: { index: decision.indexable, follow: true },
-      openGraph: {
-        title: titleBase,
-        description,
-        type: 'website',
-        ...(team.logo_url ? { images: [{ url: team.logo_url, width: 200, height: 200, alt: team.name }] } : {}),
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: titleBase,
-        description,
-        ...(team.logo_url ? { images: [team.logo_url] } : {}),
-      },
+      title: 'Team not found · RinkStop',
+      robots: { index: false, follow: false },
     };
-  } catch (err) {
-    console.error('Team metadata error:', err);
-    return { title: 'Team' };
   }
+
+  const t = team as Pick<
+    TeamRow,
+    'name' | 'description' | 'home_city' | 'home_country' | 'country_code' | 'age_label' | 'level'
+  >;
+  const location = [t.home_city, t.home_country].filter(Boolean).join(', ');
+  const title = `${t.name}${location ? ` — ${location}` : ''} · RinkStop`;
+  const desc =
+    t.description ||
+    `${t.name} hockey team${location ? ` from ${location}` : ''}. ${
+      t.level ? `Plays at the ${t.level.replace(/_/g, ' ')} level. ` : ''
+    }${t.age_label ? `Age group: ${t.age_label}. ` : ''}Roster, schedule, and recent results on RinkStop.`;
+
+  return {
+    title,
+    description: desc,
+    alternates: { canonical: `https://rinkstop.com/directory/teams/${normalizedSlug}` },
+    openGraph: {
+      title: t.name,
+      description: desc,
+      url: `https://rinkstop.com/directory/teams/${normalizedSlug}`,
+      siteName: 'RinkStop',
+      type: 'profile',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t.name,
+      description: desc,
+    },
+    robots: { index: true, follow: true },
+  };
 }
 
-export default async function TeamPage({ params }: Props) {
+export default async function PublicTeamPage({ params }: PageProps) {
   const { slug } = await params;
-  const result = await fetchTeamAndRoster(slug);
-  const articles = result ? await fetchTeamArticles(result.team.id) : [];
-  if (!result) {
-    return (
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
-        <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700 }}>Team not found</h1>
-        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>Check the URL or browse all teams.</p>
-        <Link href="/directory/teams" style={{ color: 'var(--red)', display: 'block', marginTop: '1rem' }}>← Browse All Teams</Link>
-      </div>
-    );
-  }
+  const normalizedSlug = (slug || '').toLowerCase().trim();
+  if (!normalizedSlug) notFound();
 
-  const { team, players } = result;
+  // Workspace lookup (service role — pre-existing RLS recursion makes anon
+  // SELECT unreliable for cross-table joins. Service role is safe here because
+  // this is a server-rendered page that only exposes public-profile fields.)
+  const { data: teamData } = await supabaseAdmin
+    .from('team_workspaces')
+    .select('*')
+    .eq('slug', normalizedSlug)
+    .eq('is_active', true)
+    .maybeSingle<TeamRow>();
 
-  // Social: fetch owner + initial follower count in parallel with the team data
-  const [owner, initialFollowersCount] = await Promise.all([
-    getEntityOwner('team', team.id),
-    getFollowersCount('team', team.id),
+  if (!teamData) notFound();
+  const team = teamData as TeamRow;
+
+  // Posts (anon key — these tables have public SELECT RLS)
+  // Recent results — last 2 seasons (or all if team is new)
+  const seasonStart = new Date();
+  seasonStart.setMonth(seasonStart.getMonth() - 18);
+
+  const [newsRes, resultsRes, upcomingRes, adminsRes] = await Promise.all([
+    supabase
+      .from('team_news')
+      .select('id, title, body, author_user_id, published_at')
+      .eq('team_id', team.id)
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .limit(10)
+      .returns<NewsRow[]>(),
+    supabase
+      .from('team_results')
+      .select('id, game_date, opponent, home_away, our_score, their_score, outcome, notes')
+      .eq('team_id', team.id)
+      .order('game_date', { ascending: false })
+      .limit(20)
+      .returns<ResultRow[]>(),
+    supabase
+      .from('team_schedule')
+      .select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled')
+      .eq('team_id', team.id)
+      .eq('is_cancelled', false)
+      .gte('scheduled_at', new Date().toISOString())
+      .order('scheduled_at', { ascending: true })
+      .limit(10)
+      .returns<ScheduleRow[]>(),
+    // Admin display: get head_coach + assistants + manager for the claim badge
+    supabaseAdmin
+      .from('team_members')
+      .select('user_id, role, joined_at, profiles:user_id(display_name, username)')
+      .eq('team_id', team.id)
+      .is('left_at', null)
+      .in('role', ['head_coach', 'assistant_coach', 'manager', 'team_staff'])
+      .order('joined_at'),
   ]);
 
-  // JSON-LD: SportsTeam + BreadcrumbList. Server-rendered, no client script injection.
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'SportsTeam',
-        name: team.name,
-        sport: 'Ice hockey',
-        url: `${BASE_URL}/directory/teams/${team.slug}`,
-        ...(team.logo_url ? { logo: team.logo_url } : {}),
-        ...(team.leagues?.name ? { memberOf: { '@type': 'SportsOrganization', name: team.leagues.name } } : {}),
-      },
-      {
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-          { '@type': 'ListItem', position: 2, name: 'Teams', item: `${BASE_URL}/directory/teams` },
-          { '@type': 'ListItem', position: 3, name: team.name, item: `${BASE_URL}/directory/teams/${team.slug}` },
-        ],
-      },
-    ],
-  };
+  const news: NewsRow[] = newsRes.data || [];
+  const results: ResultRow[] = resultsRes.data || [];
+  const upcoming: ScheduleRow[] = upcomingRes.data || [];
+
+  interface AdminJoin {
+    user_id: string;
+    role: string;
+    profiles: { display_name: string | null; username: string | null } | null;
+  }
+  const admins: AdminJoin[] = ((adminsRes.data || []) as unknown as AdminJoin[]).map((a) => ({
+    user_id: a.user_id,
+    role: a.role,
+    profiles: a.profiles,
+  }));
+
+  // Check claim status
+  const { data: claimRow } = await supabaseAdmin
+    .from('claims')
+    .select('id, status, user_id')
+    .eq('entity_id', team.id)
+    .eq('claim_type', 'team')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string; status: string; user_id: string }>();
+
+  // Build season record from results
+  const seasonRecord = results.reduce(
+    (acc, r) => {
+      acc.wins += r.outcome === 'W' ? 1 : 0;
+      acc.losses += r.outcome === 'L' ? 1 : 0;
+      acc.ties += r.outcome === 'T' ? 1 : 0;
+      acc.total += 1;
+      return acc;
+    },
+    { wins: 0, losses: 0, ties: 0, total: 0 }
+  );
 
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      {/* Claim this listing — only renders on unclaimed teams. Renders above the
-          main team header so the CTA is the first thing an unverified visitor sees. */}
-      <ClaimThisListingMount entityType="team" entityId={team.id} entityName={team.name} />
-      <TeamDetailClient team={team} players={players} articles={articles} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} share={buildTeamShare(team)} />
-    </>
+    <PublicTeamProfile
+      team={team}
+      news={news}
+      results={results}
+      upcoming={upcoming}
+      admins={admins}
+      claimed={!!claimRow}
+      claimedByUserId={claimRow?.user_id ?? null}
+      seasonRecord={seasonRecord}
+    />
   );
 }
