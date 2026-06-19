@@ -340,7 +340,22 @@ function StatusMsg({ ok, text }: { ok: boolean; text: string }) {
 interface DeleteOp { type: PostType; id: string; label: string; }
 
 function NewsList({ posts, onEdit, onDelete }: { posts: NewsPost[]; onEdit: (p: NewsPost) => void; onDelete: (p: NewsPost) => void }) {
-  if (!posts.length) return <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', margin: '0.5rem 0' }}>No news posts yet.</p>;
+  if (!posts.length) return (
+    <div
+      style={{
+        background: 'rgba(255,184,28,0.04)',
+        border: '1px dashed rgba(255,184,28,0.3)',
+        borderRadius: 8,
+        padding: '0.85rem 1rem',
+        margin: '0.5rem 0 1rem',
+        fontSize: '0.8rem',
+        color: 'rgba(255,255,255,0.55)',
+      }}
+    >
+      <strong style={{ color: '#FFB81C', display: 'block', marginBottom: '0.2rem' }}>No news yet.</strong>
+      Add your first post above — tryouts, game recaps, roster moves, anything your audience wants to know.
+    </div>
+  );
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.75rem' }}>
       {posts.map(p => (
@@ -362,7 +377,22 @@ function NewsList({ posts, onEdit, onDelete }: { posts: NewsPost[]; onEdit: (p: 
 }
 
 function ResultList({ posts }: { posts: ResultPost[] }) {
-  if (!posts.length) return <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', margin: '0.5rem 0' }}>No results recorded yet.</p>;
+  if (!posts.length) return (
+    <div
+      style={{
+        background: 'rgba(255,184,28,0.04)',
+        border: '1px dashed rgba(255,184,28,0.3)',
+        borderRadius: 8,
+        padding: '0.85rem 1rem',
+        margin: '0.5rem 0 1rem',
+        fontSize: '0.8rem',
+        color: 'rgba(255,255,255,0.55)',
+      }}
+    >
+      <strong style={{ color: '#FFB81C', display: 'block', marginBottom: '0.2rem' }}>No results yet.</strong>
+      Record the score after your next game. Once posted, the W/L/T badge appears on your public profile.
+    </div>
+  );
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.75rem' }}>
       {posts.map(p => (
@@ -380,7 +410,22 @@ function ResultList({ posts }: { posts: ResultPost[] }) {
 }
 
 function ScheduleList({ posts, onEdit, onDelete }: { posts: SchedulePost[]; onEdit: (p: SchedulePost) => void; onDelete: (p: SchedulePost) => void }) {
-  if (!posts.length) return <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', margin: '0.5rem 0' }}>No events scheduled yet.</p>;
+  if (!posts.length) return (
+    <div
+      style={{
+        background: 'rgba(255,184,28,0.04)',
+        border: '1px dashed rgba(255,184,28,0.3)',
+        borderRadius: 8,
+        padding: '0.85rem 1rem',
+        margin: '0.5rem 0 1rem',
+        fontSize: '0.8rem',
+        color: 'rgba(255,255,255,0.55)',
+      }}
+    >
+      <strong style={{ color: '#FFB81C', display: 'block', marginBottom: '0.2rem' }}>Nothing on the schedule yet.</strong>
+      Add games, practices, tournaments, or meetings so families and players know where to show up.
+    </div>
+  );
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.75rem' }}>
       {posts.map(p => (
