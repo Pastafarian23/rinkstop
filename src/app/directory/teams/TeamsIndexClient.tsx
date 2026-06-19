@@ -35,7 +35,7 @@ interface UserTeam {
   source: 'user';
 }
 
-type Team = NHLTeam | UserTeam;
+export type Team = NHLTeam | UserTeam;
 
 interface Props {
   initialTeams: Team[];

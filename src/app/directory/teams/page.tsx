@@ -1,16 +1,6 @@
 import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
-import TeamsIndexClient from './TeamsIndexClient';
-
-interface Team {
-  id: string;
-  name: string;
-  city?: string;
-  country?: string;
-  league_id?: string;
-  slug?: string;
-  logo_url?: string;
-}
+import TeamsIndexClient, { type Team } from './TeamsIndexClient';
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string }> }): Promise<Metadata> {
   const { country } = await searchParams;
