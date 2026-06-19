@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { SearchIcon, FilterIcon } from '@/components/icons';
 
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
-interface Team {
+interface NHLTeam {
   id: string;
   name: string;
   city?: string;
@@ -14,10 +14,28 @@ interface Team {
   leagues?: { name: string };
   slug?: string;
   logo_url?: string;
-  // claimed_by_tier is only set by /api/teams (via the claims join);
-  // direct Supabase queries (used when ?country= is set) won't have it.
   claimed_by_tier?: string | null;
+  source: 'nhl';
 }
+
+interface UserTeam {
+  id: string;
+  name: string;
+  slug: string;
+  city?: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  parent_org?: string | null;
+  level?: string | null;
+  age_label?: string | null;
+  age_category?: string | null;
+  description?: string | null;
+  season_label?: string | null;
+  claimed_by_tier?: string | null;
+  source: 'user';
+}
+
+type Team = NHLTeam | UserTeam;
 
 interface Props {
   initialTeams: Team[];
@@ -42,16 +60,23 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
     if (country === (initialCountry || '')) return;
     setLoading(true);
     const params = new URLSearchParams();
-    params.set('sort', 'tier');
     if (search) params.set('search', search);
     if (country) params.set('country', country);
-    fetch(`/api/teams?${params}`)
-      .then(r => r.json())
-      .then(d => {
-        setTeams(d?.data || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+
+    // Fetch both NHL (or directory) teams + user-created teams in parallel.
+    Promise.all([
+      fetch(`/api/teams?${params}`).then(r => r.json()).catch(() => ({ data: [] })),
+      fetch(`/api/user-teams?${params}`).then(r => r.json()).catch(() => ({ data: [] })),
+    ]).then(([nhl, user]) => {
+      const nhlTeams: NHLTeam[] = nhl?.data || [];
+      const userTeams: UserTeam[] = user?.data || [];
+      // Deduplicate by id — user-created teams may share names with NHL teams
+      const merged = [...nhlTeams, ...userTeams].filter(
+        (t, i, arr) => arr.findIndex(x => x.id === t.id) === i
+      );
+      setTeams(merged);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, [search, country, initialCountry]);
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -249,8 +274,8 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem', paddingRight: team.claimed_by_tier ? 70 : 0 }}>
-                  {team.logo_url ? (
-                    <img src={team.logo_url} alt="" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
+                  {team.source === 'nhl' && (team as NHLTeam).logo_url ? (
+                    <img src={(team as NHLTeam).logo_url} alt="" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #C8102E, #041E42)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 700, color: '#fff', flexShrink: 0 }}>🏒</div>
                   )}
@@ -263,9 +288,14 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                 <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.8125rem' }}>
                   {[team.city, team.country].filter(Boolean).join(', ')}
                 </p>
-                {team.leagues?.name && (
+                {'leagues' in team && team.leagues?.name && (
                   <span style={{ display: 'inline-block', marginTop: '0.5rem', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(200,16,46,0.15)', color: 'var(--red)' }}>
                     {team.leagues.name}
+                  </span>
+                )}
+                {team.source === 'user' && (team as UserTeam).parent_org && (
+                  <span style={{ display: 'inline-block', marginTop: '0.5rem', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(255,184,28,0.12)', color: '#FFB81C' }}>
+                    {(team as UserTeam).parent_org}
                   </span>
                 )}
               </Link>
