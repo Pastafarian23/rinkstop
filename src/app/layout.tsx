@@ -5,7 +5,6 @@ import { auth } from '@clerk/nextjs/server';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
-import MobileBottomTabBar from '@/components/MobileBottomTabBar';
 import RoleAwareTabBar from '@/components/RoleAwareTabBar';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
@@ -247,20 +246,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main>{children}</main>
 
           {/* ---- Mobile Bottom Tab Bar ------------------------------------------------------------------------------------ */}
-          {/* Day 4: RoleAwareTabBar replaces the generic 4-tab bar. It hides for
+          {/* Day 4: RoleAwareTabBar is the ONLY bottom tab bar. It hides for
               signed-out users (per Arnel's design — RinkStop = directory/news site
-              for public visitors), and shows role-specific tabs for signed-in users
-              based on profile_account_types.primary. Fallback: MobileBottomTabBar
-              renders only if RoleAwareTabBar returns null (which it does for
-              signed-out users, but we keep it as a safety net for old browsers
-              without localStorage). */}
+              for public visitors) and shows role-specific tabs for signed-in users
+              based on profile_account_types.primary. The legacy MobileBottomTabBar
+              was removed because it was rendering for signed-out users too, which
+              contradicted the design. */}
           <RoleAwareTabBar
             userId={userId}
             signedIn={signedIn}
             accountTypes={accountTypes}
             tier={tier}
           />
-          <MobileBottomTabBar />
 
           {/* ---- Footer ---------------------------------------------------------------------------------------------------------- */}
           <footer style={{ background: '#041E42', borderTop: '3px solid #C8102E', marginTop: '3rem', padding: '2.5rem 0 1.5rem' }}>
