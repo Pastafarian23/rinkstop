@@ -45,10 +45,13 @@ const LEVELS = [
   { value: 'rep', label: 'Rep / Selects' },
 ];
 
+// V1: binary visibility. 'public' is deferred until the public team profile page ships.
 const VISIBILITY = [
-  { value: 'private', label: 'Private — only invited members can view' },
-  { value: 'unlisted', label: 'Unlisted — anyone with the link' },
-  { value: 'public', label: 'Public — listed on RinkStop' },
+  {
+    value: 'private',
+    label: 'Private — workspace is invite-only (recommended)',
+    help: 'Your team is URL-known, but the roster, invites, and member data are gated behind an invite code. Parents and players need an invite to access.',
+  },
 ];
 
 const inputStyle: React.CSSProperties = {
@@ -364,19 +367,44 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       </Section>
 
       <Section title="Visibility">
-        <Field label="Who can see this team?">
-          <select
-            value={form.visibility}
-            onChange={updateStr('visibility')}
-            style={inputStyle}
+        <div
+          style={{
+            padding: '0.85rem 1rem',
+            background: 'rgba(20,184,166,0.08)',
+            border: '1px solid rgba(20,184,166,0.25)',
+            borderRadius: 8,
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: '0.85rem',
+            lineHeight: 1.5,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: '#14B8A6', marginBottom: '0.3rem' }}>
+            🔒 Private (only option in V1)
+          </div>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)' }}>
+            Your team is URL-known — anyone with the link can see the team exists. But the
+            roster, invites, and member data at <code style={{ color: '#14B8A6' }}>/dashboard/team/{slug}</code>{' '}
+            require an invite code. Generate invite codes in the{' '}
+            <strong>Invites</strong> section below the roster.
+          </p>
+          <p
+            style={{
+              margin: '0.6rem 0 0',
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(255,184,28,0.06)',
+              borderLeft: '2px solid #FFB81C',
+              color: 'rgba(255,184,28,0.85)',
+              fontSize: '0.78rem',
+            }}
           >
-            {VISIBILITY.map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label}
-              </option>
-            ))}
-          </select>
-        </Field>
+            <strong>Coming soon:</strong> a public team profile page (claim badge, season record,
+            home rink) at <code style={{ color: '#FFB81C' }}>/teams/{slug}</code>. We&rsquo;ll
+            add a public toggle then. The directory at{' '}
+            <code style={{ color: '#FFB81C' }}>/directory/teams</code> will auto-list teams as
+            that ships.
+          </p>
+        </div>
+        <input type="hidden" value={form.visibility} />
       </Section>
 
       {error && (
