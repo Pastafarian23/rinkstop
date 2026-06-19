@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { logReceived, markProcessed, markFailed } from '@/lib/stripe-webhook-log';
 
 function getStripe() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -84,7 +85,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Webhook error: ${err.message}` }, { status: 400 });
   }
 
+  let eventRowId = 'unknown';
   try {
+    eventRowId = (await logReceived(event)).id;
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as any;
@@ -358,9 +362,11 @@ export async function POST(req: NextRequest) {
         console.log(`[Webhook] Unhandled event type: ${event.type}`);
     }
 
+    await markProcessed(eventRowId);
     return NextResponse.json({ received: true });
   } catch (err: any) {
     console.error('[Webhook] Handler error:', err.message);
+    await markFailed(eventRowId, err.message || 'unknown error');
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
