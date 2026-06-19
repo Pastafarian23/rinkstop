@@ -41,7 +41,8 @@ export const LEAGUE_LEVELS: Record<string, Level> = {
   'DEL': 'pro',
   'Swedish Hockey League': 'pro',
   'SHL': 'pro',                           // alternate name
-  'Professional Women\u2019s Hockey League': 'pro',
+  'Professional Women\'s Hockey League': 'pro', // straight apostrophe in DB
+  'Professional Women\u2019s Hockey League': 'pro', // smart apostrophe variant
   'PWHL Women': 'pro',                    // alternate name
   'ECHL': 'pro',
   'Asia League Ice Hockey': 'pro',        // pro Asian league (Japan/Korea/China)
@@ -54,7 +55,8 @@ export const LEAGUE_LEVELS: Record<string, Level> = {
   'United States Hockey League': 'junior',
 
   // College
-  'NCAA Division 1 Men\u2019s Hockey': 'college',
+  'NCAA Division 1 Men\'s Hockey': 'college',     // straight apostrophe in DB
+  'NCAA Division 1 Men\u2019s Hockey': 'college', // smart apostrophe variant
   'NCAA': 'college',                              // alternate name
   'U SPORTS': 'college',
 
