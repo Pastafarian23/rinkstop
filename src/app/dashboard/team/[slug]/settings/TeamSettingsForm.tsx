@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface InitialValues {
+  slug: string;
   name: string;
   short_name: string;
   parent_org: string;
@@ -118,6 +119,8 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
 
     // Strip empty strings to null for cleaner storage; the API accepts both.
     const payload: Record<string, unknown> = {
+      // Only send slug if it differs from the URL we're on (avoids a pointless write).
+      ...(form.slug && form.slug !== slug ? { slug: form.slug } : {}),
       name: form.name,
       short_name: form.short_name === '' ? null : form.short_name,
       parent_org: form.parent_org === '' ? null : form.parent_org,
@@ -152,6 +155,16 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       }
 
       setSaved(true);
+
+      // If the slug changed, navigate to the new URL so bookmarks, page state,
+      // and any server fetches use the canonical slug.
+      const updatedSlug = data?.team?.slug;
+      if (updatedSlug && updatedSlug !== slug) {
+        // Use replace so back button doesn't bring user to the old slug URL.
+        router.replace(`/dashboard/team/${encodeURIComponent(updatedSlug)}/settings`);
+        return;
+      }
+
       // Refresh server components (header re-renders with new values).
       router.refresh();
     } catch (err) {
@@ -184,6 +197,33 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
             minLength={2}
             maxLength={80}
             style={inputStyle}
+          />
+        </Field>
+        <Field
+          label="URL slug"
+          hint={`Your team lives at rinkstop.com/dashboard/team/${form.slug || 'your-slug'}. Lowercase a–z, 0–9, hyphens. 2–60 chars. Warning: changing the slug breaks shared links; the old URL will redirect to the new one.`}
+        >
+          <input
+            type="text"
+            value={form.slug}
+            onChange={e => {
+              // Normalize: lowercase, replace spaces/underscores with hyphens, strip invalid chars
+              const normalized = e.target.value
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, '')
+                .replace(/-+/g, '-')
+                .slice(0, 60);
+              update('slug', normalized);
+            }}
+            minLength={2}
+            maxLength={60}
+            pattern="^[a-z0-9](?:[a-z0-9-]{0,58}[a-z0-9])?$"
+            style={{
+              ...inputStyle,
+              fontFamily: 'monospace',
+              fontSize: '0.85rem',
+              letterSpacing: '0.02em',
+            }}
           />
         </Field>
         <Field label="Short name" hint="Optional. Short form (e.g. 'Datus'). Used in lists and chips.">

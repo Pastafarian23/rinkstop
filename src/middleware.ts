@@ -38,6 +38,30 @@ async function lookupSlugRedirect(slug: string): Promise<string | null> {
   }
 }
 
+// Team slug redirect: handles renames of user-created teams.
+// Affects both the team hub (/dashboard/team/[slug]) and the public
+// profile (/directory/teams/[slug]). Public SELECT RLS means anyone can
+// read redirects, so this works for unauthenticated requests too.
+async function lookupTeamSlugRedirect(slug: string): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const endpoint = `${url}/rest/v1/team_slug_redirects?from_slug=eq.${encodeURIComponent(slug)}&select=to_slug&limit=1`;
+    const res = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(500),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ to_slug: string }>;
+    if (rows.length === 0) return null;
+    return rows[0].to_slug;
+  } catch (e) {
+    console.error('[middleware] team slug redirect lookup failed:', e);
+    return null;
+  }
+}
+
 // Simple in-memory rate limiter for edge runtime
 // Keyed by IP, uses sliding window (1-minute windows)
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
@@ -89,6 +113,24 @@ export default clerkMiddleware(async (auth, request) => {
       if (toSlug && toSlug !== slug) {
         const dest = new URL(`/news/${toSlug}`, request.url);
         return NextResponse.redirect(dest, 308);
+      }
+    }
+  }
+
+  // Team slug redirect: /dashboard/team/{old} and /directory/teams/{old}
+  // → same paths with the new slug. Handles workspace renames.
+  // Runs BEFORE the dashboard auth check so the auth redirect target is
+  // the canonical (new) URL, not the old one.
+  const TEAM_SLUG_PREFIXES = ['/dashboard/team/', '/directory/teams/'];
+  for (const prefix of TEAM_SLUG_PREFIXES) {
+    if (path.startsWith(prefix) && path.length > prefix.length) {
+      const slug = path.slice(prefix.length).split('/')[0];
+      if (slug && !slug.includes('.')) {
+        const toSlug = await lookupTeamSlugRedirect(slug);
+        if (toSlug && toSlug !== slug) {
+          const dest = new URL(prefix + toSlug + path.slice(prefix.length + slug.length), request.url);
+          return NextResponse.redirect(dest, 308);
+        }
       }
     }
   }

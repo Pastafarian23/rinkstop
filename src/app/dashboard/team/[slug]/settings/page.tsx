@@ -104,6 +104,7 @@ export default async function TeamSettingsPage({ params }: PageProps) {
 
   // Pass the full row (whitelisted fields) to the client form.
   const initial = {
+    slug: team.slug ?? '',
     name: team.name ?? '',
     short_name: team.short_name ?? '',
     parent_org: team.parent_org ?? '',
