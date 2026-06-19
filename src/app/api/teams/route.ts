@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { enrichEntitiesWithClaimTier, compareByTier } from '@/lib/listingTier';
+import { LEAGUE_LEVELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -10,6 +11,21 @@ function requireAuth(request: NextRequest) {
   return key === API_SECRET || key === ADMIN_SECRET;
 }
 
+/**
+ * Resolve ?level= to a list of league_ids for an efficient DB filter.
+ * Returns null if no level filter is set (caller skips the in-clause).
+ */
+async function leagueIdsForLevel(level: string): Promise<string[] | null> {
+  if (!LEVEL_ORDER.includes(level as Level)) return null;
+  const { data: leagues, error } = await supabase
+    .from('leagues')
+    .select('id, name');
+  if (error || !leagues) return null;
+  return leagues
+    .filter((l: any) => LEAGUE_LEVELS[l.name] === level)
+    .map((l: any) => l.id);
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
@@ -17,6 +33,8 @@ export async function GET(request: NextRequest) {
   const country = searchParams.get('country');
   const search = searchParams.get('search');
   const leagueId = searchParams.get('leagueId');
+  const league = searchParams.get('league');     // league NAME filter (case-insensitive)
+  const level = searchParams.get('level');        // pro | junior | college | international | adult
   const rinkId = searchParams.get('rinkId');
   const city = searchParams.get('city');
   const sort = searchParams.get('sort') || 'name';
@@ -33,7 +51,32 @@ export async function GET(request: NextRequest) {
     if (rinkId) query = query.eq('home_rink_id', rinkId);
     if (city) query = query.ilike('city', `%${city}%`);
     if (country) query = query.eq('country', country);
-    if (leagueId) query = query.eq('league_id', leagueId);
+    if (leagueId) {
+      query = query.eq('league_id', leagueId);
+    } else if (league) {
+      // Filter by league name via the joined table.
+      // Two-step because PostgREST doesn't support ilike-on-relation directly here.
+      // Fetch the matching league id(s) first.
+      const { data: matchedLeagues } = await supabase
+        .from('leagues')
+        .select('id')
+        .ilike('name', `%${league}%`);
+      if (matchedLeagues && matchedLeagues.length > 0) {
+        query = query.in('league_id', matchedLeagues.map((m: any) => m.id));
+      } else {
+        // No league matches the search → return empty set.
+        return NextResponse.json({ data: [], count: 0 });
+      }
+    } else if (level) {
+      const ids = await leagueIdsForLevel(level);
+      if (ids === null) {
+        // Bad level value → ignore (don't filter)
+      } else if (ids.length === 0) {
+        return NextResponse.json({ data: [], count: 0 });
+      } else {
+        query = query.in('league_id', ids);
+      }
+    }
     if (activeOnly && !search) query = query.eq('is_active', true);
     if (search) query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
     query = query.limit(limit);

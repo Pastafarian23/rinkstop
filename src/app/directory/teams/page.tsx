@@ -1,18 +1,46 @@
 import type { Metadata } from 'next';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import TeamsIndexClient, { type Team } from './TeamsIndexClient';
+import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 
-export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string }> }): Promise<Metadata> {
-  const { country } = await searchParams;
-  const title = country ? `Hockey Teams in ${country}` : 'Hockey Teams Directory';
-  const desc = country
-    ? `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info.`
-    : `Browse hockey teams from NHL, AHL, KHL, NCAA, junior, and youth leagues worldwide.`;
+const LEVEL_DESCRIPTIONS: Record<Level, string> = {
+  pro: 'Top-tier professional hockey: NHL, AHL, KHL, top European leagues, and professional women\u2019s hockey.',
+  junior: 'Major junior hockey: CHL (OHL, WHL, QMJHL), USHL, and other draft-eligible leagues.',
+  college: 'University-level hockey: NCAA Division I and III, U SPORTS (Canada).',
+  international: 'National-team programs and IIHF tournaments.',
+  adult: 'Senior amateur, recreational, and regional leagues (beer leagues, women\u2019s rec, men\u2019s league).',
+};
+
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string }> }): Promise<Metadata> {
+  const { country, level, league } = await searchParams;
+  const levelIsValid = level && LEVEL_ORDER.includes(level as Level);
+  const titleParts: string[] = ['Hockey Teams'];
+  if (levelIsValid) titleParts.push(LEVEL_LABELS[level as Level]);
+  if (country) titleParts.push(`in ${country}`);
+  if (league) titleParts.push(`in ${league}`);
+  const title = titleParts.join(' ');
+  const description = (() => {
+    if (levelIsValid && country) {
+      return `${LEVEL_LABELS[level as Level]} hockey teams in ${country}. ${LEVEL_DESCRIPTIONS[level as Level]}`;
+    }
+    if (levelIsValid) {
+      return `${LEVEL_LABELS[level as Level]} hockey teams from around the world. ${LEVEL_DESCRIPTIONS[level as Level]}`;
+    }
+    if (country) {
+      return `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info.`;
+    }
+    return `Browse hockey teams from NHL, AHL, KHL, NCAA, junior, and youth leagues worldwide.`;
+  })();
+  const canonicalParams = new URLSearchParams();
+  if (country) canonicalParams.set('country', country);
+  if (levelIsValid) canonicalParams.set('level', level as string);
+  if (league) canonicalParams.set('league', league);
+  const qs = canonicalParams.toString();
   return {
     title,
-    description: desc,
+    description,
     alternates: {
-      canonical: country ? `https://rinkstop.com/directory/teams?country=${encodeURIComponent(country)}` : 'https://rinkstop.com/directory/teams',
+      canonical: qs ? `https://rinkstop.com/directory/teams?${qs}` : 'https://rinkstop.com/directory/teams',
     },
     robots: {
       index: true,
@@ -20,15 +48,15 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     },
     openGraph: {
       title,
-      description: desc,
-      url: country ? `https://rinkstop.com/directory/teams?country=${encodeURIComponent(country)}` : 'https://rinkstop.com/directory/teams',
+      description,
+      url: qs ? `https://rinkstop.com/directory/teams?${qs}` : 'https://rinkstop.com/directory/teams',
       siteName: 'RinkStop',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title,
-      description: desc,
+      description,
     },
   };
 }
@@ -36,12 +64,29 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 // Always render fresh — directory data changes too often to cache statically.
 export const dynamic = 'force-dynamic';
 
-async function fetchInitialTeams(country?: string | null): Promise<Team[]> {
+/**
+ * Resolve ?level= to a list of league_ids so we can filter the teams table
+ * directly at the DB layer (no JS post-filter).
+ */
+async function leagueIdsForLevel(level: string): Promise<string[] | null> {
+  if (!LEVEL_ORDER.includes(level as Level)) return null;
+  const { data: leagues } = await supabase
+    .from('leagues')
+    .select('id, name');
+  if (!leagues) return null;
+  return leagues
+    .filter((l: any) => LEAGUE_LEVELS[l.name] === level)
+    .map((l: any) => l.id);
+}
+
+async function fetchInitialTeams(opts: {
+  country?: string | null;
+  level?: string | null;
+  league?: string | null;
+}): Promise<Team[]> {
+  const { country, level, league } = opts;
   // Fetch both NHL-imported teams AND user-created teams (team_workspaces)
   // in parallel so the SSR HTML includes user-created teams from the start.
-  // Previously only NHL teams were SSR'd and user teams only appeared after
-  // a client-side filter change — a real shipping bug found 2026-06-19 during
-  // the public posts end-to-end test.
   let nhlQuery = supabase
     .from('teams')
     .select('id, name, slug, logo_url, city, country, league_id')
@@ -49,6 +94,25 @@ async function fetchInitialTeams(country?: string | null): Promise<Team[]> {
     .order('name')
     .limit(500);
   if (country) nhlQuery = nhlQuery.eq('country', country);
+  if (league) {
+    // Filter by league name via the joined table.
+    const { data: matchedLeagues } = await supabase
+      .from('leagues')
+      .select('id')
+      .ilike('name', `%${league}%`);
+    if (matchedLeagues && matchedLeagues.length > 0) {
+      nhlQuery = nhlQuery.in('league_id', matchedLeagues.map((m: any) => m.id));
+    } else {
+      nhlQuery = nhlQuery.eq('league_id', '__none__'); // force empty result
+    }
+  } else if (level) {
+    const ids = await leagueIdsForLevel(level);
+    if (ids && ids.length > 0) {
+      nhlQuery = nhlQuery.in('league_id', ids);
+    } else if (ids !== null) {
+      nhlQuery = nhlQuery.eq('league_id', '__none__'); // level set but no matches
+    }
+  }
 
   let userQuery = supabaseAdmin
     .from('team_workspaces')
@@ -60,6 +124,19 @@ async function fetchInitialTeams(country?: string | null): Promise<Team[]> {
     userQuery = userQuery.or(
       `country_code.ilike.%${country}%,home_country.ilike.%${country}%`
     );
+  }
+  // The "level" filter for user teams: we don't have a reliable way to
+  // classify user teams by level without explicit data, so:
+  //   - ?level=adult → show user teams (they're generally adult/amateur)
+  //   - ?level=youth → hide user teams for now (until team owners fill
+  //     age_category/level; long-term: enable when data exists)
+  //   - ?level=pro/junior/college/international → hide user teams
+  // (Simplest correct behavior: only show user teams when level filter is
+  // unset OR explicitly set to 'adult'.)
+  if (level === 'pro' || level === 'junior' || level === 'college' || level === 'international') {
+    userQuery = userQuery.eq('id', '__none__'); // empty result
+  } else if (level === 'adult') {
+    // pass — include user teams
   }
 
   const [nhlRes, userRes] = await Promise.all([nhlQuery, userQuery]);
@@ -92,9 +169,9 @@ async function fetchInitialTeams(country?: string | null): Promise<Team[]> {
   return merged;
 }
 
-export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string }> }) {
-  const { country } = await searchParams;
-  const initialTeams = await fetchInitialTeams(country);
+export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string }> }) {
+  const { country, level, league } = await searchParams;
+  const initialTeams = await fetchInitialTeams({ country, level, league });
   return (
     <>
       {/* SEO editorial section — added 2026-06-15.
@@ -162,7 +239,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
           </p>
         </section>
       )}
-      <TeamsIndexClient initialTeams={initialTeams} country={country ?? null} />
+      <TeamsIndexClient initialTeams={initialTeams} country={country ?? null} level={level ?? null} league={league ?? null} />
     </>
   );
 }
