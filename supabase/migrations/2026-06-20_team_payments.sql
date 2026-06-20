@@ -21,7 +21,7 @@
 -- One row per "thing being collected" (e.g., "Oct 27 Sunday Session ₱800").
 CREATE TABLE IF NOT EXISTS payments (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  team_id               UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  team_id               UUID NOT NULL REFERENCES team_workspaces(id) ON DELETE CASCADE,
   created_by            TEXT NOT NULL,        -- Clerk user_id of coach/admin
   title                 TEXT NOT NULL,
   description           TEXT,
@@ -67,7 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_payment_records_status     ON payment_records (st
 -- Per team or per payment. PDF/waivers/etc.
 CREATE TABLE IF NOT EXISTS team_documents (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  team_id               UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  team_id               UUID NOT NULL REFERENCES team_workspaces(id) ON DELETE CASCADE,
   payment_id            UUID REFERENCES payments(id) ON DELETE CASCADE,  -- null = team-wide doc
   title                 TEXT NOT NULL,
   description           TEXT,
