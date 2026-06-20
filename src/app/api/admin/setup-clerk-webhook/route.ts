@@ -56,7 +56,7 @@ function checkSetupToken(request: NextRequest): NextResponse | null {
 }
 
 async function listWebhooks(): Promise<ClerkWebhook[]> {
-  const resp = await fetch('https://api.clerk.com/v1/webhooks', {
+  const resp = await fetch('https://api.clerk.com/v1/webhook_endpoints', {
     headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
   });
   if (!resp.ok) {
@@ -68,7 +68,7 @@ async function listWebhooks(): Promise<ClerkWebhook[]> {
 }
 
 async function createWebhook(): Promise<ClerkWebhook> {
-  const resp = await fetch('https://api.clerk.com/v1/webhooks', {
+  const resp = await fetch('https://api.clerk.com/v1/webhook_endpoints', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         });
       }
       // Update events
-      const updateResp = await fetch(`https://api.clerk.com/v1/webhooks/${ours.id}`, {
+      const updateResp = await fetch(`https://api.clerk.com/v1/webhook_endpoints/${ours.id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
