@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect, notFound } from 'next/navigation';
+import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TeamHeader } from '@/components/team/TeamHeader';
 import { RosterTable, RosterMember } from '@/components/team/RosterTable';
@@ -153,6 +154,38 @@ export default async function TeamHubPage({ params }: PageProps) {
         memberCount={members.length}
         isAdmin={isAdmin}
       />
+
+      {/* Quick nav */}
+      <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <Link
+          href={`/dashboard/team/${team.slug}/payments`}
+          style={{
+            background: '#041E42', color: '#fff', textDecoration: 'none',
+            padding: '0.5rem 1rem', borderRadius: 6, fontWeight: 700, fontSize: '0.875rem',
+          }}
+        >
+          💰 Payments
+        </Link>
+        <Link
+          href={`/dashboard/team/${team.slug}/documents`}
+          style={{
+            background: '#041E42', color: '#fff', textDecoration: 'none',
+            padding: '0.5rem 1rem', borderRadius: 6, fontWeight: 700, fontSize: '0.875rem',
+          }}
+        >
+          📄 Documents
+        </Link>
+        <Link
+          href={`/dashboard/payments`}
+          style={{
+            background: '#fff', color: '#041E42', textDecoration: 'none',
+            padding: '0.5rem 1rem', borderRadius: 6, fontWeight: 700, fontSize: '0.875rem',
+            border: '1px solid #041E42',
+          }}
+        >
+          My payments (all teams) →
+        </Link>
+      </nav>
 
       {/* Roster */}
       <section>
