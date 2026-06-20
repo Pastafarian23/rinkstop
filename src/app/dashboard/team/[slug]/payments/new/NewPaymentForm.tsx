@@ -113,7 +113,7 @@ export default function NewPaymentForm({ teamId, teamSlug, defaultCurrency }: Pr
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#041E42', marginBottom: '0.25rem' }}>
-            RinkStop fee %
+            RinkStop service fee (%)
           </label>
           <input
             type="number"
@@ -124,6 +124,9 @@ export default function NewPaymentForm({ teamId, teamSlug, defaultCurrency }: Pr
             onChange={(e) => setConvenienceFeePct(e.target.value)}
             style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '1rem' }}
           />
+          <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
+            Charged to the player on top of the session fee. Standard 5% — covers payment processing + RinkStop service. You receive the full session fee.
+          </p>
         </div>
       </div>
 
