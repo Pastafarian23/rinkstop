@@ -135,6 +135,9 @@ export async function pingEmail(): Promise<{ ok: boolean; latencyMs: number; err
  * Useful for routes that want to do their own fan-out (e.g., notifying multiple admins).
  */
 export function paymentPendingEmail(args: TemplateData['payment-pending']): { subject: string; html: string } {
-  const { subject, html } = renderTemplate('payment-pending', args);
-  return { subject, html };
+  const { html } = renderTemplate('payment-pending', args);
+  return {
+    subject: `${args.playerName} marked "${args.paymentTitle}" as paid`,
+    html,
+  };
 }
