@@ -9,6 +9,7 @@ import {
   type Connection,
 } from '@/lib/connections';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { sendEmail } from '@/lib/email';
 
 const RL_REQUEST = { maxRequests: 5, windowMs: 10 * 60 * 1000 };  // 5/10min for connection requests (anti-spam)
 const RL_READ    = { maxRequests: 30, windowMs: 60 * 1000 };     // 30/min for reads
@@ -89,6 +90,42 @@ export async function POST(request: NextRequest) {
     console.error('[connections POST] insert failed', error);
     return NextResponse.json({ error: 'Failed to send request.' }, { status: 500 });
   }
+
+  // Email the recipient (best-effort, async). Skipped if:
+  //  - recipient has email_connection_requests = false
+  //  - no email on file
+  void (async () => {
+    try {
+      const [{ data: recipientProfile }, { data: requesterProfile }] = await Promise.all([
+        supabaseAdmin
+          .from('profiles')
+          .select('user_id, email, display_name, username, email_connection_requests')
+          .eq('user_id', body.recipientId)
+          .maybeSingle(),
+        supabaseAdmin
+          .from('profiles')
+          .select('user_id, display_name, username')
+          .eq('user_id', userId)
+          .maybeSingle(),
+      ]);
+      if (!recipientProfile?.email) return;
+      if (recipientProfile.email_connection_requests === false) return;
+      const requesterName = requesterProfile?.display_name || requesterProfile?.username || 'A RinkStop user';
+      await sendEmail({
+        to: recipientProfile.email,
+        subject: `${requesterName} wants to connect on RinkStop`,
+        template: 'connection-request',
+        data: {
+          requesterName,
+          requesterUsername: requesterProfile?.username ?? null,
+          connectionId: (created as Connection).id,
+        },
+        tag: 'connection-request',
+      });
+    } catch (err) {
+      console.warn('[connections POST] email failed:', err);
+    }
+  })();
 
   const res = NextResponse.json({ connection: created as Connection });
   return applyRateLimitHeaders(res, result);

@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isAdminRole } from '@/lib/team';
 import { trackEvent } from '@/lib/analytics';
-import { fanOutTeamNotification } from '@/lib/team-notifications';
+import { fanOutTeamNotification, fanOutTeamEmail } from '@/lib/team-notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -183,16 +183,18 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     } catch {}
     // Fan out to team members (only when published)
     if (body.is_published !== false) {
-      void fanOutTeamNotification({
+      const fanoutArgs = {
         team_id: team.id,
         actor_user_id: userId,
-        kind: 'news',
+        kind: 'news' as const,
         entity_id: data.id,
         title,
         body: newsBody.length > 200 ? newsBody.slice(0, 200) + '…' : newsBody,
         payload: { team_slug: team.slug, post_id: data.id },
-        pref: 'notify_news',
-      });
+        pref: 'notify_news' as const,
+      };
+      void fanOutTeamNotification(fanoutArgs);
+      void fanOutTeamEmail(fanoutArgs);
     }
     return NextResponse.json({ ok: true, data });
   }
@@ -239,23 +241,27 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         props: { team_id: team.id, team_slug: team.slug, result_id: data.id },
       });
     } catch {}
-    void fanOutTeamNotification({
-      team_id: team.id,
-      actor_user_id: userId,
-      kind: 'result',
-      entity_id: data.id,
-      title: `${data.outcome} vs ${data.opponent} ${data.our_score}–${data.their_score}`,
-      payload: {
-        team_slug: team.slug,
-        result_id: data.id,
-        outcome: data.outcome,
-        opponent: data.opponent,
-        our_score: data.our_score,
-        their_score: data.their_score,
-        game_date: data.game_date,
-      },
-      pref: 'notify_results',
-    });
+    {
+      const fanoutArgs = {
+        team_id: team.id,
+        actor_user_id: userId,
+        kind: 'result' as const,
+        entity_id: data.id,
+        title: `${data.outcome} vs ${data.opponent} ${data.our_score}–${data.their_score}`,
+        payload: {
+          team_slug: team.slug,
+          result_id: data.id,
+          outcome: data.outcome,
+          opponent: data.opponent,
+          our_score: data.our_score,
+          their_score: data.their_score,
+          game_date: data.game_date,
+        },
+        pref: 'notify_results' as const,
+      };
+      void fanOutTeamNotification(fanoutArgs);
+      void fanOutTeamEmail(fanoutArgs);
+    }
     return NextResponse.json({ ok: true, data });
   }
 
@@ -303,10 +309,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     if (body.is_published !== false) {
       const opp = asStr(body.opponent, 120);
       const ven = asStr(body.venue, 200);
-      void fanOutTeamNotification({
+      const fanoutArgs = {
         team_id: team.id,
         actor_user_id: userId,
-        kind: 'schedule',
+        kind: 'schedule' as const,
         entity_id: data.id,
         title: `New ${kind}${opp ? `: ${opp}` : ''}${ven ? ` @ ${ven}` : ''}`,
         payload: {
@@ -317,8 +323,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
           venue: ven,
           scheduled_at: data.scheduled_at,
         },
-        pref: 'notify_schedule',
-      });
+        pref: 'notify_schedule' as const,
+      };
+      void fanOutTeamNotification(fanoutArgs);
+      void fanOutTeamEmail(fanoutArgs);
     }
     return NextResponse.json({ ok: true, data });
   }
