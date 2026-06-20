@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { sendEmail, paymentPendingEmail } from '@/lib/email';
+import { getEmailPreferences } from '@/lib/email-preferences';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -107,6 +109,79 @@ export async function PATCH(
     .single();
   if (updateErr || !updated) {
     return NextResponse.json({ error: updateErr?.message || 'Update failed' }, { status: 500 });
+  }
+
+  // Notify admins via email when player marks themselves pending_verification
+  if (status === 'pending_verification' && isSelfUpdate) {
+    try {
+      const { data: payment } = await supabaseAdmin
+        .from('payments')
+        .select('title, amount_per_player, currency, team_id')
+        .eq('id', paymentId)
+        .single();
+
+      if (payment) {
+        const { data: admins } = await supabaseAdmin
+          .from('team_members')
+          .select('user_id')
+          .eq('team_id', payment.team_id)
+          .in('role', ['head_coach', 'assistant_coach', 'manager', 'treasurer'])
+          .is('left_at', null)
+          .neq('user_id', userId);
+
+        if (admins && admins.length > 0) {
+          const adminIds = admins.map(a => a.user_id);
+          const prefsMap = await getEmailPreferences(adminIds);
+
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('display_name, username')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          const { data: teamRow } = await supabaseAdmin
+            .from('team_workspaces')
+            .select('name, slug')
+            .eq('id', payment.team_id)
+            .maybeSingle();
+
+          for (const adminId of adminIds) {
+            const prefs = prefsMap.get(adminId) || {};
+            if (prefs.email_payment_notifications === false) continue;
+
+            const { data: adminProfile } = await supabaseAdmin
+              .from('profiles')
+              .select('email, display_name')
+              .eq('user_id', adminId)
+              .maybeSingle();
+
+            if (!adminProfile?.email) continue;
+
+            const link = `https://rinkstop.com/dashboard/team/${teamRow?.slug || ''}/payments/${paymentId}`;
+            const tpl = paymentPendingEmail({
+              teamName: teamRow?.name || 'your team',
+              paymentTitle: payment.title,
+              playerName: profile?.display_name || profile?.username || 'A player',
+              amount: String(payment.amount_per_player),
+              currency: payment.currency,
+              referenceNumber: body.reference_number || null,
+              approveLink: link,
+            });
+
+            // Best-effort, fire-and-forget
+            void sendEmail({
+              to: adminProfile.email,
+              subject: tpl.subject,
+              html: tpl.html,
+              fromName: 'RinkStop',
+            }).catch(err => console.error('[email] payment-pending send failed:', err));
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[email] payment-pending notification error:', err);
+      // Non-fatal — record update succeeded
+    }
   }
 
   return NextResponse.json({ ok: true, record: updated });

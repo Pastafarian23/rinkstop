@@ -32,6 +32,9 @@ interface Props {
     convenience_fee_pct: number | string;
     due_date: string | null;
     status: string;
+    recurrence?: string | null;
+    parent_payment_id?: string | null;
+    sequence_number?: number | null;
   };
   records: PaymentRow[];
   isAdmin: boolean;
@@ -56,6 +59,8 @@ export default function PaymentDetailClient({ teamSlug, teamName, payment, recor
   const [editRefNumber, setEditRefNumber] = useState<string>('');
   const [editNotes, setEditNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [generateSubmitting, setGenerateSubmitting] = useState(false);
 
   const paidCount = records.filter(r => r.status === 'paid').length;
   const pendingCount = records.filter(r => r.status === 'pending_verification').length;
@@ -101,6 +106,49 @@ export default function PaymentDetailClient({ teamSlug, teamName, payment, recor
     }
   }
 
+  async function bulkMarkPaid() {
+    if (!confirm(`Mark all ${unpaidCount} unpaid records as paid? Default method will be 'gcash'. You can edit individual records afterwards.`)) return;
+    setBulkSubmitting(true);
+    try {
+      const resp = await fetch(`/api/team/${teamSlug}/payments/${payment.id}/bulk-mark-paid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paid_via: 'gcash', only_unpaid: true }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        router.refresh();
+      } else {
+        const err = await resp.json();
+        alert(`Failed: ${err.error || 'unknown'}`);
+      }
+    } finally {
+      setBulkSubmitting(false);
+    }
+  }
+
+  async function generateNext() {
+    setGenerateSubmitting(true);
+    try {
+      const resp = await fetch(`/api/team/${teamSlug}/payments/${payment.id}/generate-next`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        router.push(`/dashboard/team/${teamSlug}/payments/${data.payment.id}`);
+      } else {
+        const err = await resp.json();
+        alert(`Failed: ${err.error || 'unknown'}`);
+        setGenerateSubmitting(false);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Unknown error');
+      setGenerateSubmitting(false);
+    }
+  }
+
   const statusBadge = (status: string) => {
     const colors: Record<string, { bg: string; fg: string; label: string }> = {
       paid: { bg: '#22c55e', fg: '#fff', label: 'Paid' },
@@ -135,6 +183,11 @@ export default function PaymentDetailClient({ teamSlug, teamName, payment, recor
 
       <h1 style={{ margin: '0.5rem 0 0.25rem', color: '#041E42', fontSize: '1.875rem', fontWeight: 800 }}>
         {payment.title}
+        {payment.recurrence && (
+          <span style={{ fontSize: '0.7rem', background: '#041E42', color: '#FFB81C', padding: '0.25rem 0.625rem', borderRadius: 4, marginLeft: '0.75rem', fontWeight: 700, verticalAlign: 'middle', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {payment.recurrence}{payment.sequence_number ? ` #${payment.sequence_number}` : ''}
+          </span>
+        )}
       </h1>
       {payment.description && (
         <p style={{ margin: '0 0 0.5rem', color: '#6b7280' }}>{payment.description}</p>
@@ -193,7 +246,35 @@ export default function PaymentDetailClient({ teamSlug, teamName, payment, recor
       </div>
 
       {/* Player records table */}
-      <h2 style={{ margin: '1.5rem 0 0.75rem', color: '#041E42', fontSize: '1.125rem', fontWeight: 800 }}>Player payments</h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '1.5rem 0 0.75rem' }}>
+        <h2 style={{ margin: 0, color: '#041E42', fontSize: '1.125rem', fontWeight: 800 }}>Player payments</h2>
+        {isAdmin && unpaidCount > 0 && (
+          <button
+            onClick={bulkMarkPaid}
+            disabled={bulkSubmitting}
+            style={{ background: bulkSubmitting ? '#9ca3af' : '#FFB81C', color: '#041E42', border: 'none', padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.875rem', fontWeight: 700, cursor: bulkSubmitting ? 'not-allowed' : 'pointer' }}
+          >
+            {bulkSubmitting ? 'Marking…' : `Mark ${unpaidCount} unpaid as paid`}
+          </button>
+        )}
+        {isAdmin && (
+          <a
+            href={`/api/team/${teamSlug}/payments/${payment.id}/export`}
+            style={{ background: '#fff', color: '#041E42', border: '1px solid #041E42', padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.875rem', fontWeight: 700, textDecoration: 'none', marginLeft: '0.5rem' }}
+          >
+            Export CSV
+          </a>
+        )}
+        {isAdmin && payment.recurrence && (
+          <button
+            onClick={generateNext}
+            disabled={generateSubmitting}
+            style={{ background: generateSubmitting ? '#9ca3af' : '#041E42', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.875rem', fontWeight: 700, cursor: generateSubmitting ? 'not-allowed' : 'pointer', marginLeft: '0.5rem' }}
+          >
+            {generateSubmitting ? 'Creating…' : 'Generate next'}
+          </button>
+        )}
+      </div>
       {records.length === 0 ? (
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '1.5rem', textAlign: 'center', color: '#6b7280' }}>
           No players on this team yet.

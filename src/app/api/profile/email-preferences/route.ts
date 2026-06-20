@@ -27,6 +27,7 @@ const ALLOWED = new Set([
   'email_team_schedule',
   'email_connection_requests',
   'email_dm_notifications',
+  'email_payment_notifications',
   'email_marketing',
 ]);
 

@@ -10,6 +10,7 @@ interface Settings {
   email_team_schedule: boolean;
   email_connection_requests: boolean;
   email_dm_notifications: boolean;
+  email_payment_notifications: boolean;
   email_marketing: boolean;
 }
 
@@ -46,6 +47,11 @@ const ROWS: Row[] = [
     description: 'When someone you\'re connected with sends a DM while you\'re offline. (Pro+ feature.)',
   },
   {
+    key: 'email_payment_notifications',
+    label: 'Payment notifications (coaches)',
+    description: 'When a player on one of your teams marks a payment as pending verification. Coaches only.',
+  },
+  {
     key: 'email_marketing',
     label: 'Marketing &amp; newsletter',
     description: 'Product updates, hockey-news roundups, and the RinkStop monthly digest. Off by default.',
@@ -70,6 +76,7 @@ export default function NotificationSettingsForm({ initial }: { initial: Setting
           email_team_schedule: settings.email_team_schedule,
           email_connection_requests: settings.email_connection_requests,
           email_dm_notifications: settings.email_dm_notifications,
+          email_payment_notifications: settings.email_payment_notifications,
           email_marketing: settings.email_marketing,
         }),
       });

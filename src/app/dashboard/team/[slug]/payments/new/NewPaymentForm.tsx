@@ -17,6 +17,7 @@ export default function NewPaymentForm({ teamId, teamSlug, defaultCurrency }: Pr
   const [currency, setCurrency] = useState(defaultCurrency);
   const [convenienceFeePct, setConvenienceFeePct] = useState('5');
   const [dueDate, setDueDate] = useState('');
+  const [recurrence, setRecurrence] = useState('');  // '' | 'weekly' | 'biweekly' | 'monthly'
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +37,7 @@ export default function NewPaymentForm({ teamId, teamSlug, defaultCurrency }: Pr
           currency,
           convenience_fee_pct: parseFloat(convenienceFeePct),
           due_date: dueDate || null,
+          recurrence: recurrence || null,
         }),
       });
       if (!resp.ok) {
@@ -140,6 +142,25 @@ export default function NewPaymentForm({ teamId, teamSlug, defaultCurrency }: Pr
           onChange={(e) => setDueDate(e.target.value)}
           style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '1rem' }}
         />
+      </div>
+
+      <div style={{ marginBottom: '1.5rem' }}>
+        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#041E42', marginBottom: '0.25rem' }}>
+          Recurring payment
+        </label>
+        <select
+          value={recurrence}
+          onChange={(e) => setRecurrence(e.target.value)}
+          style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: 6, fontSize: '1rem' }}
+        >
+          <option value="">One-time payment</option>
+          <option value="weekly">Every week</option>
+          <option value="biweekly">Every 2 weeks</option>
+          <option value="monthly">Every month</option>
+        </select>
+        <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#6b7280' }}>
+          For recurring payments: create the first one with the upcoming due date, then click "Generate next" on the detail page to create the next instance.
+        </p>
       </div>
 
       {error && (
