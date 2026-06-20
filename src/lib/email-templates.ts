@@ -143,8 +143,9 @@ function shell(title: string, body: string): string {
       <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;background:${COLORS.card};border:1px solid ${COLORS.border};border-radius:8px;overflow:hidden;">
         <tr>
           <td style="background:${COLORS.navy};padding:20px 24px;">
-            <a href="${SITE_URL}" style="color:#fff;text-decoration:none;font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;">${FROM_NAME}</a>
-            <span style="color:${COLORS.gold};font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.05em;">.</span>
+            <a href="${SITE_URL}" style="display:inline-block;text-decoration:none;">
+              <img src="${SITE_URL}/rinkstoplogo.png" alt="${FROM_NAME}" width="160" height="auto" style="display:block;width:160px;height:auto;max-width:100%;border:0;outline:none;text-decoration:none;" />
+            </a>
           </td>
         </tr>
         <tr>
