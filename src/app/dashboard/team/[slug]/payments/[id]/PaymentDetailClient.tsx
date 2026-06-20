@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-interface Record {
+interface PaymentRow {
   id: string;
   player_id: string;
   amount_due: number | string;
@@ -33,7 +33,7 @@ interface Props {
     due_date: string | null;
     status: string;
   };
-  records: Record[];
+  records: PaymentRow[];
   isAdmin: boolean;
 }
 
@@ -66,7 +66,7 @@ export default function PaymentDetailClient({ teamSlug, teamName, payment, recor
   const fee = parseFloat(String(payment.convenience_fee_pct || 0)) / 100;
   const feeAmount = totalCollected * fee;
 
-  async function startEdit(record: Record) {
+  async function startEdit(record: PaymentRow) {
     setEditingId(record.id);
     setEditStatus(record.status);
     setEditPaidVia(record.paid_via || 'gcash');
