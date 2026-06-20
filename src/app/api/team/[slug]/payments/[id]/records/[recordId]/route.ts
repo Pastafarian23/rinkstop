@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendEmail, paymentPendingEmail } from '@/lib/email';
+import { sendEmail } from '@/lib/email';
 import { getEmailPreferences } from '@/lib/email-preferences';
 
 export const dynamic = 'force-dynamic';
@@ -158,7 +158,7 @@ export async function PATCH(
             if (!adminProfile?.email) continue;
 
             const link = `https://rinkstop.com/dashboard/team/${teamRow?.slug || ''}/payments/${paymentId}`;
-            const tpl = paymentPendingEmail({
+            const tpl = {
               teamName: teamRow?.name || 'your team',
               paymentTitle: payment.title,
               playerName: profile?.display_name || profile?.username || 'A player',
@@ -166,14 +166,14 @@ export async function PATCH(
               currency: payment.currency,
               referenceNumber: body.reference_number || null,
               approveLink: link,
-            });
+            };
 
             // Best-effort, fire-and-forget
             void sendEmail({
               to: adminProfile.email,
-              subject: tpl.subject,
-              html: tpl.html,
-              fromName: 'RinkStop',
+              subject: `${tpl.playerName} marked "${tpl.paymentTitle}" as paid`,
+              template: 'payment-pending',
+              data: tpl,
             }).catch(err => console.error('[email] payment-pending send failed:', err));
           }
         }
