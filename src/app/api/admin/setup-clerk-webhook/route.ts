@@ -42,7 +42,7 @@ interface ClerkWebhookListResponse {
 export async function POST(_request: NextRequest) {
   const auth = await getAdminFromRequest();
   if ('response' in auth) return auth.response;
-  if (!auth.isSuperAdmin) {
+  if (!auth.admin.isSuperAdmin) {
     return NextResponse.json({ error: 'super_admin only' }, { status: 403 });
   }
 
@@ -129,7 +129,7 @@ export async function POST(_request: NextRequest) {
 export async function GET(_request: NextRequest) {
   const auth = await getAdminFromRequest();
   if ('response' in auth) return auth.response;
-  if (!auth.isSuperAdmin) {
+  if (!auth.admin.isSuperAdmin) {
     return NextResponse.json({ error: 'super_admin only' }, { status: 403 });
   }
 
