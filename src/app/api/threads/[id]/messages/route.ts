@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireUserId, getUserTier, tierAtLeast } from '@/lib/connections';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { sendEmail } from '@/lib/email';
 
 const RL_READ    = { maxRequests: 30, windowMs: 60 * 1000 };
 const RL_SEND    = { maxRequests: 30, windowMs: 60 * 1000 };
@@ -197,6 +198,49 @@ export async function POST(
     .from('threads')
     .update({ last_message_at: now, last_message_preview: text.slice(0, 100) })
     .eq('id', id);
+
+  // Email the other party (best-effort, async, never blocks).
+  // Skipped if:
+  //  - the other party has email_dm_notifications = false
+  //  - they have no email on file
+  //  - the connection is blocked (defensive — shouldn't even reach here)
+  const conn = lookup.connection;
+  const otherUserId = conn.user_low === userId ? conn.user_high : conn.user_low;
+  if (conn.status === 'accepted') {
+    void (async () => {
+      try {
+        const { data: recipient } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id, email, display_name, username, email_dm_notifications')
+          .eq('user_id', otherUserId)
+          .maybeSingle();
+        if (!recipient?.email) return;
+        if (recipient.email_dm_notifications === false) return;
+
+        const { data: sender } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id, display_name, username')
+          .eq('user_id', userId)
+          .maybeSingle();
+        const senderName = sender?.display_name || sender?.username || 'Someone';
+
+        await sendEmail({
+          to: recipient.email,
+          subject: `New message from ${senderName}`,
+          template: 'dm-notification',
+          data: {
+            senderName,
+            senderUsername: sender?.username ?? null,
+            preview: text.slice(0, 200),
+            threadId: id,
+          },
+          tag: 'dm',
+        });
+      } catch (err) {
+        console.warn('[messages POST] email fanout failed:', err);
+      }
+    })();
+  }
 
   const res = NextResponse.json({ message });
   return applyRateLimitHeaders(res, result);

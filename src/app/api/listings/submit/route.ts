@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { sendEmail } from '@/lib/email';
 
 const MATON_API_KEY = process.env.MATON_API_KEY;
 if (!MATON_API_KEY) {
@@ -135,6 +136,19 @@ export async function POST(request: NextRequest) {
     const submission = { listingType, name, city, country, website, description, email, id: data.id };
     sendTelegramNotification(submission);
     sendEmailNotification(submission);
+
+    // Confirmation to the submitter (best-effort, async).
+    void sendEmail({
+      to: email,
+      subject: `We got your ${listingType} submission`,
+      template: 'listing-submission-confirmation',
+      data: {
+        listingType,
+        name,
+        submissionId: data.id,
+      },
+      tag: 'listing-confirmation',
+    });
 
     return NextResponse.json({ success: true, id: data.id }, { status: 201 });
   } catch (err) {
