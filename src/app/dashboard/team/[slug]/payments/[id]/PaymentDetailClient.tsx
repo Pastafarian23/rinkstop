@@ -177,8 +177,9 @@ export default function PaymentDetailClient({ teamSlug, teamName, payment, recor
           <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', opacity: 0.5 }}>{fmtMoney(totalExpected, payment.currency)}</div>
         </div>
         <div>
-          <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, fontWeight: 700 }}>RinkStop Fee</div>
+          <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, fontWeight: 700 }}>RinkStop service fee revenue</div>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: '0.25rem', color: '#FFB81C' }}>{fmtMoney(feeAmount, payment.currency)}</div>
+          <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '0.125rem' }}>5% charged to player on each paid record</div>
         </div>
         <div>
           <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.7, fontWeight: 700 }}>Status</div>
