@@ -129,3 +129,12 @@ export async function pingEmail(): Promise<{ ok: boolean; latencyMs: number; err
     return { ok: false, latencyMs: Date.now() - start, error: msg };
   }
 }
+
+/**
+ * Render the payment-pending email template without sending it.
+ * Useful for routes that want to do their own fan-out (e.g., notifying multiple admins).
+ */
+export function paymentPendingEmail(args: TemplateData['payment-pending']): { subject: string; html: string } {
+  const { subject, html } = renderTemplate('payment-pending', args);
+  return { subject, html };
+}
