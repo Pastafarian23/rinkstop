@@ -154,7 +154,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'CLERK_SECRET_KEY not set' }, { status: 500 });
   }
 
+  const url = new URL(request.url);
+  const action = url.searchParams.get('action');
+
   try {
+    if (action === 'createSvixApp') {
+      const result = await createSvixApp();
+      return NextResponse.json({ ok: true, action, result });
+    }
+    if (action === 'generateSvixAuthUrl') {
+      const result = await generateSvixAuthUrl();
+      return NextResponse.json({ ok: true, action, result });
+    }
+
+    // Default: webhook CRUD (list → check → create or update)
     const existing = await listWebhooks();
     const ours = existing.find((w) => w.url === WEBHOOK_URL);
     if (ours) {
@@ -204,38 +217,6 @@ export async function POST(request: NextRequest) {
       newSecretReturned: Boolean(created.secret),
       secret: created.secret ?? null,
     });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
-}
-
-// Variant handler: when called with ?action=createSvixApp, creates the Svix app
-// for the Clerk instance (so we can manage webhooks via Svix API or dashboard).
-export async function PUT(request: NextRequest) {
-  const denied = checkSetupToken(request);
-  if (denied) return denied;
-
-  if (!process.env.CLERK_SECRET_KEY) {
-    return NextResponse.json({ error: 'CLERK_SECRET_KEY not set' }, { status: 500 });
-  }
-
-  const url = new URL(request.url);
-  const action = url.searchParams.get('action');
-
-  try {
-    if (action === 'createSvixApp') {
-      const result = await createSvixApp();
-      return NextResponse.json({ ok: true, action, result });
-    }
-    if (action === 'generateSvixAuthUrl') {
-      const result = await generateSvixAuthUrl();
-      return NextResponse.json({ ok: true, action, result });
-    }
-    return NextResponse.json(
-      { error: 'unknown action; pass ?action=createSvixApp or ?action=generateSvixAuthUrl' },
-      { status: 400 }
-    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
