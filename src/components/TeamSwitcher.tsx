@@ -19,17 +19,25 @@ interface MyTeam {
 }
 
 const ROLE_COLOR: Record<string, { bg: string; fg: string; label: string }> = {
+  // Coaching / manager roles
   head_coach: { bg: 'rgba(255,184,28,0.15)', fg: '#FFB81C', label: 'Head Coach' },
   assistant_coach: { bg: 'rgba(20,184,166,0.15)', fg: '#14B8A6', label: 'Asst Coach' },
   goalie_coach: { bg: 'rgba(20,184,166,0.15)', fg: '#14B8A6', label: 'Goalie Coach' },
   skills_coach: { bg: 'rgba(20,184,166,0.15)', fg: '#14B8A6', label: 'Skills Coach' },
   manager: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.85)', label: 'Manager' },
   team_staff: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.85)', label: 'Staff' },
+  // Board roles
+  president: { bg: 'rgba(168,85,247,0.15)', fg: '#A855F7', label: 'President' },
+  vice_president: { bg: 'rgba(168,85,247,0.15)', fg: '#A855F7', label: 'Vice President' },
+  secretary: { bg: 'rgba(168,85,247,0.15)', fg: '#A855F7', label: 'Secretary' },
+  treasurer: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.7)', label: 'Treasurer' },
+  board_member: { bg: 'rgba(168,85,247,0.10)', fg: 'rgba(168,85,247,0.7)', label: 'Board' },
+  safety_officer: { bg: 'rgba(239,68,68,0.15)', fg: '#EF4444', label: 'Safety Officer' },
+  // Non-admin roster
   player: { bg: 'rgba(96,165,250,0.15)', fg: '#60A5FA', label: 'Player' },
   goalie: { bg: 'rgba(96,165,250,0.15)', fg: '#60A5FA', label: 'Goalie' },
   alternate_player: { bg: 'rgba(96,165,250,0.10)', fg: 'rgba(96,165,250,0.7)', label: 'Alt Player' },
   parent_rep: { bg: 'rgba(244,114,182,0.15)', fg: '#F472B6', label: 'Parent Rep' },
-  treasurer: { bg: 'rgba(255,255,255,0.08)', fg: 'rgba(255,255,255,0.7)', label: 'Treasurer' },
 };
 
 export default function TeamSwitcher() {
