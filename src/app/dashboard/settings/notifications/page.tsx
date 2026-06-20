@@ -11,7 +11,7 @@ export default async function NotificationSettingsPage() {
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('user_id, display_name, email, email_team_news, email_team_results, email_team_schedule, email_connection_requests, email_dm_notifications, email_marketing')
+    .select('user_id, display_name, email, email_team_news, email_team_results, email_team_schedule, email_connection_requests, email_dm_notifications, email_payment_notifications, email_marketing')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -41,6 +41,7 @@ export default async function NotificationSettingsPage() {
           email_team_schedule: profile?.email_team_schedule !== false,
           email_connection_requests: profile?.email_connection_requests !== false,
           email_dm_notifications: profile?.email_dm_notifications !== false,
+          email_payment_notifications: profile?.email_payment_notifications !== false,
           email_marketing: profile?.email_marketing === true,
         }}
       />
