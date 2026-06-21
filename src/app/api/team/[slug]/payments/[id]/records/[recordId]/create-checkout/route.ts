@@ -113,12 +113,13 @@ export async function POST(
       code: result.code,
     }, { status: result.code === 'not_configured' ? 503 : 500 });
   }
+  const success = result;
 
   return NextResponse.json({
     ok: true,
-    checkoutId: result.checkoutId,
-    url: result.url,
-    expiresAt: result.expiresAt,
+    checkoutId: success.checkoutId,
+    url: success.url,
+    expiresAt: success.expiresAt,
     breakdown: {
       session: sessionAmountCentavos,
       rinkstopFee: rinkstopFeeCentavos,
