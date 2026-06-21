@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import ShareButton from '@/components/ShareButton';
+import type { SharePayload } from '@/lib/share';
 import { SearchIcon, FilterIcon } from '@/components/icons';
 import { provinceDisplayName } from '@/lib/ca-provinces';
 
@@ -107,6 +109,16 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
           View All Rinks on Map
         </Link>
+        <div style={{ display: 'inline-flex', marginLeft: '0.5rem' }}>
+          <ShareButton
+            payload={{
+              title: 'Rinks & Arenas — RinkStop',
+              text: 'Find ice rinks and arenas near you on RinkStop. Hours, contact info, reviews, and team listings.',
+              url: 'https://rinkstop.com/directory/rinks',
+            }}
+            variant="dark"
+          />
+        </div>
       </div>
 
       {/* Filter Bar */}

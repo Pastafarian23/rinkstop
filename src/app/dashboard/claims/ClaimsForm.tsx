@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
 
@@ -18,16 +19,40 @@ interface ClaimsFormProps {
 }
 
 export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsFormProps) {
+  const searchParams = useSearchParams();
+  // Read deep-link params (e.g. /dashboard/claims?entity=team&id=...&name=...)
+  // and pre-fill the form. Supports entity=team|rink|player.
+  // If the param is missing or invalid, fall back to the default (rink).
+  const initialEntity = (() => {
+    const e = searchParams?.get('entity');
+    if (e === 'team' || e === 'player' || e === 'rink') return e;
+    return 'rink' as const;
+  })();
+  const initialName = searchParams?.get('name') || '';
+  const initialId = searchParams?.get('id') || '';
+
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState<ClaimForm>({
-    claimType: 'rink',
-    entityName: '',
-    entityId: '',
+    claimType: initialEntity,
+    entityName: initialName,
+    entityId: initialId,
     reason: '',
     proof: '',
   });
+
+  // Keep form in sync if URL params change (e.g. user navigates with new
+  // ?entity=... after the form mounted). Most cases this is a no-op.
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      claimType: initialEntity,
+      entityName: prev.entityName || initialName,
+      entityId: prev.entityId || initialId,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEntity, initialName, initialId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

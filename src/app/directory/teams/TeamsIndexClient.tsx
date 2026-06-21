@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SearchIcon, FilterIcon } from '@/components/icons';
+import ShareButton from '@/components/ShareButton';
 
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
 interface NHLTeam {
@@ -142,6 +143,16 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
         >
           Looking for a team that relocated or renamed? View NHL franchise history →
         </Link>
+        <div style={{ display: 'inline-block', marginTop: '0.5rem', marginLeft: '1rem' }}>
+          <ShareButton
+            payload={{
+              title: 'All Teams — RinkStop',
+              text: 'Find hockey teams worldwide on RinkStop. Roster, schedule, and stats for every level.',
+              url: 'https://rinkstop.com/directory/teams',
+            }}
+            variant="dark"
+          />
+        </div>
       </div>
 
       {/* Filter Bar */}
