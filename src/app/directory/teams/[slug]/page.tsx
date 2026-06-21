@@ -203,6 +203,16 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // Viewer check: is the current Clerk user an admin/member of this team?
   // Used to surface "post your first…" CTAs on empty states without
   // breaking the anonymous public-profile flow.
+  //
+  // The 12 admin roles here mirror src/lib/team.ts isAdminRole() and the
+  // SQL is_team_admin() — keep all three in sync.
+  const ADMIN_ROLES = [
+    'head_coach', 'assistant_coach', 'goalie_coach', 'skills_coach',
+    'manager', 'team_staff',
+    'president', 'vice_president', 'secretary', 'treasurer',
+    'board_member', 'safety_officer',
+  ] as const;
+
   let viewerIsAdmin = false;
   try {
     const { userId } = await auth();
@@ -214,9 +224,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
         .eq('user_id', userId)
         .is('left_at', null)
         .maybeSingle<{ role: string }>();
-      viewerIsAdmin = ['head_coach', 'assistant_coach', 'goalie_coach', 'skills_coach', 'manager', 'team_staff'].includes(
-        viewerMember?.role ?? '',
-      );
+      viewerIsAdmin = ADMIN_ROLES.includes(viewerMember?.role as any);
     }
   } catch {
     // Anonymous or auth error — leave viewerIsAdmin false, no CTAs.

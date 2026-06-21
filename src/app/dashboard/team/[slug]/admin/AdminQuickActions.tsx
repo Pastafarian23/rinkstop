@@ -48,7 +48,7 @@ export function AdminQuickActions({ teamSlug, counts }: Props) {
       href: `/dashboard/team/${teamSlug}/payments`,
       icon: '💰',
       label: 'Payments',
-      hint: counts.pendingPayments > 0 ? `${counts.pendingPayments} pending` : 'All caught up',
+      hint: counts.pendingPayments > 0 ? `${counts.pendingPayments} to verify` : 'All caught up',
       badge: counts.pendingPayments > 0 ? counts.pendingPayments : undefined,
       accent: counts.pendingPayments > 0 ? 'red' : 'navy',
     },
