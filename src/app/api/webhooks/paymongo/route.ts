@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   request.headers.forEach((v, k) => { headers[k.toLowerCase()] = v; });
 
   const parsed = provider.parseWebhook(headers, rawBody);
-  if (!parsed.ok) {
+  if (parsed.ok === false) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
