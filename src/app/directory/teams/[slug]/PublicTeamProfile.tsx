@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import ShareButton from '@/components/ShareButton';
+import { buildTeamShare } from '@/lib/share';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
 
@@ -173,7 +175,7 @@ function RecordBadge({ record }: { record: SeasonRecord }) {
   );
 }
 
-function ClaimBadge({ claimed, admins }: { claimed: boolean; admins: AdminJoin[] }) {
+function ClaimBadge({ claimed, admins, teamId, teamName }: { claimed: boolean; admins: AdminJoin[]; teamId: string; teamName: string }) {
   if (claimed) {
     const admin = admins[0];
     return (
@@ -200,6 +202,9 @@ function ClaimBadge({ claimed, admins }: { claimed: boolean; admins: AdminJoin[]
       </div>
     );
   }
+  // Unclaimed: link to the claims form pre-filled with this team. The
+  // dashboard route handles auth (redirects to /login if needed) and the
+  // form (ClaimsForm.tsx) auto-selects the entity type from the URL param.
   return (
     <div
       style={{
@@ -217,7 +222,7 @@ function ClaimBadge({ claimed, admins }: { claimed: boolean; admins: AdminJoin[]
     >
       🏅 Unclaimed —{' '}
       <Link
-        href="/claim"
+        href={`/dashboard/claims?entity=team&id=${teamId}&name=${encodeURIComponent(teamName)}`}
         style={{ color: '#FFB81C', textDecoration: 'underline' }}
       >
         Claim this team
@@ -346,7 +351,17 @@ export default function PublicTeamProfile({
             >
               {flag} {team.name}
             </h1>
-            <ClaimBadge claimed={claimed} admins={admins} />
+            <ClaimBadge claimed={claimed} admins={admins} teamId={team.id} teamName={team.name} />
+            <ShareButton
+              payload={buildTeamShare({
+                id: team.id,
+                slug: team.slug,
+                name: team.name,
+                city: team.home_city,
+                country: team.home_country,
+              })}
+              variant="dark"
+            />
           </div>
 
           {/* Meta row */}

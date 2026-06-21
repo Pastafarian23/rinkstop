@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
@@ -123,11 +124,13 @@ export default async function ClaimsPage() {
         <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 1rem' }}>
           SUBMIT A NEW CLAIM
         </h2>
-        <ClaimsForm
-          tier={tier}
-          maxClaims={maxForClient}
-          currentCount={currentCount}
-        />
+        <Suspense fallback={null}>
+          <ClaimsForm
+            tier={tier}
+            maxClaims={maxForClient}
+            currentCount={currentCount}
+          />
+        </Suspense>
       </section>
     </div>
   );

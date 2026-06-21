@@ -409,6 +409,29 @@ export default function FoundingMemberContent({
         >
           {ROLE_VALUE_PROPS[role]}
         </p>
+        {/* Operator discovery path — coaches/managers/orgs often arrive at
+            /pricing before they've even found their listing. Send them
+            through the free claim-your-listing flow first so they experience
+            the product (and land in our membership funnel with intent).
+            Players/parents don't see this — they don't manage a listing. */}
+        {(role === 'coach' || role === 'org') && (
+          <div
+            style={{
+              marginTop: '0.85rem',
+              fontSize: '0.85rem',
+              color: 'rgba(255,255,255,0.55)',
+              textAlign: 'center',
+            }}
+          >
+            Don&rsquo;t see your rink or team yet?{' '}
+            <Link
+              href="/claim-your-listing"
+              style={{ color: '#14B8A6', fontWeight: 700, textDecoration: 'underline' }}
+            >
+              Find your listing first →
+            </Link>
+          </div>
+        )}
       </section>
 
       <section style={{ padding: '2rem 1.5rem 4rem', maxWidth: 1200, margin: '0 auto' }}>
