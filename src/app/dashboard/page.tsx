@@ -25,8 +25,24 @@ export default async function DashboardPage() {
   // a transient Supabase hiccup, or a malformed Clerk session payload.
   try {
     return await renderDashboard(userId);
-  } catch (err) {
-    console.error('[dashboard] render failed:', err);
+  } catch (err: any) {
+    // Structured log so it's grep-able in Vercel Logs UI (search "dashboard-error").
+    // Includes userId so we can correlate with the affected account, and the raw
+    // error name + message + first stack frame for fast diagnosis.
+    console.error('[dashboard-error]', JSON.stringify({
+      userId,
+      name: err?.name,
+      message: err?.message,
+      stack: typeof err?.stack === 'string' ? err.stack.split('\n').slice(0, 3).join('\n') : undefined,
+      timestamp: new Date().toISOString(),
+    }));
+
+    // Show a sanitized hint in the UI (collapsed by default). We expose only the
+    // error name + message — no stack, no userId, no internals. If the user
+    // reports "Dashboard hit a snag", we ask them to expand this block and paste.
+    const errorName = typeof err?.name === 'string' ? err.name : 'Error';
+    const errorMessage = typeof err?.message === 'string' ? err.message : 'Unknown error';
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div
@@ -53,6 +69,25 @@ export default async function DashboardPage() {
             are safe — try refreshing in a minute, or head back to the home page
             in the meantime.
           </p>
+          <details style={{ margin: '0 0 1rem' }}>
+            <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', cursor: 'pointer', userSelect: 'none' }}>
+              Error details (tap to expand)
+            </summary>
+            <pre style={{
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: '0.7rem',
+              margin: '0.5rem 0 0',
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 4,
+              overflow: 'auto',
+              maxHeight: 160,
+              fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}>{errorName}: {errorMessage}</pre>
+          </details>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link
               href="/dashboard"
