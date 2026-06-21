@@ -157,6 +157,17 @@ export default async function TeamHubPage({ params }: PageProps) {
 
       {/* Quick nav */}
       <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        {isAdmin && (
+          <Link
+            href={`/dashboard/team/${team.slug}/admin`}
+            style={{
+              background: '#FFB81C', color: '#041E42', textDecoration: 'none',
+              padding: '0.5rem 1rem', borderRadius: 6, fontWeight: 700, fontSize: '0.875rem',
+            }}
+          >
+            🛡️ Admins hub
+          </Link>
+        )}
         <Link
           href={`/dashboard/team/${team.slug}/payments`}
           style={{
@@ -217,7 +228,7 @@ export default async function TeamHubPage({ params }: PageProps) {
 
       {/* Invites (admin only) */}
       {isAdmin && (
-        <section>
+        <section id="invites">
           <div
             style={{
               display: 'flex',
@@ -247,7 +258,9 @@ export default async function TeamHubPage({ params }: PageProps) {
 
       {/* Public Posts — admin-only: news, results, schedule */}
       {isAdmin && (
-        <AdminPostPanel teamSlug={team.slug} teamId={team.id} />
+        <section id="admin-posts">
+          <AdminPostPanel teamSlug={team.slug} teamId={team.id} />
+        </section>
       )}
 
       {/* Events placeholder (Day 4) */}

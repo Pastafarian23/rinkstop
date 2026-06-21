@@ -76,12 +76,23 @@ export function roleColor(role: string): { bg: string; text: string; border: str
 }
 
 export function isAdminRole(role: string): boolean {
+  // Mirrors the SQL is_team_admin() function defined in
+  // supabase/migrations/2026-06-19_is_team_admin_12_roles.sql — keep these
+  // two in sync. Used as the client-side gate for admin UI before the
+  // server confirms via is_team_admin(). The DB is the source of truth.
   return [
     'head_coach',
+    'assistant_coach',
+    'goalie_coach',
+    'skills_coach',
     'manager',
+    'team_staff',
     'president',
     'vice_president',
     'secretary',
+    'treasurer',
+    'board_member',
+    'safety_officer',
   ].includes(role);
 }
 
