@@ -69,6 +69,7 @@ export default async function TeamAdminsHubPage({ params }: PageProps) {
     .maybeSingle<{ role: string }>();
 
   if (!myMembership || !isAdminRole(myMembership.role)) {
+    const isMember = !!myMembership;
     return (
       <div style={{ maxWidth: 720 }}>
         <div
@@ -80,15 +81,19 @@ export default async function TeamAdminsHubPage({ params }: PageProps) {
             borderRadius: 12,
           }}
         >
-          <h2 style={{ margin: '0 0 0.5rem', color: '#FF6B7A' }}>Admins only</h2>
+          <h2 style={{ margin: '0 0 0.5rem', color: '#FF6B7A' }}>
+            {isMember ? 'Admins only' : 'Not a member'}
+          </h2>
           <p style={{ margin: 0, fontSize: '0.9rem' }}>
-            This hub is for coaches, managers, and board members who run {team.name}. Your current role doesn&rsquo;t have admin access — ask the head coach to invite you with an admin role.
+            {isMember
+              ? `This hub is for coaches, managers, and board members who run ${team.name}. Your current role (${myMembership.role}) doesn’t have admin access — ask the head coach to invite you with an admin role.`
+              : `You aren’t on ${team.name}’s roster. To view this team’s admin hub, you need to be added by the head coach or a manager.`}
           </p>
           <Link
-            href={`/dashboard/team/${team.slug}`}
+            href={isMember ? `/dashboard/team/${team.slug}` : '/dashboard'}
             style={{ display: 'inline-block', marginTop: '1rem', color: '#14B8A6', textDecoration: 'none', fontWeight: 600 }}
           >
-            ← Back to team hub
+            {isMember ? '← Back to team hub' : '← Back to dashboard'}
           </Link>
         </div>
       </div>
@@ -157,16 +162,27 @@ export default async function TeamAdminsHubPage({ params }: PageProps) {
       .select('id', { count: 'exact', head: true })
       .eq('team_id', team.id)
       .is('revoked_at', null),
-    // Pending payments — best-effort, gated by RLS — try anon first, fall back
-    // to service role if the count comes back as null (RLS blocks anon
-    // aggregate counts on this table in some setups).
+    // Pending payments — 'pending_verification' = player self-marked paid,
+    // coach/admin still needs to confirm. Schema enum is:
+    // 'unpaid','pending_verification','paid','partial','waived','refunded'.
+    // There's no 'pending' status — 'pending_verification' is the only one
+    // that means "needs admin action right now".
+    //
+    // Note: payment_records has no team_id column — it's joined via
+    // payment_id -> payments.id, and payments has team_id. So we have to
+    // fetch the team's payments first, then aggregate the records. This is
+    // N+1 in the SQL sense, but with a single .select().eq() + a JS count
+    // it's fine for the small payment counts a team has.
     (async () => {
-      const r = await supabaseAdmin
-        .from('team_payment_records')
-        .select('id', { count: 'exact', head: true })
-        .eq('team_id', team.id)
-        .eq('status', 'pending');
-      return r;
+      const { data: payments } = await supabaseAdmin
+        .from('payments')
+        .select('id, payment_records(status)')
+        .eq('team_id', team.id);
+      const pending = (payments || []).reduce(
+        (acc, p) => acc + (p.payment_records || []).filter((r: any) => r.status === 'pending_verification').length,
+        0
+      );
+      return { count: pending, error: null } as { count: number; error: null };
     })(),
   ]);
 
