@@ -106,7 +106,7 @@ export async function POST(
     },
   });
 
-  if (!result.ok) {
+  if (result.ok === false) {
     return NextResponse.json({
       ok: false,
       error: result.error,
