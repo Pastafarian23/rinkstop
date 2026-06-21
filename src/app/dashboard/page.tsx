@@ -18,6 +18,27 @@ export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
+  // Look up role BEFORE rendering so the catch block knows whether to surface
+  // debug details. Cheap query, isolated from renderDashboard's broader scope.
+  // Fail-closed: if the role lookup itself throws, treat as non-admin.
+  let isSuperAdmin = false;
+  try {
+    const { data: roleRow } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle();
+    isSuperAdmin = roleRow?.role === 'super_admin';
+  } catch {
+    isSuperAdmin = false;
+  }
+
+  // Debug-mode override (e.g. staging envs): DEBUG_DASHBOARD_ERRORS=true
+  // exposes the details block to ALL users. Never enable in production.
+  const forceDebugAll =
+    typeof process !== 'undefined' &&
+    process.env?.DEBUG_DASHBOARD_ERRORS === 'true';
+
   // Hard safety net: any error inside the dashboard render must NOT 500 the user.
   // Instead, show a minimal fallback that tells them the dashboard hit a snag and
   // lets them back out. The real error is logged server-side (Vercel) for diagnosis.
@@ -26,9 +47,9 @@ export default async function DashboardPage() {
   try {
     return await renderDashboard(userId);
   } catch (err: any) {
-    // Structured log so it's grep-able in Vercel Logs UI (search "dashboard-error").
-    // Includes userId so we can correlate with the affected account, and the raw
-    // error name + message + first stack frame for fast diagnosis.
+    // Always log structured JSON for grep-ability in Vercel Logs UI (search
+    // "dashboard-error"). userId + name + message + first 3 stack frames +
+    // timestamp. This fires for every user, every time — diagnostics only.
     console.error('[dashboard-error]', JSON.stringify({
       userId,
       name: err?.name,
@@ -36,6 +57,11 @@ export default async function DashboardPage() {
       stack: typeof err?.stack === 'string' ? err.stack.split('\n').slice(0, 3).join('\n') : undefined,
       timestamp: new Date().toISOString(),
     }));
+
+    // NEVER show raw error info to non-admin users — exposes table/column names,
+    // provider APIs, and internal stack info. Only super_admin accounts get the
+    // collapsible debug details. Everyone else gets the generic message + retry.
+    const showDebug = forceDebugAll || isSuperAdmin;
 
     // Show a sanitized hint in the UI (collapsed by default). We expose only the
     // error name + message — no stack, no userId, no internals. If the user
@@ -69,25 +95,27 @@ export default async function DashboardPage() {
             are safe — try refreshing in a minute, or head back to the home page
             in the meantime.
           </p>
-          <details style={{ margin: '0 0 1rem' }}>
-            <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', cursor: 'pointer', userSelect: 'none' }}>
-              Error details (tap to expand)
-            </summary>
-            <pre style={{
-              color: 'rgba(255,255,255,0.55)',
-              fontSize: '0.7rem',
-              margin: '0.5rem 0 0',
-              padding: '0.5rem 0.75rem',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 4,
-              overflow: 'auto',
-              maxHeight: 160,
-              fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}>{errorName}: {errorMessage}</pre>
-          </details>
+          {showDebug ? (
+            <details style={{ margin: '0 0 1rem' }}>
+              <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', cursor: 'pointer', userSelect: 'none' }}>
+                Error details (tap to expand)
+              </summary>
+              <pre style={{
+                color: 'rgba(255,255,255,0.55)',
+                fontSize: '0.7rem',
+                margin: '0.5rem 0 0',
+                padding: '0.5rem 0.75rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 4,
+                overflow: 'auto',
+                maxHeight: 160,
+                fontFamily: 'monospace',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>{errorName}: {errorMessage}</pre>
+            </details>
+          ) : null}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Link
               href="/dashboard"
