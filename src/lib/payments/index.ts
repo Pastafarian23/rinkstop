@@ -40,7 +40,7 @@ export type CreateCheckoutArgs = {
 
 export type CreateCheckoutResult =
   | { ok: true; checkoutId: string; url: string; expiresAt?: number }
-  | { ok: false; error: string; code?: 'not_configured' | 'invalid_request' | 'provider_error' };
+  | { ok: false; error: string; code?: 'not_configured' | 'not_implemented' | 'invalid_request' | 'provider_error' };
 
 export type WebhookParseResult =
   | {
