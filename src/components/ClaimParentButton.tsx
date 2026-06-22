@@ -77,9 +77,9 @@ export default function ClaimParentButton({
     );
   }
 
-  // Roster (starter) tier minimum required for parent-managed claims.
-  const tierRank: Record<string, number> = { free: 0, starter: 1, family_plus: 1, pro: 2, premium: 3, enterprise: 4 };
-  if ((tierRank[myTier] ?? 0) < 1) {
+  // Verified+ required.
+  const tierRank: Record<string, number> = { free: 0, starter: 1, pro: 2, premium: 3, enterprise: 4 };
+  if ((tierRank[myTier] ?? 0) < 2) {
     return (
       <a
         href="/pricing"
@@ -95,7 +95,7 @@ export default function ClaimParentButton({
           textDecoration: 'none',
         }}
       >
-        Roster membership required to claim as parent
+        Verified required to claim as parent
       </a>
     );
   }

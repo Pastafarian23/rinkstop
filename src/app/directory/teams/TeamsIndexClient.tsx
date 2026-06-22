@@ -374,7 +374,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
             : visibleTeams.map(team => (
               <Link
                 key={team.id}
-                href={`/teams/${team.slug}`}
+                href={`/directory/teams/${team.slug}`}
                 style={{
                   display: 'block', textDecoration: 'none',
                   background: team.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',

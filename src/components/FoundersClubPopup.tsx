@@ -69,14 +69,14 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             JOIN FREE TODAY
           </h2>
           <p style={{ fontSize: '0.9rem', color: '#888', margin: '0 auto', maxWidth: 360, lineHeight: 1.6 }}>
-            Create your free account. Save favorites, leave reviews, follow rinks and teams, and more.
+            Create your free account. Unlock verified profiles, save favorites, leave reviews, and more.
           </p>
         </div>
 
         {/* Benefits */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
           {[
-            '✅ Claim rinks, teams, and your own player profile',
+            '✅ Verified player, coach & team profiles',
             '✅ Save your favorite rinks & players',
             '✅ Leave reviews on any rink',
             '✅ Priority support access',
@@ -150,12 +150,12 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             JOIN FREE TODAY
           </h2>
           <p style={{ fontSize: '0.8rem', color: '#888', lineHeight: 1.55 }}>
-            Free account. Claim listings, saved items, reviews & more.
+            Free account. Verified profiles, saved items, reviews & more.
           </p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.5rem' }}>
-          {['✅ Claim your listing', '✅ Save favorites', '✅ Leave reviews', '✅ Priority support'].map(benefit => (
+          {['✅ Verified profiles', '✅ Save favorites', '✅ Leave reviews', '✅ Priority support'].map(benefit => (
             <div key={benefit} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: '#4ade80', fontSize: '0.875rem', flexShrink: 0 }}>{benefit.slice(0, 2)}</span>
               <span style={{ color: '#ccc', fontSize: '0.8rem' }}>{benefit.slice(2)}</span>

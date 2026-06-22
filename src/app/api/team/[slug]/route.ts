@@ -10,10 +10,9 @@ interface RouteParams {
   params: Promise<{ slug: string }>;
 }
 
-// Visibility values for V2 — Day 6 ships the public profile page.
-// 'public' enables /teams/[slug] discoverability and directory inclusion.
-// 'private' is the default and keeps the team invite-only.
-const VISIBILITY_VALUES = ['private', 'public'] as const;
+// Visibility is binary for V1: 'private' only.
+// 'public' is deferred until the public team profile page exists — see /api/team/[slug] PATCH.
+const VISIBILITY_VALUES = ['private'] as const;
 const AGE_CATEGORY_VALUES = ['youth', 'adult', 'mixed'] as const;
 const LEVEL_VALUES = ['learn_to_play', 'house', 'travel', 'rep'] as const;
 
@@ -283,11 +282,23 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     if (typeof visibility !== 'string') {
       return NextResponse.json({ error: 'invalid_visibility' }, { status: 400 });
     }
+    // 'public' is deferred — the public team profile page hasn't been built yet.
+    if (visibility === 'public') {
+      return NextResponse.json(
+        {
+          error: 'public_visibility_deferred',
+          message:
+            'Public team profiles are not yet available. Teams are URL-known and invite-gated; the workspace at /dashboard/team/[slug] requires an invite code. The public profile page will launch with the directory.',
+        },
+        { status: 409 }
+      );
+    }
     if (visibility === 'unlisted') {
       return NextResponse.json(
         {
           error: 'unlisted_removed',
-          message: "'unlisted' has been removed. Teams are either 'private' (workspace + invite-only) or 'public' (discoverable via /teams/[slug] and the directory).",
+          message:
+            "'unlisted' has been removed. Teams are either private (workspace + invite-only) or public (when the public profile ships).",
         },
         { status: 400 }
       );
