@@ -1,5 +1,8 @@
 import Link from 'next/link';
-import AccountTypeBadges, { getAccountTypeMeta } from '@/components/AccountTypeBadges';
+// Note: getAccountTypeMeta used to be imported from @/components/AccountTypeBadges,
+// but that file is 'use client' and TypeSectionCard is a server component.
+// Import from the server-safe helper in @/lib/accountTypeMeta instead.
+import { getAccountTypeMeta } from '@/lib/accountTypeMeta';
 import type { AccountType } from './dashboardTypes';
 import type { TypeSectionData } from './dashboardTypeData';
 
