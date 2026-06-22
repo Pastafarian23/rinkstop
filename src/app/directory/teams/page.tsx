@@ -14,22 +14,35 @@ const LEVEL_DESCRIPTIONS: Record<Level, string> = {
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string }> }): Promise<Metadata> {
   const { country, level, league } = await searchParams;
   const levelIsValid = level && LEVEL_ORDER.includes(level as Level);
-  const titleParts: string[] = ['Hockey Teams'];
-  if (levelIsValid) titleParts.push(LEVEL_LABELS[level as Level]);
-  if (country) titleParts.push(`in ${country}`);
-  if (league) titleParts.push(`in ${league}`);
-  const title = titleParts.join(' ');
+  // Title strategy: lead with the most specific filter, add context, end with brand.
+  // country + level: "[Level] Hockey Teams in [Country]"
+  // country only:    "Hockey Teams in [Country]"
+  // level only:      "[Level] Hockey Teams Worldwide"
+  // league only:     "[League] Hockey Teams"
+  // nothing:         "2,275 Hockey Teams Across 240 Leagues"
+  let title: string;
+  if (country && levelIsValid) {
+    title = `${LEVEL_LABELS[level as Level]} Hockey Teams in ${country}`;
+  } else if (country) {
+    title = `Hockey Teams in ${country}`;
+  } else if (league) {
+    title = `${league} Hockey Teams`;
+  } else if (levelIsValid) {
+    title = `${LEVEL_LABELS[level as Level]} Hockey Teams Worldwide`;
+  } else {
+    title = '2,275 Hockey Teams Across 240 Leagues';
+  }
   const description = (() => {
     if (levelIsValid && country) {
-      return `${LEVEL_LABELS[level as Level]} hockey teams in ${country}. ${LEVEL_DESCRIPTIONS[level as Level]}`;
+      return `Browse ${LEVEL_LABELS[level as Level]} hockey teams in ${country}. ${LEVEL_DESCRIPTIONS[level as Level]} Find rosters, arena info, schedules, and verified team profiles.`;
     }
     if (levelIsValid) {
-      return `${LEVEL_LABELS[level as Level]} hockey teams from around the world. ${LEVEL_DESCRIPTIONS[level as Level]}`;
+      return `Browse ${LEVEL_LABELS[level as Level]} hockey teams from every country. ${LEVEL_DESCRIPTIONS[level as Level]} Rosters, arenas, schedules, and verified profiles in one place.`;
     }
     if (country) {
-      return `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info.`;
+      return `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info — searchable by league tier and city.`;
     }
-    return `Browse hockey teams from NHL, AHL, KHL, NCAA, junior, and youth leagues worldwide.`;
+    return `Find any hockey team in the world. 2,275+ active teams across 240 leagues and 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
   })();
   const canonicalParams = new URLSearchParams();
   if (country) canonicalParams.set('country', country);
@@ -174,6 +187,41 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   const initialTeams = await fetchInitialTeams({ country, level, league });
   return (
     <>
+      {(() => {
+        // JSON-LD: CollectionPage + ItemList of top 20 teams. Helps Google
+        // build rich snippets (sitelinks, breadcrumbs). Server-rendered
+        // so it shows in initial HTML.
+        const top = initialTeams.slice(0, 20);
+        const ldJson = {
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'CollectionPage',
+              name: 'Hockey Teams Directory',
+              description: 'Hockey teams directory — RinkStop',
+              url: 'https://rinkstop.com/directory/teams',
+              isPartOf: { '@type': 'WebSite', name: 'RinkStop', url: 'https://rinkstop.com' },
+            },
+            {
+              '@type': 'ItemList',
+              name: 'Hockey Teams',
+              numberOfItems: 2275,
+              itemListElement: top.map((t, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                name: t.name,
+                url: `https://rinkstop.com/directory/teams/${(t as any).slug || t.id}`,
+              })),
+            },
+          ],
+        };
+        return (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }}
+          />
+        );
+      })()}
       {/* SEO editorial section — added 2026-06-15.
           Renders server-side so Google sees the content in the initial
           HTML. The client component below handles the live search/filter

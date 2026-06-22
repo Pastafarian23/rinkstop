@@ -24,9 +24,9 @@ interface Player {
 interface League { id: string; name: string; }
 
 export const metadata: Metadata = {
-  title: 'Hockey Players Directory',
+  title: '6,352 Hockey Player Profiles — NHL, NCAA, Junior & Pro',
   description:
-    'Browse 6,352 hockey player profiles. Career stats, draft info, and team history.',
+    'Browse 6,352 hockey player profiles from the NHL, AHL, KHL, NCAA, CHL, IIHF, and pro women’s leagues. Career stats, draft info, team history, and headshots — searchable by name, position, team, or country.',
   alternates: {
     canonical: 'https://rinkstop.com/directory/players',
   },
@@ -35,18 +35,18 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Players Directory',
+    title: '6,352 Hockey Player Profiles — NHL, NCAA, Junior & Pro',
     description:
-      'Browse 6,352 hockey player profiles. Career stats, draft info, and team history.',
+      'Browse 6,352 hockey player profiles from the NHL, AHL, KHL, NCAA, CHL, IIHF, and pro women’s leagues. Career stats, draft info, team history, and headshots — searchable by name, position, team, or country.',
     url: 'https://rinkstop.com/directory/players',
     siteName: 'RinkStop',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Players Directory',
+    title: '6,352 Hockey Player Profiles — NHL, NCAA, Junior & Pro',
     description:
-      'Browse 6,352 hockey player profiles. Career stats, draft info, and team history.',
+      'Browse 6,352 hockey player profiles from the NHL, AHL, KHL, NCAA, CHL, IIHF, and pro women’s leagues. Career stats, draft info, team history, and headshots — searchable by name, position, team, or country.',
   },
 };
 
@@ -88,5 +88,37 @@ async function fetchInitial(): Promise<{
 
 export default async function PlayersPage() {
   const initialData = await fetchInitial();
-  return <PlayersIndexClient initialData={initialData} />;
+  const top = initialData.players.slice(0, 20);
+  const ldJson = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: 'Hockey Players Directory',
+        description: 'Hockey player profiles — RinkStop',
+        url: 'https://rinkstop.com/directory/players',
+        isPartOf: { '@type': 'WebSite', name: 'RinkStop', url: 'https://rinkstop.com' },
+      },
+      {
+        '@type': 'ItemList',
+        name: 'Hockey Players',
+        numberOfItems: 6352,
+        itemListElement: top.map((p, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: `${p.first_name} ${p.last_name}`,
+          url: `https://rinkstop.com/directory/players/${p.id}`,
+        })),
+      },
+    ],
+  };
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }}
+      />
+      <PlayersIndexClient initialData={initialData} />
+    </>
+  );
 }
