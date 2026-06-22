@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { COUNTRY_OPTIONS, COUNTRY_CURRENCY } from '@/lib/federations';
 
 interface InitialValues {
   slug: string;
@@ -340,17 +341,37 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
           </Field>
         </Row>
         <Row>
-          <Field label="Country code (ISO 3166-1 alpha-2)" hint="2 letters, e.g. PH, US, CA">
-            <input
-              type="text"
+          <Field
+            label="Country *"
+            hint={
+              form.country_code
+                ? `Federation: ${COUNTRY_OPTIONS.find((c) => c.code === form.country_code)?.name ?? form.country_code}`
+                : 'Select to auto-fill currency and unlock required-doc suggestions.'
+            }
+          >
+            <select
               value={form.country_code}
-              onChange={updateStr('country_code')}
-              maxLength={2}
-              minLength={2}
-              style={{ ...inputStyle, textTransform: 'uppercase' }}
-            />
+              onChange={(e) => {
+                const code = e.target.value.toUpperCase();
+                update('country_code', code);
+                // Auto-fill currency from the country→currency map
+                if (code && !form.currency) {
+                  const suggested = COUNTRY_CURRENCY[code];
+                  if (suggested) update('currency', suggested);
+                }
+                setSaved(false);
+              }}
+              style={inputStyle}
+            >
+              <option value="">— Select country —</option>
+              {COUNTRY_OPTIONS.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </Field>
-          <Field label="Currency (ISO 4217)" hint="3 letters, e.g. PHP, USD, CAD">
+          <Field label="Currency (ISO 4217)" hint="Auto-filled from country; override if needed.">
             <input
               type="text"
               value={form.currency}
