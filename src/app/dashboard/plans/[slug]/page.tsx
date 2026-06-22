@@ -20,6 +20,8 @@ interface PlanRow {
   structure: PlanStructure;
   coach_notes: string | null;
   equipment: string[] | null;
+  created_by_user_id: string | null;
+  is_template: boolean;
 }
 
 interface PlanStructure {
@@ -54,15 +56,17 @@ const SKILL_LABELS: Record<string, string> = {
 export default async function PlanDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
+  const { slug } = await params;
+
   const { data: plan, error } = await supabaseAdmin
     .from('practice_plans')
-    .select('id, slug, title, summary, focus, age_min, age_max, duration_min, skill_level, structure, coach_notes, equipment')
-    .eq('slug', params.slug)
+    .select('id, slug, title, summary, focus, age_min, age_max, duration_min, skill_level, structure, coach_notes, equipment, created_by_user_id, is_template')
+    .eq('slug', slug)
     .eq('is_published', true)
     .single();
 
@@ -71,6 +75,7 @@ export default async function PlanDetailPage({
   }
 
   const p = plan as PlanRow;
+  const isMine = p.created_by_user_id === userId;
   const focusMeta = FOCUS_LABELS[p.focus] || { label: p.focus, emoji: '📋', color: 'bg-slate-100 text-slate-900' };
   const ageLabel = p.age_min === p.age_max ? `U${p.age_min}` : `U${p.age_min}–U${p.age_max}`;
 
@@ -112,9 +117,22 @@ export default async function PlanDetailPage({
         <h1 className="text-3xl font-bold text-slate-900">{p.title}</h1>
         <p className="mt-2 text-lg text-slate-600">{p.summary}</p>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <SaveButton planId={p.id} initialSaved={isSaved} />
           <MarkAsRunButton planId={p.id} planTitle={p.title} />
+          {isMine && (
+            <>
+              <span className="inline-flex items-center rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900">
+                Your plan
+              </span>
+              <Link
+                href={`/dashboard/plans/${p.slug}/edit`}
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Edit
+              </Link>
+            </>
+          )}
         </div>
 
         {runCount !== null && runCount > 0 && (
