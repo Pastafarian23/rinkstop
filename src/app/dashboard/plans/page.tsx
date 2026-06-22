@@ -60,6 +60,18 @@ export default async function PlansPage({
     // Non-blocking
   }
 
+  // Fetch user's own created plans (to mark them as "Your plan")
+  let createdIds = new Set<string>();
+  try {
+    const { data } = await supabaseAdmin
+      .from('practice_plans')
+      .select('id')
+      .eq('created_by_user_id', userId);
+    if (data) createdIds = new Set(data.map((r) => r.id));
+  } catch {
+    // Non-blocking
+  }
+
   // Apply filters (server-side for now; client-side would be nicer)
   const filtered = plans.filter((p) => {
     if (sp.focus && p.focus !== sp.focus) return false;
@@ -105,11 +117,19 @@ export default async function PlansPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Practice Plans</h1>
-        <p className="mt-1 text-slate-600">
-          Read-only library of {plans.length} practice plan templates. Save the ones you like, mark them as run after practice.
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Practice Plans</h1>
+          <p className="mt-1 text-slate-600">
+            {plans.length} practice plan templates. Save the ones you like, mark them as run after practice, or build your own.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/plans/new"
+          className="rounded-md bg-[#041E42] px-4 py-2 text-sm font-medium text-white hover:bg-[#041E42]/90"
+        >
+          + Create plan
+        </Link>
       </header>
 
       {queryError && (
@@ -138,6 +158,7 @@ export default async function PlansPage({
                   skillLevel={plan.skill_level}
                   equipment={plan.equipment || []}
                   initialSaved={true}
+                  isMine={createdIds.has(plan.id)}
                 />
               ))}
           </div>
@@ -227,6 +248,7 @@ export default async function PlansPage({
               skillLevel={plan.skill_level}
               equipment={plan.equipment || []}
               initialSaved={savedIds.has(plan.id)}
+              isMine={createdIds.has(plan.id)}
             />
           ))}
         </div>
