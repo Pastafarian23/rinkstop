@@ -1252,6 +1252,10 @@ img  { max-width: 100%; display: block; }
 
 .mob-tab:active { color: #fff; }
 .mob-tab:hover { color: rgba(255, 255, 255, 0.85); }
+.mob-tab-pressed {
+  transform: translateY(1px);
+  opacity: 0.86;
+}
 
 .mob-tab-active {
   color: #fff;
