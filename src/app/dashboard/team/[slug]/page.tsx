@@ -6,6 +6,8 @@ import { TeamHeader } from '@/components/team/TeamHeader';
 import { RosterTable, RosterMember, RosterMemberStatus } from '@/components/team/RosterTable';
 import { InviteTable, InviteRow } from '@/components/team/InviteTable';
 import { isAdminRole } from '@/lib/team';
+import { ComplianceWidget, ComplianceScoreData } from '@/components/team/ComplianceWidget';
+import { lookupFederation } from '@/lib/federations';
 import JoinWithCodeForm from './JoinWithCodeForm';
 import AdminPostPanel from './AdminPostPanel';
 
@@ -101,17 +103,102 @@ export default async function TeamHubPage({ params }: PageProps) {
     profiles: { display_name: string | null; username: string | null } | null;
   }
 
-  // Fetch required team-wide documents + signature counts per member
-  // (only documents where required = true count toward the docs column;
-  //  payment-linked docs are excluded since they aren't roster-level reqs)
+  // ─── Compliance score ───────────────────────────────────────────────
+  // Required team-wide docs (not payment-linked) for score widget
   const { data: requiredDocs } = await supabaseAdmin
     .from('team_documents')
-    .select('id')
+    .select('id, kind, due_date')
     .eq('team_id', team.id)
     .eq('required', true)
     .is('payment_id', null);
 
+  const federation = lookupFederation(team.country_code || '');
   const requiredDocIds = (requiredDocs || []).map((d: { id: string }) => d.id);
+  const docKinds = (requiredDocs || []).map(
+    (d: { id: string; kind: string; due_date: string | null }) => ({
+      id: d.id,
+      kind: d.kind,
+      dueDate: d.due_date,
+    })
+  );
+
+  // Signatures per doc
+  const sigsByDocId: Record<string, number> = {};
+  if (requiredDocIds.length > 0) {
+    const { data: sigs } = await supabaseAdmin
+      .from('document_signatures')
+      .select('document_id')
+      .in('document_id', requiredDocIds);
+    for (const s of sigs || []) {
+      sigsByDocId[s.document_id] = (sigsByDocId[s.document_id] || 0) + 1;
+    }
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split('T')[0];
+
+  const KIND_LABELS: Record<string, string> = {
+    birth_cert: 'Birth Certificate',
+    transfer: 'Transfer / Release',
+    insurance: 'Insurance Certificate',
+    safeguarding: 'Safeguarding / BG Check',
+    medical_release: 'Medical Authorization',
+    registration: 'Federation Registration',
+    code_of_conduct: 'Code of Conduct',
+    photo_id: 'Photo ID',
+    injury_waiver: 'Injury / Concussion Waiver',
+  };
+  const dkLabel = (k: string) => KIND_LABELS[k] ?? k.replace(/_/g, ' ');
+
+  const docStatuses = docKinds.map((d) => {
+    const signed = sigsByDocId[d.id] || 0;
+    const total = members.length;
+    return {
+      kind: d.kind,
+      label: dkLabel(d.kind),
+      dueDate: d.dueDate,
+      signedCount: signed,
+      requiredCount: total,
+      isExpired: !!d.dueDate && d.dueDate < today,
+    };
+  });
+
+  const expiringSoon = docStatuses.filter(
+    (d) => !!d.dueDate && d.dueDate >= today && d.dueDate <= in30
+  );
+
+  const totalRequired = docStatuses.length;
+  const fullySigned = docStatuses.filter(
+    (d) => d.requiredCount > 0 && d.signedCount >= d.requiredCount
+  ).length;
+
+  let score: 'green' | 'yellow' | 'red' = 'green';
+  let scoreLabel = 'Fully compliant';
+  if (totalRequired === 0) {
+    score = 'green';
+    scoreLabel = 'No required documents';
+  } else if (fullySigned === 0) {
+    score = 'red';
+    scoreLabel = 'Missing required documents';
+  } else if (fullySigned < totalRequired) {
+    score = 'yellow';
+    scoreLabel = `${totalRequired - fullySigned} doc${totalRequired - fullySigned === 1 ? '' : 's'} incomplete`;
+  }
+
+  const complianceData: ComplianceScoreData = {
+    score,
+    label: scoreLabel,
+    pct: totalRequired > 0 ? fullySigned / totalRequired : 1,
+    docs: docStatuses,
+    expiringSoon,
+    countryCode: team.country_code || undefined,
+    federation: federation ?? undefined,
+  };
+
+  // ─── Per-member status ─────────────────────────────────────────────────
+  // (requiredDocIds already computed in compliance block above)
 
   // Signatures by user (player_id is Clerk user_id, not team_member.id)
   const signaturesByUserId: Record<string, number> = {};
@@ -254,6 +341,9 @@ export default async function TeamHubPage({ params }: PageProps) {
           My payments (all teams) →
         </Link>
       </nav>
+
+      {/* Compliance score widget */}
+      <ComplianceWidget data={complianceData} />
 
       {/* Roster */}
       <section>
