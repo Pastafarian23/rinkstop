@@ -46,11 +46,14 @@ export default function DashboardError({
           </p>
         ) : null}
         {(error as any)?.message ? (
-          <details style={{ margin: '0 0 1rem' }}>
-            <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', cursor: 'pointer' }}>Error details</summary>
-            <pre style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', margin: '0.5rem 0 0', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'auto', maxHeight: 200 }}>
-{(error as any).name}: {(error as any).message}
-{(error as any).stack}
+          <details open style={{ margin: '0 0 1rem' }}>
+            <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', cursor: 'pointer' }}>
+              Error details (DEBUG — pasted back to KiloClaw)
+            </summary>
+            <pre style={{ color: '#FF6B7A', fontSize: '0.7rem', margin: '0.5rem 0 0', padding: '0.5rem', background: 'rgba(200,16,46,0.10)', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 4, overflow: 'auto', maxHeight: 320, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+Name: {(error as any).name}
+Message: {(error as any).message}
+Stack:{(error as any).stack || '(no stack)'}
             </pre>
           </details>
         ) : null}
