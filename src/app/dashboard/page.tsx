@@ -58,6 +58,24 @@ export default async function DashboardPage() {
       timestamp: new Date().toISOString(),
     }));
 
+    // DEBUG: capture the real error to Supabase so we can diagnose.
+    // Server-side catch has the FULL error (not the stripped client version).
+    // Wrapped in its own try/catch so a Supabase hiccup doesn't mask the original.
+    // Cleanup: drop this block once the underlying bug is fixed.
+    try {
+      await supabaseAdmin.from('dashboard_error_logs').insert({
+        user_id: userId,
+        pathname: '/dashboard',
+        digest: undefined, // server-side, not from React
+        error_name: err?.name ?? 'Error',
+        error_message: err?.message ?? '',
+        error_stack: err?.stack ?? '',
+        user_agent: null,
+      });
+    } catch (captureErr) {
+      // Silent — the user-facing fallback below still renders.
+    }
+
     // NEVER show raw error info to non-admin users — exposes table/column names,
     // provider APIs, and internal stack info. Only super_admin accounts get the
     // collapsible debug details. Everyone else gets the generic message + retry.
