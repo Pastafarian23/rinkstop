@@ -40,6 +40,34 @@ function contactEnterprise() {
   window.location.href = '/partner?source=enterprise-claims';
 }
 
+function TierLine({ tier, price, benefits, highlight }: { tier: string; price: string; benefits: string; highlight?: boolean }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: 8,
+      padding: highlight ? '4px 6px' : '2px 0',
+      background: highlight ? 'rgba(255,184,28,0.08)' : 'transparent',
+      borderRadius: highlight ? 4 : 0,
+    }}>
+      <span style={{
+        fontWeight: 700,
+        color: highlight ? '#FFB81C' : 'rgba(255,255,255,0.85)',
+        minWidth: 60,
+        fontSize: 12,
+      }}>
+        {tier}
+      </span>
+      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, minWidth: 55 }}>
+        {price}
+      </span>
+      <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, flex: 1 }}>
+        {benefits}
+      </span>
+    </div>
+  );
+}
+
 /**
  * "Claim this listing" CTA. Renders on unclaimed entity pages (rink, team, league, player).
  *
@@ -120,9 +148,9 @@ export default function ClaimThisListing({
             color: '#d1d5db',
             lineHeight: 1.5,
           }}>
-            <strong style={{ color: '#FFB81C' }}>Want a Premium tier with up to 25 claims and featured placement?</strong>{' '}
+            <strong style={{ color: '#FFB81C' }}>Need more than 1 claim?</strong>{' '}
             <Link href="/pricing?tier=pro" style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
-              See tier benefits →
+              Compare Pro (up to 5) and Premium (up to 25) →
             </Link>
           </div>
         )}
@@ -176,11 +204,11 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Claim it now — Starter unlocks 1 claim, Pro unlocks up to 5, Premium unlocks up to 25, and Enterprise covers larger orgs.
+              Claiming requires a Starter membership ($19.99/yr). Parents managing their kid&apos;s player profile can claim free with Starter+ (parent claims don&apos;t count against your tier limit).
             </div>
           </div>
           <button
-            onClick={() => openCheckout(state.recommendedTier || 'starter', 'inline-claim-free')}
+            onClick={() => openCheckout('starter', 'inline-claim-free')}
             style={{
               background: '#FFB81C',
               color: '#041E42',
@@ -194,8 +222,28 @@ export default function ClaimThisListing({
               cursor: 'pointer',
             }}
           >
-            Unlock claim →
+            Unlock with Starter →
           </button>
+        </div>
+        {/* Why claim? benefits preview — shows tier structure before they commit */}
+        <div style={{
+          marginTop: 6,
+          paddingTop: 10,
+          borderTop: '1px dashed rgba(255,184,28,0.2)',
+          fontSize: 12,
+          color: 'rgba(255,255,255,0.7)',
+        }}>
+          <div style={{ fontWeight: 700, color: '#FFB81C', marginBottom: 6, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Why claim?
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <TierLine tier="Starter" price="$19.99/yr" benefits="1 claim + verified checkmark" highlight />
+            <TierLine tier="Pro" price="$59.99/yr" benefits="Up to 5 claims, DMs, lead capture" />
+            <TierLine tier="Premium" price="$299/yr" benefits="Up to 25 claims, featured placement, analytics" />
+            <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>
+              Parents managing their kid&apos;s player profile: unlimited on Starter+ (no cap, no extra cost).
+            </div>
+          </div>
         </div>
       </div>
     );

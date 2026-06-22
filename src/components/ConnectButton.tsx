@@ -184,9 +184,9 @@ export default function ConnectButton({
     );
   }
 
-  // Signed in but not Verified+ — show upgrade CTA.
-  const tierRank: Record<string, number> = { free: 0, starter: 1, pro: 2, premium: 3, enterprise: 4 };
-  if ((tierRank[myTier] ?? 0) < 2) {
+  // Signed in but not Roster+ — show upgrade CTA.
+  const tierRank: Record<string, number> = { free: 0, starter: 1, family_plus: 1, pro: 2, premium: 3, enterprise: 4 };
+  if ((tierRank[myTier] ?? 0) < 1) {
     return (
       <a
         href="/pricing"
@@ -202,7 +202,7 @@ export default function ConnectButton({
           textDecoration: 'none',
         }}
       >
-        Verified required to connect
+        Roster membership required to connect
       </a>
     );
   }

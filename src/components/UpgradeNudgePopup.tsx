@@ -222,7 +222,7 @@ export default function UpgradeNudgePopup({
               whiteSpace: 'nowrap',
             }}
           >
-            Become Verified →
+            Become a Roster Member →
           </Link>
         </div>
 
