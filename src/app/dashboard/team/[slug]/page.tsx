@@ -344,7 +344,7 @@ export default async function TeamHubPage({ params }: PageProps) {
       </nav>
 
       {/* Compliance score widget */}
-      <ComplianceWidget data={complianceData} />
+      <ComplianceWidget data={complianceData} teamSlug={team.slug} isAdmin={isAdmin} />
 
       {/* Show "apply template" prompt when country is set but no required docs yet */}
       {isAdmin && team.country_code && totalRequired === 0 && federation && (
