@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 // ---------------------------------------------------------------------------
 // Tab definitions
@@ -40,14 +41,14 @@ const TABS_BY_ROLE: Record<string, TabDef[]> = {
   parent: [
     { href: '/dashboard/claims',     label: 'My Kid(s)',  iconKey: 'kid',      match: p => p === '/dashboard/claims' || p.startsWith('/dashboard/claims/') },
     { href: '/dashboard/schedule',   label: 'Schedule',   iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
-    { href: '/dashboard/messages',   label: 'Coach',      iconKey: 'chat',     match: p => p.startsWith('/dashboard/messages') },
+    { href: '/dashboard/messages',   label: 'Inbox',      iconKey: 'chat',     match: p => p.startsWith('/dashboard/messages') },
     { href: '/dashboard/profile',    label: 'Profile',    iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
   ],
   coach: [
     { href: '/dashboard/team',       label: 'My Team',    iconKey: 'team',     match: p => p.startsWith('/dashboard/team') },
     { href: '/dashboard/schedule',   label: 'Schedule',   iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
     { href: '/dashboard/plans',      label: 'Plans',      iconKey: 'plans',    match: p => p.startsWith('/dashboard/plans') },
-    { href: '/dashboard/leads',      label: 'Inbox',      iconKey: 'inbox',    match: p => p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
+    { href: '/dashboard/inbox',      label: 'Inbox',      iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
   ],
   scout: [
     { href: '/dashboard/favorites',  label: 'Watchlist',  iconKey: 'star',     match: p => p.startsWith('/dashboard/favorites') },
@@ -65,23 +66,23 @@ const TABS_BY_ROLE: Record<string, TabDef[]> = {
     { href: '/dashboard/team',                                       label: 'Roster',    iconKey: 'team',     match: p => p.startsWith('/dashboard/team') },
     { href: '/dashboard/manage/team/_stub/payments',                label: 'Payments',  iconKey: 'wallet',   match: p => p.includes('/manage/team/') && p.includes('/payments') },
     { href: '/dashboard/manage/team/_stub/compliance',              label: 'Compliance',iconKey: 'doc',      match: p => p.includes('/manage/team/') && p.includes('/compliance') },
-    { href: '/dashboard/leads',                                      label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/leads') },
+    { href: '/dashboard/inbox',                                      label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
   ],
   league_admin: [
     { href: '/dashboard/manage/league',   label: 'Leagues',   iconKey: 'trophy',   match: p => p.startsWith('/dashboard/manage/league') },
     { href: '/standings',                 label: 'Standings', iconKey: 'list',     match: p => p.startsWith('/standings') },
     { href: '/dashboard/schedule',        label: 'Schedule',  iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
-    { href: '/dashboard/leads',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/leads') },
+    { href: '/dashboard/inbox',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
   ],
   rink_operator: [
     { href: '/dashboard/manage/rink',     label: 'My Rink',   iconKey: 'rink',     match: p => p.startsWith('/dashboard/manage/rink') },
     { href: '/dashboard/schedule',        label: 'Schedule',  iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
     { href: '/dashboard/bookings',        label: 'Bookings',  iconKey: 'book',     match: p => p.startsWith('/dashboard/bookings') },
-    { href: '/dashboard/leads',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/leads') },
+    { href: '/dashboard/inbox',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
   ],
   business: [
     { href: '/dashboard/listings',        label: 'Listings',  iconKey: 'shop',     match: p => p.startsWith('/dashboard/listings') },
-    { href: '/dashboard/leads',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/leads') },
+    { href: '/dashboard/inbox',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
     { href: '/dashboard/profile',         label: 'Profile',   iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
     { href: '/directory/business',        label: 'Directory', iconKey: 'folder',   match: p => p.startsWith('/directory/business') },
   ],
@@ -89,7 +90,7 @@ const TABS_BY_ROLE: Record<string, TabDef[]> = {
     { href: '/directory',                 label: 'Browse',    iconKey: 'folder',   match: p => p === '/directory' || p.startsWith('/directory/') },
     { href: '/blog',                      label: 'News',      iconKey: 'news',     match: p => p.startsWith('/blog') || p.startsWith('/news') || p.startsWith('/guides') || p.startsWith('/rankings') },
     { href: '/dashboard/favorites',       label: 'Favorites', iconKey: 'star',     match: p => p.startsWith('/dashboard/favorites') },
-    { href: '/dashboard/profile',         label: 'Profile',   iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
+    { href: '/dashboard/messages',        label: 'Inbox',     iconKey: 'chat',     match: p => p.startsWith('/dashboard/messages') },
   ],
 };
 
@@ -123,6 +124,21 @@ interface Props {
 export default function RoleAwareTabBar({ userId: _userId, signedIn, accountTypes, tier }: Props) {
   const pathname = usePathname() || '/';
   const { isSignedIn } = useUser();
+  const [pressedHref, setPressedHref] = useState<string | null>(null);
+
+  // Pointer events fire once per gesture (touch, pen, mouse), so a single
+  // handler is the source of truth for both haptic and visual feedback.
+  function tapHaptic() {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate(10); } catch { /* noop */ }
+    }
+    Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
+  }
+
+  function tapPressed(href: string) {
+    setPressedHref(href);
+    window.setTimeout(() => setPressedHref(null), 160);
+  }
 
   // Hide on landing/auth pages where it would clutter.
   const hide = pathname === '/login' ||
@@ -188,8 +204,9 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
           <Link
             key={tab.href}
             href={tab.href}
-            className={`mob-tab ${active ? 'mob-tab-active' : ''}`}
+            className={`mob-tab ${active ? 'mob-tab-active' : ''} ${pressedHref === tab.href ? 'mob-tab-pressed' : ''}`}
             aria-current={active ? 'page' : undefined}
+            onPointerDown={() => { tapPressed(tab.href); tapHaptic(); }}
           >
             <span className="mob-tab-icon"><Icon /></span>
             <span className="mob-tab-label">{tab.label}</span>

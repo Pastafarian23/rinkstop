@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import BrandSpinner from '@/components/BrandSpinner';
 
 interface ThreadRow {
   id: string;
@@ -114,7 +115,7 @@ function MessagesInbox() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'rgba(255,255,255,0.5)' }}>Loading…</p>
+        <BrandSpinner label="Loading messages…" />
       ) : threads.length === 0 ? (
         <div style={{ padding: '3rem 1rem', textAlign: 'center', background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12 }}>
           <h2 style={{ fontSize: 18, color: 'rgba(255,255,255,0.8)', margin: 0, marginBottom: 8 }}>No conversations yet</h2>
