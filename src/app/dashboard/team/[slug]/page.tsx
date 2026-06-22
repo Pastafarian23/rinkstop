@@ -8,6 +8,7 @@ import { InviteTable, InviteRow } from '@/components/team/InviteTable';
 import { isAdminRole } from '@/lib/team';
 import { ComplianceWidget, ComplianceScoreData } from '@/components/team/ComplianceWidget';
 import { lookupFederation } from '@/lib/federations';
+import { ApplyTemplateBanner } from './ApplyTemplateBanner';
 import JoinWithCodeForm from './JoinWithCodeForm';
 import AdminPostPanel from './AdminPostPanel';
 
@@ -344,6 +345,11 @@ export default async function TeamHubPage({ params }: PageProps) {
 
       {/* Compliance score widget */}
       <ComplianceWidget data={complianceData} />
+
+      {/* Show "apply template" prompt when country is set but no required docs yet */}
+      {isAdmin && team.country_code && totalRequired === 0 && federation && (
+        <ApplyTemplateBanner teamSlug={team.slug} federationName={federation.federationName} />
+      )}
 
       {/* Country prompt — only admins see it when no country is set */}
       {isAdmin && !team.country_code && (
