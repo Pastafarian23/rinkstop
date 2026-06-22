@@ -20,8 +20,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // can recover. The real error is logged server-side (Vercel) for diagnosis.
   try {
     return await renderDashboardLayout(userId, children);
-  } catch (err) {
+  } catch (err: any) {
     console.error('[dashboard layout] render failed:', err);
+    // DEBUG: capture real error to Supabase.
+    try {
+      await supabaseAdmin.from('dashboard_error_logs').insert({
+        user_id: userId,
+        pathname: '/dashboard/layout',
+        digest: undefined,
+        error_name: err?.name ?? 'Error',
+        error_message: err?.message ?? '',
+        error_stack: err?.stack ?? '',
+        user_agent: null,
+      });
+    } catch { /* silent */ }
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
         <header style={{ background: '#041E42', borderBottom: '3px solid #C8102E' }}>
