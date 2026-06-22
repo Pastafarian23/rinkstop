@@ -102,7 +102,7 @@ export const FEDERATIONS: Federation[] = [
   {
     countryCode: 'SE',
     countryName: 'Sweden',
-    federationName: 'Svenska Ishockeyförbundet (SIFF)',
+    federationName: 'Svenska Ishockeyförbundet (SIF)',
     federationUrl: 'https://www.swehockey.se',
     governingBody: 'IIHF',
     safeguardingBody: 'Svenska Ishockeyförbundet — Tävlingsbestämmelser',
@@ -119,7 +119,7 @@ export const FEDERATIONS: Federation[] = [
   {
     countryCode: 'FI',
     countryName: 'Finland',
-    federationName: 'Suomen Jääkiekkoliitto (SJL)',
+    federationName: 'Suomen Jääkiekkoliitto (Finnish Ice Hockey Association)',
     federationUrl: 'https://www.finhockey.fi',
     governingBody: 'IIHF',
     safeguardingBody: 'Jääkiekkoliitto — Pelaajien turvallisuus',
@@ -127,7 +127,7 @@ export const FEDERATIONS: Federation[] = [
     requiredDocKinds: [
       { kind: 'birth_cert', label: 'Henkilökortti / Passport', note: 'Finnish personal identity or passport' },
       { kind: 'transfer', label: 'Transfer Certificate', note: 'Required for international transfers via IIHF' },
-      { kind: 'registration', label: 'SJL Player License', note: 'Annual; processed through club registration system' },
+      { kind: 'registration', label: 'Jääkiekkoliitto Player License', note: 'Annual; processed through club registration system' },
       { kind: 'insurance', label: 'Insurance Certificate', note: 'Jääkiekkoliitto player insurance included with license' },
       { kind: 'code_of_conduct', label: 'Code of Conduct', note: 'Signed by player/parent annually' },
       { kind: 'medical_release', label: 'Medical Information Form', note: 'Updated each season; includes emergency contact and health info' },
@@ -208,7 +208,7 @@ export const FEDERATIONS: Federation[] = [
   {
     countryCode: 'AT',
     countryName: 'Austria',
-    federationName: 'Österreichischer Eishockeyverband (EHV)',
+    federationName: 'Österreichischer Eishockeyverband (ÖEHV)',
     federationUrl: 'https://www.eishockey.at',
     governingBody: 'IIHF',
     safeguardingBody: 'EHV — Kinderschutz',
@@ -216,7 +216,7 @@ export const FEDERATIONS: Federation[] = [
     requiredDocKinds: [
       { kind: 'birth_cert', label: 'Geburtsurkunde / Reisepass', note: 'Austrian civil document or passport' },
       { kind: 'transfer', label: 'Transfer Certificate', note: 'Required for international transfers via IIHF transfer portal' },
-      { kind: 'registration', label: 'EHV Player Registration', note: 'Annual; processed through Austrian league system' },
+      { kind: 'registration', label: 'ÖEHV Player Registration', note: 'Annual; processed through Austrian league system' },
       { kind: 'insurance', label: 'Insurance Confirmation', note: 'Austrian health insurance or equivalent required' },
       { kind: 'code_of_conduct', label: 'Code of Conduct', note: 'Annual sign-off for registered players' },
     ],
@@ -225,16 +225,16 @@ export const FEDERATIONS: Federation[] = [
   {
     countryCode: 'NO',
     countryName: 'Norway',
-    federationName: 'Norges Ishockeyforbund (NIF)',
-    federationUrl: 'https://www.nifs.no',
+    federationName: 'Norges Ishockeyforbund (NIHF)',
+    federationUrl: 'https://www.hockey.no',
     governingBody: 'IIHF',
     safeguardingBody: 'Norges Idrettsforbund — Barneidrett',
     safeguardingUrl: 'https://www.idrettsforbundet.no',
     requiredDocKinds: [
       { kind: 'birth_cert', label: 'Fødselsattest / Pass', note: 'Norwegian birth certificate or passport' },
-      { kind: 'registration', label: 'NIF Player License', note: 'Annual; via club registration through NIF\'s KlubbAdmin system' },
-      { kind: 'insurance', label: 'Insurance Confirmation', note: 'NIF members insurance covers players; club confirmation accepted' },
-      { kind: 'safeguarding', label: ' politiattest', note: 'Police certificate of conduct required for coaches/staff working with under-18s' },
+      { kind: 'registration', label: 'NIHF Player License', note: 'Annual; via club registration through NIHF\'s KlubbAdmin system' },
+      { kind: 'insurance', label: 'Insurance Confirmation', note: 'NIHF members insurance covers players; club confirmation accepted' },
+      { kind: 'safeguarding', label: 'Politiattest', note: 'Police certificate of conduct required for coaches/staff working with under-18s' },
       { kind: 'code_of_conduct', label: 'Code of Conduct', note: 'Annual sign-off for players in competitive categories' },
     ],
     ageGroupNote: 'Norwegian age categories: Smågodt (5-6), Lille (7-8), Liten (9-10), Middels (11-12), Stor (13-15), Junior (16-20), Senior.',
@@ -303,7 +303,7 @@ export const FEDERATIONS: Federation[] = [
     requiredDocKinds: [
       { kind: 'birth_cert', label: 'Geboorteakte / Paspoort', note: 'Dutch birth certificate, ID card (ID), or passport' },
       { kind: 'transfer', label: 'Transfer Certificate', note: 'Required for international transfers via IIHF' },
-      { kind: 'registration', label: 'NIJA Registration', note: 'Annual; via club registration system' },
+      { kind: 'registration', label: 'IJshockey Nederland Registration', note: 'Annual; via club registration system' },
       { kind: 'insurance', label: 'Health Insurance Confirmation', note: 'Dutch basic health insurance (verplicht verzekerd) required' },
       { kind: 'safeguarding', label: 'VOG / Certificate of Conduct', note: 'Certificate of Conduct (Verklaring Omtrent Gedrag) required for coaches working with youth' },
       { kind: 'code_of_conduct', label: 'Code of Conduct', note: 'Annual sign-off by player/parent' },
@@ -321,7 +321,7 @@ export const FEDERATIONS: Federation[] = [
     requiredDocKinds: [
       { kind: 'birth_cert', label: 'Certificat de naissance / Geboorteakte', note: 'Belgian civil registry extract or passport' },
       { kind: 'transfer', label: 'Certificat de transfert / Transfertbewijs', note: 'Required for international transfers via IIHF' },
-      { kind: 'registration', label: 'BIJF License', note: 'Annual; processed through Belgian Ice Hockey League system' },
+      { kind: 'registration', label: 'Royal Belgian Ice Hockey Federation License', note: 'Annual; processed through Belgian Ice Hockey League system' },
       { kind: 'insurance', label: 'Insurance Confirmation', note: 'Belgian health insurance or European Health Insurance Card (EHIC) for EU citizens' },
       { kind: 'code_of_conduct', label: 'Code de conduite', note: 'Annual sign-off for youth players' },
     ],
@@ -338,7 +338,7 @@ export const FEDERATIONS: Federation[] = [
     requiredDocKinds: [
       { kind: 'birth_cert', label: 'Certificado de nacimiento / DNI', note: 'Spanish birth certificate or national ID (DNI) or passport' },
       { kind: 'transfer', label: 'Certificado de transferencia', note: 'Required for international transfers via IIHF' },
-      { kind: 'registration', label: 'Licencia RFEOH', note: 'Annual player license; club submits via RFEOH portal' },
+      { kind: 'registration', label: 'RFEDH Licencia', note: 'Annual player license; club submits via RFEDH portal' },
       { kind: 'insurance', label: 'Certificado de seguro', note: 'Spanish social security or private health insurance required' },
       { kind: 'code_of_conduct', label: 'Código de conducta', note: 'Annual sign-off; parents sign for junior players' },
     ],
@@ -389,11 +389,11 @@ export const FEDERATIONS: Federation[] = [
     requiredDocKinds: [
       { kind: 'birth_cert', label: 'Gimimo liudijimas / Pasas', note: 'Lithuanian birth certificate or passport' },
       { kind: 'transfer', label: 'Perėjimo sertifikatas', note: 'Required for international transfers via IIHF' },
-      { kind: 'registration', label: 'LLRF License', note: 'Annual; club registers players' },
+      { kind: 'registration', label: 'Hockey Lietuva License', note: 'Annual; club registers players' },
       { kind: 'insurance', label: 'Insurance Confirmation', note: 'Lithuanian health insurance (PSDF) or equivalent required' },
       { kind: 'code_of_conduct', label: 'Elgesio kodeksas', note: 'Annual sign-off for youth categories' },
     ],
-    ageGroupNote: 'Follows IIHF age classifications; senior and youth leagues under LLRF jurisdiction.',
+    ageGroupNote: 'Follows IIHF age classifications; senior and youth leagues under Hockey Lietuva jurisdiction.',
   },
   {
     countryCode: 'EE',
