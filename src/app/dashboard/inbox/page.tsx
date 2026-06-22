@@ -221,81 +221,81 @@ export default async function InboxPage() {
         )}
       </div>
 
-      {messages.queryError && (
+      {messages.queryError ? (
         <div style={{ background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 12, padding: '1rem 1.25rem', color: '#FF6B7A', marginBottom: '1rem', fontSize: '0.875rem' }}>
           Couldn&apos;t load messages: {messages.queryError}
         </div>
-      )}
-
-      <section style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem', marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          <div>
-            <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.2rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
-              MESSAGES
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
-              Direct messages with your connections.
-            </p>
+      ) : (
+        <section style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            <div>
+              <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.2rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
+                MESSAGES
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
+                Direct messages with your connections.
+              </p>
+            </div>
+            <Link href="/dashboard/connections" style={{ color: '#FFB81C', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 700 }}>
+              View connections
+            </Link>
           </div>
-          <Link href="/dashboard/connections" style={{ color: '#FFB81C', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 700 }}>
-            View connections
-          </Link>
-        </div>
 
-        {messages.threads.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'rgba(255,255,255,0.55)' }}>
-            <p style={{ margin: 0, fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>No conversations yet</p>
-            <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem' }}>Start a conversation by connecting with someone on their profile.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {messages.threads.map((t) => {
-              const name = t.otherUser.display_name || 'RinkStop Member';
-              return (
-                <Link
-                  key={t.id}
-                  href={`/dashboard/messages/${t.id}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '0.75rem 1rem',
-                    background: t.unreadCount > 0 ? 'rgba(20,184,166,0.05)' : '#0f0f0f',
-                    border: t.unreadCount > 0 ? '1px solid rgba(20,184,166,0.3)' : '1px solid #1e1e1e',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    color: '#fff',
-                  }}
-                >
-                  {t.otherUser.avatar_url ? (
-                    <img src={t.otherUser.avatar_url} alt={name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#041E42', color: '#FFB81C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
-                      {name[0]?.toUpperCase()}
-                    </div>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-                      <div style={{ fontWeight: 600, fontSize: 15 }}>{name}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-                        {t.last_message_at ? new Date(t.last_message_at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ''}
+          {messages.threads.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'rgba(255,255,255,0.55)' }}>
+              <p style={{ margin: 0, fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>No conversations yet</p>
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem' }}>Start a conversation by connecting with someone on their profile.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {messages.threads.map((t) => {
+                const name = t.otherUser.display_name || 'RinkStop Member';
+                return (
+                  <Link
+                    key={t.id}
+                    href={`/dashboard/messages/${t.id}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '0.75rem 1rem',
+                      background: t.unreadCount > 0 ? 'rgba(20,184,166,0.05)' : '#0f0f0f',
+                      border: t.unreadCount > 0 ? '1px solid rgba(20,184,166,0.3)' : '1px solid #1e1e1e',
+                      borderRadius: 8,
+                      textDecoration: 'none',
+                      color: '#fff',
+                    }}
+                  >
+                    {t.otherUser.avatar_url ? (
+                      <img src={t.otherUser.avatar_url} alt={name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#041E42', color: '#FFB81C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
+                        {name[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{name}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+                          {t.last_message_at ? new Date(t.last_message_at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ''}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.last_message_preview || <em>No messages yet</em>}
                       </div>
                     </div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {t.last_message_preview || <em>No messages yet</em>}
-                    </div>
-                  </div>
-                  {t.unreadCount > 0 && (
-                    <span style={{ background: '#C8102E', color: '#fff', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '0.1rem 0.5rem', minWidth: 20, textAlign: 'center' }}>
-                      {t.unreadCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                    {t.unreadCount > 0 && (
+                      <span style={{ background: '#C8102E', color: '#fff', borderRadius: 999, fontSize: 11, fontWeight: 700, padding: '0.1rem 0.5rem', minWidth: 20, textAlign: 'center' }}>
+                        {t.unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       {hasLeadAccess ? (
         <section style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem', marginBottom: '1.25rem' }}>
