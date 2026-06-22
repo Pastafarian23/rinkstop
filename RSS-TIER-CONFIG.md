@@ -52,7 +52,7 @@ Content Priority: 1-2 posts/month (Local Scenes features)
 ### Asia Pacific
 | # | Source | URL | Notes |
 |---|--------|-----|-------|
-| 27 | Hockey Philippines | https://hockeyph.com/ | SEA Games, national team |
+| 27 | Hockey Philippines (FIHL) | https://hockeyphilippines.com/ | SEA Games, national team |
 | 28 | THL Thailand | https://www.thaihockey.com/ | Thai league |
 | 29 | China Ice Hockey (search + CIIHF) | — | CWHL, KHL China teams |
 | 30 | Hong Kong Ice Hockey (search) | — | HK hockey association |
