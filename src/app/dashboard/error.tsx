@@ -11,8 +11,34 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to console — Vercel will pick it up from the browser too.
+    // Log to browser console (Vercel picks it up from there too).
     console.error('[dashboard] route error:', error);
+
+    // Capture the real error details server-side via the debug endpoint.
+    // Production builds strip error.message + stack from the client, but
+    // the error object is still in this component's scope — we send it
+    // to /api/debug/log-error which writes it to dashboard_error_logs.
+    //
+    // Fire-and-forget. Failures are silent (debug aid, not critical).
+    // No PII past error.message + stack + pathname + user-agent.
+    try {
+      fetch('/api/debug/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          errorName: (error as any)?.name ?? 'Error',
+          errorMessage: (error as any)?.message ?? '',
+          errorStack: (error as any)?.stack ?? '',
+          digest: error?.digest ?? null,
+          pathname: typeof window !== 'undefined' ? window.location.pathname : null,
+        }),
+        // keepalive: true so the request survives the page being torn down
+        // when the user clicks "Try again".
+        keepalive: true,
+      }).catch(() => { /* silent */ });
+    } catch {
+      /* silent */
+    }
   }, [error]);
 
   return (

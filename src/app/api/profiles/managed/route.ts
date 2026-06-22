@@ -39,21 +39,26 @@ export async function POST(request: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  // Tier check: must be Verified+ to claim/manage a profile.
+  // Tier check: Roster (starter) tier minimum required to manage a profile.
+  // Family+ (family_plus) also qualifies. Team/league profiles still require Pro+ (operator use case).
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'pro')) {
-    return NextResponse.json(
-      { error: 'Pro or Premium membership required to manage a profile.', currentTier: tier },
-      { status: 403 }
-    );
-  }
-
   let body: { profileType?: string; profileId?: string; relationship?: string };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
+  // For player profiles, allow Starter+ (parent-managed use case).
+  // For team/league profiles, require Pro+ (operator use case).
+  const isPlayerManaged = body.profileType === 'player';
+  const minTier = isPlayerManaged ? 'starter' : 'pro';
+  if (!tierAtLeast(tier, minTier)) {
+    return NextResponse.json(
+      { error: `${minTier === 'starter' ? 'Roster' : 'Pro'} or higher membership required to manage this profile.`, currentTier: tier },
+      { status: 403 }
+    );
+  }
+
   if (!body.profileType || !VALID_PROFILE_TYPES.includes(body.profileType as ProfileType)) {
     return NextResponse.json({ error: `profileType must be one of: ${VALID_PROFILE_TYPES.join(', ')}` }, { status: 400 });
   }

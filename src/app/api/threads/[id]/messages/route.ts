@@ -154,11 +154,12 @@ export async function POST(
     return NextResponse.json({ error: 'Thread not found.' }, { status: 404 });
   }
 
-  // Tier check.
+  // Tier check: Roster+ required to send messages. (Recipients are gated at thread-creation time
+// in /api/threads POST, so if this thread exists and the caller is a participant, they can send.)
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'pro')) {
+  if (!tierAtLeast(tier, 'starter')) {
     return NextResponse.json(
-      { error: 'Pro or Premium membership required to send messages.', currentTier: tier },
+      { error: 'Roster membership required to send messages.', currentTier: tier },
       { status: 403 }
     );
   }
