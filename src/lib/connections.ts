@@ -45,6 +45,7 @@ export const TIER_RANK: Record<string, number> = {
 export const MAX_CLAIMS_PER_TIER: Record<string, number> = {
   free: 0,
   starter: 1,
+  family_plus: 1,
   pro: 5,
   premium: 25,
   enterprise: Infinity,

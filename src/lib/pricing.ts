@@ -5,17 +5,23 @@
  * If you change a price in Stripe, update it here in the same commit and
  * redeploy. The Stripe price IDs are pinned in the comments below.
  *
- * Tier rename 2026-06-17 (was free/supporter/verified/pro → free/starter/pro/premium/enterprise).
+ * Tier structure 2026-06-22 (Option C, Arnel-approved):
+ *   free / starter (Roster) / family_plus (Roster+) / pro / premium / enterprise.
  * Enterprise is contact-sales only (no Stripe Price ID) — UI shows "Contact for pricing".
  *
- * Live Stripe prices (verified 2026-06-17, IDs unchanged):
- *   - RinkStop Starter (was Verified/Supporter): $19.99 USD/year  (price_1ThcqgCJiUbEZVbnyHLCogTF)
- *   - RinkStop Pro:                              $59.99 USD/year  (price_1ThcqhCJiUbEZVbnVfgLCdzu)
- *   - RinkStop Premium:                          $299.00 USD/year (price_1ThcqhCJiUbEZVbnHtmWwpAa)
- *   - RinkStop Enterprise:  contact sales (no Stripe product)
+ * Live Stripe prices (verified 2026-06-22, IDs unchanged for existing tiers):
+ *   - RinkStop Roster (was Starter): $19.99 USD/year  (price_1ThcqgCJiUbEZVbnyHLCogTF)
+ *   - RinkStop Pro:                   $59.99 USD/year  (price_1ThcqhCJiUbEZVbnVfgLCdzu)
+ *   - RinkStop Premium:               $299.00 USD/year (price_1ThcqhCJiUbEZVbnHtmWwpAa)
+ *   - RinkStop Roster+ (NEW):          $29.99 USD/year (Stripe Product/Price ID PENDING — create before launch)
+ *   - RinkStop Enterprise: contact sales (no Stripe product)
+ *
+ * Tier rename history:
+ *   2026-06-17: free/supporter/verified/pro → free/starter/pro/premium/enterprise
+ *   2026-06-22: Starter display "Verified" → "Roster"; added family_plus tier; retired "Verified" tier label
  */
 
-export type TierName = 'free' | 'starter' | 'pro' | 'premium' | 'enterprise';
+export type TierName = 'free' | 'starter' | 'family_plus' | 'pro' | 'premium' | 'enterprise';
 
 export interface TierInfo {
   name: TierName;
@@ -38,24 +44,31 @@ export const TIERS: Record<TierName, TierInfo> = {
   },
   starter: {
     name: 'starter',
-    label: 'Starter',
+    label: 'Roster',
     priceUsd: 19.99,
     stripePriceEnv: 'STRIPE_PRICE_TIER_STARTER',
-    tagline: 'I want a verified profile and 1 claim',
+    tagline: 'Manage your kid\'s profile, claim 1 rink or team, DM your team\'s coaches',
+  },
+  family_plus: {
+    name: 'family_plus',
+    label: 'Roster+',
+    priceUsd: 29.99,
+    stripePriceEnv: 'STRIPE_PRICE_TIER_FAMILY_PLUS',
+    tagline: 'Video highlights, recruiting profile, multi-season stats, custom URL — for serious hockey families',
   },
   pro: {
     name: 'pro',
     label: 'Pro',
     priceUsd: 59.99,
     stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
-    tagline: 'I run a rink, team, or league and want to be verified',
+    tagline: 'Up to 5 claims, DM anyone, lead capture, "open to" tags',
   },
   premium: {
     name: 'premium',
     label: 'Premium',
     priceUsd: 299,
     stripePriceEnv: 'STRIPE_PRICE_TIER_PREMIUM',
-    tagline: 'I run a regional chain or multi-team org and want featured placement',
+    tagline: 'Up to 25 claims, featured placement, analytics, multi-admin',
   },
   enterprise: {
     name: 'enterprise',
@@ -86,6 +99,7 @@ export interface TierLimits {
 export const TIER_LIMITS: Record<TierName, TierLimits> = {
   free: { maxClaims: 0, maxListings: 0, monthlyOutboundMessages: 0 },
   starter: { maxClaims: 1, maxListings: 1, monthlyOutboundMessages: 25 },
+  family_plus: { maxClaims: 1, maxListings: 2, monthlyOutboundMessages: 50 },
   pro: { maxClaims: 5, maxListings: 5, monthlyOutboundMessages: 100 },
   premium: { maxClaims: 25, maxListings: 25, monthlyOutboundMessages: Infinity },
   enterprise: { maxClaims: Infinity, maxListings: Infinity, monthlyOutboundMessages: Infinity },
