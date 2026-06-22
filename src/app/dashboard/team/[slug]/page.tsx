@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TeamHeader } from '@/components/team/TeamHeader';
-import { RosterTable, RosterMember } from '@/components/team/RosterTable';
+import { RosterTable, RosterMember, RosterMemberStatus } from '@/components/team/RosterTable';
 import { InviteTable, InviteRow } from '@/components/team/InviteTable';
 import { isAdminRole } from '@/lib/team';
 import JoinWithCodeForm from './JoinWithCodeForm';
@@ -101,6 +101,52 @@ export default async function TeamHubPage({ params }: PageProps) {
     profiles: { display_name: string | null; username: string | null } | null;
   }
 
+  // Fetch required team-wide documents + signature counts per member
+  // (only documents where required = true count toward the docs column;
+  //  payment-linked docs are excluded since they aren't roster-level reqs)
+  const { data: requiredDocs } = await supabaseAdmin
+    .from('team_documents')
+    .select('id')
+    .eq('team_id', team.id)
+    .eq('required', true)
+    .is('payment_id', null);
+
+  const requiredDocIds = (requiredDocs || []).map((d: { id: string }) => d.id);
+
+  // Signatures by user (player_id is Clerk user_id, not team_member.id)
+  const signaturesByUserId: Record<string, number> = {};
+  if (requiredDocIds.length > 0) {
+    const { data: sigs } = await supabaseAdmin
+      .from('document_signatures')
+      .select('document_id, player_id, signed_by_user_id')
+      .in('document_id', requiredDocIds);
+    for (const s of sigs || []) {
+      // A signature counts for a member if it names them as the player
+      // OR the signer is the same Clerk user_id.
+      const key = s.player_id || s.signed_by_user_id;
+      if (!key) continue;
+      signaturesByUserId[key] = (signaturesByUserId[key] || 0) + 1;
+    }
+  }
+
+  // Outstanding fees per member
+  // payment_records.player_id is the Clerk user_id (matches team_members.user_id)
+  const { data: paymentRows } = await supabaseAdmin
+    .from('payment_records')
+    .select('player_id, amount_due, amount_paid, status')
+    .in('status', ['unpaid', 'partial', 'pending_verification']);
+
+  const outstandingCentsByUserId: Record<string, number> = {};
+  for (const r of paymentRows || []) {
+    const key = r.player_id as string;
+    const due = Math.max(0, Number(r.amount_due || 0) - Number(r.amount_paid || 0));
+    if (due > 0) {
+      outstandingCentsByUserId[key] = (outstandingCentsByUserId[key] || 0) + Math.round(due * 100);
+    }
+  }
+
+  const teamCurrency = (team as { currency?: string | null }).currency || 'PHP';
+
   const members: RosterMember[] = ((memberRows || []) as unknown as MemberJoin[]).map((m) => ({
     id: m.id,
     userId: m.user_id,
@@ -112,6 +158,17 @@ export default async function TeamHubPage({ params }: PageProps) {
     joinedAt: m.joined_at,
     isMinor: m.is_minor,
   }));
+
+  // Per-member status: required-doc signature count + outstanding fees
+  const statusByUserId: Record<string, RosterMemberStatus> = {};
+  for (const m of members) {
+    statusByUserId[m.userId] = {
+      outstandingCents: outstandingCentsByUserId[m.userId] || 0,
+      currency: teamCurrency,
+      docsSigned: signaturesByUserId[m.userId] || 0,
+      docsRequired: requiredDocIds.length,
+    };
+  }
 
   // Fetch invites (admin only — non-admins don't need to see codes)
   let invites: InviteRow[] = [];
@@ -223,7 +280,7 @@ export default async function TeamHubPage({ params }: PageProps) {
             {members.length} member{members.length === 1 ? '' : 's'}
           </span>
         </div>
-        <RosterTable members={members} />
+        <RosterTable members={members} statusByUserId={statusByUserId} teamCurrency={teamCurrency} />
       </section>
 
       {/* Invites (admin only) */}
