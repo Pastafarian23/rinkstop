@@ -56,6 +56,8 @@ export interface ComplianceScoreData {
 
 interface Props {
   data: ComplianceScoreData;
+  teamSlug?: string;
+  isAdmin?: boolean;
 }
 
 const DOT_COLOR: Record<ScoreLevel, string> = {
@@ -64,7 +66,7 @@ const DOT_COLOR: Record<ScoreLevel, string> = {
   red: '#C8102E',
 };
 
-export function ComplianceWidget({ data }: Props) {
+export function ComplianceWidget({ data, teamSlug, isAdmin }: Props) {
   const { score, label, pct, docs, expiringSoon, federation } = data;
   const dot = DOT_COLOR[score];
 
@@ -275,6 +277,16 @@ export function ComplianceWidget({ data }: Props) {
           </span>
           {federation.ageGroupNote && (
             <span style={{ fontStyle: 'italic' }}>{federation.ageGroupNote}</span>
+          )}
+          {isAdmin && teamSlug && (
+            <span>
+              <a
+                href={`/dashboard/team/${teamSlug}/documents`}
+                style={{ color: '#14B8A6', textDecoration: 'none' }}
+              >
+                Manage documents →
+              </a>
+            </span>
           )}
         </div>
       )}
