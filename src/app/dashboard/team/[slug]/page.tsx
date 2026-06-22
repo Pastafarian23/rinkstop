@@ -345,6 +345,45 @@ export default async function TeamHubPage({ params }: PageProps) {
       {/* Compliance score widget */}
       <ComplianceWidget data={complianceData} />
 
+      {/* Country prompt — only admins see it when no country is set */}
+      {isAdmin && !team.country_code && (
+        <div
+          style={{
+            background: 'rgba(255,184,28,0.08)',
+            border: '1px solid rgba(255,184,28,0.35)',
+            borderRadius: 10,
+            padding: '0.85rem 1.1rem',
+            fontSize: '0.85rem',
+            color: 'rgba(255,255,255,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ fontSize: '1.1rem' }}>🌍</span>
+          <span style={{ flex: 1 }}>
+            <strong>Set your country</strong> in team settings to get federation auto-suggest and
+            required-document templates.
+          </span>
+          <a
+            href={`/dashboard/team/${team.slug}/settings`}
+            style={{
+              padding: '0.4rem 0.9rem',
+              background: '#FFB81C',
+              color: '#041E42',
+              borderRadius: 6,
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Open settings →
+          </a>
+        </div>
+      )}
+
       {/* Roster */}
       <section>
         <div
