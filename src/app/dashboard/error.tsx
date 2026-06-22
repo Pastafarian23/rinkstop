@@ -11,34 +11,8 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log to browser console (Vercel picks it up from there too).
+    // Log the error to console — Vercel will pick it up from the browser too.
     console.error('[dashboard] route error:', error);
-
-    // Capture the real error details server-side via the debug endpoint.
-    // Production builds strip error.message + stack from the client, but
-    // the error object is still in this component's scope — we send it
-    // to /api/debug/log-error which writes it to dashboard_error_logs.
-    //
-    // Fire-and-forget. Failures are silent (debug aid, not critical).
-    // No PII past error.message + stack + pathname + user-agent.
-    try {
-      fetch('/api/debug/log-error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          errorName: (error as any)?.name ?? 'Error',
-          errorMessage: (error as any)?.message ?? '',
-          errorStack: (error as any)?.stack ?? '',
-          digest: error?.digest ?? null,
-          pathname: typeof window !== 'undefined' ? window.location.pathname : null,
-        }),
-        // keepalive: true so the request survives the page being torn down
-        // when the user clicks "Try again".
-        keepalive: true,
-      }).catch(() => { /* silent */ });
-    } catch {
-      /* silent */
-    }
   }, [error]);
 
   return (
@@ -72,14 +46,11 @@ export default function DashboardError({
           </p>
         ) : null}
         {(error as any)?.message ? (
-          <details open style={{ margin: '0 0 1rem' }}>
-            <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', cursor: 'pointer' }}>
-              Error details (DEBUG — pasted back to KiloClaw)
-            </summary>
-            <pre style={{ color: '#FF6B7A', fontSize: '0.7rem', margin: '0.5rem 0 0', padding: '0.5rem', background: 'rgba(200,16,46,0.10)', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 4, overflow: 'auto', maxHeight: 320, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-Name: {(error as any).name}
-Message: {(error as any).message}
-Stack:{(error as any).stack || '(no stack)'}
+          <details style={{ margin: '0 0 1rem' }}>
+            <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', cursor: 'pointer' }}>Error details</summary>
+            <pre style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', margin: '0.5rem 0 0', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 4, overflow: 'auto', maxHeight: 200 }}>
+{(error as any).name}: {(error as any).message}
+{(error as any).stack}
             </pre>
           </details>
         ) : null}
