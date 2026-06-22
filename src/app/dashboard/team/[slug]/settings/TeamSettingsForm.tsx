@@ -236,7 +236,7 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
             style={inputStyle}
           />
         </Field>
-        <Field label="Parent organization" hint="Optional. League or governing body (e.g. 'IIHF', 'USA Hockey', 'Cebu Ice Hockey Association').">
+        <Field label="Parent organization" hint="Optional. League or governing body (e.g. 'IIHF', 'USA Hockey', 'FIHL — Hockey Philippines').">
           <input
             type="text"
             value={form.parent_org}
