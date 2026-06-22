@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isAdminRole } from '@/lib/team';
 
 export const dynamic = 'force-dynamic';
 
@@ -221,17 +222,30 @@ export default async function TeamIndexPage() {
                       (team.age_min != null && team.age_max != null
                         ? `${team.age_min}U–${team.age_max}U`
                         : null);
+                    const canManage = isAdminRole(team.role);
                     return (
-                      <Link
+                      <div
                         key={team.id}
-                        href={`/dashboard/team/${team.slug}`}
                         style={{
                           background: '#0f0f0f',
                           border: '1px solid #1e1e1e',
                           borderRadius: 12,
                           padding: '1.25rem 1.25rem 1rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.75rem',
+                          transition: 'border-color 0.15s',
+                        }}
+                      >
+                      <Link
+                        href={`/dashboard/team/${team.slug}`}
+                        style={{
                           textDecoration: 'none',
                           display: 'block',
+                          background: '#0f0f0f',
+                          border: '1px solid #1e1e1e',
+                          borderRadius: 12,
+                          padding: '1.25rem 1.25rem 1rem',
                           transition: 'border-color 0.15s, transform 0.15s',
                         }}
                       >
@@ -305,6 +319,53 @@ export default async function TeamIndexPage() {
                           {team.role.replace(/_/g, ' ')}
                         </div>
                       </Link>
+                      {canManage && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '0.4rem',
+                            paddingTop: '0.5rem',
+                            borderTop: '1px solid #1e1e1e',
+                            marginTop: 4,
+                          }}
+                        >
+                          <Link
+                            href={`/dashboard/team/${team.slug}/payments`}
+                            style={{
+                              flex: 1,
+                              textAlign: 'center',
+                              padding: '0.4rem 0.5rem',
+                              background: 'rgba(4,30,66,0.4)',
+                              color: '#fff',
+                              border: '1px solid rgba(4,30,66,0.6)',
+                              borderRadius: 6,
+                              textDecoration: 'none',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                            }}
+                          >
+                            💰 Payments
+                          </Link>
+                          <Link
+                            href={`/dashboard/team/${team.slug}/documents`}
+                            style={{
+                              flex: 1,
+                              textAlign: 'center',
+                              padding: '0.4rem 0.5rem',
+                              background: 'rgba(4,30,66,0.4)',
+                              color: '#fff',
+                              border: '1px solid rgba(4,30,66,0.6)',
+                              borderRadius: 6,
+                              textDecoration: 'none',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                            }}
+                          >
+                            📄 Documents
+                          </Link>
+                        </div>
+                      )}
+                      </div>
                     );
                   })}
                 </div>
