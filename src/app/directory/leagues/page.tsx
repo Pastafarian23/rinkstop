@@ -12,9 +12,9 @@ interface League {
 }
 
 export const metadata: Metadata = {
-  title: 'Hockey Leagues Directory',
+  title: '240 Hockey Leagues Worldwide — NHL, NCAA, IIHF, Junior & More',
   description:
-    'Browse 192 hockey leagues from NHL, AHL, KHL, NCAA, IIHF, and youth leagues worldwide.',
+    'Browse 240 hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Find tier, country, level, and contact info for every league in one place.',
   alternates: {
     canonical: 'https://rinkstop.com/directory/leagues',
   },
@@ -23,18 +23,18 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Leagues Directory',
+    title: '240 Hockey Leagues Worldwide — NHL, NCAA, IIHF, Junior & More',
     description:
-      'Browse 192 hockey leagues from NHL, AHL, KHL, NCAA, IIHF, and youth leagues worldwide.',
+      'Browse 240 hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Find tier, country, level, and contact info for every league in one place.',
     url: 'https://rinkstop.com/directory/leagues',
     siteName: 'RinkStop',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Leagues Directory',
+    title: '240 Hockey Leagues Worldwide — NHL, NCAA, IIHF, Junior & More',
     description:
-      'Browse 192 hockey leagues from NHL, AHL, KHL, NCAA, IIHF, and youth leagues worldwide.',
+      'Browse 240 hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Find tier, country, level, and contact info for every league in one place.',
   },
 };
 
@@ -57,5 +57,37 @@ async function fetchInitialLeagues(): Promise<League[]> {
 
 export default async function LeaguesPage() {
   const initialLeagues = await fetchInitialLeagues();
-  return <LeaguesIndexClient initialLeagues={initialLeagues} />;
+  const top = initialLeagues.slice(0, 20);
+  const ldJson = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: 'Hockey Leagues Directory',
+        description: 'Hockey leagues directory — RinkStop',
+        url: 'https://rinkstop.com/directory/leagues',
+        isPartOf: { '@type': 'WebSite', name: 'RinkStop', url: 'https://rinkstop.com' },
+      },
+      {
+        '@type': 'ItemList',
+        name: 'Hockey Leagues',
+        numberOfItems: 240,
+        itemListElement: top.map((l, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: l.name,
+          url: `https://rinkstop.com/directory/leagues/${l.id}`,
+        })),
+      },
+    ],
+  };
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }}
+      />
+      <LeaguesIndexClient initialLeagues={initialLeagues} />
+    </>
+  );
 }

@@ -27,9 +27,11 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const { country } = await searchParams;
   const n = await getRinkCount(country);
   const desc = country
-    ? `Browse ${n.toLocaleString()} ice rinks and arenas in ${country}. Find public skating, hockey, and curling facilities.`
-    : `Browse ${n.toLocaleString()} ice rinks from every country. Find public skating, hockey, and curling facilities worldwide.`;
-  const title = country ? `Ice Rinks in ${country}` : 'Ice Rinks Directory';
+    ? `Browse ${n.toLocaleString()} ice rinks and arenas in ${country}. Find public skating, hockey, and curling facilities — with addresses, capacity, and ice size.`
+    : `Browse 1,917 ice rinks and arenas across 57 countries and 833 cities. Find public skating, hockey, and curling facilities worldwide — searchable by city, state, or country.`;
+  const title = country
+    ? `Ice Rinks in ${country} — ${n.toLocaleString()} Arenas & Facilities`
+    : '1,917 Ice Rinks Across 57 Countries — Find One Near You';
   return {
     title,
     description: desc,
@@ -77,5 +79,37 @@ async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
 export default async function RinksPage({ searchParams }: { searchParams: Promise<{ country?: string }> }) {
   const { country } = await searchParams;
   const initialRinks = await fetchInitialRinks(country);
-  return <RinksIndexClient initialRinks={initialRinks} country={country ?? null} />;
+  const top = initialRinks.slice(0, 20);
+  const ldJson = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        name: 'Ice Rinks Directory',
+        description: 'Ice rinks and arenas directory — RinkStop',
+        url: 'https://rinkstop.com/directory/rinks',
+        isPartOf: { '@type': 'WebSite', name: 'RinkStop', url: 'https://rinkstop.com' },
+      },
+      {
+        '@type': 'ItemList',
+        name: 'Ice Rinks',
+        numberOfItems: 1917,
+        itemListElement: top.map((r, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: r.name,
+          url: `https://rinkstop.com/directory/rinks/${r.slug || r.id}`,
+        })),
+      },
+    ],
+  };
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }}
+      />
+      <RinksIndexClient initialRinks={initialRinks} country={country ?? null} />
+    </>
+  );
 }
