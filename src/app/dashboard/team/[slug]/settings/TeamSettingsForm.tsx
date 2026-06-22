@@ -23,7 +23,7 @@ interface InitialValues {
   description: string;
   contact_email: string;
   contact_phone: string;
-  visibility: 'private' | 'public' | string;
+  visibility: 'private' | 'unlisted' | 'public' | string;
 }
 
 interface Props {
@@ -47,19 +47,12 @@ const LEVELS = [
   { value: 'rep', label: 'Rep / Selects' },
 ];
 
-// V2 (Day 6): public profile shipped at /teams/[slug]. Coaches can flip the toggle.
-// 'public' shows the team on rinkstop.com/teams/[slug] and adds it to the directory.
-// 'private' keeps the workspace invite-only (default; recommended for tryout periods).
+// V1: binary visibility. 'public' is deferred until the public team profile page ships.
 const VISIBILITY = [
   {
     value: 'private',
     label: 'Private — workspace is invite-only (recommended)',
     help: 'Your team is URL-known, but the roster, invites, and member data are gated behind an invite code. Parents and players need an invite to access.',
-  },
-  {
-    value: 'public',
-    label: 'Public — shareable profile at /teams/[slug]',
-    help: 'Your team gets a public profile page with news, schedule, results, and a claim badge. Listed in the directory. Roster and member data stay private.',
   },
 ];
 
@@ -435,54 +428,44 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       </Section>
 
       <Section title="Visibility">
-        <div role="radiogroup" aria-label="Team visibility" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          {VISIBILITY.map((v) => {
-            const selected = form.visibility === v.value;
-            return (
-              <label
-                key={v.value}
-                style={{
-                  display: 'block',
-                  padding: '0.85rem 1rem',
-                  background: selected ? 'rgba(20,184,166,0.10)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${selected ? 'rgba(20,184,166,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value={v.value}
-                    checked={selected}
-                    onChange={() => update('visibility', v.value)}
-                    style={{ accentColor: '#14B8A6', width: 16, height: 16 }}
-                  />
-                  <span style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>{v.label}</span>
-                </div>
-                <p style={{ margin: '0.4rem 0 0 1.6rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
-                  {v.help}
-                </p>
-              </label>
-            );
-          })}
-        </div>
-        {form.visibility === 'public' && (
+        <div
+          style={{
+            padding: '0.85rem 1rem',
+            background: 'rgba(20,184,166,0.08)',
+            border: '1px solid rgba(20,184,166,0.25)',
+            borderRadius: 8,
+            color: 'rgba(255,255,255,0.85)',
+            fontSize: '0.85rem',
+            lineHeight: 1.5,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: '#14B8A6', marginBottom: '0.3rem' }}>
+            🔒 Private (only option in V1)
+          </div>
+          <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)' }}>
+            Your team is URL-known — anyone with the link can see the team exists. But the
+            roster, invites, and member data at <code style={{ color: '#14B8A6' }}>/dashboard/team/{slug}</code>{' '}
+            require an invite code. Generate invite codes in the{' '}
+            <strong>Invites</strong> section below the roster.
+          </p>
           <p
             style={{
-              margin: '0.5rem 0 0',
+              margin: '0.6rem 0 0',
               padding: '0.5rem 0.75rem',
-              background: 'rgba(20,184,166,0.08)',
-              borderLeft: '2px solid #14B8A6',
-              color: 'rgba(20,184,166,0.95)',
+              background: 'rgba(255,184,28,0.06)',
+              borderLeft: '2px solid #FFB81C',
+              color: 'rgba(255,184,28,0.85)',
               fontSize: '0.78rem',
             }}
           >
-            Public URL: <code style={{ color: '#14B8A6' }}>rinkstop.com/teams/{form.slug || 'your-slug'}</code>
+            <strong>Coming soon:</strong> a public team profile page (claim badge, season record,
+            home rink) at <code style={{ color: '#FFB81C' }}>/teams/{slug}</code>. We&rsquo;ll
+            add a public toggle then. The directory at{' '}
+            <code style={{ color: '#FFB81C' }}>/directory/teams</code> will auto-list teams as
+            that ships.
           </p>
-        )}
+        </div>
+        <input type="hidden" value={form.visibility} />
       </Section>
 
       {error && (

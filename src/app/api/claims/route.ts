@@ -40,40 +40,26 @@ export async function POST(request: NextRequest) {
 
     // Tier-based claim cap enforcement.
     // Counts only APPROVED claims (pending claims can be in flight while the user submits more).
-    //
-    // Two-tier rule:
-    // 1. Tier minimum (always enforced): Free tier CANNOT claim anything.
-    //    Even parent_managed claims require Starter+.
-    // 2. Claim cap (skipped for parent_managed): 'parent_managed' claims
-    //    (parent claims kid's player profile) bypass the per-tier cap because
-    //    they're a different use case — one parent can manage many kids.
-    //
-    // The claim_type must still be 'player' for parent_managed to count
-    // (parents don't claim rinks/teams/leagues for free).
-    const isParentManagedClaim =
-      typeof reason === 'string' &&
-      reason.startsWith('parent_managed:') &&
-      claim_type === 'player';
-
-    const tier = await getUserTier(userId);
-    const maxClaims = getMaxClaimsForTier(tier);
-
-    // Tier minimum check: free tier can never claim, even with parent_managed.
-    if (maxClaims === 0) {
-      return NextResponse.json(
-        { error: `Claiming listings requires a paid membership. Upgrade to Starter (1 claim), Pro (up to 5), Premium (up to 25), or Enterprise for more. See /pricing.` },
-        { status: 403 }
-      );
-    }
-
-    // Claim cap check: skipped for parent_managed (parents managing kids' profiles).
-    if (!isParentManagedClaim && maxClaims !== Infinity) {
-      const currentCount = await getUserApprovedClaimCount(userId);
-      if (currentCount >= maxClaims) {
+    // Special case: 'parent_managed' claims (parent claims kid's player profile) bypass the cap
+    // because they're a different use case — one parent can manage many kids.
+    const isParentManagedClaim = typeof reason === 'string' && reason.startsWith('parent_managed:');
+    if (!isParentManagedClaim) {
+      const tier = await getUserTier(userId);
+      const maxClaims = getMaxClaimsForTier(tier);
+      if (maxClaims === 0) {
         return NextResponse.json(
-          { error: `You have reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Pro for up to 25 claims, or contact Enterprise for custom volume. See /pricing.` },
+          { error: `Claiming listings requires a paid membership. Upgrade to Starter (1 claim), Pro (up to 5), Premium (up to 25), or Enterprise for more. See /pricing.` },
           { status: 403 }
         );
+      }
+      if (maxClaims !== Infinity) {
+        const currentCount = await getUserApprovedClaimCount(userId);
+        if (currentCount >= maxClaims) {
+          return NextResponse.json(
+            { error: `You have reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Pro for up to 25 claims, or contact Enterprise for custom volume. See /pricing.` },
+            { status: 403 }
+          );
+        }
       }
     }
 

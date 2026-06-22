@@ -2,22 +2,19 @@
 // Lower = higher in the list. Premium is always on top when claimed.
 // Listings without an active claim are sorted alphabetically within the "unclaimed" bucket.
 //
-// Tier structure 2026-06-22: free / starter (Roster) / family_plus (Roster+) / pro / premium / enterprise.
-// "Verified" tier label retired (was display name for starter until 2026-06-17).
+// Tier rename 2026-06-17: was free/supporter/verified/pro → free/starter/pro/premium/enterprise.
 export const TIER_RANK: Record<string, number> = {
   enterprise: 0,
   premium: 1,
   pro: 2,
-  family_plus: 3,
-  starter: 4,
-  free: 5,
+  starter: 3,
+  free: 4,
 };
 
 // Display labels for each tier (consumer-facing). Single source of truth.
 export const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  starter: 'Roster',
-  family_plus: 'Roster+',
+  starter: 'Starter',
   pro: 'Pro',
   premium: 'Premium',
   enterprise: 'Enterprise',
