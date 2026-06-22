@@ -99,7 +99,9 @@ export async function GET(request: NextRequest) {
 // POST /api/threads
 // Body: { recipientId, contextProfileType?, contextProfileId? }
 // Creates a thread (or returns the existing one for the same connection + context).
-// Sender must be Verified+. Recipient must be in an accepted connection.
+// Sender must be Roster+ (starter/family_plus). For Roster, recipient must be a coach/manager
+// of a team the sender's claimed kid is rostered on. Pro+ can DM anyone (operator use case).
+// Recipient must be in an accepted connection.
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
   const result = await checkRateLimit(`threads:${ip}`, RL);
@@ -124,11 +126,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot message yourself.' }, { status: 400 });
   }
 
-  // Tier check
+  // Tier check: Roster+ allowed (parent path). Pro+ can DM anyone. Roster can only DM coaches
+  // of teams their claimed kid is on (checked below after we have recipientId).
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'pro')) {
+  const tierRank: Record<string, number> = { free: 0, starter: 1, family_plus: 1, pro: 2, premium: 3, enterprise: 4 };
+  const isRosterOnly = (tierRank[tier] ?? 0) === 1; // starter or family_plus, NOT pro+
+
+  if (!tierAtLeast(tier, 'starter')) {
     return NextResponse.json(
-      { error: 'Pro or Premium membership required to send messages.', currentTier: tier },
+      { error: 'Roster membership required to send messages.', currentTier: tier },
       { status: 403 }
     );
   }
@@ -139,6 +145,58 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'You must be connected with this user to message them.' }, { status: 403 });
   }
   const connection = conn;
+
+  // For Roster users: verify the recipient is a coach/team_manager of a team that
+  // one of the sender's claimed kids is rostered on. Pro+ users skip this check.
+  if (isRosterOnly) {
+    const { data: senderKids } = await supabaseAdmin
+      .from('managed_profiles')
+      .select('profile_id')
+      .eq('manager_user_id', userId)
+      .eq('profile_type', 'player');
+
+    const senderKidIds = (senderKids || []).map((k: any) => k.profile_id);
+
+    if (senderKidIds.length === 0) {
+      return NextResponse.json(
+        { error: 'You must claim at least one kid\'s player profile before messaging coaches.', currentTier: tier },
+        { status: 403 }
+      );
+    }
+
+    // Find teams where any of the sender's kids are rostered.
+    const { data: teamRosters } = await supabaseAdmin
+      .from('team_rosters')
+      .select('team_id')
+      .in('player_id', senderKidIds);
+
+    const teamIds = Array.from(new Set((teamRosters || []).map((r: any) => r.team_id)));
+
+    if (teamIds.length === 0) {
+      return NextResponse.json(
+        { error: 'None of your claimed kids are rostered on any team. You can only DM coaches of teams your kids are on.', currentTier: tier },
+        { status: 403 }
+      );
+    }
+
+    // Verify the recipient is a coach/team_manager of any of those teams.
+    const { data: recipientMemberships } = await supabaseAdmin
+      .from('team_memberships')
+      .select('team_id, role')
+      .eq('user_id', body.recipientId)
+      .in('team_id', teamIds);
+
+    const isCoachOrManager = (recipientMemberships || []).some((m: any) =>
+      m.role === 'coach' || m.role === 'manager' || m.role === 'head_coach' || m.role === 'team_manager'
+    );
+
+    if (!isCoachOrManager) {
+      return NextResponse.json(
+        { error: 'Roster members can only DM coaches or team managers of teams your kid is on.', currentTier: tier },
+        { status: 403 }
+      );
+    }
+  }
 
   // Validate context profile if provided.
   const validProfileTypes = ['player', 'team', 'league', 'rink'];
