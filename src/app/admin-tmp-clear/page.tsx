@@ -16,7 +16,7 @@ export default function ClearArnelPhotoPage() {
     setResult(null);
     setError(null);
     try {
-      const res = await fetch('/api/_admin/clear-arnel-photo', { method: 'POST' });
+      const res = await fetch('/api/admin-tmp/clear-arnel-photo', { method: 'POST' });
       const data = await res.json();
       if (res.ok && data.ok) {
         setResult(`Photo removed. New imageUrl: ${data.newImageUrl || '(null — fallback to initials)'}`);
