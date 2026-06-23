@@ -126,6 +126,38 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
   const { isSignedIn } = useUser();
   const [pressedHref, setPressedHref] = useState<string | null>(null);
 
+  // ALL HOOKS MUST BE CALLED BEFORE ANY EARLY RETURN.
+  // Day 7 hotfix (Arnel, 2026-06-23 16:14 CDT): the previous version had
+  // `if (hide) return null;` BEFORE the [activeRole, setActiveRole] useState
+  // and the activeRole useEffect. When the user navigated from / to /sign-up
+  // (or any auth page), the first render called all hooks, but the next
+  // render on /sign-up returned null after only 3 hooks — React threw #300
+  // ("Rendered fewer hooks than expected. This may be caused by an accidental
+  // early return statement.") and the user landed on global-error.tsx
+  // ("Something went wrong / RinkStop hit an unexpected error").
+  //
+  // Fix: declare every hook first, THEN early-return. This is the standard
+  // React rules-of-hooks pattern. Also moved useMemo role/tabs computation
+  // below the early return so it doesn't waste cycles when hidden.
+  const [activeRole, setActiveRole] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = window.localStorage.getItem('rinkstop_active_role');
+      if (saved) return saved;
+    }
+    return '';
+  });
+
+  useEffect(() => {
+    // If saved role is no longer in their types, fall back to primary.
+    const typeList = accountTypes.map(t => t.account_type);
+    if (activeRole && !typeList.includes(activeRole)) {
+      const primary = accountTypes.find(t => t.is_primary)?.account_type;
+      const fallback = primary || typeList[0] || 'fan';
+      setActiveRole(fallback);
+      try { window.localStorage.setItem('rinkstop_active_role', fallback); } catch { /* noop */ }
+    }
+  }, [accountTypes, activeRole]);
+
   // Pointer events fire once per gesture (touch, pen, mouse), so a single
   // handler is the source of truth for both haptic and visual feedback.
   function tapHaptic() {
@@ -145,29 +177,6 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
                pathname.startsWith('/sign-') ||
                pathname === '/onboarding';
   if (hide) return null;
-
-  // Determine active role. Priority:
-  // 1. localStorage (user picked a non-primary role from avatar menu)
-  // 2. primary account type
-  // 3. fallback 'fan'
-  const [activeRole, setActiveRole] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = window.localStorage.getItem('rinkstop_active_role');
-      if (saved) return saved;
-    }
-    return '';
-  });
-
-  useEffect(() => {
-    // If saved role is no longer in their types, fall back to primary.
-    const typeList = accountTypes.map(t => t.account_type);
-    if (activeRole && !typeList.includes(activeRole)) {
-      const primary = accountTypes.find(t => t.is_primary)?.account_type;
-      const fallback = primary || typeList[0] || 'fan';
-      setActiveRole(fallback);
-      try { window.localStorage.setItem('rinkstop_active_role', fallback); } catch { /* noop */ }
-    }
-  }, [accountTypes, activeRole]);
 
   const role = useMemo(() => {
     const typeList = accountTypes.map(t => t.account_type);
