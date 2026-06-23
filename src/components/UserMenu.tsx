@@ -155,6 +155,7 @@ export default function UserMenu({
           role="menu"
           aria-label="Account menu"
           data-testid="user-menu-popover"
+          className="dashboard-dropdown-panel"
           style={{
             position: 'absolute',
             top: `calc(${size}px + 8px)`,

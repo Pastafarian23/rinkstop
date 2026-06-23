@@ -181,6 +181,7 @@ export default function TeamSwitcher() {
         <div
           role="menu"
           aria-label="Switch team"
+          className="dashboard-dropdown-panel"
           style={{
             position: 'absolute',
             top: 'calc(100% + 0.5rem)',
