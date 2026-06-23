@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
 import ProfileEditForm from './ProfileEditForm';
 import FollowingList from './FollowingList';
+import ChangePhotoButton from './ChangePhotoButton';
 
 export default async function ProfilePage() {
   const { userId } = await auth();
@@ -69,6 +70,14 @@ export default async function ProfilePage() {
           </div>
         </div>
 
+        {/* Day 7 (Arnel, 2026-06-23): inline photo upload. Clerk is the source
+            of truth for avatars (the page reads user.imageUrl). Inline upload
+            avoids the round-trip to /user-profile for what is the most common
+            edit on this page. */}
+        <div style={{ marginBottom: '1.25rem' }}>
+          <ChangePhotoButton />
+        </div>
+
         <div style={{ borderTop: '1px solid #1e1e1e', paddingTop: '1.25rem' }}>
           <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1rem', color: '#888', letterSpacing: '0.06em', margin: '0 0 1rem' }}>
             ACCOUNT INFORMATION
@@ -105,7 +114,7 @@ export default async function ProfilePage() {
           MANAGE YOUR ACCOUNT
         </h3>
         <p style={{ color: '#666', fontSize: '0.875rem', margin: '0 0 1.25rem', lineHeight: 1.6 }}>
-          To update your name, email, or avatar, click your avatar in the top-right corner to open the account menu, or use the button below.
+          To update your name or email, click your avatar in the top-right corner to open the account menu, or use the button below.
         </p>
         <Link
           href="/user-profile"
