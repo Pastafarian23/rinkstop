@@ -176,7 +176,6 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
   const hide = pathname === '/login' ||
                pathname.startsWith('/sign-') ||
                pathname === '/onboarding';
-  if (hide) return null;
 
   const role = useMemo(() => {
     const typeList = accountTypes.map(t => t.account_type);
@@ -199,6 +198,16 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
     }
     return set.slice(0, 4);
   }, [role, tier, accountTypes.length]);
+
+  // ALL HOOKS ABOVE THIS POINT. Both early returns come AFTER every hook.
+  // Day 7 hotfix (Arnel, 2026-06-23 16:14 CDT, second attempt): moving only
+  // the [activeRole, setActiveRole] useState above the early return was not
+  // enough. The two useMemo calls for `role` and `tabs` were ALSO below
+  // the early return, so on /sign-up React saw 4 hooks (pressedHref state,
+  // activeRole state, activeRole effect) but on / it saw 6 hooks (the same
+  // three plus role useMemo plus tabs useMemo). React #300 fires for any
+  // hook-count mismatch, not just useState/useEffect. useMemo IS a hook.
+  if (hide) return null;
 
   // Don't render if signed-out (per Arnel's design — public users get a clean
   // directory experience, no tab bar clutter).
