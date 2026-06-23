@@ -23,3 +23,4 @@ export async function GET() {
     service: 'rinkstop',
   });
 }
+
