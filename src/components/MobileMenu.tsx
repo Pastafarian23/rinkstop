@@ -69,8 +69,18 @@ export default function MobileMenu({
   activeRole,
   currentTier,
 }: MobileMenuProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { signOut } = useClerk();
+  const [open, setOpen] = useState(false);
   const [teams, setTeams] = useState<MobileMenuTeam[]>([]);
   const [teamsLoaded, setTeamsLoaded] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Close on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   // Lazy-load teams when the panel opens (avoid fetching for desktop users
   // who never see this menu). The /api/my-teams endpoint is shared with
@@ -99,16 +109,6 @@ export default function MobileMenu({
     };
   }, [open, teamsLoaded]);
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const { signOut } = useClerk();
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-
-  // Close on route change
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
 
   // Close on Escape
   useEffect(() => {
