@@ -159,6 +159,9 @@ export default function UserMenu({
             position: 'absolute',
             top: `calc(${size}px + 8px)`,
             right: 0,
+            // Day 7: clamp width to viewport so the popover never bleeds
+            // off-screen on narrow viewports.
+            width: 'min(280px, calc(100vw - 2rem))',
             minWidth: 240,
             background: '#0f0f0f',
             border: '1px solid #1e1e1e',
