@@ -46,6 +46,7 @@ async function fetchProfile(slug: string): Promise<{
   profile: Profile;
   managed: ManagedProfile[];
   accountTypes: AccountTypeRow[];
+  photoHistory: Array<{ id: string; url: string | null; set_at: string; replaced_at: string | null; removed_at: string | null; source: string }>;
 } | null> {
   // Look up by username (case-insensitive)
   const { data: profile } = await supabaseAdmin
@@ -56,7 +57,7 @@ async function fetchProfile(slug: string): Promise<{
 
   if (!profile) return null;
 
-  const [mRes, aRes] = await Promise.all([
+  const [mRes, aRes, phRes] = await Promise.all([
     supabaseAdmin
       .from('managed_profiles')
       .select('id, profile_type, profile_id, relationship, profile:profiles(*)')
@@ -65,12 +66,23 @@ async function fetchProfile(slug: string): Promise<{
       .from('profile_account_types')
       .select('account_type, is_primary')
       .eq('user_id', profile.user_id),
+    // Photo history (public — Day 7, Arnel 2026-06-23 05:13 CDT).
+    // We only need photos that had a real URL (skip the "removed" rows
+    // that have url=null). Sort newest first.
+    supabaseAdmin
+      .from('profile_photo_history')
+      .select('id, url, set_at, replaced_at, removed_at, source')
+      .eq('user_id', profile.user_id)
+      .not('url', 'is', null)
+      .order('set_at', { ascending: false })
+      .limit(20),
   ]);
 
   return {
     profile,
     managed: (mRes.data as any) ?? [],
     accountTypes: (aRes.data as any) ?? [],
+    photoHistory: (phRes.data as any) ?? [],
   };
 }
 
@@ -124,7 +136,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   const data = await fetchProfile(slug);
   if (!data) notFound();
 
-  const { profile, managed, accountTypes } = data;
+  const { profile, managed, accountTypes, photoHistory } = data;
   const displayName = profile.display_name ?? 'RinkStop user';
   const profileUrl = `https://rinkstop.com/profile/${profile.username}`;
   const tierStyle = TIER_COLORS[profile.tier] ?? TIER_COLORS.free;
@@ -227,6 +239,45 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                   <p className="text-xs text-white/50">{m.relationship}</p>
                 </Link>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Photo history (Day 7, Arnel 2026-06-23 05:13 CDT — public).
+            Shows the user's previous profile photos in reverse-chronological
+            order. The current photo is the first tile (highlighted). The
+            section is hidden when there's only ever been one photo or zero
+            photos — no point showing an empty strip. */}
+        {photoHistory.length >= 2 && (
+          <section className="mb-8">
+            <h2 className="text-sm uppercase text-white/40 mb-3">Photo history</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {photoHistory.map((p, i) => {
+                const isCurrent = i === 0 && !p.removed_at;
+                return (
+                  <div
+                    key={p.id}
+                    className="flex-shrink-0"
+                    style={{ width: 96 }}
+                  >
+                    {p.url ? (
+                      <img
+                        src={p.url}
+                        alt={isCurrent ? 'Current profile photo' : 'Previous profile photo'}
+                        className={`w-24 h-24 rounded-lg object-cover border-2 ${
+                          isCurrent ? 'border-[#FFB81C]' : 'border-white/10'
+                        }`}
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-lg bg-white/5 border border-white/10" />
+                    )}
+                    <p className="text-xs text-white/40 mt-1">
+                      {new Date(p.set_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })}
+                      {isCurrent && <span className="ml-1 text-[#FFB81C]">· now</span>}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

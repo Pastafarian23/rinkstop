@@ -214,7 +214,66 @@ async function handleUserUpdated(data: ClerkUserPayload) {
     throw new Error(`profile update failed: ${error.message}`);
   }
 
+  // Mirror the photo change to profile_photo_history. This is the
+  // sync path for when the photo is changed via Clerk's hosted
+  // /user-profile UI (or any other Clerk-side change), so the
+  // history stays complete even when the user didn't use our
+  // ChangePhotoButton.
+  await syncPhotoHistory(data.id, avatarUrl, 'clerk_webhook');
+
   return NextResponse.json({ ok: true, event: 'user.updated', userId: data.id });
+}
+
+/**
+ * Append a row to profile_photo_history for any change in the
+ * user's avatar. Used by both the user.updated webhook (external
+ * changes via Clerk UI) and the manual /api/profiles/me/photo route
+ * (changes via ChangePhotoButton). Idempotent: if the new URL
+ * matches the current row's URL, no insert happens (avoids
+ * duplicate rows from repeated webhook deliveries).
+ */
+async function syncPhotoHistory(
+  userId: string,
+  newUrl: string | null,
+  source: 'clerk_webhook' | 'manual' | 'reset',
+): Promise<void> {
+  // Find the current (not-replaced, not-removed) row.
+  const { data: current } = await supabaseAdmin
+    .from('profile_photo_history')
+    .select('id, url')
+    .eq('user_id', userId)
+    .is('replaced_at', null)
+    .is('removed_at', null)
+    .maybeSingle();
+
+  const currentUrl = current?.url ?? null;
+  // No-op if the URL hasn't actually changed.
+  if (currentUrl === newUrl) return;
+
+  if (newUrl === null) {
+    // Removal: mark the current row removed_at = now(). No new row.
+    if (current) {
+      await supabaseAdmin
+        .from('profile_photo_history')
+        .update({ removed_at: new Date().toISOString() })
+        .eq('id', current.id);
+    }
+  } else {
+    // Set/replace: mark current row replaced_at, then insert new row.
+    const now = new Date().toISOString();
+    if (current) {
+      await supabaseAdmin
+        .from('profile_photo_history')
+        .update({ replaced_at: now })
+        .eq('id', current.id);
+    }
+    await supabaseAdmin.from('profile_photo_history').insert({
+      user_id: userId,
+      url: newUrl,
+      source,
+      set_at: now,
+    });
+  }
 }
 
 async function handleUserDeleted(data: ClerkUserPayload) {
