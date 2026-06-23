@@ -9,10 +9,40 @@ interface FoundersClubPopupProps {
   entityId?: string;
 }
 
+// Day 7 hotfix (2026-06-23 20:55 CDT, Arnel): the popup was mounting on
+// /sign-up and /login pages, where it stacked on top of the Clerk form and
+// produced React #300 ("render was interrupted by another render"). The
+// modal also has z-index 1000, which covers any UI Clerk tries to mount
+// beneath it. Both bugs are solved by suppressing the popup on auth pages —
+// which is also correct product behavior, because pitching "Join Free" to
+// someone who is already on the sign-up page is redundant.
+//
+// Keep this list in sync with src/components/IntentBanner.tsx SUPPRESS_PREFIXES.
+const SUPPRESS_PREFIXES = [
+  '/sign-up',
+  '/login',
+  '/forgot-password',
+  '/reset-password',
+  '/sso-callback',
+  '/verify',
+  '/onboarding',
+  '/dashboard',
+  '/api',
+  '/_next',
+];
+
 export default function FoundersClubPopup({ frequency = 'once', entityType, entityId }: FoundersClubPopupProps) {
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
+    // Path suppression first — the popup should never compete with auth UI
+    // (which is what caused the React #300 cascade reported 2026-06-23).
+    // Read on the client only; during SSR window is undefined.
+    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+    if (SUPPRESS_PREFIXES.some(p => path.startsWith(p))) {
+      return;
+    }
+
     if (frequency === 'always') {
       setShowPopup(true);
       return;

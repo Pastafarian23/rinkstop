@@ -74,9 +74,10 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
   useEffect(() => {
     // 0. Suppress on auth/dashboard/etc. paths. The banner is a signup
     // CTA — useless where the user is already in the funnel.
+    // Use functional state update to avoid redundant re-renders.
     const path = currentPathProp || (typeof window !== 'undefined' ? window.location.pathname : '/');
     if (SUPPRESS_PREFIXES.some(p => path.startsWith(p))) {
-      setState({ kind: 'hidden' });
+      setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' });
       return;
     }
 
@@ -105,7 +106,7 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
       } catch { return false; }
     })();
     if (recentlyDismissed) {
-      setState({ kind: 'hidden' });
+      setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' });
       return;
     }
 
@@ -117,15 +118,15 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
       fetch('/api/favorites', { credentials: 'include' })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
-          if (!d) { setState({ kind: 'hidden' }); return; }
+          if (!d) { setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' }); return; }
           const favs = d.favorites || [];
           if (favs.length === 0) {
-            setState({ kind: 'signed_in_no_favs' });
+            setState(prev => prev.kind === 'signed_in_no_favs' ? prev : { kind: 'signed_in_no_favs' });
           } else {
-            setState({ kind: 'hidden' }); // active user, don't nag
+            setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' }); // active user, don't nag
           }
         })
-        .catch(() => setState({ kind: 'hidden' }));
+        .catch(() => setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' }));
       return;
     }
 
@@ -133,11 +134,10 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
     // page view (viewCount starts at 1 for the first counted page in
     // the session, so we need >= 2 to mean "the user has looked at
     // 2 listings this session").
-    if (viewCount >= VIEW_THRESHOLD) {
-      setState({ kind: 'anon_returning' });
-    } else {
-      setState({ kind: 'hidden' });
-    }
+    const targetState: ViewState = viewCount >= VIEW_THRESHOLD
+      ? { kind: 'anon_returning' }
+      : { kind: 'hidden' };
+    setState(prev => JSON.stringify(prev) === JSON.stringify(targetState) ? prev : targetState);
   }, [isLoaded, isSignedIn, currentPathProp]);
 
   // (The original spec included a 4-second delay on the first view, but
@@ -148,7 +148,7 @@ export default function IntentBanner({ currentPath: currentPathProp }: IntentBan
 
   function handleDismiss() {
     try { localStorage.setItem(DISMISS_KEY, Date.now().toString()); } catch {}
-    setState({ kind: 'hidden' });
+    setState(prev => prev.kind === 'hidden' ? prev : { kind: 'hidden' });
   }
 
   if (state.kind === 'hidden') return null;
