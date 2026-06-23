@@ -362,6 +362,13 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
              never overflows. */
           .dashboard-dropdown-panel {
             position: fixed !important;
+            /* Override the inline 'top: calc(100% + 0.5rem)' on the bell
+               and team-switcher panels. With position: fixed, that 100% now
+               refers to viewport height and pushes the panel off-screen.
+               Pin top to the header height (avatar is 36-40px, padding 1rem
+               each side, so ~72-80px). Adding a small gap for the
+               separator. */
+            top: 72px !important;
             left: 1rem !important;
             right: 1rem !important;
             width: auto !important;
