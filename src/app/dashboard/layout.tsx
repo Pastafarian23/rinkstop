@@ -352,6 +352,22 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
           .dashboard-header-email { display: none !important; }
           .dashboard-header-back span:last-child { display: none !important; }
           .dashboard-header-back { padding: 0.5rem 0.6rem !important; }
+
+          /* Day 7 hotfix: re-anchor header dropdown panels to the viewport
+             on mobile/tablet. Inline styles use \`right: 0\` which makes the
+             panel's left edge land at \`bellRight - panelWidth\` — when the
+             bell is somewhere mid-header, the panel bleeds past the left edge
+             of the screen on narrow viewports. Switching to \`position:
+             fixed\` with \`left/right: 1rem\` pins it to the viewport so it
+             never overflows. */
+          .dashboard-dropdown-panel {
+            position: fixed !important;
+            left: 1rem !important;
+            right: 1rem !important;
+            width: auto !important;
+            max-width: calc(100vw - 2rem) !important;
+            min-width: 0 !important;
+          }
         }
         @media (max-width: 640px) {
           .dashboard-header-title h1 { font-size: 1rem !important; }

@@ -167,6 +167,7 @@ export default function NotificationBell() {
         <div
           role="dialog"
           aria-label="Notifications"
+          className="dashboard-dropdown-panel"
           style={{
             position: 'absolute',
             top: 'calc(100% + 0.5rem)',
