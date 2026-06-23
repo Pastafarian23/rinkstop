@@ -6,6 +6,7 @@ import DashboardNav from '@/components/DashboardNav';
 import UserMenu from '@/components/UserMenu';
 import NotificationBell from '@/components/NotificationBell';
 import TeamSwitcher from '@/components/TeamSwitcher';
+import MobileMenu from '@/components/MobileMenu';
 import { getUserTier, tierAtLeast } from '@/lib/connections';
 
 export const dynamic = 'force-dynamic';
@@ -158,8 +159,9 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   }
   // Identity verification nav: gated to Starter+ (per design, 2026-06-17).
   // Free users see the /pricing upsell instead of this link.
+  let currentTier = 'free';
   try {
-    const currentTier = await getUserTier(userId);
+    currentTier = await getUserTier(userId);
     if (tierAtLeast(currentTier, 'starter')) {
       navLinks.push(['/dashboard/identity', 'Verification']);
     }
@@ -170,47 +172,76 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
     ['/dashboard/support', 'Support'],
   );
 
+  // Icon mapping for the mobile menu (and any future iconified nav).
+  // Keep keys aligned with navLinks hrefs above.
+  const NAV_ICONS: Record<string, string> = {
+    '/dashboard': '🏠',
+    '/dashboard/connections': '🤝',
+    '/dashboard/messages': '💬',
+    '/dashboard/profile': '👤',
+    '/dashboard/favorites': '⭐',
+    '/dashboard/reviews': '✍️',
+    '/dashboard/claims': '🏷️',
+    '/dashboard/listings': '📋',
+    '/dashboard/identity': '✅',
+    '/dashboard/leads': '🎯',
+    '/dashboard/subscription': '💳',
+    '/dashboard/support': '🛟',
+  };
+  const mobileNavLinks = navLinks.map(([href, label, badge]) => ({
+    href,
+    label,
+    badge,
+    icon: NAV_ICONS[href] || '•',
+  }));
+
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
       <header style={{ background: '#041E42', borderBottom: '3px solid #C8102E' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0 }}>
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt="Profile"
-                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #C8102E' }}
+                  className="dashboard-header-avatar"
+                  style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #C8102E', flexShrink: 0 }}
                 />
               ) : (
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.1rem',
-                  border: '2px solid #C8102E',
-                }}>
+                <div
+                  className="dashboard-header-avatar"
+                  style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.1rem',
+                    border: '2px solid #C8102E', flexShrink: 0,
+                  }}
+                >
                   {firstName?.[0]?.toUpperCase() || '?'}
                 </div>
               )}
-              <div>
+              <div className="dashboard-header-title" style={{ minWidth: 0 }}>
                 <h1 style={{
                   fontFamily: "'Bebas Neue', Impact, sans-serif",
                   fontSize: '1.25rem',
                   color: 'white',
                   letterSpacing: '0.05em',
                   margin: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
                 }}>
                   MY RINKSTOP
                 </h1>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: 0 }}>
+                <p className="dashboard-header-email" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {email}
                 </p>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
               <NotificationBell />
-              <TeamSwitcher />
               {isAdmin ? (
                 <Link
                   href="/admin"
@@ -264,20 +295,37 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                 <span style={{ marginRight: 4 }}>←</span>
                 <span>Back to Site</span>
               </Link>
-              {/* UserMenu: replaces the two-ambiguous-A-circles pattern. Single
-                  avatar button that opens a labeled popover (Edit profile,
-                  Subscription, Help, Sign out). Replaces both <UserButton>
-                  (which threw during RSC) and the previous SignOutButton +
-                  standalone Link to /dashboard/profile. */}
-              <UserMenu
-                initials={firstName?.[0] || '?'}
-                displayName={`${firstName || 'RinkStop'}${lastName ? ' ' + lastName : ''}`}
-                email={email}
-                avatarUrl={avatarUrl}
-                size={40}
-                accountTypes={accountTypes}
-                activeRole={activeRole}
-              />
+              {/* Desktop-only: full TeamSwitcher + UserMenu in the header.
+                  The MobileMenu (≤1023px) renders all of these inline. */}
+              <span className="dashboard-header-desktop-only" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <TeamSwitcher />
+                <UserMenu
+                  initials={firstName?.[0] || '?'}
+                  displayName={`${firstName || 'RinkStop'}${lastName ? ' ' + lastName : ''}`}
+                  email={email}
+                  avatarUrl={avatarUrl}
+                  size={40}
+                  accountTypes={accountTypes}
+                  activeRole={activeRole}
+                />
+              </span>
+              {/* Mobile/tablet hamburger (≤1023px). On desktop, the CSS below
+                  sets display: none. */}
+              <span className="dashboard-header-mobile-only" style={{ display: 'none' }}>
+                <MobileMenu
+                  user={{
+                    initials: firstName?.[0]?.toUpperCase() || '?',
+                    displayName: `${firstName || 'RinkStop'}${lastName ? ' ' + lastName : ''}`,
+                    email,
+                    avatarUrl,
+                  }}
+                  isAdmin={isAdmin}
+                  navLinks={mobileNavLinks}
+                  accountTypes={accountTypes}
+                  activeRole={activeRole}
+                  currentTier={currentTier}
+                />
+              </span>
             </div>
           </div>
 
@@ -293,12 +341,24 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
       </header>
 
       <style>{`
-        @media (max-width: 640px) {
-          .dashboard-header-back { display: none !important; }
+        /* Day 7: responsive header.
+           ≤1023px (tablet + mobile): hamburger only, hide team switcher +
+           UserMenu + email + "Back to Site" text, drop the avatar+title
+           block to save space. Notification bell and admin shield stay.
+           1024px+ (desktop): full header with all icons visible. */
+        @media (max-width: 1023px) {
+          .dashboard-header-desktop-only { display: none !important; }
+          .dashboard-header-mobile-only { display: inline-flex !important; }
+          .dashboard-header-email { display: none !important; }
+          .dashboard-header-back span:last-child { display: none !important; }
+          .dashboard-header-back { padding: 0.5rem 0.6rem !important; }
         }
-        @media (max-width: 480px) {
-          .dashboard-header-admin span:last-child { display: none; }
-          .dashboard-header-admin { padding: 0.5rem 0.6rem !important; }
+        @media (max-width: 640px) {
+          .dashboard-header-title h1 { font-size: 1rem !important; }
+          .dashboard-header-avatar { width: 36px !important; height: 36px !important; }
+        }
+        @media (max-width: 380px) {
+          .dashboard-header-back { display: none !important; }
         }
       `}</style>
 

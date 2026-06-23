@@ -171,7 +171,10 @@ export default function NotificationBell() {
             position: 'absolute',
             top: 'calc(100% + 0.5rem)',
             right: 0,
-            width: 360,
+            // Day 7: width: min() lets the panel shrink on narrow viewports
+            // instead of overflowing. maxWidth is the fallback (kept for
+            // older browsers); width is the primary clamp.
+            width: 'min(360px, calc(100vw - 2rem))',
             maxWidth: 'calc(100vw - 2rem)',
             maxHeight: 480,
             overflowY: 'auto',

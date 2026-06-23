@@ -186,6 +186,9 @@ export default function TeamSwitcher() {
             top: 'calc(100% + 0.5rem)',
             right: 0,
             minWidth: 280,
+            // Day 7: width: min() clamps to viewport so the dropdown never
+            // bleeds off-screen on narrow viewports.
+            width: 'min(360px, calc(100vw - 2rem))',
             maxWidth: 360,
             maxHeight: 420,
             overflowY: 'auto',
