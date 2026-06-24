@@ -39,11 +39,11 @@ interface PlanSegment {
 }
 
 const FOCUS_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  skills: { label: 'Skills', emoji: '🎯', color: 'bg-blue-100 text-blue-900' },
-  game_situations: { label: 'Game situations', emoji: '🏒', color: 'bg-purple-100 text-purple-900' },
-  off_ice: { label: 'Off-ice', emoji: '💪', color: 'bg-amber-100 text-amber-900' },
-  goalie: { label: 'Goalie', emoji: '🥅', color: 'bg-red-100 text-red-900' },
-  conditioning: { label: 'Conditioning', emoji: '⚡', color: 'bg-green-100 text-green-900' },
+  skills: { label: 'Skills', emoji: '🎯', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  game_situations: { label: 'Game situations', emoji: '🏒', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  off_ice: { label: 'Off-ice', emoji: '💪', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  goalie: { label: 'Goalie', emoji: '🥅', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  conditioning: { label: 'Conditioning', emoji: '⚡', color: 'bg-white/5 text-white ring-1 ring-white/15' },
 };
 
 const SKILL_LABELS: Record<string, string> = {
@@ -76,7 +76,7 @@ export default async function PlanDetailPage({
 
   const p = plan as PlanRow;
   const isMine = p.created_by_user_id === userId;
-  const focusMeta = FOCUS_LABELS[p.focus] || { label: p.focus, emoji: '📋', color: 'bg-slate-100 text-slate-900' };
+  const focusMeta = FOCUS_LABELS[p.focus] || { label: p.focus, emoji: '📋', color: 'bg-white/5 text-white ring-1 ring-white/15' };
   const ageLabel = p.age_min === p.age_max ? `U${p.age_min}` : `U${p.age_min}–U${p.age_max}`;
 
   // Check if saved
@@ -98,7 +98,7 @@ export default async function PlanDetailPage({
     <div className="mx-auto max-w-4xl px-4 py-8">
       <Link
         href="/dashboard/plans"
-        className="mb-4 inline-block text-sm text-[#041E42] hover:underline"
+        className="mb-4 inline-block text-sm text-[#FFB81C] hover:underline"
       >
         ← Back to plans
       </Link>
@@ -109,25 +109,25 @@ export default async function PlanDetailPage({
             <span>{focusMeta.emoji}</span>
             <span>{focusMeta.label}</span>
           </span>
-          <span className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">⏱ {p.duration_min} min</span>
-          <span className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{ageLabel}</span>
-          <span className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{SKILL_LABELS[p.skill_level] || p.skill_level}</span>
+          <span className="rounded bg-white/5 px-2 py-1 text-xs text-white/70">⏱ {p.duration_min} min</span>
+          <span className="rounded bg-white/5 px-2 py-1 text-xs text-white/70">{ageLabel}</span>
+          <span className="rounded bg-white/5 px-2 py-1 text-xs text-white/70">{SKILL_LABELS[p.skill_level] || p.skill_level}</span>
         </div>
 
-        <h1 className="text-3xl font-bold text-slate-900">{p.title}</h1>
-        <p className="mt-2 text-lg text-slate-600">{p.summary}</p>
+        <h1 className="text-3xl font-bold text-white">{p.title}</h1>
+        <p className="mt-2 text-lg text-white/65">{p.summary}</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <SaveButton planId={p.id} initialSaved={isSaved} />
           <MarkAsRunButton planId={p.id} planTitle={p.title} />
           {isMine && (
             <>
-              <span className="inline-flex items-center rounded-md bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900">
+              <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400">
                 Your plan
               </span>
               <Link
                 href={`/dashboard/plans/${p.slug}/edit`}
-                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-white/15 bg-[#111823] px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/5"
               >
                 Edit
               </Link>
@@ -136,18 +136,18 @@ export default async function PlanDetailPage({
         </div>
 
         {runCount !== null && runCount > 0 && (
-          <p className="mt-3 text-sm text-slate-600">
+          <p className="mt-3 text-sm text-white/65">
             You have run this plan <strong>{runCount}</strong> time{runCount === 1 ? '' : 's'}.
           </p>
         )}
       </header>
 
       {p.equipment && p.equipment.length > 0 && (
-        <section className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-700">Equipment needed</h2>
+        <section className="mb-6 rounded-lg border border-white/10 bg-[#111823] p-4">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/80">Equipment needed</h2>
           <ul className="flex flex-wrap gap-2 text-sm">
             {p.equipment.map((eq, i) => (
-              <li key={i} className="rounded bg-white px-2 py-1 text-slate-700">{eq}</li>
+              <li key={i} className="rounded bg-[#0D1117] px-2 py-1 text-white/80">{eq}</li>
             ))}
           </ul>
         </section>
@@ -158,9 +158,9 @@ export default async function PlanDetailPage({
       <PlanSegment title="Cooldown" emoji="🧘" segments={p.structure.cooldown} />
 
       {(p.structure.coach_notes || p.coach_notes) && (
-        <section className="mt-6 rounded-lg border-l-4 border-[#FFB81C] bg-amber-50 p-4">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-amber-900">Coach notes</h2>
-          <p className="text-sm text-amber-900">
+        <section className="mt-6 rounded-lg border-l-4 border-[#FFB81C] bg-[#FFB81C]/10 p-4">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[#FFB81C]">Coach notes</h2>
+          <p className="text-sm text-white/85">
             {p.structure.coach_notes || p.coach_notes}
           </p>
         </section>
@@ -183,28 +183,28 @@ function PlanSegment({
   return (
     <section className="mb-6">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-slate-900">
+        <h2 className="text-xl font-semibold text-white">
           <span className="mr-2">{emoji}</span>
           {title}
         </h2>
-        <span className="text-sm text-slate-500">{totalMin} min</span>
+        <span className="text-sm text-white/50">{totalMin} min</span>
       </div>
       <ol className="space-y-3">
         {segments.map((seg, i) => (
-          <li key={i} className="rounded-lg border border-slate-200 bg-white p-4">
+          <li key={i} className="rounded-lg border border-white/10 bg-[#111823] p-4">
             <div className="mb-1 flex items-start justify-between gap-3">
-              <h3 className="font-medium text-slate-900">{seg.name}</h3>
-              <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+              <h3 className="font-medium text-white">{seg.name}</h3>
+              <span className="shrink-0 rounded bg-white/5 px-2 py-0.5 text-xs text-white/70">
                 {seg.duration_min} min
               </span>
             </div>
             {seg.drills && (
-              <p className="mt-1 text-sm text-slate-700">
-                <span className="font-medium text-slate-900">Drill:</span> {seg.drills}
+              <p className="mt-1 text-sm text-white/80">
+                <span className="font-medium text-white">Drill:</span> {seg.drills}
               </p>
             )}
             {seg.notes && (
-              <p className="mt-1 text-sm italic text-slate-600">
+              <p className="mt-1 text-sm italic text-white/65">
                 {seg.notes}
               </p>
             )}
