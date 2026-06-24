@@ -192,13 +192,40 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // Check claim status
   const { data: claimRow } = await supabaseAdmin
     .from('claims')
-    .select('id, status, user_id')
+    .select(`
+      id,
+      status,
+      user_id,
+      profiles:user_id (
+        display_name,
+        username,
+        identity_verified_at,
+        identity_expires_at
+      ),
+      team_members:user_id!inner (
+        role,
+        team_id
+      )
+    `)
     .eq('entity_id', team.id)
     .eq('claim_type', 'team')
     .eq('status', 'approved')
+    .eq('team_members.team_id', team.id)
+    .is('team_members.left_at', null)
     .order('created_at', { ascending: false })
     .limit(1)
-    .maybeSingle<{ id: string; status: string; user_id: string }>();
+    .maybeSingle<{
+      id: string;
+      status: string;
+      user_id: string;
+      profiles: {
+        display_name: string | null;
+        username: string | null;
+        identity_verified_at: string | null;
+        identity_expires_at: string | null;
+      } | null;
+      team_members: { role: string; team_id: string } | null;
+    }>();
 
   // Viewer check: is the current Clerk user an admin/member of this team?
   // Used to surface "post your first…" CTAs on empty states without
@@ -230,6 +257,25 @@ export default async function PublicTeamPage({ params }: PageProps) {
     // Anonymous or auth error — leave viewerIsAdmin false, no CTAs.
   }
 
+  // Piece A: verified-claim requires the claimant to be BOTH identity-verified
+  // AND an admin on this team. Per Arnel (2026-06-24 14:38), only admins can
+  // claim a team — parents and players cannot. Piece B will enforce this on
+  // the claim form; piece A is the defensive safety net that guards against
+  // legacy data or pre-piece-B edge cases.
+  const claimantIdentityVerified = !!(
+    claimRow?.profiles?.identity_verified_at &&
+    claimRow.profiles.identity_expires_at &&
+    new Date(claimRow.profiles.identity_expires_at) > new Date()
+  );
+  const claimantIsAdmin = !!(
+    claimRow?.team_members?.role &&
+    ADMIN_ROLES.includes(claimRow.team_members.role as any)
+  );
+  const isVerifiedClaim = !!(claimRow && claimantIdentityVerified && claimantIsAdmin);
+  const claimantDisplayName =
+    claimRow?.profiles?.display_name || claimRow?.profiles?.username || null;
+  const claimantRole = claimantIsAdmin ? claimRow?.team_members?.role ?? null : null;
+
   // Build season record from results
   const seasonRecord = results.reduce(
     (acc, r) => {
@@ -249,11 +295,13 @@ export default async function PublicTeamPage({ params }: PageProps) {
       results={results}
       upcoming={upcoming}
       admins={admins}
-      claimed={!!claimRow}
+      claimed={isVerifiedClaim}
       claimedByUserId={claimRow?.user_id ?? null}
       seasonRecord={seasonRecord}
       viewerIsAdmin={viewerIsAdmin}
       teamSlug={team.slug}
+      claimantDisplayName={claimantDisplayName}
+      claimantRole={claimantRole}
     />
   );
 }
