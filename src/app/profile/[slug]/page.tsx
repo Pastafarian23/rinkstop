@@ -7,6 +7,7 @@ import SocialActions from '@/components/SocialActions';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
 import { IdentityVerified } from '@/components/IdentityVerified';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
+import { isIdentityVerified } from '@/lib/identity-verified';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -141,6 +142,19 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   const profileUrl = `https://rinkstop.com/profile/${profile.username}`;
   const tierStyle = TIER_COLORS[profile.tier] ?? TIER_COLORS.free;
 
+  // Piece C (2026-06-24): identity-verified gate uses the hardened helper,
+  // which also requires profiles.didit_session_id and a matching approved
+  // didit_sessions row. Bare flag is no longer trusted.
+  //
+  // This checks the VIEWED profile's verification, not the viewer.
+  const profileIdentityVerified = await isIdentityVerified(profile.user_id);
+  const verifiedAt = profileIdentityVerified
+    ? ((profile as any).identity_verified_at as string | null)
+    : null;
+  const expiresAt = profileIdentityVerified
+    ? ((profile as any).identity_expires_at as string | null)
+    : null;
+
   return (
     <main className="min-h-screen bg-[#041E42] text-white">
       <div className="max-w-3xl mx-auto px-4 py-12">
@@ -165,14 +179,16 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 // Identity verification is the ONLY check. Tier is shown as
                 // a text pill below this row. The previous teal check on
                 // every Pro+ profile is removed.
-                const verifiedAt = (profile as any).identity_verified_at as string | null;
-                const expiresAt = (profile as any).identity_expires_at as string | null;
-                const isActive = !!verifiedAt && !!expiresAt && new Date(expiresAt) > new Date();
-                if (!isActive) return null;
+                //
+                // Piece C (2026-06-24): verifiedAt/expiresAt are gated by
+                // the hardened helper above. If the helper returned false
+                // (no real Didit session), verifiedAt is null here and the
+                // shield doesn't render.
+                if (!verifiedAt || !expiresAt) return null;
                 return (
                   <IdentityVerified
-                    verifiedAt={verifiedAt!}
-                    expiresAt={expiresAt!}
+                    verifiedAt={verifiedAt}
+                    expiresAt={expiresAt}
                   />
                 );
               })()}
