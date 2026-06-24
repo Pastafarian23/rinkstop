@@ -13,14 +13,14 @@ export default async function NewPlanPage() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <Link
         href="/dashboard/plans"
-        className="mb-4 inline-block text-sm text-[#041E42] hover:underline"
+        className="mb-4 inline-block text-sm text-[#FFB81C] hover:underline"
       >
         ← Back to plans
       </Link>
 
       <header className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Create a practice plan</h1>
-        <p className="mt-1 text-slate-600">
+        <h1 className="text-3xl font-bold text-white">Create a practice plan</h1>
+        <p className="mt-1 text-white/65">
           Build a structured plan with warmup, main drills, and cooldown. Save it to your library to share with assistant coaches and run again later.
         </p>
       </header>
