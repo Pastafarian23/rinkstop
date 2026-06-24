@@ -44,14 +44,14 @@ export default function SaveButton({ planId, initialSaved }: SaveButtonProps) {
         disabled={isPending}
         className={`rounded-md px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${
           saved
-            ? 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+            ? 'border border-white/15 bg-[#111823] text-white/80 hover:bg-white/5'
             : 'bg-[#C8102E] text-white hover:bg-[#C8102E]/90'
         }`}
       >
         {saved ? '❤️ Saved' : '🤍 Save plan'}
       </button>
       {error && (
-        <p className="mt-1 text-xs text-red-600" role="alert">{error}</p>
+        <p className="mt-1 text-xs text-[#C8102E]" role="alert">{error}</p>
       )}
     </div>
   );

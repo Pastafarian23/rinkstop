@@ -29,13 +29,13 @@ export default async function EditPlanPage({
   if (plan.created_by_user_id !== userId) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">Not your plan</h1>
-        <p className="mt-2 text-slate-600">
+        <h1 className="text-2xl font-bold text-white">Not your plan</h1>
+        <p className="mt-2 text-white/65">
           You can only edit plans you created. To use this plan as a starting point, you can clone it (coming soon) or build a new plan from scratch.
         </p>
         <Link
           href={`/dashboard/plans/${plan.slug}`}
-          className="mt-4 inline-block rounded-md bg-[#041E42] px-4 py-2 text-sm font-medium text-white hover:bg-[#041E42]/90"
+          className="mt-4 inline-block rounded-md bg-[#FFB81C] px-4 py-2 text-sm font-medium text-[#0D1117] hover:bg-[#FFB81C]/90"
         >
           ← Back to plan
         </Link>
@@ -47,14 +47,14 @@ export default async function EditPlanPage({
     <div className="mx-auto max-w-4xl px-4 py-8">
       <Link
         href={`/dashboard/plans/${plan.slug}`}
-        className="mb-4 inline-block text-sm text-[#041E42] hover:underline"
+        className="mb-4 inline-block text-sm text-[#FFB81C] hover:underline"
       >
         ← Back to plan
       </Link>
 
       <header className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-900">Edit practice plan</h1>
-        <p className="mt-1 text-slate-600">
+        <h1 className="text-3xl font-bold text-white">Edit practice plan</h1>
+        <p className="mt-1 text-white/65">
           Update fields and segments. Changes are saved immediately.
         </p>
       </header>
