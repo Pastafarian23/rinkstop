@@ -81,6 +81,8 @@ interface Props {
   seasonRecord: SeasonRecord;
   viewerIsAdmin: boolean;
   teamSlug: string;
+  claimantDisplayName?: string | null;
+  claimantRole?: string | null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -107,7 +109,17 @@ const ROLE_LABELS: Record<string, string> = {
   skills_coach: 'Skills Coach',
   manager: 'Manager',
   team_staff: 'Team Staff',
+  president: 'President',
+  vice_president: 'Vice President',
+  secretary: 'Secretary',
+  treasurer: 'Treasurer',
+  board_member: 'Board Member',
+  safety_officer: 'Safety Officer',
 };
+
+function formatRoleLabel(role: string): string {
+  return ROLE_LABELS[role] ?? role.charAt(0).toUpperCase() + role.slice(1).replace(/_/g, ' ');
+}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -175,9 +187,29 @@ function RecordBadge({ record }: { record: SeasonRecord }) {
   );
 }
 
-function ClaimBadge({ claimed, admins, teamId, teamName }: { claimed: boolean; admins: AdminJoin[]; teamId: string; teamName: string }) {
+function ClaimBadge({
+  claimed,
+  admins,
+  teamId,
+  teamName,
+  claimantDisplayName,
+  claimantRole,
+}: {
+  claimed: boolean;
+  admins: AdminJoin[];
+  teamId: string;
+  teamName: string;
+  claimantDisplayName?: string | null;
+  claimantRole?: string | null;
+}) {
   if (claimed) {
-    const admin = admins[0];
+    // Per Arnel (2026-06-24 14:32): "the badge should show whoever it is claimed by,
+    // since they would have a profile with their role on team, or in organization."
+    // claimantDisplayName is only non-null when the claim is verified (admin role +
+    // identity verified). Fall back to head_coach name only if claimantDisplayName
+    // is missing (defensive — should not happen post-piece-A).
+    const name = claimantDisplayName ?? admins[0]?.profiles?.display_name;
+    const roleLabel = claimantRole ? formatRoleLabel(claimantRole) : null;
     return (
       <div
         style={{
@@ -194,9 +226,9 @@ function ClaimBadge({ claimed, admins, teamId, teamName }: { claimed: boolean; a
         }}
       >
         ✓ Verified
-        {admin?.profiles?.display_name && (
+        {name && (
           <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.6)' }}>
-            by {admin.profiles.display_name}
+            by {name}{roleLabel ? ` (${roleLabel})` : ''}
           </span>
         )}
       </div>
@@ -243,6 +275,8 @@ export default function PublicTeamProfile({
   seasonRecord,
   viewerIsAdmin,
   teamSlug,
+  claimantDisplayName,
+  claimantRole,
 }: Props) {
   const flag = countryFlag(team.country_code);
   const levelLabel = team.level ? (LEVEL_LABELS[team.level] ?? team.level) : null;
@@ -351,7 +385,14 @@ export default function PublicTeamProfile({
             >
               {flag} {team.name}
             </h1>
-            <ClaimBadge claimed={claimed} admins={admins} teamId={team.id} teamName={team.name} />
+            <ClaimBadge
+              claimed={claimed}
+              admins={admins}
+              teamId={team.id}
+              teamName={team.name}
+              claimantDisplayName={claimantDisplayName}
+              claimantRole={claimantRole}
+            />
             <ShareButton
               payload={buildTeamShare({
                 id: team.id,
