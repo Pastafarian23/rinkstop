@@ -1378,21 +1378,36 @@ img  { max-width: 100%; display: block; }
    4. Adding min-width:0 to prevent horizontal scroll
    ═══════════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* On mobile, hide the user's selected grid view (month/week/day) and
-     the agenda the user picked. The always-rendered agenda fallback
-     (data-calendar-agenda-fallback) becomes the only visible view.
-     The 7-column grid is too cramped for narrow screens. */
-  [data-calendar-month],
-  .cal-week,
-  [data-calendar-agenda] {
+  /* On narrow viewports, keep the user's selected view visible — just
+     change the layout so it fits. The fallback agenda becomes redundant. */
+  [data-calendar-agenda-fallback] {
     display: none !important;
   }
 
-  [data-calendar-agenda-fallback] {
-    display: block !important;
+  /* Month grid: switch from 7 columns to a single column where each day
+     cell is full-width. Day labels and event pills get vertical space. */
+  [data-calendar-month] {
+    grid-template-columns: 1fr !important;
+    grid-auto-rows: auto !important;
   }
 
-  /* Outer schedule page wrapper — prevent horizontal scroll */
+  /* Week grid: same — switch to single column. */
+  .cal-week {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Compact the month day cells so they don't get too tall when stacked */
+  [data-calendar-month] > div {
+    min-height: auto !important;
+  }
+
+  /* Reduce event pill text size slightly on mobile */
+  [data-calendar-month] a,
+  .cal-week a {
+    font-size: 11px !important;
+  }
+
+  /* Outer schedule page wrapper — prevent horizontal scroll on any element */
   body {
     overflow-x: hidden;
   }
