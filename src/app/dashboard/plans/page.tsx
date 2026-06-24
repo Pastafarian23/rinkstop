@@ -119,28 +119,28 @@ export default async function PlansPage({
     <div className="mx-auto max-w-6xl px-4 py-8">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Practice Plans</h1>
-          <p className="mt-1 text-slate-600">
+          <h1 className="text-3xl font-bold text-white">Practice Plans</h1>
+          <p className="mt-1 text-white/65">
             {plans.length} practice plan templates. Save the ones you like, mark them as run after practice, or build your own.
           </p>
         </div>
         <Link
           href="/dashboard/plans/new"
-          className="rounded-md bg-[#041E42] px-4 py-2 text-sm font-medium text-white hover:bg-[#041E42]/90"
+          className="rounded-md bg-[#FFB81C] px-4 py-2 text-sm font-medium text-[#0D1117] hover:bg-[#FFB81C]/90"
         >
           + Create plan
         </Link>
       </header>
 
       {queryError && (
-        <div className="mb-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="mb-6 rounded-md border border-[#FFB81C]/40 bg-[#FFB81C]/10 p-3 text-sm text-[#FFB81C]">
           <strong>Heads up:</strong> could not load plans ({queryError}). Try refreshing.
         </div>
       )}
 
       {savedIds.size > 0 && !sp.focus && !sp.age && !sp.duration && (
         <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-slate-900">Your saved plans</h2>
+          <h2 className="mb-3 text-lg font-semibold text-white">Your saved plans</h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {plans
               .filter((p) => savedIds.has(p.id))
@@ -162,8 +162,8 @@ export default async function PlansPage({
                 />
               ))}
           </div>
-          <div className="mt-6 border-t border-slate-200 pt-6">
-            <h2 className="mb-3 text-lg font-semibold text-slate-900">All plans</h2>
+          <div className="mt-6 border-t border-white/10 pt-6">
+            <h2 className="mb-3 text-lg font-semibold text-white">All plans</h2>
           </div>
         </section>
       )}
@@ -171,14 +171,14 @@ export default async function PlansPage({
       {/* Filter bar */}
       <form
         method="GET"
-        className="mb-6 grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 md:grid-cols-3"
+        className="mb-6 grid grid-cols-1 gap-3 rounded-lg border border-white/10 bg-[#111823] p-4 md:grid-cols-3"
       >
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Focus</span>
+          <span className="mb-1 block font-medium text-white/80">Focus</span>
           <select
             name="focus"
             defaultValue={sp.focus || ''}
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="w-full rounded-md border border-white/15 bg-[#0D1117] px-3 py-2 text-sm text-white"
           >
             {focusFilters.map((f) => (
               <option key={f.value} value={f.value}>{f.label}</option>
@@ -186,11 +186,11 @@ export default async function PlansPage({
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Age</span>
+          <span className="mb-1 block font-medium text-white/80">Age</span>
           <select
             name="age"
             defaultValue={sp.age || ''}
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="w-full rounded-md border border-white/15 bg-[#0D1117] px-3 py-2 text-sm text-white"
           >
             {ageFilters.map((a) => (
               <option key={a.value} value={a.value}>{a.label}</option>
@@ -198,11 +198,11 @@ export default async function PlansPage({
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-700">Duration</span>
+          <span className="mb-1 block font-medium text-white/80">Duration</span>
           <select
             name="duration"
             defaultValue={sp.duration || ''}
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="w-full rounded-md border border-white/15 bg-[#0D1117] px-3 py-2 text-sm text-white"
           >
             {durationFilters.map((d) => (
               <option key={d.value} value={d.value}>{d.label}</option>
@@ -212,13 +212,13 @@ export default async function PlansPage({
         <div className="md:col-span-3 flex gap-2">
           <button
             type="submit"
-            className="rounded-md bg-[#041E42] px-4 py-2 text-sm font-medium text-white hover:bg-[#041E42]/90"
+            className="rounded-md bg-[#FFB81C] px-4 py-2 text-sm font-medium text-[#0D1117] hover:bg-[#FFB81C]/90"
           >
             Apply filters
           </button>
           <Link
             href="/dashboard/plans"
-            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="rounded-md border border-white/15 bg-[#111823] px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/5"
           >
             Clear
           </Link>
@@ -226,9 +226,9 @@ export default async function PlansPage({
       </form>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-slate-600">
+        <div className="rounded-lg border border-white/10 bg-[#111823] p-8 text-center text-white/65">
           <p className="text-lg">No plans match your filters.</p>
-          <Link href="/dashboard/plans" className="mt-2 inline-block text-sm text-[#041E42] underline">
+          <Link href="/dashboard/plans" className="mt-2 inline-block text-sm text-[#FFB81C] underline">
             Clear filters
           </Link>
         </div>
