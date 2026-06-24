@@ -33,7 +33,15 @@ export type SessionStatus =
   | 'resubmitted';
 
 export interface DiditSession {
-  id: string;                  // Didit's session UUID
+  // Per Didit v3 docs (https://docs.didit.me/sessions-api/create-session):
+  // the create-session response uses 'session_id' as the UUID field.
+  // Was 'id' in our type, but Didit v3 doesn't return 'id' — that was
+  // a day-one bug that surfaced when Piece D2 shipped. Arnel caught it
+  // via 'Failed to record session' error on 2026-06-24 16:58 CDT.
+  session_id: string;          // Didit's session UUID
+  session_number?: number;     // human-friendly per-application sequence
+  session_token?: string;      // short-lived, embedded in hosted URL
+  session_kind?: string;       // 'user' | 'business'
   status: SessionStatus;
   url: string;                 // hosted URL for the user to open
   workflow_id: string;
