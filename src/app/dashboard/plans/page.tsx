@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import PlanCard from '@/components/plans/PlanCard';
+import Dropdown from '@/components/ui/Dropdown';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Practice Plans' };
@@ -171,57 +172,73 @@ export default async function PlansPage({
       {/* Filter bar */}
       <form
         method="GET"
-        className="mb-6 grid grid-cols-1 gap-3 rounded-lg border border-white/10 bg-[#111823] p-4 md:grid-cols-3"
+        className="mb-6 rounded-lg border border-white/10 bg-[#111823] p-5"
       >
-        <label className="text-sm">
-          <span className="mb-1 block font-medium text-white/80">Focus</span>
-          <select
-            name="focus"
-            defaultValue={sp.focus || ''}
-            className="w-full rounded-md border border-white/15 bg-[#0D1117] px-3 py-2 text-sm text-white"
-          >
-            {focusFilters.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm">
-          <span className="mb-1 block font-medium text-white/80">Age</span>
-          <select
-            name="age"
-            defaultValue={sp.age || ''}
-            className="w-full rounded-md border border-white/15 bg-[#0D1117] px-3 py-2 text-sm text-white"
-          >
-            {ageFilters.map((a) => (
-              <option key={a.value} value={a.value}>{a.label}</option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm">
-          <span className="mb-1 block font-medium text-white/80">Duration</span>
-          <select
-            name="duration"
-            defaultValue={sp.duration || ''}
-            className="w-full rounded-md border border-white/15 bg-[#0D1117] px-3 py-2 text-sm text-white"
-          >
-            {durationFilters.map((d) => (
-              <option key={d.value} value={d.value}>{d.label}</option>
-            ))}
-          </select>
-        </label>
-        <div className="md:col-span-3 flex gap-2">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-white/55">
+            Filter plans
+          </h2>
+          {(sp.focus || sp.age || sp.duration) && (
+            <span className="text-xs text-[#FFB81C]">
+              {[
+                sp.focus && `focus: ${focusFilters.find((f) => f.value === sp.focus)?.label}`,
+                sp.age && `age: ${ageFilters.find((a) => a.value === sp.age)?.label}`,
+                sp.duration && `≤ ${sp.duration} min`,
+              ].filter(Boolean).join(' · ')}
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/55">
+              Focus
+            </label>
+            <Dropdown
+              name="focus"
+              value={sp.focus || ''}
+              options={focusFilters.map((f) => ({ value: f.value, label: f.label }))}
+              ariaLabel="Focus filter"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/55">
+              Age
+            </label>
+            <Dropdown
+              name="age"
+              value={sp.age || ''}
+              options={ageFilters.map((a) => ({ value: a.value, label: a.label }))}
+              ariaLabel="Age filter"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-white/55">
+              Duration
+            </label>
+            <Dropdown
+              name="duration"
+              value={sp.duration || ''}
+              options={durationFilters.map((d) => ({ value: d.value, label: d.label }))}
+              ariaLabel="Duration filter"
+            />
+          </div>
+        </div>
+        <div className="mt-5 flex gap-2 border-t border-white/10 pt-4">
           <button
             type="submit"
-            className="rounded-md bg-[#FFB81C] px-4 py-2 text-sm font-medium text-[#0D1117] hover:bg-[#FFB81C]/90"
+            className="rounded-md bg-[#FFB81C] px-4 py-2 text-sm font-bold text-[#0D1117] hover:bg-[#FFB81C]/90"
           >
             Apply filters
           </button>
           <Link
             href="/dashboard/plans"
-            className="rounded-md border border-white/15 bg-[#111823] px-4 py-2 text-sm font-medium text-white/80 hover:bg-white/5"
+            className="rounded-md border border-white/15 bg-[#0D1117] px-4 py-2 text-sm font-semibold text-white/80 hover:bg-white/5"
           >
-            Clear
+            Clear all
           </Link>
+          <span className="ml-auto self-center text-xs text-white/45">
+            Showing {filtered.length} of {plans.length}
+          </span>
         </div>
       </form>
 

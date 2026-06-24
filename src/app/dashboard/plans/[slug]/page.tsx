@@ -143,19 +143,30 @@ export default async function PlanDetailPage({
       </header>
 
       {p.equipment && p.equipment.length > 0 && (
-        <section className="mb-6 rounded-lg border border-white/10 bg-[#111823] p-4">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-white/80">Equipment needed</h2>
-          <ul className="flex flex-wrap gap-2 text-sm">
+        <section className="mb-6 rounded-lg border border-white/10 bg-[#0f0f0f] p-5">
+          <h2 className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/55">
+            <span aria-hidden="true">🏒</span>
+            <span>Equipment needed</span>
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-white/65">
+              {p.equipment.length}
+            </span>
+          </h2>
+          <ul className="flex flex-wrap gap-2">
             {p.equipment.map((eq, i) => (
-              <li key={i} className="rounded bg-[#0D1117] px-2 py-1 text-white/80">{eq}</li>
+              <li
+                key={i}
+                className="rounded-md border border-white/15 bg-[#0D1117] px-3 py-1.5 text-sm font-medium text-white"
+              >
+                {eq}
+              </li>
             ))}
           </ul>
         </section>
       )}
 
-      <PlanSegment title="Warmup" emoji="🔥" segments={p.structure.warmup} />
-      <PlanSegment title="Main drills" emoji="⛸️" segments={p.structure.main} />
-      <PlanSegment title="Cooldown" emoji="🧘" segments={p.structure.cooldown} />
+      <PlanSegment title="Warmup" emoji="🔥" accent="#C8102E" segments={p.structure.warmup} />
+      <PlanSegment title="Main drills" emoji="⛸️" accent="#FFB81C" segments={p.structure.main} />
+      <PlanSegment title="Cooldown" emoji="🧘" accent="#14b8a6" segments={p.structure.cooldown} />
 
       {(p.structure.coach_notes || p.coach_notes) && (
         <section className="mt-6 rounded-lg border-l-4 border-[#FFB81C] bg-[#FFB81C]/10 p-4">
@@ -172,41 +183,142 @@ export default async function PlanDetailPage({
 function PlanSegment({
   title,
   emoji,
+  accent,
   segments,
 }: {
   title: string;
   emoji: string;
+  accent: string;
   segments?: PlanSegment[];
 }) {
   if (!segments || segments.length === 0) return null;
   const totalMin = segments.reduce((sum, s) => sum + s.duration_min, 0);
   return (
-    <section className="mb-6">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">
-          <span className="mr-2">{emoji}</span>
-          {title}
+    <section className="mb-8">
+      {/* Section header with colored accent bar on the left */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        paddingBottom: 12, marginBottom: 16,
+        borderBottom: `2px solid ${accent}`,
+      }}>
+        <h2 style={{
+          fontFamily: "'Bebas Neue', Impact, sans-serif",
+          fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em',
+          margin: 0, display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span aria-hidden="true" style={{ fontSize: '1.5rem' }}>{emoji}</span>
+          <span>{title.toUpperCase()}</span>
         </h2>
-        <span className="text-sm text-white/50">{totalMin} min</span>
+        <span style={{
+          fontSize: 12, fontWeight: 700, color: accent,
+          background: `${accent}20`,
+          padding: '0.25rem 0.7rem',
+          borderRadius: 999,
+          letterSpacing: '0.04em',
+        }}>
+          {totalMin} MIN TOTAL
+        </span>
       </div>
-      <ol className="space-y-3">
+
+      <ol style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {segments.map((seg, i) => (
-          <li key={i} className="rounded-lg border border-white/10 bg-[#111823] p-4">
-            <div className="mb-1 flex items-start justify-between gap-3">
-              <h3 className="font-medium text-white">{seg.name}</h3>
-              <span className="shrink-0 rounded bg-white/5 px-2 py-0.5 text-xs text-white/70">
-                {seg.duration_min} min
+          <li
+            key={i}
+            style={{
+              position: 'relative',
+              padding: '1.25rem 1.25rem 1.25rem 4rem',
+              background: '#0f0f0f',
+              border: '1px solid #1e1e1e',
+              borderLeft: `3px solid ${accent}`,
+              borderRadius: 8,
+            }}
+          >
+            {/* Numbered circle on the left */}
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 32, height: 32,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `${accent}25`,
+                border: `1px solid ${accent}80`,
+                color: accent,
+                borderRadius: '50%',
+                fontWeight: 800,
+                fontSize: 13,
+              }}
+            >
+              {i + 1}
+            </span>
+
+            {/* Header row: segment name + duration pill */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0, flex: 1, minWidth: 0 }}>
+                {seg.name}
+              </h3>
+              <span style={{
+                flexShrink: 0,
+                fontSize: 12, fontWeight: 700,
+                color: 'rgba(255,255,255,0.85)',
+                background: 'rgba(255,255,255,0.08)',
+                padding: '0.3rem 0.7rem',
+                borderRadius: 6,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}>
+                <span aria-hidden="true">⏱</span> {seg.duration_min} min
               </span>
             </div>
+
+            {/* Drill block — clearly labeled */}
             {seg.drills && (
-              <p className="mt-1 text-sm text-white/80">
-                <span className="font-medium text-white">Drill:</span> {seg.drills}
-              </p>
+              <div style={{
+                marginTop: 10, padding: '0.75rem 1rem',
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 6,
+              }}>
+                <div style={{
+                  fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
+                  color: accent, textTransform: 'uppercase',
+                  marginBottom: 4,
+                }}>
+                  DRILL
+                </div>
+                <p style={{
+                  fontSize: 14, color: '#fff', lineHeight: 1.5, margin: 0,
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {seg.drills}
+                </p>
+              </div>
             )}
+
+            {/* Notes block — visually distinct from drills */}
             {seg.notes && (
-              <p className="mt-1 text-sm italic text-white/65">
-                {seg.notes}
-              </p>
+              <div style={{
+                marginTop: 8, padding: '0.65rem 0.9rem',
+                background: 'rgba(255,184,28,0.04)',
+                border: '1px dashed rgba(255,184,28,0.25)',
+                borderRadius: 6,
+              }}>
+                <div style={{
+                  fontSize: 10, fontWeight: 800, letterSpacing: '0.08em',
+                  color: 'rgba(255,184,28,0.85)', textTransform: 'uppercase',
+                  marginBottom: 4,
+                }}>
+                  COACH NOTE
+                </div>
+                <p style={{
+                  fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5,
+                  margin: 0, fontStyle: 'italic',
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {seg.notes}
+                </p>
+              </div>
             )}
           </li>
         ))}
