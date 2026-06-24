@@ -1364,3 +1364,42 @@ img  { max-width: 100%; display: block; }
     page-break-inside: avoid;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE STYLES — Piece G1c mobile fix
+   ═══════════════════════════════════════════════════════════════════
+   Problem: Week/month grid (7 columns) overflows on narrow viewports
+   because inline grid-template-columns has no minimum width fallback.
+
+   Fix: On viewports < 768px, force the agenda view by:
+   1. Hiding the month grid (data-calendar-month)
+   2. Hiding the week grid (no data attr yet — add via class .cal-week)
+   3. Showing the agenda view (data-calendar-agenda)
+   4. Adding min-width:0 to prevent horizontal scroll
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* On mobile, hide the user's selected grid view (month/week/day) and
+     the agenda the user picked. The always-rendered agenda fallback
+     (data-calendar-agenda-fallback) becomes the only visible view.
+     The 7-column grid is too cramped for narrow screens. */
+  [data-calendar-month],
+  .cal-week,
+  [data-calendar-agenda] {
+    display: none !important;
+  }
+
+  [data-calendar-agenda-fallback] {
+    display: block !important;
+  }
+
+  /* Outer schedule page wrapper — prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* The calendar wrapper — ensure child grids can shrink */
+  .cal-root {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

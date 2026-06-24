@@ -153,7 +153,7 @@ export default function TeamCalendar({
   }
 
   return (
-    <div style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem' }}>
+    <div className="cal-root" style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem' }}>
       {/* Print header — CSS @media print uses content + attr() to render */}
       <div data-print-header data-print-date={new Date().toLocaleDateString('en-US', { dateStyle: 'long' })} style={{ display: 'none' }} aria-hidden="true" />
       {/* Toolbar */}
@@ -243,6 +243,13 @@ export default function TeamCalendar({
         </div>
       )}
 
+      {/* Mobile fallback agenda — always rendered, hidden on desktop via CSS,
+          shown via @media (max-width: 768px) as a guaranteed-usable list view.
+          Same data + filters as the user-selected view. */}
+      <div data-calendar-agenda-fallback style={{ display: 'none' }}>
+        <AgendaView cursor={cursor} events={filtered} teamById={teamById} />
+      </div>
+
       {/* Legend */}
       {teams.length > 1 && (
         <div style={{ marginTop: 16, padding: '0.75rem 1rem', background: '#0D1117', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
@@ -285,7 +292,7 @@ function MonthView({
   const today = new Date();
 
   return (
-    <div data-calendar-month style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+    <div data-calendar-month style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4 }}>
       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
         <div key={d} style={{ padding: '0.5rem 0', textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {d}
@@ -355,7 +362,7 @@ function WeekView({ cursor, events, teamById }: { cursor: Date; events: Calendar
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const today = new Date();
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+    <div className="cal-week" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4 }}>
       {days.map((d) => {
         const isToday = isSameDay(d, today);
         const dayEvents = events.filter((e) => isSameDay(new Date(e.starts_at), d)).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
