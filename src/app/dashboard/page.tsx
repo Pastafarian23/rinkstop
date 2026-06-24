@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import { TierBadge } from '@/components/TierBadge';
 import { FounderBadge } from '@/components/FounderBadge';
 import UsernameBanner from '@/components/UsernameBanner';
@@ -239,6 +240,13 @@ async function renderDashboard(userId: string) {
     console.error('[dashboard] team_members query failed:', e);
   }
 
+  // Piece E (2026-06-24): check if user is identity-verified, using the
+  // hardened helper from Piece C (requires real approved didit_sessions
+  // row, not just the bare profiles.identity_verified_at flag). Drives
+  // the verify-identity banner at the top of the dashboard. Fails
+  // closed — if any of the 3 conditions fail, banner shows.
+  const isIdentityVerifiedForUser = await isIdentityVerified(userId);
+
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
     { field: 'Display name', done: !!(profile?.display_name || firstName), href: '/dashboard/profile', hint: 'Add your first and last name' },
     { field: 'Avatar', done: !!avatarUrl, href: '/dashboard/profile', hint: 'Upload a profile photo' },
@@ -251,6 +259,69 @@ async function renderDashboard(userId: string) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+      {/* Piece E (2026-06-24): verify-identity banner. Only shows for
+          unverified users. Uses the hardened helper from Piece C, so the
+          same gate that powers the ✓ Verified badge and team-creation
+          gates also drives this banner. Purely additive — does not move
+          or hide any other cards. */}
+      {!isIdentityVerifiedForUser && (
+        <div
+          role="region"
+          aria-label="Verify your identity"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,184,28,0.12) 0%, rgba(200,16,46,0.08) 100%)',
+            border: '1px solid rgba(255,184,28,0.35)',
+            borderRadius: 12,
+            padding: '1.25rem 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ fontSize: '1.75rem', flexShrink: 0 }} aria-hidden="true">🛡️</div>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <h2
+              style={{
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+                fontSize: '1.15rem',
+                color: '#fff',
+                letterSpacing: '0.04em',
+                margin: '0 0 0.25rem',
+              }}
+            >
+              VERIFY YOUR IDENTITY TO UNLOCK TEAM MANAGEMENT
+            </h2>
+            <p
+              style={{
+                color: 'rgba(255,255,255,0.7)',
+                fontSize: '0.85rem',
+                margin: 0,
+                lineHeight: 1.5,
+              }}
+            >
+              Coaches and managers need verified identity to manage teams, claim
+              rosters, and message parents. Takes ~2 minutes with a government ID.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/identity"
+            style={{
+              padding: '0.65rem 1.25rem',
+              background: '#FFB81C',
+              color: '#0a0a0a',
+              borderRadius: 6,
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Verify identity →
+          </Link>
+        </div>
+      )}
 
       {profile?.username ? null : (
         <UsernameBanner
