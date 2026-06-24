@@ -1284,3 +1284,83 @@ img  { max-width: 100%; display: block; }
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRINT STYLES — Piece G1c
+   ═══════════════════════════════════════════════════════════════════
+   Goals:
+   - Hide chrome (nav, footer, action buttons) on print
+   - Calendar renders as a clean agenda list
+   - Background stays dark (coaches print dark mode)
+   - Brand colors preserved (gold headers, red links)
+   - Page margins reduced for paper
+   ═══════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Reset page margins — browsers default to ~1in which is too much */
+  @page {
+    margin: 0.5in;
+    size: auto;
+  }
+
+  /* Hide nav, footer, and interactive controls */
+  header.nav-bar,
+  footer,
+  .mob-drawer,
+  .no-print,
+  button,
+  [role="button"]:not(.print-keep) {
+    display: none !important;
+  }
+
+  /* Force dark background for print (so colors stay readable) */
+  html, body {
+    background: var(--bg) !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Calendar container — single column agenda for print */
+  [data-print-mode="auto"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Calendar month grid — flatten to agenda list */
+  [data-calendar-month] {
+    display: none !important;
+  }
+
+  [data-calendar-agenda] {
+    display: block !important;
+  }
+
+  /* Event blocks — keep team color but lose hover effects */
+  a {
+    color: var(--gold) !important;
+    text-decoration: none !important;
+  }
+
+  /* Avoid page breaks inside an event block */
+  li, .event-block {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Add a print header above the calendar */
+  [data-print-header]::before {
+    content: "RinkStop Schedule — printed " attr(data-print-date);
+    display: block;
+    color: var(--gold);
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid var(--gold);
+  }
+
+  /* Sections — give a tiny bit of breathing room */
+  section, header {
+    page-break-inside: avoid;
+  }
+}

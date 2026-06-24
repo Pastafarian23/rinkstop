@@ -154,6 +154,8 @@ export default function TeamCalendar({
 
   return (
     <div style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem' }}>
+      {/* Print header — CSS @media print uses content + attr() to render */}
+      <div data-print-header data-print-date={new Date().toLocaleDateString('en-US', { dateStyle: 'long' })} style={{ display: 'none' }} aria-hidden="true" />
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -225,7 +227,7 @@ export default function TeamCalendar({
         </div>
       </div>
 
-      {/* Calendar grid */}
+      {/* Calendar grid — month view gets data-calendar-month so print can hide it */}
       {view === 'month' && (
         <MonthView cursor={cursor} events={filtered} teamById={teamById} teamFilter={teamFilter} />
       )}
@@ -236,7 +238,9 @@ export default function TeamCalendar({
         <DayView cursor={cursor} events={filtered} teamById={teamById} />
       )}
       {view === 'agenda' && (
-        <AgendaView cursor={cursor} events={filtered} teamById={teamById} />
+        <div data-calendar-agenda>
+          <AgendaView cursor={cursor} events={filtered} teamById={teamById} />
+        </div>
       )}
 
       {/* Legend */}
@@ -281,7 +285,7 @@ function MonthView({
   const today = new Date();
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+    <div data-calendar-month style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
         <div key={d} style={{ padding: '0.5rem 0', textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
           {d}
