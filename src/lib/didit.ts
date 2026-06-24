@@ -86,7 +86,16 @@ async function diditFetch<T>(
   const apiKey = requireEnv('DIDIT_API_KEY', API_KEY);
   const url = `${BASE_URL}${path}`;
   const headers: Record<string, string> = {
-    'Authorization': `Bearer ${apiKey}`,
+    // Per Didit's official auth docs
+    // (https://docs.didit.me/getting-started/api-authentication):
+    //   "The verification API does not use OAuth Bearer tokens. It uses
+    //    a long-lived API key on the x-api-key header."
+    // Was Authorization: Bearer ${apiKey} from initial integration
+    // (2026-06-17 commit b7f29f9). Was wrong from day one but never
+    // caught because the dev shortcut (direct DB UPDATE on profiles)
+    // was the only verification path that ever worked. Arnel caught it
+    // on 2026-06-24 when he ran the real flow after the Q1 revoke.
+    'x-api-key': apiKey,
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'User-Agent': 'RinkStop/1.0 (+https://rinkstop.com)',
