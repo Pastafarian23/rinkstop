@@ -70,14 +70,16 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
     data.parent.loaded = true;
   } catch { /* table missing — keep loaded=false */ }
 
-  // COACH: teams where this user is a member with role='coach'.
+  // COACH: teams where this user is a member with a coaching role.
   // Uses team_members (user_id + role) instead of nonexistent team_owners.
+  // Note: role is plain TEXT (not enum). Common values: 'coach', 'head_coach',
+  // 'assistant_coach'. Add new variants here as they appear in the data.
   try {
     const { count } = await supabaseAdmin
       .from('team_members')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('role', 'coach');
+      .in('role', ['coach', 'head_coach', 'assistant_coach']);
     data.coach.teamsManaged = count || 0;
     data.coach.loaded = true;
   } catch { /* team_members may not exist — keep loaded=false */ }
