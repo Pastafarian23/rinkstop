@@ -499,6 +499,7 @@ async function renderDashboard(userId: string) {
                 primary={primary}
                 data={typeData}
                 username={profile?.username ?? null}
+                identityVerified={isIdentityVerifiedForUser}
               />
             ))}
           </div>

@@ -17,13 +17,14 @@ interface TypeSectionCardProps {
   primary: AccountType | null;
   data: TypeSectionData;
   username: string | null;
+  identityVerified?: boolean; // If user has verified identity (Piece C hardening)
 }
 
 // Each type renders ONE section card. The card has a header (type label + primary star),
 // a 1-2 line headline number (e.g. "12 rinks", "0 followed teams"), a Quick Actions row,
 // and an empty state if applicable. The action set is intentionally small — Phase 1
 // is about visibility, not new features. Phase 2/3 fill in the destinations.
-function getConfig(t: AccountType, data: TypeSectionData, username: string | null): {
+function getConfig(t: AccountType, data: TypeSectionData, username: string | null, identityVerified: boolean = true): {
   headline: string;
   cta: SectionAction[];
   empty: { message: string; cta: { href: string; label: string } } | null;
@@ -63,10 +64,15 @@ function getConfig(t: AccountType, data: TypeSectionData, username: string | nul
             ? "You haven't claimed a team yet"
             : `Coaching ${data.coach.teamsManaged} ${data.coach.teamsManaged === 1 ? 'team' : 'teams'}`
           : 'Your coaching role',
-        cta: [
-          { href: '/directory/teams', label: 'Find your team', icon: '🏒' },
-          { href: '/dashboard/claims', label: 'Claim a team', icon: '✅' },
-        ],
+        cta: identityVerified
+          ? [
+              { href: '/directory/teams', label: 'Find your team', icon: '🏒' },
+              { href: '/dashboard/claims', label: 'Claim a team', icon: '✅' },
+            ]
+          : [
+              { href: '/directory/teams', label: 'Find your team', icon: '🏒' },
+              { href: '/dashboard/identity', label: 'Verify identity', icon: '🛡️' },
+            ],
         empty: data.coach.loaded && data.coach.teamsManaged === 0
           ? { message: 'Claim the team you coach to manage roster, schedule, and incoming parent messages.', cta: { href: '/directory/teams', label: 'Browse teams →' } }
           : null,
@@ -175,9 +181,9 @@ function getConfig(t: AccountType, data: TypeSectionData, username: string | nul
   }
 }
 
-export default function TypeSectionCard({ type, primary, data, username }: TypeSectionCardProps) {
+export default function TypeSectionCard({ type, primary, data, username, identityVerified = true }: TypeSectionCardProps) {
   const meta = getAccountTypeMeta(type);
-  const cfg = getConfig(type, data, username);
+  const cfg = getConfig(type, data, username, identityVerified);
   const isPrimary = type === primary;
 
   return (

@@ -70,17 +70,17 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
     data.parent.loaded = true;
   } catch { /* table missing — keep loaded=false */ }
 
-  // COACH: team_admin is a separate concept (see team_admin below). The relationship
-  // values for coach aren't tracked in `managed_profiles` (it's a people→profile table,
-  // not a people→team table). For now, count teams the user has claimed.
+  // COACH: teams where this user is a member with role='coach'.
+  // Uses team_members (user_id + role) instead of nonexistent team_owners.
   try {
     const { count } = await supabaseAdmin
-      .from('team_owners')
+      .from('team_members')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('role', 'coach');
     data.coach.teamsManaged = count || 0;
     data.coach.loaded = true;
-  } catch { /* team_owners may not exist — keep loaded=false */ }
+  } catch { /* team_members may not exist — keep loaded=false */ }
 
   // SCOUT: watchlist = follows of players
   try {
