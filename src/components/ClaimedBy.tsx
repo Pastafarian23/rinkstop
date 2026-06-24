@@ -14,9 +14,14 @@ interface ClaimedBy {
   is_founding_member: boolean;
   username: string | null;
   claimed_at: string;
-  // Identity verification (added 2026-06-17, requires Phase 1 build to populate)
-  identity_verified_at: string | null;
-  identity_expires_at: string | null;
+  // Piece C (2026-06-24): identity verification comes from the hardened
+  // helper on the server. True only if claimant has a real, approved
+  // didit_sessions row. Bare flag is no longer trusted.
+  verified: boolean;
+  // Raw timestamps kept for display (e.g., "verified since Mar 2026").
+  // Only meaningful when verified === true.
+  identity_verified_at?: string | null;
+  identity_expires_at?: string | null;
 }
 
 export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'rink' | 'team' | 'league' | 'player'; entityId: string; entityName: string }) {
@@ -43,13 +48,12 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
 
   if (loading || !data) return null;
 
-  // Identity verification is the ONLY signal that earns a check on RinkStop.
+  // Piece C (2026-06-24): identity verification is computed server-side
+  // via the hardened helper (verified boolean). The component just trusts
+  // the API response — no client-side re-check, no raw timestamp leak.
   // Tier is shown as a text pill (Starter / Pro / Premium / Enterprise).
   // Tier alone is NOT a verification signal.
-  const isIdentityVerified =
-    !!data.identity_verified_at &&
-    !!data.identity_expires_at &&
-    new Date(data.identity_expires_at) > new Date();
+  const isIdentityVerified = data.verified === true;
   const displayName = data.display_name || 'Owner';
 
   return (
