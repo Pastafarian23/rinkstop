@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import NewTeamForm from './NewTeamForm';
 
 export const dynamic = 'force-dynamic';
@@ -9,16 +10,17 @@ export default async function NewTeamPage() {
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
-  // Check identity verification status
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('identity_verified_at, identity_expires_at, display_name')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  const isVerified =
-    !!profile?.identity_verified_at &&
-    (!profile.identity_expires_at || new Date(profile.identity_expires_at) > new Date());
+  // Identity verification gate. Piece C: uses hardened helper that
+  // also requires profiles.didit_session_id and a matching approved
+  // didit_sessions row. Bare flag is no longer trusted.
+  const [{ data: profile }, isVerified] = await Promise.all([
+    supabaseAdmin
+      .from('profiles')
+      .select('display_name')
+      .eq('user_id', userId)
+      .maybeSingle(),
+    isIdentityVerified(userId),
+  ]);
 
   // Fetch all active rinks (limit to 200 for the dropdown — should be enough for v1)
   const { data: rinks } = await supabaseAdmin

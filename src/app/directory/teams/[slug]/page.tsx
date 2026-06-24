@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { countryFlag } from '@/lib/team';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import PublicTeamProfile from './PublicTeamProfile';
 
 export const dynamic = 'force-dynamic';
@@ -262,11 +263,13 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // claim a team — parents and players cannot. Piece B will enforce this on
   // the claim form; piece A is the defensive safety net that guards against
   // legacy data or pre-piece-B edge cases.
-  const claimantIdentityVerified = !!(
-    claimRow?.profiles?.identity_verified_at &&
-    claimRow.profiles.identity_expires_at &&
-    new Date(claimRow.profiles.identity_expires_at) > new Date()
-  );
+  //
+  // Piece C (2026-06-24): identity-verified uses the hardened helper which
+  // also requires profiles.didit_session_id to be set AND a matching approved
+  // didit_sessions row to exist. Bare flag is no longer trusted.
+  const claimantIdentityVerified = claimRow?.user_id
+    ? await isIdentityVerified(claimRow.user_id)
+    : false;
   const claimantIsAdmin = !!(
     claimRow?.team_members?.role &&
     ADMIN_ROLES.includes(claimRow.team_members.role as any)

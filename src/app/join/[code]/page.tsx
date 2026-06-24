@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import JoinForm from './JoinForm';
 import { countryFlag } from '@/lib/team';
 
@@ -40,16 +41,9 @@ export default async function JoinPage({ params }: PageProps) {
     teamPreview = t;
   }
 
-  // Check identity verification
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('identity_verified_at, identity_expires_at')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  const isVerified =
-    !!profile?.identity_verified_at &&
-    (!profile.identity_expires_at || new Date(profile.identity_expires_at) > new Date());
+  // Identity verification gate. Piece C: hardened helper also requires
+  // a matching approved didit_sessions row.
+  const isVerified = await isIdentityVerified(userId);
 
   // Pre-check invite state for messaging (without exposing too much)
   const inviteState = invite

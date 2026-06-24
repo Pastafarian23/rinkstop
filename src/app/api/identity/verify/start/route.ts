@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import { getUserTier, tierAtLeast } from '@/lib/connections';
 import { createSession } from '@/lib/didit';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
@@ -62,25 +63,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Check if user already has an active verification
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('identity_verified_at, identity_expires_at, identity_verification_method')
-      .eq('user_id', userId)
-      .maybeSingle();
+    // 4. Check if user already has an active verification.
+    //    Piece C: uses hardened helper (also requires didit_session_id +
+    //    matching approved didit_sessions row). Bare flag is no longer trusted.
+    const [{ data: profile }, alreadyVerified] = await Promise.all([
+      supabaseAdmin
+        .from('profiles')
+        .select('identity_verified_at, identity_expires_at, identity_verification_method')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      isIdentityVerified(userId),
+    ]);
 
-    if (
-      profile?.identity_verified_at &&
-      profile?.identity_expires_at &&
-      new Date(profile.identity_expires_at) > new Date()
-    ) {
+    if (alreadyVerified) {
       return NextResponse.json(
         {
           error: 'already_verified',
           message: 'You already have an active verification.',
-          identity_verified_at: profile.identity_verified_at,
-          identity_expires_at: profile.identity_expires_at,
-          method: profile.identity_verification_method,
+          identity_verified_at: profile?.identity_verified_at ?? null,
+          identity_expires_at: profile?.identity_expires_at ?? null,
+          method: profile?.identity_verification_method ?? null,
         },
         { status: 409 }
       );
