@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
 const RL = { maxRequests: 60, windowMs: 60 * 1000 };
@@ -71,6 +72,11 @@ export async function GET(
     return applyRateLimitHeaders(res, result);
   }
 
+  // Piece C (2026-06-24): use the hardened helper. Returns true ONLY if
+  // the claimant actually completed the Didit flow (matching approved
+  // didit_sessions row exists). Bare flag is no longer trusted.
+  const verified = await isIdentityVerified(claim.user_id);
+
   const res = NextResponse.json({
     claim: {
       claim_id: claim.id,
@@ -81,11 +87,9 @@ export async function GET(
       is_founding_member: profile.is_founding_member,
       username: profile.username,
       claimed_at: claim.created_at,
-      // Identity verification (populated after Phase 1 build). Returns null
-      // for users who haven't completed the Didit flow. The component
-      // checks identity_expires_at > now() to decide whether to render.
-      identity_verified_at: (profile as any).identity_verified_at ?? null,
-      identity_expires_at: (profile as any).identity_expires_at ?? null,
+      // Piece C: return a single boolean instead of raw timestamps.
+      // The raw timestamps are not exposed to the client anymore.
+      verified,
     },
   });
   return applyRateLimitHeaders(res, result);
