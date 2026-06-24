@@ -101,7 +101,9 @@ export async function POST(req: NextRequest) {
       .from('didit_sessions')
       .insert({
         user_id: userId,
-        session_id: diditSession.id,
+        // Piece D2: Didit v3 returns the session UUID as 'session_id',
+        // not 'id'. Was passing undefined before (NOT NULL violation).
+        session_id: diditSession.session_id,
         session_kind: 'user',
         workflow_id: diditSession.workflow_id,
         status: 'not_started',
@@ -123,7 +125,7 @@ export async function POST(req: NextRequest) {
         name: 'identity_verify_started',
         userId: userId,
         props: {
-          session_id: diditSession.id,
+          session_id: diditSession.session_id,
           tier,
         },
       });
@@ -131,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     const res = NextResponse.json({
       url: diditSession.url,
-      session_id: diditSession.id,
+      session_id: diditSession.session_id,
       status: 'not_started',
     });
     return applyRateLimitHeaders(res, result);
