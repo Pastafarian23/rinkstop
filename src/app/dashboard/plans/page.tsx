@@ -174,7 +174,7 @@ export default async function PlansPage({
         method="GET"
         className="mb-6 rounded-lg border p-5 shadow-md"
         style={{
-          backgroundColor: '#1F2D45',
+          backgroundColor: '#2A3B52',
           borderColor: 'rgba(255,255,255,0.2)',
         }}
       >
@@ -250,7 +250,7 @@ export default async function PlansPage({
         <div
           className="rounded-lg border p-8 text-center text-white/65"
           style={{
-            backgroundColor: '#1F2D45',
+            backgroundColor: '#2A3B52',
             borderColor: 'rgba(255,255,255,0.2)',
           }}
         >
@@ -283,3 +283,4 @@ export default async function PlansPage({
     </div>
   );
 }
+// Force cache bust - 1782386373
