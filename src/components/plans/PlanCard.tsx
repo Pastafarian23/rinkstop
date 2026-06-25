@@ -81,7 +81,7 @@ export default function PlanCard(props: PlanCardProps) {
     <div
       className="flex flex-col rounded-lg border p-4 shadow-md transition hover:shadow-lg"
       style={{
-        backgroundColor: '#1F2D45',
+        backgroundColor: '#2A3B52',
         borderColor: 'rgba(255,255,255,0.2)',
         borderLeftWidth: '4px',
         borderLeftColor: accentColor,
