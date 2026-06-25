@@ -70,8 +70,25 @@ export default function PlanCard(props: PlanCardProps) {
     ? `U${props.ageMin}`
     : `U${props.ageMin}–U${props.ageMax}`;
 
+  // Per-focus left accent color (inline style bypasses Tailwind JIT caching issues)
+  const accentColor =
+    props.focus === 'goalie' ? '#14B8A6' :
+    props.focus === 'off_ice' ? '#FFB81C' :
+    props.focus === 'conditioning' ? '#FFB81C' :
+    '#C8102E'; // skills + game_situations = red
+
   return (
-    <div className="flex flex-col rounded-lg border border-white/10 bg-[#111823] p-4 shadow-sm transition hover:shadow-md">
+    <div
+      className="flex flex-col rounded-lg border p-4 shadow-md transition hover:shadow-lg"
+      style={{
+        backgroundColor: '#1F2D45',
+        borderColor: 'rgba(255,255,255,0.2)',
+        borderLeftWidth: '4px',
+        borderLeftColor: accentColor,
+        borderLeftStyle: 'solid',
+        minHeight: '180px',
+      }}
+    >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${focusMeta.color}`}>
