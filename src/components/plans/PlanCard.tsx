@@ -19,12 +19,12 @@ interface PlanCardProps {
   isMine?: boolean;
 }
 
-const FOCUS_LABELS: Record<string, { label: string; emoji: string; color: string; accent: string }> = {
-  skills: { label: 'Skills', emoji: '🎯', color: 'bg-white/5 text-white ring-1 ring-white/15', accent: 'border-l-[#C8102E]' },
-  game_situations: { label: 'Game situations', emoji: '🏒', color: 'bg-white/5 text-white ring-1 ring-white/15', accent: 'border-l-[#C8102E]' },
-  off_ice: { label: 'Off-ice', emoji: '💪', color: 'bg-white/5 text-white ring-1 ring-white/15', accent: 'border-l-[#FFB81C]' },
-  goalie: { label: 'Goalie', emoji: '🥅', color: 'bg-white/5 text-white ring-1 ring-white/15', accent: 'border-l-[#14B8A6]' },
-  conditioning: { label: 'Conditioning', emoji: '⚡', color: 'bg-white/5 text-white ring-1 ring-white/15', accent: 'border-l-[#FFB81C]' },
+const FOCUS_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
+  skills: { label: 'Skills', emoji: '🎯', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  game_situations: { label: 'Game situations', emoji: '🏒', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  off_ice: { label: 'Off-ice', emoji: '💪', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  goalie: { label: 'Goalie', emoji: '🥅', color: 'bg-white/5 text-white ring-1 ring-white/15' },
+  conditioning: { label: 'Conditioning', emoji: '⚡', color: 'bg-white/5 text-white ring-1 ring-white/15' },
 };
 
 const SKILL_LABELS: Record<string, string> = {
@@ -40,7 +40,7 @@ export default function PlanCard(props: PlanCardProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const focusMeta = FOCUS_LABELS[props.focus] || { label: props.focus, emoji: '📋', color: 'bg-white/5 text-white ring-1 ring-white/15', accent: 'border-l-white/30' };
+  const focusMeta = FOCUS_LABELS[props.focus] || { label: props.focus, emoji: '📋', color: 'bg-white/5 text-white ring-1 ring-white/15' };
 
   const handleToggleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,7 +71,7 @@ export default function PlanCard(props: PlanCardProps) {
     : `U${props.ageMin}–U${props.ageMax}`;
 
   return (
-    <div className={`flex flex-col rounded-lg border border-white/15 border-l-4 ${focusMeta.accent} bg-[#161F2E] p-4 shadow-md min-h-[180px] transition hover:shadow-lg`}>
+    <div className="flex flex-col rounded-lg border border-white/10 bg-[#111823] p-4 shadow-sm transition hover:shadow-md">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${focusMeta.color}`}>
