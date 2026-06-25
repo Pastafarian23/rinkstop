@@ -57,48 +57,18 @@ export default function OffSeasonTicker() {
           alignItems: 'center',
         }}
       >
-        <div
-          style={{
-            padding: '0 0.875rem',
-            fontSize: '0.5625rem',
-            fontWeight: 800,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#C8102E',
-            flexShrink: 0,
-            borderRight: '1px solid rgba(255,255,255,0.2)',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            whiteSpace: 'nowrap',
-            zIndex: 1,
-            background: '#041E42',
-          }}
-        >
-          WELCOME TO RINKSTOP
-        </div>
-        <div
-          style={{
-            overflow: 'hidden',
-            flex: 1,
-            height: '38px',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <div className="off-season-track">
-            {[...CHIPS, ...CHIPS].map((chip, i) => (
-              <Link
-                key={`${chip.id}-${i}`}
-                href={chip.href}
-                className="off-season-chip"
-                aria-label={chip.label}
-              >
-                <span aria-hidden="true">{chip.emoji}</span>
-                <span>{chip.label} →</span>
-              </Link>
-            ))}
-          </div>
+        <div className="off-season-track">
+          {[...CHIPS, ...CHIPS].map((chip, i) => (
+            <Link
+              key={`${chip.id}-${i}`}
+              href={chip.href}
+              className="off-season-chip"
+              aria-label={chip.label}
+            >
+              <span aria-hidden="true">{chip.emoji}</span>
+              <span>{chip.label} →</span>
+            </Link>
+          ))}
         </div>
       </div>
     </>
