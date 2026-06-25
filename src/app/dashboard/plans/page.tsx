@@ -163,7 +163,7 @@ export default async function PlansPage({
                 />
               ))}
           </div>
-          <div className="mt-6 border-t border-white/10 pt-6">
+          <div className="mt-6 border-t pt-6" style={{ borderColor: 'rgba(255,255,255,0.2)' }}>
             <h2 className="mb-3 text-lg font-semibold text-white">All plans</h2>
           </div>
         </section>
@@ -172,7 +172,11 @@ export default async function PlansPage({
       {/* Filter bar */}
       <form
         method="GET"
-        className="mb-6 rounded-lg border border-white/10 bg-[#111823] p-5"
+        className="mb-6 rounded-lg border p-5 shadow-md"
+        style={{
+          backgroundColor: '#1F2D45',
+          borderColor: 'rgba(255,255,255,0.2)',
+        }}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-wider text-white/55">
@@ -223,7 +227,7 @@ export default async function PlansPage({
             />
           </div>
         </div>
-        <div className="mt-5 flex gap-2 border-t border-white/10 pt-4">
+        <div className="mt-5 flex gap-2 border-t pt-4" style={{ borderColor: 'rgba(255,255,255,0.2)' }}>
           <button
             type="submit"
             className="rounded-md bg-[#FFB81C] px-4 py-2 text-sm font-bold text-[#0D1117] hover:bg-[#FFB81C]/90"
@@ -243,7 +247,13 @@ export default async function PlansPage({
       </form>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-white/10 bg-[#111823] p-8 text-center text-white/65">
+        <div
+          className="rounded-lg border p-8 text-center text-white/65"
+          style={{
+            backgroundColor: '#1F2D45',
+            borderColor: 'rgba(255,255,255,0.2)',
+          }}
+        >
           <p className="text-lg">No plans match your filters.</p>
           <Link href="/dashboard/plans" className="mt-2 inline-block text-sm text-[#FFB81C] underline">
             Clear filters
