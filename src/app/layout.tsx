@@ -11,7 +11,7 @@ import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
-import ScoreTicker from '@/components/ScoreTicker';
+import OffSeasonTicker from '@/components/OffSeasonTicker';
 import IntentBanner from '@/components/IntentBanner';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getUserTier } from '@/lib/connections';
@@ -185,8 +185,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </head>
         <body>
 
-          {/* ---- Score Ticker ---------------------------------------------------------------------------------------------- */}
-          <ScoreTicker />
+          {/* ---- Off-Season Welcome Ticker (replaces ScoreTicker until NHL season returns) ------------------------------- */}
+          <OffSeasonTicker />
 
           {/* ---- Nav ---------------------------------------------------------------------------------------------------------------- */}
           <header className="nav-bar">
