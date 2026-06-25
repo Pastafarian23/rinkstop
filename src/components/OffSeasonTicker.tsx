@@ -9,7 +9,7 @@ interface Chip {
 
 const CHIPS: Chip[] = [
   { id: 'welcome', emoji: '🏒', label: 'Welcome to RinkStop — Find a rink near you', href: '/directory/rinks' },
-  { id: 'find-rink', emoji: '⛸', label: 'Find a rink near you', href: '/directory/rinks' },
+  { id: 'browse-players', emoji: '👤', label: 'Browse hockey players', href: '/directory/players' },
   { id: 'explore-teams', emoji: '🏒', label: 'Explore local hockey teams', href: '/directory/teams' },
   { id: 'claim', emoji: '📋', label: 'Claim your team listing', href: '/claim-your-listing' },
 ];
