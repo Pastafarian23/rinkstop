@@ -71,7 +71,7 @@ export default function PlanCard(props: PlanCardProps) {
     : `U${props.ageMin}–U${props.ageMax}`;
 
   return (
-    <div className={`flex flex-col rounded-lg border border-white/15 border-l-4 ${focusMeta.accent} bg-[#161F2E] p-4 shadow-md min-h-[180px] transition hover:shadow-lg`}>
+    <div className={`flex flex-col rounded-lg border border-white/15 border-l-4 ${focusMeta.accent} bg-slate-800 p-4 shadow-md min-h-[180px] transition hover:shadow-lg`}>
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${focusMeta.color}`}>
