@@ -172,7 +172,7 @@ export default async function PlansPage({
       {/* Filter bar */}
       <form
         method="GET"
-        className="mb-6 rounded-lg border border-white/15 bg-slate-800 p-5 shadow-md"
+        className="mb-6 rounded-lg border border-white/15 bg-[#161F2E] p-5 shadow-md"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-wider text-white/55">
@@ -243,7 +243,7 @@ export default async function PlansPage({
       </form>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-white/15 bg-slate-800 p-8 text-center text-white/65">
+        <div className="rounded-lg border border-white/15 bg-[#161F2E] p-8 text-center text-white/65">
           <p className="text-lg">No plans match your filters.</p>
           <Link href="/dashboard/plans" className="mt-2 inline-block text-sm text-[#FFB81C] underline">
             Clear filters
