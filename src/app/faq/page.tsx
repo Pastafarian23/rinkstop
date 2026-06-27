@@ -45,15 +45,15 @@ const sections: Array<{
       },
       {
         q: 'What is a "public profile" and where does it live?',
-        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Starter / Pro / Premium / Enterprise). An identity-verified checkmark — a navy-and-gold mark separate from your tier — means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
+        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Roster / Roster+ / Pro / Business Starter / Business Pro / Business Premium / Enterprise). An identity-verified checkmark - a navy-and-gold mark separate from your tier - means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
       },
       {
         q: 'What are the username rules?',
-        a: 'Usernames must be 1–30 characters, lowercase letters and numbers only (a–z, 0–9), with optional periods and underscores. Dashes, spaces, and special characters are not allowed. All usernames are case-insensitive — /profile/CoachSmith and /profile/coachsmith go to the same page. You can change your username once every 14 days; the old username is held for 14 days before becoming available again. A number of slugs are reserved: system routes (/admin, /dashboard, /login, etc.), brand terms (rinkstop, hockey, ice, rink, puck), and account-type words (team, league, player, coach, referee).',
+        a: 'Usernames must be 1-30 characters, lowercase letters and numbers only (a-z, 0-9), with optional periods and underscores. Dashes, spaces, and special characters are not allowed. All usernames are case-insensitive - /profile/CoachSmith and /profile/coachsmith go to the same page. You can change your username once every 14 days; the old username is held for 14 days before becoming available again. A number of slugs are reserved: system routes (/admin, /dashboard, /login, etc.), brand terms (rinkstop, hockey, ice, rink, puck), and account-type words (team, league, player, coach, referee).',
       },
       {
         q: 'What is the username review queue?',
-        a: 'When you sign up, your username passes through three automated checks. Layer 1 validates the format (allowed characters, length, no reserved slugs). Layer 2 flags any username starting with a brand-protected prefix (e.g. rinkstop, kiloclaw) for human review — the account is created but the username is held until an admin approves or rejects it. Layer 3 checks against a profanity and inappropriate-word list; matches are either hard-blocked (clear slurs, auto-rejected with a polite message) or soft-queued (borderline terms, reviewed by an admin). You are notified by email once your username is decided. If you believe your username was rejected in error, contact support@rinkstop.com.',
+        a: 'When you sign up, your username passes through three automated checks. Layer 1 validates the format (allowed characters, length, no reserved slugs). Layer 2 flags any username starting with a brand-protected prefix (e.g. rinkstop, kiloclaw) for human review - the account is created but the username is held until an admin approves or rejects it. Layer 3 checks against a profanity and inappropriate-word list; matches are either hard-blocked (clear slurs, auto-rejected with a polite message) or soft-queued (borderline terms, reviewed by an admin). You are notified by email once your username is decided. If you believe your username was rejected in error, contact support@rinkstop.com.',
       },
       {
         q: 'How do I edit my bio and location?',
@@ -65,11 +65,11 @@ const sections: Array<{
       },
       {
         q: 'What is identity verification and how does it work?',
-        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier — you can be verified at any paid tier (Starter, Pro, Premium, or Enterprise). Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. The verification uses a government ID document and a live selfie, processed by our vendor Didit. The check is valid for two years before a re-verification is prompted. Starter members and above can start the process at /dashboard/identity.',
+        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier - you can be verified at any paid tier (Roster, Roster+, Pro, Business tiers, or Enterprise). Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. The verification uses a government ID document and a live selfie, processed by our vendor Didit. The check is valid for two years before a re-verification is prompted. Roster+ members and above can start the process at /dashboard/identity.',
       },
       {
         q: 'Why would I verify my identity?',
-        a: 'Verification is required to hold certain roles on RinkStop — including coach, referee, scorekeeper, team manager, rink operator, and federation admin — because those roles involve youth hockey, financial transactions, or organizational trust. Even when not required for a role, verification builds credibility: other users, league admins, and clients see the checkmark and know you are a real, identified person.',
+        a: 'Verification is required to hold certain roles on RinkStop - including coach, referee, scorekeeper, team manager, rink operator, and federation admin - because those roles involve youth hockey, financial transactions, or organizational trust. Even when not required for a role, verification builds credibility: other users, league admins, and clients see the checkmark and know you are a real, identified person.',
       },
       {
         q: 'I never got my email verification code. What do I do?',
@@ -84,7 +84,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Five tiers. Free ($0) lets you browse the directory, save up to 3 listings, and follow up to 3 teams or players. Starter ($19.99/year) adds unlimited saves and follows, a Founding Member badge (first 500 only), a weekly digest, and the ability to claim 1 listing with a lead-capture form on the profile. Pro ($59.99/year) adds up to 5 claimed listings, each with its own lead-capture form, a public profile page, DM access with other Pro+ users, and above-search-result placement. Premium ($299/year) is for rinks, teams, and leagues that need more scale - it adds a Featured Listing rotation in your city, up to 25 claims, bulk claim, and an analytics dashboard. Enterprise is custom for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier. Identity verification (a government ID + selfie check) is a separate opt-in flow available to Starter members and above — it is not tied to your tier level, it is its own action you take once. See /dashboard/identity to start the process. Verified accounts show a navy-and-gold checkmark on their public profile.',
+        a: 'Eight tiers across two tracks. Personal: Free ($0) lets you browse. Roster ($19.99/year) unlocks profile claims and unlimited kid links. Roster+ ($29.99/year) adds Family Hub, photos, videos, and kid performance tracking. Pro ($59.99/year) adds up to 5 claims, DMs, and advanced analytics. Business: Business Starter ($29.99/year) claims 1 business listing. Business Pro ($59.99/year) claims up to 5 with DMs and analytics. Business Premium ($299/year) claims up to 25 with featured placement. Enterprise is custom for 25+ claims. Founding Member badge is included on all paid tiers for the first 500 members.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -100,7 +100,7 @@ const sections: Array<{
       },
       {
         q: 'Can I upgrade mid-year?',
-        a: 'Yes. Upgrades (Free to Starter, Starter to Pro, Pro to Premium) take effect immediately and the unused portion of your current plan is credited toward the new one. Go to /pricing and pick the higher tier - the checkout flow handles proration automatically.',
+        a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited toward the new one. Go to /pricing and pick the higher tier - the checkout flow handles proration automatically.',
       },
       {
         q: 'What is the Founding Member badge?',
@@ -108,7 +108,7 @@ const sections: Array<{
       },
       {
         q: 'Is there a free trial?',
-        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Starter - it is $19.99/year and you can cancel anytime by emailing support.',
+        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Roster - it is $19.99/year and you can cancel anytime by emailing support.',
       },
     ],
   },
@@ -127,11 +127,11 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Starter tier members can claim 1 listing. Pro tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Premium tier members can claim up to 25 listings, plus bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for leagues, brands, federations, or organizations that need more than 25 claims. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
+        a: 'Roster tier members can claim 1 listing. Roster+ adds Family Hub. Pro tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kids team, your beer-league squad). Business Starter claims 1 business listing. Business Pro claims up to 5 with DMs and analytics. Business Premium claims up to 25 with featured placement. Enterprise is custom for 25+ claims. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Premium is built for you if you need up to 25 claims, want featured placement at the top of your city\'s directory on every page load, or need bulk claim to claim every team in your league in one request. Enterprise is the right fit for organizations that need more than 25 claims. Lead capture is included on every claimed listing regardless of tier, so a single-rink Starter ($19.99/yr) gets the same lead pipeline as a 25-listing Premium. The analytics dashboard is included on Premium and Enterprise. If you need more than 25 claims, Enterprise is the right fit.',
+        a: 'Business Starter ($29.99) covers one rink/team/league claim. Business Pro ($59.99) covers up to 5 claims with DMs and analytics. Business Premium ($299) covers up to 25 claims with featured placement. Enterprise is for 25+ claims. Lead capture is included on every claimed listing regardless of tier, so a single-rink Business Starter gets the same lead pipeline as Business Premium.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
@@ -139,7 +139,7 @@ const sections: Array<{
       },
       {
         q: 'Can I update hours, contacts, and socials for a listing I claimed?',
-        a: 'Yes. Starter tier includes 1 claimed listing with editable details. Pro tier includes up to 5 claimed listings. Premium includes up to 25 claimed listings, all editable from your dashboard. Enterprise covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
+        a: 'Yes. Roster tier includes 1 claimed listing with editable details. Pro tier includes up to 5 claimed listings. Business Premium includes up to 25 claimed listings. Enterprise covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
       },
       {
         q: 'How long does listing review take?',
@@ -166,7 +166,7 @@ const sections: Array<{
       },
       {
         q: 'How do I save a team, player, or rink?',
-        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save up to 3; Starter and above can save unlimited.',
+        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save up to 3; Roster and above can save unlimited.',
       },
       {
         q: 'How do rink reviews work?',
@@ -193,11 +193,11 @@ const sections: Array<{
     qa: [
       {
         q: 'How do I send a direct message (DM) to another user?',
-        a: 'Pro, Premium, and Enterprise tier members can DM each other. Free and Starter tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
+        a: 'Pro, Roster+, Business Pro, Business Premium, and Enterprise tier members can DM each other. Free, Roster, and Business Starter tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
       },
       {
         q: 'Why do I need a Pro tier to DM?',
-        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Pro or higher) so the person on the other end knows they are dealing with a real account, not a throwaway. Pro, Premium, and Enterprise tiers can all DM.',
+        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Pro, Roster+, Business Pro, Business Premium, or Enterprise) so the person on the other end knows they are dealing with a real account, not a throwaway.',
       },
       {
         q: 'How do connection requests work?',
@@ -220,7 +220,7 @@ const sections: Array<{
     qa: [
       {
         q: 'How can my league or team get featured on RinkStop?',
-        a: 'Reach out at /partner or email support@rinkstop.com with your story. Premium tier members get automatic Featured Listing rotation in their city. Non-Premium members can be considered for editorial coverage in /highlights.',
+        a: 'Reach out at /partner or email support@rinkstop.com with your story. Business Premium members get automatic Featured Listing rotation in their city. Non-Premium members can be considered for editorial coverage in /highlights.',
       },
       {
         q: 'How do I advertise on RinkStop?',
@@ -255,7 +255,7 @@ const sections: Array<{
       },
       {
         q: 'How do I use the Hockey Cost Calculator?',
-        a: 'The Hockey Cost Calculator at /tools/hockey-cost-calculator estimates how much hockey costs per year in the United States. Enter the player\'s age, your state, and hockey level (House/Rec, Travel A/AA, or AAA), and the calculator returns a breakdown covering registration fees, equipment, ice time, tournaments, travel, and other costs — all based on 2026 data. No sign-up is required. The calculator is free to use and the results are shareable.',
+        a: 'The Hockey Cost Calculator at /tools/hockey-cost-calculator estimates how much hockey costs per year in the United States. Enter the player\'s age, your state, and hockey level (House/Rec, Travel A/AA, or AAA), and the calculator returns a breakdown covering registration fees, equipment, ice time, tournaments, travel, and other costs - all based on 2026 data. No sign-up is required. The calculator is free to use and the results are shareable.',
       },
       {
         q: 'How do I find out if a rink, team, or league is already on RinkStop?',
