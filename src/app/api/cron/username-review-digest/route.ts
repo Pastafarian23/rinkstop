@@ -51,9 +51,9 @@ function timeAgo(iso: string): string {
 }
 
 function tierEmoji(tier: string | null): string {
-  if (tier === 'premium') return '⭐';
+  if (tier === 'business_premium' || tier === 'enterprise') return '⭐';
   if (tier === 'pro') return '🥇';
-  if (tier === 'starter') return '🎟️';
+  if (tier === 'roster' || tier === 'roster_plus') return '🎟️';
   return '';
 }
 

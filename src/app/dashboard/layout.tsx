@@ -149,20 +149,27 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
     ['/dashboard', 'Overview'],
     ['/dashboard/connections', 'Connections', pendingConnectionCount],
     ['/dashboard/messages', 'Messages', unreadMessageCount],
-    ['/dashboard/profile', 'Profile'],
-    ['/dashboard/favorites', 'Favorites'],
-    ['/dashboard/reviews', 'Reviews'],
-    ['/dashboard/claims', 'Claims'],
   );
-  if (isBusinessUser) {
-    navLinks.push(['/dashboard/listings', 'Listings']);
+  // Personal track: show Family section
+  if (!isBusinessUser) {
+    navLinks.push(
+      ['/dashboard/family', 'Family'],
+      ['/dashboard/claims', 'Claims'],
+    );
+  } else {
+    // Business track: show Listings section
+    navLinks.push(
+      ['/dashboard/listings', 'Listings'],
+    );
   }
-  // Identity verification nav: gated to Starter+ (per design, 2026-06-17).
+  // Identity verification nav: gated to Roster+ (per design, 2026-06-17).
   // Free users see the /pricing upsell instead of this link.
   let currentTier = 'free';
   try {
     currentTier = await getUserTier(userId);
-    if (tierAtLeast(currentTier, 'starter')) {
+    // Personal track: roster+ has ID verification. Business track: business_starter+ has verification.
+    // We check if user has ANY paid tier in their track (tierAtLeast returns true if same track).
+    if (tierAtLeast(currentTier, 'roster')) {
       navLinks.push(['/dashboard/identity', 'Verification']);
     }
   } catch { /* best-effort — don't break the layout if Supabase is down */ }
@@ -181,6 +188,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
     '/dashboard/profile': '👤',
     '/dashboard/favorites': '⭐',
     '/dashboard/reviews': '✍️',
+    '/dashboard/family': '👨‍👩‍👧‍👦',
     '/dashboard/claims': '🏷️',
     '/dashboard/listings': '📋',
     '/dashboard/identity': '✅',

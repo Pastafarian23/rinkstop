@@ -129,10 +129,10 @@ export async function POST(request: NextRequest) {
   // Tier check: Roster+ allowed (parent path). Pro+ can DM anyone. Roster can only DM coaches
   // of teams their claimed kid is on (checked below after we have recipientId).
   const tier = await getUserTier(userId);
-  const tierRank: Record<string, number> = { free: 0, starter: 1, family_plus: 1, pro: 2, premium: 3, enterprise: 4 };
-  const isRosterOnly = (tierRank[tier] ?? 0) === 1; // starter or family_plus, NOT pro+
+  const tierRank: Record<string, number> = { free: 0, roster: 1, roster_plus: 1, pro: 2, business_premium: 3, enterprise: 4 };
+  const isRosterOnly = (tierRank[tier] ?? 0) === 1; // roster or roster_plus, NOT pro+
 
-  if (!tierAtLeast(tier, 'starter')) {
+  if (!tierAtLeast(tier, 'roster')) {
     return NextResponse.json(
       { error: 'Roster membership required to send messages.', currentTier: tier },
       { status: 403 }

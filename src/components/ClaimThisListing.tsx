@@ -8,13 +8,13 @@ export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';
 export type ClaimCtaState =
   | { kind: 'signed_out' }
   | { kind: 'claim_form'; entityType: ClaimEntityType; entityId: string; entityName: string }
-  | { kind: 'free'; recommendedTier?: 'starter' | 'pro' | 'premium' }
-  | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'pro' | 'enterprise' }
+  | { kind: 'free'; recommendedTier?: 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium' }
+  | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'pro' | 'business_premium' | 'enterprise' }
   | { kind: 'pending'; tier: string };
 
 const NOOP = (e: React.MouseEvent) => { e.preventDefault(); };
 
-async function openCheckout(tier: 'starter' | 'pro' | 'premium', context: string) {
+async function openCheckout(tier: 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium', context: string) {
   try {
     const res = await fetch('/api/tier/upgrade', {
       method: 'POST',
@@ -176,11 +176,11 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Claim it now — Starter unlocks 1 claim, Pro unlocks up to 5, Premium unlocks up to 25, and Enterprise covers larger orgs.
+              Claim it now — Roster unlocks profile claims, Pro unlocks up to 5, Business Premium unlocks up to 25, and Enterprise covers larger orgs.
             </div>
           </div>
           <button
-            onClick={() => openCheckout(state.recommendedTier || 'starter', 'inline-claim-free')}
+            onClick={() => openCheckout(state.recommendedTier || 'roster', 'inline-claim-free')}
             style={{
               background: '#FFB81C',
               color: '#041E42',

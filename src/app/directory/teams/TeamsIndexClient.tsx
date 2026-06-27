@@ -377,8 +377,8 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                 href={`/directory/teams/${team.slug}`}
                 style={{
                   display: 'block', textDecoration: 'none',
-                  background: team.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
-                  border: `1px solid ${team.claimed_by_tier === 'premium' ? 'rgba(200,16,46,0.5)' : team.claimed_by_tier === 'pro' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  background: team.claimed_by_tier === 'pro' || team.claimed_by_tier === 'business_premium' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
+                  border: `1px solid ${team.claimed_by_tier === 'business_premium' ? 'rgba(200,16,46,0.5)' : team.claimed_by_tier === 'pro' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
                   borderRadius: '6px',
                   padding: '1.125rem',
                   position: 'relative',
@@ -388,7 +388,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
                 {/* Tier badge in corner */}
-                {team.claimed_by_tier === 'pro' && (
+                {(team.claimed_by_tier === 'pro' || team.claimed_by_tier === 'business_premium') && (
                   <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
                     ⭐ Featured
                   </div>

@@ -48,13 +48,13 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
   }
-  // For player profiles, allow Starter+ (parent-managed use case).
+  // For player profiles, allow Roster+ (parent-managed use case).
   // For team/league profiles, require Pro+ (operator use case).
   const isPlayerManaged = body.profileType === 'player';
-  const minTier = isPlayerManaged ? 'starter' : 'pro';
+  const minTier = isPlayerManaged ? 'roster' : 'pro';
   if (!tierAtLeast(tier, minTier)) {
     return NextResponse.json(
-      { error: `${minTier === 'starter' ? 'Roster' : 'Pro'} or higher membership required to manage this profile.`, currentTier: tier },
+      { error: `${minTier === 'roster' ? 'Roster' : 'Pro'} or higher membership required to manage this profile.`, currentTier: tier },
       { status: 403 }
     );
   }

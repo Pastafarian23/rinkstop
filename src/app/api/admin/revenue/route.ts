@@ -8,11 +8,14 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any })
   : null;
 
-// Tier rename 2026-06-17: was supporter/verified/pro → starter/pro/premium.
-const PRICE_TO_TIER: Record<string, 'starter' | 'pro' | 'premium'> = {
-  [process.env.STRIPE_PRICE_TIER_STARTER || '']: 'starter',
-  [process.env.STRIPE_PRICE_TIER_PRO || '']: 'pro',
-  [process.env.STRIPE_PRICE_TIER_PREMIUM || '']: 'premium',
+// Tier rename 2026-06-17: was supporter/verified/pro → roster/roster_plus/pro/business tiers.
+const PRICE_TO_TIER: Record<string, 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium'> = {
+  [process.env.STRIPE_PRICE_ROSTER || '']: 'roster',
+  [process.env.STRIPE_PRICE_ROSTER_PLUS || '']: 'roster_plus',
+  [process.env.STRIPE_PRICE_PRO || '']: 'pro',
+  [process.env.STRIPE_PRICE_BUSINESS_STARTER || '']: 'business_starter',
+  [process.env.STRIPE_PRICE_BUSINESS_PRO || '']: 'business_pro',
+  [process.env.STRIPE_PRICE_BUSINESS_PREMIUM || '']: 'business_premium',
 };
 
 /**
@@ -41,7 +44,7 @@ export async function GET(_req: NextRequest) {
       starting_after = r.data[r.data.length - 1].id;
     }
 
-    const tierCounts: Record<string, number> = { supporter: 0, verified: 0, pro: 0, other: 0 };
+    const tierCounts: Record<string, number> = { roster: 0, roster_plus: 0, pro: 0, business_starter: 0, business_pro: 0, business_premium: 0, other: 0 };
     let mrrCents = 0;
     let arrCents = 0;
     let trialingNow = 0;

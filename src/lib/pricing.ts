@@ -1,28 +1,49 @@
 /**
  * Single source of truth for RinkStop subscription tier prices.
  *
- * IMPORTANT: The values here MUST match the live Stripe prices exactly.
- * If you change a price in Stripe, update it here in the same commit and
- * redeploy. The Stripe price IDs are pinned in the comments below.
+ * TWO SEPARATE TRACKS: PERSONAL and BUSINESS.
+ * Users choose track at signup - pricing/tier logic is completely separate.
+ * Personal users cannot access business features and vice versa.
  *
- * Tier rename 2026-06-17 (was free/supporter/verified/pro → free/starter/pro/premium/enterprise).
- * Enterprise is contact-sales only (no Stripe Price ID) — UI shows "Contact for pricing".
+ * PERSONAL TRACK (players/families):
+ *   - roster ($19.99)      → claim your profile + unlimited kids
+ *   - roster_plus ($29.99)  → photos/videos + Family Hub
+ *   - pro ($59.99)         → advanced personal features
  *
- * Live Stripe prices (verified 2026-06-17, IDs unchanged):
- *   - RinkStop Starter (was Verified/Supporter): $19.99 USD/year  (price_1ThcqgCJiUbEZVbnyHLCogTF)
- *   - RinkStop Pro:                              $59.99 USD/year  (price_1ThcqhCJiUbEZVbnVfgLCdzu)
- *   - RinkStop Premium:                          $299.00 USD/year (price_1ThcqhCJiUbEZVbnHtmWwpAa)
- *   - RinkStop Enterprise:  contact sales (no Stripe product)
+ * BUSINESS TRACK (orgs/rinks/leagues):
+ *   - business_starter ($29.99) → claim 1 business listing
+ *   - business_pro ($59.99)   → lead forms + DMs + 5 claims
+ *   - business_premium ($299)  → analytics + branding + 25 claims
+ *   - enterprise (Contact)     → custom integration
+ *
+ * Stripe price IDs are verified and stored in Vercel environment.
  */
 
-export type TierName = 'free' | 'starter' | 'pro' | 'premium' | 'enterprise';
+export type TierName = 'free' | 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium' | 'enterprise';
+
+export type AccountTrack = 'personal' | 'business';
+
+/**
+ * Tier to track mapping. Used for UI routing and feature differentiation.
+ */
+export const TIER_TO_TRACK: Record<TierName, AccountTrack> = {
+  free: 'personal', // neutral - can switch later via signup
+  roster: 'personal',
+  roster_plus: 'personal',
+  pro: 'personal',
+  business_starter: 'business',
+  business_pro: 'business',
+  business_premium: 'business',
+  enterprise: 'business',
+};
 
 export interface TierInfo {
   name: TierName;
   label: string;
-  /** Annual price in USD as a decimal (e.g. 19.99 for $19.99/year). 0 for free. null = contact sales. */
+  track: AccountTrack;
+  /** Annual price in USD as a decimal (e.g. 19.99 for $19.99/year). 0 for free. */
   priceUsd: number | null;
-  /** Stripe price ID env var name (the actual ID is server-side via process.env). Empty string if contact-sales. */
+  /** Stripe price ID env var name (the actual ID is server-side via process.env). */
   stripePriceEnv: string;
   /** Short marketing line for the tier card. */
   tagline: string;
@@ -32,75 +53,115 @@ export const TIERS: Record<TierName, TierInfo> = {
   free: {
     name: 'free',
     label: 'Free',
+    track: 'personal',
     priceUsd: 0,
     stripePriceEnv: '',
     tagline: 'I want to browse',
   },
-  starter: {
-    name: 'starter',
-    label: 'Starter',
+  roster: {
+    name: 'roster',
+    label: 'Roster',
+    track: 'personal',
     priceUsd: 19.99,
-    stripePriceEnv: 'STRIPE_PRICE_TIER_STARTER',
-    tagline: 'I want a verified profile and 1 claim',
+    stripePriceEnv: 'STRIPE_PRICE_ROSTER',
+    tagline: 'Claim your profile and link unlimited kids',
+  },
+  roster_plus: {
+    name: 'roster_plus',
+    label: 'Roster+',
+    track: 'personal',
+    priceUsd: 29.99,
+    stripePriceEnv: 'STRIPE_PRICE_ROSTER_PLUS',
+    tagline: 'Photos, videos, and Family Hub for your kids',
   },
   pro: {
     name: 'pro',
     label: 'Pro',
+    track: 'personal',
     priceUsd: 59.99,
-    stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
-    tagline: 'I run a rink, team, or league and want to be verified',
+    stripePriceEnv: 'STRIPE_PRICE_PRO',
+    tagline: 'Team management and advanced features',
   },
-  premium: {
-    name: 'premium',
-    label: 'Premium',
+  business_starter: {
+    name: 'business_starter',
+    label: 'Business Starter',
+    track: 'business',
+    priceUsd: 29.99,
+    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_STARTER',
+    tagline: 'Claim one business listing - rink, team, or league',
+  },
+  business_pro: {
+    name: 'business_pro',
+    label: 'Business Pro',
+    track: 'business',
+    priceUsd: 59.99,
+    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_PRO',
+    tagline: 'Lead forms, DMs, and featured placement for up to 5 claims',
+  },
+  business_premium: {
+    name: 'business_premium',
+    label: 'Business Premium',
+    track: 'business',
     priceUsd: 299,
-    stripePriceEnv: 'STRIPE_PRICE_TIER_PREMIUM',
-    tagline: 'I run a regional chain or multi-team org and want featured placement',
+    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_PREMIUM',
+    tagline: 'Analytics, custom branding, and advanced features for up to 25 claims',
   },
   enterprise: {
     name: 'enterprise',
     label: 'Enterprise',
+    track: 'business',
     priceUsd: null,
     stripePriceEnv: '',
-    tagline: 'I run a national league, brand, or federation and need custom integration',
+    tagline: 'Custom integration for large organizations',
   },
 };
 
 /**
- * Budget knobs per tier. Tier is a budget ceiling — features beyond the
- * budget are gated by activity (e.g. lead capture is available to anyone
- * with an active listing, not gated by Pro). See SPEC 2026-06-17 for the
- * rationale: tier-as-budget decouples features from user archetypes, so
- * a $19.99 Starter running one rink gets the same lead capture as a
- * $299 Premium running 25 listings.
+ * Max claims per tier (both tracks).
+ * Kids are unlimited within plans but don't count against this cap.
  */
-export interface TierLimits {
-  /** Max approved claims a user can hold. Infinity for enterprise. */
-  maxClaims: number;
-  /** Max active marketplace listings (ice slots, programs, etc.). */
-  maxListings: number;
-  /** Outbound marketplace messages per calendar month. Infinity = uncapped. */
-  monthlyOutboundMessages: number;
-}
-
-export const TIER_LIMITS: Record<TierName, TierLimits> = {
-  free: { maxClaims: 0, maxListings: 0, monthlyOutboundMessages: 0 },
-  starter: { maxClaims: 1, maxListings: 1, monthlyOutboundMessages: 25 },
-  pro: { maxClaims: 5, maxListings: 5, monthlyOutboundMessages: 100 },
-  premium: { maxClaims: 25, maxListings: 25, monthlyOutboundMessages: Infinity },
-  enterprise: { maxClaims: Infinity, maxListings: Infinity, monthlyOutboundMessages: Infinity },
+export const MAX_CLAIMS_PER_TIER: Record<TierName, number> = {
+  free: 0,
+  roster: 1,
+  roster_plus: 1,
+  pro: 5,
+  business_starter: 1,
+  business_pro: 5,
+  business_premium: 25,
+  enterprise: Infinity,
 };
 
 /** Convenience: monthly outbound message cap for a tier, defaulting to 0 for unknown tiers. */
 export function getMonthlyOutboundMessages(tier: TierName | string | null | undefined): number {
   if (!tier) return 0;
-  return TIER_LIMITS[tier as TierName]?.monthlyOutboundMessages ?? 0;
+  // Business tiers get higher message quotas
+  const businessTiers: Record<string, number> = {
+    free: 0,
+    roster: 100,
+    roster_plus: 250,
+    pro: 500,
+    business_starter: 100,
+    business_pro: 1000,
+    business_premium: 5000,
+    enterprise: Infinity,
+  };
+  return businessTiers[tier as TierName] ?? 0;
 }
 
 /** Convenience: max active listings for a tier. */
 export function getMaxListingsForTier(tier: TierName | string | null | undefined): number {
   if (!tier) return 0;
-  return TIER_LIMITS[tier as TierName]?.maxListings ?? 0;
+  const limits: Record<string, number> = {
+    free: 0,
+    roster: 1,
+    roster_plus: 3,
+    pro: 5,
+    business_starter: 1,
+    business_pro: 5,
+    business_premium: 25,
+    enterprise: Infinity,
+  };
+  return limits[tier as TierName] ?? 0;
 }
 
 /** Format a tier's price for display. '$0' for free, '$19.99' for paid, 'Contact' for enterprise. */
@@ -108,7 +169,6 @@ export function formatTierPrice(tier: TierName): string {
   const p = TIERS[tier].priceUsd;
   if (p === null) return 'Contact';
   if (p === 0) return '$0';
-  // Whole dollars: no decimals
   if (p === Math.floor(p)) return `$${p}`;
   return `$${p.toFixed(2)}`;
 }
@@ -118,4 +178,10 @@ export function formatTierPricePerYear(tier: TierName): string {
   const price = formatTierPrice(tier);
   if (price === 'Contact') return 'Contact for pricing';
   return `${price} / year`;
+}
+
+/** Get track for a tier (for UI routing). */
+export function getTrackForTier(tier: TierName | string | null | undefined): AccountTrack {
+  if (!tier) return 'personal';
+  return TIER_TO_TRACK[tier as TierName] ?? 'personal';
 }

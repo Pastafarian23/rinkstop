@@ -38,13 +38,13 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
   }, []);
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const verifiedCount = leagues.filter(l => l.claimed_by_tier === 'pro' || l.claimed_by_tier === 'premium' || l.claimed_by_tier === 'enterprise').length;
+  const verifiedCount = leagues.filter(l => ['pro', 'business_premium', 'enterprise'].includes(l.claimed_by_tier)).length;
 
   // Client-side filters
   const filtered = leagues.filter(l => {
     const matchSearch = !search || l.name.toLowerCase().includes(search.toLowerCase());
     const matchCountry = !country || (l.country || '').toLowerCase().includes(country.toLowerCase());
-    const matchVerified = !verifiedOnly || l.claimed_by_tier === 'pro' || l.claimed_by_tier === 'premium' || l.claimed_by_tier === 'enterprise';
+    const matchVerified = !verifiedOnly || ['pro', 'business_premium', 'enterprise'].includes(l.claimed_by_tier);
     return matchSearch && matchCountry && matchVerified;
   });
 
@@ -149,8 +149,8 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
                 href={`/directory/leagues/${league.id}`}
                 style={{
                   display: 'block', textDecoration: 'none',
-                  background: league.claimed_by_tier === 'pro' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
-                  border: `1px solid ${league.claimed_by_tier === 'premium' ? 'rgba(200,16,46,0.5)' : league.claimed_by_tier === 'pro' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  background: league.claimed_by_tier === 'pro' || league.claimed_by_tier === 'business_premium' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
+                  border: `1px solid ${league.claimed_by_tier === 'business_premium' ? 'rgba(200,16,46,0.5)' : league.claimed_by_tier === 'pro' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
                   borderRadius: '6px',
                   padding: '1.125rem',
                   position: 'relative',
@@ -159,12 +159,12 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
-                {league.claimed_by_tier === 'pro' && (
+                {league.claimed_by_tier === 'business_premium' && (
                   <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
                     ⭐ Featured
                   </div>
                 )}
-                {league.claimed_by_tier === 'pro' && (
+                {(league.claimed_by_tier === 'pro' || league.claimed_by_tier === 'business_premium') && (
                   <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Verified
