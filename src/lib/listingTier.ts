@@ -10,10 +10,10 @@ export const TIER_RANK: Record<string, number> = {
   enterprise: 0,
   business_premium: 1,
   pro: 2,
-  business_pro: 2,
-  roster_plus: 3,
-  roster: 4,
+  roster_plus: 2, // Roster+ shares rank with Pro (both can link kids + verify)
+  business_pro: 3,
   business_starter: 4,
+  roster: 4,
   free: 5,
 };
 
