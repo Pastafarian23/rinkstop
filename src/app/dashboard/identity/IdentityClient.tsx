@@ -159,13 +159,13 @@ export default function IdentityClient({
 
   const copy = STATUS_COPY[status] || STATUS_COPY.never_verified;
 
-  // Free-tier gate
+  // Roster-tier gate
   if (!canVerify) {
     return (
       <div style={{ maxWidth: 720 }}>
         <h1 style={titleStyle}>Identity verification</h1>
         <p style={bodyStyle}>
-          Identity verification is available on the <strong>Roster</strong> tier and above. It costs you $0 — the platform absorbs the fee.
+          Identity verification is available on <strong>Roster+</strong> (personal) or <strong>Business Starter</strong> (business). It costs you $0 — the platform absorbs the fee.
         </p>
         <div style={cardStyle}>
           <p style={{ ...bodyStyle, marginBottom: '1.25rem' }}>

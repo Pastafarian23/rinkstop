@@ -77,9 +77,13 @@ export default function ClaimParentButton({
     );
   }
 
-  // Roster+ required for parent claim.
-  const tierRank: Record<string, number> = { free: 0, roster: 1, roster_plus: 2, pro: 3, business_starter: 4, business_pro: 5, business_premium: 6, enterprise: 7 };
-  if ((tierRank[myTier] ?? 0) < 2) {
+  // Roster+ (personal) OR Business Pro+ (business) required for parent claim.
+  // Parents claim youth players - this is a personal feature, but business users
+  // with higher tiers also get access.
+  const personalTiers = ['roster_plus', 'pro'];
+  const businessTiers = ['business_pro', 'business_premium', 'enterprise'];
+  const canClaimParent = personalTiers.includes(myTier) || businessTiers.includes(myTier);
+  if (!canClaimParent) {
     return (
       <a
         href="/pricing"

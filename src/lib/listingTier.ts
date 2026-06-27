@@ -3,12 +3,17 @@
 // Listings without an active claim are sorted alphabetically within the "unclaimed" bucket.
 //
 // Tier rename 2026-06-17: was free/supporter/verified/pro → free/roster/roster_plus/pro/business tiers.
+// Business Starter (29.99) sorts same as Roster (same claim count).
+// Business Pro (59.99) sorts same as Pro (same claim count).
+// Business Premium and Enterprise get top placement for lead capture priority.
 export const TIER_RANK: Record<string, number> = {
   enterprise: 0,
   business_premium: 1,
   pro: 2,
+  business_pro: 2,
   roster_plus: 3,
   roster: 4,
+  business_starter: 4,
   free: 5,
 };
 
