@@ -1,23 +1,24 @@
-// Tier rank used to sort listings in directory pages.
-// Lower = higher in the list. Business Premium is always on top when claimed.
-// Listings without an active claim are sorted alphabetically within the "unclaimed" bucket.
-//
-// Tier rename 2026-06-17: was free/supporter/verified/pro → free/roster/roster_plus/pro/business tiers.
-// Business Starter (29.99) sorts same as Roster (same claim count).
-// Business Pro (59.99) sorts same as Pro (same claim count).
-// Business Premium and Enterprise get top placement for lead capture priority.
+// Tier rank for directory sorting (lower = higher placement).
+// This determines search result order for claimed listings.
+// Higher tiers get better placement for lead capture priority.
+// Roster+ (personal) and Business Pro (business) both have DMs + photos.
 export const TIER_RANK: Record<string, number> = {
+  // Top placement: priority lead capture
   enterprise: 0,
   business_premium: 1,
+  // Mid placement: DMs enabled, multiple claims
   pro: 2,
-  roster_plus: 2, // Roster+ shares rank with Pro (both can link kids + verify)
-  business_pro: 3,
-  business_starter: 4,
+  business_pro: 2,
+  // Lower placement: personal focus, kid linking
+  roster_plus: 3,
+  // Starter tiers: basic claim access
   roster: 4,
+  business_starter: 4,
+  // Unclaimed
   free: 5,
 };
 
-// Display labels for each tier (consumer-facing). Single source of truth.
+// Display labels - sourced from pricing.ts single source of truth
 export const TIER_LABELS: Record<string, string> = {
   free: 'Free',
   roster: 'Roster',
