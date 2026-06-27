@@ -517,7 +517,7 @@ export default async function Home() {
               PICK THE PLAN THAT FITS
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6 }}>
-              Free is free, forever. Starter, Pro, and Premium unlock claims, public profiles, and DMs (Pro+) — annual plans, cancel any time. Enterprise is for national leagues, brands, and federations. Identity verification is a separate opt-in flow for Pro+ members.
+              Free is free, forever. Roster ($19.99) unlocks profile claims. Pro ($59.99) adds DMs and team management. Business tiers start at $29.99 for claims, $299 for scale. Enterprise is custom for organizations needing 25+ claims. Identity verification is available to Pro and above.
             </p>
           </div>
 
@@ -525,8 +525,12 @@ export default async function Home() {
             {[
               { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, and read the directory.', cta: 'Join Free', href: '/sign-up', ctaStyle: 'btn btn-ghost' },
               { tier: 'roster', label: 'Roster', price: '$19.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Claim your profile, link unlimited kids.', cta: 'Join Roster', href: '/pricing?tier=roster', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
-              { tier: 'pro', label: 'Pro', price: '$59.99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.4)', tagline: 'Team management, DMs, and lead capture.', cta: 'Go Pro', href: '/pricing?tier=pro', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff', popular: true },
-              { tier: 'business_premium', label: 'Business Premium', price: '$299', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.4)', tagline: 'Claim up to 25, featured rotation, analytics.', cta: 'Go Premium', href: '/pricing?tier=business_premium', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
+              { tier: 'roster_plus', label: 'Roster+', price: '$29.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Family Hub, photos, videos, and performance tracking.', cta: 'Go Roster+', href: '/pricing?tier=roster_plus', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
+              { tier: 'pro', label: 'Pro', price: '$59.99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.4)', tagline: 'Team management, DMs, and advanced analytics.', cta: 'Go Pro', href: '/pricing?tier=pro', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff', popular: true },
+              { tier: 'business_starter', label: 'Business Starter', price: '$29.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Claim your rink/team/league listing.', cta: 'Claim your listing', href: '/pricing?tier=business_starter', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
+              { tier: 'business_pro', label: 'Business Pro', price: '$59.99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.4)', tagline: 'Multiple listings, DMs, analytics.', cta: 'Go Business Pro', href: '/pricing?tier=business_pro', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff', popular: true },
+              { tier: 'business_premium', label: 'Business Premium', price: '$299', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.4)', tagline: 'Featured placement, up to 25 claims.', cta: 'Go Premium', href: '/pricing?tier=business_premium', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
+              { tier: 'enterprise', label: 'Enterprise', price: 'Contact', period: '', color: '#111827', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.22)', tagline: 'Custom integration for 25+ claims.', cta: 'Contact Enterprise', href: '/partner?source=enterprise-pricing', ctaStyle: 'btn', ctaBg: 'linear-gradient(135deg, #111827, #000)', ctaColor: '#fff' },
             ].map((t) => (
               <div key={t.tier} style={{
                 position: 'relative',
