@@ -165,11 +165,11 @@ export default function IdentityClient({
       <div style={{ maxWidth: 720 }}>
         <h1 style={titleStyle}>Identity verification</h1>
         <p style={bodyStyle}>
-          Identity verification is available on the <strong>Starter</strong> tier and above. It costs you $0 — the platform absorbs the fee.
+          Identity verification is available on the <strong>Roster</strong> tier and above. It costs you $0 — the platform absorbs the fee.
         </p>
         <div style={cardStyle}>
           <p style={{ ...bodyStyle, marginBottom: '1.25rem' }}>
-            Upgrade to Starter ($19.99/yr) to verify your identity with a government-issued ID + selfie match. The "Identity verified" check appears on your profile and re-verifies every 2 years.
+            Upgrade to Roster ($19.99/yr) to verify your identity with a government-issued ID + selfie match. The "Identity verified" check appears on your profile and re-verifies every 2 years.
           </p>
           <Link
             href="/pricing"
