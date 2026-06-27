@@ -5,19 +5,20 @@
  *
  * UX (locked design, 2026-06-17):
  *   1. Show current verification status (never_verified / active / expired)
- *   2. For Roster+/Starter+ users not yet verified: show the iframe embed (Option B)
+ *   2. For Roster+/Business Starter+ users not yet verified: show the iframe embed (Option B)
  *   3. For Free/Roster users: show upgrade CTA
  *   4. For verified users: show "Identity verified" with date + expiration
  *   5. For expired: re-verify CTA
  *
- * Tier gate: Roster+ or Business Starter+ to start verification. Free/Roster users see an upsell.
+ * Tier gate: Roster+ (personal) or Business Starter+ (business) to start verification. Free/Roster users see an upsell.
  */
 
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getUserTier, tierAtLeast } from '@/lib/connections';
+import { getUserTier } from '@/lib/connections';
+import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import IdentityClient from './IdentityClient';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,8 @@ export default async function IdentityPage({
 
   const tier = await getUserTier(userId);
   // Roster+ (personal track) OR Business Starter+ (business track) can verify
-  const canVerify = tierAtLeast(tier, 'roster_plus') || tierAtLeast(tier, 'business_starter');
+  // Using tierAtLeastSameTrack which enforces same-track comparison.
+  const canVerify = tierAtLeastSameTrack(tier, 'roster_plus') || tierAtLeastSameTrack(tier, 'business_starter');
 
   // Fetch current identity status from the view
   const { data: status } = await supabaseAdmin
