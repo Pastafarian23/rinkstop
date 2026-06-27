@@ -21,17 +21,17 @@ interface MeResponse {
 
 /**
  * Post-login upgrade nudge. Shows once to free users (or weekly if frequency='weekly')
- * with a single, clear ask: "Become a Starter".
+ * with a single, clear ask: "Join Roster".
  *
  * Mounted in the root layout, but only shows on the dashboard / homepage
  * (or whatever showOnPaths lists) — never on the pricing page itself.
  *
  * Tier-aware:
- *  - If user is already on a paid tier (starter/pro/premium), show nothing
+ *  - If user is already on a paid tier (roster/pro/business), show nothing
  *  - If user is founding member, show nothing
  *  - If user just dismissed, show nothing until cooldown
  *
- * Idempotency: stores localStorage keys per-tier ("rinkstop_upgrade_nudge_seen_starter"),
+ * Idempotency: stores localStorage keys per-tier ("rinkstop_upgrade_nudge_seen_roster"),
  * not per-user. If the user clears cookies, the popup shows again — that's fine,
  * it's a free user on a clean device, not a power user with storage they care about.
  */
@@ -210,7 +210,7 @@ export default function UpgradeNudgePopup({
             </div>
           </div>
           <Link
-            href="/pricing?tier=starter"
+            href="/pricing?tier=roster"
             onClick={dismiss}
             className="btn"
             style={{
@@ -222,7 +222,7 @@ export default function UpgradeNudgePopup({
               whiteSpace: 'nowrap',
             }}
           >
-            Become Verified →
+            Join Roster →
           </Link>
         </div>
 

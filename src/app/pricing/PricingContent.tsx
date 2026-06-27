@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
 
 type Tier = {
-  id: 'free' | 'starter' | 'pro' | 'premium' | 'enterprise';
+  id: 'free' | 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium' | 'enterprise';
   label: string;
   price: string;
   period: string;
@@ -45,80 +45,137 @@ const TIERS: Tier[] = [
     footnote: 'For people just checking the site out. No card, no upsell. Browse and leave.',
   },
   {
-    id: 'starter',
-    label: 'Starter',
-    price: formatTierPrice('starter'),
+    id: 'roster',
+    label: 'Roster',
+    price: formatTierPrice('roster'),
     period: '/ year',
-    tagline: 'I want to claim 1 listing, get a Founding Member badge, and follow teams',
+    tagline: 'I want to claim my profile and link unlimited kids',
     color: '#FFB81C',
     bgColor: 'rgba(255,184,28,0.06)',
     borderColor: 'rgba(255,184,28,0.3)',
     popular: false,
-    cta: 'Become a Member',
-    stripePriceEnv: 'STRIPE_PRICE_TIER_STARTER',
+    cta: 'Join Roster',
+    stripePriceEnv: 'STRIPE_PRICE_ROSTER',
     features: [
-      'Unlimited follows and saves',
+      'Claim your player profile',
+      'Link unlimited kids',
       'Founding Member badge on your profile',
-      'Weekly digest — your favorite teams’ games, scores, and new signings',
-      'Claim a single listing (rink, team, or league) for free — update hours, contacts, socials, and unlock the lead-capture form',
+      'Weekly digest - teams games, scores, and signings',
       'Priority email support',
     ],
-    footnote:
-      'Founding Member badge is exclusive to the first 500 paid members. After that, the tier stays, the badge doesn’t.',
+    footnote: 'Founding Member badge is exclusive to the first 500 paying members.',
+  },
+  {
+    id: 'roster_plus',
+    label: 'Roster+',
+    price: formatTierPrice('roster_plus'),
+    period: '/ year',
+    tagline: 'I want photos, videos, and Family Hub for my kids',
+    color: '#FFB81C',
+    bgColor: 'rgba(255,184,28,0.12)',
+    borderColor: 'rgba(255,184,28,0.4)',
+    popular: false,
+    cta: 'Go Roster+',
+    stripePriceEnv: 'STRIPE_PRICE_ROSTER_PLUS',
+    features: [
+      'Everything in Roster',
+      'Photos and videos on profiles',
+      'Family Hub dashboard',
+      'Kid performance tracking',
+      'Priority email support',
+    ],
+    footnote: 'Designed for parents managing multiple youth players.',
   },
   {
     id: 'pro',
     label: 'Pro',
     price: formatTierPrice('pro'),
     period: '/ year',
-    tagline: 'I run a rink, team, or league and want claims, DMs, and a public profile',
+    tagline: 'I want advanced personal features and team management',
     color: '#14B8A6',
     bgColor: 'rgba(20,184,166,0.06)',
     borderColor: 'rgba(20,184,166,0.4)',
     popular: true,
     cta: 'Go Pro',
-    stripePriceEnv: 'STRIPE_PRICE_TIER_PRO',
+    stripePriceEnv: 'STRIPE_PRICE_PRO',
     features: [
-      'Everything in Starter',
-      'Up to 5 claimed listings (your home rink, your kid’s team, your beer-league squad)',
-      'Lead capture form on every claimed listing — visitors can contact you without signing up',
-      'Public profile page you can share (rinkstop.com/profile/you)',
-      'Send and receive DMs with other Pro+ users',
-      'Above search results in directory listings',
-      'Optional: earn the verified check on your profile by passing a 60-second ID check (government ID + selfie, free)',
+      'Everything in Roster+',
+      'Manage up to 5 teams',
+      'Send and receive DMs',
+      'Advanced analytics',
+      'Priority email support',
     ],
-    footnote:
-      `Pro is the identity play for orgs. It tells the people you DM that you are who you say you are — and gives you up to 5 claims, business profile, and DMs. If you need more than 5 claims (you run a rink chain, league, or multi-team org), upgrade to Premium.`,
+    footnote: 'Pro is for players/parents who want to connect with coaches.',
   },
   {
-    id: 'premium',
-    label: 'Premium',
-    price: formatTierPrice('premium'),
+    id: 'business_starter',
+    label: 'Business Starter',
+    price: formatTierPrice('business_starter'),
     period: '/ year',
-    tagline: 'I run a regional chain or multi-team org and want featured placement',
+    tagline: 'I run a rink, team, or league and want to claim listings',
+    color: '#FFB81C',
+    bgColor: 'rgba(255,184,28,0.06)',
+    borderColor: 'rgba(255,184,28,0.3)',
+    popular: false,
+    cta: 'Claim your listing',
+    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_STARTER',
+    features: [
+      'Claim one business listing (rink, team, or league)',
+      'Update hours, contacts, socials',
+      'Lead capture form on your listing',
+      'Founding Member badge on your profile',
+      'Priority email support',
+    ],
+    footnote: 'One claim covers your home rink or your team.',
+  },
+  {
+    id: 'business_pro',
+    label: 'Business Pro',
+    price: formatTierPrice('business_pro'),
+    period: '/ year',
+    tagline: 'I run multiple teams or need lead forms and DMs',
+    color: '#14B8A6',
+    bgColor: 'rgba(20,184,166,0.06)',
+    borderColor: 'rgba(20,184,166,0.4)',
+    popular: true,
+    cta: 'Go Business Pro',
+    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_PRO',
+    features: [
+      'Everything in Business Starter',
+      'Up to 5 claimed listings',
+      'Send and receive DMs',
+      'Public business profile',
+      'Analytics dashboard',
+    ],
+    footnote: 'Perfect for coaches, managers, and small orgs.',
+  },
+  {
+    id: 'business_premium',
+    label: 'Business Premium',
+    price: formatTierPrice('business_premium'),
+    period: '/ year',
+    tagline: 'I run a chain or multi-team org and want featured placement',
     color: '#C8102E',
     bgColor: 'rgba(200,16,46,0.06)',
     borderColor: 'rgba(200,16,46,0.4)',
     popular: false,
     cta: 'Go Premium',
-    stripePriceEnv: 'STRIPE_PRICE_TIER_PREMIUM',
+    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_PREMIUM',
     features: [
-      'Everything in Pro',
-      'Up to 25 claimed listings (org scope: rinks, teams, leagues — whatever you run)',
-      'Featured Listing rotation in your city (top of directory, every page load)',
-      'Bulk claim — claim every team, rink, or league in your organization at once',
-      'Analytics dashboard — who’s viewing your profile, your listings, your team',
-      'Custom branding on your public profile',
+      'Everything in Business Pro',
+      'Up to 25 claimed listings',
+      'Featured Listing rotation',
+      'Bulk claim for your organization',
+      'Custom branding',
     ],
-    footnote:
-      `At ${formatTierPrice('premium')}/year, Premium pays for itself with a single signup. Featured Listing rotation, 25 claims, and analytics give you the lead pipeline that smaller plans can’t. Built for rinks, rink chains, leagues, and multi-team orgs up to 25 claims. Lead capture is included on every claimed listing regardless of tier.`,
+    footnote: 'Built for rinks, chains, and organizations up to 25 claims.',
   },
   {
     id: 'enterprise',
     label: 'Enterprise',
-    price: 'Custom',
+    price: 'Contact',
     period: '',
-    tagline: 'For leagues, brands, federations, and organizations with more than 25 claims',
+    tagline: 'I need custom integration for 25+ claims',
     color: '#111827',
     bgColor: 'rgba(255,255,255,0.06)',
     borderColor: 'rgba(255,255,255,0.22)',
@@ -126,14 +183,13 @@ const TIERS: Tier[] = [
     cta: 'Contact Enterprise',
     stripePriceEnv: null,
     features: [
-      'Everything in Premium',
-      'More than 25 claimed listings',
-      'Bulk claim and data onboarding support',
-      'Priority support for leagues, brands, federations, and multi-team orgs',
-      'Custom reporting, API access, or partnership packaging when needed',
+      'Everything in Business Premium',
+      'Unlimited claimed listings',
+      'Bulk data onboarding',
+      'Priority support',
+      'Custom reporting/API',
     ],
-    footnote:
-      'Need more than 25 claims? Contact us and we’ll scope it with you before you pay.',
+    footnote: 'For national leagues, brands, and federations.',
   },
 ];
 
@@ -161,39 +217,39 @@ const ROLE_VALUE_PROPS: Record<Role, string> = {
 const FAQ = [
   {
     q: 'Is this a subscription?',
-    a: 'Yes. Starter, Pro, and Premium are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
+    a: 'Yes. Roster, Pro, and Business Premium are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
   },
   {
-    q: 'What’s a Founding Member badge?',
-    a: 'The first 500 paying members (any paid tier) get a Founding Member badge on their profile. It’s a one-time, no-replacement scarcity lever — once they’re gone, the tier stays but the badge doesn’t come back.',
+    q: 'What is a Founding Member badge?',
+    a: 'The first 500 paying members (any paid tier) get a Founding Member badge on their profile. It is a one-time, no-replacement scarcity lever - once they are gone, the tier stays but the badge does not come back.',
   },
   {
     q: 'Can I claim a listing without paying?',
-    a: 'Starter includes 1 claim. Pro includes up to 5 claims — enough for a personal scope (your home rink, your kid’s team, your beer-league squad). Premium includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
+    a: 'Roster includes your profile claim. Pro includes up to 5 claims - enough for a personal scope (your home rink, your kids team, your beer-league squad). Business Premium includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
   },
   {
     q: 'I manage a rink, team, league, or organization. Which tier is for me?',
-    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Starter ($19.99) gets the same lead pipeline as a 25-listing Premium ($299). The difference is scale: Starter covers 1 claim, Pro covers up to 5, Premium covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
+    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Roster ($19.99) gets the same lead pipeline as a 25-listing Business Premium ($299). The difference is scale: Roster covers profile claims, Pro covers up to 5, Business Premium covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
   },
   {
-    q: 'I’m a parent of a youth player. Can I claim my kid?',
-    a: 'Yes. The parent signs up (Pro+ to DM) and uses “I’m this player’s parent” on the kid’s profile to claim it. The kid’s profile shows “Managed by [Your Name]”. All DMs go through your account — one Clerk account, kid as a managed sub-profile.',
+    q: 'I am a parent of a youth player. Can I claim my kid?',
+    a: 'Yes. The parent signs up (Pro+ to DM) and uses "I am this players parent" on the kids profile to claim it. The kids profile shows "Managed by [Your Name]". All DMs go through your account - one Clerk account, kid as a managed sub-profile.',
   },
   {
-    q: 'Can I send DMs as my kid’s parent?',
-    a: 'Yes. The parent’s account sends the DM, the kid’s profile is the context. Coaches and scouts see the kid’s name and stats in the thread, and the parent’s name in the from-line.',
+    q: 'Can I send DMs as my kids parent?',
+    a: 'Yes. The parents account sends the DM, the kids profile is the context. Coaches and scouts see the kids name and stats in the thread, and the parents name in the from-line.',
   },
   {
     q: 'What if I want to change or cancel my membership?',
-    a: 'Email support@rinkstop.com. We respond within 24 hours and can walk you through your options. Your benefits stay active through the end of your paid period. We don’t bury a cancel button in your account — we just ask you to talk to us first so we can understand what we could have done better.',
+    a: 'Email support@rinkstop.com. We respond within 24 hours and can walk you through your options. Your benefits stay active through the end of your paid period. We do not bury a cancel button in your account - we just ask you to talk to us first so we can understand what we could have done better.',
   },
   {
     q: 'Can I upgrade mid-year?',
-    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Starter to Pro, or Pro to Premium, at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
+    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Roster to Roster+, Roster+ to Pro, or Business tiers at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
   },
   {
     q: 'Why no ad-free tier?',
-    a: 'Ads fund the free tier and the low prices on the paid tiers. We don’t pretend otherwise.',
+    a: 'Ads fund the free tier and the low prices on the paid tiers. We do not pretend otherwise.',
   },
 ];
 
@@ -272,7 +328,7 @@ export default function FoundingMemberContent({
         setError('Checkout did not return a URL');
       }
     } catch (e) {
-      setError('Network error — please try again');
+      setError('Network error - please try again');
     } finally {
       setBusy(null);
     }
@@ -280,7 +336,7 @@ export default function FoundingMemberContent({
 
   return (
     <main style={{ background: '#0a0a0a', minHeight: '100vh', color: '#fff' }}>
-      {/* Cancelled-checkout recovery banner — only renders if the user came
+      {/* Cancelled-checkout recovery banner - only renders if the user came
           back from a Stripe Checkout "back" click. Doesn't penalize them,
           doesn't nag. Just acknowledges and offers to make it easy. */}
       {cancelled && (
@@ -295,7 +351,7 @@ export default function FoundingMemberContent({
             fontSize: '0.875rem',
           }}
         >
-          You bailed on checkout — no problem. Founding-member pricing is still live.{' '}
+          You bailed on checkout - no problem. Founding-member pricing is still live.{' '}
           <a href="#tiers" style={{ color: '#FFB81C', fontWeight: 700, textDecoration: 'underline', marginLeft: 4 }}>
             Jump back to plans
           </a>
@@ -332,16 +388,16 @@ export default function FoundingMemberContent({
           </div>
         ) : (
           <div style={{ marginTop: 12, fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>
-            All {foundingCap} Founding Member badges have been claimed. The paid tiers stay — only the badge is gone.
+            All {foundingCap} Founding Member badges have been claimed. The paid tiers stay - only the badge is gone.
           </div>
         )}
         {currentUserId && currentUserTier && currentUserTier !== 'free' ? (
           <div style={{ marginTop: 12, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
-            You’re on the <span style={{ color: '#FFB81C', fontWeight: 600 }}>{currentUserTier}</span> tier. Use the cards below to upgrade.
+            You're on the <span style={{ color: '#FFB81C', fontWeight: 600 }}>{currentUserTier}</span> tier. Use the cards below to upgrade.
           </div>
         ) : null}
         <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, lineHeight: 1.1, margin: '0 0 1.25rem' }}>
-          Hockey’s directory. <br />
+          Hockey's directory. <br />
           <span style={{ color: '#C8102E' }}>Actually useful</span> for everyone in it.
         </h1>
         <p style={{ fontSize: '1.125rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
@@ -349,7 +405,7 @@ export default function FoundingMemberContent({
         </p>
       </section>
 
-      {/* Role-based value prop tabs. Default to 'player' — the broadest
+      {/* Role-based value prop tabs. Default to 'player' - the broadest
           audience. Switching roles changes the value-prop paragraph above the
           tier grid without changing the tiers themselves. Per SPEC 2026-06-17,
           tiers stay the same; the framing is what adapts. */}
@@ -409,11 +465,11 @@ export default function FoundingMemberContent({
         >
           {ROLE_VALUE_PROPS[role]}
         </p>
-        {/* Operator discovery path — coaches/managers/orgs often arrive at
+        {/* Operator discovery path - coaches/managers/orgs often arrive at
             /pricing before they've even found their listing. Send them
             through the free claim-your-listing flow first so they experience
             the product (and land in our membership funnel with intent).
-            Players/parents don't see this — they don't manage a listing. */}
+            Players/parents don't see this - they don't manage a listing. */}
         {(role === 'coach' || role === 'org') && (
           <div
             style={{
@@ -513,7 +569,7 @@ export default function FoundingMemberContent({
                   transition: 'transform 0.1s, opacity 0.15s',
                 }}
               >
-                {busy === tier.id ? 'Loading…' : tier.cta}
+                {busy === tier.id ? 'Loading...' : tier.cta}
               </button>
             </div>
           ))}
@@ -568,39 +624,39 @@ export default function FoundingMemberContent({
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Founding Member badge</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'free' ? 'rgba(255,255,255,0.3)' : '#FFB81C' }}>
-                    {t.id === 'free' ? '—' : '✓'}
+                    {t.id === 'free' ? '-' : '✓'}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Claim listings</td>
+                <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Claims</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: '#fff' }}>
-                    {t.id === 'free' ? '—' : t.id === 'starter' ? '1' : t.id === 'pro' ? 'Up to 5' : t.id === 'premium' ? 'Up to 25' : 'Custom'}
+                    {t.id === 'free' ? '-' : t.id === 'roster' || t.id === 'roster_plus' || t.id === 'business_starter' ? '1' : t.id === 'pro' || t.id === 'business_pro' ? 'Up to 5' : t.id === 'business_premium' ? 'Up to 25' : 'Custom'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Optional identity check<br /><span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>Government ID + selfie, free, re-verify every 2 years</span></td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '#FFB81C' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'roster_plus' || t.id === 'business_pro' || t.id === 'business_premium' || t.id === 'enterprise' ? '#FFB81C' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'pro' || t.id === 'roster_plus' || t.id === 'business_pro' || t.id === 'business_premium' || t.id === 'enterprise' ? '✓' : '-'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Send and receive DMs</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' || t.id === 'premium' || t.id === 'enterprise' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'roster_plus' || t.id === 'business_pro' || t.id === 'business_premium' || t.id === 'enterprise' ? '#14B8A6' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'pro' || t.id === 'roster_plus' || t.id === 'business_pro' || t.id === 'business_premium' || t.id === 'enterprise' ? '✓' : '-'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Featured Listing rotation</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'business_premium' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'business_premium' || t.id === 'enterprise' ? '✓' : '-'}
                   </td>
                 ))}
               </tr>
@@ -608,15 +664,15 @@ export default function FoundingMemberContent({
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Lead capture form on each claim</td>
                 {TIERS.map((t) => (
                   <td key={t.id} style={{ textAlign: 'center', color: t.id === 'free' ? 'rgba(255,255,255,0.3)' : '#FFB81C' }}>
-                    {t.id === 'free' ? '—' : '✓'}
+                    {t.id === 'free' ? '-' : '✓'}
                   </td>
                 ))}
               </tr>
               <tr>
                 <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>Analytics dashboard</td>
                 {TIERS.map((t) => (
-                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'pro' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
-                    {t.id === 'pro' || t.id === 'enterprise' ? '✓' : '—'}
+                  <td key={t.id} style={{ textAlign: 'center', color: t.id === 'business_pro' || t.id === 'business_premium' || t.id === 'enterprise' ? '#C8102E' : 'rgba(255,255,255,0.3)' }}>
+                    {t.id === 'business_pro' || t.id === 'business_premium' || t.id === 'enterprise' ? '✓' : '—'}
                   </td>
                 ))}
               </tr>
@@ -631,7 +687,7 @@ export default function FoundingMemberContent({
           {[
             { title: 'One price, all features', body: 'Your tier gets you every feature in that tier. No add-ons, no boost packs, no "verified on top of founding" upsells.' },
             { title: 'Your listing, your data', body: 'When you claim a listing, you can edit anything we show. When you leave, your edits stay unless you want them gone.' },
-            { title: 'No daily upsell', body: 'You won’t get a "save 20% if you upgrade today" banner on every page. One price, one ask.' },
+            { title: 'No daily upsell', body: "You won't get a 'save 20% if you upgrade today' banner on every page. One price, one ask." },
             { title: 'No ads dressed up as content', body: 'Sponsored rinks in search results are labeled "Sponsored". Always.' },
           ].map((b) => (
             <div key={b.title} style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}>
@@ -664,7 +720,7 @@ export default function FoundingMemberContent({
 
       <section style={{ padding: '2rem 1.5rem 4rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-          Have a question we didn’t answer? Email <a href="mailto:support@rinkstop.com" style={{ color: '#14B8A6', textDecoration: 'none' }}>support@rinkstop.com</a>.
+          Have a question we didn't answer? Email <a href="mailto:support@rinkstop.com" style={{ color: '#14B8A6', textDecoration: 'none' }}>support@rinkstop.com</a>.
         </p>
         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', margin: '0.5rem 0 0' }}>
           Already a member? <Link href="/dashboard/subscription" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Manage your subscription</Link>.

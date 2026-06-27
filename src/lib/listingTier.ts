@@ -1,22 +1,26 @@
 // Tier rank used to sort listings in directory pages.
-// Lower = higher in the list. Premium is always on top when claimed.
+// Lower = higher in the list. Business Premium is always on top when claimed.
 // Listings without an active claim are sorted alphabetically within the "unclaimed" bucket.
 //
-// Tier rename 2026-06-17: was free/supporter/verified/pro → free/starter/pro/premium/enterprise.
+// Tier rename 2026-06-17: was free/supporter/verified/pro → free/roster/roster_plus/pro/business tiers.
 export const TIER_RANK: Record<string, number> = {
   enterprise: 0,
-  premium: 1,
+  business_premium: 1,
   pro: 2,
-  starter: 3,
-  free: 4,
+  roster_plus: 3,
+  roster: 4,
+  free: 5,
 };
 
 // Display labels for each tier (consumer-facing). Single source of truth.
 export const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  starter: 'Starter',
+  roster: 'Roster',
+  roster_plus: 'Roster+',
   pro: 'Pro',
-  premium: 'Premium',
+  business_starter: 'Business Starter',
+  business_pro: 'Business Pro',
+  business_premium: 'Business Premium',
   enterprise: 'Enterprise',
 };
 

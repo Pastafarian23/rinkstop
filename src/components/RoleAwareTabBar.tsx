@@ -116,7 +116,7 @@ interface Props {
    */
   accountTypes: Array<{ account_type: string; is_primary: boolean }>;
   /**
-   * User tier from profiles.tier. 'free' / 'starter' / 'pro' / 'premium' / 'enterprise'.
+   * User tier from profiles.tier. 'free' / 'roster' / 'roster_plus' / 'pro' / 'business_starter' / 'business_pro' / 'business_premium' / 'enterprise'.
    */
   tier: string;
 }
@@ -186,7 +186,7 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
 
   const tabs = useMemo(() => {
     let set = TABS_BY_ROLE[role] || DEFAULT_TABS;
-    // Tier gating: paid profiles (starter+) don't see Browse/News/Directory tabs
+    // Tier gating: paid profiles (roster+) don't see Browse/News/Directory tabs
     // unless they're specifically the role's working tool.
     // EXCEPTION: if the user hasn't picked an account_type yet (accountTypes is
     // empty), don't tier-gate — they need every tab to navigate and find their

@@ -216,11 +216,11 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
           )}
           {atCap && (
             <p style={{ color: '#C8102E', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
-              {tier === 'pro' ? `You've reached the 25-claim Premium limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
+              {tier === 'business_premium' || tier === 'enterprise' ? `You've reached the ${maxClaims}-claim limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
               <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-                {tier === 'pro' ? 'Contact Enterprise' : 'Upgrade to Premium'}
+                {tier === 'business_premium' || tier === 'enterprise' ? 'Contact Enterprise' : 'Upgrade'}
               </Link>{' '}
-              {tier === 'pro' ? 'for custom claim volume, bulk claim, and Featured Listing rotation.' : 'for up to 25 claims and bulk claim. If you need more, contact Enterprise.'}
+              {tier === 'business_premium' || tier === 'enterprise' ? 'for custom claim volume and bulk claim.' : 'for more claims and bulk claim. If you need more, contact Enterprise.'}
             </p>
           )}
         </div>
@@ -238,7 +238,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Upgrade required to claim
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            The Free tier doesn't include claims. Starter is {formatTierPrice('starter')}/year (1 claim), Pro is {formatTierPrice('pro')}/year (up to 5), Premium is {formatTierPrice('premium')}/year (up to 25 + bulk), and Enterprise is custom for larger organizations.
+            The Free tier doesn't include claims. Roster is {formatTierPrice('roster')}/year (profile + kids), Roster+ is {formatTierPrice('roster_plus')}/year (photos/videos), Pro is {formatTierPrice('pro')}/year (team management/DMs), Business Pro is {formatTierPrice('business_pro')}/year (up to 5 claims), Business Premium is {formatTierPrice('business_premium')}/year (up to 25 + bulk), and Enterprise is custom for larger organizations.
           </p>
           <Link
             href="/pricing"
@@ -269,7 +269,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Claim limit reached
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            {tier === 'pro' ? `You've used all 25 Premium claim slots. Contact Enterprise for custom volume, bulk claim, and Featured Listing rotation.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade to Premium for up to 25 claims, bulk claim, and Featured Listing rotation. For more than 25, contact Enterprise.`}
+            {tier === 'business_premium' || tier === 'enterprise' ? `You've used all ${maxClaims} claim slots. Contact Enterprise for custom volume and bulk claim.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact Enterprise.`}
           </p>
           <Link
             href="/pricing"
@@ -285,7 +285,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
               letterSpacing: '0.02em',
             }}
           >
-            {tier === 'pro' ? 'Contact Enterprise →' : 'Upgrade to Pro →'}
+            {tier === 'business_premium' || tier === 'enterprise' ? 'Contact Enterprise →' : 'Upgrade →'}
           </Link>
         </div>
       ) : (

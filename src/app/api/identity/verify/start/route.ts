@@ -4,7 +4,7 @@
  * POST /api/identity/verify/start
  *
  * Creates a Didit.me verification session for the caller and returns the
- * hosted URL. Tier gate: `tierAtLeast(tier, 'starter')` (Starter+ required
+ * hosted URL. Tier gate: `tierAtLeast(tier, 'roster_plus')` (Roster+ required
  * for Phase 1, per the role-based hub design where 7 of 8 roles require
  * verification and verification itself requires a paid tier).
  *
@@ -46,16 +46,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 3. Tier gate: Starter+ required for Phase 1
+    // 3. Tier gate: Roster+ required for Phase 1
     // (Was Pro+ in earlier design; downgraded 2026-06-17 because
     //  verification-required roles (coach, manager, etc.) are
-    //  available from Starter. Only free users are blocked.)
+    //  available from Roster+. Only free/roster users are blocked.)
     const tier = await getUserTier(userId);
-    if (!tierAtLeast(tier, 'starter')) {
+    if (!tierAtLeast(tier, 'roster_plus')) {
       return NextResponse.json(
         {
           error: 'tier_required',
-          message: 'Identity verification requires a paid tier (Starter or above).',
+          message: 'Identity verification requires Roster+ tier (Personal) or Business Starter+ tier.',
           current_tier: tier,
           upgrade_url: '/pricing',
         },

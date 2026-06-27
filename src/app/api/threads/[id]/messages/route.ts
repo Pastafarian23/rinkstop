@@ -157,7 +157,7 @@ export async function POST(
   // Tier check: Roster+ required to send messages. (Recipients are gated at thread-creation time
 // in /api/threads POST, so if this thread exists and the caller is a participant, they can send.)
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'starter')) {
+  if (!tierAtLeast(tier, 'roster')) {
     return NextResponse.json(
       { error: 'Roster membership required to send messages.', currentTier: tier },
       { status: 403 }

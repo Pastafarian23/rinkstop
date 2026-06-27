@@ -10,16 +10,22 @@ export const dynamic = 'force-dynamic';
 
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  starter: 'Starter',
+  roster: 'Roster',
+  roster_plus: 'Roster+',
   pro: 'Pro',
-  premium: 'Premium',
+  business_starter: 'Business Starter',
+  business_pro: 'Business Pro',
+  business_premium: 'Business Premium',
   enterprise: 'Enterprise',
 };
 
 const TIER_PRICES: Record<string, string> = {
-  starter: formatTierPricePerYear('starter'),
+  roster: formatTierPricePerYear('roster'),
+  roster_plus: formatTierPricePerYear('roster_plus'),
   pro: formatTierPricePerYear('pro'),
-  premium: formatTierPricePerYear('premium'),
+  business_starter: formatTierPricePerYear('business_starter'),
+  business_pro: formatTierPricePerYear('business_pro'),
+  business_premium: formatTierPricePerYear('business_premium'),
   enterprise: formatTierPricePerYear('enterprise'),
 };
 

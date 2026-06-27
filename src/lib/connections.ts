@@ -3,6 +3,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase';
 import { auth } from '@clerk/nextjs/server';
+import { TierName, MAX_CLAIMS_PER_TIER as NEW_MAX_CLAIMS, TIER_TO_TRACK, AccountTrack } from '@/lib/pricing';
 
 export type ConnectionStatus = 'pending' | 'accepted' | 'blocked' | 'declined';
 
@@ -16,42 +17,55 @@ export interface Connection {
   accepted_at: string | null;
 }
 
-// Tier rename 2026-06-17: was free/supporter/verified/pro/enterprise → free/starter/pro/premium/enterprise.
+// Tier rank within each track (separate rankings, no cross-track comparisons).
+// Within each track: free < roster < roster_plus < pro (for personal)
+// Within each track: free < business_starter < business_pro < business_premium < enterprise (for business)
 export const TIER_RANK: Record<string, number> = {
+  // Personal track ranks
   free: 0,
-  starter: 1,
-  pro: 2,
-  premium: 3,
+  roster: 1,
+  roster_plus: 2,
+  pro: 3,
+  // Business track ranks
+  business_starter: 1,
+  business_pro: 2,
+  business_premium: 3,
   enterprise: 4,
 };
 
 /**
  * Max number of APPROVED claims a user can hold on each tier.
- *  free: 0 (cannot claim)
- *  starter: 1 (personal: home rink, kid's team)
- *  pro: 5 (multi-purpose: rinks, teams, leagues under one operator)
- *  premium: 25 (org-scope: regional chains, multi-team programs)
- *  enterprise: Infinity (custom org-scope: national leagues, brands, federations, and large data partners)
- *
- * Pending claims don't count against the cap (the user can submit a new one
- * while a previous one is still being reviewed). The cap applies to
- * status='approved' rows in the claims table.
- *
- * Special case: 'parent_managed' claims (where a parent claims their kid's
- * player profile) don't count against the cap. They're a separate use case
- * (declared via the special reason text 'parent_managed:<player_id>') and
- * route through a different code path on the API side.
+ * Kids are unlimited and don't count against this cap.
  */
 export const MAX_CLAIMS_PER_TIER: Record<string, number> = {
-  free: 0,
-  starter: 1,
-  pro: 5,
-  premium: 25,
-  enterprise: Infinity,
+  ...NEW_MAX_CLAIMS,
 };
 
 export function getMaxClaimsForTier(tier: string): number {
   return MAX_CLAIMS_PER_TIER[tier] ?? 0;
+}
+
+/**
+ * Is the user's tier at least `minTier` within their track?
+ * Returns false for cross-track comparisons (roster vs business_starter).
+ */
+export function tierAtLeast(actualTier: string, minTier: string): boolean {
+  const actualRank = TIER_RANK[actualTier] ?? 0;
+  const minRank = TIER_RANK[minTier] ?? 0;
+  const actualTrack = TIER_TO_TRACK[actualTier as TierName] ?? 'personal';
+  const minTrack = TIER_TO_TRACK[minTier as TierName] ?? 'personal';
+  
+  // Cross-track comparison not allowed - must be within same track
+  if (actualTrack !== minTrack) return false;
+  
+  return actualRank >= minRank;
+}
+
+/**
+ * Get a user's tier track (personal or business).
+ */
+export function getTierTrack(tier: string): AccountTrack {
+  return TIER_TO_TRACK[tier as TierName] ?? 'personal';
 }
 
 /**
@@ -103,13 +117,6 @@ export async function getUserTier(userId: string): Promise<string> {
   }
 
   return (data.tier as string) || 'free';
-}
-
-/**
- * Is the user's tier at least `minTier`?
- */
-export function tierAtLeast(actualTier: string, minTier: string): boolean {
-  return (TIER_RANK[actualTier] ?? 0) >= (TIER_RANK[minTier] ?? 0);
 }
 
 /**

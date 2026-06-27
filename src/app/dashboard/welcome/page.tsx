@@ -7,61 +7,89 @@ import { formatTierPricePerYear } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
-type TierId = 'free' | 'starter' | 'pro' | 'premium' | 'enterprise';
-// Tier rename 2026-06-17: was free/supporter/verified/pro → free/starter/pro/premium/enterprise.
+type TierId = 'free' | 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium' | 'enterprise';
+// Tier rename 2026-06-17: was free/supporter/verified/pro → free/roster/roster_plus/pro/business tiers.
 
 // Lower number = lower tier; 0 is free, 4 is enterprise
-const TIER_RANK: Record<TierId, number> = {
+// Personal track ranks
+const PERSONAL_TIER_RANK: Record<string, number> = {
   free: 0,
-  starter: 1,
-  pro: 2,
-  premium: 3,
+  roster: 1,
+  roster_plus: 2,
+  pro: 3,
+};
+// Business track ranks
+const BUSINESS_TIER_RANK: Record<string, number> = {
+  business_starter: 1,
+  business_pro: 2,
+  business_premium: 3,
   enterprise: 4,
 };
+const TIER_RANK: Record<string, number> = { ...PERSONAL_TIER_RANK, ...BUSINESS_TIER_RANK };
 
-// What each tier just unlocked — kept short and concrete so the user knows
+// What each tier just unlocked - kept short and concrete so the user knows
 // exactly what to do with their new membership.
 const NEXT_STEPS: Record<TierId, string[]> = {
-  starter: [
-    'Claim 1 listing (your home rink, your kid’s team, your beer-league squad) — just click any rink/team/league and tap "Claim".',
-    'Opt in to the weekly digest from your account settings to get your favorite teams’ games, scores, and new signings in one email.',
-    'Your Founding Member badge is now live on your profile. (First 500 paying members only — it stays after that.)',
+  roster: [
+    'Claim your player profile and link your kids.',
+    'Opt in to the weekly digest from your account settings to get your favorite teams games, scores, and new signings in one email.',
+    'Your Founding Member badge is now live on your profile. (First 500 paying members only - it stays after that.)',
+  ],
+  roster_plus: [
+    'Photos and videos are now enabled on your profile.',
+    'Open the Family Hub to start tracking your kids performance.',
+    'Your Founding Member badge is now live on your profile.',
   ],
   pro: [
-    'Your Pro tier is live — claim up to 5 listings, get a public profile at rinkstop.com/profile/yourusername, and DM other Pro+ users.',
-    'Verify your identity (optional, 60 seconds) to earn the only check on RinkStop. Visit /dashboard/identity. The check shows on your profile and every listing you claim. Re-verify every 2 years.',
-    'Claim your first listing — click any rink/team/league and tap "Claim".',
-    'Above the search results in directory listings — your claimed rink/team now ranks higher in the city.',
+    'Your Pro tier is live - claim up to 5 listings and DM other Pro+ users.',
+    'Verify your identity (optional, 60 seconds) to earn the only check on RinkStop. Visit /dashboard/identity.',
+    'Claim your first listing - click any rink/team/league and tap "Claim".',
+    'Above the search results in directory listings.',
   ],
-  premium: [
-    'Claim up to 25 listings — if you run a rink chain, league, or multi-team org, you can now bulk-claim everything.',
-    'Your Featured Listing rotation is live in your city. Top of the directory on page load.',
-    'A lead-capture form is now on every claimed listing — visitors can contact you without signing up. Check the Leads tab in your dashboard.',
-    'Open the Analytics dashboard to see who is viewing your profile, your listings, and your team.',
-    'Custom branding on your public profile is available in /dashboard/profile.',
+  business_starter: [
+    'Claim one business listing (rink, team, or league) - update hours, contacts, and unlock lead capture.',
+    'Opt in to the weekly digest to get inquiries sent to your email.',
+    'Your Founding Member badge is now live on your profile.',
+  ],
+  business_pro: [
+    'Claim up to 5 listings and get a public business profile.',
+    'Receive DMs from interested players and teams.',
+    'Check your Leads tab in the dashboard.',
+  ],
+  business_premium: [
+    'Claim up to 25 listings - bulk claim for your whole organization.',
+    'Your Featured Listing rotation is live in your city.',
+    'Open the Analytics dashboard to see who is viewing your listings.',
+    'Custom branding is available in /dashboard/profile.',
   ],
   enterprise: [
     'Welcome to Enterprise. Your account has been configured for unlimited claims.',
-    'Your dedicated success contact has been notified — they’ll reach out within 24 hours to scope data onboarding and API access.',
+    'Your dedicated success contact has been notified - they will reach out within 24 hours to scope data onboarding and API access.',
   ],
   free: [],
 };
 
-// What to upsell to (or "you’ve got everything" for premium/enterprise)
+// What to upsell to (or "you've got everything" for premium/enterprise)
 const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: string; reason: string }> = {
-  free: { id: 'starter', label: 'Starter', price: formatTierPricePerYear('starter'), reason: 'Unlimited follows, claim 1 listing, weekly digest' },
-  starter: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Claim up to 5, public profile, DMs' },
-  pro: { id: 'premium', label: 'Premium', price: formatTierPricePerYear('premium'), reason: 'Claim up to 25, featured rotation, analytics' },
-  premium: { id: 'enterprise', label: 'Enterprise', price: 'Contact', reason: 'You’ve got every self-serve feature. Enterprise is for national leagues, brands, and federations with custom needs.' },
-  enterprise: { id: null, label: '—', price: '—', reason: 'You’ve got every feature. Reach out to your success contact for anything else.' },
+  free: { id: 'roster', label: 'Roster', price: formatTierPricePerYear('roster'), reason: 'Claim your profile and link unlimited kids' },
+  roster: { id: 'roster_plus', label: 'Roster+', price: formatTierPricePerYear('roster_plus'), reason: 'Photos, videos, and Family Hub for your kids' },
+  roster_plus: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Team management and advanced features' },
+  pro: { id: 'business_starter', label: 'Business Starter', price: formatTierPricePerYear('business_starter'), reason: 'Switch to business track for lead capture and DMs' },
+  business_starter: { id: 'business_pro', label: 'Business Pro', price: formatTierPricePerYear('business_pro'), reason: 'Claim up to 5, lead capture, DMs, analytics' },
+  business_pro: { id: 'business_premium', label: 'Business Premium', price: formatTierPricePerYear('business_premium'), reason: 'Claim up to 25, featured rotation, analytics' },
+  business_premium: { id: 'enterprise', label: 'Enterprise', price: 'Contact', reason: 'You\'ve got every self-serve feature. Enterprise is for national leagues, brands, and federations with custom needs.' },
+  enterprise: { id: null, label: '—', price: '—', reason: 'You\'ve got every feature. Reach out to your success contact for anything else.' },
 };
 
 // Tier color (matches TierBadge)
 const TIER_COLOR: Record<TierId, string> = {
   free: '#9CA3AF',
-  starter: '#FFB81C',
+  roster: '#FFB81C',
+  roster_plus: '#FFB81C',
   pro: '#14B8A6',
-  premium: '#C8102E',
+  business_starter: '#FFB81C',
+  business_pro: '#14B8A6',
+  business_premium: '#C8102E',
   enterprise: '#FFFFFF',
 };
 
@@ -73,12 +101,12 @@ export default async function WelcomePage({
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
-  // Pull both the URL param and the current profile tier — they should match
+  // Pull both the URL param and the current profile tier - they should match
   // by the time the user lands here (the webhook fires on
   // checkout.session.completed), but we tolerate a slight race by preferring
   // the profile's actual current tier.
   const params = await searchParams;
-  const urlTier = (params.tier || 'starter') as TierId;
+  const urlTier = (params.tier || 'roster') as TierId;
   const sessionId = params.session_id || null;
 
   const { data: profile } = await supabaseAdmin
@@ -94,8 +122,8 @@ export default async function WelcomePage({
   const tier = upgraded ? actualTier : urlTier;
   const color = TIER_COLOR[tier] || '#FFB81C';
   const isFounding = profile?.is_founding_member || false;
-  const nextSteps = NEXT_STEPS[tier] || NEXT_STEPS.starter;
-  const nextTier = NEXT_TIER[tier] || NEXT_TIER.starter;
+  const nextSteps = NEXT_STEPS[tier] || NEXT_STEPS.roster;
+  const nextTier = NEXT_TIER[tier] || NEXT_TIER.roster;
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
@@ -124,14 +152,17 @@ export default async function WelcomePage({
           {isFounding && <FoundingMemberBadge />}
         </div>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', maxWidth: 480, margin: '0 auto' }}>
-          {tier === 'premium' && 'Premium is unlocked. Lead capture, featured rotation, analytics — it’s all live.'}
-          {tier === 'pro' && 'You’re Pro. Your checkmark is showing on your profile and every listing you claim.'}
-          {tier === 'starter' && 'You’re a Member. Your one free claim is ready — start with a rink or team you manage.'}
-          {tier === 'enterprise' && 'You’re on Enterprise. Your success contact will reach out within 24 hours to scope onboarding.'}
+          {tier === 'business_premium' && 'Business Premium is unlocked. Lead capture, featured rotation, analytics - it\'s all live.'}
+          {tier === 'pro' && 'You\'re Pro. Your checkmark is showing on your profile and every listing you claim.'}
+          {tier === 'roster_plus' && 'You\'re on Roster+. Family Hub and photo features are now available.'}
+          {tier === 'roster' && 'You\'re on Roster. Your profile claim and kids linking is ready.'}
+          {tier === 'business_starter' && 'You\'re on Business Starter. Your one free claim is ready - start with a rink or team you manage.'}
+          {tier === 'business_pro' && 'You\'re on Business Pro. Lead capture, DMs, and analytics are now live.'}
+          {tier === 'enterprise' && 'You\'re on Enterprise. Your success contact will reach out within 24 hours to scope onboarding.'}
         </p>
         {!upgraded && (
           <div style={{ marginTop: 12, fontSize: '0.8125rem', color: '#FFB81C' }}>
-            Finalizing your upgrade… (usually under 5 seconds — refresh if it doesn’t update)
+            Finalizing your upgrade... (usually under 5 seconds - refresh if it doesn't update)
           </div>
         )}
       </div>
@@ -228,7 +259,7 @@ export default async function WelcomePage({
             Want more?
           </div>
           <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
-            <strong style={{ color: '#fff' }}>{nextTier.label}</strong> ({nextTier.price}) — {nextTier.reason}.
+            <strong style={{ color: '#fff' }}>{nextTier.label}</strong> ({nextTier.price}) - {nextTier.reason}.
           </p>
           <Link
             href={`/pricing?tier=${nextTier.id}`}

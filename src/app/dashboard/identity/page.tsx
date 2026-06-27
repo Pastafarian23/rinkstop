@@ -5,12 +5,12 @@
  *
  * UX (locked design, 2026-06-17):
  *   1. Show current verification status (never_verified / active / expired)
- *   2. For Starter+ users not yet verified: show the iframe embed (Option B)
- *   3. For free users: show upgrade CTA
+ *   2. For Roster+/Starter+ users not yet verified: show the iframe embed (Option B)
+ *   3. For Free/Roster users: show upgrade CTA
  *   4. For verified users: show "Identity verified" with date + expiration
  *   5. For expired: re-verify CTA
  *
- * Tier gate: Starter+ to start verification. Free users see an upsell.
+ * Tier gate: Roster+ or Business Starter+ to start verification. Free/Roster users see an upsell.
  */
 
 import { auth } from '@clerk/nextjs/server';
@@ -31,7 +31,8 @@ export default async function IdentityPage({
   if (!userId) redirect('/login');
 
   const tier = await getUserTier(userId);
-  const canVerify = tierAtLeast(tier, 'starter');
+  // Roster+ (personal track) OR Business Starter+ (business track) can verify
+  const canVerify = tierAtLeast(tier, 'roster_plus') || tierAtLeast(tier, 'business_starter');
 
   // Fetch current identity status from the view
   const { data: status } = await supabaseAdmin

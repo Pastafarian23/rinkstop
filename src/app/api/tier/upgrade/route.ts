@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
+import { TierName, TIER_TO_TRACK, MAX_CLAIMS_PER_TIER } from '@/lib/pricing';
 
 const RATE_LIMIT = { maxRequests: 5, windowMs: 10 * 60 * 1000 };
 
@@ -15,19 +16,31 @@ const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' as any })
   : null;
 
-// Tier rename 2026-06-17: was supporter/verified/pro → starter/pro/premium.
-type TierId = 'starter' | 'pro' | 'premium';
-
-const TIER_RANK: Record<TierId, number> = {
-  starter: 1,
-  pro: 2,
-  premium: 3,
+/**
+ * Tier to track-specific price env var mapping.
+ * Each track has its own Stripe price ID (separate products).
+ */
+const TIER_TO_PRICE_ENV: Record<TierName, string> = {
+  free: '',
+  roster: 'STRIPE_PRICE_ROSTER',
+  roster_plus: 'STRIPE_PRICE_ROSTER_PLUS',
+  pro: 'STRIPE_PRICE_PRO',
+  business_starter: 'STRIPE_PRICE_BUSINESS_STARTER',
+  business_pro: 'STRIPE_PRICE_BUSINESS_PRO',
+  business_premium: 'STRIPE_PRICE_BUSINESS_PREMIUM',
+  enterprise: '', // contact sales - no Stripe product
 };
 
-const TIER_TO_PRICE_ENV: Record<TierId, string> = {
-  starter: 'STRIPE_PRICE_TIER_STARTER',
-  pro: 'STRIPE_PRICE_TIER_PRO',
-  premium: 'STRIPE_PRICE_TIER_PREMIUM',
+// Tier rank for downgrade prevention (within each track)
+const TIER_RANK: Record<TierName, number> = {
+  free: 0,
+  roster: 1,
+  roster_plus: 2,
+  pro: 3,
+  business_starter: 1,
+  business_pro: 2,
+  business_premium: 3,
+  enterprise: 4,
 };
 
 export async function POST(req: NextRequest) {
@@ -53,7 +66,7 @@ export async function POST(req: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  let body: { tier?: string | null };
+  let body: { tier?: string | null; track?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -62,6 +75,8 @@ export async function POST(req: NextRequest) {
   }
 
   const requestedTier = typeof body.tier === 'string' ? body.tier : '';
+  const requestedTrack = typeof body.track === 'string' ? body.track : null;
+
   if (requestedTier === 'enterprise') {
     const res = NextResponse.json(
       { error: 'enterprise_contact_sales', url: '/partner?source=tier-upgrade-api' },
@@ -70,10 +85,10 @@ export async function POST(req: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  const tier = requestedTier as TierId;
+  const tier = requestedTier as TierName;
   if (!tier || !(tier in TIER_TO_PRICE_ENV)) {
     const res = NextResponse.json(
-      { error: 'invalid_tier', allowed: Object.keys(TIER_TO_PRICE_ENV) },
+      { error: 'invalid_tier', allowed: Object.keys(TIER_TO_PRICE_ENV).filter(t => t !== 'free' && t !== 'enterprise') },
       { status: 400 }
     );
     return applyRateLimitHeaders(res, result);
@@ -95,18 +110,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Server-side funnel event: user reached the Stripe checkout start.
-  // We capture this here (not just on the client) so a dropped
-  // navigator.sendBeacon can't lose the event. The actual purchase
-  // is captured by the Stripe webhook (checkout.session.completed)
-  // and the invoice.paid handler, both in /api/webhooks/stripe.
   await trackEvent({
     name: 'checkout_started',
     userId,
     pathname: '/pricing',
-    props: { tier, priceEnv },
+    props: { tier, track: TIER_TO_TRACK[tier], priceEnv },
   });
 
-  // Look up or create a Stripe customer for this Clerk user
+  // Look up profile for downgrade guard
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles')
     .select('stripe_customer_id, email, display_name, tier, stripe_subscription_id, subscription_status')
@@ -114,24 +125,28 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   // GUARD: Reject downgrades. Self-serve cancel/downgrade is intentionally not supported.
-  // Users must contact support to change or cancel a paid membership.
-  const currentTier = (profile?.tier || 'free') as TierId | 'free';
-  if (currentTier !== 'free' && profile?.stripe_subscription_id) {
-    // They have an active subscription
-    if (subscriptionIsActive(profile.subscription_status) && TIER_RANK[tier] <= (TIER_RANK[currentTier as TierId] ?? 0)) {
+  const currentTier = (profile?.tier || 'free') as TierName | 'free';
+  const currentUserTrack = TIER_TO_TRACK[currentTier as TierName] ?? 'personal';
+  const requestedUserTrack = TIER_TO_TRACK[tier] ?? 'personal';
+  
+  // Cross-track upgrades allowed, but downgrades within track blocked
+  if (profile?.stripe_subscription_id) {
+    const isActive = subscriptionIsActive(profile.subscription_status);
+    const currentRank = TIER_RANK[currentTier as TierName] ?? 0;
+    const requestedRank = TIER_RANK[tier] ?? 0;
+    
+    // Block downgrade if same track and requested rank <= current
+    if (isActive && currentUserTrack === requestedUserTrack && requestedRank <= currentRank) {
       const res = NextResponse.json(
         {
           error: 'downgrade_not_self_serve',
-          message: 'To change or cancel your paid membership, please contact support@rinkstop.com. We respond within 24 hours and will work with you on any changes.',
+          message: 'To change or cancel your paid membership, please contact support@rinkstop.com. We respond within 24 hours.',
         },
         { status: 403 }
       );
       return applyRateLimitHeaders(res, result);
     }
   }
-
-  // Look up or create a Stripe customer for this Clerk user
-  // (profile already loaded above for downgrade guard)
 
   if (profileErr) {
     console.error('profile lookup err', profileErr);
@@ -161,16 +176,13 @@ export async function POST(req: NextRequest) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${origin}/dashboard/welcome?tier=${tier}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/pricing?cancelled=1`,
-    metadata: { clerk_user_id: userId, tier },
-    subscription_data: { metadata: { clerk_user_id: userId, tier } },
+    metadata: { clerk_user_id: userId, tier, track: TIER_TO_TRACK[tier] },
+    subscription_data: { metadata: { clerk_user_id: userId, tier, track: TIER_TO_TRACK[tier] } },
     allow_promotion_codes: true,
   });
 
-  // Conversion tracking — structured log line so we can grep it later
-  // or pipe to a real analytics service. Format: parseable key=value pairs
-  // in a single line so it doesn't fragment in log aggregators.
-  console.log(`[conversion] checkout_started user_id=${userId} tier=${tier} customer_id=${customerId} session_id=${session.id}`);
+  console.log(`[conversion] checkout_started user_id=${userId} tier=${tier} track=${TIER_TO_TRACK[tier]} customer_id=${customerId} session_id=${session.id}`);
 
-  const res = NextResponse.json({ url: session.url, sessionId: session.id, tier });
+  const res = NextResponse.json({ url: session.url, sessionId: session.id, tier, track: TIER_TO_TRACK[tier] });
   return applyRateLimitHeaders(res, result);
 }
