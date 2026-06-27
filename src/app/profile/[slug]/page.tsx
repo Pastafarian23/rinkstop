@@ -125,11 +125,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 const TIER_COLORS: Record<string, { bg: string; border: string; text: string; label: string }> = {
-  free:       { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',  text: 'rgba(255,255,255,0.5)', label: 'Free' },
-  starter:    { bg: 'rgba(255,184,28,0.1)',  border: 'rgba(255,184,28,0.3)',  text: '#FFB81C',                label: 'Starter' },
-  pro:        { bg: 'rgba(20,184,166,0.1)',  border: 'rgba(20,184,166,0.3)',  text: '#14B8A6',                label: 'Pro' },
-  premium:    { bg: 'rgba(200,16,46,0.1)',   border: 'rgba(200,16,46,0.3)',   text: '#C8102E',                label: 'Premium' },
-  enterprise: { bg: 'rgba(99,102,241,0.1)',  border: 'rgba(99,102,241,0.3)',  text: '#818CF8',                label: 'Enterprise' },
+  free:         { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',  text: 'rgba(255,255,255,0.5)', label: 'Free' },
+  roster:       { bg: 'rgba(255,184,28,0.1)',  border: 'rgba(255,184,28,0.3)',  text: '#FFB81C',                label: 'Roster' },
+  roster_plus:  { bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)',  text: '#FFB81C',                label: 'Roster+' },
+  pro:          { bg: 'rgba(20,184,166,0.1)',  border: 'rgba(20,184,166,0.3)',  text: '#14B8A6',                label: 'Pro' },
+  business_starter: { bg: 'rgba(255,184,28,0.1)', border: 'rgba(255,184,28,0.3)', text: '#FFB81C', label: 'Business Starter' },
+  business_pro: { bg: 'rgba(20,184,166,0.1)',  border: 'rgba(20,184,166,0.3)',  text: '#14B8A6',                label: 'Business Pro' },
+  business_premium: { bg: 'rgba(200,16,46,0.12)', border: 'rgba(200,16,46,0.4)',   text: '#C8102E', label: 'Business Premium' },
+  enterprise:   { bg: 'rgba(99,102,241,0.1)',  border: 'rgba(99,102,241,0.3)',  text: '#818CF8',                label: 'Enterprise' },
 };
 
 export default async function ProfileBySlugPage({ params }: PageProps) {
