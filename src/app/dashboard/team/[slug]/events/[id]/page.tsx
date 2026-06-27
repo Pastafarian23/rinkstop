@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { hasTeamAdminAccess } from '@/lib/tier-gate';
 import EventKindBadge from '@/components/team/EventKindBadge';
 import DeleteButtonClient from './DeleteButtonClient';
+import { AttendanceSection } from '@/components/team/AttendanceSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,6 +112,41 @@ export default async function EventDetailPage({ params }: PageProps) {
   const isAuthor = event.created_by === userId;
   const isAdmin = ADMIN_ROLES.includes(myMembership.role);
   const canEdit = gate.allowed && (isAuthor || isAdmin);
+  const canMarkAttendance = gate.allowed && isAdmin;
+
+  // Fetch players with RSVP status for attendance section
+  const { data: playersWithRsvp } = await supabaseAdmin
+    .from('team_rsvps')
+    .select('user_id, response, attendance_status')
+    .eq('event_id', id)
+    .in('response', ['yes', 'maybe']);
+
+  const playerIds = (playersWithRsvp || []).map((p) => p.user_id);
+  const attendancePlayers: Array<{
+    userId: string;
+    displayName: string | null;
+    username: string | null;
+    attendanceStatus: string | null;
+    rsvpResponse: string;
+  }> = [];
+
+  if (playerIds.length > 0) {
+    const { data: profs } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, display_name, username')
+      .in('user_id', playerIds);
+    const profMap = new Map((profs || []).map((p) => [p.user_id, p]));
+    for (const p of playersWithRsvp || []) {
+      const prof = profMap.get(p.user_id);
+      attendancePlayers.push({
+        userId: p.user_id,
+        displayName: prof?.display_name || null,
+        username: prof?.username || null,
+        attendanceStatus: (p.attendance_status as any) || null,
+        rsvpResponse: p.response,
+      });
+    }
+  }
 
   const isCancelled = event.status === 'cancelled';
   const isCompleted = event.status === 'completed';
@@ -228,6 +264,47 @@ export default async function EventDetailPage({ params }: PageProps) {
             <RsvpStat label="Maybe" count={maybeCount} color="#3b82f6" />
             <RsvpStat label="No" count={noCount} color="#C8102E" />
           </div>
+        </div>
+      )}
+
+      {/* Attendance section */}
+      {event.rsvp_required && (
+        <div style={{
+          background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem',
+          marginBottom: 16,
+        }}>
+          <h2 style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 12px' }}>
+            Attendance
+          </h2>
+          {!gate.allowed ? (
+            <div style={{ padding: '1rem', color: 'rgba(255,255,255,0.7)' }}>
+              <p style={{ margin: '0 0 8px', fontSize: 13 }}>
+                Attendance tracking requires a paid tier.
+              </p>
+              <a
+                href="/pricing"
+                style={{
+                  display: 'inline-block',
+                  padding: '0.4rem 0.8rem',
+                  background: '#FFB81C',
+                  color: '#0D1117',
+                  borderRadius: 4,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Upgrade to unlock
+              </a>
+            </div>
+          ) : (
+            <AttendanceSection
+              teamSlug={normalizedSlug}
+              eventId={id}
+              players={attendancePlayers}
+              canMarkAttendance={canMarkAttendance}
+            />
+          )}
         </div>
       )}
     </div>
