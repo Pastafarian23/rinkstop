@@ -2,33 +2,33 @@
 
 ## Personal Track
 
-| Tier | Price | Max Claims | Family Hub | Profile Verification | DMs | Analytics | Storage |
-|------|-------|------------|------------|---------------------|-----|-----------|---------|
-| Free | $0 | 0 | ❌ | ❌ | ❌ | ❌ | 0GB |
-| Roster | $19.99 | 1 | ❌ | ❌ | ❌ | ❌ | 0GB |
-| Roster+ | $29.99 | 1 | ✅ | ✅ | ❌ | ❌ | 1GB |
-| Pro | $59.99 | 5 | ✅ | ✅ | ✅ | ✅ | 5GB |
+| Tier | Price | Max Claims | Max Listings | DMs | Family Hub | Identity Verify | Photo Upload | Analytics | Notes |
+|------|-------|------------|--------------|-----|------------|-----------------|--------------|-----------|-------|
+| Free | $0 | 0 | 0 | ❌ | ❌ | ❌ | ❌ | ❌ | Browse only |
+| Roster | $19.99 | 1 | 3 | ❌ | ❌ | ❌ | ❌ | ❌ | Claim 1 personal profile |
+| Roster+ | $29.99 | 1 | 3 | ❌ | ✅ | ✅ | ✅ | ❌ | Family features, kid linking |
+| Pro | $59.99 | 5 | 5 | ✅ | ✅ | ✅ | ✅ | ✅ | Team management |
 
 ## Business Track
 
-| Tier | Price | Max Claims | Family Hub | Profile Verification | DMs | Analytics | Lead Capture | Storage |
-|------|-------|------------|------------|---------------------|-----|-----------|--------------|---------|
-| Free | $0 | 0 | ❌ | ✅ | ❌ | ❌ | ❌ | 0GB |
-| Business Starter | $29.99 | 1 | ❌ | ✅ | ❌ | ❌ | ✅ | 1GB |
-| Business Pro | $55.99 | 5 | ✅ | ✅ | ✅ | ✅ | ✅ | 5GB |
-| Business Premium | $299 | 25 | ✅ | ✅ | ✅ | ✅ | ✅ (Priority) | 25GB |
-| Enterprise | Contact | ∞ | ✅ | ✅ | ✅ | ✅ | ✅ (Priority) | ∞ |
+| Tier | Price | Max Claims | Max Listings | DMs | Family Hub | Identity Verify | Photo Upload | Analytics | Lead Capture | Notes |
+|------|-------|------------|--------------|-----|------------|-----------------|--------------|-----------|--------------|-------|
+| Free | $0 | 0 | 0 | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | Browse only |
+| Business Starter | $29.99 | 1 | 1 | ❌ | ❌ | ✅ | ❌ | ❌ | ✅ | Single business claim |
+| Business Pro | $55.99 | 5 | 5 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Lead forms, DMs |
+| Business Premium | $299 | 25 | 25 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Priority) | Analytics, branding |
+| Enterprise | Contact | ∞ | ∞ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (Priority) | Custom integration |
 
 ## Feature Details
 
 ### Claims & Listings
 - **Personal**: Claim rinks, teams, leagues, or players for personal use (your kid's team, your home rink)
-- **Business**: Claim business listings (rink facility, hockey store, training center)
+- **Business**: Claim business listings (rink facility, hockey store, training center, league)
 
 ### Family Hub
-- **Roster+ and above**: Link youth players as parent/guardian
-- **Includes**: Kid profile linking, performance tracking, photos/videos
-- **Purpose**: Track your children's hockey journey
+- **Roster+ and above (personal)**, **Business Pro+ (business)**
+- Link youth players as parent/guardian
+- Includes: Kid profile linking, performance tracking, photos/videos
 
 ### Profile Verification
 - **Gate**: Roster+ (personal) OR Business Starter+ (business)
@@ -43,21 +43,23 @@
 
 ### Lead Capture
 - **Gate**: Any active claim
-- **Business Premium/Enterprise**: Priority placement in directory listings
+- **Business Premium/Enterprise**: Priority placement in directory listings (higher search rank)
 
 ## Database Tier Values
 
 ```typescript
-type TierId = 
+type TierName = 
   | 'free'
   | 'roster' | 'roster_plus' | 'pro'
   | 'business_starter' | 'business_pro' | 'business_premium'
   | 'enterprise';
+
+type AccountTrack = 'personal' | 'business';
 ```
 
 ## Navigation Split
 
-### Personal Dashboard
+### Personal Dashboard (`/dashboard/family/` route)
 - Family - Linked players, performance tracking
 - Claims - Claim personal listings
 - Identity - Verification status
@@ -65,7 +67,7 @@ type TierId =
 - Subscription - Billing
 - Support - Help
 
-### Business Dashboard
+### Business Dashboard (`/dashboard/listings/` route)
 - Listings - Business claim management
 - Identity - Verification status
 - Leads - Lead pipeline (priority for Business Premium/Enterprise)
