@@ -259,7 +259,7 @@ const sections: Array<{
       },
       {
         q: 'How do I find out if a rink, team, or league is already on RinkStop?',
-        a: 'Use the search bar on the homepage or go to /claim-your-listing and type the name. If the listing appears, it\'s already in our directory. If it does not appear, you can submit a new listing from /add-listing or claim it once you have a Starter or higher membership.',
+        a: 'Use the search bar on the homepage or go to /claim-your-listing and type the name. If the listing appears, it\'s already in our directory. If it does not appear, you can submit a new listing from /add-listing or claim it once you have a Roster or higher membership.',
       },
       {
         q: 'How do I delete a review I left?',
