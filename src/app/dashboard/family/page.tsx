@@ -16,7 +16,9 @@ export default async function FamilyPage() {
 
   // Personal track: Roster+/Pro/Business Pro/Business Premium/Enterprise have Family features
   // Business Starter does NOT have Family features (business focus)
-  const canAccessFamily = ['roster_plus', 'pro', 'business_pro', 'business_premium', 'enterprise'].includes(tier);
+  // Handle legacy 'premium' tier value (maps to roster_plus)
+  const normalizedTier = tier === 'premium' ? 'roster_plus' : tier;
+  const canAccessFamily = ['roster_plus', 'pro', 'business_pro', 'business_premium', 'enterprise'].includes(normalizedTier);
 
   if (!canAccessFamily) {
     redirect('/pricing');
