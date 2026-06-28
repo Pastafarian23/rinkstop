@@ -73,7 +73,7 @@ export async function GET() {
           token,
           createdAt: new Date(meta.createdAt).toISOString(),
           expiresAt: new Date(meta.expiresAt).toISOString(),
-          url: `/api/schedule/share/${token}`,
+          url: `/schedule/share/${token}/`,
         });
       }
     }
@@ -124,7 +124,7 @@ export async function POST() {
     token,
     createdAt: new Date(now).toISOString(),
     expiresAt: new Date(now + TOKEN_TTL_MS).toISOString(),
-    url: `/api/schedule/share/${token}`,
+    url: `/schedule/share/${token}/`,
   });
 }
 
