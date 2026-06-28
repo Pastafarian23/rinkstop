@@ -1,6 +1,7 @@
 'use client';
 
 import { AttendanceCheck } from './AttendanceCheck';
+import { AttendanceNotes } from './AttendanceNotes';
 
 interface AttendanceRowProps {
   teamSlug: string;
@@ -10,6 +11,7 @@ interface AttendanceRowProps {
   username: string | null;
   rsvpResponse: string;
   currentStatus: string | null;
+  currentNote?: string | null;
   canMark: boolean;
 }
 
@@ -21,6 +23,7 @@ export function AttendanceRow({
   username,
   rsvpResponse,
   currentStatus,
+  currentNote,
   canMark,
 }: AttendanceRowProps) {
   const rsvpColors = {
@@ -33,7 +36,7 @@ export function AttendanceRow({
     <div
       style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
         padding: '0.5rem 0.75rem',
         background: 'rgba(255,255,255,0.03)',
@@ -71,12 +74,23 @@ export function AttendanceRow({
           </div>
         </div>
       </div>
-      <AttendanceCheck
-        playerId={playerId}
-        initialStatus={currentStatus as any}
-        onChange={(pid, newStatus) => handleAttendanceChange(teamSlug, eventId, pid, newStatus)}
-        disabled={!canMark}
-      />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+        <AttendanceCheck
+          playerId={playerId}
+          initialStatus={currentStatus as any}
+          onChange={(pid, newStatus) => handleAttendanceChange(teamSlug, eventId, pid, newStatus)}
+          disabled={!canMark}
+        />
+        {canMark && (
+          <AttendanceNotes
+            playerId={playerId}
+            eventId={eventId}
+            teamSlug={teamSlug}
+            initialNote={currentNote}
+            disabled={!canMark}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -103,6 +103,7 @@ export default function TeamCalendar({
   initialDate,
   initialKind = '',
   initialTeam = 'all',
+  readonly = false,
 }: TeamCalendarProps) {
   const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>(initialView);
   const [cursor, setCursor] = useState<Date>(() => {
@@ -323,10 +324,6 @@ function MonthView({
               {dayEvents.slice(0, 3).map((e) => {
                 const c = teamColor(e.team_id);
                 const team = teamById.get(e.team_id);
-                // In readonly mode (shared schedule), don't link to dashboard
-                const eventLink = readonly 
-                  ? null 
-                  : `/dashboard/team/${e.team_slug}/events/${e.id}`;
                 const title = `${team?.name ?? 'Team'} — ${KIND_LABEL[e.event_kind] || e.event_kind}: ${e.title}`;
                 return (
                   <div
@@ -363,7 +360,9 @@ function MonthView({
 }
 
 function WeekView({ cursor, events, teamById, readonly = false }: { cursor: Date; events: CalendarEvent[]; teamById: Map<string, CalendarTeam>; readonly?: boolean }) {
-  // ... existing code ...
+  const start = startOfWeek(cursor);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  const today = new Date();
   return (
     <div className="cal-week" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4 }}>
       {days.map((d) => {
