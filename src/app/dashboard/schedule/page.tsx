@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import TeamCalendar, { CalendarEvent, CalendarTeam } from '@/components/team/TeamCalendar';
 import PrintButton from '@/components/ui/PrintButton';
+import ShareScheduleButton from '@/components/ui/ShareScheduleButton';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Schedule' };
@@ -110,7 +111,7 @@ export default async function SchedulePage({ searchParams }: PageProps) {
             Events across <strong style={{ color: '#FFB81C' }}>{teamsList.length}</strong> team{teamsList.length === 1 ? '' : 's'} you&rsquo;re on. Color-coded so you always know which team.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: 'column' }}>
           <a
             href="/api/schedule/ics"
             style={{
@@ -129,6 +130,7 @@ export default async function SchedulePage({ searchParams }: PageProps) {
           >
             📥 Export .ics
           </a>
+          <ShareScheduleButton />
           <PrintButton />
         </div>
       </header>

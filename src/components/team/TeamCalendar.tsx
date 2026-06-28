@@ -38,6 +38,8 @@ interface TeamCalendarProps {
   initialKind?: string;
   /** Initial team filter ('all' or team id). */
   initialTeam?: string;
+  /** Readonly mode - hides action buttons and navigation. */
+  readonly?: boolean;
 }
 
 const KIND_EMOJI: Record<string, string> = {
@@ -321,11 +323,15 @@ function MonthView({
               {dayEvents.slice(0, 3).map((e) => {
                 const c = teamColor(e.team_id);
                 const team = teamById.get(e.team_id);
+                // In readonly mode (shared schedule), don't link to dashboard
+                const eventLink = readonly 
+                  ? null 
+                  : `/dashboard/team/${e.team_slug}/events/${e.id}`;
+                const title = `${team?.name ?? 'Team'} — ${KIND_LABEL[e.event_kind] || e.event_kind}: ${e.title}`;
                 return (
-                  <Link
+                  <div
                     key={e.id}
-                    href={`/dashboard/team/${e.team_slug}/events/${e.id}`}
-                    title={`${team?.name ?? 'Team'} — ${KIND_LABEL[e.event_kind] || e.event_kind}: ${e.title}`}
+                    title={title}
                     style={{
                       display: 'block',
                       padding: '2px 6px',
@@ -334,14 +340,13 @@ function MonthView({
                       borderRadius: 3,
                       fontSize: 10,
                       color: '#fff',
-                      textDecoration: 'none',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                     }}
                   >
                     {teamShortLabel(team || { slug: e.team_slug, name: e.team_name })} {KIND_EMOJI[e.event_kind] || ''}
-                  </Link>
+                  </div>
                 );
               })}
               {dayEvents.length > 3 && (
@@ -357,10 +362,8 @@ function MonthView({
   );
 }
 
-function WeekView({ cursor, events, teamById }: { cursor: Date; events: CalendarEvent[]; teamById: Map<string, CalendarTeam> }) {
-  const start = startOfWeek(cursor);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  const today = new Date();
+function WeekView({ cursor, events, teamById, readonly = false }: { cursor: Date; events: CalendarEvent[]; teamById: Map<string, CalendarTeam>; readonly?: boolean }) {
+  // ... existing code ...
   return (
     <div className="cal-week" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4 }}>
       {days.map((d) => {
@@ -372,7 +375,7 @@ function WeekView({ cursor, events, teamById }: { cursor: Date; events: Calendar
               {d.toLocaleDateString('en-US', { weekday: 'short' })} {d.getDate()}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {dayEvents.map((e) => <EventBlock key={e.id} event={e} team={teamById.get(e.team_id)} compact />)}
+              {dayEvents.map((e) => <EventBlock key={e.id} event={e} team={teamById.get(e.team_id)} compact readonly={readonly} />)}
               {dayEvents.length === 0 && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>No events</div>}
             </div>
           </div>
@@ -446,12 +449,46 @@ function AgendaView({ cursor, events, teamById }: { cursor: Date; events: Calend
   );
 }
 
-function EventBlock({ event, team, compact = false }: { event: CalendarEvent; team?: CalendarTeam | undefined; compact?: boolean }) {
+function EventBlock({ event, team, compact = false, readonly = false }: { event: CalendarEvent; team?: CalendarTeam | undefined; compact?: boolean; readonly?: boolean }) {
   const c = teamColor(event.team_id);
   const teamLabel = team ? teamShortLabel(team) : (event.team_short_name || event.team_name);
   const start = new Date(event.starts_at);
   const end = new Date(event.ends_at);
   const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  
+  // In readonly mode, render as div instead of Link
+  if (readonly) {
+    return (
+      <div
+        style={{
+          display: 'block',
+          padding: compact ? '0.4rem 0.6rem' : '0.7rem 0.9rem',
+          background: c.bg,
+          borderLeft: `3px solid ${c.color}`,
+          borderRadius: 4,
+          color: '#fff',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, color: c.color, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>
+          <span>{KIND_EMOJI[event.event_kind] || '📅'}</span>
+          <span>{teamLabel}</span>
+          <span style={{ color: 'rgba(255,255,255,0.4)' }}>·</span>
+          <span style={{ color: 'rgba(255,255,255,0.65)' }}>{KIND_LABEL[event.event_kind] || event.event_kind}</span>
+        </div>
+        <div style={{ fontSize: compact ? 12 : 13, fontWeight: 600, marginBottom: 2, color: '#fff' }}>
+          {event.title}
+        </div>
+        {!compact && (
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
+            {fmt(start)} → {fmt(end)}
+            {event.location_note ? ` · 📍 ${event.location_note}` : ''}
+            {event.opposing_team ? ` · vs ${event.opposing_team}` : ''}
+          </div>
+        )}
+      </div>
+    );
+  }
+  
   return (
     <Link
       href={`/dashboard/team/${event.team_slug}/events/${event.id}`}
