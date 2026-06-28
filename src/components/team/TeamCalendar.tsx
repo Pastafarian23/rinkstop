@@ -281,11 +281,13 @@ function MonthView({
   events,
   teamById,
   teamFilter,
+  readonly = false,
 }: {
   cursor: Date;
   events: CalendarEvent[];
   teamById: Map<string, CalendarTeam>;
   teamFilter: string;
+  readonly?: boolean;
 }) {
   // Build 6-week grid (42 cells) starting from startOfWeek(startOfMonth(cursor))
   const start = startOfWeek(startOfMonth(cursor));
@@ -326,24 +328,13 @@ function MonthView({
                 const team = teamById.get(e.team_id);
                 const title = `${team?.name ?? 'Team'} — ${KIND_LABEL[e.event_kind] || e.event_kind}: ${e.title}`;
                 return (
-                  <div
+                  <EventBlock
                     key={e.id}
-                    title={title}
-                    style={{
-                      display: 'block',
-                      padding: '2px 6px',
-                      background: c.bg,
-                      borderLeft: `3px solid ${c.color}`,
-                      borderRadius: 3,
-                      fontSize: 10,
-                      color: '#fff',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {teamShortLabel(team || { slug: e.team_slug, name: e.team_name })} {KIND_EMOJI[e.event_kind] || ''}
-                  </div>
+                    event={e}
+                    team={team}
+                    compact
+                    readonly={readonly}
+                  />
                 );
               })}
               {dayEvents.length > 3 && (
@@ -384,7 +375,7 @@ function WeekView({ cursor, events, teamById, readonly = false }: { cursor: Date
   );
 }
 
-function DayView({ cursor, events, teamById }: { cursor: Date; events: CalendarEvent[]; teamById: Map<string, CalendarTeam> }) {
+function DayView({ cursor, events, teamById, readonly = false }: { cursor: Date; events: CalendarEvent[]; teamById: Map<string, CalendarTeam>; readonly?: boolean }) {
   const today = new Date();
   const isToday = isSameDay(cursor, today);
   const dayEvents = events
@@ -396,14 +387,14 @@ function DayView({ cursor, events, teamById }: { cursor: Date; events: CalendarE
         {cursor.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {dayEvents.map((e) => <EventBlock key={e.id} event={e} team={teamById.get(e.team_id)} />)}
+        {dayEvents.map((e) => <EventBlock key={e.id} event={e} team={teamById.get(e.team_id)} readonly={readonly} />)}
         {dayEvents.length === 0 && <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>No events scheduled for this day.</div>}
       </div>
     </div>
   );
 }
 
-function AgendaView({ cursor, events, teamById }: { cursor: Date; events: CalendarEvent[]; teamById: Map<string, CalendarTeam> }) {
+function AgendaView({ cursor, events, teamById, readonly = false }: { cursor: Date; events: CalendarEvent[]; teamById: Map<string, CalendarTeam>; readonly?: boolean }) {
   // Show events from cursor through cursor+60 days, sorted ascending
   const end = addDays(cursor, 60);
   const upcoming = events
@@ -439,7 +430,7 @@ function AgendaView({ cursor, events, teamById }: { cursor: Date; events: Calend
               {d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {dayEvents.map((e) => <EventBlock key={e.id} event={e} team={teamById.get(e.team_id)} />)}
+              {dayEvents.map((e) => <EventBlock key={e.id} event={e} team={teamById.get(e.team_id)} readonly={readonly} />)}
             </div>
           </div>
         );
