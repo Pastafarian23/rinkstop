@@ -117,7 +117,7 @@ export default async function EventDetailPage({ params }: PageProps) {
   // Fetch players with RSVP status for attendance section
   const { data: playersWithRsvp } = await supabaseAdmin
     .from('team_rsvps')
-    .select('user_id, response, attendance_status')
+    .select('user_id, response, attendance_status, attendance_note')
     .eq('event_id', id)
     .in('response', ['yes', 'maybe']);
 
@@ -128,6 +128,7 @@ export default async function EventDetailPage({ params }: PageProps) {
     username: string | null;
     attendanceStatus: string | null;
     rsvpResponse: string;
+    attendanceNote?: string | null;
   }> = [];
 
   if (playerIds.length > 0) {
@@ -144,6 +145,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         username: prof?.username || null,
         attendanceStatus: (p.attendance_status as any) || null,
         rsvpResponse: p.response,
+        attendanceNote: (p as any).attendance_note || null,
       });
     }
   }

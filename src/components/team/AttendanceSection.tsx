@@ -1,6 +1,7 @@
 'use client';
 
 import { AttendanceRow } from './AttendanceRow';
+import { AttendanceNotes } from './AttendanceNotes';
 
 interface AttendancePlayer {
   userId: string;
@@ -8,6 +9,7 @@ interface AttendancePlayer {
   username: string | null;
   attendanceStatus: string | null;
   rsvpResponse: string;
+  attendanceNote?: string | null;
 }
 
 interface AttendanceSectionProps {
@@ -66,6 +68,7 @@ export function AttendanceSection({
             username={player.username}
             rsvpResponse={player.rsvpResponse}
             currentStatus={player.attendanceStatus}
+            currentNote={player.attendanceNote}
             canMark={canMarkAttendance}
           />
         ))}

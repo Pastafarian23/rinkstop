@@ -81,7 +81,7 @@ export async function PATCH(
     });
   }
 
-  const { playerId, attendanceStatus } = body;
+  const { playerId, attendanceStatus, attendanceNote } = body;
   if (!playerId || !attendanceStatus) {
     return new NextResponse(JSON.stringify({ error: 'missing_params' }), {
       status: 400,
@@ -112,6 +112,7 @@ export async function PATCH(
       .from('team_rsvps')
       .update({
         attendance_status: attendanceStatus,
+        attendance_note: attendanceNote ?? null,
         attendance_at: now,
         marked_by: userId,
       })
@@ -131,6 +132,7 @@ export async function PATCH(
         user_id: playerId,
         response: 'yes',
         attendance_status: attendanceStatus,
+        attendance_note: attendanceNote ?? null,
         attendance_at: now,
         marked_by: userId,
       });
