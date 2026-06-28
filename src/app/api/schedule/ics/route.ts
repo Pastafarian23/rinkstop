@@ -26,13 +26,21 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const daysParam = parseInt(url.searchParams.get('days') || '90', 10);
   const days = Math.max(1, Math.min(365, Number.isFinite(daysParam) ? daysParam : 90));
+  const teamFilter = url.searchParams.get('team');
 
   // 1. Get user's teams
-  const { data: memberships } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('team_members')
     .select('team_id, team:team_workspaces(id, name, short_name, slug)')
     .eq('user_id', userId)
     .is('left_at', null);
+
+  // If team filter provided, only include that team
+  if (teamFilter) {
+    query = query.eq('team_id', teamFilter);
+  }
+
+  const { data: memberships } = await query;
 
   const teamsList = (memberships || [])
     .map((m: any) => {
