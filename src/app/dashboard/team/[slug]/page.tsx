@@ -455,32 +455,67 @@ export default async function TeamHubPage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Events placeholder (Day 4) */}
+      {/* Events section — links to schedule page */}
       <section>
-        <h2
+        <div
           style={{
-            fontFamily: "'Bebas Neue', Impact, sans-serif",
-            fontSize: '1.25rem',
-            color: '#fff',
-            letterSpacing: '0.05em',
-            margin: '0 0 0.75rem',
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            marginBottom: '0.75rem',
           }}
         >
-          Events
-        </h2>
+          <h2
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: '1.25rem',
+              color: '#fff',
+              letterSpacing: '0.05em',
+              margin: 0,
+            }}
+          >
+            Events
+          </h2>
+          <Link
+            href={`/dashboard/team/${team.slug}/schedule`}
+            style={{
+              fontSize: '0.75rem',
+              color: '#FFB81C',
+              textDecoration: 'none',
+            }}
+          >
+            View calendar →
+          </Link>
+        </div>
         <div
           style={{
             background: '#0f0f0f',
             border: '1px dashed #2a2a2a',
             borderRadius: 12,
-            padding: '2rem 1.5rem',
+            padding: '1.5rem',
             textAlign: 'center',
-            color: 'rgba(255,255,255,0.4)',
+            color: 'rgba(255,255,255,0.6)',
           }}
         >
           <p style={{ margin: 0, fontSize: '0.85rem' }}>
-            🗓️ Ice time scheduler, practices, and games coming in Day 4.
+            Practices, games, and tournaments for {team.name}.
           </p>
+          <Link
+            href={`/dashboard/team/${team.slug}/events/new`}
+            style={{
+              display: 'inline-block',
+              marginTop: '1rem',
+              padding: '0.5rem 1rem',
+              background: '#FFB81C',
+              color: '#041E42',
+              borderRadius: 6,
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            + New event
+          </Link>
         </div>
       </section>
     </div>
