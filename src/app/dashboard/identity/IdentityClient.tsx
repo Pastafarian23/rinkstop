@@ -4,7 +4,7 @@
  * IdentityClient — the actual UI for /dashboard/identity
  *
  * States:
- *   - canVerify=false → upgrade CTA (Starter required)
+ *   - canVerify=false → upgrade CTA (Roster+ or Business Starter+ required)
  *   - status='active'  → "Identity verified" with date + expiry
  *   - status='expired' → "Re-verify" CTA
  *   - status='never_verified' OR 'in_progress' → "Verify" CTA + iframe after start
@@ -159,7 +159,7 @@ export default function IdentityClient({
 
   const copy = STATUS_COPY[status] || STATUS_COPY.never_verified;
 
-  // Roster-tier gate
+  // Roster+ or Business Starter+ gate
   if (!canVerify) {
     return (
       <div style={{ maxWidth: 720 }}>
@@ -169,7 +169,7 @@ export default function IdentityClient({
         </p>
         <div style={cardStyle}>
           <p style={{ ...bodyStyle, marginBottom: '1.25rem' }}>
-            Upgrade to Roster ($19.99/yr) to verify your identity with a government-issued ID + selfie match. The "Identity verified" check appears on your profile and re-verifies every 2 years.
+            Upgrade to Roster+ ($29.99/yr) to verify your identity with a government-issued ID + selfie match. The "Identity verified" check appears on your profile and re-verifies every 2 years.
           </p>
           <Link
             href="/pricing"
