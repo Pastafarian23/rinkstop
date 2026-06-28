@@ -105,10 +105,16 @@ export async function PATCH(
     .eq('user_id', playerId)
     .maybeSingle();
 
+  const now = new Date().toISOString();
+
   if (rsvp) {
     const { error: updErr } = await supabaseAdmin
       .from('team_rsvps')
-      .update({ attendance_status: attendanceStatus })
+      .update({
+        attendance_status: attendanceStatus,
+        attendance_at: now,
+        marked_by: userId,
+      })
       .eq('id', rsvp.id);
 
     if (updErr) {
@@ -125,6 +131,8 @@ export async function PATCH(
         user_id: playerId,
         response: 'yes',
         attendance_status: attendanceStatus,
+        attendance_at: now,
+        marked_by: userId,
       });
 
     if (insErr) {
