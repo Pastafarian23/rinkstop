@@ -184,10 +184,9 @@ export default function ConnectButton({
     );
   }
 
-  // Signed in but not Roster+ (personal) or Business Pro+ (business) — show upgrade CTA.
-  const personalTiers = ['roster_plus', 'pro'];
-  const businessTiers = ['business_pro', 'business_premium', 'enterprise'];
-  const canConnect = personalTiers.includes(myTier) || businessTiers.includes(myTier);
+  // Signed in but not Pro/Business Pro - DMs require Pro tier.
+  // Per privilege matrix: DMs need Pro (personal) or Business Pro (business).
+  const canConnect = ['pro', 'business_pro', 'business_premium', 'enterprise'].includes(myTier);
   if (!canConnect) {
     return (
       <a
@@ -204,7 +203,7 @@ export default function ConnectButton({
           textDecoration: 'none',
         }}
       >
-        Verified required to connect
+        Pro tier required to connect
       </a>
     );
   }

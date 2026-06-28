@@ -3,11 +3,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 import {
   requireUserId,
   getUserTier,
-  tierAtLeast,
   normalizePair,
   getConnectionBetween,
   type Connection,
 } from '@/lib/connections';
+import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/email';
 
@@ -41,11 +41,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot connect with yourself.' }, { status: 400 });
   }
 
-  // Tier check: caller must be Verified+ to send connection requests (so DMs are gated).
+  // Tier check: caller must be Pro (personal) or Business Pro (business) to send connection requests.
+  // DMs are gated so the person on the other end knows they are dealing with a real account.
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'pro')) {
+  const canInitiate = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
+  if (!canInitiate) {
     return NextResponse.json(
-      { error: 'Pro or Premium membership required to send connection requests.', currentTier: tier },
+      { error: 'Pro or Business Pro membership required to send connection requests.', currentTier: tier },
       { status: 403 }
     );
   }
