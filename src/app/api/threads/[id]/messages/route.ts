@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUserId, getUserTier, tierAtLeast } from '@/lib/connections';
+import { requireUserId, getUserTier } from '@/lib/connections';
+import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/email';
 
@@ -154,12 +155,14 @@ export async function POST(
     return NextResponse.json({ error: 'Thread not found.' }, { status: 404 });
   }
 
-  // Tier check: Roster+ required to send messages. (Recipients are gated at thread-creation time
-// in /api/threads POST, so if this thread exists and the caller is a participant, they can send.)
+  // Tier check: Pro (personal) or Business Pro (business) required to send messages.
+  // Connection requests are gated at /api/connections, but we re-check here
+  // so users who somehow got into the thread without proper tier are blocked.
   const tier = await getUserTier(userId);
-  if (!tierAtLeast(tier, 'roster')) {
+  const canSendMessage = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
+  if (!canSendMessage) {
     return NextResponse.json(
-      { error: 'Roster membership required to send messages.', currentTier: tier },
+      { error: 'Pro or Business Pro membership required to send messages.', currentTier: tier },
       { status: 403 }
     );
   }

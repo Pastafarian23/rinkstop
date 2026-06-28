@@ -37,7 +37,7 @@
 - **Duration**: 2 years before re-verification
 
 ### Direct Messaging
-- **Gate**: Pro (personal) OR Business Pro+ (business)
+- **Gate**: Pro (personal) OR Business Pro (business)
 - **Purpose**: Connect with other users
 - **Scope**: Can message any verified user in same or higher tier
 
