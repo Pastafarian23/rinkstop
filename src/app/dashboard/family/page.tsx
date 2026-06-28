@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import { getUserTier } from '@/lib/connections';
+import FamilySearch from '@/components/family/FamilySearch';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,8 +15,6 @@ export default async function FamilyPage() {
 
   const tier = await getUserTier(userId);
 
-  // Personal track: Roster+/Pro/Business Pro/Business Premium/Enterprise have Family features
-  // Business Starter does NOT have Family features (business focus)
   // Handle legacy 'premium' tier value (maps to roster_plus)
   const normalizedTier = tier === 'premium' ? 'roster_plus' : tier;
   const canAccessFamily = ['roster_plus', 'pro', 'business_pro', 'business_premium', 'enterprise'].includes(normalizedTier);
@@ -25,11 +24,25 @@ export default async function FamilyPage() {
   }
 
   // Fetch managed profiles (kids linked to this user)
+  // Note: column is manager_user_id, profile_id links to players.id
   const { data: managedProfiles } = await supabaseAdmin
     .from('managed_profiles')
-    .select('id, profile_id, relationship, created_at, profiles:profiles!managed_profiles_profile_id_fkey(slug, display_name, avatar_url)')
-    .eq('owner_id', userId)
+    .select('id, profile_id, relationship, created_at')
+    .eq('manager_user_id', userId)
     .order('created_at', { ascending: false });
+
+  // Hydrate player names for display
+  const profileIds = (managedProfiles || []).map((mp: any) => mp.profile_id);
+  const playerMap: Record<string, any> = {};
+  if (profileIds.length > 0) {
+    const { data: players } = await supabaseAdmin
+      .from('players')
+      .select('id, first_name, last_name, slug, headshot_url')
+      .in('id', profileIds);
+    for (const p of players || []) {
+      playerMap[p.id] = p;
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 760 }}>
@@ -50,13 +63,16 @@ export default async function FamilyPage() {
         <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 1rem' }}>
           LINKED PLAYERS
         </h2>
+        
         {!managedProfiles || managedProfiles.length === 0 ? (
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', margin: 0 }}>
-            No players linked yet. Find youth hockey players in the directory and use "I&apos;m this player&apos;s parent" on their profile to link them here.
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', margin: '0 0 1rem' }}>
+            No players linked yet.
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {managedProfiles.map((mp: any) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            {managedProfiles.map((mp: any) => {
+              const player = playerMap[mp.profile_id] || {};
+              return (
               <div
                 key={mp.id}
                 style={{
@@ -67,24 +83,29 @@ export default async function FamilyPage() {
                 <div style={{ fontSize: '1.25rem' }}>⭐</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ color: '#fff', fontSize: '0.95rem', fontWeight: 600 }}>
-                    {mp.profiles?.display_name || 'Unknown Player'}
+                    {player.first_name && player.last_name ? `${player.first_name} ${player.last_name}` : 'Unknown Player'}
                   </div>
                   <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
                     {mp.relationship || 'parent'}
-                    {mp.profiles?.slug && (
+                    {player.slug && (
                       <>
                         {' · '}
-                        <Link href={`/profile/${mp.profiles.slug}`} style={{ color: '#14B8A6' }}>
-                          /profile/{mp.profiles.slug}
+                        <Link href={`/directory/players/${player.slug}`} style={{ color: '#14B8A6' }}>
+                          /directory/players/{player.slug}
                         </Link>
                       </>
                     )}
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
+
+        <Suspense fallback={<div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Loading search…</div>}>
+          <FamilySearch />
+        </Suspense>
       </section>
 
       <section style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}>
