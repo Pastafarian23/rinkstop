@@ -338,6 +338,17 @@ export default function HockeyCostCalculatorClient() {
               </div>
             </div>
           </div>
+          {/* Cross-link: stick-size calculator (Day 3 Option A) */}
+          <div style={{
+            marginTop: '1rem', padding: '0.75rem 1rem',
+            background: 'rgba(255,184,28,0.05)', border: '1px solid rgba(255,184,28,0.2)',
+            borderRadius: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)',
+          }}>
+            💡 <Link href="/tools/hockey-stick-size-calculator" style={{ color: '#FFB81C', fontWeight: 600 }}>
+              What size stick do you need?
+            </Link>{' '}
+            Free stick-size calculator → length, flex, and curve recommendations in 10 seconds.
+          </div>
         </div>
 
         {/* Total — the headline number */}
