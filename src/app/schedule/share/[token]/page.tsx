@@ -11,7 +11,8 @@ function getStore(): Map<string, { userId: string; createdAt: number; expiresAt:
   return (globalThis as any).__rinkstopShareStore || null;
 }
 
-export async function generateMetadata({ params }: { params: { token: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   return {
     title: 'Shared Schedule',
     description: 'View this shared hockey schedule',
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: { params: { token: string } }
   };
 }
 
-export default async function SharedSchedulePage({ params }: { params: { token: string } }) {
+export default async function SharedSchedulePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const store = getStore();
   
