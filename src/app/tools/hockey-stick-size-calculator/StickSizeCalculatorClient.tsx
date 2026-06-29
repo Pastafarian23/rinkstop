@@ -7,54 +7,114 @@ import { buildToolShare } from '@/lib/share';
 
 type Position = 'forward' | 'defense' | 'goalie';
 type Skill = 'beginner' | 'intermediate' | 'advanced';
+type StickCategory = 'youth' | 'junior' | 'intermediate' | 'senior';
 
 interface StickRecommendation {
   lengthIn: number;
   flex: number;
+  category: StickCategory;
+  categoryLabel: string;
+  retailLengthRange: string;
   curveFamily: string;
   curveNote: string;
-  isJunior: boolean;
   notes: string[];
 }
 
+// Category buckets verified against Bauer / CCM / HockeyMonkey / Icebox / StickMeta
+// / Scheels / LabSports sizing charts (4+ sources agree).
+//
+// Industry standard is FOUR categories, not two. The most common mistake is
+// putting intermediate-size players (HS sophomores, adult women, lighter adult
+// men 4'11"-5'8" / 90-150 lbs) on senior sticks — those players benefit from
+// intermediate flex because senior 70+ flex requires more body weight to load.
+const FLEX_BUCKETS: Record<StickCategory, number[]> = {
+  youth:        [20, 25, 30, 35, 40],
+  junior:       [40, 45, 50, 55],
+  intermediate: [55, 60, 65, 70],
+  senior:       [70, 75, 85, 95, 102, 110],
+};
+
+const RETAIL_LENGTH: Record<StickCategory, string> = {
+  youth:        '38–49"',
+  junior:       '50–54"',
+  intermediate: '55–58"',
+  senior:       '57–63"',
+};
+
+const CATEGORY_LABEL: Record<StickCategory, string> = {
+  youth:        'Youth',
+  junior:       'Junior',
+  intermediate: 'Intermediate',
+  senior:       'Senior',
+};
+
+// Category picker: height-first (Bauer's chart is height-indexed), with weight
+// as the tiebreaker for the senior/intermediate boundary at 5'4"-6'0".
+function pickCategory(heightIn: number, weightLbs: number): StickCategory {
+  if (heightIn < 56) return 'youth';                       // under 4'8"
+  if (heightIn < 64) return 'junior';                      // 4'8" to 5'4"
+  if (heightIn < 72 && weightLbs < 160) return 'intermediate'; // 5'4"-6'0", under 160 lbs
+  return 'senior';
+}
+
 // Industry-standard length formula: chin-to-nose rule.
-// Player holds stick vertically against the body with skates on;
-// the tip should land between the chin and the nose.
-// We approximate with: length (in) = height (in) × 0.6 (round to nearest half-inch)
-// Then nudge up to .5 if between sizes, cap to the next standard retail size
-// (40/46/50/52/54/56/58/60/63 ... we round to nearest half-inch between 40-72).
-function calcLength(heightIn: number, position: Position, skill: Skill): number {
-  // Base: chin-to-nose (~60% of height).
-  let length = heightIn * 0.6;
+// Player holds stick vertically against the body with skates on; the tip
+// should land between the chin and the nose. For adult 5'10"+ players the
+// nose-to-floor ratio is ~0.83 of standing height. For younger players the
+// ratio is higher (kids' heads are proportionally larger), so we floor to
+// the category retail range after computing.
+function calcLength(heightIn: number, position: Position, skill: Skill, category: StickCategory): number {
+  // Base: chin-to-nose approximation (~83% of standing height for adults).
+  let length = heightIn * 0.83;
 
   // Position nudges (small, within ±1 inch).
-  // Defensemen and goalies often prefer slightly longer for reach.
   if (position === 'defense') length += 0.5;
-  if (position === 'goalie') length += 1.0; // goalie sticks are much longer IRL but we keep UI short for now
+  if (position === 'goalie') length += 1.0; // goalie sticks are much longer IRL but UI keeps short for now
 
-  // Skill nudges: advanced players prefer shorter sticks for better stickhandling.
+  // Skill nudges: advanced players prefer shorter sticks for stickhandling.
   if (skill === 'advanced') length -= 0.5;
   if (skill === 'beginner') length += 0.5;
 
   // Round to nearest half inch.
-  return Math.round(length * 2) / 2;
+  let rounded = Math.round(length * 2) / 2;
+
+  // Clamp to category retail range so we don't recommend a stick that isn't
+  // actually sold at the category (e.g. a 42" "senior" stick doesn't exist;
+  // senior retail is 57-63"). Junior retail 50-54, intermediate 55-58,
+  // senior 57-63. Youth retail 38-49.
+  const clamp: Record<StickCategory, [number, number]> = {
+    youth:        [38, 49],
+    junior:       [50, 54],
+    intermediate: [55, 58],
+    senior:       [57, 63],
+  };
+  const [lo, hi] = clamp[category];
+  return Math.max(lo, Math.min(hi, rounded));
 }
 
-// Flex rule: weight (lbs) ÷ 2 = flex (rounded to nearest standard flex).
-// Standard senior flexes: 75, 85, 95, 102, 110
-// Standard intermediate flexes: 55, 65
-// Standard junior flexes: 20, 30, 40, 50
-function calcFlex(weightLbs: number): { flex: number; isJunior: boolean } {
-  const isJunior = weightLbs < 110;
-  const ideal = Math.round(weightLbs / 2);
+// Modern 2026 flex baseline: weight × 0.45 (rounded to nearest standard flex
+// within the player's category). The old "weight ÷ 2" rule was for 1990s
+// slapshot-dominated play; modern sticks are engineered to bend more easily.
+function calcFlex(weightLbs: number, category: StickCategory, skill: Skill, position: Position): number {
+  const ideal = Math.round(weightLbs * 0.45);
 
-  if (isJunior) {
-    const juniorStandard = [20, 30, 40, 50];
-    return { flex: juniorStandard.reduce((a, b) => (Math.abs(b - ideal) < Math.abs(a - ideal) ? b : a)), isJunior: true };
-  } else {
-    const seniorStandard = [75, 85, 95, 102, 110];
-    return { flex: seniorStandard.reduce((a, b) => (Math.abs(b - ideal) < Math.abs(a - ideal) ? b : a)), isJunior: false };
-  }
+  // Skill nudges flex by ±5 (beginners go softer for easier whip; advanced
+  // go stiffer for muscle-loaded shots).
+  let adjusted = ideal;
+  if (skill === 'beginner') adjusted -= 5;
+  if (skill === 'advanced') adjusted += 5;
+
+  // Defensemen prefer slightly stiffer for slapshot power.
+  if (position === 'defense') adjusted += 5;
+
+  // Snap to nearest standard flex within the player's category.
+  const buckets = FLEX_BUCKETS[category];
+  const closest = buckets.reduce((a, b) =>
+    Math.abs(b - adjusted) < Math.abs(a - adjusted) ? b : a
+  );
+
+  // Clamp: never recommend outside the category's allowed range.
+  return Math.max(buckets[0], Math.min(buckets[buckets.length - 1], closest));
 }
 
 // Curve family recommendation by position.
@@ -100,15 +160,15 @@ export default function StickSizeCalculatorClient() {
 
   // Derived recommendation. useMemo so we only recompute when inputs change.
   const rec = useMemo<StickRecommendation>(() => {
-    const lengthIn = calcLength(heightIn, position, skill);
-    const { flex, isJunior } = calcFlex(weightLbs);
+    const category = pickCategory(heightIn, weightLbs);
+    const lengthIn = calcLength(heightIn, position, skill, category);
+    const flex = calcFlex(weightLbs, category, skill, position);
     const curve = curveForPosition(position);
 
     const notes: string[] = [];
-    if (isJunior) {
-      notes.push('Based on weight, this player should use a junior stick (shorter shaft, lower flex).');
-    } else {
-      notes.push('Based on weight, this player should use a senior stick.');
+    notes.push(`Category: ${CATEGORY_LABEL[category]} (retail length range ${RETAIL_LENGTH[category]}).`);
+    if (category === 'intermediate') {
+      notes.push('Intermediate sticks are commonly missed — they fit lighter players and smaller adults better than senior.');
     }
     if (skill === 'beginner') {
       notes.push('As a beginner, consider sizing up 1 inch for better balance and reach while learning.');
@@ -123,9 +183,11 @@ export default function StickSizeCalculatorClient() {
     return {
       lengthIn,
       flex,
+      category,
+      categoryLabel: CATEGORY_LABEL[category],
+      retailLengthRange: RETAIL_LENGTH[category],
       curveFamily: curve.family,
       curveNote: curve.note,
-      isJunior,
       notes,
     };
   }, [heightIn, weightLbs, position, skill]);
@@ -314,7 +376,7 @@ export default function StickSizeCalculatorClient() {
                 Category
               </div>
               <div style={{ fontFamily: '"Bebas Neue", "Arial Narrow", sans-serif', fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', color: '#FFB81C', lineHeight: 1, letterSpacing: '0.02em' }}>
-                {rec.isJunior ? 'Junior' : 'Senior'}
+                {rec.categoryLabel}
               </div>
             </div>
           </div>
@@ -437,9 +499,13 @@ export default function StickSizeCalculatorClient() {
           fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)',
         }}>
           <strong style={{ color: '#FFB81C' }}>How we calculated this.</strong>{' '}
-          Stick length uses the chin-to-nose rule (height × 0.6) adjusted by ±0.5–1 inch for position and skill.
-          Flex uses the weight ÷ 2 formula (rounded to the nearest standard flex). Curve families recommended by
-          position per industry consensus (Bauer, CCM, Warrior).{' '}
+          Category is picked by height first (Bauer convention), then validated by weight — youth / junior /
+          intermediate / senior. Length uses the chin-to-nose rule (height × 0.83) with ±0.5–1 inch for position
+          and skill, then clamped to the category's retail range so the recommendation is always a stick that's
+          actually sold. Flex uses the modern 2026 formula of weight × 0.45 (the old weight ÷ 2 rule was for
+          1990s slapshot-era sticks and overshoots for most players today), rounded to the nearest standard flex
+          within the player's category, with ±5 flex for skill level and defense position. Curve families
+          recommended by position per industry consensus (Bauer, CCM, Warrior).{' '}
           <Link href="/guides/hockey-stick-guide" style={{ color: '#FFB81C' }}>
             Read the full stick guide →
           </Link>
