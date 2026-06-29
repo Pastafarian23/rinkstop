@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackPageView } from '@/lib/analytics';
+import { ClaimButton } from './ClaimButton';
 
 export const metadata: Metadata = {
   title: 'Claim Your Listing on RinkStop',
@@ -213,7 +214,7 @@ export default async function ClaimYourListingPage({
               {results.length} result{results.length === 1 ? '' : 's'} for &ldquo;{query}&rdquo;
             </div>
             {results.map((rink) => (
-              <RinkResultCard key={rink.id} rink={rink} />
+              <RinkResultCard key={rink.id} rink={rink} query={query} />
             ))}
           </div>
         )}
@@ -347,7 +348,7 @@ function BenefitRow({ icon, text }: { icon: string; text: string }) {
   );
 }
 
-function RinkResultCard({ rink }: { rink: RinkResult }) {
+function RinkResultCard({ rink, query }: { rink: RinkResult; query: string }) {
   const location = [rink.city, rink.state, rink.country].filter(Boolean).join(', ');
   const alreadyClaimed = rink.has_claim && rink.claim_status === 'approved';
   const pending = rink.has_claim && rink.claim_status === 'pending';
@@ -433,21 +434,12 @@ function RinkResultCard({ rink }: { rink: RinkResult }) {
           View
         </Link>
         {!alreadyClaimed && !pending && (
-          <Link
+          <ClaimButton
             href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?prefill_rink=${rink.id}`)}`}
-            style={{
-              background: '#C8102E',
-              color: '#fff',
-              padding: '0.55rem 1.25rem',
-              borderRadius: 8,
-              textDecoration: 'none',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              letterSpacing: '0.02em',
-            }}
-          >
-            Claim This →
-          </Link>
+            rinkId={rink.id}
+            rinkSlug={rink.slug}
+            query={query}
+          />
         )}
       </div>
     </div>
