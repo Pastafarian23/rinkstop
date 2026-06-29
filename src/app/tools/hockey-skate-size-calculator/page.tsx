@@ -17,7 +17,7 @@ import SkateSizeCalculatorClient from './SkateSizeCalculatorClient';
 import { trackPageView } from '@/lib/analytics';
 
 export const metadata: Metadata = {
-  title: 'Hockey Skate Size Calculator (2026) — US Shoe Size → Bauer / CCM | RinkStop',
+  title: 'Hockey Skate Size Calculator (2026) — US Shoe Size → Bauer / CCM',
   description:
     'What size hockey skate does your kid need? Free calculator — enter US shoe size (women, men, kid), get skate size, age category (youth/junior/intermediate/senior), and width recommendation.',
   alternates: { canonical: 'https://rinkstop.com/tools/hockey-skate-size-calculator' },
@@ -36,6 +36,7 @@ export const metadata: Metadata = {
     description: 'Free skate-sizing tool. US shoe size → skate size and width recommendation.',
   },
 };
+// Note: layout auto-appends " | RinkStop" so the title above must omit it.
 
 export const dynamic = 'force-dynamic';
 
