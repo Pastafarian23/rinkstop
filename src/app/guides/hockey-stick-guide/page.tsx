@@ -207,6 +207,30 @@ export default function HockeyStickGuide() {
           <Link href="/glossary/icing" style={{ padding: '0.625rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Glossary</Link>
         </div>
       </div>
+
+      {/* Cross-link: stick-size calculator (Day 3 Option A) */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, rgba(255,184,28,0.05) 100%)',
+        border: '1px solid rgba(200,16,46,0.25)', borderRadius: '12px',
+        padding: '2rem 1.5rem', textAlign: 'center', marginTop: '1.5rem',
+      }}>
+        <h2 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem', color: '#fff', fontFamily: '"Bebas Neue", sans-serif', letterSpacing: '0.02em' }}>
+          Skip the guesswork — get a recommendation in 10 seconds
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 1.25rem', fontSize: '1rem', maxWidth: '560px', marginLeft: 'auto', marginRight: 'auto' }}>
+          Our free stick-size calculator uses the chin-to-nose rule and weight-based flex to recommend length, flex rating, and curve family for any height, weight, position, and skill level.
+        </p>
+        <Link
+          href="/tools/hockey-stick-size-calculator"
+          style={{
+            display: 'inline-block', padding: '0.75rem 1.5rem',
+            background: '#C8102E', color: '#fff', borderRadius: '6px',
+            textDecoration: 'none', fontWeight: 700, fontSize: '1rem',
+          }}
+        >
+          Try the stick-size calculator →
+        </Link>
+      </div>
     </div>
   );
 }
