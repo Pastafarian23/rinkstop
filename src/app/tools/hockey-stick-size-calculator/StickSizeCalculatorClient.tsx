@@ -445,6 +445,31 @@ export default function StickSizeCalculatorClient() {
           </Link>
         </div>
 
+        {/* Cross-link: glove size (Day 4) */}
+        <div style={{
+          background: 'rgba(255,184,28,0.05)', border: '1px solid rgba(255,184,28,0.2)',
+          borderRadius: '12px', padding: '1.25rem 1.5rem', marginBottom: '1.5rem',
+          fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem',
+        }}>
+          <div>
+            <strong style={{ color: '#FFB81C' }}>What about gloves?</strong>{' '}
+            Sizing gloves correctly matters just as much as the stick — fit check included.
+          </div>
+          <Link
+            href="/tools/hockey-glove-size-calculator"
+            style={{
+              display: 'inline-block', padding: '0.55rem 1.25rem',
+              background: 'transparent', color: '#FFB81C',
+              border: '1px solid #FFB81C', borderRadius: '6px',
+              textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Glove sizer →
+          </Link>
+        </div>
+
         {/* Share + Where to buy CTAs */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <ShareButton
