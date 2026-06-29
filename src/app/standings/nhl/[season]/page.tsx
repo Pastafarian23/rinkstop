@@ -33,7 +33,8 @@ function resolveCanonical(teamName: string): NhlTeamCanonical | undefined {
     'arizona': 'utah-hockey-club',
     // Note: 'Brantford Bulldogs' is intentionally NOT aliased — it's an OHL
     // team that got mis-synced into nhl_standings for 2023-24 and 2024-25.
-    // Leaving the row dropped is the safest behavior. See TODO.md "Data Integrity".
+    // Leaving the row dropped is the safest behavior. Data integrity
+    // rationale documented in memory/2026-06-29-rinkstop-prep.md §4.
   };
   if (ALIASES[norm]) {
     return NHL_TEAMS_CANONICAL.find(t => t.slug === ALIASES[norm]);

@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
     'founding_urgency_viewed',
     'claim_started',
     'claim_submitted',
+    'claim_approved',
+    'checkout_completed',
     'lead_form_submitted',
     'affiliate_clicked',
     'homepage_cta_clicked',

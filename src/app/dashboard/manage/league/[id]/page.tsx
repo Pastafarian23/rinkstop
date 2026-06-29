@@ -17,7 +17,10 @@ export default async function ManageLeaguePage({ params }: PageProps) {
 
   // League admin gating: requires `league_admin` account type AND a real league
   // with that id. The claim system doesn't support leagues today, so we lean
-  // on the account-type signal. (Track a proper league_claims table as a TODO.)
+  // on the account-type signal.
+  // NOTE: a proper league_claims table is a separate feature, not a cleanup.
+  // Tracked in memory/2026-06-29-rinkstop-prep.md §4. Build when we add league
+  // claiming as a product surface (probably Q3 2026).
   const { count: adminCount } = await supabaseAdmin
     .from('profile_account_types')
     .select('user_id', { count: 'exact', head: true })
