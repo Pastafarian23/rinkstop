@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { PROVINCE_FROM_SLUG_OR_ABBR, PROVINCE_FULL_NAMES, PROVINCE_SLUGS, type ProvinceAbbr } from '@/lib/ca-provinces';
+import HockeyCanadaAd from '@/components/HockeyCanadaAd';
 
 interface CityData {
   city: string;
@@ -176,6 +177,9 @@ export default async function CanadaProvincePage({
           </p>
         </div>
       )}
+
+      {/* Hockey Canada affiliate ad — test placement, bottom of province page */}
+      <HockeyCanadaAd size="300x250" />
     </div>
   );
 }
