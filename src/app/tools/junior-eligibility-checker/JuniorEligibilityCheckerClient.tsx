@@ -365,39 +365,53 @@ export default function JuniorEligibilityCheckerClient() {
                   background: c.bg,
                   border: `1px solid ${c.border}`,
                   borderRadius: '8px',
-                  padding: '1rem 1.25rem',
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr auto',
-                  gap: '1rem',
-                  alignItems: 'center',
+                  padding: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
                 }}>
+                  {/* Top row: league name + status badge (mobile-friendly stacked header) */}
                   <div style={{
-                    fontFamily: '"Bebas Neue", "Arial Narrow", sans-serif',
-                    fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1, minWidth: '60px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    flexWrap: 'wrap',
                   }}>
-                    {row.name}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>
-                      {row.level} · ages {row.minAge}-{row.maxAge} · {row.country}
+                    <div style={{
+                      fontFamily: '"Bebas Neue", "Arial Narrow", sans-serif',
+                      fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1,
+                    }}>
+                      {row.name}
                     </div>
-                    <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>
-                      {row.reason}
+                    <div style={{
+                      background: c.bg,
+                      border: `1px solid ${c.border}`,
+                      borderRadius: '6px',
+                      padding: '0.3rem 0.7rem',
+                      color: c.text,
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                      whiteSpace: 'nowrap',
+                    }} data-testid={`status-${row.key}`}>
+                      {c.icon} {c.label}
                     </div>
                   </div>
+                  {/* Meta line */}
                   <div style={{
-                    background: c.bg,
-                    border: `1px solid ${c.border}`,
-                    borderRadius: '6px',
-                    padding: '0.4rem 0.85rem',
-                    color: c.text,
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    whiteSpace: 'nowrap',
-                  }} data-testid={`status-${row.key}`}>
-                    {c.icon} {c.label}
+                    fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)',
+                    textTransform: 'uppercase', letterSpacing: '1px',
+                  }}>
+                    {row.level} · ages {row.minAge}-{row.maxAge} · {row.country}
+                  </div>
+                  {/* Reason */}
+                  <div style={{
+                    fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)',
+                    lineHeight: 1.4,
+                  }}>
+                    {row.reason}
                   </div>
                 </div>
               );
