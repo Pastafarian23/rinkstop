@@ -470,6 +470,31 @@ export default function StickSizeCalculatorClient() {
           </Link>
         </div>
 
+        {/* Cross-link: skate size (Day 4) */}
+        <div style={{
+          background: 'rgba(255,184,28,0.05)', border: '1px solid rgba(255,184,28,0.2)',
+          borderRadius: '12px', padding: '1.25rem 1.5rem', marginBottom: '1.5rem',
+          fontSize: '0.95rem', color: 'rgba(255,255,255,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem',
+        }}>
+          <div>
+            <strong style={{ color: '#FFB81C' }}>Got the stick, what about skates?</strong>{' '}
+            US shoe size to skate size, plus age category (youth / junior / senior) and width.
+          </div>
+          <Link
+            href="/tools/hockey-skate-size-calculator"
+            style={{
+              display: 'inline-block', padding: '0.55rem 1.25rem',
+              background: 'transparent', color: '#FFB81C',
+              border: '1px solid #FFB81C', borderRadius: '6px',
+              textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Skate sizer →
+          </Link>
+        </div>
+
         {/* Share + Where to buy CTAs */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <ShareButton
