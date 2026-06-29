@@ -27,24 +27,26 @@ export interface ArticleCtaBlockProps {
 
 // Keyword sets — case-insensitive substring match against category, tags, title, slug.
 const YOUTH_KEYWORDS = [
-  'youth', 'parent', 'family', 'kid', 'minor hockey', 'tier 1', 'tier 2', 'mite', 'squirt',
-  'peewee', 'bantam', 'midget', '16u', '18u', 'high school hockey', 'junior hockey', 'recruit',
-  'beginner cost', 'family cost', 'equipment cost', 'program cost', 'cost guide',
+  'youth hockey', 'minor hockey', 'tier 1', 'tier 2', 'mite', 'squirt',
+  'peewee', 'bantam', 'midget', '16u', '18u', 'high school hockey', 'junior hockey',
+  'youth leagues', 'youth programs', 'youth teams', 'youth cost', 'youth directory',
+  'kid hockey', 'parent guide',
 ];
 
 const TRY_KEYWORDS = [
-  'try hockey', 'try-hockey', 'learn to play', 'learn-to-play', 'beginner',
-  'first skate', 'free skate', 'intro to hockey', 'hockey for kids',
+  'try hockey', 'try-hockey', 'trying hockey', 'learn to play', 'learn-to-play',
+  'learning hockey', 'first skate', 'free skate', 'intro to hockey', 'new to hockey',
+  'never played', 'starting hockey',
 ];
 
 const EQUIPMENT_KEYWORDS = [
   'stick', 'blade', 'flex', 'curve', 'equipment', 'gear', 'helmet', 'skates',
-  'gloves', 'pads', 'hockey stick', 'hockey equipment',
+  'gloves', 'pads', 'hockey stick', 'hockey equipment', 'stick size', 'stick guide',
 ];
 
 const REGIONAL_KEYWORDS = [
-  'directory', 'find hockey', 'find a rink', 'near me', 'in any city', 'in any state',
-  'directory', 'team directory', 'rink directory', 'league directory', 'hockey rinks',
+  'near me', 'in any city', 'in any state',
+  'team directory', 'rink directory', 'league directory', 'hockey rinks',
   'public ice skating', 'leagues near', 'teams near', 'rinks with', 'practice facilities',
   'training facilities', 'adult hockey leagues', 'youth hockey leagues', 'hockey teams',
 ];
@@ -67,10 +69,14 @@ export function selectArticleCtaVariant(props: ArticleCtaBlockProps): ArticleCta
     ...(props.tags || []),
   ].join(' ');
 
-  // Order matters — youth > try > equipment > regional > claim > default
-  if (matchTopic(haystack, YOUTH_KEYWORDS)) return 'youth';
-  if (matchTopic(haystack, TRY_KEYWORDS)) return 'try';
+  // Order matters — equipment first (specific domain), then try, youth, regional, claim, default.
+  // Equipment > try so that equipment articles tagged "beginners" route to equipment
+  // (the "beginners" tag is incidental; the domain is equipment).
+  // Try > youth so that try-hockey articles for families route to try
+  // (the family context is incidental; the action is try).
   if (matchTopic(haystack, EQUIPMENT_KEYWORDS)) return 'equipment';
+  if (matchTopic(haystack, TRY_KEYWORDS)) return 'try';
+  if (matchTopic(haystack, YOUTH_KEYWORDS)) return 'youth';
   if (matchTopic(haystack, REGIONAL_KEYWORDS)) return 'regional';
   if (matchTopic(haystack, CLAIM_KEYWORDS)) return 'claim';
   return 'default';
