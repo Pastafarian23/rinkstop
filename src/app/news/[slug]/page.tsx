@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
 import ShareButton from '@/components/ShareButton';
+import ArticleCtaBlock from '@/components/ArticleCtaBlock';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
@@ -371,6 +372,14 @@ export default async function BlogPostPage({ params }: Props) {
               <div
                 className="article-card"
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
+              />
+
+              {/* Inline CTA (Day 3 — article CTA backfill). Topic-matched destination. */}
+              <ArticleCtaBlock
+                slug={post.slug}
+                category={post.category ?? null}
+                tags={post.tags ?? null}
+                title={post.title ?? null}
               />
 
               {/* Share — full popover (X, Facebook, LinkedIn, WhatsApp, Reddit, Email, Copy).
