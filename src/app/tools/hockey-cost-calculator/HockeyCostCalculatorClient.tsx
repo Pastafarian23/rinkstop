@@ -349,6 +349,18 @@ export default function HockeyCostCalculatorClient() {
             </Link>{' '}
             Free stick-size calculator → length, flex, and curve recommendations in 10 seconds.
           </div>
+
+          {/* Cross-link: glove size calculator (Day 4) */}
+          <div style={{
+            marginTop: '0.5rem', padding: '0.75rem 1rem',
+            background: 'rgba(255,184,28,0.05)', border: '1px solid rgba(255,184,28,0.2)',
+            borderRadius: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)',
+          }}>
+            🧤 <Link href="/tools/hockey-glove-size-calculator" style={{ color: '#FFB81C', fontWeight: 600 }}>
+              What size gloves does your player need?
+            </Link>{' '}
+            Free glove sizing tool → two modes: by height or by arm measurement.
+          </div>
         </div>
 
         {/* Total — the headline number */}
