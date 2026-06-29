@@ -361,6 +361,16 @@ export default function HockeyCostCalculatorClient() {
             </Link>{' '}
             Free glove sizing tool → two modes: by height or by arm measurement.
           </div>
+          <div style={{
+            marginTop: '0.5rem', padding: '0.75rem 1rem',
+            background: 'rgba(255,184,28,0.05)', border: '1px solid rgba(255,184,28,0.2)',
+            borderRadius: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)',
+          }}>
+            🛼 <Link href="/tools/hockey-skate-size-calculator" style={{ color: '#FFB81C', fontWeight: 600 }}>
+              What size hockey skates do you need?
+            </Link>{' '}
+            Free skate-sizing tool → US shoe size to skate size, category (youth / junior / senior), and width.
+          </div>
         </div>
 
         {/* Total — the headline number */}
