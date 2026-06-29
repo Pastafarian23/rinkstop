@@ -84,8 +84,10 @@ async function isOwner(userId: string, type: EntityType, entityId: string): Prom
     // No claim_type='league' today. For now, gate by the user having the
     // `league_admin` account type AND having any approved claim of any type
     // that points at this league. The latter is a stretch — admins can
-    // still edit if they hold the role. A `league_claims` table would be
-    // the proper fix; track it as a TODO.
+    // still edit if they hold the role.
+    // NOTE: a `league_claims` table is a separate feature, not a cleanup.
+    // Tracked in memory/2026-06-29-rinkstop-prep.md §4. Build when we add
+    // league claiming as a product surface (probably Q3 2026).
     const { count } = await supabaseAdmin
       .from('profile_account_types')
       .select('user_id', { count: 'exact', head: true })
