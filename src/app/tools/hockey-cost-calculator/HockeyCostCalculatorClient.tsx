@@ -371,6 +371,16 @@ export default function HockeyCostCalculatorClient() {
             </Link>{' '}
             Free skate-sizing tool → US shoe size to skate size, category (youth / junior / senior), and width.
           </div>
+          <div style={{
+            marginTop: '0.5rem', padding: '0.75rem 1rem',
+            background: 'rgba(255,184,28,0.05)', border: '1px solid rgba(255,184,28,0.2)',
+            borderRadius: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)',
+          }}>
+            🏒 <Link href="/tools/junior-eligibility-checker" style={{ color: '#FFB81C', fontWeight: 600 }}>
+              Is your player eligible for junior hockey?
+            </Link>{' '}
+            Free checker → birth year + month → OHL, WHL, QMJHL, USHL, NCDC, NAHL, BCHL, AJHL, NCAA.
+          </div>
         </div>
 
         {/* Total — the headline number */}
