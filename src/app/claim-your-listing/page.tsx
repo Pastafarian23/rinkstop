@@ -31,7 +31,6 @@ interface RinkResult {
   slug: string;
   name: string;
   city: string | null;
-  state: string | null;
   country: string | null;
   is_active: boolean;
   has_claim: boolean;
@@ -46,7 +45,7 @@ async function searchRinks(query: string): Promise<RinkResult[]> {
   // We use ilike with %query% — fast for ~2K row tables, no need for FTS.
   const { data, error } = await supabaseAdmin
     .from('rinks')
-    .select('id, slug, name, city, state, country, is_active')
+    .select('id, slug, name, city, country, is_active')
     .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
     .eq('is_active', true)
     .limit(20);
@@ -76,7 +75,6 @@ async function searchRinks(query: string): Promise<RinkResult[]> {
     slug: r.slug,
     name: r.name,
     city: r.city,
-    state: r.state,
     country: r.country,
     is_active: r.is_active,
     has_claim: claimByRinkId.has(r.id),
@@ -349,7 +347,7 @@ function BenefitRow({ icon, text }: { icon: string; text: string }) {
 }
 
 function RinkResultCard({ rink, query }: { rink: RinkResult; query: string }) {
-  const location = [rink.city, rink.state, rink.country].filter(Boolean).join(', ');
+  const location = [rink.city, rink.country].filter(Boolean).join(', ');
   const alreadyClaimed = rink.has_claim && rink.claim_status === 'approved';
   const pending = rink.has_claim && rink.claim_status === 'pending';
 
