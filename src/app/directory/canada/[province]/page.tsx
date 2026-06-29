@@ -138,6 +138,9 @@ export default async function CanadaProvincePage({
         </p>
       </div>
 
+      {/* Hockey Canada affiliate ad — top placement, matches country + city pages */}
+      <HockeyCanadaAd size="300x250" />
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
         {cities.map(({ city, team_count, rink_count }) => {
           const citySlug = city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -177,9 +180,6 @@ export default async function CanadaProvincePage({
           </p>
         </div>
       )}
-
-      {/* Hockey Canada affiliate ad — test placement, bottom of province page */}
-      <HockeyCanadaAd size="300x250" />
     </div>
   );
 }
