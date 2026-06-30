@@ -65,6 +65,18 @@ const nextConfig = {
         destination: '/directory/games',
         permanent: true,
       },
+      // Legacy /draft/[year] URLs from before the namespace split
+      // (per Arnel's decision 2026-06-30, Option A). All historical
+      // references to /draft/2026, /draft/2025, etc. should now go
+      // to /draft/nhl/[year]. Future sibling routes will live at
+      // /draft/ohl/[year], /draft/whl/[year], etc. so we use a regex
+      // that only matches the 4-digit year pattern — not landing pages
+      // like /draft/ohl which we'll add later.
+      {
+        source: '/draft/:year(\\d{4})',
+        destination: '/draft/nhl/:year',
+        permanent: true,
+      },
       {
         source: '/gear-brands',
         destination: '/gear-reviews',

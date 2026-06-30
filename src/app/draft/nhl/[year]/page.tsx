@@ -4,9 +4,9 @@
 // picks grouped by round, with client-side search/filter/sort via the
 // embedded PicksBrowser client component. SEO-friendly static page.
 //
-// URL pattern: /draft/[year], e.g. /draft/2026
-//   - /draft/2026 (supported, see PICKS_YEARS)
-//   - /draft/2025, /draft/2024, etc. → renders a "coming soon" placeholder
+// URL pattern: /draft/nhl/[year], e.g. /draft/nhl/2026
+//   - /draft/nhl/2026 (supported, see PICKS_YEARS)
+//   - /draft/nhl/2025, /draft/nhl/2024, etc. → renders a "coming soon" placeholder
 //     with the SEO-friendly hero + cross-links to existing content
 //
 // Data shape is currently hard-coded from xlsx uploaded via Telegram. To
@@ -15,7 +15,7 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PICKS_2026, DRAFT_2026_STATS, type Pick } from '../picks-2026';
+import { PICKS_2026, DRAFT_2026_STATS, type Pick } from '../../picks-2026';
 import PicksBrowser from './PicksBrowser';
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -42,6 +42,11 @@ const PICKS_YEARS: Record<number, YearArchive> = {
 
 // Single live NHL year — the "go back to live" link points here.
 const LIVE_NHL_YEAR = 2026;
+
+// URL base for the NHL namespace. Articles and the index page link here.
+// Other leagues (OHL/WHL/QMJHL/USHL) will get sibling routes under
+// /draft/<league>/[year] and a parallel base URL.
+const DRAFT_NHL_BASE = '/draft/nhl';
 
 const PRIOR_YEARS = [2025, 2024, 2023, 2022, 2021, 2020, 2019];
 
@@ -86,12 +91,12 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
     return {
       title,
       description,
-      alternates: { canonical: `https://rinkstop.com/draft/${year}` },
+      alternates: { canonical: `https://rinkstop.com${DRAFT_NHL_BASE}/${year}` },
       robots: { index: true, follow: true },
       openGraph: {
         title,
         description,
-        url: `https://rinkstop.com/draft/${year}`,
+        url: `https://rinkstop.com${DRAFT_NHL_BASE}/${year}`,
         siteName: 'RinkStop',
         type: 'article',
       },
@@ -105,7 +110,7 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
   return {
     title: `${year} NHL Draft Picks Archive — Coming Soon`,
     description: `We're building out the archive for the ${year} NHL Draft. Subscribe to RinkStop for updates.`,
-    alternates: { canonical: `https://rinkstop.com/draft/${year}` },
+    alternates: { canonical: `https://rinkstop.com${DRAFT_NHL_BASE}/${year}` },
     robots: { index: true, follow: true },
   };
 }
@@ -132,7 +137,7 @@ export default async function DraftArchivePage({ params }: { params: Promise<{ y
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/draft/2026" style={{ color: '#555' }}>Draft</Link>
+        <Link href={`${DRAFT_NHL_BASE}/2026`} style={{ color: '#555' }}>Draft</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <span style={{ color: '#A0A0A0' }}>{year}</span>
       </nav>
@@ -246,7 +251,7 @@ function Stat({ label, value, accent }: { label: string; value: number; accent?:
 
 function YearSwitcher({ currentYear }: { currentYear: number }) {
   const allYears = [LIVE_NHL_YEAR, ...PRIOR_YEARS.filter((y) => y !== LIVE_NHL_YEAR)].sort((a, b) => b - a);
-  const liveLink = `/draft/${LIVE_NHL_YEAR}`;
+  const liveLink = `${DRAFT_NHL_BASE}/${LIVE_NHL_YEAR}`;
   return (
     <div style={{
       marginBottom: '1.5rem',
@@ -295,7 +300,7 @@ function YearSwitcher({ currentYear }: { currentYear: number }) {
           return (
             <Link
               key={y}
-              href={`/draft/${y}`}
+              href={`${DRAFT_NHL_BASE}/${y}`}
               style={{
                 padding: '0.4rem 0.85rem',
                 background: isCurrent
@@ -352,7 +357,7 @@ function PriorYearStub({
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/draft/2026" style={{ color: '#555' }}>Draft</Link>
+        <Link href={`${DRAFT_NHL_BASE}/2026`} style={{ color: '#555' }}>Draft</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <span style={{ color: '#A0A0A0' }}>{year}</span>
       </nav>
@@ -383,7 +388,7 @@ function PriorYearStub({
         <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '0.5rem', maxWidth: '520px', marginLeft: 'auto', marginRight: 'auto' }}>
           We currently index one NHL draft at a time. The {year} archive is on the build list —
           in the meantime, the {year === LIVE_NHL_YEAR ? 'data is below.' : 'most recent live archive is'} {' '}
-          <Link href="/draft/2026" style={{ color: '#FFB81C', fontWeight: 600 }}>/draft/2026</Link>.
+          <Link href={`${DRAFT_NHL_BASE}/2026`} style={{ color: '#FFB81C', fontWeight: 600 }}>/draft/nhl/2026</Link>.
         </p>
         {crossArticles.length > 0 && (
           <div style={{ marginTop: '1.5rem', textAlign: 'left', maxWidth: '520px', margin: '1.5rem auto 0' }}>
