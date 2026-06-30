@@ -110,10 +110,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [...staticPages, ...countryUrls];
   }
 
+  // P1 (2026-06-30): paginate teams and rinks queries — PostgREST silently caps
+  // at 1,000 rows when no .range() is specified. We need to pull all indexable
+  // records so the sitemap exposes every rink/team that passes the quality
+  // filter. Players already has an explicit .limit(500) — leaving as-is.
+  // Each paginated call covers 1,000 rows. 3 calls = 3,000 row ceiling.
+  // Current DB sizes: rinks 1,917, teams 2,275. The 3rd call is defensive.
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult, caRinksResult, ukRinksResult] = await Promise.all([
-    // Phase 1 SEO: select fields needed for quality filter. See isHighQualityTeam() below.
-    supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true),
-    supabaseAdmin.from('rinks').select('slug, updated_at, city, country, province_state').eq('is_active', true),
+    Promise.all([
+      supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true).range(0, 999),
+      supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true).range(1000, 1999),
+      supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true).range(2000, 2999),
+    ]).then(results => ({ data: results.flatMap(r => r.data || []) })),
+    Promise.all([
+      supabaseAdmin.from('rinks').select('slug, updated_at, city, country, province_state').eq('is_active', true).range(0, 999),
+      supabaseAdmin.from('rinks').select('slug, updated_at, city, country, province_state').eq('is_active', true).range(1000, 1999),
+      supabaseAdmin.from('rinks').select('slug, updated_at, city, country, province_state').eq('is_active', true).range(2000, 2999),
+    ]).then(results => ({ data: results.flatMap(r => r.data || []) })),
     supabaseAdmin.from('leagues').select('slug, updated_at, country, level, website_url').eq('is_active', true),
     supabaseAdmin.from('posts').select('slug, updated_at').eq('status', 'published'),
     supabaseAdmin.from('players').select('id, updated_at, first_name, last_name, position, team_id, nationality, headshot_url').eq('is_active', true).order('updated_at', { ascending: false }).limit(500),
