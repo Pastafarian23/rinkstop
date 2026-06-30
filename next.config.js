@@ -77,6 +77,16 @@ const nextConfig = {
         destination: '/draft/nhl/:year',
         permanent: true,
       },
+      // /directory/staffs → /directory/staff. The dynamic [country] route
+      // catches /directory/staffs and renders 'Hockey in Staffs' (a non-country
+      // the geo template didn't recognize). The actual staff directory lives
+      // at the singular path. Permanent redirect so old links + bookmarks
+      // resolve to the right page.
+      {
+        source: '/directory/staffs',
+        destination: '/directory/staff',
+        permanent: true,
+      },
       {
         source: '/gear-brands',
         destination: '/gear-reviews',
