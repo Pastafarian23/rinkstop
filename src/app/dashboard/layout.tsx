@@ -157,6 +157,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
 
   navLinks.push(
     ['/dashboard', 'Overview'],
+    ['/dashboard/profile', 'Profile'],
     ['/dashboard/connections', 'Connections', pendingConnectionCount],
     ['/dashboard/messages', 'Messages', unreadMessageCount],
   );
@@ -204,7 +205,6 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   navLinks.push(
     ['/dashboard/leads', 'Leads'],
     ['/dashboard/subscription', 'Subscription'],
-    ['/dashboard/profile', 'Profile'],
     ['/dashboard/support', 'Support'],
   );
 
