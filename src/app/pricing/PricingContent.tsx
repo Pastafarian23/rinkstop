@@ -46,7 +46,7 @@ const TIERS: Tier[] = [
   },
   {
     id: 'roster',
-    label: 'Roster',
+    label: 'Roster Starter',
     price: formatTierPrice('roster'),
     period: '/ year',
     tagline: 'I want to claim my profile and link unlimited kids',
@@ -54,7 +54,7 @@ const TIERS: Tier[] = [
     bgColor: 'rgba(255,184,28,0.06)',
     borderColor: 'rgba(255,184,28,0.3)',
     popular: false,
-    cta: 'Join Roster',
+    cta: 'Join Roster Starter',
     stripePriceEnv: 'STRIPE_PRICE_ROSTER',
     features: [
       'Claim your player profile',
@@ -67,7 +67,7 @@ const TIERS: Tier[] = [
   },
   {
     id: 'roster_plus',
-    label: 'Roster+',
+    label: 'Roster Pro',
     price: formatTierPrice('roster_plus'),
     period: '/ year',
     tagline: 'I want photos, videos, and Family Hub for my kids',
@@ -75,10 +75,10 @@ const TIERS: Tier[] = [
     bgColor: 'rgba(255,184,28,0.12)',
     borderColor: 'rgba(255,184,28,0.4)',
     popular: false,
-    cta: 'Go Roster+',
+    cta: 'Go Roster Pro',
     stripePriceEnv: 'STRIPE_PRICE_ROSTER_PLUS',
     features: [
-      'Everything in Roster',
+      'Everything in Roster Starter',
       'Photos and videos on profiles',
       'Family Hub dashboard',
       'Kid performance tracking',
@@ -88,7 +88,7 @@ const TIERS: Tier[] = [
   },
   {
     id: 'pro',
-    label: 'Pro',
+    label: 'Roster Premium',
     price: formatTierPrice('pro'),
     period: '/ year',
     tagline: 'I want advanced personal features and team management',
@@ -99,7 +99,7 @@ const TIERS: Tier[] = [
     cta: 'Go Pro',
     stripePriceEnv: 'STRIPE_PRICE_PRO',
     features: [
-      'Everything in Roster+',
+      'Everything in Roster Pro',
       'Manage up to 5 teams',
       'Send and receive DMs',
       'Advanced analytics',
@@ -217,7 +217,7 @@ const ROLE_VALUE_PROPS: Record<Role, string> = {
 const FAQ = [
   {
     q: 'Is this a subscription?',
-    a: 'Yes. Roster, Pro, and Business Premium are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
+    a: 'Yes. Roster Starter, Roster Premium, and Business Premium are annual subscriptions that renew automatically each year. Free is always free. Your benefits stay active for the full year you paid for, regardless of any future changes.',
   },
   {
     q: 'What is a Founding Member badge?',
@@ -225,11 +225,11 @@ const FAQ = [
   },
   {
     q: 'Can I claim a listing without paying?',
-    a: 'Roster includes your profile claim. Pro includes up to 5 claims - enough for a personal scope (your home rink, your kids team, your beer-league squad). Business Premium includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
+    a: 'Roster Starter includes your profile claim. Roster Premium includes up to 5 claims - enough for a personal scope (your home rink, your kids team, your beer-league squad). Business Premium includes up to 25 claims and bulk claim for orgs that run multiple rinks, teams, or leagues. Enterprise is custom for organizations that need more than 25. Free accounts can browse but not claim.',
   },
   {
     q: 'I manage a rink, team, league, or organization. Which tier is for me?',
-    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Roster ($19.99) gets the same lead pipeline as a 25-listing Business Premium ($299). The difference is scale: Roster covers profile claims, Pro covers up to 5, Business Premium covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
+    a: 'Lead capture is included on every claimed listing regardless of tier, so a single-rink Roster Starter ($19.99) gets the same lead pipeline as a 25-listing Business Premium ($299). The difference is scale: Roster Starter covers profile claims, Roster Premium covers up to 5, Business Premium covers up to 25 with featured placement and analytics. Enterprise is for organizations that need more than 25.',
   },
   {
     q: 'I am a parent of a youth player. Can I claim my kid?',

@@ -238,7 +238,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Upgrade required to claim
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            The Free tier doesn't include claims. Roster is {formatTierPrice('roster')}/year (profile + kids), Roster+ is {formatTierPrice('roster_plus')}/year (photos/videos), Pro is {formatTierPrice('pro')}/year (team management/DMs), Business Pro is {formatTierPrice('business_pro')}/year (up to 5 claims), Business Premium is {formatTierPrice('business_premium')}/year (up to 25 + bulk), and Enterprise is custom for larger organizations.
+            The Free tier doesn't include claims. Roster Starter is {formatTierPrice('roster')}/year (profile + kids), Roster Pro is {formatTierPrice('roster_plus')}/year (photos/videos), Roster Premium is {formatTierPrice('pro')}/year (team management/DMs), Business Pro is {formatTierPrice('business_pro')}/year (up to 5 claims), Business Premium is {formatTierPrice('business_premium')}/year (up to 25 + bulk), and Enterprise is custom for larger organizations.
           </p>
           <Link
             href="/pricing"

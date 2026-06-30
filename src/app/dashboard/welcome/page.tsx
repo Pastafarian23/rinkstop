@@ -71,9 +71,9 @@ const NEXT_STEPS: Record<TierId, string[]> = {
 
 // What to upsell to (or "you've got everything" for premium/enterprise)
 const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: string; reason: string }> = {
-  free: { id: 'roster', label: 'Roster', price: formatTierPricePerYear('roster'), reason: 'Claim your profile and link unlimited kids' },
-  roster: { id: 'roster_plus', label: 'Roster+', price: formatTierPricePerYear('roster_plus'), reason: 'Photos, videos, and Family Hub for your kids' },
-  roster_plus: { id: 'pro', label: 'Pro', price: formatTierPricePerYear('pro'), reason: 'Team management and advanced features' },
+  free: { id: 'roster', label: 'Roster Starter', price: formatTierPricePerYear('roster'), reason: 'Claim your profile and link unlimited kids' },
+  roster: { id: 'roster_plus', label: 'Roster Pro', price: formatTierPricePerYear('roster_plus'), reason: 'Photos, videos, and Family Hub for your kids' },
+  roster_plus: { id: 'pro', label: 'Roster Premium', price: formatTierPricePerYear('pro'), reason: 'Team management and advanced features' },
   pro: { id: 'business_starter', label: 'Business Starter', price: formatTierPricePerYear('business_starter'), reason: 'Switch to business track for lead capture and DMs' },
   business_starter: { id: 'business_pro', label: 'Business Pro', price: formatTierPricePerYear('business_pro'), reason: 'Claim up to 5, lead capture, DMs, analytics' },
   business_pro: { id: 'business_premium', label: 'Business Premium', price: formatTierPricePerYear('business_premium'), reason: 'Claim up to 25, featured rotation, analytics' },
@@ -153,9 +153,9 @@ export default async function WelcomePage({
         </div>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', maxWidth: 480, margin: '0 auto' }}>
           {tier === 'business_premium' && 'Business Premium is unlocked. Lead capture, featured rotation, analytics - it\'s all live.'}
-          {tier === 'pro' && 'You\'re Pro. Your checkmark is showing on your profile and every listing you claim.'}
-          {tier === 'roster_plus' && 'You\'re on Roster+. Family Hub and photo features are now available.'}
-          {tier === 'roster' && 'You\'re on Roster. Your profile claim and kids linking is ready.'}
+          {tier === 'pro' && 'You\'re on Roster Premium. Team management and advanced features are now available.'}
+          {tier === 'roster_plus' && 'You\'re on Roster Pro. Family Hub and photo features are now available.'}
+          {tier === 'roster' && 'You\'re on Roster Starter. Your profile claim and kids linking is ready.'}
           {tier === 'business_starter' && 'You\'re on Business Starter. Your one free claim is ready - start with a rink or team you manage.'}
           {tier === 'business_pro' && 'You\'re on Business Pro. Lead capture, DMs, and analytics are now live.'}
           {tier === 'enterprise' && 'You\'re on Enterprise. Your success contact will reach out within 24 hours to scope onboarding.'}
