@@ -169,7 +169,13 @@ export default async function BlogPostPage({ params }: Props) {
   const post = await getPost(slug);
   if (!post) return notFound();
 
-  const htmlContent = contentToHtml(post.content);
+  // Prefer rich HTML when the publisher set `content_html` (per
+  // src/lib/markdown.ts contract — articles that need tables / formatted
+  // markup should set both fields). Fall back to markdown→HTML for legacy
+  // highlight-pipeline posts that only set `content`.
+  const htmlContent = (post.content_html && post.content_html.trim().length > 0)
+    ? post.content_html
+    : contentToHtml(post.content);
   // Prefer the post's own author fields when set (the highlight pipeline sets
   // author_name = 'RinkStop / Highlight Desk'); fall back to the founder.
   const authorName = post.author_name || 'Arnel Larracas';
