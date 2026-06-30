@@ -15,6 +15,20 @@ import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
 
+/**
+ * Canonical owner emails. The Founder badge + super_admin-level views fire
+ * for any Clerk session whose primary email is in this set, regardless of
+ * which `profiles.user_id` row maps to that Clerk account. This protects
+ * against Clerk OAuth flows creating a separate duplicate user (e.g. when
+ * account-linking is off) — the rendered dashboard still reflects ownership.
+ *
+ * Keep this set SMALL. Each entry is a God-mode credential; only the
+ * actual project owner(s) belong here.
+ */
+const OWNER_EMAILS = new Set([
+  'arnellarracas@gmail.com',
+]);
+
 export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/login');
@@ -22,7 +36,10 @@ export default async function DashboardPage() {
   // Look up role BEFORE rendering so the catch block knows whether to surface
   // debug details. Cheap query, isolated from renderDashboard's broader scope.
   // Fail-closed: if the role lookup itself throws, treat as non-admin.
+  // We also OR-in owner-email match because Clerk OAuth may have created a
+  // separate "free" user for the same person — we still want Founder context.
   let isSuperAdmin = false;
+  let ownerEmail = '';
   try {
     const { data: roleRow } = await supabaseAdmin
       .from('profiles')
@@ -30,6 +47,10 @@ export default async function DashboardPage() {
       .eq('user_id', userId)
       .maybeSingle();
     isSuperAdmin = roleRow?.role === 'super_admin';
+    // Resolve current email from Clerk session (used for OWNER_EMAILS fallback).
+    const cu = await currentUser();
+    ownerEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+    if (!isSuperAdmin && OWNER_EMAILS.has(ownerEmail)) isSuperAdmin = true;
   } catch {
     isSuperAdmin = false;
   }
@@ -174,7 +195,11 @@ async function renderDashboard(userId: string) {
   }
 
   const isSuperAdmin = profile?.role === 'super_admin';
-  const isFounder = isSuperAdmin;
+  // Founder = role-based OR email-canonical. The email fallback is the
+  // fix for Clerk OAuth creating a duplicate user_id — even if the new
+  // Clerk account's profile row has no role, the dashboard still knows
+  // the signed-in email is the owner's.
+  const isFounder = isSuperAdmin || OWNER_EMAILS.has(email);
   // For the OG founder, "Member since" should reflect when they actually started the project
   // (e.g. domain registration date), not when their Clerk account was created.
   const founderSince = 'February 2019';
