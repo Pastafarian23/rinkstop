@@ -1,7 +1,8 @@
 import './globals.css';
 import Link from 'next/link';
 import { ClerkProvider } from '@clerk/nextjs';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
@@ -145,13 +146,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     if (auth_?.userId) {
       userId = auth_.userId;
       signedIn = true;
+      // Resolve canonical-user_id for owner emails so the bottom tab bar
+      // reads the canonical profile_account_types row (orphaned Clerk
+      // sessions otherwise produce an empty accountTypes array and the
+      // tab bar falls through to fan/default tabs).
+      const cu = await currentUser();
+      const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+      const canonicalUserId = await resolveCanonicalUserId(userId, userEmail);
       const { data } = await supabaseAdmin
         .from('profile_account_types')
         .select('account_type, is_primary')
-        .eq('user_id', userId);
+        .eq('user_id', canonicalUserId);
       accountTypes = (data || []) as Array<{ account_type: string; is_primary: boolean }>;
+      userId = canonicalUserId;
       try {
-        tier = await getUserTier(userId);
+        tier = await getUserTier(canonicalUserId);
       } catch {
         tier = 'free';
       }
