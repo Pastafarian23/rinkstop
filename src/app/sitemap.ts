@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { supabaseAdmin } from '@/lib/supabase';
 import { provinceSlug } from '@/lib/ca-provinces';
+import { FEDERATIONS } from '@/lib/federations';
 
 const baseUrl = 'https://rinkstop.com';
 
@@ -122,6 +123,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/guides/adult/shin-guard-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
     { url: `${baseUrl}/guides/adult/jock-jill-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
   ];
+
+  // ─── Federation URLs (P3 — added 2026-06-30) ───────────────────────────────
+  // All 85 national hockey federations from the FEDERATIONS constant. Every
+  // entry has federationName, federationUrl, governingBody, safeguardingBody,
+  // and requiredDocKinds — verified by reading the Federation type definition.
+  // URL slugs are computed inline using the same regex as
+  // @/lib/country-page.ts#countryToSlug, so sitemap and page URLs stay in sync.
+  // (We don't import countryToSlug directly because Next.js' const hoisting
+  //  caused a TDZ ReferenceError on its dependency COUNTRY_MAP during build.)
+  // Prep doc: docs/p3-federations-sitemap-prep.md
+  const federationUrls: MetadataRoute.Sitemap = FEDERATIONS.map(f => ({
+    url: `${baseUrl}/federations/${f.countryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+    lastModified: new Date(),
+    changeFrequency: 'yearly' as const,
+    priority: 0.5,
+  }));
 
   // Country slugs to exclude from sitemap: countries with NO real hockey content
   // (Antigua, Bahamas, Barbados, Belize, Caribbean nations, Pacific islands, etc.)
@@ -362,7 +379,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...usCityUrls, ...universalCityUrls, ...guideUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
+  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...usCityUrls, ...universalCityUrls, ...guideUrls, ...federationUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
 
   // Log filter effectiveness — Vercel picks this up in logs
   console.log('[sitemap] Phase 1 SEO filter:', JSON.stringify({
@@ -376,6 +393,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     uk_cities: ukCities.size,
     universal_cities: universalCities.size,
     guides: guideUrls.length,
+    federations: federationUrls.length,
     percent_kept: ((all.length / 2966) * 100).toFixed(1) + '%',
   }));
 
