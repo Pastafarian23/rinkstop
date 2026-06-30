@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { OWNER_EMAILS } from '@/lib/admin-auth';
 
 // POST /api/account-type
 // Body: { types: string[], primary: string }
@@ -28,6 +29,31 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
+  // Owner-email canonical-user-id fallback (same pattern as identity page
+  // 4700eee, dashboard layout 8fb9823, subscription page 1b45415, dashboard
+  // page 0a8909f). profile_account_types has a FK to profiles.user_id with
+  // CASCADE delete, so an INSERT for an orphan Clerk user_id (which has no
+  // profiles row) fails the FK constraint and returns 500 — the picker
+  // silently catches it and the user sees 'nothing saved'. Resolving to the
+  // canonical user_id before delete+insert makes the save land on the row
+  // the dashboard nav reads from.
+  let effectiveUserId = userId;
+  try {
+    const cu = await currentUser();
+    const ownerEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+    if (OWNER_EMAILS.has(ownerEmail)) {
+      const { data: byEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .ilike('email', ownerEmail)
+        .neq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (byEmail) effectiveUserId = byEmail.user_id;
+    }
+  } catch { /* fall through to auth().userId */ }
+
   let body: { types?: unknown; primary?: unknown };
   try {
     body = await req.json();
@@ -50,14 +76,14 @@ export async function POST(req: NextRequest) {
   const { error: delErr } = await supabaseAdmin
     .from('profile_account_types')
     .delete()
-    .eq('user_id', userId);
+    .eq('user_id', effectiveUserId);
   if (delErr) {
     console.error('[account-type] delete failed', delErr);
     return NextResponse.json({ error: 'update_failed', message: delErr.message }, { status: 500 });
   }
 
   const rows = types.map((t) => ({
-    user_id: userId,
+    user_id: effectiveUserId,
     account_type: t,
     is_primary: t === primary,
   }));
@@ -78,7 +104,29 @@ export async function GET(req: NextRequest) {
 
   // Allow reading any user's public types (used by /u/[userId] profile page).
   // The RLS policy on profile_account_types is SELECT USING (true), so this is safe.
-  const targetUserId = req.nextUrl.searchParams.get('userId') || authedUserId;
+  let targetUserId = req.nextUrl.searchParams.get('userId') || authedUserId;
+
+  // Owner-email canonical lookup (read path). Same pattern as POST below:
+  // if the authed Clerk user_id is the orphan and the email is in
+  // OWNER_EMAILS, read the canonical row's account types instead so the
+  // picker pre-loads the user's existing selection.
+  if (targetUserId === authedUserId) {
+    try {
+      const cu = await currentUser();
+      const ownerEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+      if (OWNER_EMAILS.has(ownerEmail)) {
+        const { data: byEmail } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id')
+          .ilike('email', ownerEmail)
+          .neq('user_id', authedUserId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (byEmail) targetUserId = byEmail.user_id;
+      }
+    } catch { /* fall through */ }
+  }
 
   const { data, error } = await supabaseAdmin
     .from('profile_account_types')
