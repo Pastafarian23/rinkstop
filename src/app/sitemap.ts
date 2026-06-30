@@ -81,6 +81,48 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/ice-rinks-near-me`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
   ];
 
+  // ─── Guide URLs (P2 — added 2026-06-30) ─────────────────────────────────────
+  // All guide pages have original editorial content (≥640 words per file audit).
+  // No quality filter needed — every page is real, unique content. Prep doc:
+  // docs/p2-guides-sitemap-prep.md
+  const guideUrls: MetadataRoute.Sitemap = [
+    // Top-level guide indexes
+    { url: `${baseUrl}/guides`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    { url: `${baseUrl}/guides/youth`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    { url: `${baseUrl}/guides/adult`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    // Top-level editorial guides
+    { url: `${baseUrl}/guides/hockey-rules`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/hockey-positions`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/hockey-nutrition`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/hockey-stick-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/skate-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/breaking-in-hockey-gloves`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/off-ice-hockey-training`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/hockey-parents-handbook`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth-to-junior-hockey`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    // Youth guides
+    { url: `${baseUrl}/guides/youth/house-vs-travel-hockey`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/usa-hockey-adm-explained`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/how-to-fit-hockey-equipment`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/how-to-tie-hockey-skates`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/helmet-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/shoulder-pad-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/elbow-pad-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/hockey-glove-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/hockey-pants-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/shin-guard-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/youth/jock-jill-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    // Adult guides
+    { url: `${baseUrl}/guides/adult/how-to-fit-hockey-equipment`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/adult/helmet-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/adult/shoulder-pad-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/adult/elbow-pad-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/adult/hockey-glove-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/adult/hockey-pants-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/adult/shin-guard-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+    { url: `${baseUrl}/guides/adult/jock-jill-fitting-guide`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.7 },
+  ];
+
   // Country slugs to exclude from sitemap: countries with NO real hockey content
   // (Antigua, Bahamas, Barbados, Belize, Caribbean nations, Pacific islands, etc.)
   // These pages exist for completeness but have <10 rinks and are essentially empty.
@@ -320,7 +362,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...usCityUrls, ...universalCityUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
+  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...usCityUrls, ...universalCityUrls, ...guideUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
 
   // Log filter effectiveness — Vercel picks this up in logs
   console.log('[sitemap] Phase 1 SEO filter:', JSON.stringify({
@@ -333,6 +375,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ca_cities: caCities.size,
     uk_cities: ukCities.size,
     universal_cities: universalCities.size,
+    guides: guideUrls.length,
     percent_kept: ((all.length / 2966) * 100).toFixed(1) + '%',
   }));
 
