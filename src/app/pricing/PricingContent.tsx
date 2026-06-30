@@ -245,7 +245,7 @@ const FAQ = [
   },
   {
     q: 'Can I upgrade mid-year?',
-    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Roster to Roster+, Roster+ to Pro, or Business tiers at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
+    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited to the new one. You can move from Roster Starter to Roster Pro, Roster Pro to Roster Premium, or between Business tiers at any time from your dashboard. Enterprise is scoped with us first so large organizations get the right claim volume.',
   },
   {
     q: 'Why no ad-free tier?',
