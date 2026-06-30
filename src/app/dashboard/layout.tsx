@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { OWNER_EMAILS } from '@/lib/admin-auth';
 import DashboardNav from '@/components/DashboardNav';
 import UserMenu from '@/components/UserMenu';
 import NotificationBell from '@/components/NotificationBell';
@@ -70,7 +71,16 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   } catch {
     // best-effort
   }
-  const isSuperAdmin = clerkRole === 'super_admin' || profileRole === 'super_admin';
+  const isSuperAdminBase = clerkRole === 'super_admin' || profileRole === 'super_admin';
+  // OWNER_EMAILS bypass — same God-mode fallback used by requireAdmin() in
+  // src/lib/admin-auth.ts. If the signed-in email is the owner's, treat as
+  // super_admin regardless of what Clerk publicMetadata or profiles says.
+  // Ensures the admin button (and the /admin route guard) only surface to
+  // the project owner, even if Clerk account-linking issues produce a fresh
+  // duplicate user with no role assigned.
+  const ownerEmail = user?.emailAddresses?.[0]?.emailAddress || '';
+  const isOwner = OWNER_EMAILS.has(ownerEmail);
+  const isSuperAdmin = isSuperAdminBase || isOwner;
   const isAdmin = isSuperAdmin || clerkRole === 'admin' || profileRole === 'admin';
 
   // Fetch pending connection requests + unread message counts for nav badges.

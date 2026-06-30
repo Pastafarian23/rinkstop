@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { OWNER_EMAILS } from '@/lib/admin-auth';
 
 /**
  * GET /api/profile-debug
@@ -17,12 +18,10 @@ import { supabaseAdmin } from '@/lib/supabase';
  * Safe to expose: returns only what the caller already has access to (their
  * own Clerk user data + their own Supabase profile). Public users calling
  * without a session get a 401.
+ *
+ * OWNER_EMAILS comes from src/lib/admin-auth.ts — single source of truth.
  */
 export const dynamic = 'force-dynamic';
-
-const OWNER_EMAILS = new Set([
-  'arnellarracas@gmail.com',
-]);
 
 export async function GET(req: NextRequest) {
   const { userId } = await auth();
