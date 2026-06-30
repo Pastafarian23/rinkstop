@@ -12,12 +12,18 @@ interface UpgradeNudgePopupProps {
   disabled?: boolean;
 }
 
-interface MeResponse {
+interface MeProfile {
   user_id: string;
   tier: string;
   is_founding_member?: boolean;
-  created_at?: string;
+  subscription_status?: string;
 }
+
+type MeResponse = Partial<MeProfile> & {
+  created_at?: string;
+  // /api/profiles/me returns { profile, managedProfiles, ... }
+  profile?: MeProfile;
+};
 
 /**
  * Post-login upgrade nudge. Shows once to free users (or weekly if frequency='weekly')
@@ -83,12 +89,24 @@ export default function UpgradeNudgePopup({
         const data: MeResponse = await res.json();
         if (cancelled) return;
 
-        // Only show to free users who are not already founders
-        if (data.tier && data.tier !== 'free') {
+        // /api/profiles/me returns the profile nested under `profile`.
+        // Fall back to flat fields in case a future endpoint returns the legacy shape.
+        const profile = data.profile ?? data;
+        const tier = profile?.tier;
+        const isFounding = Boolean(profile?.is_founding_member);
+        const subStatus = profile?.subscription_status;
+
+        // Don't show to anyone on a paid tier or with an active subscription,
+        // even if the tier field is missing or stale.
+        if (isFounding) {
           setLoading(false);
           return;
         }
-        if (data.is_founding_member) {
+        if (tier && tier !== 'free') {
+          setLoading(false);
+          return;
+        }
+        if (subStatus === 'active' || subStatus === 'trialing') {
           setLoading(false);
           return;
         }
@@ -188,11 +206,25 @@ export default function UpgradeNudgePopup({
           UNLOCK RINKSTOP
         </h2>
 
-        {/* Body */}
-        <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.55, margin: '0 0 1.25rem' }}>
-          Support the site and get a <strong style={{ color: '#FFB81C' }}>Founding Member badge</strong> on your profile,
-          unlimited follows, the weekly digest, and the ability to claim <strong style={{ color: '#FFB81C' }}>1 listing</strong> (your home rink, your kid&apos;s team, your beer-league squad).
-        </p>
+        {/* Body — feature-first pitch */}
+        <ul style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9375rem', lineHeight: 1.55, margin: '0 0 1.25rem', padding: 0, listStyle: 'none' }}>
+          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
+            <span><strong style={{ color: '#FFB81C' }}>Founding Member badge</strong> on your profile — permanent, first 500 only</span>
+          </li>
+          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
+            <span>Claim <strong style={{ color: '#FFB81C' }}>1 listing</strong> — your home rink, your kid&apos;s team, your beer-league squad</span>
+          </li>
+          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
+            <span>Unlimited follows and the weekly digest in your dashboard</span>
+          </li>
+          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
+            <span>Manage everything from <strong style={{ color: '#FFB81C' }}>/dashboard</strong></span>
+          </li>
+        </ul>
 
         {/* Price + CTA */}
         <div
@@ -206,7 +238,7 @@ export default function UpgradeNudgePopup({
               $19.99<span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', fontFamily: 'system-ui' }}> / year</span>
             </div>
             <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-              Annual subscription. Cancel any time.
+              Annual plan · priced to stay
             </div>
           </div>
           <Link
