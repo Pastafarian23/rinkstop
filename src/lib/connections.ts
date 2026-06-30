@@ -26,6 +26,7 @@ export const TIER_RANK: Record<string, number> = {
   roster: 1,
   roster_plus: 2,
   pro: 3,
+  premium: 3, // legacy alias for `pro` (top of personal track, pre-2026-06-17 rename)
   // Business track ranks
   business_starter: 1,
   business_pro: 2,

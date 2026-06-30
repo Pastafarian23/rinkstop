@@ -177,6 +177,24 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   let currentTier = 'free';
   try {
     currentTier = await getUserTier(userId);
+    // Owner-email fallback: if the authed Clerk user_id resolves to a shadow
+    // row with tier=free (e.g. orphan Clerk account) and the user's email
+    // is in OWNER_EMAILS, fall through to the canonical profile row by
+    // email. Without this, the dashboard layout shows no tier badge for
+    // the owner because getUserTier reads the orphan row.
+    if (OWNER_EMAILS.has(ownerEmail)) {
+      const { data: byEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .ilike('email', ownerEmail)
+        .neq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (byEmail) {
+        currentTier = await getUserTier(byEmail.user_id);
+      }
+    }
     // Personal track: roster+ has ID verification. Business track: business_starter+ has verification.
     // We check if user has ANY paid tier in their track (tierAtLeast returns true if same track).
     if (tierAtLeast(currentTier, 'roster')) {

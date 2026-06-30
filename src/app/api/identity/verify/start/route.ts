@@ -16,10 +16,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { getUserTier, tierAtLeast } from '@/lib/connections';
+import { OWNER_EMAILS } from '@/lib/admin-auth';
 import { createSession } from '@/lib/didit';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { trackEvent } from '@/lib/analytics';
@@ -50,7 +51,32 @@ export async function POST(req: NextRequest) {
     // (Was Pro+ in earlier design; downgraded 2026-06-17 because
     //  verification-required roles (coach, manager, etc.) are
     //  available from Roster+. Only free/roster users are blocked.)
-    const tier = await getUserTier(userId);
+    //
+    // Owner-email fallback: if the authed Clerk user_id resolves to a
+    // shadow row (e.g. an orphan Clerk user that lazy-create built with
+    // tier=free), and the user's email is in OWNER_EMAILS, fall through
+    // to the canonical profile row by email so identity verification
+    // unlocks. Mirrors the dashboard page pattern.
+    let effectiveUserId = userId;
+    let tier = await getUserTier(userId);
+    try {
+      const cu = await currentUser();
+      const primaryEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+      if (OWNER_EMAILS.has(primaryEmail)) {
+        const { data: byEmail } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id, tier')
+          .ilike('email', primaryEmail)
+          .neq('user_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (byEmail) {
+          effectiveUserId = byEmail.user_id;
+          tier = await getUserTier(byEmail.user_id);
+        }
+      }
+    } catch { /* currentUser() may throw in edge cases — fall through */ }
     if (!tierAtLeast(tier, 'roster_plus')) {
       return NextResponse.json(
         {
@@ -70,9 +96,9 @@ export async function POST(req: NextRequest) {
       supabaseAdmin
         .from('profiles')
         .select('identity_verified_at, identity_expires_at, identity_verification_method')
-        .eq('user_id', userId)
+        .eq('user_id', effectiveUserId)
         .maybeSingle(),
-      isIdentityVerified(userId),
+      isIdentityVerified(effectiveUserId),
     ]);
 
     if (alreadyVerified) {
@@ -91,7 +117,7 @@ export async function POST(req: NextRequest) {
     // 5. Create Didit session
     const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com'}/dashboard/identity?return=1`;
     const diditSession = await createSession('user', {
-      vendorData: userId,
+      vendorData: effectiveUserId,
       callbackUrl,
       metadata: { tier, source: 'web' },
     });
@@ -100,7 +126,7 @@ export async function POST(req: NextRequest) {
     const { data: sessionRow, error: insertError } = await supabaseAdmin
       .from('didit_sessions')
       .insert({
-        user_id: userId,
+        user_id: effectiveUserId,
         // Piece D2: Didit v3 returns the session UUID as 'session_id',
         // not 'id'. Was passing undefined before (NOT NULL violation).
         session_id: diditSession.session_id,
@@ -123,7 +149,7 @@ export async function POST(req: NextRequest) {
     try {
       trackEvent({
         name: 'identity_verify_started',
-        userId: userId,
+        userId: effectiveUserId,
         props: {
           session_id: diditSession.session_id,
           tier,
