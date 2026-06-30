@@ -167,19 +167,29 @@ async function handleUserCreated(data: ClerkUserPayload) {
   // into the generic "free / Founding" render path even though the actual
   // person signed in.
   //
-  // We do NOT delete the original profile row — both Clerk user_ids now
-  // resolve to equivalent rows, and the dashboard's OWNER_EMAILS fallback
-  // (added in dashboard/page.tsx c46a8ce) renders Founder for either. That
-  // way a stale duplicate can still be cleaned up later from Clerk dashboard
-  // / Supabase without losing access for the owner.
+  // For OWNER accounts (role='super_admin' OR is_founding_member=true on the
+  // email-matched row), we ALSO delete the newly-created Clerk user
+  // immediately. Account-linking is OFF on this Clerk instance, so every
+  // fresh sign-in spawns a brand-new Clerk user for the same email. If we
+  // don't delete the new one, the dashboard's next login session may
+  // resolve to the new orphan and the user is back in the same broken
+  // state we spent the day fixing. Deleting the new Clerk user forces the
+  // next sign-in to land back on the canonical Clerk user (which is still
+  // active and signed-in-token-valid). This is the structural fix for
+  // "orphan Clerk users keep appearing": as long as account-linking is
+  // off, we have to delete them at the webhook layer.
+  //
+  // (Arnel directive 2026-06-30: "Fix the clerk account linking issue.
+  //  This should have been done already.")
   let inheritedTier = 'free';
   let inheritedRole = 'user';
   let inheritedIsFoundingMember = false;
+  let shouldDeleteNewUser = false;
   if (email) {
     const { data: existing } = await supabaseAdmin
       .from('profiles')
-      .select('tier, role, is_founding_member')
-      .eq('email', email)
+      .select('tier, role, is_founding_member, user_id')
+      .ilike('email', email)
       .neq('user_id', data.id) // never inherit from the row we're about to write
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -188,8 +198,16 @@ async function handleUserCreated(data: ClerkUserPayload) {
       if (existing.tier && existing.tier !== 'free') inheritedTier = existing.tier;
       if (existing.role && existing.role !== 'user') inheritedRole = existing.role;
       if (existing.is_founding_member) inheritedIsFoundingMember = existing.is_founding_member;
+      // Owner-account detection: super_admin or founding member. For these
+      // rows the canonical Clerk user_id is the one we want to keep. The
+      // brand-new Clerk user just created should be deleted.
+      if (existing.role === 'super_admin' || existing.is_founding_member === true) {
+        if (existing.user_id && existing.user_id !== data.id) {
+          shouldDeleteNewUser = true;
+        }
+      }
       console.log(
-        `[clerk-webhook] user.created for new Clerk id ${data.id} matched existing profile row by email ${email}; inheriting tier=${inheritedTier} role=${inheritedRole}`,
+        `[clerk-webhook] user.created for new Clerk id ${data.id} matched existing profile row by email ${email}; inheriting tier=${inheritedTier} role=${inheritedRole}${shouldDeleteNewUser ? ' (will delete new Clerk user)' : ''}`,
       );
     }
   } else if (displayName) {
@@ -239,6 +257,40 @@ async function handleUserCreated(data: ClerkUserPayload) {
 
   if (error) {
     throw new Error(`profile upsert failed: ${error.message}`);
+  }
+
+  // Delete the newly-created Clerk user if it duplicates an OWNER account.
+  // This is the structural fix for the orphan-Clerk-user accumulation when
+  // account-linking is OFF. The canonical Clerk user (the one already tied
+  // to the canonical Supabase profile row) remains; the fresh duplicate
+  // is removed. The webhook returns 200 to Clerk either way — a non-2xx
+  // response would cause Clerk to retry the webhook, which is not what we
+  // want.
+  if (shouldDeleteNewUser) {
+    const clerkSecret = process.env.CLERK_SECRET_KEY;
+    if (clerkSecret) {
+      try {
+        const del = await fetch(`https://api.clerk.com/v1/users/${data.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${clerkSecret}` },
+          signal: AbortSignal.timeout(5_000),
+        });
+        console.log(
+          `[clerk-webhook] orphan cleanup: DELETE /v1/users/${data.id} status=${del.status} for email=${email}`,
+        );
+        // Also clean up the orphan Supabase row we just wrote via the upsert
+        // so the canonical profile row stays the sole owner row.
+        await supabaseAdmin
+          .from('profiles')
+          .delete()
+          .eq('user_id', data.id);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`[clerk-webhook] orphan cleanup failed (non-blocking): ${msg}`);
+      }
+    } else {
+      console.warn('[clerk-webhook] orphan cleanup skipped: CLERK_SECRET_KEY not set');
+    }
   }
 
   // Welcome email (best-effort, never blocks).
