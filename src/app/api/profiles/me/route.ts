@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireUserId } from '@/lib/connections';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
@@ -14,7 +15,10 @@ export async function PATCH(request: NextRequest) {
   const result = await checkRateLimit(`me:${ip}`, RL);
   maybeCleanup();
 
-  const userId = await requireUserId();
+  const userId = await resolveCanonicalUserId(
+    await requireUserId(),
+    (await currentUser())?.emailAddresses?.[0]?.emailAddress || ''
+  );
   if (!userId) {
     const res = NextResponse.json({ error: 'Sign in.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);
@@ -69,7 +73,10 @@ export async function GET(request: NextRequest) {
   const result = await checkRateLimit(`me:${ip}`, RL);
   maybeCleanup();
 
-  const userId = await requireUserId();
+  const userId = await resolveCanonicalUserId(
+    await requireUserId(),
+    (await currentUser())?.emailAddresses?.[0]?.emailAddress || ''
+  );
   if (!userId) {
     const res = NextResponse.json({ error: 'Sign in.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);

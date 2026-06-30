@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 const VALID_CATEGORIES = new Set(['pro_shop', 'sharpening', 'camp', 'training', 'equipment', 'other']);
@@ -28,8 +29,11 @@ async function getOwnedListing(listingId: string, userId: string) {
 // Returns a single listing. Owner only (a public /businesses directory view
 // will be a separate read endpoint that hits Supabase directly with RLS).
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { id } = await params;
   const owned = await getOwnedListing(id, userId);
@@ -50,8 +54,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 // PATCH /api/listings/[id]
 // Body: any subset of editable fields. All edits are owner-only.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { id } = await params;
   const owned = await getOwnedListing(id, userId);
@@ -144,8 +151,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 // Hard delete. Owner only. Cascades: leads.listing_id has no FK so any
 // leads pointing at this listing become orphans (acceptable — Phase 2).
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { id } = await params;
   const owned = await getOwnedListing(id, userId);

@@ -163,3 +163,62 @@ export async function getAdminFromRequest(): Promise<{ admin: AdminContext } | {
 
   return { response: new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: { 'Content-Type': 'application/json' } }) };
 }
+
+/**
+ * Canonical-user-id resolver.
+ *
+ * Owner-email fallback for the orphan-Clerk-session bug: when the user's
+ * email is in OWNER_EMAILS and the authed Clerk user_id is not the
+ * canonical profile row, return the canonical user_id. Otherwise return
+ * the authed userId unchanged.
+ *
+ * This is the structural fix for the band-aid pattern of adding OWNER_EMAILS
+ * fallback to every individual page/API. Centralize here, call from one
+ * place per request, pass the result to all downstream queries.
+ *
+ * Returns the original userId if the lookup fails or the email doesn't match
+ * OWNER_EMAILS — i.e. it never changes behavior for non-owner users.
+ *
+ * Usage:
+ *   const userId = await resolveCanonicalUserId(authUserId, userEmail);
+ *   // userId is now either authUserId (normal case) or the canonical row's
+ *   // user_id (orphan session + owner email case).
+ */
+export async function resolveCanonicalUserId(
+  authUserId: string,
+  userEmail: string | null | undefined,
+): Promise<string> {
+  if (!userEmail || !OWNER_EMAILS.has(userEmail)) return authUserId;
+  if (!authUserId) return authUserId;
+
+  try {
+    const { data: byEmail } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id')
+      .ilike('email', userEmail)
+      .neq('user_id', authUserId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (byEmail?.user_id) return byEmail.user_id;
+  } catch {
+    // Fall through — never block the request on a failed lookup
+  }
+  return authUserId;
+}
+
+/**
+ * One-call helper: resolve canonical-user_id for the current Clerk session.
+ * Reads the session + email via Clerk, then calls resolveCanonicalUserId.
+ *
+ * Use this at the top of every server route/page that needs to read/write
+ * profiles or any FK-locked table tied to profiles.user_id.
+ */
+export async function getCurrentCanonicalUserId(): Promise<{ userId: string; email: string } | null> {
+  const session = await auth();
+  if (!session.userId) return null;
+  const user = await currentUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, email);
+  return { userId, email };
+}

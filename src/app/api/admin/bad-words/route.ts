@@ -22,6 +22,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
@@ -33,8 +34,11 @@ const ADMIN_EMAILS = new Set([
 ]);
 
 async function requireAdmin(): Promise<{ userId: string } | { error: NextResponse }> {
-  const { userId } = await auth();
-  if (!userId) return { error: NextResponse.json({ error: 'unauthorized' }, { status: 401 }) };
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return { error: NextResponse.json({ error: 'unauthorized' }, { status: 401 }) };
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('role, _deprecated_account_type, user_id')

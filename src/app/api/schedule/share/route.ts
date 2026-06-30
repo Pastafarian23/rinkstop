@@ -1,4 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { NextResponse } from 'next/server';
 import { hasTeamAdminAccess } from '@/lib/tier-gate';
 
@@ -47,8 +48,11 @@ function generateToken(): string {
  * Tier-gated: paid tier required.
  */
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     return new NextResponse(JSON.stringify({ error: 'unauthenticated' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
@@ -91,8 +95,11 @@ export async function GET() {
  * Tier-gated.
  */
 export async function POST() {
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     return new NextResponse(JSON.stringify({ error: 'unauthenticated' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
@@ -134,8 +141,11 @@ export async function POST() {
  * Revokes any active share token for the user. No content-type required.
  */
 export async function DELETE() {
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     return new NextResponse(JSON.stringify({ error: 'unauthenticated' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },

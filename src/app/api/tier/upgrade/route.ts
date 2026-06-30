@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import Stripe from 'stripe';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -44,8 +45,11 @@ const TIER_RANK: Record<TierName, number> = {
 };
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const ip = getClientIP(req);
   const result = await checkRateLimit(`tier-upgrade:${ip}`, RATE_LIMIT);
@@ -170,7 +174,7 @@ export async function POST(req: NextRequest) {
 
   const origin = req.headers.get('origin') || `https://${req.headers.get('host')}`;
 
-  const session = await stripe.checkout.sessions.create({
+  const checkoutSession = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
@@ -181,8 +185,8 @@ export async function POST(req: NextRequest) {
     allow_promotion_codes: true,
   });
 
-  console.log(`[conversion] checkout_started user_id=${userId} tier=${tier} track=${TIER_TO_TRACK[tier]} customer_id=${customerId} session_id=${session.id}`);
+  console.log(`[conversion] checkout_started user_id=${userId} tier=${tier} track=${TIER_TO_TRACK[tier]} customer_id=${customerId} session_id=${checkoutSession.id}`);
 
-  const res = NextResponse.json({ url: session.url, sessionId: session.id, tier, track: TIER_TO_TRACK[tier] });
+  const res = NextResponse.json({ url: checkoutSession.url, sessionId: checkoutSession.id, tier, track: TIER_TO_TRACK[tier] });
   return applyRateLimitHeaders(res, result);
 }

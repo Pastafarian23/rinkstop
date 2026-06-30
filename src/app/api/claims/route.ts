@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 import { getUserTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
@@ -21,8 +22,11 @@ export async function POST(request: NextRequest) {
     return response;
   }
 
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
@@ -120,8 +124,11 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 

@@ -1,3 +1,5 @@
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
+import { currentUser } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import {
@@ -22,7 +24,10 @@ export async function POST(request: NextRequest) {
   const result = await checkRateLimit(`connections:${ip}`, RL_REQUEST);
   maybeCleanup();
 
-  const userId = await requireUserId();
+  const userId = await resolveCanonicalUserId(
+    await requireUserId(),
+    (await currentUser())?.emailAddresses?.[0]?.emailAddress || ''
+  );
   if (!userId) {
     const res = NextResponse.json({ error: 'Sign in to send connection requests.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);
@@ -141,7 +146,10 @@ export async function GET(request: NextRequest) {
   const result = await checkRateLimit(`connections:${ip}`, RL_READ);
   maybeCleanup();
 
-  const userId = await requireUserId();
+  const userId = await resolveCanonicalUserId(
+    await requireUserId(),
+    (await currentUser())?.emailAddresses?.[0]?.emailAddress || ''
+  );
   if (!userId) {
     const res = NextResponse.json({ error: 'Sign in to view connections.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);

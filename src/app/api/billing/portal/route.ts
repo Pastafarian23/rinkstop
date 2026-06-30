@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 
@@ -41,8 +42,11 @@ function getStripe(): Stripe {
 }
 
 export async function POST(_req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(
@@ -89,11 +93,11 @@ export async function POST(_req: NextRequest) {
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
-    const session = await stripe.billingPortal.sessions.create({
+    const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${baseUrl}/dashboard/subscription`,
     });
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: portalSession.url });
   } catch (e) {
     console.error('[billing/portal] session create failed', e);
     return NextResponse.json(

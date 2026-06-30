@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
@@ -34,7 +35,10 @@ export async function POST(request: NextRequest) {
   const result = await checkRateLimit(`support:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
-  const { userId } = await auth();
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
   let email = '';
   let name = '';
 
@@ -71,7 +75,7 @@ export async function POST(request: NextRequest) {
   }
 
   // If not logged in, require an email
-  if (!userId) {
+  if (!session.userId) {
     email = (body.email || '').trim();
     name = (body.name || '').trim();
     if (!email || !email.includes('@')) {
@@ -115,8 +119,11 @@ export async function GET(request: NextRequest) {
   const result = await checkRateLimit(`support:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     const res = NextResponse.json({ tickets: [] });
     return applyRateLimitHeaders(res, result);
   }

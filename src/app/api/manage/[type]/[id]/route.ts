@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // Allowed entity types and their table names.
@@ -116,8 +117,11 @@ async function isOwner(userId: string, type: EntityType, entityId: string): Prom
 
 // GET /api/manage/[type]/[id] — owner-only read
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ type: string; id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const { type, id } = await params;
   if (!(type in TABLES)) return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
   const t = type as EntityType;
@@ -131,8 +135,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ typ
 
 // PATCH /api/manage/[type]/[id] — owner-only update
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ type: string; id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const { type, id } = await params;
   if (!(type in TABLES)) return NextResponse.json({ error: 'invalid_type' }, { status: 400 });
   const t = type as EntityType;
