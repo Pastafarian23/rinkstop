@@ -27,7 +27,7 @@ type MeResponse = Partial<MeProfile> & {
 
 /**
  * Post-login upgrade nudge. Shows once to free users (or weekly if frequency='weekly')
- * with a single, clear ask: "Join Roster".
+ * with a single, clear ask: "Join Roster Starter".
  *
  * Mounted in the root layout, but only shows on the dashboard / homepage
  * (or whatever showOnPaths lists) — never on the pricing page itself.
@@ -254,7 +254,7 @@ export default function UpgradeNudgePopup({
               whiteSpace: 'nowrap',
             }}
           >
-            Join Roster →
+            Join Roster Starter →
           </Link>
         </div>
 
