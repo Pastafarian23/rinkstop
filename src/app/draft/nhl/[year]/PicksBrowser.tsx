@@ -18,7 +18,7 @@
 //   - clamp() on name fontSize
 
 import { useState, useMemo } from 'react';
-import type { Pick } from '../picks-2026';
+import type { Pick } from '../../picks-2026';
 
 interface Props {
   picks: Pick[];
