@@ -87,6 +87,15 @@ const nextConfig = {
         destination: '/directory/staff',
         permanent: true,
       },
+      // /news/2026-nhl-draft-complete-results → /news/2026-nhl-draft-round-1-storylines
+      // The article title changed in iteration 2 but the slug wasn't updated
+      // until iteration 3. Old slug URL no longer matches the content; redirect
+      // so social shares + bookmarks from the original publish still resolve.
+      {
+        source: '/news/2026-nhl-draft-complete-results',
+        destination: '/news/2026-nhl-draft-round-1-storylines',
+        permanent: true,
+      },
       {
         source: '/gear-brands',
         destination: '/gear-reviews',
