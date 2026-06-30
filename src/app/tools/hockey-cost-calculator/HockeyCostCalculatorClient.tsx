@@ -381,6 +381,16 @@ export default function HockeyCostCalculatorClient() {
             </Link>{' '}
             Free checker → birth year + month → OHL, WHL, QMJHL, USHL, NCDC, NAHL, BCHL, AJHL, NCAA.
           </div>
+          <div style={{
+            marginTop: '0.5rem', padding: '0.75rem 1rem',
+            background: 'rgba(255,184,28,0.05)', border: '1px solid rgba(255,184,28,0.2)',
+            borderRadius: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)',
+          }}>
+            🥅 <Link href="/tools/hockey-goalie-gear-sizer" style={{ color: '#FFB81C', fontWeight: 600 }}>
+              Goalie parent? Size pads, blocker, glove, chest, stick.
+            </Link>{' '}
+            Free 5-piece goalie gear calculator → Bauer / CCM verified 2026.
+          </div>
         </div>
 
         {/* Total — the headline number */}
