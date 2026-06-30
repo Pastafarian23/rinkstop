@@ -1,5 +1,6 @@
 // Team-specific schedule page
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -15,8 +16,11 @@ interface PageProps {
 }
 
 export default async function TeamSchedulePage({ params, searchParams }: PageProps) {
-  const { userId } = await auth();
-  if (!userId) redirect('/login');
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) redirect('/login');
 
   const { slug } = await params;
   const sp = await searchParams;

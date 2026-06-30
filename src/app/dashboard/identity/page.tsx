@@ -14,6 +14,7 @@
  */
 
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -29,16 +30,18 @@ export default async function IdentityPage({
 }: {
   searchParams: Promise<{ session?: string; return?: string }>;
 }) {
-  const { userId } = await auth();
-  if (!userId) redirect('/login');
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) redirect('/login');
 
   // Determine the canonical tier for this request. Clerk OAuth flows may have
   // created a separate Clerk user for the same person (account-linking off),
   // in which case the signed-in user_id may not own the premium profile row.
   // For owner emails, fall back to the canonical row by email so identity
   // verification unlocks regardless of which Clerk user_id owns the session.
-  const cu = await currentUser();
-  const primaryEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const primaryEmail = userEmail;
   let effectiveUserId = userId;
   let tier = await getUserTier(userId);
   if (OWNER_EMAILS.has(primaryEmail)) {
@@ -69,7 +72,7 @@ export default async function IdentityPage({
     .maybeSingle();
 
   // Fetch most recent session id (for the decision-poll back link)
-  const { data: session } = await supabaseAdmin
+  const { data: latestSession } = await supabaseAdmin
     .from('didit_sessions')
     .select('session_id, status, created_at')
     .eq('user_id', effectiveUserId)
@@ -88,7 +91,7 @@ export default async function IdentityPage({
       identityExpiresAt={status?.identity_expires_at ?? null}
       daysUntilExpiry={status?.days_until_expiry ?? null}
       method={status?.identity_verification_method ?? null}
-      latestSessionId={session?.session_id ?? null}
+      latestSessionId={latestSession?.session_id ?? null}
       returnFromDidit={sp?.return === '1'}
     />
   );

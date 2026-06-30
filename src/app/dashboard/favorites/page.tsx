@@ -1,4 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import FavoritesClient from './FavoritesClient';
@@ -31,8 +32,11 @@ const TYPE_TO_ICON = {
 } as const;
 
 export default async function FavoritesPage() {
-  const { userId } = await auth();
-  if (!userId) redirect('/login');
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) redirect('/login');
 
   const { data: favorites } = await supabaseAdmin
     .from('favorites')

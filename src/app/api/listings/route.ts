@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // GET /api/listings
 // Returns the current user's business listings. Always scoped to the caller.
 export async function GET(_req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const { data, error } = await supabaseAdmin
     .from('listings')
@@ -29,8 +33,11 @@ export async function GET(_req: NextRequest) {
 const VALID_CATEGORIES = new Set(['pro_shop', 'sharpening', 'camp', 'training', 'equipment', 'other']);
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'invalid_json' }, { status: 400 }); }

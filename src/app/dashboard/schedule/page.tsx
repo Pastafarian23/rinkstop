@@ -1,4 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -14,8 +15,11 @@ interface PageProps {
 }
 
 export default async function SchedulePage({ searchParams }: PageProps) {
-  const { userId } = await auth();
-  if (!userId) redirect('/login');
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) redirect('/login');
 
   const sp = await searchParams;
   const initialView = (['month', 'week', 'day', 'agenda'].includes(sp.view || '') ? sp.view : 'month') as 'month' | 'week' | 'day' | 'agenda';

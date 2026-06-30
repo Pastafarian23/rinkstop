@@ -10,7 +10,8 @@
  * to console first; Supabase insert is best-effort. Never throws.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -51,7 +52,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });
   }
 
-  const { userId } = await auth();
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
 
   const log = {
     name,

@@ -1,4 +1,5 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -58,8 +59,11 @@ function formatMoney(amount: number | null, currency: string = 'usd'): string {
 }
 
 export default async function SubscriptionPage() {
-  const { userId } = await auth();
-  if (!userId) redirect('/login');
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) redirect('/login');
 
   // Owner-email fallback: same as /dashboard/identity and /dashboard/layout
   // (see 4700eee + 8fb9823). If the Clerk session resolves to a different

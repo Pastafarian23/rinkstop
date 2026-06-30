@@ -1,4 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -14,8 +15,11 @@ interface PageProps {
 const ADMIN_ROLES = ['head_coach', 'assistant_coach', 'manager', 'president', 'vice_president'];
 
 export default async function EditEventPage({ params }: PageProps) {
-  const { userId } = await auth();
-  if (!userId) redirect('/login');
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) redirect('/login');
 
   const { slug, id } = await params;
   const normalizedSlug = (slug || '').toLowerCase().trim();

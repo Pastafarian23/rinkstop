@@ -1,3 +1,5 @@
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
+import { currentUser } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireUserId, getUserTier, normalizePair, getConnectionBetween } from '@/lib/connections';
@@ -14,7 +16,10 @@ export async function GET(request: NextRequest) {
   const result = await checkRateLimit(`threads:${ip}`, RL);
   maybeCleanup();
 
-  const userId = await requireUserId();
+  const userId = await resolveCanonicalUserId(
+    await requireUserId(),
+    (await currentUser())?.emailAddresses?.[0]?.emailAddress || ''
+  );
   if (!userId) {
     const res = NextResponse.json({ error: 'Sign in to view messages.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);
@@ -107,7 +112,10 @@ export async function POST(request: NextRequest) {
   const result = await checkRateLimit(`threads:${ip}`, RL);
   maybeCleanup();
 
-  const userId = await requireUserId();
+  const userId = await resolveCanonicalUserId(
+    await requireUserId(),
+    (await currentUser())?.emailAddresses?.[0]?.emailAddress || ''
+  );
   if (!userId) {
     const res = NextResponse.json({ error: 'Sign in to start a conversation.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);

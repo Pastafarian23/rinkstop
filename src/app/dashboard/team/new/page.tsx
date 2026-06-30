@@ -1,4 +1,5 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isIdentityVerified } from '@/lib/identity-verified';
@@ -7,8 +8,11 @@ import NewTeamForm from './NewTeamForm';
 export const dynamic = 'force-dynamic';
 
 export default async function NewTeamPage() {
-  const { userId } = await auth();
-  if (!userId) redirect('/login');
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) redirect('/login');
 
   // Identity verification gate. Piece C: uses hardened helper that
   // also requires profiles.didit_session_id and a matching approved

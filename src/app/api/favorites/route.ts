@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
@@ -26,8 +27,11 @@ export async function POST(request: NextRequest) {
   const result = await checkRateLimit(`favorites:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     const res = NextResponse.json({ error: 'Sign in to save items.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);
   }
@@ -99,8 +103,11 @@ export async function DELETE(request: NextRequest) {
   const result = await checkRateLimit(`favorites:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     const res = NextResponse.json({ error: 'Sign in to manage saved items.' }, { status: 401 });
     return applyRateLimitHeaders(res, result);
   }
@@ -138,8 +145,11 @@ export async function GET(request: NextRequest) {
   const result = await checkRateLimit(`favorites:${ip}`, RATE_LIMIT);
   maybeCleanup();
 
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     const res = NextResponse.json({ favorites: [] });
     return applyRateLimitHeaders(res, result);
   }

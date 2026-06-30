@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 
@@ -30,8 +31,11 @@ function getStripe(): Stripe {
 }
 
 export async function GET(_req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json(

@@ -1,4 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { teamShortLabel } from '@/lib/team-color';
 
@@ -18,8 +19,11 @@ export const dynamic = 'force-dynamic';
  * Membership check: only events for teams the user is on (left_at IS NULL).
  */
 export async function GET(req: Request) {
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     return new Response('Unauthorized', { status: 401 });
   }
 

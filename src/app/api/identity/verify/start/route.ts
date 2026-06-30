@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { getUserTier, tierAtLeast } from '@/lib/connections';
@@ -29,8 +30,11 @@ const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 60 * 1000 };   // 10/hr per
 
 export async function POST(req: NextRequest) {
   // 1. Auth
-  const { userId } = await auth();
-  if (!userId) {
+  const session = await auth();
+  const cu = await currentUser();
+  const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  const userId = await resolveCanonicalUserId(session.userId, userEmail);
+  if (!session.userId) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
