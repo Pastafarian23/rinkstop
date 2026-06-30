@@ -759,6 +759,13 @@ img  { max-width: 100%; display: block; }
 .transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4,0,0.2,1); transition-duration: 0.15s; }
 
 /* News article layout - responsive */
+/* Mobile default uses minmax(0, 1fr) so the column can shrink below content's intrinsic width.
+   Without this, a wide child (e.g. a 600px-min table) pushes the article-card past the viewport
+   and body { overflow-x:hidden } clips the right edge of the article. */
+.news-content-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
 @media (min-width: 768px) {
   .news-content-grid {
     grid-template-columns: minmax(0, 1fr) 280px !important;
