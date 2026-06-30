@@ -140,6 +140,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
+  // ─── Standings URLs (P4 — added 2026-06-30) ─────────────────────────────────
+  // 6 standings pages: 1 hub + 5 NHL seasons (2021-2025). Each season page
+  // shows 32 teams with full conference/division breakdown. Sources:
+  // /standings (hub) and /standings/nhl/[season] (5 seasons).
+  // Verified all 6 return 200 with substantial unique content (67-132 KB each),
+  // 32 teams per season in nhl_standings DB table.
+  //
+  // Why static and not query-based: getAllSeasons() reads nhl_standings for the
+  // season list at request time. We want stable entry-level URLs here
+  // regardless of which seasons have data, so we hard-code the years that are
+  // known good today. Adding future seasons (2026-27) will require updating
+  // this list — flagged for October 2026 review.
+  //
+  // Prep doc: docs/p4-standings-sitemap-prep.md
+  const standingsUrls: MetadataRoute.Sitemap = [
+    { url: `${baseUrl}/standings`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
+    { url: `${baseUrl}/standings/nhl/2021`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.6 },
+    { url: `${baseUrl}/standings/nhl/2022`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.6 },
+    { url: `${baseUrl}/standings/nhl/2023`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.6 },
+    { url: `${baseUrl}/standings/nhl/2024`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.6 },
+    { url: `${baseUrl}/standings/nhl/2025`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.7 },
+  ];
+
   // Country slugs to exclude from sitemap: countries with NO real hockey content
   // (Antigua, Bahamas, Barbados, Belize, Caribbean nations, Pacific islands, etc.)
   // These pages exist for completeness but have <10 rinks and are essentially empty.
@@ -379,7 +402,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...usCityUrls, ...universalCityUrls, ...guideUrls, ...federationUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
+  const all = [...staticPages, ...countryUrls, ...usStateUrls, ...usCityUrls, ...universalCityUrls, ...guideUrls, ...federationUrls, ...standingsUrls, ...teamUrls, ...rinkUrls, ...leagueUrls, ...postUrls, ...playerUrls, ...caCityUrls, ...ukCityUrls];
 
   // Log filter effectiveness — Vercel picks this up in logs
   console.log('[sitemap] Phase 1 SEO filter:', JSON.stringify({
@@ -394,6 +417,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     universal_cities: universalCities.size,
     guides: guideUrls.length,
     federations: federationUrls.length,
+    standings: standingsUrls.length,
     percent_kept: ((all.length / 2966) * 100).toFixed(1) + '%',
   }));
 
