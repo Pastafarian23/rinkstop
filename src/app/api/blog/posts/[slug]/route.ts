@@ -43,9 +43,13 @@ export async function GET(request: NextRequest, { params }: Props) {
   if (error) return jsonResponse({ error: error.message }, 500);
   if (!data) return jsonResponse({ error: 'Post not found' }, 404);
 
-  // 2026-06-11: Vercel Hobby limit reduction — blog posts are static-ish, cache 10min
+  // 2026-06-30: Lowered edge cache from 10min to 30s so PUT-driven content
+  // updates (via /api/blog/publish) propagate to the public page within
+  // ~30s. Was causing the public page to render stale content for up to
+  // 10min after a re-PUT. Browser cache stays at 60s so repeat readers
+  // are still served from local cache.
   const response = jsonResponse(data);
-  response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=600, stale-while-revalidate=7200');
+  response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=30, stale-while-revalidate=300');
   return response;
 }
 
