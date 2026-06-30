@@ -49,12 +49,23 @@ export async function GET(req: NextRequest) {
   // ghost duplicates so we can decide which to keep.
   let duplicateProfiles: any[] = [];
   if (OWNER_EMAILS.has(primaryEmail)) {
-    const { data: byName } = await supabaseAdmin
+    // Use email (newly added column, lowercased) for the canonical lookup;
+    // fall back to display_name for legacy rows where email may still be null.
+    const { data: byEmail } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, role, tier, subscription_status, is_founding_member, display_name, username, location, updated_at')
-      .eq('display_name', 'Arnel Larracas')
+      .select('user_id, role, tier, subscription_status, is_founding_member, display_name, username, location, email, updated_at')
+      .ilike('email', primaryEmail)
       .order('updated_at', { ascending: false });
-    duplicateProfiles = byName || [];
+    if (byEmail && byEmail.length > 0) {
+      duplicateProfiles = byEmail;
+    } else {
+      const { data: byName } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, role, tier, subscription_status, is_founding_member, display_name, username, location, email, updated_at')
+        .eq('display_name', 'Arnel Larracas')
+        .order('updated_at', { ascending: false });
+      duplicateProfiles = byName || [];
+    }
   }
 
   // Compute the dashboard's effective state under the current code, so the
