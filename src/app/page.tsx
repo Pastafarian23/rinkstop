@@ -5,6 +5,7 @@ import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
+import HomeCtaButtons from '@/components/HomeCtaButtons';
 
 // Home page is rendered statically with ISR (revalidate every 5 min).
 // The page runs 9 Supabase queries for the stats grid + recent sections;
@@ -263,15 +264,7 @@ export default async function Home() {
 
               <HomeSearch />
 
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <Link href="/directory" className="btn btn-red">Explore Directory</Link>
-                {/* Show Join Now to all visitors. If they're already signed in, Clerk's
-                    header nav already shows their profile button, so seeing a Join
-                    Now button here is harmless — clicking it just lands on a page
-                    Clerk handles gracefully. This avoids Clerk's <Show> which would
-                    force the entire home page to be dynamic (no ISR). */}
-                <Link href="/sign-up" className="btn btn-yellow">Join Now</Link>
-              </div>
+              <HomeCtaButtons />
             </div>
 
             <div className="stats-grid">
