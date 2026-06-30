@@ -159,6 +159,41 @@ async function handleUserCreated(data: ClerkUserPayload) {
   const username = pickDefaultUsername(data);
   const avatarUrl = data.image_url ?? null;
 
+  // Account-recreation safety: if Clerk creates a new user for an email that
+  // already owns a profile row (e.g. account-linking off, so Google OAuth
+  // sign-in produces a fresh Clerk user instead of linking to the existing
+  // email-based one), inherit the original tier/role from the email-matched
+  // row. Without this, the dashboard cannot recognize the owner and falls
+  // into the generic "free / Founding" render path even though the actual
+  // person signed in.
+  //
+  // We do NOT delete the original profile row — both Clerk user_ids now
+  // resolve to equivalent rows, and the dashboard's OWNER_EMAILS fallback
+  // (added in dashboard/page.tsx c46a8ce) renders Founder for either. That
+  // way a stale duplicate can still be cleaned up later from Clerk dashboard
+  // / Supabase without losing access for the owner.
+  let inheritedTier = 'free';
+  let inheritedRole = 'user';
+  let inheritedIsFoundingMember = false;
+  if (email) {
+    const { data: existing } = await supabaseAdmin
+      .from('profiles')
+      .select('tier, role, is_founding_member')
+      .eq('email', email)
+      .neq('user_id', data.id) // never inherit from the row we're about to write
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing) {
+      if (existing.tier && existing.tier !== 'free') inheritedTier = existing.tier;
+      if (existing.role && existing.role !== 'user') inheritedRole = existing.role;
+      if (existing.is_founding_member) inheritedIsFoundingMember = existing.is_founding_member;
+      console.log(
+        `[clerk-webhook] user.created for new Clerk id ${data.id} matched existing profile row by email ${email}; inheriting tier=${inheritedTier} role=${inheritedRole}`,
+      );
+    }
+  }
+
   // Insert idempotently — if the profile already exists (lazy ensureProfile
   // beat us to it), we update from Clerk instead of failing.
   const { error } = await supabaseAdmin
@@ -170,8 +205,9 @@ async function handleUserCreated(data: ClerkUserPayload) {
         display_name: displayName,
         username,
         avatar_url: avatarUrl,
-        tier: 'free',
-        role: 'user',
+        tier: inheritedTier,
+        role: inheritedRole,
+        is_founding_member: inheritedIsFoundingMember,
       },
       { onConflict: 'user_id', ignoreDuplicates: false }
     );
