@@ -20,12 +20,16 @@ interface StaffMember {
   logo?: string;
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  coach: 'Coach',
-  scout: 'Scout',
-  official: 'Official',
-  executive: 'Executive',
-  staff: 'Staff',
+// Each role carries singular + plural labels. "Staff" is a collective
+// noun (uncountable) — its plural form is also "staff", not "staffs".
+// "Coach" was previously pluralized via an inline ternary; we move it
+// here for consistency.
+const ROLE_LABELS: Record<string, { singular: string; plural: string }> = {
+  coach: { singular: 'Coach', plural: 'Coaches' },
+  scout: { singular: 'Scout', plural: 'Scouts' },
+  official: { singular: 'Official', plural: 'Officials' },
+  executive: { singular: 'Executive', plural: 'Executives' },
+  staff: { singular: 'Staff', plural: 'Staff' },
 };
 
 function roleBadgeStyle(role: string): React.CSSProperties {
@@ -68,13 +72,13 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
     );
   });
 
-  const roleLabel = ROLE_LABELS[role] || role;
+  const roleLabel = ROLE_LABELS[role] || { singular: role, plural: role };
 
   return (
     <div className="container" style={{ padding: '2rem 1rem 4rem' }}>
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
-          Hockey {role === 'coach' ? 'Coaches' : `${roleLabel}s`}
+          Hockey {roleLabel.plural}
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9375rem', maxWidth: '680px' }}>
           {role === 'coach' && 'Head coaches and assistant coaches across the NHL, KHL, and other professional leagues.'}
@@ -90,7 +94,7 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder={`Search ${roleLabel.toLowerCase()}s by name, team, or nationality…`}
+          placeholder={`Search ${roleLabel.plural.toLowerCase()} by name, team, or nationality…`}
           className="input-field"
           style={{ maxWidth: '420px' }}
         />
@@ -99,8 +103,8 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
       {!loading && (
         <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1.25rem' }}>
           {totalCount === 0
-            ? `No ${roleLabel.toLowerCase()}s in directory yet`
-            : `${totalCount} ${roleLabel.toLowerCase()}${totalCount !== 1 ? 's' : ''} in directory${search ? ` · ${filtered.length} matching search` : ''}`}
+            ? `No ${roleLabel.plural.toLowerCase()} in directory yet`
+            : `${totalCount} ${roleLabel.plural.toLowerCase()} in directory${search ? ` · ${filtered.length} matching search` : ''}`}
         </p>
       )}
 
@@ -119,8 +123,8 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem' }}>
                 <p style={{ color: 'rgba(255,255,255,0.3)' }}>
                   {totalCount === 0
-                    ? `No ${roleLabel.toLowerCase()}s have been added to the directory yet.`
-                    : `No ${roleLabel.toLowerCase()}s matching "${search}"`}
+                    ? `No ${roleLabel.plural.toLowerCase()} have been added to the directory yet.`
+                    : `No ${roleLabel.plural.toLowerCase()} matching "${search}"`}
                 </p>
               </div>
             )
@@ -187,7 +191,7 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                   }}>
-                    {ROLE_LABELS[m.role] || m.role}
+                    {(ROLE_LABELS[m.role] && ROLE_LABELS[m.role].singular) || m.role}
                   </span>
                   {m.was_player && (
                     <span style={{
