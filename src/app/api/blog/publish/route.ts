@@ -187,11 +187,22 @@ export async function PUT(request: NextRequest) {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
   const normalized = normalizePostBody(body);
-  // If transitioning to published and no published_at set, stamp it.
-  if (normalized.status === 'published' && !normalized.published_at) {
-    normalized.published_at = new Date().toISOString();
-  }
   const db = pickSupabase();
+  // Preserve the original published_at on re-PUT unless the caller explicitly
+  // sends a new one. Reading the existing row here avoids bumping publish
+  // date every time the agent corrects a typo.
+  if (normalized.status === 'published' && !normalized.published_at) {
+    const { data: existing } = await db
+      .from('posts')
+      .select('published_at, status')
+      .eq('slug', slug)
+      .single();
+    if (existing?.published_at) {
+      normalized.published_at = existing.published_at;
+    } else {
+      normalized.published_at = new Date().toISOString();
+    }
+  }
   const { data, error } = await db
     .from('posts')
     .update(normalized)
