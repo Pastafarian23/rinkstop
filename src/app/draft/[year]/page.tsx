@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
   const archive = PICKS_YEARS[year];
   if (archive && archive.status === 'live') {
     const { totalPicks, realPicks, forfeits, rounds } = archive.stats;
-    const title = `${year} NHL Draft Picks — Every Selection, Every Round | RinkStop`;
+    const title = `${year} NHL Draft Picks — Every Selection, Every Round`;
     const description =
       `Every pick from the ${year} NHL Entry Draft — ${realPicks} selections across ${rounds} rounds` +
       (forfeits > 0 ? `, plus ${forfeits} forfeit${forfeits === 1 ? '' : 's'}.` : '.') +
@@ -100,7 +100,7 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
     };
   }
   return {
-    title: `${year} NHL Draft Picks Archive — Coming Soon | RinkStop`,
+    title: `${year} NHL Draft Picks Archive — Coming Soon`,
     description: `We're building out the archive for the ${year} NHL Draft. Subscribe to RinkStop for updates.`,
     alternates: { canonical: `https://rinkstop.com/draft/${year}` },
     robots: { index: true, follow: true },
