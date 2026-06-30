@@ -89,15 +89,64 @@ export async function GET(request: NextRequest) {
     // a row exists, all subsequent reads skip this path.
     let display_name: string | null = null;
     let avatar_url: string | null = null;
+    let userEmail: string | null = null;
     try {
       const user = await currentUser();
       if (user) {
         display_name =
           [user.firstName, user.lastName].filter(Boolean).join(' ') || null;
         avatar_url = user.imageUrl || null;
+        userEmail = user.emailAddresses?.[0]?.emailAddress || null;
       }
     } catch {
       // If Clerk lookup fails, fall through with nulls — better than failing the request.
+    }
+
+    // Tier/role/founding-member inheritance: if the Clerk user has an email
+    // matching an existing profile row, inherit those fields so we don't
+    // shadow a canonical paid row with a default free-tier shadow. Display-
+    // name fallback is used when the Clerk user has no email (e.g. legacy
+    // test accounts) and the existing row is super_admin — common-name
+    // collisions are filtered out that way.
+    let inheritedTier = 'free';
+    let inheritedRole = 'user';
+    let inheritedIsFoundingMember = false;
+    let inheritedEmail: string | null = userEmail;
+    if (userEmail) {
+      const { data: byEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('tier, role, is_founding_member')
+        .eq('email', userEmail)
+        .neq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (byEmail) {
+        if (byEmail.tier && byEmail.tier !== 'free') inheritedTier = byEmail.tier;
+        if (byEmail.role && byEmail.role !== 'user') inheritedRole = byEmail.role;
+        if (byEmail.is_founding_member) inheritedIsFoundingMember = byEmail.is_founding_member;
+        console.log(
+          `[profiles GET] lazy-create for ${userId} matched existing profile by email=${userEmail}; inheriting tier=${inheritedTier} role=${inheritedRole}`,
+        );
+      }
+    } else if (display_name) {
+      const { data: byName } = await supabaseAdmin
+        .from('profiles')
+        .select('tier, role, is_founding_member')
+        .eq('display_name', display_name)
+        .eq('role', 'super_admin')
+        .neq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (byName) {
+        if (byName.tier && byName.tier !== 'free') inheritedTier = byName.tier;
+        if (byName.role && byName.role !== 'user') inheritedRole = byName.role;
+        if (byName.is_founding_member) inheritedIsFoundingMember = byName.is_founding_member;
+        console.log(
+          `[profiles GET] lazy-create for ${userId} (no email) matched super_admin by display_name=${display_name}; inheriting tier=${inheritedTier} role=${inheritedRole}`,
+        );
+      }
     }
 
     const { data: created, error: createErr } = await supabaseAdmin
@@ -107,6 +156,10 @@ export async function GET(request: NextRequest) {
           user_id: userId,
           display_name,
           avatar_url,
+          email: inheritedEmail,
+          tier: inheritedTier,
+          role: inheritedRole,
+          is_founding_member: inheritedIsFoundingMember,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'user_id' }
