@@ -4,6 +4,23 @@ import { redirect } from 'next/navigation';
 
 export type AdminRole = 'admin' | 'super_admin';
 
+/**
+ * Canonical owner emails. Sign-ins with these emails get super_admin-level
+ * access regardless of profiles.role or Clerk publicMetadata.role, as long as
+ * they pass the regular Clerk session check. This is the God-mode fallback
+ * for the case where Clerk OAuth creates a duplicate user (account-linking
+ * off) and the new profile row has no role assigned.
+ *
+ * Keep this set SMALL. Each entry is a God-mode credential; only the actual
+ * project owner(s) belong here.
+ *
+ * Single source of truth — also used by dashboard/page.tsx and
+ * dashboard/layout.tsx. Update here, not at the call sites.
+ */
+export const OWNER_EMAILS: ReadonlySet<string> = new Set([
+  'arnellarracas@gmail.com',
+]);
+
 interface AdminContext {
   userId: string;
   email: string;
@@ -16,9 +33,11 @@ interface AdminContext {
  *
  * Flow:
  *  1. Require Clerk session (redirects to /login if not signed in)
- *  2. Check Clerk publicMetadata.role - source of truth for fast checks
- *  3. If not set there, check profiles.role in Supabase (fallback)
- *  4. If neither has admin role, redirect to /login?error=admin_only
+ *  2. Check OWNER_EMAILS — God-mode bypass for the project owner regardless
+ *     of Clerk/Supabase role state
+ *  3. Check Clerk publicMetadata.role — source of truth for fast checks
+ *  4. If not set there, check profiles.role in Supabase (fallback)
+ *  5. If none match, redirect to /login?error=admin_only
  *
  * The publicMetadata is the source of truth because:
  *  - It's set once via Clerk dashboard/API and never changes automatically
@@ -38,6 +57,18 @@ export async function requireAdmin(): Promise<AdminContext> {
 
   const email = user.emailAddresses[0]?.emailAddress || '';
   const metaRole = (user.publicMetadata?.role as string) || '';
+
+  // OWNER_EMAILS bypass — God-mode fallback for the project owner. If their
+  // Clerk publicMetadata or profiles.role gets wiped (e.g. webhook overwrote
+  // a fresh duplicate Clerk user), they still get super_admin via this path.
+  if (OWNER_EMAILS.has(email)) {
+    return {
+      userId: session.userId,
+      email,
+      role: 'super_admin',
+      isSuperAdmin: true,
+    };
+  }
 
   // Check Clerk publicMetadata first
   if (metaRole === 'super_admin' || metaRole === 'admin') {
@@ -86,6 +117,20 @@ export async function getAdminFromRequest(): Promise<{ admin: AdminContext } | {
 
   const email = user.emailAddresses[0]?.emailAddress || '';
   const metaRole = (user.publicMetadata?.role as string) || '';
+
+  // OWNER_EMAILS bypass — God-mode fallback for the project owner. Mirrors
+  // the same bypass in requireAdmin() above. If their Clerk publicMetadata
+  // or profiles.role gets wiped, owner still gets super_admin via this path.
+  if (OWNER_EMAILS.has(email)) {
+    return {
+      admin: {
+        userId: session.userId,
+        email,
+        role: 'super_admin',
+        isSuperAdmin: true,
+      },
+    };
+  }
 
   if (metaRole === 'super_admin' || metaRole === 'admin') {
     return {

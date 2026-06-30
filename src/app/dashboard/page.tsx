@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { OWNER_EMAILS } from '@/lib/admin-auth';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { TierBadge } from '@/components/TierBadge';
 import { FounderBadge } from '@/components/FounderBadge';
@@ -16,18 +17,13 @@ import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
 
 /**
- * Canonical owner emails. The Founder badge + super_admin-level views fire
- * for any Clerk session whose primary email is in this set, regardless of
- * which `profiles.user_id` row maps to that Clerk account. This protects
- * against Clerk OAuth flows creating a separate duplicate user (e.g. when
- * account-linking is off) — the rendered dashboard still reflects ownership.
- *
- * Keep this set SMALL. Each entry is a God-mode credential; only the
- * actual project owner(s) belong here.
+ * OWNER_EMAILS is defined in src/lib/admin-auth.ts — single source of truth.
+ * The Founder badge + super_admin-level views fire for any Clerk session whose
+ * primary email is in that set, regardless of which `profiles.user_id` row
+ * maps to that Clerk account. This protects against Clerk OAuth flows
+ * creating a separate duplicate user (e.g. when account-linking is off) —
+ * the rendered dashboard still reflects ownership.
  */
-const OWNER_EMAILS = new Set([
-  'arnellarracas@gmail.com',
-]);
 
 export default async function DashboardPage() {
   const { userId } = await auth();
