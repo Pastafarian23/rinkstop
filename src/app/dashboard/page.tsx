@@ -177,13 +177,35 @@ async function renderDashboard(userId: string) {
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
   const avatarUrl = user?.imageUrl || '';
 
+  // Owner-email canonical lookup (same pattern as identity page 4700eee,
+  // dashboard layout 8fb9823, subscription page 1b45415). If the Clerk
+  // session resolves to an orphan user_id and the email is in OWNER_EMAILS,
+  // read the canonical row instead. Without this, the dashboard renders
+  // null for username/display_name/etc. → the UsernamePromptModal pops up
+  // and suggests 'arnel' (auto-slug from display name), which the API
+  // then rejects as 'already taken' (taken by Arnel's real row).
+  let profileUserId = userId;
+  try {
+    if (OWNER_EMAILS.has(email)) {
+      const { data: byEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .ilike('email', email)
+        .neq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (byEmail) profileUserId = byEmail.user_id;
+    }
+  } catch { /* fall through */ }
+
   // Profile completeness + tier
   let profile: any = null;
   try {
     const { data } = await supabaseAdmin
       .from('profiles')
       .select('bio, location, tier, is_founding_member, created_at, role, display_name, username')
-      .eq('user_id', userId)
+      .eq('user_id', profileUserId)
       .maybeSingle();
     profile = data;
   } catch (e) {
