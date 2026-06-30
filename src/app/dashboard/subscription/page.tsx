@@ -1,10 +1,11 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
 import ManageSubscriptionClient from './ManageSubscriptionClient';
 import { formatTierPricePerYear } from '@/lib/pricing';
+import { OWNER_EMAILS } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,11 +61,33 @@ export default async function SubscriptionPage() {
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
+  // Owner-email fallback: same as /dashboard/identity and /dashboard/layout
+  // (see 4700eee + 8fb9823). If the Clerk session resolves to a different
+  // user_id than the canonical profile row (e.g. orphan Clerk account), and
+  // the user's email is in OWNER_EMAILS, read the canonical row instead so
+  // the subscription page shows the actual paid tier.
+  let profileUserId = userId;
+  try {
+    const cu = await currentUser();
+    const primaryEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+    if (OWNER_EMAILS.has(primaryEmail)) {
+      const { data: byEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .ilike('email', primaryEmail)
+        .neq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (byEmail) profileUserId = byEmail.user_id;
+    }
+  } catch { /* fall through */ }
+
   // Read profile fields directly for fast first paint
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('tier, subscription_status, tier_expires_at, is_founding_member, stripe_customer_id, stripe_subscription_id, created_at')
-    .eq('user_id', userId)
+    .eq('user_id', profileUserId)
     .maybeSingle();
 
   const tier = profile?.tier || 'free';

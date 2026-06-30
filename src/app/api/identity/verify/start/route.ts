@@ -122,7 +122,25 @@ export async function POST(req: NextRequest) {
       metadata: { tier, source: 'web' },
     });
 
-    // 6. Insert didit_sessions row (no decision yet; status='not_started')
+    // 6. Didit is idempotent on (workflow_id, vendor_data) — calling createSession()
+    //    twice with the same vendor_data returns the SAME session_id. Without
+    //    cleanup, the second call's INSERT fails the UNIQUE(session_id) constraint
+    //    and the user gets 'Failed to record session'. Clean up any prior
+    //    not_started rows for this user before insert.
+    //
+    //    Verified 2026-06-30 via direct Didit API test: two POSTs with the
+    //    same vendor_data return identical session_id, session_token, and
+    //    session_number. Different vendor_data = different session.
+    //    The webhook handler reads vendor_data as the canonical user_id, so
+    //    we can't change vendor_data to force uniqueness — we have to clean
+    //    up stale not_started rows here.
+    await supabaseAdmin
+      .from('didit_sessions')
+      .delete()
+      .eq('user_id', effectiveUserId)
+      .eq('status', 'not_started');
+
+    // 7. Insert didit_sessions row (no decision yet; status='not_started')
     const { data: sessionRow, error: insertError } = await supabaseAdmin
       .from('didit_sessions')
       .insert({
@@ -145,7 +163,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 7. Track analytics
+    // 8. Track analytics
     try {
       trackEvent({
         name: 'identity_verify_started',
