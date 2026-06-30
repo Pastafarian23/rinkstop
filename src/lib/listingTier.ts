@@ -1,7 +1,7 @@
 // Tier rank for directory sorting (lower = higher placement).
 // This determines search result order for claimed listings.
 // Higher tiers get better placement for lead capture priority.
-// Roster+ (personal) and Business Pro (business) both have DMs + photos.
+// Roster Pro (personal) and Business Pro (business) both have DMs + photos.
 export const TIER_RANK: Record<string, number> = {
   // Top placement: priority lead capture
   enterprise: 0,
@@ -18,12 +18,15 @@ export const TIER_RANK: Record<string, number> = {
   free: 5,
 };
 
-// Display labels - sourced from pricing.ts single source of truth
+// Display labels - sourced from pricing.ts single source of truth.
+// 2026-06-30 rename: personal track now reads Starter → Pro → Premium
+// to mirror the business track.
 export const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  roster: 'Roster',
-  roster_plus: 'Roster+',
-  pro: 'Pro',
+  roster: 'Roster Starter',
+  roster_plus: 'Roster Pro',
+  pro: 'Roster Premium',
+  premium: 'Roster Premium', // legacy alias for `pro`
   business_starter: 'Business Starter',
   business_pro: 'Business Pro',
   business_premium: 'Business Premium',

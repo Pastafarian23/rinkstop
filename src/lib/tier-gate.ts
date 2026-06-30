@@ -8,13 +8,19 @@ import { TierName, TIER_TO_TRACK, AccountTrack, MAX_CLAIMS_PER_TIER } from './pr
 
 /**
  * Personal tier hierarchy (rank order within the track).
- * Free < Roster < Roster+ < Pro
+ * Free < Roster Starter < Roster Pro < Roster Premium
+ *
+ * `premium` is included as a legacy alias for `pro` (Roster Premium). Pre-2026-06-30
+ * the personal-track top tier was called `premium`; that value persists in some
+ * profiles (notably Arnel Larracas' founding-member row). Treating it as the
+ * top of the personal track preserves their feature access without a DB migration.
  */
 export const PERSONAL_TIER_RANK: Record<string, number> = {
   free: 0,
   roster: 1,
   roster_plus: 2,
   pro: 3,
+  premium: 3, // legacy alias for `pro` (top of personal track, pre-rename)
 };
 
 /**

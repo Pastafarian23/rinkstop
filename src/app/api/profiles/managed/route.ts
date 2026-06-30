@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   const minTier = isPlayerManaged ? 'roster' : 'pro';
   if (!tierAtLeast(tier, minTier)) {
     return NextResponse.json(
-      { error: `${minTier === 'roster' ? 'Roster' : 'Pro'} or higher membership required to manage this profile.`, currentTier: tier },
+      { error: `${minTier === 'roster' ? 'Roster Starter' : 'Roster Premium'} or higher membership required to manage this profile.`, currentTier: tier },
       { status: 403 }
     );
   }

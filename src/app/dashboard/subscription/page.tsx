@@ -10,9 +10,9 @@ export const dynamic = 'force-dynamic';
 
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  roster: 'Roster',
-  roster_plus: 'Roster+',
-  pro: 'Pro',
+  roster: 'Roster Starter',
+  roster_plus: 'Roster Pro',
+  pro: 'Roster Premium',
   business_starter: 'Business Starter',
   business_pro: 'Business Pro',
   business_premium: 'Business Premium',

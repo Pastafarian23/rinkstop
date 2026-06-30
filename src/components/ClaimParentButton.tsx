@@ -77,7 +77,7 @@ export default function ClaimParentButton({
     );
   }
 
-  // Roster+ (personal) OR Business Pro+ (business) required for parent claim.
+  // Roster Pro (personal) OR Business Pro+ (business) required for parent claim.
   // Parents claim youth players - this is a personal feature, but business users
   // with higher tiers also get access.
   const personalTiers = ['roster_plus', 'pro'];

@@ -45,7 +45,7 @@ const sections: Array<{
       },
       {
         q: 'What is a "public profile" and where does it live?',
-        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Roster / Roster+ / Pro / Business Starter / Business Pro / Business Premium / Enterprise). An identity-verified checkmark - a navy-and-gold mark separate from your tier - means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
+        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Roster Starter / Roster Pro / Roster Premium / Business Starter / Business Pro / Business Premium / Enterprise). An identity-verified checkmark - a navy-and-gold mark separate from your tier - means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
       },
       {
         q: 'What are the username rules?',
@@ -65,7 +65,7 @@ const sections: Array<{
       },
       {
         q: 'What is identity verification and how does it work?',
-        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier - you can be verified at any paid tier (Roster, Roster+, Pro, Business tiers, or Enterprise). Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. The verification uses a government ID document and a live selfie, processed by our vendor Didit. The check is valid for two years before a re-verification is prompted. Roster+ members and above can start the process at /dashboard/identity.',
+        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier - you can be verified at any paid tier (Roster Starter, Roster Pro, Roster Premium, Business tiers, or Enterprise). Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. The verification uses a government ID document and a live selfie, processed by our vendor Didit. The check is valid for two years before a re-verification is prompted. Roster Pro members and above can start the process at /dashboard/identity.',
       },
       {
         q: 'Why would I verify my identity?',
@@ -84,7 +84,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Eight tiers across two tracks. Personal: Free ($0) lets you browse. Roster ($19.99/year) unlocks profile claims and unlimited kid links. Roster+ ($29.99/year) adds Family Hub, photos, videos, and kid performance tracking. Pro ($59.99/year) adds up to 5 claims, DMs, and advanced analytics. Business: Business Starter ($29.99/year) claims 1 business listing. Business Pro ($59.99/year) claims up to 5 with DMs and analytics. Business Premium ($299/year) claims up to 25 with featured placement. Enterprise is custom for 25+ claims. Founding Member badge is included on all paid tiers for the first 500 members.',
+        a: 'Eight tiers across two tracks. Personal: Free ($0) lets you browse. Roster Starter ($19.99/year) unlocks profile claims and unlimited kid links. Roster Pro ($29.99/year) adds Family Hub, photos, videos, and kid performance tracking. Roster Premium ($59.99/year) adds up to 5 claims, DMs, and advanced analytics. Business: Business Starter ($29.99/year) claims 1 business listing. Business Pro ($59.99/year) claims up to 5 with DMs and analytics. Business Premium ($299/year) claims up to 25 with featured placement. Enterprise is custom for 25+ claims. Founding Member badge is included on all paid tiers for the first 500 members.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -108,7 +108,7 @@ const sections: Array<{
       },
       {
         q: 'Is there a free trial?',
-        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Roster - it is $19.99/year and you can cancel anytime by emailing support.',
+        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Roster Starter - it is $19.99/year and you can cancel anytime by emailing support.',
       },
     ],
   },
@@ -127,7 +127,7 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Roster tier members can claim 1 listing. Roster+ adds Family Hub. Pro tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kids team, your beer-league squad). Business Starter claims 1 business listing. Business Pro claims up to 5 with DMs and analytics. Business Premium claims up to 25 with featured placement. Enterprise is custom for 25+ claims. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
+        a: 'Roster Starter tier members can claim 1 listing. Roster Pro adds Family Hub. Roster Premium tier members can claim up to 5 listings — enough for a personal scope (your home rink, your kids team, your beer-league squad). Business Starter claims 1 business listing. Business Pro claims up to 5 with DMs and analytics. Business Premium claims up to 25 with featured placement. Enterprise is custom for 25+ claims. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
@@ -139,7 +139,7 @@ const sections: Array<{
       },
       {
         q: 'Can I update hours, contacts, and socials for a listing I claimed?',
-        a: 'Yes. Roster tier includes 1 claimed listing with editable details. Pro tier includes up to 5 claimed listings. Business Premium includes up to 25 claimed listings. Enterprise covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
+        a: 'Yes. Roster Starter tier includes 1 claimed listing with editable details. Roster Premium tier includes up to 5 claimed listings. Business Premium includes up to 25 claimed listings. Enterprise covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
       },
       {
         q: 'How long does listing review take?',
@@ -166,7 +166,7 @@ const sections: Array<{
       },
       {
         q: 'How do I save a team, player, or rink?',
-        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save up to 3; Roster and above can save unlimited.',
+        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save up to 3; Roster Starter and above can save unlimited.',
       },
       {
         q: 'How do rink reviews work?',
@@ -193,11 +193,11 @@ const sections: Array<{
     qa: [
       {
         q: 'How do I send a direct message (DM) to another user?',
-        a: 'Pro, Roster+, Business Pro, Business Premium, and Enterprise tier members can DM each other. Free, Roster, and Business Starter tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
+        a: 'Roster Premium, Roster Pro, Business Pro, Business Premium, and Enterprise tier members can DM each other. Free, Roster Starter, and Business Starter tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
       },
       {
         q: 'Why do I need a Pro tier to DM?',
-        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Pro, Roster+, Business Pro, Business Premium, or Enterprise) so the person on the other end knows they are dealing with a real account, not a throwaway.',
+        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Roster Premium, Roster Pro, Business Pro, Business Premium, or Enterprise) so the person on the other end knows they are dealing with a real account, not a throwaway.',
       },
       {
         q: 'How do connection requests work?',
@@ -259,7 +259,7 @@ const sections: Array<{
       },
       {
         q: 'How do I find out if a rink, team, or league is already on RinkStop?',
-        a: 'Use the search bar on the homepage or go to /claim-your-listing and type the name. If the listing appears, it\'s already in our directory. If it does not appear, you can submit a new listing from /add-listing or claim it once you have a Roster or higher membership.',
+        a: 'Use the search bar on the homepage or go to /claim-your-listing and type the name. If the listing appears, it\'s already in our directory. If it does not appear, you can submit a new listing from /add-listing or claim it once you have a Roster Starter or higher membership.',
       },
       {
         q: 'How do I delete a review I left?',

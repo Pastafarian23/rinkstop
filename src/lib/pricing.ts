@@ -5,16 +5,22 @@
  * Users choose track at signup - pricing/tier logic is completely separate.
  * Personal users cannot access business features and vice versa.
  *
- * PERSONAL TRACK (players/families):
- *   - roster ($19.99)      → claim your profile + unlimited kids
- *   - roster_plus ($29.99)  → photos/videos + Family Hub
- *   - pro ($59.99)         → advanced personal features
+ * PERSONAL TRACK (players/families), display labels per 2026-06-30 rename:
+ *   - Roster Starter        (roster, $19.99)         → claim your profile + unlimited kids
+ *   - Roster Pro            (roster_plus, $29.99)    → photos/videos + Family Hub
+ *   - Roster Premium        (pro, $59.99)            → advanced personal features
  *
  * BUSINESS TRACK (orgs/rinks/leagues):
- *   - business_starter ($29.99) → claim 1 business listing
- *   - business_pro ($59.99)   → lead forms + DMs + 5 claims
- *   - business_premium ($299)  → analytics + branding + 25 claims
- *   - enterprise (Contact)     → custom integration
+ *   - Business Starter      (business_starter, $29.99) → claim 1 business listing
+ *   - Business Pro          (business_pro, $59.99)    → lead forms + DMs + 5 claims
+ *   - Business Premium      (business_premium, $299)  → analytics + branding + 25 claims
+ *   - Enterprise            (enterprise, Contact)     → custom integration
+ *
+ * Note: the internal enum values (roster, roster_plus, pro, etc.) are kept
+ * unchanged because they are stored in the database and referenced by SQL
+ * constraints. Only the user-visible labels were renamed in 2026-06-30 so
+ * the personal-track progression reads Starter → Pro → Premium, mirroring
+ * the business-track progression Starter → Pro → Premium.
  *
  * Stripe price IDs are verified and stored in Vercel environment.
  */
@@ -60,7 +66,7 @@ export const TIERS: Record<TierName, TierInfo> = {
   },
   roster: {
     name: 'roster',
-    label: 'Roster',
+    label: 'Roster Starter',
     track: 'personal',
     priceUsd: 19.99,
     stripePriceEnv: 'STRIPE_PRICE_ROSTER',
@@ -68,7 +74,7 @@ export const TIERS: Record<TierName, TierInfo> = {
   },
   roster_plus: {
     name: 'roster_plus',
-    label: 'Roster+',
+    label: 'Roster Pro',
     track: 'personal',
     priceUsd: 29.99,
     stripePriceEnv: 'STRIPE_PRICE_ROSTER_PLUS',
@@ -76,7 +82,7 @@ export const TIERS: Record<TierName, TierInfo> = {
   },
   pro: {
     name: 'pro',
-    label: 'Pro',
+    label: 'Roster Premium',
     track: 'personal',
     priceUsd: 59.99,
     stripePriceEnv: 'STRIPE_PRICE_PRO',
