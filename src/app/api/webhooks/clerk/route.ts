@@ -192,6 +192,31 @@ async function handleUserCreated(data: ClerkUserPayload) {
         `[clerk-webhook] user.created for new Clerk id ${data.id} matched existing profile row by email ${email}; inheriting tier=${inheritedTier} role=${inheritedRole}`,
       );
     }
+  } else if (displayName) {
+    // Fallback: a Clerk user may have no email (older/test accounts) but
+    // still own a profile row by display_name. Without this, signing in to
+    // such a user creates a fresh free-tier row that shadows the canonical
+    // premium row, and the user gets locked out of paid features until the
+    // duplicate is manually cleaned up. Display-name match is risky for
+    // common names, so we also require the existing row to be super_admin
+    // (i.e. not a random founder/duplicate collision) before inheriting.
+    const { data: byName } = await supabaseAdmin
+      .from('profiles')
+      .select('tier, role, is_founding_member')
+      .eq('display_name', displayName)
+      .eq('role', 'super_admin')
+      .neq('user_id', data.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (byName) {
+      if (byName.tier && byName.tier !== 'free') inheritedTier = byName.tier;
+      if (byName.role && byName.role !== 'user') inheritedRole = byName.role;
+      if (byName.is_founding_member) inheritedIsFoundingMember = byName.is_founding_member;
+      console.log(
+        `[clerk-webhook] user.created for new Clerk id ${data.id} (no email) matched existing super_admin profile row by display_name=${displayName}; inheriting tier=${inheritedTier} role=${inheritedRole}`,
+      );
+    }
   }
 
   // Insert idempotently — if the profile already exists (lazy ensureProfile

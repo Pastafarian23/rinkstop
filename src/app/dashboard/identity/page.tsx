@@ -13,12 +13,13 @@
  * Tier gate: Roster Pro (personal) or Business Starter+ (business) to start verification. Free/Roster Starter users see an upsell.
  */
 
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getUserTier } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
+import { OWNER_EMAILS } from '@/lib/admin-auth';
 import IdentityClient from './IdentityClient';
 
 export const dynamic = 'force-dynamic';
@@ -31,23 +32,47 @@ export default async function IdentityPage({
   const { userId } = await auth();
   if (!userId) redirect('/login');
 
-  const tier = await getUserTier(userId);
+  // Determine the canonical tier for this request. Clerk OAuth flows may have
+  // created a separate Clerk user for the same person (account-linking off),
+  // in which case the signed-in user_id may not own the premium profile row.
+  // For owner emails, fall back to the canonical row by email so identity
+  // verification unlocks regardless of which Clerk user_id owns the session.
+  const cu = await currentUser();
+  const primaryEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+  let effectiveUserId = userId;
+  let tier = await getUserTier(userId);
+  if (OWNER_EMAILS.has(primaryEmail)) {
+    const { data: byEmail } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, tier, role, is_founding_member, subscription_status, tier_expires_at')
+      .ilike('email', primaryEmail)
+      .neq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (byEmail) {
+      // Canonical row exists at a different user_id. Re-derive tier using
+      // getUserTier's own expiry/subscription rules against the canonical row.
+      effectiveUserId = byEmail.user_id;
+      tier = await getUserTier(byEmail.user_id);
+    }
+  }
   // Roster Pro (personal track) OR Business Starter+ (business track) can verify
   // Using tierAtLeastSameTrack which enforces same-track comparison.
   const canVerify = tierAtLeastSameTrack(tier, 'roster_plus') || tierAtLeastSameTrack(tier, 'business_starter');
 
-  // Fetch current identity status from the view
+  // Fetch current identity status from the view (canonical user_id)
   const { data: status } = await supabaseAdmin
     .from('profile_identity_status')
     .select('status, identity_verified_at, identity_expires_at, days_until_expiry, identity_verification_method')
-    .eq('user_id', userId)
+    .eq('user_id', effectiveUserId)
     .maybeSingle();
 
   // Fetch most recent session id (for the decision-poll back link)
   const { data: session } = await supabaseAdmin
     .from('didit_sessions')
     .select('session_id, status, created_at')
-    .eq('user_id', userId)
+    .eq('user_id', effectiveUserId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
