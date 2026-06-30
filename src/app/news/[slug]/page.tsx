@@ -335,14 +335,14 @@ export default async function BlogPostPage({ params }: Props) {
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem 3rem' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr',
+            gridTemplateColumns: 'minmax(0, 1fr)',
             gap: '2rem',
             alignItems: 'start'
           }}
           className="news-content-grid"
           >
             {/* Main content */}
-            <div>
+            <div style={{ minWidth: 0 }}>
               {/* Breadcrumb */}
               <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
                 <Link href="/" style={{ color: '#555' }}>Home</Link>
