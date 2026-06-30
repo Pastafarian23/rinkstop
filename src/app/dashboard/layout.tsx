@@ -204,6 +204,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   navLinks.push(
     ['/dashboard/leads', 'Leads'],
     ['/dashboard/subscription', 'Subscription'],
+    ['/dashboard/profile', 'Profile'],
     ['/dashboard/support', 'Support'],
   );
 
