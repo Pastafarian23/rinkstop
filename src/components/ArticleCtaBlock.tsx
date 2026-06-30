@@ -179,7 +179,8 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
           fontWeight: 700,
           fontSize: '1rem',
           fontFamily: 'inherit',
-          minWidth: '220px',
+          textAlign: 'center',
+          maxWidth: '100%',
         }}
         className="article-cta-button"
       >
