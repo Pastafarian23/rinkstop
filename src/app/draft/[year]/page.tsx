@@ -327,7 +327,7 @@ function YearSwitcher({ currentYear }: { currentYear: number }) {
                   ★ live
                 </span>
               )}
-              {!isLive && (
+              {!isLive && !isCurrent && (
                 <span style={{ marginLeft: '0.3rem', fontSize: '0.65rem', opacity: 0.6 }}>
                   soon
                 </span>
