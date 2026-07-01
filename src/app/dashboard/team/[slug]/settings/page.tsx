@@ -127,6 +127,9 @@ export default async function TeamSettingsPage({ params }: PageProps) {
     contact_email: team.contact_email ?? '',
     contact_phone: team.contact_phone ?? '',
     visibility: team.visibility ?? 'public',
+    pending_name: team.pending_name ?? null,
+    pending_short_name: team.pending_short_name ?? null,
+    pending_submitted_at: team.pending_submitted_at ?? null,
   };
 
   return (

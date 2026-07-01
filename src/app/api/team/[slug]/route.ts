@@ -89,15 +89,41 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'not_admin' }, { status: 403 });
   }
 
+  // Super-admin check for name/short_name changes
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('role, _deprecated_account_type')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const isSuper = profile?.role === 'super_admin' || profile?._deprecated_account_type === 'super_admin';
+
   // Build update payload — only fields present in the body are touched.
   const patch: Record<string, unknown> = {};
+  const pendingPatch: Record<string, unknown> = {};
 
   const name = asStringOrNull(body.name);
   if (name !== undefined) {
     if (typeof name !== 'string' || name.length < 2 || name.length > 80) {
       return NextResponse.json({ error: 'invalid_name' }, { status: 400 });
     }
-    patch.name = name;
+    if (isSuper) {
+      patch.name = name;
+    } else {
+      // Non-super-admin: queue for approval
+      pendingPatch.name = name;
+    }
+  }
+
+  const shortName = asStringOrNull(body.short_name);
+  if (shortName !== undefined) {
+    if (shortName !== null && (typeof shortName !== 'string' || shortName.length > 40)) {
+      return NextResponse.json({ error: 'invalid_short_name' }, { status: 400 });
+    }
+    if (isSuper) {
+      patch.short_name = shortName;
+    } else {
+      pendingPatch.short_name = shortName;
+    }
   }
 
   // Slug change — validate format, check uniqueness, write a redirect row
@@ -137,15 +163,6 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       // Mark for redirect insert (after the workspace update succeeds)
       (patch as any)._old_slug_for_redirect = team.slug;
     }
-  }
-
-  const shortName = asStringOrNull(body.short_name);
-  if (shortName !== undefined) {
-    // null is valid — means "clear the short_name". typeof null === 'object' in JS, so handle explicitly.
-    if (shortName !== null && (typeof shortName !== 'string' || shortName.length > 40)) {
-      return NextResponse.json({ error: 'invalid_short_name' }, { status: 400 });
-    }
-    patch.short_name = shortName;
   }
 
   const parentOrg = asStringOrNull(body.parent_org);
@@ -300,15 +317,92 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     patch.visibility = visibility;
   }
 
-  if (Object.keys(patch).length === 0) {
+  if (Object.keys(patch).length === 0 && Object.keys(pendingPatch).length === 0) {
     return NextResponse.json({ error: 'no_fields' }, { status: 400 });
+  }
+
+  // If there are pending name/short_name changes from a non-super-admin, create a review row
+  if (Object.keys(pendingPatch).length > 0) {
+    // Reject if there's already a pending review for this team
+    const { data: existingReview } = await supabaseAdmin
+      .from('team_name_review')
+      .select('id')
+      .eq('team_id', team.id)
+      .eq('status', 'pending')
+      .maybeSingle();
+    if (existingReview) {
+      return NextResponse.json(
+        { error: 'pending_already_exists', message: 'A name change is already pending review. Wait for it to be approved or rejected before submitting another.' },
+        { status: 409 },
+      );
+    }
+
+    // Read current team state for the review row
+    const { data: currentTeam } = await supabaseAdmin
+      .from('team_workspaces')
+      .select('name, short_name')
+      .eq('id', team.id)
+      .maybeSingle();
+
+    // Create the review row
+    const { error: reviewErr } = await supabaseAdmin
+      .from('team_name_review')
+      .insert({
+        team_id: team.id,
+        requested_name: (pendingPatch.name as string) ?? currentTeam?.name ?? '',
+        requested_short_name: (pendingPatch.short_name as string | null) ?? currentTeam?.short_name ?? null,
+        previous_name: currentTeam?.name ?? '',
+        previous_short_name: currentTeam?.short_name ?? null,
+        requested_by: userId,
+      });
+    if (reviewErr) {
+      return NextResponse.json({ error: 'review_create_failed' }, { status: 500 });
+    }
+
+    // Set the pending fields on the team (don't apply to live name yet)
+    const { error: pendingErr } = await supabaseAdmin
+      .from('team_workspaces')
+      .update({
+        pending_name: pendingPatch.name ?? null,
+        pending_short_name: pendingPatch.short_name ?? null,
+        pending_submitted_at: new Date().toISOString(),
+        pending_submitted_by: userId,
+      })
+      .eq('id', team.id);
+    if (pendingErr) {
+      return NextResponse.json({ error: 'pending_update_failed' }, { status: 500 });
+    }
+
+    // If there were also direct fields to update, do those now
+    if (Object.keys(patch).length > 0) {
+      const { error: directErr } = await supabaseAdmin
+        .from('team_workspaces')
+        .update(patch)
+        .eq('id', team.id);
+      if (directErr) {
+        return NextResponse.json({ error: 'update_failed', detail: directErr.message }, { status: 500 });
+      }
+    }
+
+    // Fetch updated team state to return
+    const { data: updatedTeam } = await supabaseAdmin
+      .from('team_workspaces')
+      .select('id, slug, name, short_name, pending_name, pending_short_name, visibility')
+      .eq('id', team.id)
+      .maybeSingle();
+
+    return NextResponse.json({
+      team: updatedTeam,
+      pending_review: true,
+      message: 'Name change submitted for super_admin review.',
+    });
   }
 
   const { data: updated, error: updateErr } = await supabaseAdmin
     .from('team_workspaces')
     .update(patch)
     .eq('id', team.id)
-    .select('id, slug, name, short_name, parent_org, home_city, home_country, country_code, currency, age_category, age_label, age_min, age_max, season_label, level, founded_on, description, contact_email, contact_phone, visibility')
+    .select('id, slug, name, short_name, pending_name, pending_short_name, pending_submitted_at, parent_org, home_city, home_country, country_code, currency, age_category, age_label, age_min, age_max, season_label, level, founded_on, description, contact_email, contact_phone, visibility')
     .single();
 
   if (updateErr || !updated) {

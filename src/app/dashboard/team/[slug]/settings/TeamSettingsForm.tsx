@@ -8,6 +8,9 @@ interface InitialValues {
   slug: string;
   name: string;
   short_name: string;
+  pending_name: string | null;
+  pending_short_name: string | null;
+  pending_submitted_at: string | null;
   parent_org: string;
   home_city: string;
   home_country: string;
@@ -189,6 +192,18 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       }}
     >
       <Section title="Identity">
+        {form.pending_name && (
+          <div style={{ marginBottom: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(255,184,28,0.08)', border: '1px solid rgba(255,184,28,0.25)', borderRadius: 8 }}>
+            <div style={{ fontWeight: 700, color: '#FFB81C', marginBottom: '0.3rem', fontSize: '0.85rem' }}>⏳ Name change pending approval</div>
+            <p style={{ margin: '0 0 0.4rem', color: 'rgba(255,255,255,0.65)', fontSize: '0.8rem' }}>
+              You submitted: <strong style={{ color: '#fff' }}>{form.pending_name}</strong>
+              {form.pending_short_name !== form.pending_name ? ` (${form.pending_short_name || 'no short name'})` : ''}
+            </p>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>
+              A super admin will review and approve or reject. Current name stays live until approved.
+            </p>
+          </div>
+        )}
         <Field label="Team name *" hint="The official name shown on listings and invites (2–80 chars)">
           <input
             type="text"
