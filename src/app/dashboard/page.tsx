@@ -9,7 +9,6 @@ import { TierBadge } from '@/components/TierBadge';
 import { FounderBadge } from '@/components/FounderBadge';
 import UsernameBanner from '@/components/UsernameBanner';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
-import AccountTypePicker from '@/components/AccountTypePicker';
 import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
 import InboxCard from '@/components/dashboard/InboxCard';
 import { loadDashboardTypeData } from '@/components/dashboard/dashboardTypeData';
@@ -482,7 +481,9 @@ async function renderDashboard(userId: string) {
           loadInboxSummary. */}
       <InboxCard data={inbox} />
 
-      {/* Onboarding for users who haven't picked an account type yet */}
+      {/* Onboarding for users who haven't picked an account type yet.
+          Piece 3.5: AccountTypePicker moved to its own page at /dashboard/roles.
+          This card is a CTA link to that page. */}
       {types.length === 0 && (
         <div
           id="account-types"
@@ -514,7 +515,24 @@ async function renderDashboard(userId: string) {
           >
             Pick every role that fits you. We&rsquo;ll show you the right tools and shortcuts for each one.
           </p>
-          <AccountTypePicker />
+          <a
+            href="/dashboard/roles"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.625rem 1.25rem',
+              background: '#14B8A6',
+              color: '#0a0a0a',
+              borderRadius: 6,
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              letterSpacing: '0.03em',
+            }}
+          >
+            Choose your roles →
+          </a>
         </div>
       )}
 
@@ -553,7 +571,9 @@ async function renderDashboard(userId: string) {
         </div>
       )}
 
-      {/* Edit types shortcut — visible to everyone who has at least one type */}
+      {/* Edit types shortcut — visible to everyone who has at least one type.
+          Piece 3.5: AccountTypePicker moved to its own page at /dashboard/roles.
+          This is a CTA link card so the home dashboard stays scannable. */}
       {types.length > 0 && (
         <div
           id="account-types"
@@ -574,13 +594,31 @@ async function renderDashboard(userId: string) {
                 margin: 0,
               }}
             >
-              MANAGE YOUR ROLES
+              MANAGE YOUR ROLES &amp; LINKED RECORDS
             </h3>
             <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
               Multi-select is free. Add or remove roles anytime.
             </span>
           </div>
-          <AccountTypePicker />
+          <a
+            href="/dashboard/roles"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.55rem 1.1rem',
+              background: 'rgba(20,184,166,0.12)',
+              border: '1px solid rgba(20,184,166,0.5)',
+              borderRadius: 6,
+              color: '#14B8A6',
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              letterSpacing: '0.03em',
+            }}
+          >
+            Manage roles &amp; records →
+          </a>
         </div>
       )}
 
