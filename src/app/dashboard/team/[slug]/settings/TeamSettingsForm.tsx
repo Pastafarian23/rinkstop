@@ -439,33 +439,40 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
             lineHeight: 1.5,
           }}
         >
-          <div style={{ fontWeight: 700, color: '#14B8A6', marginBottom: '0.3rem' }}>
-            🔒 Private (only option in V1)
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+            <div>
+              <div style={{ fontWeight: 700, color: form.visibility === 'public' ? '#14B8A6' : '#FFB81C', marginBottom: '0.25rem' }}>
+                {form.visibility === 'public' ? '🌐 Public' : '🔒 Private'}
+              </div>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)' }}>
+                {form.visibility === 'public'
+                  ? 'Listed in the RinkStop directory. Anyone can find and follow your team.'
+                  : 'Hidden from the directory. Only people with the direct link can find the team.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => update('visibility', form.visibility === 'public' ? 'private' : 'public')}
+              style={{
+                flexShrink: 0,
+                padding: '0.35rem 0.85rem',
+                borderRadius: 6,
+                border: `1px solid ${form.visibility === 'public' ? 'rgba(20,184,166,0.4)' : 'rgba(255,184,28,0.4)'}`,
+                background: form.visibility === 'public' ? 'rgba(20,184,166,0.1)' : 'rgba(255,184,28,0.1)',
+                color: form.visibility === 'public' ? '#14B8A6' : '#FFB81C',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {form.visibility === 'public' ? 'Make Private' : 'Make Public'}
+            </button>
           </div>
-          <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)' }}>
-            Your team is URL-known — anyone with the link can see the team exists. But the
-            roster, invites, and member data at <code style={{ color: '#14B8A6' }}>/dashboard/team/{slug}</code>{' '}
-            require an invite code. Generate invite codes in the{' '}
-            <strong>Invites</strong> section below the roster.
-          </p>
-          <p
-            style={{
-              margin: '0.6rem 0 0',
-              padding: '0.5rem 0.75rem',
-              background: 'rgba(255,184,28,0.06)',
-              borderLeft: '2px solid #FFB81C',
-              color: 'rgba(255,184,28,0.85)',
-              fontSize: '0.78rem',
-            }}
-          >
-            <strong>Coming soon:</strong> a public team profile page (claim badge, season record,
-            home rink) at <code style={{ color: '#FFB81C' }}>/teams/{slug}</code>. We&rsquo;ll
-            add a public toggle then. The directory at{' '}
-            <code style={{ color: '#FFB81C' }}>/directory/teams</code> will auto-list teams as
-            that ships.
+          <p style={{ margin: '0.5rem 0 0', color: 'rgba(255,255,255,0.55)', fontSize: '0.78rem' }}>
+            The team hub at <code style={{ color: '#14B8A6' }}>/dashboard/team/{slug}</code> always requires an invite code, regardless of this setting.
           </p>
         </div>
-        <input type="hidden" value={form.visibility} />
       </Section>
 
       {error && (

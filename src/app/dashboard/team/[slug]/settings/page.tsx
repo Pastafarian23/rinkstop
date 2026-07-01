@@ -126,7 +126,7 @@ export default async function TeamSettingsPage({ params }: PageProps) {
     description: team.description ?? '',
     contact_email: team.contact_email ?? '',
     contact_phone: team.contact_phone ?? '',
-    visibility: team.visibility ?? 'private',
+    visibility: team.visibility ?? 'public',
   };
 
   return (

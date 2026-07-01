@@ -12,7 +12,7 @@ interface RouteParams {
 
 // Visibility is binary for V1: 'private' only.
 // 'public' is deferred until the public team profile page exists — see /api/team/[slug] PATCH.
-const VISIBILITY_VALUES = ['private'] as const;
+const VISIBILITY_VALUES = ['private', 'public'] as const;
 const AGE_CATEGORY_VALUES = ['youth', 'adult', 'mixed'] as const;
 const LEVEL_VALUES = ['learn_to_play', 'house', 'travel', 'rep'] as const;
 
@@ -283,16 +283,6 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'invalid_visibility' }, { status: 400 });
     }
     // 'public' is deferred — the public team profile page hasn't been built yet.
-    if (visibility === 'public') {
-      return NextResponse.json(
-        {
-          error: 'public_visibility_deferred',
-          message:
-            'Public team profiles are not yet available. Teams are URL-known and invite-gated; the workspace at /dashboard/team/[slug] requires an invite code. The public profile page will launch with the directory.',
-        },
-        { status: 409 }
-      );
-    }
     if (visibility === 'unlisted') {
       return NextResponse.json(
         {
