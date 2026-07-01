@@ -141,7 +141,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const shortName = asStringOrNull(body.short_name);
   if (shortName !== undefined) {
-    if (typeof shortName !== 'string' || shortName.length > 40) {
+    // null is valid — means "clear the short_name". typeof null === 'object' in JS, so handle explicitly.
+    if (shortName !== null && (typeof shortName !== 'string' || shortName.length > 40)) {
       return NextResponse.json({ error: 'invalid_short_name' }, { status: 400 });
     }
     patch.short_name = shortName;
@@ -149,7 +150,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const parentOrg = asStringOrNull(body.parent_org);
   if (parentOrg !== undefined) {
-    if (typeof parentOrg !== 'string' || parentOrg.length > 120) {
+    if (parentOrg !== null && (typeof parentOrg !== 'string' || parentOrg.length > 120)) {
       return NextResponse.json({ error: 'invalid_parent_org' }, { status: 400 });
     }
     patch.parent_org = parentOrg;
@@ -157,7 +158,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const homeCity = asStringOrNull(body.home_city);
   if (homeCity !== undefined) {
-    if (typeof homeCity !== 'string' || homeCity.length > 80) {
+    if (homeCity !== null && (typeof homeCity !== 'string' || homeCity.length > 80)) {
       return NextResponse.json({ error: 'invalid_home_city' }, { status: 400 });
     }
     patch.home_city = homeCity;
@@ -165,7 +166,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const homeCountry = asStringOrNull(body.home_country);
   if (homeCountry !== undefined) {
-    if (typeof homeCountry !== 'string' || homeCountry.length > 80) {
+    if (homeCountry !== null && (typeof homeCountry !== 'string' || homeCountry.length > 80)) {
       return NextResponse.json({ error: 'invalid_home_country' }, { status: 400 });
     }
     patch.home_country = homeCountry;
@@ -255,7 +256,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const description = asStringOrNull(body.description);
   if (description !== undefined) {
-    if (typeof description !== 'string' || description.length > 1000) {
+    if (description !== null && (typeof description !== 'string' || description.length > 1000)) {
       return NextResponse.json({ error: 'invalid_description' }, { status: 400 });
     }
     patch.description = description;
@@ -271,7 +272,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const contactPhone = asStringOrNull(body.contact_phone);
   if (contactPhone !== undefined) {
-    if (typeof contactPhone !== 'string' || contactPhone.length > 40) {
+    if (contactPhone !== null && (typeof contactPhone !== 'string' || contactPhone.length > 40)) {
       return NextResponse.json({ error: 'invalid_contact_phone' }, { status: 400 });
     }
     patch.contact_phone = contactPhone;
