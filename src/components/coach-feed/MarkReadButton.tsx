@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface MarkReadButtonProps {
-  postTable: 'team_news' | 'team_schedule' | 'team_results';
+  postTable: 'team_news' | 'team_events' | 'team_results';
   postId: string;
 }
 
