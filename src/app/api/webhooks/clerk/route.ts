@@ -181,6 +181,13 @@ async function handleUserCreated(data: ClerkUserPayload) {
   //
   // (Arnel directive 2026-06-30: "Fix the clerk account linking issue.
   //  This should have been done already.")
+  // (Arnel directive 2026-07-01: "The problem seems to be in supabase and
+  //  the record keeping of users." Structural fix: enforce "one profile per
+  //  email" via a partial unique index on profiles(email) (NULLs allowed),
+  //  and unify the webhook's delete-new-Clerk-user behavior across ALL tiers
+  //  — not just OWNER. Previously only OWNER-tier matches triggered the
+  //  delete, which let regular users accumulate duplicate Clerk accounts
+  //  pointing at different profile rows for the same email.)
   let inheritedTier = 'free';
   let inheritedRole = 'user';
   let inheritedIsFoundingMember = false;
@@ -198,13 +205,12 @@ async function handleUserCreated(data: ClerkUserPayload) {
       if (existing.tier && existing.tier !== 'free') inheritedTier = existing.tier;
       if (existing.role && existing.role !== 'user') inheritedRole = existing.role;
       if (existing.is_founding_member) inheritedIsFoundingMember = existing.is_founding_member;
-      // Owner-account detection: super_admin or founding member. For these
-      // rows the canonical Clerk user_id is the one we want to keep. The
-      // brand-new Clerk user just created should be deleted.
-      if (existing.role === 'super_admin' || existing.is_founding_member === true) {
-        if (existing.user_id && existing.user_id !== data.id) {
-          shouldDeleteNewUser = true;
-        }
+      // Any email match with a different user_id means a duplicate Clerk
+      // user is being created. The existing profile row's user_id is the
+      // canonical Clerk user (the one with the active session). The fresh
+      // duplicate is removed. Applies to ALL tiers, not just OWNER.
+      if (existing.user_id && existing.user_id !== data.id) {
+        shouldDeleteNewUser = true;
       }
       console.log(
         `[clerk-webhook] user.created for new Clerk id ${data.id} matched existing profile row by email ${email}; inheriting tier=${inheritedTier} role=${inheritedRole}${shouldDeleteNewUser ? ' (will delete new Clerk user)' : ''}`,
@@ -237,35 +243,59 @@ async function handleUserCreated(data: ClerkUserPayload) {
     }
   }
 
-  // Insert idempotently — if the profile already exists (lazy ensureProfile
-  // beat us to it), we update from Clerk instead of failing.
-  const { error } = await supabaseAdmin
-    .from('profiles')
-    .upsert(
-      {
-        user_id: data.id,
-        email,
-        display_name: displayName,
-        username,
-        avatar_url: avatarUrl,
-        tier: inheritedTier,
-        role: inheritedRole,
-        is_founding_member: inheritedIsFoundingMember,
-      },
-      { onConflict: 'user_id', ignoreDuplicates: false }
-    );
-
-  if (error) {
-    throw new Error(`profile upsert failed: ${error.message}`);
+  // If we already detected a duplicate Clerk user via the email-match
+  // query above, skip the upsert entirely — inserting a row we'd delete
+  // 5 lines later is wasted work and risks a unique-constraint violation
+  // against idx_profiles_email_unique. The delete-new-Clerk-user branch
+  // below handles the cleanup.
+  let upsertError: { code?: string; message: string } | null = null;
+  if (!shouldDeleteNewUser) {
+    // Insert idempotently — if the profile already exists (lazy ensureProfile
+    // beat us to it), we update from Clerk instead of failing. The unique
+    // partial index on profiles(email) catches race-condition duplicates
+    // (a second webhook arriving before this one's email-match query ran).
+    // On 23505 (unique_violation), we treat it as a duplicate-detected
+    // signal and fall through to the delete-new-Clerk-user branch.
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .upsert(
+        {
+          user_id: data.id,
+          email,
+          display_name: displayName,
+          username,
+          avatar_url: avatarUrl,
+          tier: inheritedTier,
+          role: inheritedRole,
+          is_founding_member: inheritedIsFoundingMember,
+        },
+        { onConflict: 'user_id', ignoreDuplicates: false }
+      );
+    if (error) {
+      // Unique constraint violation on email — the email-match query above
+      // missed a race-condition duplicate. Treat as duplicate-detected.
+      if (error.code === '23505' && (error.message.includes('profiles_email_unique') || error.message.toLowerCase().includes('duplicate key'))) {
+        shouldDeleteNewUser = true;
+        upsertError = { code: error.code, message: error.message };
+        console.log(`[clerk-webhook] user.created for new Clerk id ${data.id}: upsert hit unique constraint on email=${email}; will delete new Clerk user`);
+      } else {
+        throw new Error(`profile upsert failed: ${error.message}`);
+      }
+    }
   }
 
-  // Delete the newly-created Clerk user if it duplicates an OWNER account.
-  // This is the structural fix for the orphan-Clerk-user accumulation when
+  // Delete the newly-created Clerk user if a duplicate was detected (by
+  // email match OR by the unique constraint catching a race). This is the
+  // structural fix for the orphan-Clerk-user accumulation when
   // account-linking is OFF. The canonical Clerk user (the one already tied
   // to the canonical Supabase profile row) remains; the fresh duplicate
   // is removed. The webhook returns 200 to Clerk either way — a non-2xx
   // response would cause Clerk to retry the webhook, which is not what we
   // want.
+  //
+  // (Arnel directive 2026-07-01: unify delete behavior across all tiers,
+  //  not just OWNER. Eliminates the duplicate-Clerk-user accumulation for
+  //  regular free-tier users as well.)
   if (shouldDeleteNewUser) {
     const clerkSecret = process.env.CLERK_SECRET_KEY;
     if (clerkSecret) {
