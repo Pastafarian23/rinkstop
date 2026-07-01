@@ -83,6 +83,7 @@ interface Props {
   teamSlug: string;
   claimantDisplayName?: string | null;
   claimantRole?: string | null;
+  teamTimezone?: string;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -136,11 +137,17 @@ function formatDateShort(iso: string): string {
   });
 }
 
-function formatDatetime(iso: string): { date: string; time: string } {
+function formatDatetime(iso: string, timeZone?: string): { date: string; time: string } {
   const d = new Date(iso);
+  const opts: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    ...(timeZone ? { timeZone } : {}),
+  };
   return {
-    date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+    date: d.toLocaleDateString('en-US', opts),
+    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, ...(timeZone ? { timeZone } : {}) }),
   };
 }
 
@@ -277,6 +284,7 @@ export default function PublicTeamProfile({
   teamSlug,
   claimantDisplayName,
   claimantRole,
+  teamTimezone,
 }: Props) {
   const flag = countryFlag(team.country_code);
   const levelLabel = team.level ? (LEVEL_LABELS[team.level] ?? team.level) : null;
@@ -521,7 +529,7 @@ export default function PublicTeamProfile({
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {upcomingGames.map((g) => (
-                  <ScheduleCard key={g.id} game={g} />
+                  <ScheduleCard key={g.id} game={g} timeZone={teamTimezone} />
                 ))}
               </div>
             )}
@@ -739,8 +747,8 @@ function ResultCard({ result }: { result: ResultRow }) {
   );
 }
 
-function ScheduleCard({ game }: { game: ScheduleRow }) {
-  const { date, time } = formatDatetime(game.scheduled_at);
+function ScheduleCard({ game, timeZone }: { game: ScheduleRow; timeZone?: string }) {
+  const { date, time } = formatDatetime(game.scheduled_at, timeZone);
   return (
     <div
       style={{

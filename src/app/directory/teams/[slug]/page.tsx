@@ -5,6 +5,7 @@ import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { countryFlag } from '@/lib/team';
 import { isIdentityVerified } from '@/lib/identity-verified';
+import { timezoneForCountry } from '@/lib/team-timezone';
 import PublicTeamProfile from './PublicTeamProfile';
 
 export const dynamic = 'force-dynamic';
@@ -140,7 +141,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   const seasonStart = new Date();
   seasonStart.setMonth(seasonStart.getMonth() - 18);
 
-  const [newsRes, resultsRes, upcomingRes, adminsRes] = await Promise.all([
+  const [newsRes, resultsRes, upcomingRes, upcomingEventsRes, adminsRes] = await Promise.all([
     supabase
       .from('team_news')
       .select('id, title, body, author_user_id, published_at')
@@ -165,6 +166,15 @@ export default async function PublicTeamPage({ params }: PageProps) {
       .order('scheduled_at', { ascending: true })
       .limit(10)
       .returns<ScheduleRow[]>(),
+    // ALSO read from new team_events table (consolidation: source of truth going forward)
+    supabaseAdmin
+      .from('team_events')
+      .select('id, event_kind, starts_at, ends_at, opposing_team, location_note, status')
+      .eq('team_id', team.id)
+      .neq('status', 'cancelled')
+      .gte('starts_at', new Date().toISOString())
+      .order('starts_at', { ascending: true })
+      .limit(10),
     // Admin display: get head_coach + assistants + manager for the claim badge
     supabaseAdmin
       .from('team_members')
@@ -178,6 +188,29 @@ export default async function PublicTeamPage({ params }: PageProps) {
   const news: NewsRow[] = newsRes.data || [];
   const results: ResultRow[] = resultsRes.data || [];
   const upcoming: ScheduleRow[] = upcomingRes.data || [];
+  // Normalize team_events rows into ScheduleRow shape so the rest of the page works unchanged
+  const teamEventsRows = (upcomingEventsRes.data || []) as Array<{
+    id: string;
+    event_kind: 'practice' | 'game' | 'tournament' | 'meeting' | 'other';
+    starts_at: string;
+    opposing_team: string | null;
+    location_note: string | null;
+    status: string;
+  }>;
+  const upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e) => ({
+    id: `evt_${e.id}`, // prefix to avoid ID collision with team_schedule rows
+    scheduled_at: e.starts_at,
+    opponent: e.opposing_team,
+    kind: e.event_kind,
+    venue: e.location_note,
+    home_away: null,
+    notes: null,
+    is_cancelled: false,
+  }));
+  // Merge both sources, sort by scheduled_at ascending, take top 10
+  const mergedUpcoming: ScheduleRow[] = [...upcoming, ...upcomingFromEvents]
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+    .slice(0, 10);
 
   interface AdminJoin {
     user_id: string;
@@ -296,7 +329,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
       team={team}
       news={news}
       results={results}
-      upcoming={upcoming}
+      upcoming={mergedUpcoming}
       admins={admins}
       claimed={isVerifiedClaim}
       claimedByUserId={claimRow?.user_id ?? null}
@@ -305,6 +338,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
       teamSlug={team.slug}
       claimantDisplayName={claimantDisplayName}
       claimantRole={claimantRole}
+      teamTimezone={timezoneForCountry(team.country_code || team.home_country)}
     />
   );
 }
