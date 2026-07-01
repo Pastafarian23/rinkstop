@@ -420,23 +420,57 @@ async function syncPhotoHistory(
 }
 
 async function handleUserDeleted(data: ClerkUserPayload) {
-  // Soft-delete: mark the profile's email/username as nulled but keep the row
-  // for audit trail. Connections, threads, and team memberships remain in
-  // place; we just lose the personal info. RLS already prevents read access
-  // for non-self users.
-  const { error } = await supabaseAdmin
+  const deletedUserId = data.id;
+  const now = new Date().toISOString();
+
+  // 1. Soft-delete the profile — keep row for audit trail
+  const { error: profileErr } = await supabaseAdmin
     .from('profiles')
     .update({
       email: null,
       display_name: null,
       avatar_url: null,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
-    .eq('user_id', data.id);
+    .eq('user_id', deletedUserId);
+  if (profileErr) throw new Error(`profile soft-delete failed: ${profileErr.message}`);
 
-  if (error) {
-    throw new Error(`profile soft-delete failed: ${error.message}`);
+  // 2. Mark user as left in all team memberships (prevents orphan team_members rows)
+  const { error: memberErr } = await supabaseAdmin
+    .from('team_members')
+    .update({ left_at: now })
+    .eq('user_id', deletedUserId)
+    .is('left_at', null);
+  if (memberErr) {
+    console.error(`[user.deleted] team_members cleanup failed for ${deletedUserId}:`, memberErr.message);
   }
 
-  return NextResponse.json({ ok: true, event: 'user.deleted', userId: data.id });
+  // 3. Null out created_by on team_workspaces the user created (they can't admin it anymore)
+  const { error: workspaceErr } = await supabaseAdmin
+    .from('team_workspaces')
+    .update({ created_by: null })
+    .eq('created_by', deletedUserId);
+  if (workspaceErr) {
+    console.error(`[user.deleted] team_workspaces cleanup failed for ${deletedUserId}:`, workspaceErr.message);
+  }
+
+  // 4. Null out created_by on profile_account_types
+  const { error: acctErr } = await supabaseAdmin
+    .from('profile_account_types')
+    .update({ created_by: null })
+    .eq('created_by', deletedUserId);
+  if (acctErr) {
+    console.error(`[user.deleted] profile_account_types cleanup failed for ${deletedUserId}:`, acctErr.message);
+  }
+
+  // 5. Null out created_by on analytics_events (preserve the events themselves)
+  const { error: analyticsErr } = await supabaseAdmin
+    .from('analytics_events')
+    .update({ user_id: null })
+    .eq('user_id', deletedUserId);
+  if (analyticsErr) {
+    console.error(`[user.deleted] analytics_events cleanup failed for ${deletedUserId}:`, analyticsErr.message);
+  }
+
+  return NextResponse.json({ ok: true, event: 'user.deleted', userId: deletedUserId });
 }
