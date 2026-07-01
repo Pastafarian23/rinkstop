@@ -6,6 +6,57 @@ import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { countryFlag } from '@/lib/team';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { timezoneForCountry } from '@/lib/team-timezone';
+
+interface TeamWithLocation {
+  country_code: string | null;
+  home_country: string | null;
+}
+
+interface EventRowForTz {
+  rink_id?: string | null;
+}
+
+// Look up the timezone for a team. Tries (in order):
+//   1. team.country_code (e.g. 'PH')
+//   2. team.home_country string (if it matches a known country name)
+//   3. country of any rink referenced by the team's upcoming events
+//   4. UTC
+async function deriveTeamTimezone(
+  team: TeamWithLocation,
+  events: EventRowForTz[]
+): Promise<string> {
+  if (team.country_code) return timezoneForCountry(team.country_code);
+  if (team.home_country) {
+    const countryNameToCode: Record<string, string> = {
+      'Philippines': 'PH',
+      'United States': 'US',
+      'Canada': 'CA',
+      'United Kingdom': 'GB',
+      // Extend as needed
+    };
+    const code = countryNameToCode[team.home_country];
+    if (code) return timezoneForCountry(code);
+  }
+  // Fallback: look up rink country from any event with a rink_id
+  const rinkIds = Array.from(new Set(events.map((e) => e.rink_id).filter(Boolean) as string[]));
+  if (rinkIds.length > 0) {
+    const { data: rinks } = await supabaseAdmin
+      .from('rinks')
+      .select('id, country')
+      .in('id', rinkIds)
+      .limit(1);
+    if (rinks && rinks.length > 0 && rinks[0].country) {
+      const countryToCode: Record<string, string> = {
+        'Philippines': 'PH',
+        'United States': 'US',
+        'Canada': 'CA',
+      };
+      const code = countryToCode[rinks[0].country];
+      if (code) return timezoneForCountry(code);
+    }
+  }
+  return 'UTC';
+}
 import PublicTeamProfile from './PublicTeamProfile';
 
 export const dynamic = 'force-dynamic';
@@ -169,7 +220,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     // ALSO read from new team_events table (consolidation: source of truth going forward)
     supabaseAdmin
       .from('team_events')
-      .select('id, event_kind, starts_at, ends_at, opposing_team, location_note, status')
+      .select('id, event_kind, starts_at, ends_at, opposing_team, location_note, status, rink_id')
       .eq('team_id', team.id)
       .neq('status', 'cancelled')
       .gte('starts_at', new Date().toISOString())
@@ -196,6 +247,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     opposing_team: string | null;
     location_note: string | null;
     status: string;
+    rink_id?: string | null;
   }>;
   const upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e) => ({
     id: `evt_${e.id}`, // prefix to avoid ID collision with team_schedule rows
@@ -338,7 +390,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
       teamSlug={team.slug}
       claimantDisplayName={claimantDisplayName}
       claimantRole={claimantRole}
-      teamTimezone={timezoneForCountry(team.country_code || team.home_country)}
+      teamTimezone={await deriveTeamTimezone(team, teamEventsRows)}
     />
   );
 }
