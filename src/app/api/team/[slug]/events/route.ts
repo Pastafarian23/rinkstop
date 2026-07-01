@@ -149,7 +149,7 @@ export async function POST(
   // Look up team
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug, name, currency')
+    .select('id, slug, name, currency, timezone, home_rink_id')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -229,6 +229,26 @@ export async function POST(
   // Optional rink reference — only include if provided
   const rinkId = body.rink_id && typeof body.rink_id === 'string' ? body.rink_id : null;
 
+  // Resolve timezone — team.timezone is authoritative.
+  // Fallback chain: client-provided timezone (if valid) -> team.timezone -> rink.timezone -> UTC
+  let resolvedTimezone = team.timezone;
+  if (!resolvedTimezone && rinkId) {
+    const { data: rinkRow } = await supabaseAdmin
+      .from('rinks')
+      .select('timezone')
+      .eq('id', rinkId)
+      .maybeSingle();
+    resolvedTimezone = rinkRow?.timezone || null;
+  }
+  if (!resolvedTimezone) {
+    resolvedTimezone = body.timezone && typeof body.timezone === 'string' ? body.timezone : 'UTC';
+  }
+  // If client provided a timezone, validate it matches (warn but don't reject for now)
+  const clientTimezone = body.timezone && typeof body.timezone === 'string' ? body.timezone : null;
+  if (clientTimezone && clientTimezone !== resolvedTimezone) {
+    console.warn(`[events] client timezone ${clientTimezone} differs from team timezone ${resolvedTimezone}; using team timezone`);
+  }
+
   const insert = {
     team_id: team.id,
     event_kind: body.event_kind,
@@ -248,6 +268,7 @@ export async function POST(
     created_by: userId,
     is_off_ice: body.is_off_ice === true,
     practice_plan_id: body.practice_plan_id || null,
+    timezone: resolvedTimezone,
     ...(rinkId ? { rink_id: rinkId } : {}),
   };
 

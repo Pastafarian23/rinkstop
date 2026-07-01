@@ -10,6 +10,7 @@ import { timezoneForCountry } from '@/lib/team-timezone';
 interface TeamWithLocation {
   country_code: string | null;
   home_country: string | null;
+  timezone?: string | null;
 }
 
 interface EventRowForTz {
@@ -17,14 +18,16 @@ interface EventRowForTz {
 }
 
 // Look up the timezone for a team. Tries (in order):
-//   1. team.country_code (e.g. 'PH')
-//   2. team.home_country string (if it matches a known country name)
-//   3. country of any rink referenced by the team's upcoming events
-//   4. UTC
+//   1. team.timezone (authoritative, set on the team row)
+//   2. team.country_code (e.g. 'PH')
+//   3. team.home_country string (if it matches a known country name)
+//   4. country of any rink referenced by the team's upcoming events
+//   5. UTC
 async function deriveTeamTimezone(
   team: TeamWithLocation,
   events: EventRowForTz[]
 ): Promise<string> {
+  if (team.timezone) return team.timezone;
   if (team.country_code) return timezoneForCountry(team.country_code);
   if (team.home_country) {
     const countryNameToCode: Record<string, string> = {
@@ -42,17 +45,20 @@ async function deriveTeamTimezone(
   if (rinkIds.length > 0) {
     const { data: rinks } = await supabaseAdmin
       .from('rinks')
-      .select('id, country')
+      .select('id, country, timezone')
       .in('id', rinkIds)
       .limit(1);
-    if (rinks && rinks.length > 0 && rinks[0].country) {
-      const countryToCode: Record<string, string> = {
-        'Philippines': 'PH',
-        'United States': 'US',
-        'Canada': 'CA',
-      };
-      const code = countryToCode[rinks[0].country];
-      if (code) return timezoneForCountry(code);
+    if (rinks && rinks.length > 0) {
+      if (rinks[0].timezone) return rinks[0].timezone;
+      if (rinks[0].country) {
+        const countryToCode: Record<string, string> = {
+          'Philippines': 'PH',
+          'United States': 'US',
+          'Canada': 'CA',
+        };
+        const code = countryToCode[rinks[0].country];
+        if (code) return timezoneForCountry(code);
+      }
     }
   }
   return 'UTC';
@@ -74,6 +80,7 @@ interface TeamRow {
   country_code: string | null;
   home_city: string | null;
   home_country: string | null;
+  timezone: string | null;
   age_category: string;
   age_label: string | null;
   age_min: number | null;
@@ -117,6 +124,7 @@ interface ScheduleRow {
   home_away: 'home' | 'away' | 'neutral' | null;
   notes: string | null;
   is_cancelled: boolean;
+  timezone?: string | null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -125,7 +133,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('name, description, home_city, home_country, country_code, age_label, level')
+    .select('name, description, home_city, home_country, country_code, age_label, level, timezone')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -220,7 +228,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     // ALSO read from new team_events table (consolidation: source of truth going forward)
     supabaseAdmin
       .from('team_events')
-      .select('id, event_kind, starts_at, ends_at, opposing_team, location_note, status, rink_id')
+      .select('id, event_kind, starts_at, ends_at, opposing_team, location_note, status, rink_id, timezone')
       .eq('team_id', team.id)
       .neq('status', 'cancelled')
       .gte('starts_at', new Date().toISOString())
@@ -248,6 +256,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     location_note: string | null;
     status: string;
     rink_id?: string | null;
+    timezone?: string | null;
   }>;
   const upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e) => ({
     id: `evt_${e.id}`, // prefix to avoid ID collision with team_schedule rows
@@ -258,6 +267,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     home_away: null,
     notes: null,
     is_cancelled: false,
+    timezone: e.timezone ?? null,
   }));
   // Merge both sources, sort by scheduled_at ascending, take top 10
   const mergedUpcoming: ScheduleRow[] = [...upcoming, ...upcomingFromEvents]

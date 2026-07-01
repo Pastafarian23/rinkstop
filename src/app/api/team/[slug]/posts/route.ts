@@ -55,7 +55,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug')
+    .select('id, slug, timezone')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug')
+    .select('id, slug, timezone')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -382,6 +382,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       status: body.is_cancelled === true ? 'cancelled' : 'scheduled',
       created_by: userId,
       legacy_schedule_id: data.id,
+      timezone: team.timezone || 'UTC',
     };
     const { error: dualWriteError } = await supabaseAdmin
       .from('team_events')
@@ -436,7 +437,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug')
+    .select('id, slug, timezone')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();

@@ -55,6 +55,7 @@ interface ScheduleRow {
   home_away: 'home' | 'away' | 'neutral' | null;
   notes: string | null;
   is_cancelled: boolean;
+  timezone?: string | null;
 }
 
 interface AdminJoin {
@@ -748,7 +749,9 @@ function ResultCard({ result }: { result: ResultRow }) {
 }
 
 function ScheduleCard({ game, timeZone }: { game: ScheduleRow; timeZone?: string }) {
-  const { date, time } = formatDatetime(game.scheduled_at, timeZone);
+  // Prefer the row's own timezone (the local team intent captured at create time),
+  // fall back to the team-level timezone.
+  const { date, time } = formatDatetime(game.scheduled_at, game.timezone || timeZone);
   return (
     <div
       style={{
