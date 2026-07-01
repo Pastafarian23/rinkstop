@@ -148,7 +148,7 @@ export default clerkMiddleware(async (auth, request) => {
   // the user lands on the original target, not /dashboard).
   //
   // Note: the in-layout auth check is kept as a defense-in-depth fallback.
-  if (path.startsWith('/dashboard')) {
+  if (path.startsWith('/dashboard') || path.startsWith('/admin')) {
     const { userId } = await auth();
     if (!userId) {
       const loginUrl = new URL('/login', request.url);
