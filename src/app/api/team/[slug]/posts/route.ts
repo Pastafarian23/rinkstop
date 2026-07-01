@@ -94,22 +94,71 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ data: data || [] });
   }
   if (type === 'schedule') {
-    const { data } = await baseQuery(
+    // Read from BOTH team_schedule (legacy) and team_events (new source of truth).
+    // Map team_events fields into the same shape so the UI doesn't change.
+    const [legacyRes, eventsRes] = await Promise.all([
+      baseQuery(
+        supabaseAdmin
+          .from('team_schedule')
+          .select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled, is_published, published_at, created_at')
+      ),
       supabaseAdmin
-        .from('team_schedule')
-        .select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled, is_published, published_at, created_at')
-    );
-    return NextResponse.json({ data: data || [] });
+        .from('team_events')
+        .select('id, event_kind, starts_at, opposing_team, location_note, status, created_at, legacy_schedule_id')
+        .eq('team_id', team.id)
+        .order('created_at', { ascending: false })
+        .limit(limit),
+    ]);
+    const legacy = legacyRes.data || [];
+    const eventsAsSchedule = (eventsRes.data || []).map((e) => ({
+      id: e.legacy_schedule_id || `evt_${e.id}`, // use legacy id so admin can edit/cancel; else prefix
+      scheduled_at: e.starts_at,
+      opponent: e.opposing_team,
+      kind: e.event_kind,
+      venue: e.location_note,
+      home_away: null,
+      notes: null,
+      is_cancelled: e.status === 'cancelled',
+      is_published: true,
+      published_at: e.created_at,
+      created_at: e.created_at,
+    }));
+    const merged = [...legacy, ...eventsAsSchedule]
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, limit);
+    return NextResponse.json({ data: merged });
   }
 
   // Return all types
-  const [news, results, schedule] = await Promise.all([
+  const [news, results, schedule, eventsSched] = await Promise.all([
     baseQuery(supabaseAdmin.from('team_news').select('id, title, body, published_at, is_published, created_at')),
     baseQuery(supabaseAdmin.from('team_results').select('id, game_date, opponent, home_away, our_score, their_score, outcome, notes, created_at')),
     baseQuery(supabaseAdmin.from('team_schedule').select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled, is_published, published_at, created_at')),
+    supabaseAdmin
+      .from('team_events')
+      .select('id, event_kind, starts_at, opposing_team, location_note, status, created_at, legacy_schedule_id')
+      .eq('team_id', team.id)
+      .order('created_at', { ascending: false })
+      .limit(limit),
   ]);
+  const eventsAsSchedule = (eventsSched.data || []).map((e) => ({
+    id: e.legacy_schedule_id || `evt_${e.id}`,
+    scheduled_at: e.starts_at,
+    opponent: e.opposing_team,
+    kind: e.event_kind,
+    venue: e.location_note,
+    home_away: null,
+    notes: null,
+    is_cancelled: e.status === 'cancelled',
+    is_published: true,
+    published_at: e.created_at,
+    created_at: e.created_at,
+  }));
+  const mergedSchedule = [...(schedule.data || []), ...eventsAsSchedule]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, limit);
 
-  return NextResponse.json({ news: news.data || [], results: results.data || [], schedule: schedule.data || [] });
+  return NextResponse.json({ news: news.data || [], results: results.data || [], schedule: mergedSchedule });
 }
 
 // POST — create a news item, result, or schedule entry
@@ -298,6 +347,49 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Dual-write to new team_events table (single source of truth going forward)
+    const allowedKinds = new Set(['practice', 'game', 'tournament', 'meeting', 'other']);
+    const newEventKind = allowedKinds.has(kind) ? kind : 'other';
+    const startsAtMs = new Date(scheduledAt).getTime();
+    const endsAtIso = new Date(startsAtMs + 90 * 60 * 1000).toISOString();
+    const venueText = asStr(body.venue, 200);
+    let rinkId: string | null = null;
+    if (venueText) {
+      const sanitizedVenue = venueText.replace(/[%_,]/g, '');
+      const { data: rinkMatch } = await supabaseAdmin
+        .from('rinks')
+        .select('id')
+        .or(`name.ilike.%${sanitizedVenue}%,city.ilike.%${sanitizedVenue}%`)
+        .limit(1)
+        .maybeSingle();
+      rinkId = rinkMatch?.id ?? null;
+    }
+    const oppText = asStr(body.opponent, 120);
+    const kindLabel = newEventKind.charAt(0).toUpperCase() + newEventKind.slice(1);
+    const teamEventRow = {
+      team_id: team.id,
+      rink_id: rinkId,
+      event_kind: newEventKind,
+      title: oppText ? `${kindLabel} vs ${oppText}` : kindLabel,
+      starts_at: scheduledAt,
+      ends_at: endsAtIso,
+      arrival_minutes: 30,
+      opposing_team: oppText || null,
+      location_note: venueText || null,
+      notes: asStr(body.notes, 2000) || null,
+      rsvp_required: false,
+      status: body.is_cancelled === true ? 'cancelled' : 'scheduled',
+      created_by: userId,
+      legacy_schedule_id: data.id,
+    };
+    const { error: dualWriteError } = await supabaseAdmin
+      .from('team_events')
+      .insert(teamEventRow);
+    if (dualWriteError) {
+      console.error('[team schedule dual-write] team_events insert failed:', dualWriteError.message);
+    }
+
     try {
       await trackEvent({
         name: 'team_schedule_added',
@@ -472,6 +564,37 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Cascade update: also update the corresponding team_events row (if dual-written)
+    const teamEventsPatch: Record<string, unknown> = {};
+    if (patch.scheduled_at !== undefined) {
+      teamEventsPatch.starts_at = patch.scheduled_at;
+      // Keep ends_at as a 90-min default from new starts_at
+      const startsAtMs = new Date(patch.scheduled_at as string).getTime();
+      teamEventsPatch.ends_at = new Date(startsAtMs + 90 * 60 * 1000).toISOString();
+    }
+    if (patch.opponent !== undefined) {
+      teamEventsPatch.opposing_team = patch.opponent || null;
+      const kind = (data?.kind || 'other') as string;
+      const kindLabel = kind.charAt(0).toUpperCase() + kind.slice(1);
+      teamEventsPatch.title = patch.opponent ? `${kindLabel} vs ${patch.opponent}` : kindLabel;
+    }
+    if (patch.venue !== undefined) teamEventsPatch.location_note = patch.venue || null;
+    if (patch.notes !== undefined) teamEventsPatch.notes = patch.notes || null;
+    if (patch.is_cancelled !== undefined) {
+      teamEventsPatch.status = patch.is_cancelled === true ? 'cancelled' : 'scheduled';
+    }
+    if (Object.keys(teamEventsPatch).length > 0) {
+      const { error: cascadeError } = await supabaseAdmin
+        .from('team_events')
+        .update(teamEventsPatch)
+        .eq('legacy_schedule_id', postId)
+        .eq('team_id', team.id);
+      if (cascadeError) {
+        console.error('[team schedule edit cascade] team_events update failed:', cascadeError.message);
+      }
+    }
+
     try {
       await trackEvent({
         name: 'team_schedule_edited',
@@ -534,6 +657,18 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
 
   const { error } = await supabaseAdmin.from(table).delete().eq('id', postId).eq('team_id', team.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Cascade delete: also remove the corresponding team_events row (if dual-written)
+  if (postType === 'schedule') {
+    const { error: cascadeError } = await supabaseAdmin
+      .from('team_events')
+      .delete()
+      .eq('legacy_schedule_id', postId)
+      .eq('team_id', team.id);
+    if (cascadeError) {
+      console.error('[team schedule delete cascade] team_events delete failed:', cascadeError.message);
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }
