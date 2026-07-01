@@ -350,6 +350,15 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
             if (type === 'league') return 'leagues';
             return 'family';
           };
+          // Canonical detail URL per profile_type. Players → /players/[id] (Piece 2).
+          // Teams → /directory/teams/[slug-or-id]; leagues → /directory/leagues/[id].
+          const hrefFor = (m: ManagedProfile): string => {
+            const p = m.profile;
+            if (m.profile_type === 'player') return `/players/${m.profile_id}`;
+            if (m.profile_type === 'team') return `/directory/teams/${p?.slug || m.profile_id}`;
+            if (m.profile_type === 'league') return `/directory/leagues/${m.profile_id}`;
+            return `/directory/${m.profile_type}s/${m.profile_id}`;
+          };
           const groups: Record<string, ManagedProfile[]> = { records: [], teams: [], leagues: [], family: [] };
           for (const m of managed) groups[bucket(m.relationship, m.profile_type)].push(m);
 
@@ -365,7 +374,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                   {rows.map((m) => (
                     <Link
                       key={m.id}
-                      href={`/directory/${m.profile_type}s/${m.profile_id}`}
+                      href={hrefFor(m)}
                       className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 transition-colors"
                     >
                       {imgFor(m) ? (
