@@ -91,6 +91,8 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
   const [form, setForm] = useState<FormState>(initial);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pendingSubmitted, setPendingSubmitted] = useState(false);
+  const [pendingName, setPendingName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -120,6 +122,7 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
     setSaving(true);
     setError(null);
     setSaved(false);
+    setPendingSubmitted(false);
 
     // Strip empty strings to null for cleaner storage; the API accepts both.
     const payload: Record<string, unknown> = {
@@ -155,6 +158,19 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(data?.error ?? `Save failed (${res.status})`);
+        return;
+      }
+
+      // If the server routed the name/short_name change to pending review,
+      // show a different banner so the user knows it's queued, not live.
+      if (data?.pending_review) {
+        setPendingSubmitted(true);
+        setPendingName(data?.team?.pending_name ?? null);
+        // Update local form state so the input reflects the submitted value
+        if (data?.team?.pending_name) {
+          setForm(f => ({ ...f, pending_name: data.team.pending_name, pending_short_name: data.team.pending_short_name }));
+        }
+        router.refresh();
         return;
       }
 
@@ -506,7 +522,57 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
         </div>
       )}
 
-      {saved && !error && (
+      {pendingSubmitted && !error && (
+        <div
+          role="status"
+          style={{
+            background: 'rgba(255,184,28,0.10)',
+            border: '1px solid rgba(255,184,28,0.4)',
+            color: '#FFB81C',
+            padding: '0.85rem 1rem',
+            borderRadius: 8,
+            fontSize: '0.875rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>
+              ⏳ Name change submitted for review
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem' }}>
+              {pendingName ? (
+                <>Your team name is now <strong style={{ color: '#fff' }}>“{pendingName}”</strong> pending a super admin’s approval. Your current name stays live until approved.</>
+              ) : (
+                <>Your name change is pending a super admin’s approval. Your current name stays live until approved.</>
+              )}
+            </div>
+          </div>
+          <a
+            href="/admin/team-name-review"
+            target="_blank"
+            rel="noopener"
+            style={{
+              flexShrink: 0,
+              padding: '0.35rem 0.7rem',
+              background: 'rgba(255,184,28,0.15)',
+              border: '1px solid rgba(255,184,28,0.35)',
+              borderRadius: 6,
+              color: '#FFB81C',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Review queue →
+          </a>
+        </div>
+      )}
+
+      {saved && !error && !pendingSubmitted && (
         <div
           role="status"
           style={{
