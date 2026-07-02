@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
+import { tierAtLeast } from '@/lib/connections';
 
 export const dynamic = 'force-dynamic';
 
@@ -325,7 +326,8 @@ export default async function InboxPage() {
             </div>
           )}
 
-          {listing.tier !== 'pro' && (
+          {/* Show upgrade nudge to anyone below Business Plus. tierAtLeast handles legacy aliases. */}
+          {!tierAtLeast(listing.tier, 'business_plus') && (
             <div style={{ background: 'linear-gradient(135deg, rgba(200,16,46,0.12), rgba(255,184,28,0.08))', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 12, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
               <div>
                 <p style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', margin: '0 0 0.25rem' }}>

@@ -167,7 +167,8 @@ export async function POST(
   // Connection requests are gated at /api/connections, but we re-check here
   // so users who somehow got into the thread without proper tier are blocked.
   const tier = await getUserTier(userId);
-  const canSendMessage = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
+  // Personal: Identity Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
+  const canSendMessage = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(tier, 'business_listing');
   if (!canSendMessage) {
     return NextResponse.json(
       { error: 'Identity Plus or Business Plus membership required to send messages.', currentTier: tier },

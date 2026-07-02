@@ -199,7 +199,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
     }
     // Personal track: roster+ has ID verification. Business track: business_starter+ has verification.
     // We check if user has ANY paid tier in their track (tierAtLeast returns true if same track).
-    if (tierAtLeast(currentTier, 'roster')) {
+    if (tierAtLeast(currentTier, 'verified_identity')) {
       navLinks.push(['/dashboard/identity', 'Verification']);
     }
   } catch { /* best-effort — don't break the layout if Supabase is down */ }

@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
   // Tier check: caller must be Identity Plus (personal) or Business Plus (business) to send connection requests.
   // DMs are gated so the person on the other end knows they are dealing with a real account.
   const tier = await getUserTier(userId);
-  const canInitiate = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
+  // Personal: Identity Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
+  const canInitiate = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(tier, 'business_listing');
   if (!canInitiate) {
     return NextResponse.json(
       { error: 'Identity Plus or Business Plus membership required to send connection requests.', currentTier: tier },
