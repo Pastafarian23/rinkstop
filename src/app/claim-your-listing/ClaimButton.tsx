@@ -26,7 +26,7 @@ interface ClaimButtonProps {
  * "from $X/yr" so the operator knows the cost before clicking.
  * Sourced from src/lib/pricing.ts so it's never out of sync.
  */
-export function ClaimButton({ href, rinkId, rinkSlug, query, priceTier = 'business_starter' }: ClaimButtonProps) {
+export function ClaimButton({ href, rinkId, rinkSlug, query, priceTier = 'business_listing' }: ClaimButtonProps) {
   const router = useRouter();
   const price = formatTierPrice(priceTier); // e.g. "$29.99"
 

@@ -20,28 +20,37 @@ const stripe = process.env.STRIPE_SECRET_KEY
 /**
  * Tier to track-specific price env var mapping.
  * Each track has its own Stripe price ID (separate products).
+ *
+ * Federation has no Stripe product (contact sales only).
+ * New tiers (verified_identity, identity_plus, club_*, league, business_listing,
+ * business_plus) will return 503 "tier_not_configured" until their Stripe
+ * products are created and the env var is set in Vercel.
  */
 const TIER_TO_PRICE_ENV: Record<TierName, string> = {
   free: '',
-  roster: 'STRIPE_PRICE_ROSTER',
-  roster_plus: 'STRIPE_PRICE_ROSTER_PLUS',
-  pro: 'STRIPE_PRICE_PRO',
-  business_starter: 'STRIPE_PRICE_BUSINESS_STARTER',
-  business_pro: 'STRIPE_PRICE_BUSINESS_PRO',
-  business_premium: 'STRIPE_PRICE_BUSINESS_PREMIUM',
-  enterprise: '', // contact sales - no Stripe product
+  verified_identity: 'STRIPE_PRICE_VERIFIED_IDENTITY',
+  identity_plus: 'STRIPE_PRICE_IDENTITY_PLUS',
+  club_starter: 'STRIPE_PRICE_CLUB_STARTER',
+  club_pro: 'STRIPE_PRICE_CLUB_PRO',
+  club_elite: 'STRIPE_PRICE_CLUB_ELITE',
+  league: 'STRIPE_PRICE_LEAGUE',
+  federation: '', // contact sales - no Stripe product
+  business_listing: 'STRIPE_PRICE_BUSINESS_LISTING',
+  business_plus: 'STRIPE_PRICE_BUSINESS_PLUS',
 };
 
 // Tier rank for downgrade prevention (within each track)
 const TIER_RANK: Record<TierName, number> = {
   free: 0,
-  roster: 1,
-  roster_plus: 2,
-  pro: 3,
-  business_starter: 1,
-  business_pro: 2,
-  business_premium: 3,
-  enterprise: 4,
+  verified_identity: 1,
+  identity_plus: 2,
+  club_starter: 1,
+  club_pro: 2,
+  club_elite: 3,
+  league: 4,
+  federation: 5,
+  business_listing: 1,
+  business_plus: 2,
 };
 
 export async function POST(req: NextRequest) {
