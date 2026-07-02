@@ -1,0 +1,104 @@
+{
+  "created_2026-07-02": "Stripe products + prices for 2026-07-02 pricing brief. Federation is contact-sales only (no Stripe product). Federation still uses the old 'enterprise' flow if a legacy user requests it.",
+  "products": {
+    "verified_identity": {
+      "name": "RinkStop Verified Identity",
+      "description": "Required for active participation in the RinkStop ecosystem. Identity verification, claim your player profile, unlimited roles under one identity.",
+      "product_id": "prod_UoV7TGBlukeQNr",
+      "price_id": "price_1Tos72CJiUbEZVbnr6lBmobk",
+      "amount_usd_per_year": 24.99,
+      "env_var": "STRIPE_PRICE_VERIFIED_IDENTITY"
+    },
+    "identity_plus": {
+      "name": "RinkStop Identity Plus",
+      "description": "Everything in Verified Identity plus Family Hub, advanced analytics, unlimited photos/videos, priority support.",
+      "product_id": "prod_UoV7khMAx4AgcY",
+      "price_id": "price_1Tos73CJiUbEZVbnsAwo0j7g",
+      "amount_usd_per_year": 59.99,
+      "env_var": "STRIPE_PRICE_IDENTITY_PLUS"
+    },
+    "club_starter": {
+      "name": "RinkStop Club Starter",
+      "description": "Designed for small clubs. Up to 30 players, team management, registration, scheduling, attendance, payments.",
+      "product_id": "prod_UoV7gMZ7ca0pJ2",
+      "price_id": "price_1Tos74CJiUbEZVbnN262j87f",
+      "amount_usd_per_year": 149.00,
+      "env_var": "STRIPE_PRICE_CLUB_STARTER"
+    },
+    "club_pro": {
+      "name": "RinkStop Club Pro",
+      "description": "Mid-sized clubs. Up to 150 players, multiple teams, coach management, financial reporting.",
+      "product_id": "prod_UoV7xuZ8SGW8yE",
+      "price_id": "price_1Tos74CJiUbEZVbno7VMntGj",
+      "amount_usd_per_year": 399.00,
+      "env_var": "STRIPE_PRICE_CLUB_PRO"
+    },
+    "club_elite": {
+      "name": "RinkStop Club Elite",
+      "description": "Large clubs. Unlimited teams, advanced analytics, custom branding, API access, multi-location.",
+      "product_id": "prod_UoV7zFgnxTemZW",
+      "price_id": "price_1Tos75CJiUbEZVbn4QPOsM5s",
+      "amount_usd_per_year": 999.00,
+      "env_var": "STRIPE_PRICE_CLUB_ELITE"
+    },
+    "league": {
+      "name": "RinkStop League",
+      "description": "League-wide management. Custom pricing based on scope, dedicated success manager.",
+      "product_id": "prod_UoV7fytZFY8q4r",
+      "price_id": "price_1Tos76CJiUbEZVbntXVK72vw",
+      "amount_usd_per_year": 1999.00,
+      "env_var": "STRIPE_PRICE_LEAGUE"
+    },
+    "business_listing": {
+      "name": "RinkStop Business Listing",
+      "description": "Verified business listing with contact, lead form, photos, analytics.",
+      "product_id": "prod_UoV73q4mh7zgPC",
+      "price_id": "price_1Tos77CJiUbEZVbnu7KazO5D",
+      "amount_usd_per_year": 99.00,
+      "env_var": "STRIPE_PRICE_BUSINESS_LISTING"
+    },
+    "business_plus": {
+      "name": "RinkStop Business Plus",
+      "description": "Multi-listing, featured placement, promotions, messaging, enhanced analytics, booking support.",
+      "product_id": "prod_UoV7aAmJfbN2Lt",
+      "price_id": "price_1Tos77CJiUbEZVbnEyaHZAuO",
+      "amount_usd_per_year": 299.00,
+      "env_var": "STRIPE_PRICE_BUSINESS_PLUS"
+    },
+    "federation": {
+      "name": "(contact-sales only — no Stripe product)",
+      "stripe_flow": "/partner?source=tier-upgrade-api",
+      "code_branch": "api/tier/upgrade/route.ts (returns 303 redirect)"
+    }
+  },
+  "legacy_products_kept_live": {
+    "starter": {
+      "name": "RinkStop Roster (was RinkStop Supporter)",
+      "product_id": "prod_Uh0sbTWqWylT3v",
+      "price_id": "price_1ThcqgCJiUbEZVbn...",
+      "env_var": "STRIPE_PRICE_TIER_STARTER"
+    },
+    "family_plus": {
+      "name": "RinkStop Roster+ (display 'Roster+' - Stripe stripped +)",
+      "product_id": "prod_UkmUIdAPNmfUtD",
+      "price_id": "price_1TlGvYCJiUbEZVbn...",
+      "env_var": "STRIPE_PRICE_TIER_FAMILY_PLUS"
+    },
+    "pro": {
+      "name": "RinkStop Pro",
+      "product_id": "prod_Uh0sWm2h79ZFsF",
+      "price_id": "price_1ThcqhCJiUbEZVbn...",
+      "env_var": "STRIPE_PRICE_TIER_PRO"
+    },
+    "premium": {
+      "name": "RinkStop Premium",
+      "product_id": "prod_Uh0sd5JQGeBaBB",
+      "price_id": "price_1ThcqhCJiUbEZVbn...",
+      "env_var": "STRIPE_PRICE_TIER_PREMIUM"
+    }
+  },
+  "scripts": {
+    "stripe_create_products": "stripe-create-products.sh (re-runnable; will create duplicate products — guard against re-runs)",
+    "vercel_set_env": "vercel-set-env.sh (idempotent — uses PATCH if env var exists, POST if new)"
+  }
+}
