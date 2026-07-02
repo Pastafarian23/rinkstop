@@ -107,17 +107,24 @@ function getConfig(t: AccountType, data: TypeSectionData, username: string | nul
           ? { message: 'Follow players to add them to your watchlist. The activity feed will surface their game updates.', cta: { href: '/directory/players', label: 'Find a player →' } }
           : null,
       };
-    case 'referee':
+    case 'referee': {
+      const games = data.referee.officiatedGames;
+      const headline = data.referee.loaded
+        ? games > 0
+          ? `Officiated ${games} ${games === 1 ? 'game' : 'games'} this season`
+          : 'No games officiated yet'
+        : 'Officiating tools coming soon';
+      const existingCta = [
+        { href: '/directory/teams', label: 'Find a game', icon: '🟥' },
+        { href: '/dashboard/referee/games', label: 'Game assignments', icon: '📋' },
+        { href: '/dashboard/support', label: 'Submit game report', icon: '📝' },
+      ];
       return {
-        headline: data.referee.loaded
-          ? 'Officiating tools are ready'
-          : 'Officiating tools',
-        cta: [
-          { href: '/directory/teams', label: 'Find a game', icon: '🟥' },
-          { href: '/dashboard/support', label: 'Submit game report', icon: '📝' },
-        ],
-        empty: { message: 'Game reporting and certification tracking are coming in a later phase. For now, find a game and reach the rink through the team page.', cta: { href: '/directory/teams', label: 'Find a team →' } },
+        headline,
+        cta: existingCta,
+        empty: { message: 'Game reporting, certification tracking, and pay tracking are part of the officiating tools shipping in Q4 2026. For now, find a game through the team directory or report an issue to support.', cta: { href: '/dashboard/referee/games', label: 'See what is coming →' } },
       };
+    }
     case 'team_admin': {
       const existingCta = [
         { href: '/dashboard/claims', label: 'Claim a team', icon: '✅' },
