@@ -155,12 +155,12 @@ export default async function TeamAdminsHubPage({ params }: PageProps) {
       .eq('team_id', team.id)
       .eq('is_published', false),
     supabaseAdmin
-      .from('team_schedule')
+      .from('team_events')
       .select('id', { count: 'exact', head: true })
       .eq('team_id', team.id)
-      .eq('is_cancelled', false)
-      .gte('scheduled_at', new Date().toISOString())
-      .lte('scheduled_at', new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()),
+      .neq('status', 'cancelled')
+      .gte('starts_at', new Date().toISOString())
+      .lte('starts_at', new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()),
     supabaseAdmin
       .from('team_invites')
       .select('id', { count: 'exact', head: true })
