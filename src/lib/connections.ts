@@ -18,20 +18,33 @@ export interface Connection {
 }
 
 // Tier rank within each track (separate rankings, no cross-track comparisons).
-// Within each track: free < roster < roster_plus < pro (for personal)
-// Within each track: free < business_starter < business_pro < business_premium < enterprise (for business)
+// Within each track: free < verified_identity < identity_plus (personal)
+// Within business track: free < business_listing < business_plus
+//                          free < club_starter < club_pro < club_elite < league < federation
+// Legacy aliases (pre-2026-07-02) preserved so existing DB rows rank correctly.
 export const TIER_RANK: Record<string, number> = {
-  // Personal track ranks
   free: 0,
-  roster: 1,
-  roster_plus: 2,
-  pro: 3,
-  premium: 3, // legacy alias for `pro` (top of personal track, pre-2026-06-17 rename)
-  // Business track ranks
-  business_starter: 1,
-  business_pro: 2,
-  business_premium: 3,
-  enterprise: 4,
+  // New canonical personal tiers
+  verified_identity: 1,
+  identity_plus: 2,
+  // New canonical business tiers
+  business_listing: 1,
+  business_plus: 2,
+  // New organization tiers
+  club_starter: 1,
+  club_pro: 2,
+  club_elite: 3,
+  league: 4,
+  federation: 5,
+  // Legacy aliases — preserve access for pre-2026-07-02 DB rows
+  roster: 1,             // -> verified_identity
+  roster_plus: 2,        // -> identity_plus
+  pro: 2,                // -> identity_plus
+  premium: 2,            // -> identity_plus (legacy alias for `pro`)
+  business_starter: 1,   // -> business_listing
+  business_pro: 2,       // -> business_plus
+  business_premium: 2,   // -> business_plus
+  enterprise: 5,         // -> federation
 };
 
 /**
@@ -47,18 +60,38 @@ export function getMaxClaimsForTier(tier: string): number {
 }
 
 /**
+ * Resolve the track for a tier name, including legacy aliases that are not in
+ * the modern TIER_TO_TRANK map. Mirrors the legacy-alias mapping in
+ * src/lib/pricing.ts:431-442 (getTierLabel).
+ */
+function resolveTrack(tier: string | null | undefined): AccountTrack {
+  if (!tier) return 'personal';
+  if (tier in TIER_TO_TRACK) return TIER_TO_TRACK[tier as TierName];
+  // Legacy aliases — pre-2026-07-02 DB values
+  const legacyTrack: Record<string, AccountTrack> = {
+    roster: 'personal',
+    roster_plus: 'personal',
+    pro: 'personal',
+    premium: 'personal',
+    business_starter: 'business',
+    business_pro: 'business',
+    business_premium: 'business',
+    enterprise: 'business',
+  };
+  return legacyTrack[tier] ?? 'personal';
+}
+
+/**
  * Is the user's tier at least `minTier` within their track?
- * Returns false for cross-track comparisons (roster vs business_starter).
+ * Returns false for cross-track comparisons (verified_identity vs club_starter, etc.).
  */
 export function tierAtLeast(actualTier: string, minTier: string): boolean {
-  const actualRank = TIER_RANK[actualTier] ?? 0;
-  const minRank = TIER_RANK[minTier] ?? 0;
-  const actualTrack = TIER_TO_TRACK[actualTier as TierName] ?? 'personal';
-  const minTrack = TIER_TO_TRACK[minTier as TierName] ?? 'personal';
-  
+  const actualTrack = resolveTrack(actualTier);
+  const minTrack = resolveTrack(minTier);
   // Cross-track comparison not allowed - must be within same track
   if (actualTrack !== minTrack) return false;
-  
+  const actualRank = TIER_RANK[actualTier] ?? 0;
+  const minRank = TIER_RANK[minTier] ?? 0;
   return actualRank >= minRank;
 }
 

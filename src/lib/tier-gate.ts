@@ -8,31 +8,49 @@ import { TierName, TIER_TO_TRACK, AccountTrack, MAX_CLAIMS_PER_TIER } from './pr
 
 /**
  * Personal tier hierarchy (rank order within the track).
- * Free < Roster Starter < Roster Pro < Roster Premium
+ * Free < Verified Identity < Identity Plus
  *
- * `premium` is included as a legacy alias for `pro` (Roster Premium). Pre-2026-06-30
- * the personal-track top tier was called `premium`; that value persists in some
- * profiles (notably Arnel Larracas' founding-member row). Treating it as the
- * top of the personal track preserves their feature access without a DB migration.
+ * Legacy aliases (pre-2026-07-02 brief): `roster` -> verified_identity (rank 1),
+ * `roster_plus`/`pro`/`premium` -> identity_plus (rank 2). Old DB values still
+ * rank correctly so pre-existing users keep their feature access.
  */
 export const PERSONAL_TIER_RANK: Record<string, number> = {
   free: 0,
-  roster: 1,
-  roster_plus: 2,
-  pro: 3,
-  premium: 3, // legacy alias for `pro` (top of personal track, pre-rename)
+  // New canonical personal tiers (2026-07-02 brief)
+  verified_identity: 1,
+  identity_plus: 2,
+  // Legacy aliases — preserve access for pre-2026-07-02 DB rows
+  roster: 1,            // -> verified_identity
+  roster_plus: 2,       // -> identity_plus
+  pro: 2,               // -> identity_plus (top personal tier before 2026-06-30 rename)
+  premium: 2,           // -> identity_plus (legacy alias for `pro`, pre-2026-06-30)
 };
 
 /**
  * Business tier hierarchy (rank order within the track).
- * Free < Business Starter < Business Pro < Business Premium < Enterprise
+ * Free < Business Listing < Business Plus
+ * For organization tiers (clubs/leagues/federations), each has its own rank
+ * within the same `business` track. Cross-tier comparisons are blocked.
+ *
+ * Legacy aliases (pre-2026-07-02 brief): business_starter -> business_listing,
+ * business_pro/business_premium -> business_plus, enterprise -> federation.
  */
 export const BUSINESS_TIER_RANK: Record<string, number> = {
   free: 0,
-  business_starter: 1,
-  business_pro: 2,
-  business_premium: 3,
-  enterprise: 4,
+  // New canonical business tiers
+  business_listing: 1,
+  business_plus: 2,
+  // New organization tiers (ranked by tier strength within business track)
+  club_starter: 1,
+  club_pro: 2,
+  club_elite: 3,
+  league: 4,
+  federation: 5,
+  // Legacy aliases — preserve access for pre-2026-07-02 DB rows
+  business_starter: 1,    // -> business_listing
+  business_pro: 2,        // -> business_plus
+  business_premium: 2,    // -> business_plus (top business tier pre-refactor)
+  enterprise: 5,          // -> federation (top tier pre-refactor)
 };
 
 /**
@@ -56,26 +74,40 @@ export function canAccessBusinessFeature(tier: TierName | string | null | undefi
 }
 
 /**
+ * Resolve the track for a tier name, including legacy aliases that are not in
+ * the modern TIER_TO_TRACK map. Mirrors the legacy-alias mapping in
+ * src/lib/pricing.ts:431-442 (getTierLabel).
+ */
+function resolveTrack(tier: string | null | undefined): 'personal' | 'business' {
+  if (!tier) return 'personal';
+  if (tier in TIER_TO_TRACK) return TIER_TO_TRACK[tier as TierName];
+  // Legacy aliases — pre-2026-07-02 DB values
+  const legacyTrack: Record<string, 'personal' | 'business'> = {
+    roster: 'personal',
+    roster_plus: 'personal',
+    pro: 'personal',
+    premium: 'personal',
+    business_starter: 'business',
+    business_pro: 'business',
+    business_premium: 'business',
+    enterprise: 'business',
+  };
+  return legacyTrack[tier] ?? 'personal';
+}
+
+/**
  * Check if user's tier is at least `minTier` within their track.
  * Cross-track comparisons return false (no confusion between tracks).
  */
 export function tierAtLeastSameTrack(actualTier: TierName | string | null | undefined, minTier: TierName | string): boolean {
   const actual = actualTier ?? 'free';
-  const actualRank = 
-    TIER_TO_TRACK[actual as TierName] === 'business' 
-      ? BUSINESS_TIER_RANK[actual] ?? 0 
-      : PERSONAL_TIER_RANK[actual] ?? 0;
-  const minRank = 
-    TIER_TO_TRACK[minTier as TierName] === 'business'
-      ? BUSINESS_TIER_RANK[minTier] ?? 0
-      : PERSONAL_TIER_RANK[minTier] ?? 0;
-  
-  const actualTrack = TIER_TO_TRACK[actual as TierName] ?? 'personal';
-  const minTrack = TIER_TO_TRACK[minTier as TierName] ?? 'personal';
-  
+  const actualTrack = resolveTrack(actual);
+  const minTrack = resolveTrack(minTier);
   // Cross-track comparison not allowed
   if (actualTrack !== minTrack) return false;
-  
+  const rankTable = actualTrack === 'business' ? BUSINESS_TIER_RANK : PERSONAL_TIER_RANK;
+  const actualRank = rankTable[actual] ?? 0;
+  const minRank = rankTable[minTier] ?? 0;
   return actualRank >= minRank;
 }
 
@@ -116,16 +148,27 @@ export async function hasTeamAdminAccess(userId: string): Promise<{
     .single();
 
   const tier = (profile?.tier as string) || 'free';
-  
-  // Team admin features require at least Pro tier (personal or business)
-  if (tierAtLeastSameTrack(tier, 'pro')) {
-    return { allowed: true, tier };
+
+  // Team admin features require:
+  // - Personal track: Identity Plus (or legacy pro/roster_plus/premium equivalent)
+  // - Business track: any paid tier (Club Starter+, Business Listing+, etc.)
+  // Cross-track: identity_plus users CAN manage teams they coach.
+  const track = TIER_TO_TRACK[tier as TierName] ?? 'personal';
+  if (track === 'personal') {
+    if (tierAtLeastSameTrack(tier, 'identity_plus')) {
+      return { allowed: true, tier };
+    }
+  } else {
+    // business track — any paid tier grants team admin
+    if (tierAtLeastSameTrack(tier, 'club_starter')) {
+      return { allowed: true, tier };
+    }
   }
-  
-  return { 
-    allowed: false, 
-    tier, 
-    reason: 'Team admin features require Pro tier or higher' 
+
+  return {
+    allowed: false,
+    tier,
+    reason: 'Team admin features require Identity Plus (personal) or Club Starter (business) tier or higher'
   };
 }
 
