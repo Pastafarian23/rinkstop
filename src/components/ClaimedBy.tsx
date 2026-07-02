@@ -51,7 +51,7 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
   // Piece C (2026-06-24): identity verification is computed server-side
   // via the hardened helper (verified boolean). The component just trusts
   // the API response — no client-side re-check, no raw timestamp leak.
-  // Tier is shown as a text pill (Starter / Pro / Premium / Enterprise).
+  // Tier is shown as a text pill (Verified Identity / Identity Plus / Club / Business Listing / etc.).
   // Tier alone is NOT a verification signal.
   const isIdentityVerified = data.verified === true;
   const displayName = data.display_name || 'Owner';

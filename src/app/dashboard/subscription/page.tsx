@@ -10,25 +10,33 @@ import { OWNER_EMAILS } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
+// Subscription page displays the user's CURRENT tier. New canonical tier
+// names live in lib/pricing.ts. Legacy DB-stored values (roster, pro, etc.)
+// fall through getTierLabel() and surface as "<NewName> (legacy)" so we
+// never silently mislabel paying subscribers.
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  roster: 'Roster Starter',
-  roster_plus: 'Roster Pro',
-  pro: 'Roster Premium',
-  business_starter: 'Business Starter',
-  business_pro: 'Business Pro',
-  business_premium: 'Business Premium',
-  enterprise: 'Enterprise',
+  verified_identity: 'Verified Identity',
+  identity_plus: 'Identity Plus',
+  club_starter: 'Club Starter',
+  club_pro: 'Club Pro',
+  club_elite: 'Club Elite',
+  league: 'League',
+  federation: 'Federation',
+  business_listing: 'Business Listing',
+  business_plus: 'Business Plus',
 };
 
 const TIER_PRICES: Record<string, string> = {
-  roster: formatTierPricePerYear('roster'),
-  roster_plus: formatTierPricePerYear('roster_plus'),
-  pro: formatTierPricePerYear('pro'),
-  business_starter: formatTierPricePerYear('business_starter'),
-  business_pro: formatTierPricePerYear('business_pro'),
-  business_premium: formatTierPricePerYear('business_premium'),
-  enterprise: formatTierPricePerYear('enterprise'),
+  verified_identity: formatTierPricePerYear('verified_identity'),
+  identity_plus: formatTierPricePerYear('identity_plus'),
+  club_starter: formatTierPricePerYear('club_starter'),
+  club_pro: formatTierPricePerYear('club_pro'),
+  club_elite: formatTierPricePerYear('club_elite'),
+  league: formatTierPricePerYear('league'),
+  federation: formatTierPricePerYear('federation'),
+  business_listing: formatTierPricePerYear('business_listing'),
+  business_plus: formatTierPricePerYear('business_plus'),
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {

@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: 'tier_required',
-          message: 'Identity verification requires Roster+ tier (Personal) or Business Starter+ tier.',
+          message: 'Identity verification requires Verified Identity tier (Personal) or Business Listing tier.',
           current_tier: tier,
           upgrade_url: '/pricing',
         },

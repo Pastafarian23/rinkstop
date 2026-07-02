@@ -191,23 +191,23 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const countryCode = asStringOrNull(body.country_code);
   if (countryCode !== undefined) {
-    if (typeof countryCode !== 'string' || countryCode.length !== 2) {
+    if (countryCode !== null && (typeof countryCode !== 'string' || countryCode.length !== 2)) {
       return NextResponse.json({ error: 'invalid_country_code' }, { status: 400 });
     }
-    patch.country_code = countryCode.toUpperCase();
+    patch.country_code = countryCode ? countryCode.toUpperCase() : null;
   }
 
   const currency = asStringOrNull(body.currency);
   if (currency !== undefined) {
-    if (typeof currency !== 'string' || currency.length !== 3) {
+    if (currency !== null && (typeof currency !== 'string' || currency.length !== 3)) {
       return NextResponse.json({ error: 'invalid_currency' }, { status: 400 });
     }
-    patch.currency = currency.toUpperCase();
+    patch.currency = currency ? currency.toUpperCase() : null;
   }
 
   const seasonLabel = asStringOrNull(body.season_label);
   if (seasonLabel !== undefined) {
-    if (typeof seasonLabel !== 'string' || seasonLabel.length > 40) {
+    if (seasonLabel !== null && (typeof seasonLabel !== 'string' || seasonLabel.length > 40)) {
       return NextResponse.json({ error: 'invalid_season_label' }, { status: 400 });
     }
     patch.season_label = seasonLabel;
@@ -215,7 +215,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const ageLabel = asStringOrNull(body.age_label);
   if (ageLabel !== undefined) {
-    if (typeof ageLabel !== 'string' || ageLabel.length > 40) {
+    if (ageLabel !== null && (typeof ageLabel !== 'string' || ageLabel.length > 40)) {
       return NextResponse.json({ error: 'invalid_age_label' }, { status: 400 });
     }
     patch.age_label = ageLabel;
@@ -252,7 +252,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const ageCategory = asStringOrNull(body.age_category);
   if (ageCategory !== undefined) {
-    if (typeof ageCategory !== 'string' || !AGE_CATEGORY_VALUES.includes(ageCategory as any)) {
+    if (ageCategory !== null && (typeof ageCategory !== 'string' || !AGE_CATEGORY_VALUES.includes(ageCategory as any))) {
       return NextResponse.json({ error: 'invalid_age_category' }, { status: 400 });
     }
     patch.age_category = ageCategory;

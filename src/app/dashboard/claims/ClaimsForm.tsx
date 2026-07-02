@@ -14,7 +14,7 @@ interface ClaimForm {
 
 interface ClaimsFormProps {
   tier: string;
-  maxClaims: number; // -1 means Enterprise/custom
+  maxClaims: number; // -1 means Federation/custom
   currentCount: number;
 }
 
@@ -218,9 +218,9 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             <p style={{ color: '#C8102E', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
               {tier === 'business_premium' || tier === 'enterprise' ? `You've reached the ${maxClaims}-claim limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
               <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-                {tier === 'business_premium' || tier === 'enterprise' ? 'Contact Enterprise' : 'Upgrade'}
+                {tier === 'business_premium' || tier === 'enterprise' ? 'Contact Sales' : 'Upgrade'}
               </Link>{' '}
-              {tier === 'business_premium' || tier === 'enterprise' ? 'for custom claim volume and bulk claim.' : 'for more claims and bulk claim. If you need more, contact Enterprise.'}
+              {tier === 'business_premium' || tier === 'enterprise' ? 'for custom claim volume and bulk claim.' : 'for more claims and bulk claim. If you need more, contact sales for Federation.'}
             </p>
           )}
         </div>
@@ -238,7 +238,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Upgrade required to claim
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            The Free tier doesn't include claims. Roster Starter is {formatTierPrice('roster')}/year (profile + kids), Roster Pro is {formatTierPrice('roster_plus')}/year (photos/videos), Roster Premium is {formatTierPrice('pro')}/year (team management/DMs), Business Pro is {formatTierPrice('business_pro')}/year (up to 5 claims), Business Premium is {formatTierPrice('business_premium')}/year (up to 25 + bulk), and Enterprise is custom for larger organizations.
+            The Free tier doesn't include claims. Verified Identity is {formatTierPrice('verified_identity')}/year (claim your profile + unlimited roles under one identity), Identity Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
           </p>
           <Link
             href="/pricing"
@@ -269,7 +269,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Claim limit reached
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            {tier === 'business_premium' || tier === 'enterprise' ? `You've used all ${maxClaims} claim slots. Contact Enterprise for custom volume and bulk claim.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact Enterprise.`}
+            {tier === 'business_premium' || tier === 'enterprise' ? `You've used all ${maxClaims} claim slots. Contact sales for Federation custom volume.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact sales for Federation.`}
           </p>
           <Link
             href="/pricing"
@@ -285,7 +285,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
               letterSpacing: '0.02em',
             }}
           >
-            {tier === 'business_premium' || tier === 'enterprise' ? 'Contact Enterprise →' : 'Upgrade →'}
+            {tier === 'business_premium' || tier === 'enterprise' ? 'Contact Sales →' : 'Upgrade →'}
           </Link>
         </div>
       ) : (

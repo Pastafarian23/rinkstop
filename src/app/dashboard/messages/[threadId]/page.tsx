@@ -41,7 +41,7 @@ const TIER_LABEL: Record<string, string> = {
   starter: 'Starter',
   pro: 'Pro',
   premium: 'Premium',
-  enterprise: 'Enterprise',
+  enterprise: 'Federation (legacy)',
 };
 
 export default function ThreadPage({ params }: { params: Promise<{ threadId: string }> }) {

@@ -510,20 +510,20 @@ export default async function Home() {
               PICK THE PLAN THAT FITS
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6 }}>
-              Free is free, forever. Roster Starter ($19.99) unlocks profile claims. Roster Premium ($59.99) adds DMs and team management. Business tiers start at $29.99 for claims, $299 for scale. Enterprise is custom for organizations needing 25+ claims. Identity verification is available to Roster Premium and above.
+              Free is free, forever. Verified Identity ($24.99) unlocks profile claims. Identity Plus ($59.99) adds Family Hub and advanced analytics. Club Starter ($149) for small clubs, Club Pro ($399) for mid-sized clubs, Club Elite ($999) for large clubs. Business Listing ($99) and Business Plus ($299) for commercial businesses. Federation is custom for enterprise-scale organizations.
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', maxWidth: '1100px', margin: '0 auto' }}>
             {[
               { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, and read the directory.', cta: 'Join Free', href: '/sign-up', ctaStyle: 'btn btn-ghost' },
-              { tier: 'roster', label: 'Roster Starter', price: '$19.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Claim your profile, link unlimited kids.', cta: 'Join Roster Starter', href: '/pricing?tier=roster', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
-              { tier: 'roster_plus', label: 'Roster Pro', price: '$29.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Family Hub, photos, videos, and performance tracking.', cta: 'Go Roster Pro', href: '/pricing?tier=roster_plus', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
-              { tier: 'pro', label: 'Roster Premium', price: '$59.99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.4)', tagline: 'Team management, DMs, and advanced analytics.', cta: 'Go Roster Premium', href: '/pricing?tier=pro', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff', popular: true },
-              { tier: 'business_starter', label: 'Business Starter', price: '$29.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Claim your rink/team/league listing.', cta: 'Claim your listing', href: '/pricing?tier=business_starter', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
-              { tier: 'business_pro', label: 'Business Pro', price: '$59.99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.4)', tagline: 'Multiple listings, DMs, analytics.', cta: 'Go Business Pro', href: '/pricing?tier=business_pro', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff', popular: true },
-              { tier: 'business_premium', label: 'Business Premium', price: '$299', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.4)', tagline: 'Featured placement, up to 25 claims.', cta: 'Go Premium', href: '/pricing?tier=business_premium', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
-              { tier: 'enterprise', label: 'Enterprise', price: 'Contact', period: '', color: '#111827', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.22)', tagline: 'Custom integration for 25+ claims.', cta: 'Contact Enterprise', href: '/partner?source=enterprise-pricing', ctaStyle: 'btn', ctaBg: 'linear-gradient(135deg, #111827, #000)', ctaColor: '#fff' },
+              { tier: 'verified_identity', label: 'Verified Identity', price: '$24.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Claim your player profile, unlimited roles under one identity.', cta: 'Verify My Identity', href: '/pricing?tier=verified_identity', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42', popular: true },
+              { tier: 'identity_plus', label: 'Identity Plus', price: '$59.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Family Hub, photos, videos, advanced analytics.', cta: 'Upgrade to Identity Plus', href: '/pricing?tier=identity_plus', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
+              { tier: 'club_starter', label: 'Club Starter', price: '$149', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.35)', tagline: 'Small clubs — up to 30 players.', cta: 'Start Your Club', href: '/pricing?tier=club_starter', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
+              { tier: 'club_pro', label: 'Club Pro', price: '$399', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.10)', border: 'rgba(200,16,46,0.4)', tagline: 'Mid-sized clubs — up to 150 players, multiple teams.', cta: 'Upgrade to Club Pro', href: '/pricing?tier=club_pro', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
+              { tier: 'club_elite', label: 'Club Elite', price: '$999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.16)', border: 'rgba(200,16,46,0.5)', tagline: 'Large clubs — unlimited teams, advanced analytics, custom branding.', cta: 'Go Club Elite', href: '/pricing?tier=club_elite', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
+              { tier: 'business_listing', label: 'Business Listing', price: '$99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.35)', tagline: 'Verified business listing with contact and lead form.', cta: 'Claim Listing', href: '/pricing?tier=business_listing', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff' },
+              { tier: 'business_plus', label: 'Business Plus', price: '$299', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.12)', border: 'rgba(20,184,166,0.4)', tagline: 'Multiple listings, featured placement, messaging.', cta: 'Upgrade to Business Plus', href: '/pricing?tier=business_plus', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff' },
             ].map((t) => (
               <div key={t.tier} style={{
                 position: 'relative',
@@ -582,7 +582,7 @@ export default async function Home() {
 
           <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
             <Link href="/pricing" style={{ color: '#FFB81C', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
-              Compare all features (FAQ + Enterprise) →
+              Compare all features (FAQ + Federation) →
             </Link>
           </div>
         </div>

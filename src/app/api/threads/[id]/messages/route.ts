@@ -163,14 +163,14 @@ export async function POST(
     return NextResponse.json({ error: 'Thread not found.' }, { status: 404 });
   }
 
-  // Tier check: Pro (personal) or Business Pro (business) required to send messages.
+  // Tier check: Identity Plus (personal) or Business Plus (business) required to send messages.
   // Connection requests are gated at /api/connections, but we re-check here
   // so users who somehow got into the thread without proper tier are blocked.
   const tier = await getUserTier(userId);
   const canSendMessage = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
   if (!canSendMessage) {
     return NextResponse.json(
-      { error: 'Pro or Business Pro membership required to send messages.', currentTier: tier },
+      { error: 'Identity Plus or Business Plus membership required to send messages.', currentTier: tier },
       { status: 403 }
     );
   }

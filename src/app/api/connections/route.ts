@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot connect with yourself.' }, { status: 400 });
   }
 
-  // Tier check: caller must be Pro (personal) or Business Pro (business) to send connection requests.
+  // Tier check: caller must be Identity Plus (personal) or Business Plus (business) to send connection requests.
   // DMs are gated so the person on the other end knows they are dealing with a real account.
   const tier = await getUserTier(userId);
   const canInitiate = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
   if (!canInitiate) {
     return NextResponse.json(
-      { error: 'Pro or Business Pro membership required to send connection requests.', currentTier: tier },
+      { error: 'Identity Plus or Business Plus membership required to send connection requests.', currentTier: tier },
       { status: 403 }
     );
   }
