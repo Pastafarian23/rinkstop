@@ -41,7 +41,7 @@ export default function PartnerPage() {
             icon: '📊',
           },
           {
-            title: 'Enterprise Claims',
+            title: 'Federation & Large-Org Claims',
             desc: 'Need more than 25 claimed listings? We can scope custom access for leagues, brands, federations, and multi-team organizations.',
             icon: '🏆',
           },
@@ -65,7 +65,7 @@ export default function PartnerPage() {
           We work with hockey organizations, brands, media companies, and technology platforms. Tell us about your goals and we&apos;ll put together a custom partnership proposal.
         </p>
         <a
-          href="mailto:support@rinkstop.com?subject=Enterprise%20Claim%20Access%20Inquiry"
+          href="mailto:support@rinkstop.com?subject=Federation%20Claim%20Access%20Inquiry"
           style={{
             display: 'inline-block',
             background: '#C8102E',

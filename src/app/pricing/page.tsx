@@ -7,13 +7,13 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const metadata: Metadata = {
   title: 'Pricing — RinkStop',
   description:
-    'RinkStop pricing — Free, Roster Starter, Roster Pro, Roster Premium, Business Starter, Business Pro, Business Premium, and Enterprise tiers for the global hockey directory. Founding Member badge available for the first 500 paid members.',
+    'RinkStop pricing — Free, Verified Identity, Identity Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
   alternates: { canonical: 'https://rinkstop.com/pricing' },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Roster Starter, Roster Pro, Roster Premium, Business Starter, Business Pro, Business Premium, and Enterprise tiers for the global hockey directory. Founding Member badge available for the first 500 paid members.',
+      'RinkStop pricing — Free, Verified Identity, Identity Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
     url: 'https://rinkstop.com/pricing',
     siteName: 'RinkStop',
     type: 'website',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Roster Starter, Roster Pro, Roster Premium, Business Starter, Business Pro, Business Premium, and Enterprise tiers for the global hockey directory. Founding Member badge available for the first 500 paid members.',
+      'RinkStop pricing — Free, Verified Identity, Identity Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
   },
 };
 

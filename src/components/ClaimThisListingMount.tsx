@@ -153,7 +153,9 @@ export default async function ClaimThisListingMount({
         entityType={entityType}
         entityId={entityId}
         entityName={displayName}
-        state={{ kind: 'at_cap', tier, maxClaims: max === Infinity ? -1 : max, recommendedTier: tier === 'pro' ? 'enterprise' : tier === 'enterprise' ? 'enterprise' : 'pro' }}
+        // 'pro' and 'enterprise' are legacy tier names. Users on those tiers are
+// at cap and need to contact sales for the Federation/Club Elite plans.
+state={{ kind: 'at_cap', tier, maxClaims: max === Infinity ? -1 : max, recommendedTier: tier === 'pro' || tier === 'identity_plus' ? 'identity_plus' : tier === 'enterprise' || tier === 'federation' ? 'federation' : 'business_plus' }}
       />
     );
   }

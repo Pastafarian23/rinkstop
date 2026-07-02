@@ -381,7 +381,7 @@ export default function LinkedRecordsManager({ initialManaged, tier }: Props) {
                 )}
                 {type === 'player' && (
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', marginTop: '0.5rem' }}>
-                    Note: youth players (under 18) require a Roster Starter membership or higher.
+                    Note: youth players (under 18) require a Verified Identity or higher.
                   </p>
                 )}
               </div>

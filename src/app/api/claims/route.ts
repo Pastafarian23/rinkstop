@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       const maxClaims = getMaxClaimsForTier(tier);
       if (maxClaims === 0) {
         return NextResponse.json(
-          { error: `Claiming listings requires a paid membership. Upgrade to Roster (1 claim), Pro (up to 5), Business Premium (up to 25), or Enterprise for more. See /pricing.` },
+          { error: `Claiming listings requires a paid membership. Upgrade to Verified Identity (1 claim), Identity Plus (up to 5), Business Plus (up to 25), or Federation for more. See /pricing.` },
           { status: 403 }
         );
       }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         const currentCount = await getUserApprovedClaimCount(userId);
         if (currentCount >= maxClaims) {
           return NextResponse.json(
-            { error: `You have reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Pro for up to 25 claims, or contact Enterprise for custom volume. See /pricing.` },
+            { error: `You have reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Identity Plus for up to 5 claims or Business Plus for up to 25, or contact sales for Federation custom volume. See /pricing.` },
             { status: 403 }
           );
         }

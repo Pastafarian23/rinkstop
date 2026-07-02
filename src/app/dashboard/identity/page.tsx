@@ -5,12 +5,12 @@
  *
  * UX (locked design, 2026-06-17):
  *   1. Show current verification status (never_verified / active / expired)
- *   2. For Roster Pro/Business Starter+ users not yet verified: show the iframe embed (Option B)
- *   3. For Free/Roster Starter users: show upgrade CTA
+ *   2. For Verified Identity/Business Listing+ users not yet verified: show the iframe embed (Option B)
+ *   3. For Free users: show upgrade CTA
  *   4. For verified users: show "Identity verified" with date + expiration
  *   5. For expired: re-verify CTA
  *
- * Tier gate: Roster Pro (personal) or Business Starter+ (business) to start verification. Free/Roster Starter users see an upsell.
+ * Tier gate: Verified Identity (personal) or Business Listing+ (business) to start verification. Free users see an upsell.
  */
 
 import { auth, currentUser } from '@clerk/nextjs/server';
@@ -60,7 +60,7 @@ export default async function IdentityPage({
       tier = await getUserTier(byEmail.user_id);
     }
   }
-  // Roster Pro (personal track) OR Business Starter+ (business track) can verify
+  // Verified Identity (personal track) OR Business Listing+ (business track) can verify
   // Using tierAtLeastSameTrack which enforces same-track comparison.
   const canVerify = tierAtLeastSameTrack(tier, 'roster_plus') || tierAtLeastSameTrack(tier, 'business_starter');
 

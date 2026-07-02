@@ -122,7 +122,7 @@ export default async function FamilyPage() {
           PHOTOS &amp; VIDEOS
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', margin: 0 }}>
-          Photo and video upload for linked players coming soon. Roster Pro members get 1GB storage, Roster Premium members get 5GB.
+          Photo and video upload for linked players coming soon. Identity Plus members get unlimited storage.
         </p>
       </section>
     </div>

@@ -8,13 +8,13 @@ export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';
 export type ClaimCtaState =
   | { kind: 'signed_out' }
   | { kind: 'claim_form'; entityType: ClaimEntityType; entityId: string; entityName: string }
-  | { kind: 'free'; recommendedTier?: 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium' }
-  | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'pro' | 'business_premium' | 'enterprise' }
+  | { kind: 'free'; recommendedTier?: 'verified_identity' | 'identity_plus' | 'business_listing' | 'business_plus' | 'club_starter' | 'club_pro' | 'club_elite' }
+  | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'identity_plus' | 'business_plus' | 'club_elite' | 'league' | 'federation' }
   | { kind: 'pending'; tier: string };
 
 const NOOP = (e: React.MouseEvent) => { e.preventDefault(); };
 
-async function openCheckout(tier: 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium', context: string) {
+async function openCheckout(tier: 'verified_identity' | 'identity_plus' | 'business_listing' | 'business_plus' | 'club_starter' | 'club_pro' | 'club_elite', context: string) {
   try {
     const res = await fetch('/api/tier/upgrade', {
       method: 'POST',
@@ -36,8 +36,8 @@ async function openCheckout(tier: 'roster' | 'roster_plus' | 'pro' | 'business_s
   }
 }
 
-function contactEnterprise() {
-  window.location.href = '/partner?source=enterprise-claims';
+function contactSales() {
+  window.location.href = '/partner?source=claims-cap';
 }
 
 /**
@@ -108,7 +108,7 @@ export default function ClaimThisListing({
           </div>
         </div>
         {/* Why upgrade? prompt — shown to users who have room (claim_form, free, pending).
-            Hidden for Pro/Enterprise (at_cap kind). Compact link, not a big panel. */}
+            Hidden for at-cap users (any tier). Compact link, not a big panel. */}
         {state.kind !== 'at_cap' && (
           <div style={{
             marginTop: 4,
@@ -176,11 +176,11 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Claim it now — Roster Starter unlocks profile claims, Roster Premium unlocks up to 5, Business Premium unlocks up to 25, and Enterprise covers larger orgs.
+              Claim it now — Verified Identity unlocks profile claims, Club Pro covers up to 150 players, Business Plus unlocks multiple listings, and Federation covers enterprise-scale orgs.
             </div>
           </div>
           <button
-            onClick={() => openCheckout(state.recommendedTier || 'roster', 'inline-claim-free')}
+            onClick={() => openCheckout(state.recommendedTier || 'verified_identity', 'inline-claim-free')}
             style={{
               background: '#FFB81C',
               color: '#041E42',
@@ -209,14 +209,14 @@ export default function ClaimThisListing({
           <span style={{ fontSize: 18 }}>🏒</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
-              {state.recommendedTier === 'enterprise' ? `You've reached the 25-claim Pro limit. Enterprise covers larger organizations.` : `You've claimed ${state.maxClaims} ${state.maxClaims === 1 ? 'listing' : 'listings'} on ${titleCase(state.tier)}.`}
+              {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? `You've reached your tier's claim limit. Federation covers enterprise-scale organizations.` : `You've claimed ${state.maxClaims} ${state.maxClaims === 1 ? 'listing' : 'listings'} on ${titleCase(state.tier)}.`}
             </div>
             <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              Pro covers up to 25 claims. For leagues, brands, or organizations that need more, contact us for Enterprise.
+              Club Pro covers up to 150 players with multiple teams. For leagues, brands, or organizations that need more, contact sales for Federation.
             </div>
           </div>
           <button
-            onClick={() => state.recommendedTier === 'enterprise' ? contactEnterprise() : openCheckout('pro', 'inline-claim-cap')}
+            onClick={() => state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? contactSales() : openCheckout('identity_plus', 'inline-claim-cap')}
             style={{
               background: '#C8102E',
               color: '#fff',
@@ -230,7 +230,7 @@ export default function ClaimThisListing({
               cursor: 'pointer',
             }}
           >
-            {state.recommendedTier === 'enterprise' ? 'Contact Enterprise →' : 'Upgrade to Pro →'}
+            {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Identity Plus →'}
           </button>
         </div>
       </div>
@@ -284,7 +284,7 @@ export default function ClaimThisListing({
         const msg =
           data?.error ||
           (res.status === 403 && data?.error === 'claim_limit_reached'
-            ? 'You have reached your tier\'s claim limit. Pro covers up to 25 claims; Enterprise is available for larger organizations.'
+            ? 'You have reached your tier\'s claim limit. Upgrade to a higher tier or contact sales for Federation.'
             : `Claim submission failed (${res.status})`);
         setResult({ kind: 'error', message: msg });
         return;

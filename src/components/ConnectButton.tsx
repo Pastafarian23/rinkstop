@@ -184,8 +184,8 @@ export default function ConnectButton({
     );
   }
 
-  // Signed in but not Pro/Business Pro - DMs require Pro tier.
-  // Per privilege matrix: DMs need Pro (personal) or Business Pro (business).
+  // Signed in but not Identity Plus/Business Plus - DMs require Identity Plus tier.
+  // Per privilege matrix: DMs need Identity Plus (personal) or Business Plus (business).
   const canConnect = ['pro', 'business_pro', 'business_premium', 'enterprise'].includes(myTier);
   if (!canConnect) {
     return (

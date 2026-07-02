@@ -8,6 +8,7 @@ import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
 import { IdentityVerified } from '@/components/IdentityVerified';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import { isIdentityVerified } from '@/lib/identity-verified';
+import { getTierLabel } from '@/lib/pricing';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -187,17 +188,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-const TIER_COLORS: Record<string, { bg: string; border: string; text: string; label: string }> = {
-  free:         { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',  text: 'rgba(255,255,255,0.5)', label: 'Free' },
-  roster:       { bg: 'rgba(255,184,28,0.1)',  border: 'rgba(255,184,28,0.3)',  text: '#FFB81C',                label: 'Roster Starter' },
-  roster_plus:  { bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)',  text: '#FFB81C',                label: 'Roster Pro' },
-  pro:          { bg: 'rgba(20,184,166,0.1)',  border: 'rgba(20,184,166,0.3)',  text: '#14B8A6',                label: 'Roster Premium' },
-  premium:      { bg: 'rgba(20,184,166,0.1)',  border: 'rgba(20,184,166,0.3)',  text: '#14B8A6',                label: 'Roster Premium' },
-  business_starter: { bg: 'rgba(255,184,28,0.1)', border: 'rgba(255,184,28,0.3)', text: '#FFB81C', label: 'Business Starter' },
-  business_pro: { bg: 'rgba(20,184,166,0.1)',  border: 'rgba(20,184,166,0.3)',  text: '#14B8A6',                label: 'Business Pro' },
-  business_premium: { bg: 'rgba(200,16,46,0.12)', border: 'rgba(200,16,46,0.4)',   text: '#C8102E', label: 'Business Premium' },
-  enterprise:   { bg: 'rgba(99,102,241,0.1)',  border: 'rgba(99,102,241,0.3)',  text: '#818CF8',                label: 'Enterprise' },
+// Canonical tier colors. Legacy values (roster, pro, etc.) fall through to
+// the muted yellow LEGACY_COLOR and the label from lib/pricing.getTierLabel.
+const TIER_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  free:              { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',  text: 'rgba(255,255,255,0.5)' },
+  verified_identity: { bg: 'rgba(255,184,28,0.18)',  border: 'rgba(255,184,28,0.5)',   text: '#FFB81C' },
+  identity_plus:     { bg: 'rgba(255,184,28,0.25)',  border: 'rgba(255,184,28,0.6)',   text: '#FFB81C' },
+  club_starter:      { bg: 'rgba(200,16,46,0.10)',   border: 'rgba(200,16,46,0.4)',    text: '#C8102E' },
+  club_pro:          { bg: 'rgba(200,16,46,0.15)',   border: 'rgba(200,16,46,0.5)',    text: '#C8102E' },
+  club_elite:        { bg: 'rgba(200,16,46,0.22)',   border: 'rgba(200,16,46,0.6)',    text: '#C8102E' },
+  league:            { bg: 'rgba(200,16,46,0.10)',   border: 'rgba(200,16,46,0.4)',    text: '#C8102E' },
+  federation:        { bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.4)',   text: '#818CF8' },
+  business_listing:  { bg: 'rgba(20,184,166,0.12)',  border: 'rgba(20,184,166,0.4)',   text: '#14B8A6' },
+  business_plus:     { bg: 'rgba(20,184,166,0.22)',  border: 'rgba(20,184,166,0.6)',   text: '#14B8A6' },
 };
+
+const LEGACY_COLOR = { bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.25)', text: 'rgba(255,184,28,0.7)' };
 
 export default async function ProfileBySlugPage({ params }: PageProps) {
   const { slug } = await params;
@@ -207,7 +213,8 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   const { profile, managed, accountTypes, photoHistory } = data;
   const displayName = profile.display_name ?? 'RinkStop user';
   const profileUrl = `https://rinkstop.com/profile/${profile.username}`;
-  const tierStyle = TIER_COLORS[profile.tier] ?? TIER_COLORS.free;
+  const tierStyle = TIER_COLORS[profile.tier] ?? LEGACY_COLOR;
+  const tierLabel = getTierLabel(profile.tier);
 
   // Piece C (2026-06-24): identity-verified gate uses the hardened helper,
   // which also requires profiles.didit_session_id and a matching approved
@@ -271,7 +278,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 className="text-xs px-2 py-1 rounded"
                 style={{ background: tierStyle.bg, border: `1px solid ${tierStyle.border}`, color: tierStyle.text }}
               >
-                {tierStyle.label}
+                {tierLabel}
               </span>
             </div>
 

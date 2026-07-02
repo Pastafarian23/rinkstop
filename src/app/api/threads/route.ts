@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 // POST /api/threads
 // Body: { recipientId, contextProfileType?, contextProfileId? }
 // Creates a thread (or returns the existing one for the same connection + context).
-// Sender must be Pro (personal track) or Business Pro (business track).
+// Sender must be Identity Plus (personal track) or Business Plus (business track).
 // Recipient must be in an accepted connection.
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
@@ -134,13 +134,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot message yourself.' }, { status: 400 });
   }
 
-  // Tier check: Pro (personal) or Business Pro (business) required to start DMs.
+  // Tier check: Identity Plus (personal) or Business Plus (business) required to start DMs.
   // Per privilege matrix, DMs are gated to ensure quality conversations.
   const tier = await getUserTier(userId);
   const canDM = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
   if (!canDM) {
     return NextResponse.json(
-      { error: 'Pro or Business Pro membership required to start conversations.', currentTier: tier },
+      { error: 'Identity Plus or Business Plus membership required to start conversations.', currentTier: tier },
       { status: 403 }
     );
   }
