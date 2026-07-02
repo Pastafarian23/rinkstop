@@ -200,7 +200,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   const seasonStart = new Date();
   seasonStart.setMonth(seasonStart.getMonth() - 18);
 
-  const [newsRes, resultsRes, upcomingRes, upcomingEventsRes, adminsRes] = await Promise.all([
+  const [newsRes, resultsRes, upcomingEventsRes, adminsRes] = await Promise.all([
     supabase
       .from('team_news')
       .select('id, title, body, author_user_id, published_at')
@@ -216,16 +216,6 @@ export default async function PublicTeamPage({ params }: PageProps) {
       .order('game_date', { ascending: false })
       .limit(20)
       .returns<ResultRow[]>(),
-    supabase
-      .from('team_schedule')
-      .select('id, scheduled_at, opponent, kind, venue, home_away, notes, is_cancelled')
-      .eq('team_id', team.id)
-      .eq('is_cancelled', false)
-      .gte('scheduled_at', new Date().toISOString())
-      .order('scheduled_at', { ascending: true })
-      .limit(10)
-      .returns<ScheduleRow[]>(),
-    // ALSO read from new team_events table (consolidation: source of truth going forward)
     supabaseAdmin
       .from('team_events')
       .select('id, event_kind, starts_at, ends_at, opposing_team, location_note, status, rink_id, timezone')
@@ -246,7 +236,6 @@ export default async function PublicTeamPage({ params }: PageProps) {
 
   const news: NewsRow[] = newsRes.data || [];
   const results: ResultRow[] = resultsRes.data || [];
-  const upcoming: ScheduleRow[] = upcomingRes.data || [];
   // Normalize team_events rows into ScheduleRow shape so the rest of the page works unchanged
   const teamEventsRows = (upcomingEventsRes.data || []) as Array<{
     id: string;
@@ -269,8 +258,9 @@ export default async function PublicTeamPage({ params }: PageProps) {
     is_cancelled: false,
     timezone: e.timezone ?? null,
   }));
-  // Merge both sources, sort by scheduled_at ascending, take top 10
-  const mergedUpcoming: ScheduleRow[] = [...upcoming, ...upcomingFromEvents]
+  // team_events is the canonical source (team_schedule was dropped). Sort by
+  // scheduled_at ascending, take top 10.
+  const mergedUpcoming: ScheduleRow[] = [...upcomingFromEvents]
     .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
     .slice(0, 10);
 
