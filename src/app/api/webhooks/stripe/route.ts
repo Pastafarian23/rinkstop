@@ -136,33 +136,6 @@ export async function POST(req: NextRequest) {
           }
           break;
         }
-
-        // Entity-level badge (legacy founding member per-player / per-rink)
-        const { playerId, tier } = metadata;
-        if (!playerId || !tier) {
-          console.error('[Webhook] Missing metadata in session', session.id);
-          break;
-        }
-
-        const subscriptionId = session.subscription as string;
-        const customerId = session.customer as string;
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
-        const status = subscription.status;
-
-        const supabase = getSupabase() as any;
-        const { error } = await supabase
-          .from('players')
-          .update({ badge_tier: tier, stripe_customer_id: customerId, stripe_subscription_id: subscriptionId, subscription_status: status, subscription_expires_at: expiresAt })
-          .eq('id', playerId);
-
-        if (error) {
-          console.error('[Webhook] Failed to update player:', error);
-          return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
-        }
-
-        console.log(`[Webhook] Player ${playerId} upgraded to ${tier}, expires ${expiresAt}`);
-        break;
       }
 
       case 'customer.subscription.updated': {
@@ -232,20 +205,6 @@ export async function POST(req: NextRequest) {
           }
           break;
         }
-
-        const { playerId } = metadata;
-        if (!playerId) break;
-
-        const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
-
-        const supabase = getSupabase() as any;
-        await supabase
-          .from('players')
-          .update({ subscription_status: subscription.status, subscription_expires_at: expiresAt })
-          .eq('id', playerId);
-
-        console.log(`[Webhook] Subscription updated for player ${playerId}: ${subscription.status}`);
-        break;
       }
 
       case 'customer.subscription.deleted': {
@@ -256,18 +215,6 @@ export async function POST(req: NextRequest) {
           await updateUserTier(metadata.clerk_user_id, null, null, null, 'cancelled', null);
           break;
         }
-
-        const { playerId } = metadata;
-        if (!playerId) break;
-
-        const supabase = getSupabase() as any;
-        await supabase
-          .from('players')
-          .update({ badge_tier: 'free', stripe_subscription_id: null, subscription_status: 'cancelled', subscription_expires_at: null })
-          .eq('id', playerId);
-
-        console.log(`[Webhook] Subscription cancelled for player ${playerId} — reverted to free`);
-        break;
       }
 
       case 'invoice.payment_failed': {
@@ -297,20 +244,6 @@ export async function POST(req: NextRequest) {
           console.log(`[Webhook] payment_failed for user ${userProfile.user_id} - marked past_due, tier=${userProfile.tier} kept`);
           break;
         }
-
-        const { data: player } = await supabase
-          .from('players')
-          .select('id')
-          .eq('stripe_customer_id', customerId)
-          .maybeSingle();
-
-        if (player) {
-          await supabase
-            .from('players')
-            .update({ subscription_status: 'past_due' })
-            .eq('id', player.id);
-        }
-        break;
       }
 
       case 'invoice.paid': {
@@ -346,16 +279,6 @@ export async function POST(req: NextRequest) {
           }
           break;
         }
-
-        const { playerId } = metadata;
-        if (playerId) {
-          const supabase = getSupabase() as any;
-          await supabase
-            .from('players')
-            .update({ subscription_expires_at: expiresAt, subscription_status: subscription.status })
-            .eq('id', playerId);
-        }
-        break;
       }
 
       default:
