@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useUser } from '@clerk/nextjs';
 
 interface FoundersClubPopupProps {
   frequency?: 'always' | 'once' | 'weekly';
@@ -33,13 +34,22 @@ const SUPPRESS_PREFIXES = [
 
 export default function FoundersClubPopup({ frequency = 'once', entityType, entityId }: FoundersClubPopupProps) {
   const [showPopup, setShowPopup] = useState(false);
+  const { isSignedIn, isLoaded } = useUser();
 
   useEffect(() => {
+    if (!isLoaded) return;
+
     // Path suppression first — the popup should never compete with auth UI
     // (which is what caused the React #300 cascade reported 2026-06-23).
     // Read on the client only; during SSR window is undefined.
     const path = typeof window !== 'undefined' ? window.location.pathname : '';
     if (SUPPRESS_PREFIXES.some(p => path.startsWith(p))) {
+      return;
+    }
+
+    // Conflict prevention: signed-in users should never see the "Join Free" CTA.
+    // UpgradeNudgePopup (z-index 1001) handles the signed-in free user flow.
+    if (isSignedIn) {
       return;
     }
 
@@ -61,7 +71,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
         localStorage.setItem('rinkstop_founders_popup_weekly', Date.now().toString());
       }
     }
-  }, [frequency]);
+  }, [frequency, isSignedIn, isLoaded]);
 
   if (!showPopup) return null;
 
