@@ -149,7 +149,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
               <li><strong style={{ color: '#fff' }}>Weekly digest</strong> of activity on your listings</li>
             </ul>
             <Link
-              href="/pricing?tier=supporter"
+              href="/pricing?tier=verified_identity"
               style={{
                 background: '#C8102E',
                 color: '#fff',
@@ -216,11 +216,11 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
           )}
           {atCap && (
             <p style={{ color: '#C8102E', fontSize: '0.8rem', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
-              {tier === 'business_plus' || tier === 'federation' || tier === 'business_premium' || tier === 'enterprise' ? `You've reached the ${maxClaims}-claim limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
+              {tier === 'business_plus' || tier === 'federation' ? `You've reached the ${maxClaims}-claim limit.` : `You've reached the ${maxClaims}-claim limit on the ${tier} tier.`}{' '}
               <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-                {tier === 'business_plus' || tier === 'federation' || tier === 'business_premium' || tier === 'enterprise' ? 'Contact Sales' : 'Upgrade'}
+                {tier === 'business_plus' || tier === 'federation' ? 'Contact Sales' : 'Upgrade'}
               </Link>{' '}
-              {tier === 'business_plus' || tier === 'federation' || tier === 'business_premium' || tier === 'enterprise' ? 'for custom claim volume and bulk claim.' : 'for more claims and bulk claim. If you need more, contact sales for Federation.'}
+              {tier === 'business_plus' || tier === 'federation' ? 'for custom claim volume and bulk claim.' : 'for more claims and bulk claim. If you need more, contact sales for Federation.'}
             </p>
           )}
         </div>
@@ -269,7 +269,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Claim limit reached
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            {tier === 'business_plus' || tier === 'federation' || tier === 'business_premium' || tier === 'enterprise' ? `You've used all ${maxClaims} claim slots. Contact sales for Federation custom volume.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact sales for Federation.`}
+            {tier === 'business_plus' || tier === 'federation' ? `You've used all ${maxClaims} claim slots. Contact sales for Federation custom volume.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact sales for Federation.`}
           </p>
           <Link
             href="/pricing"
@@ -285,7 +285,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
               letterSpacing: '0.02em',
             }}
           >
-            {tier === 'business_plus' || tier === 'federation' || tier === 'business_premium' || tier === 'enterprise' ? 'Contact Sales →' : 'Upgrade →'}
+            {tier === 'business_plus' || tier === 'federation' ? 'Contact Sales →' : 'Upgrade →'}
           </Link>
         </div>
       ) : (

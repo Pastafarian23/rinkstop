@@ -52,12 +52,12 @@ function timeAgo(iso: string): string {
 
 function tierEmoji(tier: string | null): string {
   if (!tier) return '';
-  // Top tier (any track) gets the star — federation, league, club_elite, business_plus, enterprise (legacy)
-  if (['federation', 'league', 'club_elite', 'business_plus', 'enterprise', 'business_premium'].includes(tier)) return '⭐';
-  // Mid tier (paid but not top)
-  if (['identity_plus', 'club_pro', 'pro', 'premium', 'business_pro'].includes(tier)) return '🥇';
-  // Entry paid tier
-  if (['verified_identity', 'club_starter', 'business_listing', 'roster', 'roster_plus', 'business_starter'].includes(tier)) return '🎟️';
+  // Top tier (any track) gets the star — federation, league, club_elite, business_plus
+  if (['federation', 'league', 'club_elite', 'business_plus'].includes(tier)) return '⭐';
+  // Mid tier (paid but not top) — identity_plus, club_pro
+  if (['identity_plus', 'club_pro'].includes(tier)) return '🥇';
+  // Entry paid tier — verified_identity, club_starter, business_listing
+  if (['verified_identity', 'club_starter', 'business_listing'].includes(tier)) return '🎟️';
   return '';
 }
 

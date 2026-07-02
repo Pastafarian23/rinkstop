@@ -23,11 +23,6 @@ interface Props {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  // Old tiers (kept for backward compat with pre-2026-07-02 subscribers)
-  roster: 'text-amber-400',
-  roster_plus: 'text-amber-300',
-  pro: 'text-teal-400',
-  // New tiers (2026-07-02 brief)
   verified_identity: 'text-amber-300',
   identity_plus: 'text-amber-400',
   club_starter: 'text-amber-400',
@@ -36,21 +31,10 @@ const TIER_COLORS: Record<string, string> = {
   league: 'text-rose-300',
   business_listing: 'text-teal-400',
   business_plus: 'text-teal-300',
-  // Federation is contact-sales only — no Stripe product, no bucket
-  // Legacy aliases
-  business_starter: 'text-amber-400',
-  business_pro: 'text-teal-400',
-  business_premium: 'text-rose-400',
-  enterprise: 'text-rose-400',
   other: 'text-slate-500',
 };
 
 const TIER_BG: Record<string, string> = {
-  // Old tiers
-  roster: 'bg-amber-500',
-  roster_plus: 'bg-amber-400',
-  pro: 'bg-teal-500',
-  // New tiers
   verified_identity: 'bg-amber-400',
   identity_plus: 'bg-amber-500',
   club_starter: 'bg-amber-500',
@@ -59,11 +43,6 @@ const TIER_BG: Record<string, string> = {
   league: 'bg-rose-400',
   business_listing: 'bg-teal-500',
   business_plus: 'bg-teal-400',
-  // Legacy
-  business_starter: 'bg-amber-500',
-  business_pro: 'bg-teal-500',
-  business_premium: 'bg-rose-500',
-  enterprise: 'bg-rose-500',
   other: 'bg-slate-800',
 };
 
@@ -143,7 +122,7 @@ export default function RevenueDashboard({ initial }: Props) {
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-5 mb-6">
         <h3 className="text-sm uppercase tracking-wider text-slate-500 mb-4">Subscribers by Tier</h3>
         <div className="space-y-3">
-          {(['verified_identity', 'identity_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'business_listing', 'business_plus', 'roster', 'roster_plus', 'pro', 'business_starter', 'business_pro', 'business_premium', 'enterprise', 'other'] as const).map((tier) => {
+          {(['verified_identity', 'identity_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'business_listing', 'business_plus', 'other'] as const).map((tier) => {
             const count = data.tierCounts[tier] || 0;
             const max = Math.max(...Object.values(data.tierCounts), 1);
             const pct = (count / max) * 100;

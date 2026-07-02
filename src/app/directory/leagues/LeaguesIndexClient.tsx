@@ -42,9 +42,8 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
   // Personal: identity_plus (or legacy pro/roster_plus). Business: business_listing+ (or legacy business_*).
   // Federation is always verified (it's a paid org tier).
   const VERIFIED_TIERS = new Set([
-    'identity_plus', 'pro', 'roster_plus', 'premium',
+    'identity_plus',
     'business_listing', 'business_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation',
-    'business_starter', 'business_pro', 'business_premium', 'enterprise',
   ]);
   const verifiedCount = leagues.filter(l => l.claimed_by_tier && VERIFIED_TIERS.has(l.claimed_by_tier)).length;
 
@@ -167,7 +166,7 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
-                {(league.claimed_by_tier === 'business_plus' || league.claimed_by_tier === 'business_premium' || league.claimed_by_tier === 'federation' || league.claimed_by_tier === 'enterprise') && (                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
+                {(league.claimed_by_tier === 'business_plus' || league.claimed_by_tier === 'federation') && (                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
                     ⭐ Featured
                   </div>
                 )}
