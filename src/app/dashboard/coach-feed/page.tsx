@@ -120,12 +120,33 @@ export default async function CoachFeedPage({
       .eq('is_published', true)
       .order('published_at', { ascending: false })
       .limit(50),
-    supabaseAdmin
-      .from('team_schedule')
-      .select('id, team_id, opponent, home_away, start_at, location, notes, profiles:author_user_id (display_name)')
-      .in('team_id', teamIds)
-      .order('start_at', { ascending: false })
-      .limit(50),
+    // team_events is the canonical source. Join back to team_schedule via
+    // legacy_schedule_id to get opponent / home_away / location which live in the
+    // legacy table (team_events.opposing_team maps to team_schedule.opponent).
+    (async () => {
+      const { data, error } = await supabaseAdmin
+        .from('team_events')
+        .select(
+          `id, team_id, title, starts_at, ends_at, opposing_team, status,
+           location_note, description,
+           profiles:author_user_id(display_name),
+           team_schedule!inner(id, opponent, home_away, location, notes)`
+        )
+        .in('team_id', teamIds)
+        .order('starts_at', { ascending: false })
+        .limit(50);
+      if (error) return { data: null, error };
+      // Normalise into the flat shape the feed expects
+      const flat = (data || []).map((e: any) => ({
+          ...e,
+          opponent: e.team_schedule?.opponent ?? null,
+          home_away: e.team_schedule?.home_away ?? null,
+          location: e.team_schedule?.location ?? null,
+          // Use legacy_schedule_id so read-tracking keys stay stable
+          id: e.legacy_schedule_id ?? e.id,
+        }));
+      return { data: flat, error: null };
+    })(),
     supabaseAdmin
       .from('team_results')
       .select('id, team_id, game_date, opponent, home_away, our_score, their_score, profiles:author_user_id (display_name)')
@@ -177,12 +198,12 @@ export default async function CoachFeedPage({
       team_slug: t.slug,
       author_name: authorData?.display_name || null,
       title: `vs ${s.opponent}`,
-      body: s.notes || `${s.home_away === 'home' ? 'Home' : s.home_away === 'away' ? 'Away' : 'Neutral'} game${s.location ? ` at ${s.location}` : ''}.`,
-      created_at: s.start_at,
-      game_date: s.start_at,
+      body: s.team_schedule?.notes || `${s.home_away === 'home' ? 'Home' : s.home_away === 'away' ? 'Away' : 'Neutral'} game${s.location ? ` at ${s.location}` : ''}.`,
+      created_at: s.starts_at,
+      game_date: s.starts_at,
       opponent: s.opponent,
       home_away: s.home_away as 'home' | 'away' | 'neutral',
-      start_at: s.start_at,
+      start_at: s.starts_at,
       location: s.location || undefined,
     });
   }
