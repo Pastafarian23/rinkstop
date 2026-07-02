@@ -14,13 +14,19 @@ interface PageProps {
   params: Promise<{ slug: string; id: string }>;
 }
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string, timeZone?: string | null): string {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+    ...(timeZone ? { timeZone } : {}),
+  });
 }
-function fmtTime(iso: string): string {
+function fmtTime(iso: string, timeZone?: string | null): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit',
+    ...(timeZone ? { timeZone } : {}),
+  });
 }
 function fmtMoney(n: number | string | null | undefined, currency: string): string {
   if (n == null) return '—';
@@ -48,7 +54,7 @@ export default async function EventDetailPage({ params }: PageProps) {
 
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug, name, currency')
+    .select('id, slug, name, currency, timezone')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -226,8 +232,8 @@ export default async function EventDetailPage({ params }: PageProps) {
         background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem',
         marginBottom: 16,
       }}>
-        <DetailRow label="Date" value={fmtDate(event.starts_at)} />
-        <DetailRow label="Time" value={`${fmtTime(event.starts_at)} → ${fmtTime(event.ends_at)}`} />
+        <DetailRow label="Date" value={fmtDate(event.starts_at, event.timezone || team?.timezone)} />
+        <DetailRow label="Time" value={`${fmtTime(event.starts_at, event.timezone || team?.timezone)} → ${fmtTime(event.ends_at, event.timezone || team?.timezone)}`} />
         <DetailRow label="Arrive" value={`${event.arrival_minutes || 30} min before`} />
         {event.opposing_team && (
           <DetailRow label="Opponent" value={event.opposing_team} />
