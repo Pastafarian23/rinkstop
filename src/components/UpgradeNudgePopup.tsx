@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatTierPricePerYear, TIERS, TierName } from '@/lib/pricing';
 
 interface UpgradeNudgePopupProps {
   /** When the popup should fire. 'once' = until dismissed; 'weekly' = 7-day cooldown. */
@@ -17,30 +18,54 @@ interface MeProfile {
   tier: string;
   is_founding_member?: boolean;
   subscription_status?: string;
+  created_at?: string;
 }
 
 type MeResponse = Partial<MeProfile> & {
   created_at?: string;
-  // /api/profiles/me returns { profile, managedProfiles, ... }
   profile?: MeProfile;
 };
 
+// Tier the popup promotes. Single source of truth: TIERS.verified_identity in
+// src/lib/pricing.ts. If we change the tier, the title, price, features, and
+// CTA href all update automatically.
+const PROMOTED_TIER: TierName = 'verified_identity';
+const PROMOTED = TIERS[PROMOTED_TIER];
+
 /**
  * Post-login upgrade nudge. Shows once to free users (or weekly if frequency='weekly')
- * with a single, clear ask: "Join Verified Identity".
+ * with a single, clear ask: upgrade to Verified Identity.
  *
  * Mounted in the root layout, but only shows on the dashboard / homepage
- * (or whatever showOnPaths lists) — never on the pricing page itself.
+ * (or whatever showOnPaths lists) — never on the pricing page itself, the
+ * welcome page, or auth pages.
  *
  * Tier-aware:
- *  - If user is already on a paid tier (roster/pro/business), show nothing
+ *  - If user is already on a paid tier, show nothing
  *  - If user is founding member, show nothing
+ *  - If user just signed up (within last 24h), show nothing
  *  - If user just dismissed, show nothing until cooldown
  *
- * Idempotency: stores localStorage keys per-tier ("rinkstop_upgrade_nudge_seen_roster"),
- * not per-user. If the user clears cookies, the popup shows again — that's fine,
- * it's a free user on a clean device, not a power user with storage they care about.
+ * Conflict prevention:
+ *  - SUPPRESS_PREFIXES ensures the popup never fires on auth, welcome, or
+ *    pricing pages — those have their own UI flows.
+ *  - The 24h post-signup grace period prevents this popup from stacking on
+ *    top of a fresh sign-up experience.
+ *  - Single modal at a time (z-index 1001, above FoundersClubPopup's 1000).
+ *
+ * Idempotency: stores localStorage keys for last-seen + signup grace period,
+ * not per-user. If the user clears cookies, the popup shows again — that's
+ * fine, it's a free user on a clean device.
  */
+const SUPPRESS_PREFIXES = [
+  '/sign-up', '/login', '/forgot-password', '/reset-password',
+  '/sso-callback', '/verify', '/onboarding',
+  '/pricing', '/partner',
+  '/dashboard/welcome',
+  '/api', '/_next',
+];
+const SIGNUP_GRACE_MS = 24 * 60 * 60 * 1000; // 24h post-signup grace period
+
 export default function UpgradeNudgePopup({
   frequency = 'once',
   showOnPaths = ['/dashboard', '/'],
@@ -57,6 +82,10 @@ export default function UpgradeNudgePopup({
 
     // Path check: only show on allowed paths
     const path = window.location.pathname;
+    if (SUPPRESS_PREFIXES.some(p => path === p || path.startsWith(p + '/') || path === p)) {
+      setLoading(false);
+      return;
+    }
     const onAllowedPath = showOnPaths.some((p) => path === p || path.startsWith(p + '/') || path === p);
     if (!onAllowedPath) {
       setLoading(false);
@@ -89,15 +118,12 @@ export default function UpgradeNudgePopup({
         const data: MeResponse = await res.json();
         if (cancelled) return;
 
-        // /api/profiles/me returns the profile nested under `profile`.
-        // Fall back to flat fields in case a future endpoint returns the legacy shape.
         const profile = data.profile ?? data;
         const tier = profile?.tier;
         const isFounding = Boolean(profile?.is_founding_member);
         const subStatus = profile?.subscription_status;
 
-        // Don't show to anyone on a paid tier or with an active subscription,
-        // even if the tier field is missing or stale.
+        // Don't show to anyone on a paid tier or with an active subscription.
         if (isFounding) {
           setLoading(false);
           return;
@@ -109,6 +135,17 @@ export default function UpgradeNudgePopup({
         if (subStatus === 'active' || subStatus === 'trialing') {
           setLoading(false);
           return;
+        }
+
+        // Post-signup grace period (24h): don't pester a brand-new free user
+        // with an upgrade popup right after they just created an account.
+        const createdAt = profile?.created_at;
+        if (createdAt) {
+          const accountAgeMs = Date.now() - new Date(createdAt).getTime();
+          if (accountAgeMs >= 0 && accountAgeMs < SIGNUP_GRACE_MS) {
+            setLoading(false);
+            return;
+          }
         }
 
         setShow(true);
@@ -128,6 +165,9 @@ export default function UpgradeNudgePopup({
   const dismiss = () => setShow(false);
 
   if (loading || !show) return null;
+
+  // Top 4 features from pricing.ts (single source of truth)
+  const features = PROMOTED.features.slice(0, 4);
 
   return (
     <div
@@ -178,7 +218,7 @@ export default function UpgradeNudgePopup({
           ×
         </button>
 
-        {/* Badge */}
+        {/* Badge — names the canonical tier */}
         <div
           style={{
             display: 'inline-block',
@@ -190,7 +230,7 @@ export default function UpgradeNudgePopup({
             marginBottom: '0.75rem',
           }}
         >
-          Founding Member — first 500 only
+          {PROMOTED.label} — most popular
         </div>
 
         {/* Title */}
@@ -199,31 +239,26 @@ export default function UpgradeNudgePopup({
           className="font-sport"
           style={{
             fontSize: 'clamp(1.5rem, 4vw, 1.875rem)',
-            color: '#fff', lineHeight: 1.1, margin: '0 0 0.75rem',
+            color: '#fff', lineHeight: 1.1, margin: '0 0 0.5rem',
             letterSpacing: '0.02em',
           }}
         >
           UNLOCK RINKSTOP
         </h2>
 
-        {/* Body — feature-first pitch */}
+        {/* Subtitle — tagline from pricing.ts */}
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
+          {PROMOTED.tagline}
+        </p>
+
+        {/* Body — top 4 features from pricing.ts */}
         <ul style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9375rem', lineHeight: 1.55, margin: '0 0 1.25rem', padding: 0, listStyle: 'none' }}>
-          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
-            <span><strong style={{ color: '#FFB81C' }}>Founding Member badge</strong> on your profile — permanent, first 500 only</span>
-          </li>
-          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
-            <span>Claim <strong style={{ color: '#FFB81C' }}>1 listing</strong> — your home rink, your kid&apos;s team, your beer-league squad</span>
-          </li>
-          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
-            <span>Unlimited follows and the weekly digest in your dashboard</span>
-          </li>
-          <li style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
-            <span>Manage everything from <strong style={{ color: '#FFB81C' }}>/dashboard</strong></span>
-          </li>
+          {features.map((f, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+              <span aria-hidden style={{ color: '#FFB81C', fontWeight: 800, flexShrink: 0 }}>✓</span>
+              <span>{f}</span>
+            </li>
+          ))}
         </ul>
 
         {/* Price + CTA */}
@@ -235,14 +270,14 @@ export default function UpgradeNudgePopup({
         >
           <div>
             <div className="font-sport" style={{ fontSize: '1.75rem', color: '#FFB81C', lineHeight: 1 }}>
-              $19.99<span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', fontFamily: 'system-ui' }}> / year</span>
+              {formatTierPricePerYear(PROMOTED_TIER)}
             </div>
             <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
               Annual plan · priced to stay
             </div>
           </div>
           <Link
-            href="/pricing?tier=roster"
+            href={`/pricing?tier=${PROMOTED_TIER}`}
             onClick={dismiss}
             className="btn"
             style={{
@@ -254,7 +289,7 @@ export default function UpgradeNudgePopup({
               whiteSpace: 'nowrap',
             }}
           >
-            Join Verified Identity →
+            {PROMOTED.cta} →
           </Link>
         </div>
 
