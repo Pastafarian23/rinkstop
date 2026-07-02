@@ -46,12 +46,11 @@ interface Props {
 }
 
 // A listing is "verified" if the claimant has a paid tier in either track.
-// Personal: identity_plus (or legacy pro/roster_plus). Business: business_listing+ (or legacy business_*).
+// Personal: identity_plus. Business: business_listing+ and organization tiers.
 // Federation is always verified (it's a paid org tier).
 const VERIFIED_TIERS = new Set([
-  'identity_plus', 'pro', 'roster_plus', 'premium',
+  'identity_plus',
   'business_listing', 'business_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation',
-  'business_starter', 'business_pro', 'business_premium', 'enterprise',
 ]);
 
 export default function TeamsIndexClient({ initialTeams, country: initialCountry, level: initialLevel, league: initialLeague }: Props) {
@@ -397,12 +396,12 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
                 {/* Tier badge in corner */}
-                {(team.claimed_by_tier && (team.claimed_by_tier === 'business_plus' || team.claimed_by_tier === 'business_premium' || team.claimed_by_tier === 'federation' || team.claimed_by_tier === 'enterprise')) && (
+                {(team.claimed_by_tier && (team.claimed_by_tier === 'business_plus' || team.claimed_by_tier === 'federation')) && (
                   <div style={{ position: 'absolute', top: 8, left: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
                     ⭐ Featured
                   </div>
                 )}
-                {(team.claimed_by_tier === 'identity_plus' || team.claimed_by_tier === 'pro' || team.claimed_by_tier === 'roster_plus' || team.claimed_by_tier === 'premium') && (
+                {(team.claimed_by_tier === 'identity_plus') && (
                   <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Verified

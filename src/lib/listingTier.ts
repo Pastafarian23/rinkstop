@@ -2,38 +2,27 @@
 // This determines search result order for claimed listings.
 // Higher tiers get better placement for lead capture priority.
 // Identity Plus (personal) and Business Plus (business) both have DMs + photos.
-//
-// 2026-07-02 brief: new tier structure added; legacy aliases preserved so old
-// DB-stored tier values still rank correctly during the transition.
 export const TIER_RANK: Record<string, number> = {
   // Top placement: priority lead capture
   federation: 0,
-  enterprise: 0,         // legacy alias for federation
   league: 1,
   business_plus: 2,
-  business_premium: 2,   // legacy alias for business_plus
   club_elite: 3,
   // Mid placement: DMs enabled, multiple claims
   identity_plus: 4,
-  pro: 4,                 // legacy alias for identity_plus
   business_listing: 5,
-  business_pro: 5,        // legacy alias for business_listing's neighborhood
   club_pro: 5,
   club_starter: 6,
   // Lower placement: personal focus, kid linking
   verified_identity: 7,
-  roster: 7,              // legacy alias for verified_identity
-  roster_plus: 4,         // legacy alias for identity_plus
-  business_starter: 6,   // legacy alias for club_starter
   // Unclaimed
   free: 8,
 };
 
-// Display labels - sourced from pricing.ts single source of truth via getTierLabel().
-// Fallback map kept for legacy DB-stored values; getTierLabel() in pricing.ts
-// already handles the modern mapping.
+// Display labels — canonical tier names only. For legacy DB values that may
+// still exist in claims.tier, getTierLabel() in src/lib/pricing.ts handles
+// the fallback (it returns the raw string for unknowns).
 export const TIER_LABELS: Record<string, string> = {
-  // New canonical tiers
   free: 'Free',
   verified_identity: 'Verified Identity',
   identity_plus: 'Identity Plus',
@@ -44,15 +33,6 @@ export const TIER_LABELS: Record<string, string> = {
   federation: 'Federation',
   business_listing: 'Business Listing',
   business_plus: 'Business Plus',
-  // Legacy aliases — for any pre-2026-07-02 DB rows
-  roster: 'Verified Identity (legacy)',
-  roster_plus: 'Identity Plus (legacy)',
-  pro: 'Identity Plus (legacy)',
-  premium: 'Identity Plus (legacy)',
-  business_starter: 'Business Listing (legacy)',
-  business_pro: 'Business Listing (legacy)',
-  business_premium: 'Business Plus (legacy)',
-  enterprise: 'Federation (legacy)',
 };
 
 export function rankForTier(tier: string | null | undefined): number {

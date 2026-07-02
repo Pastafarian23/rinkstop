@@ -60,25 +60,14 @@ export function getMaxClaimsForTier(tier: string): number {
 }
 
 /**
- * Resolve the track for a tier name, including legacy aliases that are not in
- * the modern TIER_TO_TRANK map. Mirrors the legacy-alias mapping in
- * src/lib/pricing.ts:431-442 (getTierLabel).
+ * Resolve the track for a tier name.
+ * All tier names are mapped in TIER_TO_TRACK (src/lib/pricing.ts). No legacy
+ * aliases exist — old tier names were migrated to new names by
+ * supabase/migrations/2026-07-02_remove_old_tier_names.sql.
  */
 function resolveTrack(tier: string | null | undefined): AccountTrack {
   if (!tier) return 'personal';
-  if (tier in TIER_TO_TRACK) return TIER_TO_TRACK[tier as TierName];
-  // Legacy aliases — pre-2026-07-02 DB values
-  const legacyTrack: Record<string, AccountTrack> = {
-    roster: 'personal',
-    roster_plus: 'personal',
-    pro: 'personal',
-    premium: 'personal',
-    business_starter: 'business',
-    business_pro: 'business',
-    business_premium: 'business',
-    enterprise: 'business',
-  };
-  return legacyTrack[tier] ?? 'personal';
+  return TIER_TO_TRACK[tier as TierName] ?? 'personal';
 }
 
 /**

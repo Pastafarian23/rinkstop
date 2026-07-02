@@ -428,18 +428,8 @@ export function getTierLabel(tier: string | null | undefined): string {
   if (!tier) return 'Free';
   const t = TIERS[tier as TierName];
   if (t) return t.label;
-  // Legacy / unknown values from pre-2026-07-02 DB rows. Map the common ones;
-  // fall back to the raw string so we never silently drop information.
-  const legacy: Record<string, string> = {
-    roster: 'Verified Identity (legacy)',
-    roster_plus: 'Identity Plus (legacy)',
-    pro: 'Identity Plus (legacy)',
-    premium: 'Identity Plus (legacy)',
-    starter: 'Verified Identity (legacy)',
-    business_starter: 'Business Listing (legacy)',
-    business_pro: 'Business Listing (legacy)',
-    business_premium: 'Business Plus (legacy)',
-    enterprise: 'Federation (legacy)',
-  };
-  return legacy[tier] ?? tier;
+  // Unknown tier value — shouldn't happen after the 2026-07-02 data migration
+  // (see supabase/migrations/2026-07-02_remove_old_tier_names.sql). Return the
+  // raw string so we never silently drop information.
+  return tier;
 }
