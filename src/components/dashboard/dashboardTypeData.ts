@@ -53,8 +53,35 @@ const EMPTY: TypeSectionData = {
 export async function loadDashboardTypeData(userId: string): Promise<TypeSectionData> {
   const data: TypeSectionData = { ...EMPTY };
 
-  // PLAYER: profile_views is logged on /profile/[username]; use 0 for now (no view-logging
-  // table yet). Once views are tracked, swap to: count from profile_views.
+  // PLAYER: profile views (last 7 days). Count from analytics_events where
+  // pathname starts with /profile/{userSlug} AND name='profile_viewed'.
+  // TODO(track): the /profile/[slug] page does NOT currently emit a
+  // 'profile_viewed' analytics event. Verified 2026-07-02: zero rows in
+  // analytics_events match pathname LIKE '/profile/%'. Until we wire that
+  // event in the page (1-line change to src/app/profile/[slug]/page.tsx),
+  // the count is always 0. The card copy reflects that honestly.
+  // When the event is wired, this loader just works — no schema change.
+  let profileSlug: string | null = null;
+  try {
+    const { data: profileRow } = await supabaseAdmin
+      .from('profiles')
+      .select('username')
+      .eq('user_id', userId)
+      .maybeSingle();
+    profileSlug = profileRow?.username || null;
+  } catch { /* keep null */ }
+  if (profileSlug) {
+    try {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabaseAdmin
+        .from('analytics_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('name', 'profile_viewed')
+        .eq('pathname', `/profile/${profileSlug}`)
+        .gte('ts', sevenDaysAgo);
+      data.player.profileViews = count || 0;
+    } catch { /* keep 0 */ }
+  }
   data.player.loaded = true;
 
   // PARENT: managed_profiles where relationship IN ('parent', 'guardian', 'spouse', 'self').

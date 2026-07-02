@@ -31,18 +31,23 @@ function getConfig(t: AccountType, data: TypeSectionData, username: string | nul
 } {
   const profileHref = username ? `/profile/${username}` : '/dashboard/profile';
   switch (t) {
-    case 'player':
+    case 'player': {
+      const views = data.player.profileViews;
+      const headline = data.player.loaded
+        ? views > 0
+          ? `Your player profile \u2014 ${views} view${views === 1 ? '' : 's'} this week`
+          : 'Profile analytics coming soon'
+        : 'Your player profile';
       return {
-        headline: data.player.loaded
-          ? 'Your player profile is live'
-          : 'Your player profile',
+        headline,
         cta: [
           { href: profileHref, label: 'View public profile', icon: '👁️' },
           { href: '/dashboard/claims', label: 'Claim a record', icon: '✅' },
         ],
         empty: null,
       };
-    case 'parent':
+    }
+    case 'parent': {
       return {
         headline: data.parent.loaded
           ? data.parent.linkedPlayers === 0
@@ -57,26 +62,36 @@ function getConfig(t: AccountType, data: TypeSectionData, username: string | nul
           ? { message: "Find your kid's player page and claim it. You can manage their profile, schedule, and team membership from there.", cta: { href: '/directory/players', label: 'Find a player →' } }
           : null,
       };
-    case 'coach':
+    }
+    case 'coach': {
+      const existingCta = identityVerified
+        ? [
+            { href: '/directory/teams', label: 'Find your team', icon: '🏒' },
+            { href: '/dashboard/claims', label: 'Claim a team', icon: '✅' },
+          ]
+        : [
+            { href: '/directory/teams', label: 'Find your team', icon: '🏒' },
+            { href: '/dashboard/identity', label: 'Verify identity', icon: '🛡️' },
+          ];
+      const hasTeams = data.coach.loaded && data.coach.teamsManaged > 0;
+      const teamCtas = hasTeams
+        ? [
+            { href: '/dashboard/team', label: 'Your team dashboard', icon: '📋' },
+            { href: '/dashboard/plans', label: 'Practice plans', icon: '🗒' },
+          ]
+        : [];
       return {
         headline: data.coach.loaded
           ? data.coach.teamsManaged === 0
             ? "You haven't claimed a team yet"
             : `Coaching ${data.coach.teamsManaged} ${data.coach.teamsManaged === 1 ? 'team' : 'teams'}`
           : 'Your coaching role',
-        cta: identityVerified
-          ? [
-              { href: '/directory/teams', label: 'Find your team', icon: '🏒' },
-              { href: '/dashboard/claims', label: 'Claim a team', icon: '✅' },
-            ]
-          : [
-              { href: '/directory/teams', label: 'Find your team', icon: '🏒' },
-              { href: '/dashboard/identity', label: 'Verify identity', icon: '🛡️' },
-            ],
+        cta: [...teamCtas, ...existingCta],
         empty: data.coach.loaded && data.coach.teamsManaged === 0
           ? { message: 'Claim the team you coach to manage roster, schedule, and incoming parent messages.', cta: { href: '/directory/teams', label: 'Browse teams →' } }
           : null,
       };
+    }
     case 'scout':
       return {
         headline: data.scout.loaded
@@ -103,66 +118,101 @@ function getConfig(t: AccountType, data: TypeSectionData, username: string | nul
         ],
         empty: { message: 'Game reporting and certification tracking are coming in a later phase. For now, find a game and reach the rink through the team page.', cta: { href: '/directory/teams', label: 'Find a team →' } },
       };
-    case 'team_admin':
+    case 'team_admin': {
+      const existingCta = [
+        { href: '/dashboard/claims', label: 'Claim a team', icon: '✅' },
+        { href: '/dashboard/leads', label: 'Team inbox', icon: '📨' },
+      ];
+      const hasTeams = data.team_admin.loaded && data.team_admin.teamCount > 0;
+      const teamCtas = hasTeams
+        ? [
+            { href: '/dashboard/team', label: 'Team dashboard', icon: '📋' },
+            { href: '/dashboard/team', label: 'Roster & schedule', icon: '🗓' },
+          ]
+        : [];
       return {
         headline: data.team_admin.loaded
           ? data.team_admin.teamCount === 0
             ? "You don't manage any teams yet"
             : `Managing ${data.team_admin.teamCount} ${data.team_admin.teamCount === 1 ? 'team' : 'teams'}`
           : 'Your teams',
-        cta: [
-          { href: '/dashboard/claims', label: 'Claim a team', icon: '✅' },
-          { href: '/dashboard/leads', label: 'Team inbox', icon: '📨' },
-        ],
+        cta: [...teamCtas, ...existingCta],
         empty: data.team_admin.loaded && data.team_admin.teamCount === 0
           ? { message: 'Claim the team you manage. Roster, schedule, and parent messages will live there.', cta: { href: '/directory/teams', label: 'Browse teams →' } }
           : null,
       };
-    case 'league_admin':
+    }
+    case 'league_admin': {
+      const existingCta = [
+        { href: '/dashboard/claims', label: 'Claim a league', icon: '✅' },
+        { href: '/directory/leagues', label: 'Browse leagues', icon: '🏆' },
+      ];
+      const hasLeagues = data.league_admin.loaded && data.league_admin.leagueCount > 0;
+      const leagueCtas = hasLeagues
+        ? [
+            { href: '/standings', label: 'View standings', icon: '📊' },
+            { href: '/dashboard/manage/league', label: 'Manage league', icon: '⚙️' },
+          ]
+        : [];
       return {
         headline: data.league_admin.loaded
           ? data.league_admin.leagueCount === 0
             ? "You don't run a league yet"
             : `Running ${data.league_admin.leagueCount} ${data.league_admin.leagueCount === 1 ? 'league' : 'leagues'}`
           : 'Your leagues',
-        cta: [
-          { href: '/dashboard/claims', label: 'Claim a league', icon: '✅' },
-          { href: '/directory/leagues', label: 'Browse leagues', icon: '🏆' },
-        ],
+        cta: [...existingCta, ...leagueCtas],
         empty: data.league_admin.loaded && data.league_admin.leagueCount === 0
           ? { message: 'Claim the league you run to publish standings, divisions, and registration.', cta: { href: '/directory/leagues', label: 'Find a league →' } }
           : null,
       };
-    case 'rink_operator':
+    }
+    case 'rink_operator': {
+      const existingCta = [
+        { href: '/dashboard/claims', label: 'Claim a rink', icon: '✅' },
+        { href: '/dashboard/leads', label: `Leads inbox${data.rink_operator.leads ? ` (${data.rink_operator.leads})` : ''}`, icon: '📨' },
+      ];
+      const hasRinks = data.rink_operator.loaded && data.rink_operator.rinkCount > 0;
+      const rinkCtas = hasRinks
+        ? [
+            { href: '/dashboard/listings', label: 'Hours & photos', icon: '📷' },
+            { href: '/dashboard/manage/rink', label: 'Manage rink', icon: '⚙️' },
+          ]
+        : [];
       return {
         headline: data.rink_operator.loaded
           ? data.rink_operator.rinkCount === 0
             ? "You don't run a rink yet"
             : `Running ${data.rink_operator.rinkCount} ${data.rink_operator.rinkCount === 1 ? 'rink' : 'rinks'}`
           : 'Your rinks',
-        cta: [
-          { href: '/dashboard/claims', label: 'Claim a rink', icon: '✅' },
-          { href: '/dashboard/leads', label: `Leads inbox${data.rink_operator.leads ? ` (${data.rink_operator.leads})` : ''}`, icon: '📨' },
-        ],
+        cta: [...rinkCtas, ...existingCta],
         empty: data.rink_operator.loaded && data.rink_operator.rinkCount === 0
           ? { message: 'Claim the rink you operate. Hours, photos, and incoming parent inquiries live there.', cta: { href: '/directory/rinks', label: 'Find a rink →' } }
           : null,
       };
-    case 'business':
+    }
+    case 'business': {
+      const existingCta = [
+        { href: '/dashboard/listings', label: 'Manage listings', icon: '🛍️' },
+        { href: '/dashboard/leads', label: `Leads inbox${data.business.leads ? ` (${data.business.leads})` : ''}`, icon: '📨' },
+      ];
+      const hasListings = data.business.loaded && data.business.listings > 0;
+      const listingCtas = hasListings
+        ? [
+            { href: '/dashboard/listings', label: 'Add photos', icon: '📷' },
+          ]
+        : [];
       return {
         headline: data.business.loaded
           ? data.business.listings === 0
             ? "You haven't created a business listing yet"
             : `${data.business.listings} ${data.business.listings === 1 ? 'listing' : 'listings'} live`
           : 'Your business listing',
-        cta: [
-          { href: '/dashboard/listings', label: 'Manage listings', icon: '🛍️' },
-          { href: '/dashboard/leads', label: `Leads inbox${data.business.leads ? ` (${data.business.leads})` : ''}`, icon: '📨' },
-        ],
+        cta: [...listingCtas, ...existingCta],
         empty: data.business.loaded && data.business.listings === 0
           ? { message: 'Pro shop, sharpening, or camp? Add a listing to appear in the directory and start receiving leads.', cta: { href: '/dashboard/listings', label: 'Create a listing →' } }
           : null,
       };
+    }
     case 'fan':
       return {
         headline: data.fan.loaded
