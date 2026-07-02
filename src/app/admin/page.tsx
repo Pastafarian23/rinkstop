@@ -133,9 +133,9 @@ async function getActivityFeed(): Promise<ActivityEvent[]> {
       .order('published_at', { ascending: false })
       .limit(10),
     supabaseAdmin
-      .from('team_schedule')
-      .select('id, team_id, title, event_type, event_date, created_at')
-      .eq('is_published', true)
+      .from('team_events')
+      .select('id, team_id, title, event_kind, starts_at, created_at')
+      .in('status', ['scheduled', 'completed'])
       .gte('created_at', since)
       .order('created_at', { ascending: false })
       .limit(10),
@@ -210,7 +210,7 @@ async function getActivityFeed(): Promise<ActivityEvent[]> {
         type: 'schedule_published',
         icon: '📅',
         title: s.title,
-        detail: `Schedule event: ${s.event_type || 'general'}${s.event_date ? ` on ${new Date(s.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`,
+        detail: `Schedule event: ${s.event_kind || 'general'}${s.starts_at ? ` on ${new Date(s.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`,
         tone: 'info',
       });
     }
