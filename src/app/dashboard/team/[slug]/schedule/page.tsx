@@ -33,7 +33,7 @@ export default async function TeamSchedulePage({ params, searchParams }: PagePro
   // Get team
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug, name, currency')
+    .select('id, slug, name, currency, timezone')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -67,7 +67,7 @@ export default async function TeamSchedulePage({ params, searchParams }: PagePro
 
   const { data: eventsRaw } = await supabaseAdmin
     .from('team_events')
-    .select('id, event_kind, title, starts_at, ends_at, location_note, opposing_team, is_off_ice, status')
+    .select('id, event_kind, title, starts_at, ends_at, location_note, opposing_team, is_off_ice, status, timezone')
     .eq('team_id', team.id)
     .gte('starts_at', now.toISOString())
     .lte('starts_at', horizon.toISOString())
@@ -91,6 +91,7 @@ export default async function TeamSchedulePage({ params, searchParams }: PagePro
     opposing_team: e.opposing_team,
     is_off_ice: e.is_off_ice || false,
     status: e.status,
+    timezone: e.timezone ?? team.timezone ?? null,
   }));
 
   return (

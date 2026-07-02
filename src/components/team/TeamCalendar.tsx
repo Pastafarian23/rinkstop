@@ -18,6 +18,7 @@ export interface CalendarEvent {
   opposing_team?: string | null;
   is_off_ice?: boolean;
   status: string;
+  timezone?: string | null;
 }
 
 export interface CalendarTeam {
@@ -25,6 +26,7 @@ export interface CalendarTeam {
   name: string;
   short_name?: string | null;
   slug: string;
+  timezone?: string | null;
 }
 
 interface TeamCalendarProps {
@@ -444,7 +446,8 @@ function EventBlock({ event, team, compact = false, readonly = false }: { event:
   const teamLabel = team ? teamShortLabel(team) : (event.team_short_name || event.team_name);
   const start = new Date(event.starts_at);
   const end = new Date(event.ends_at);
-  const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const tz = event.timezone;
+  const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', ...(tz ? { timeZone: tz } : {}) });
   
   // In readonly mode, render as div instead of Link
   if (readonly) {

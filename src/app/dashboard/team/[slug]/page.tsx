@@ -455,7 +455,7 @@ export default async function TeamHubPage({ params }: PageProps) {
       {/* Public Posts — admin-only: news, results, schedule */}
       {isAdmin && (
         <section id="admin-posts">
-          <AdminPostPanel teamSlug={team.slug} teamId={team.id} />
+          <AdminPostPanel teamSlug={team.slug} teamId={team.id} teamTimezone={team.timezone ?? null} />
         </section>
       )}
 

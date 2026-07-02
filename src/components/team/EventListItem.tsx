@@ -13,18 +13,25 @@ interface EventListItemProps {
     opposing_team?: string | null;
     is_off_ice?: boolean;
     status: string;
+    timezone?: string | null;
   };
   rsvpCount?: number;
 }
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string, timeZone?: string | null): string {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+    ...(timeZone ? { timeZone } : {}),
+  });
 }
 
-function fmtTime(iso: string): string {
+function fmtTime(iso: string, timeZone?: string | null): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit',
+    ...(timeZone ? { timeZone } : {}),
+  });
 }
 
 export default function EventListItem({ teamSlug, event, rsvpCount }: EventListItemProps) {
@@ -50,13 +57,13 @@ export default function EventListItem({ teamSlug, event, rsvpCount }: EventListI
     >
       <div style={{ minWidth: 96, textAlign: 'center', flexShrink: 0 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          {fmtDate(event.starts_at).split(',')[0]}
+          {fmtDate(event.starts_at, event.timezone).split(',')[0]}
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, color: '#FFB81C', lineHeight: 1.1 }}>
           {new Date(event.starts_at).getDate()}
         </div>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-          {fmtTime(event.starts_at)}
+          {fmtTime(event.starts_at, event.timezone)}
         </div>
       </div>
 

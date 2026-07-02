@@ -30,7 +30,7 @@ export default async function EventsListPage({ params, searchParams }: PageProps
   // Team lookup
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug, name, currency')
+    .select('id, slug, name, currency, timezone')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -62,7 +62,7 @@ export default async function EventsListPage({ params, searchParams }: PageProps
   // Fetch events
   let query = supabaseAdmin
     .from('team_events')
-    .select('id, event_kind, title, starts_at, ends_at, location_note, opposing_team, is_off_ice, status')
+    .select('id, event_kind, title, starts_at, ends_at, location_note, opposing_team, is_off_ice, status, timezone')
     .eq('team_id', team.id)
     .order('starts_at', { ascending: false })
     .limit(500);
@@ -159,7 +159,7 @@ export default async function EventsListPage({ params, searchParams }: PageProps
             <EventListItem
               key={e.id}
               teamSlug={normalizedSlug}
-              event={e}
+              event={{ ...e, timezone: e.timezone ?? team?.timezone ?? null }}
               rsvpCount={rsvpCounts[e.id] ?? 0}
             />
           ))}
