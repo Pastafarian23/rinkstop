@@ -100,46 +100,83 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
   // as the only action. loaded=true so the section renders.
   data.referee.loaded = true;
 
-  // TEAM_ADMIN: teams where this user is the owner/manager.
-  // `team_owners` table (Phase 1) — fall back to 0 if it doesn't exist yet.
+  // TEAM_ADMIN: teams where this user is the creator OR active head_coach.
+  // `team_owners` (the Phase 1 placeholder) doesn't exist on prod (verified
+  // 2026-07-02 via information_schema.tables). The official ownership system
+  // is `claims` with status='approved' per
+  // /api/manage/[type]/[id]/route.ts:isOwner, but `claims` is empty on prod.
+  // Closest existing signals: team_workspaces.created_by (user who created
+  // the workspace) OR team_members.role='head_coach' (active membership).
+  // Either signal indicates ownership. Take the max (the two may overlap for
+  // the same team — overcount by ≤1 is acceptable for a summary card).
+  // When `claims` is wired or `team_owners` is added, swap to that source.
   try {
-    const { count } = await supabaseAdmin
-      .from('team_owners')
+    const { count: created } = await supabaseAdmin
+      .from('team_workspaces')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId);
-    data.team_admin.teamCount = count || 0;
+      .eq('created_by', userId);
+    const { count: headCoach } = await supabaseAdmin
+      .from('team_members')
+      .select('team_id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('role', 'head_coach')
+      .is('left_at', null);
+    data.team_admin.teamCount = Math.max(created || 0, headCoach || 0);
     data.team_admin.loaded = true;
-  } catch { /* keep */ }
+  } catch { /* keep loaded=false on unexpected error */ }
 
-  // LEAGUE_ADMIN: leagues where this user is the owner/admin.
-  // `league_owners` table (Phase 1) — fall back to 0 if it doesn't exist yet.
+  // LEAGUE_ADMIN: `league_owners` doesn't exist on prod (verified 2026-07-02).
+  // `leagues` table has NO ownership column (no owner_user_id, no created_by).
+  // `claims` is empty on prod, so we can't count approved league claims.
+  // No reliable ownership signal exists yet. Probe-only pattern: if the table
+  // appears in the future, this loader starts working automatically with no
+  // code change. Until then, loaded=false and the card shows the honest
+  // empty state ("You don't run a league yet").
+  // Separate piece: add leagues.owner_user_id or wire claims. Out of scope here.
   try {
+    await supabaseAdmin
+      .from('league_owners')
+      .select('id', { count: 'exact', head: true })
+      .limit(1);
+    // league_owners exists — count against it.
     const { count } = await supabaseAdmin
       .from('league_owners')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId);
     data.league_admin.leagueCount = count || 0;
     data.league_admin.loaded = true;
-  } catch { /* keep */ }
+  } catch { /* league_owners still missing — keep loaded=false */ }
 
-  // RINK_OPERATOR: rinks where this user is the operator/owner.
-  // `rink_operators` table (Phase 1) — fall back to 0 if it doesn't exist yet.
+  // RINK_OPERATOR: `rink_operators` doesn't exist on prod (verified 2026-07-02).
+  // `rinks` table has NO ownership column (only created_at). Same problem as
+  // league_admin. Probe-only pattern — same as above.
   try {
+    await supabaseAdmin
+      .from('rink_operators')
+      .select('id', { count: 'exact', head: true })
+      .limit(1);
+    // rink_operators exists — count against it.
     const { count } = await supabaseAdmin
       .from('rink_operators')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId);
     data.rink_operator.rinkCount = count || 0;
-    // Leads associated with this user's rinks (clerk_user_id is the new column).
-    try {
-      const { count: lc } = await supabaseAdmin
-        .from('leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('clerk_user_id', userId);
-      data.rink_operator.leads = lc || 0;
-    } catch { /* no leads table — keep 0 */ }
     data.rink_operator.loaded = true;
-  } catch { /* keep */ }
+  } catch { /* rink_operators still missing — keep loaded=false */ }
+
+  // RINK_OPERATOR.leads: count leads associated with this user's rinks.
+  // The leads table has NO `clerk_user_id` column (verified 2026-07-02 via
+  // information_schema.columns). The real column is `claimant_user_id`.
+  // Filtering on a non-existent column would silently return 0 for everyone;
+  // switching to claimant_user_id returns the real count (table is small
+  // on prod but the filter is at least correct now).
+  try {
+    const { count: lc } = await supabaseAdmin
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .eq('claimant_user_id', userId);
+    data.rink_operator.leads = lc || 0;
+  } catch { /* no leads table — keep 0 */ }
 
   // BUSINESS: listings table (Phase 0.4).
   try {
@@ -149,11 +186,12 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
       .eq('owner_user_id', userId)
       .eq('listing_type', 'business');
     data.business.listings = count || 0;
+    // Same leads.clerk_user_id -> claimant_user_id fix as rink_operator above.
     try {
       const { count: lc } = await supabaseAdmin
         .from('leads')
         .select('id', { count: 'exact', head: true })
-        .eq('clerk_user_id', userId);
+        .eq('claimant_user_id', userId);
       data.business.leads = lc || 0;
     } catch { /* no leads table */ }
     data.business.loaded = true;
