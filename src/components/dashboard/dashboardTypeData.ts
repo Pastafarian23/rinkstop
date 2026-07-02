@@ -123,9 +123,27 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
     data.scout.loaded = true;
   } catch { /* keep */ }
 
-  // REFEREE: games officiated. We don't log this yet; render the "Report a game" CTA
-  // as the only action. loaded=true so the section renders.
-  data.referee.loaded = true;
+  // REFEREE: games officiated. Probe-only pattern (same as league_admin / rink_operator
+  // shipped in Fix #1). `referee_assignments` table doesn't exist on prod (verified
+  // 2026-07-02). When the table appears (Q4 2026 ETA per /dashboard/referee/games stub),
+  // this loader starts working automatically — counts assignments for this user where
+  // status indicates an officiated game (not declined). Until then, loaded=false and
+  // the card shows honest empty state ("Officiating tools coming soon") pointing at
+  // the stub. Expected schema: referee_assignments(user_id, game_id, status, assigned_at).
+  try {
+    await supabaseAdmin
+      .from('referee_assignments')
+      .select('id', { count: 'exact', head: true })
+      .limit(1);
+    // referee_assignments exists — count this user's completed assignments.
+    const { count } = await supabaseAdmin
+      .from('referee_assignments')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'completed');
+    data.referee.officiatedGames = count || 0;
+    data.referee.loaded = true;
+  } catch { /* referee_assignments still missing — keep loaded=false */ }
 
   // TEAM_ADMIN: teams where this user is the creator OR active head_coach.
   // `team_owners` (the Phase 1 placeholder) doesn't exist on prod (verified
