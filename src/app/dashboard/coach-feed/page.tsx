@@ -284,7 +284,7 @@ export default async function CoachFeedPage({
                 <FeedItem post={post} isRead={isRead} meta={FOCUS_META[post.type]} fmtRelative={fmtRelative} fmtDate={fmtDate} fmtTime={fmtTime}>
                   {!isRead && (
                     <MarkReadButton
-                      postTable={post.type === 'news' ? 'team_news' : post.type === 'schedule' ? 'team_events' : 'team_results'}
+                      postTable={post.type === 'news' ? 'team_news' : post.type === 'schedule' ? 'team_schedule' : 'team_results'}
                       postId={post.id}
                     />
                   )}
