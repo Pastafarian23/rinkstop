@@ -35,7 +35,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
   // Get all teams the sharing user is on
   const { data: memberships } = await supabaseAdmin
     .from('team_members')
-    .select('team_id, team:team_workspaces(id, name, short_name, slug)')
+    .select('team_id, team:team_workspaces(id, name, short_name, slug, timezone)')
     .eq('user_id', meta.userId)
     .is('left_at', null);
 
@@ -43,7 +43,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
     .map((m) => {
       const t: any = m.team;
       if (!t) return null;
-      return { id: t.id, name: t.name, short_name: t.short_name, slug: t.slug };
+      return { id: t.id, name: t.name, short_name: t.short_name, slug: t.slug, timezone: t.timezone ?? null };
     })
     .filter(Boolean) as CalendarTeam[];
 
@@ -55,7 +55,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
 
   const { data: eventsRaw } = await supabaseAdmin
     .from('team_events')
-    .select('id, team_id, event_kind, title, starts_at, ends_at, location_note, opposing_team, is_off_ice, status')
+    .select('id, team_id, event_kind, title, starts_at, ends_at, location_note, opposing_team, is_off_ice, status, timezone')
     .in('team_id', teamIds)
     .gte('starts_at', now.toISOString())
     .lte('starts_at', horizon.toISOString())
@@ -80,6 +80,7 @@ export default async function SharedSchedulePage({ params }: { params: Promise<{
     opposing_team: e.opposing_team,
     is_off_ice: e.is_off_ice || false,
     status: e.status,
+    timezone: e.timezone ?? teamById.get(e.team_id)?.timezone ?? null,
   }));
 
   return (

@@ -10,7 +10,7 @@ interface NewsPost { id: string; title: string; body?: string; is_published: boo
 interface ResultPost { id: string; game_date: string; opponent: string; home_away?: string; our_score: number; their_score: number; outcome: string; notes?: string; created_at: string; }
 interface SchedulePost { id: string; scheduled_at: string; opponent?: string; kind: string; venue?: string; home_away?: string; notes?: string; is_cancelled: boolean; created_at: string; }
 
-interface Props { teamSlug: string; teamId: string; }
+interface Props { teamSlug: string; teamId: string; teamTimezone?: string | null; }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
@@ -60,13 +60,13 @@ function ConfirmDialog({
 
 // ── Post list helpers ─────────────────────────────────────────────────────────
 
-function fmtDate(s: string | undefined, wantTime = false): string {
+function fmtDate(s: string | undefined, wantTime = false, timeZone?: string | null): string {
   if (!s) return '';
   const d = new Date(s);
   if (!Number.isFinite(d.getTime())) return s;
   return wantTime
-    ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
-    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', ...(timeZone ? { timeZone } : {}) })
+    : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', ...(timeZone ? { timeZone } : {}) });
 }
 
 function outcomeBadge(outcome: string): React.ReactNode {
@@ -349,7 +349,7 @@ function StatusMsg({ ok, text }: { ok: boolean; text: string }) {
 
 interface DeleteOp { type: PostType; id: string; label: string; }
 
-function NewsList({ posts, onEdit, onDelete }: { posts: NewsPost[]; onEdit: (p: NewsPost) => void; onDelete: (p: NewsPost) => void }) {
+function NewsList({ posts, onEdit, onDelete, teamTimezone }: { posts: NewsPost[]; onEdit: (p: NewsPost) => void; onDelete: (p: NewsPost) => void; teamTimezone?: string | null }) {
   if (!posts.length) return (
     <div
       style={{
@@ -373,7 +373,7 @@ function NewsList({ posts, onEdit, onDelete }: { posts: NewsPost[]; onEdit: (p: 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
             <div style={{ minWidth: 0 }}>
               <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</p>
-              <p style={{ margin: '0.15rem 0 0', fontSize: '0.72rem', color: 'rgba(255,255,255,0.38)' }}>{fmtDate(p.published_at ?? p.created_at)} · {p.is_published ? 'Published' : 'Draft'}</p>
+              <p style={{ margin: '0.15rem 0 0', fontSize: '0.72rem', color: 'rgba(255,255,255,0.38)' }}>{fmtDate(p.published_at ?? p.created_at, false, teamTimezone)} · {p.is_published ? 'Published' : 'Draft'}</p>
             </div>
             <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
               <button onClick={() => onEdit(p)} style={{ padding: '0.3rem 0.6rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 5, color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Edit</button>
@@ -386,7 +386,7 @@ function NewsList({ posts, onEdit, onDelete }: { posts: NewsPost[]; onEdit: (p: 
   );
 }
 
-function ResultList({ posts }: { posts: ResultPost[] }) {
+function ResultList({ posts, teamTimezone }: { posts: ResultPost[]; teamTimezone?: string | null }) {
   if (!posts.length) return (
     <div
       style={{
@@ -410,7 +410,7 @@ function ResultList({ posts }: { posts: ResultPost[] }) {
           {outcomeBadge(p.outcome)}
           <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', flex: 1 }}>{p.opponent}</span>
           <span style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1rem', color: '#fff', letterSpacing: '0.05em' }}>{p.our_score}–{p.their_score}</span>
-          <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.38)' }}>{fmtDate(p.game_date)}</span>
+          <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.38)' }}>{fmtDate(p.game_date, false, teamTimezone)}</span>
           <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', textTransform: 'capitalize' }}>{p.home_away ?? 'home'}</span>
         </div>
       ))}
@@ -419,7 +419,7 @@ function ResultList({ posts }: { posts: ResultPost[] }) {
   );
 }
 
-function ScheduleList({ posts, onEdit, onDelete }: { posts: SchedulePost[]; onEdit: (p: SchedulePost) => void; onDelete: (p: SchedulePost) => void }) {
+function ScheduleList({ posts, onEdit, onDelete, teamTimezone }: { posts: SchedulePost[]; onEdit: (p: SchedulePost) => void; onDelete: (p: SchedulePost) => void; teamTimezone?: string | null }) {
   if (!posts.length) return (
     <div
       style={{
@@ -449,7 +449,7 @@ function ScheduleList({ posts, onEdit, onDelete }: { posts: SchedulePost[]; onEd
                   {p.is_cancelled && <span style={{ color: '#FF6B7A', marginLeft: '0.4rem' }}>— Cancelled</span>}
                 </p>
                 <p style={{ margin: '0.1rem 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
-                  {fmtDate(p.scheduled_at, true)}{p.venue ? ` · ${p.venue}` : ''}{p.home_away && p.kind === 'game' ? ` · ${p.home_away}` : ''}
+                  {fmtDate(p.scheduled_at, true, teamTimezone)}{p.venue ? ` · ${p.venue}` : ''}{p.home_away && p.kind === 'game' ? ` · ${p.home_away}` : ''}
                 </p>
               </div>
             </div>
@@ -466,7 +466,7 @@ function ScheduleList({ posts, onEdit, onDelete }: { posts: SchedulePost[]; onEd
 
 // ── Main panel ─────────────────────────────────────────────────────────────────
 
-export default function AdminPostPanel({ teamSlug }: Props) {
+export default function AdminPostPanel({ teamSlug, teamTimezone }: Props) {
   const [activeTab, setActiveTab] = useState<PostType>('news');
 
   // Post lists
@@ -558,7 +558,7 @@ export default function AdminPostPanel({ teamSlug }: Props) {
               </>
             ) : (
               <>
-                <NewsList posts={news} onEdit={p => setEditingNews(p)} onDelete={p => setConfirmDelete({ type: 'news', id: p.id, label: p.title })} />
+                <NewsList posts={news} onEdit={p => setEditingNews(p)} onDelete={p => setConfirmDelete({ type: 'news', id: p.id, label: p.title })} teamTimezone={teamTimezone} />
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem', marginTop: '0.25rem' }}>
                   <p style={{ margin: '0 0 0.85rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>New post</p>
                   <NewsForm teamSlug={teamSlug} onSaved={loadPosts} onCancel={() => {}} />
@@ -571,7 +571,7 @@ export default function AdminPostPanel({ teamSlug }: Props) {
         {/* Results tab */}
         {activeTab === 'result' && (
           <>
-            <ResultList posts={results} />
+            <ResultList posts={results} teamTimezone={teamTimezone} />
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem', marginTop: '0.25rem' }}>
               <p style={{ margin: '0 0 0.85rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Record new result</p>
               <ResultForm teamSlug={teamSlug} onSaved={loadPosts} />
@@ -589,7 +589,7 @@ export default function AdminPostPanel({ teamSlug }: Props) {
               </>
             ) : (
               <>
-                <ScheduleList posts={schedule} onEdit={p => setEditingSchedule(p)} onDelete={p => setConfirmDelete({ type: 'schedule', id: p.id, label: `${kindLabel(p.kind)} — ${fmtDate(p.scheduled_at)}` })} />
+                <ScheduleList posts={schedule} onEdit={p => setEditingSchedule(p)} onDelete={p => setConfirmDelete({ type: 'schedule', id: p.id, label: `${kindLabel(p.kind)} — ${fmtDate(p.scheduled_at, false, teamTimezone)}` })} teamTimezone={teamTimezone} />
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1rem', marginTop: '0.25rem' }}>
                   <p style={{ margin: '0 0 0.85rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Add event</p>
                   <ScheduleForm teamSlug={teamSlug} onSaved={loadPosts} onCancel={() => {}} />
