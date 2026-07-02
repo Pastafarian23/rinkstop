@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import { getUserTier } from '@/lib/connections';
+import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import FamilySearch from '@/components/family/FamilySearch';
 
 export const dynamic = 'force-dynamic';
@@ -15,10 +16,12 @@ export default async function FamilyPage() {
 
   const tier = await getUserTier(userId);
 
-  // Handle legacy 'premium' tier value (maps to roster_plus)
-  const normalizedTier = tier === 'premium' ? 'roster_plus' : tier;
-  const canAccessFamily = ['roster_plus', 'pro', 'business_pro', 'business_premium', 'enterprise'].includes(normalizedTier);
-
+  // Family Hub is part of the Identity Plus plan (and legacy pro/roster_plus).
+  // The business track has its own equivalents (business_pro+ = paid business tier with multi-listing).
+  // tierAtLeast handles both new and legacy tier names.
+  const canAccessFamily =
+    tierAtLeastSameTrack(tier, 'identity_plus') ||
+    tierAtLeastSameTrack(tier, 'business_listing');
   if (!canAccessFamily) {
     redirect('/pricing');
   }

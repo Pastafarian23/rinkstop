@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
+import { tierAtLeast } from '@/lib/connections';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,7 +66,11 @@ export default async function LeadsPage() {
         )}
       </div>
 
-      {claimantTier !== 'pro' && (
+      {/*
+        Show upgrade nudge to anyone below Business Plus (the top business tier
+        that has featured placement). tierAtLeast handles legacy aliases too.
+      */}
+      {!tierAtLeast(claimantTier, 'business_plus') && (
         <div style={{
           background: 'linear-gradient(135deg, rgba(200,16,46,0.12), rgba(255,184,28,0.08))',
           border: '1px solid rgba(200,16,46,0.3)',

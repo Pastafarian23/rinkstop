@@ -4,7 +4,7 @@
  * POST /api/identity/verify/start
  *
  * Creates a Didit.me verification session for the caller and returns the
- * hosted URL. Tier gate: `tierAtLeast(tier, 'roster_plus')` (Roster+ required
+ * hosted URL. Tier gate: `tierAtLeast(tier, 'identity_plus')` (Identity Plus required,
  * for Phase 1, per the role-based hub design where 7 of 8 roles require
  * verification and verification itself requires a paid tier).
  *
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch { /* currentUser() may throw in edge cases — fall through */ }
-    if (!tierAtLeast(tier, 'roster_plus')) {
+    if (!tierAtLeast(tier, 'identity_plus')) {
       return NextResponse.json(
         {
           error: 'tier_required',

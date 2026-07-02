@@ -131,7 +131,8 @@ export default async function WelcomePage({
   // checkout.session.completed), but we tolerate a slight race by preferring
   // the profile's actual current tier.
   const params = await searchParams;
-  const urlTier = (params.tier || 'roster') as TierId;
+  // Default to 'verified_identity' if no tier in URL (post-checkout redirect).
+  const urlTier = (params.tier || 'verified_identity') as TierId;
   const sessionId = params.session_id || null;
 
   const { data: profile } = await supabaseAdmin

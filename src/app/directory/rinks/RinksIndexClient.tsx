@@ -63,12 +63,20 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
   }, [country, initialCountry]);
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const verifiedCount = rinks.filter(r => ['pro', 'business_premium', 'enterprise'].includes(r.claimed_by_tier)).length;
+  // A listing is "verified" if the claimant has a paid tier in either track.
+  // Personal: identity_plus (or legacy pro/roster_plus). Business: business_listing+ (or legacy business_*).
+  // Federation is always verified (it's a paid org tier).
+  const VERIFIED_TIERS = new Set([
+    'identity_plus', 'pro', 'roster_plus', 'premium',
+    'business_listing', 'business_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation',
+    'business_starter', 'business_pro', 'business_premium', 'enterprise',
+  ]);
+  const verifiedCount = rinks.filter(r => r.claimed_by_tier && VERIFIED_TIERS.has(r.claimed_by_tier)).length;
 
   const filtered = rinks.filter(r => {
     const matchSearch = !search || r.name.toLowerCase().includes(search.toLowerCase()) || (r.city || '').toLowerCase().includes(search.toLowerCase());
     const matchCountry = !country || (r.country || '').toLowerCase().includes(country.toLowerCase());
-    const matchVerified = !verifiedOnly || ['pro', 'business_premium', 'enterprise'].includes(r.claimed_by_tier);
+    const matchVerified = !verifiedOnly || (r.claimed_by_tier != null && VERIFIED_TIERS.has(r.claimed_by_tier));
     return matchSearch && matchCountry && matchVerified;
   });
 
@@ -260,8 +268,8 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
                 href={`/directory/rinks/${rink.slug || rink.id}`}
                 style={{
                   display: 'flex', alignItems: 'stretch', gap: '0.75rem', textDecoration: 'none',
-                  background: rink.claimed_by_tier === 'pro' || rink.claimed_by_tier === 'business_premium' ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
-                  border: `1px solid ${rink.claimed_by_tier === 'business_premium' ? 'rgba(200,16,46,0.5)' : rink.claimed_by_tier === 'pro' ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  background: rink.claimed_by_tier && VERIFIED_TIERS.has(rink.claimed_by_tier) ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
+                  border: `1px solid ${rink.claimed_by_tier && VERIFIED_TIERS.has(rink.claimed_by_tier) ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
                   borderRadius: '6px',
                   padding: '0.625rem',
                   position: 'relative',
@@ -271,12 +279,11 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
                 {/* Featured/Verified badge in the corner */}
-                {rink.claimed_by_tier === 'business_premium' && (
-                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
+                {(rink.claimed_by_tier === 'business_plus' || rink.claimed_by_tier === 'business_premium' || rink.claimed_by_tier === 'federation' || rink.claimed_by_tier === 'enterprise') && (                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
                     ⭐ Featured
                   </div>
                 )}
-                {(rink.claimed_by_tier === 'pro' || rink.claimed_by_tier === 'business_premium') && (
+                {(rink.claimed_by_tier && VERIFIED_TIERS.has(rink.claimed_by_tier)) && (
                   <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Verified

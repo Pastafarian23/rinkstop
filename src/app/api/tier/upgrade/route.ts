@@ -90,9 +90,11 @@ export async function POST(req: NextRequest) {
   const requestedTier = typeof body.tier === 'string' ? body.tier : '';
   const requestedTrack = typeof body.track === 'string' ? body.track : null;
 
-  if (requestedTier === 'enterprise') {
+  // Federation has no Stripe product (contact sales only) — short-circuit with 303 redirect.
+  // League is also contact-sales but DOES have a Stripe price (lower-friction purchase).
+  if (requestedTier === 'federation') {
     const res = NextResponse.json(
-      { error: 'enterprise_contact_sales', url: '/partner?source=tier-upgrade-api' },
+      { error: 'federation_contact_sales', url: '/partner?source=tier-upgrade-api' },
       { status: 303 }
     );
     return applyRateLimitHeaders(res, result);
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
   const tier = requestedTier as TierName;
   if (!tier || !(tier in TIER_TO_PRICE_ENV)) {
     const res = NextResponse.json(
-      { error: 'invalid_tier', allowed: Object.keys(TIER_TO_PRICE_ENV).filter(t => t !== 'free' && t !== 'enterprise') },
+      { error: 'invalid_tier', allowed: Object.keys(TIER_TO_PRICE_ENV).filter(t => t !== 'free' && t !== 'federation') },
       { status: 400 }
     );
     return applyRateLimitHeaders(res, result);

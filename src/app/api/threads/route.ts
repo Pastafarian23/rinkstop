@@ -137,7 +137,8 @@ export async function POST(request: NextRequest) {
   // Tier check: Identity Plus (personal) or Business Plus (business) required to start DMs.
   // Per privilege matrix, DMs are gated to ensure quality conversations.
   const tier = await getUserTier(userId);
-  const canDM = tierAtLeastSameTrack(tier, 'pro') || tierAtLeastSameTrack(tier, 'business_pro');
+  // Personal: Identity Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
+  const canDM = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(tier, 'business_listing');
   if (!canDM) {
     return NextResponse.json(
       { error: 'Identity Plus or Business Plus membership required to start conversations.', currentTier: tier },
