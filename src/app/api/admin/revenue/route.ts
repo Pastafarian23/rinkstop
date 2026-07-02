@@ -9,13 +9,32 @@ const stripe = process.env.STRIPE_SECRET_KEY
   : null;
 
 // Tier rename 2026-06-17: was supporter/verified/pro → roster/roster_plus/pro/business tiers.
-const PRICE_TO_TIER: Record<string, 'roster' | 'roster_plus' | 'pro' | 'business_starter' | 'business_pro' | 'business_premium'> = {
+// 2026-07-02 brief: added 8 new canonical tiers. Env var names changed.
+// Both old (STRIPE_PRICE_TIER_*) and new (STRIPE_PRICE_*) env vars are checked so
+// existing subscribers on the old products still map correctly while new subscribers
+// on the new products map to the new tier names. Federation has no Stripe product
+// (contact-sales only) so it's not represented here.
+const PRICE_TO_TIER: Record<string, string> = {
+  // Old tiers (pre-2026-07-02) — backed by STRIPE_PRICE_TIER_* env vars
+  [process.env.STRIPE_PRICE_TIER_STARTER || '']: 'roster',
+  [process.env.STRIPE_PRICE_TIER_FAMILY_PLUS || '']: 'roster_plus',
+  [process.env.STRIPE_PRICE_TIER_PRO || '']: 'pro',
+  // New tiers (2026-07-02 brief) — backed by STRIPE_PRICE_* env vars
+  [process.env.STRIPE_PRICE_VERIFIED_IDENTITY || '']: 'verified_identity',
+  [process.env.STRIPE_PRICE_IDENTITY_PLUS || '']: 'identity_plus',
+  [process.env.STRIPE_PRICE_CLUB_STARTER || '']: 'club_starter',
+  [process.env.STRIPE_PRICE_CLUB_PRO || '']: 'club_pro',
+  [process.env.STRIPE_PRICE_CLUB_ELITE || '']: 'club_elite',
+  [process.env.STRIPE_PRICE_LEAGUE || '']: 'league',
+  [process.env.STRIPE_PRICE_BUSINESS_LISTING || '']: 'business_listing',
+  [process.env.STRIPE_PRICE_BUSINESS_PLUS || '']: 'business_plus',
+  // Legacy aliases kept for safety (in case the renamed env vars are also still set)
   [process.env.STRIPE_PRICE_ROSTER || '']: 'roster',
   [process.env.STRIPE_PRICE_ROSTER_PLUS || '']: 'roster_plus',
   [process.env.STRIPE_PRICE_PRO || '']: 'pro',
-  [process.env.STRIPE_PRICE_BUSINESS_STARTER || '']: 'business_starter',
-  [process.env.STRIPE_PRICE_BUSINESS_PRO || '']: 'business_pro',
-  [process.env.STRIPE_PRICE_BUSINESS_PREMIUM || '']: 'business_premium',
+  [process.env.STRIPE_PRICE_BUSINESS_STARTER || '']: 'business_listing',
+  [process.env.STRIPE_PRICE_BUSINESS_PRO || '']: 'business_plus',
+  [process.env.STRIPE_PRICE_BUSINESS_PREMIUM || '']: 'business_plus',
 };
 
 /**
@@ -44,7 +63,15 @@ export async function GET(_req: NextRequest) {
       starting_after = r.data[r.data.length - 1].id;
     }
 
-    const tierCounts: Record<string, number> = { roster: 0, roster_plus: 0, pro: 0, business_starter: 0, business_pro: 0, business_premium: 0, other: 0 };
+    const tierCounts: Record<string, number> = {
+      // Old tier buckets
+      roster: 0, roster_plus: 0, pro: 0,
+      // New tier buckets (2026-07-02 brief)
+      verified_identity: 0, identity_plus: 0,
+      club_starter: 0, club_pro: 0, club_elite: 0, league: 0,
+      business_listing: 0, business_plus: 0,
+      other: 0,
+    };
     let mrrCents = 0;
     let arrCents = 0;
     let trialingNow = 0;
