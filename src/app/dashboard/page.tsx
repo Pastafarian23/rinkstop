@@ -15,6 +15,8 @@ import { loadDashboardTypeData } from '@/components/dashboard/dashboardTypeData'
 import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
+import { tierAtLeast } from '@/lib/connections';
+import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
 
 /**
  * OWNER_EMAILS is defined in src/lib/admin-auth.ts — single source of truth.
@@ -317,353 +319,336 @@ async function renderDashboard(userId: string) {
         background: '#0f0f0f',
         border: '1px solid #1e1e1e',
         borderRadius: 12,
-        padding: '1.75rem',
+        padding: '1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        flexWrap: 'wrap',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="Profile"
-              style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid #C8102E' }}
-            />
-          ) : (
-            <div style={{
-              width: 72, height: 72, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #C8102E 0%, #8b0a1e 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '2rem',
-              border: '3px solid #C8102E',
-            }}>
-              {firstName?.[0]?.toUpperCase() || '?'}
-            </div>
-          )}
-          <div>
-            <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.25rem' }}>
-              Welcome back, {firstName || 'RinkStop Member'}
-            </h2>
-            <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>{email}</p>
-            <p style={{ color: '#555', fontSize: '0.8rem', margin: '0.5rem 0 0' }}>
-              {memberSinceDate ? `Founder since ${memberSinceDate}` : 'Welcome to RinkStop'}
-            </p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              {isFounder ? (
-                <FounderBadge size="xs" foundingDate="February 7, 2019" />
-              ) : (
-                <>
-                  <TierBadge tier={profile?.tier || 'free'} size="xs" />
-                  {profile?.is_founding_member && (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      padding: '0.1rem 0.5rem', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em',
-                      textTransform: 'uppercase', borderRadius: 999,
-                      background: 'rgba(255,184,28,0.12)', color: '#FFB81C',
-                      border: '1px solid rgba(255,184,28,0.4)',
-                    }}>⭐ Founding</span>
-                  )}
-                  {profile?.tier === 'free' ? (
-                    <Link href="/pricing" style={{ fontSize: 11, color: '#FFB81C', textDecoration: 'none', fontWeight: 600 }}>
-                      ✨ Upgrade →
-                    </Link>
-                  ) : (
-                    <Link href="/dashboard/subscription" style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textDecoration: 'none', fontWeight: 600 }}>
-                      Manage subscription →
-                    </Link>
-                  )}
-                </>
-              )}
-            </div>
-            {types.length > 0 && (
-              <div style={{ marginTop: 10 }}>
-                <AccountTypeBadges types={types} primary={primary} size="sm" />
-              </div>
-            )}
+        <div style={{ flex: '1 1 280px', minWidth: 240 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.05em', margin: 0 }}>
+              {firstName ? `Welcome back, ${firstName}` : 'Welcome to RinkStop'}
+            </h1>
+            <TierBadge tier={profile?.tier ?? 'free'} size="sm" />
+            {isFounder ? <FounderBadge /> : null}
           </div>
+          {memberSinceDate ? (
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', marginBottom: 8 }}>
+              Member since {memberSinceDate}
+            </div>
+          ) : null}
+          {types.length > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Your roles</span>
+              <AccountTypeBadges types={types} primary={primary} />
+            </div>
+          ) : null}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Link
+            href="/dashboard/profile"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '0.55rem 1rem', borderRadius: 6,
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              color: '#fff', fontSize: '0.85rem', fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            View profile
+          </Link>
+          <Link
+            href="/dashboard/subscription"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '0.55rem 1rem', borderRadius: 6,
+              background: profile?.tier === 'free' || !profile?.tier ? '#FFB81C' : 'rgba(255,255,255,0.08)',
+              color: profile?.tier === 'free' || !profile?.tier ? '#0a0a0a' : '#fff',
+              fontSize: '0.85rem', fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            {profile?.tier === 'free' || !profile?.tier ? 'Upgrade plan' : 'Manage plan'}
+          </Link>
         </div>
       </div>
 
-      {/* Piece E (2026-06-24): verify-identity banner. Only shows for
-          unverified users. Uses the hardened helper from Piece C, so the
-          same gate that powers the ✓ Verified badge and team-creation
-          gates also drives this banner. Smaller on mobile. */}
-      {!isIdentityVerifiedForUser && (
-        <div
-          role="region"
-          aria-label="Verify your identity"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,184,28,0.12) 0%, rgba(200,16,46,0.08) 100%)',
-            border: '1px solid rgba(255,184,28,0.35)',
-            borderRadius: 12,
-            padding: '1.25rem 1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-            flexWrap: 'wrap',
-          }}
-        >
-          <div style={{ fontSize: '1.5rem', flexShrink: 0 }} aria-hidden="true">🛡️</div>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <h2
-              style={{
-                fontFamily: "'Bebas Neue', Impact, sans-serif",
-                fontSize: '1rem',
-                color: '#fff',
-                letterSpacing: '0.04em',
-                margin: '0 0 0.15rem',
-              }}
-            >
-              VERIFY YOUR IDENTITY TO UNLOCK TEAM MANAGEMENT
-            </h2>
-            <p
-              style={{
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: '0.8rem',
-                margin: 0,
-                lineHeight: 1.4,
-              }}
-            >
-              Coaches and managers need verified identity to manage teams. Takes ~2 minutes with a government ID.
-            </p>
-          </div>
-          <Link
-            href="/dashboard/identity"
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#FFB81C',
-              color: '#0a0a0a',
-              borderRadius: 6,
-              textDecoration: 'none',
-              fontSize: '0.85rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Verify identity →
-          </Link>
-        </div>
-      )}
-
-      {/* Profile completeness */}
-      {completenessPct < 100 && firstMissing && (
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(255,184,28,0.08) 0%, rgba(20,184,166,0.04) 100%)',
-          border: '1px solid rgba(255,184,28,0.2)',
-          borderRadius: 12,
-          padding: '1.25rem 1.5rem',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ flex: 1, minWidth: 240 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>Profile {completenessPct}% complete</span>
-              </div>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: 0 }}>
-                {firstMissing.hint}
-              </p>
-              <div style={{ marginTop: 10, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: `${completenessPct}%`, height: '100%', background: 'linear-gradient(90deg, #FFB81C, #14B8A6)' }} />
-              </div>
-            </div>
-            <Link
-              href={firstMissing.href}
-              style={{
-                padding: '0.5rem 1rem', background: '#FFB81C', color: '#0a0a0a',
-                borderRadius: 6, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 700,
-              }}
-            >
-              Complete profile →
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Inbox widget — shows recent threads or empty-state discover CTAs.
-          Always visible so the user has a single place to see new messages
-          and start conversations. Loaded server-side via
-          loadInboxSummary. */}
+      {/* Inbox widget — quick access to messages, available to all users */}
       <InboxCard data={inbox} />
 
-      {/* Onboarding for users who haven't picked an account type yet.
-          Piece 3.5: AccountTypePicker moved to its own page at /dashboard/roles.
-          This card is a CTA link to that page. */}
+      {/* Workspace hub — three cards: Personal / Organization / Business.
+          Per Arnel's 2026-07-02 directive, this replaces the previous
+          10-section landing. Locked workspaces show with 🔒 + opacity
+          + upgrade CTA per the standing "never hide locked features" rule. */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: '0.75rem',
+        marginTop: '0.5rem',
+      }}>
+        <h2 style={{
+          fontFamily: "'Bebas Neue', Impact, sans-serif",
+          fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em',
+          margin: '0.25rem 0 0',
+        }}>
+          Your Workspaces
+        </h2>
+        <p style={{
+          color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem',
+          margin: 0, lineHeight: 1.5,
+        }}>
+          RinkStop organizes your dashboard into three workspaces based on what you do in hockey. Pick the one that fits your current focus.
+        </p>
+      </div>
+
+      <WorkspaceHub
+        userTier={profile?.tier ?? 'free'}
+        accountTypes={types.map(t => String(t))}
+      />
+
+      {/* Choose your roles — only when user has zero account types.
+          Shown AFTER the workspace hub so empty-state users can still see
+          what they're missing. */}
       {types.length === 0 && (
         <div
-          id="account-types"
+          id="empty-state-roles"
           style={{
-            background: 'linear-gradient(135deg, rgba(20,184,166,0.06) 0%, rgba(96,165,250,0.04) 100%)',
-            border: '1px solid rgba(20,184,166,0.25)',
+            background: '#0f0f0f',
+            border: '1px solid rgba(255,184,28,0.4)',
             borderRadius: 12,
-            padding: '1.75rem',
+            padding: '1.75rem 1.5rem',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '0.75rem',
           }}
         >
-          <h3
-            style={{
-              fontFamily: "'Bebas Neue', Impact, sans-serif",
-              fontSize: '1.25rem',
-              color: '#fff',
-              letterSpacing: '0.05em',
-              margin: '0 0 0.5rem',
-            }}
-          >
-            WHAT DO YOU DO IN HOCKEY?
+          <div style={{ fontSize: '1.5rem' }}>👋</div>
+          <h3 style={{
+            fontFamily: "'Bebas Neue', Impact, sans-serif",
+            fontSize: '1.25rem', color: '#fff', letterSpacing: '0.05em',
+            margin: 0,
+          }}>
+            PICK YOUR HOCKEY ROLE TO GET STARTED
           </h3>
-          <p
-            style={{
-              color: 'rgba(255,255,255,0.65)',
-              fontSize: '0.9rem',
-              margin: '0 0 1.25rem',
-              maxWidth: 640,
-            }}
-          >
-            Pick every role that fits you. We&rsquo;ll show you the right tools and shortcuts for each one.
+          <p style={{
+            color: 'rgba(255,255,255,0.65)', fontSize: '0.9rem',
+            margin: 0, maxWidth: 520, lineHeight: 1.55,
+          }}>
+            Tell us what you do in hockey (player, parent, coach, fan, etc.) and we'll unlock the right workspace for you. Free forever, multi-select.
           </p>
-          <a
+          <Link
             href="/dashboard/roles"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.625rem 1.25rem',
+              display: 'inline-block',
+              padding: '0.75rem 1.5rem',
               background: '#14B8A6',
               color: '#0a0a0a',
               borderRadius: 6,
               fontSize: '0.9rem',
               fontWeight: 700,
               textDecoration: 'none',
-              letterSpacing: '0.03em',
+              letterSpacing: '0.02em',
             }}
           >
             Choose your roles →
-          </a>
-        </div>
-      )}
-
-      {/* Type-aware sections — primary first */}
-      {types.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3
-            style={{
-              fontFamily: "'Bebas Neue', Impact, sans-serif",
-              fontSize: '1.15rem',
-              color: '#fff',
-              letterSpacing: '0.05em',
-              margin: '0.5rem 0 0',
-            }}
-          >
-            YOUR HOCKEY ROLES
-          </h3>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {types.map((t) => (
-              <TypeSectionCard
-                key={t}
-                type={t}
-                primary={primary}
-                data={typeData}
-                username={profile?.username ?? null}
-                identityVerified={isIdentityVerifiedForUser}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Edit types shortcut — visible to everyone who has at least one type.
-          Piece 3.5: AccountTypePicker moved to its own page at /dashboard/roles.
-          This is a CTA link card so the home dashboard stays scannable. */}
-      {types.length > 0 && (
-        <div
-          id="account-types"
-          style={{
-            background: '#0f0f0f',
-            border: '1px solid #1e1e1e',
-            borderRadius: 12,
-            padding: '1.5rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: '1rem' }}>
-            <h3
-              style={{
-                fontFamily: "'Bebas Neue', Impact, sans-serif",
-                fontSize: '1.1rem',
-                color: '#fff',
-                letterSpacing: '0.05em',
-                margin: 0,
-              }}
-            >
-              MANAGE YOUR ROLES &amp; LINKED RECORDS
-            </h3>
-            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-              Multi-select is free. Add or remove roles anytime.
-            </span>
-          </div>
-          <a
-            href="/dashboard/roles"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.55rem 1.1rem',
-              background: 'rgba(20,184,166,0.12)',
-              border: '1px solid rgba(20,184,166,0.5)',
-              borderRadius: 6,
-              color: '#14B8A6',
-              fontSize: '0.875rem',
-              fontWeight: 700,
-              textDecoration: 'none',
-              letterSpacing: '0.03em',
-            }}
-          >
-            Manage roles &amp; records →
-          </a>
-        </div>
-      )}
-
-      {/* My Teams (Day 3 — private team workspaces) */}
-      <div
-        id="my-teams"
-        style={{
-          background: '#0f0f0f',
-          border: '1px solid #1e1e1e',
-          borderRadius: 12,
-          padding: '1.25rem 1.5rem',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: '0.875rem' }}>
-          <h3
-            style={{
-              fontFamily: "'Bebas Neue', Impact, sans-serif",
-              fontSize: '1.1rem',
-              color: '#fff',
-              letterSpacing: '0.05em',
-              margin: 0,
-            }}
-          >
-            🏒 MY TEAMS
-          </h3>
-          <Link
-            href="/dashboard/team/new"
-            style={{
-              fontSize: '0.8rem',
-              color: '#14B8A6',
-              textDecoration: 'none',
-              fontWeight: 600,
-            }}
-          >
-            + Create a team
           </Link>
         </div>
-        {myTeams.length === 0 ? (
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
-            You&rsquo;re not on any teams yet. Start your own or ask a coach for an invite code.
+      )}
+
+    </div>
+  );
+}
+
+/**
+ * WorkspaceHub — renders the 3 workspace cards (Personal / Organization / Business)
+ * with lock-aware UX per Arnel's "never hide locked features" rule.
+ *
+ * Card visual states:
+ *   - Fully available: full opacity, primary CTA "Open Workspace →"
+ *   - Unlocked but tier-gated: full opacity on card, 🔒 icon on title,
+ *     subpages listed but each link shows 🔒, primary CTA "Upgrade to [tier] →"
+ *   - Account-type-locked: 70% opacity on card, 🔒 icon on title,
+ *     subpages listed but each link shows 🔒, primary CTA "Choose [type] roles →"
+ *     → /dashboard/roles
+ */
+function WorkspaceHub({
+  userTier,
+  accountTypes,
+}: {
+  userTier: string;
+  accountTypes: string[];
+}) {
+  const access = getWorkspaceAccess(accountTypes, userTier, tierAtLeast);
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+      gap: '1rem',
+    }}>
+      {access.map(({ workspace: ws, unlocked, fullyAvailable, requiredTier }) => {
+        // 70% opacity when account-type-locked (Arnel-approved default).
+        // Tier-locked (unlocked but no tier) keeps full opacity so users see
+        // the upgrade CTA clearly.
+        const cardOpacity = unlocked ? 1 : 0.7;
+        const locked = !fullyAvailable;
+
+        // Determine primary CTA
+        let ctaHref: string;
+        let ctaLabel: string;
+        let ctaStyle: React.CSSProperties;
+
+        if (!unlocked) {
+          // Account-type-locked: send user to /dashboard/roles
+          ctaHref = '/dashboard/roles';
+          ctaLabel = `Choose ${ws.requiredAccountTypes[0]?.replace('_', ' ') || 'role'} →`;
+          ctaStyle = {
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: '#fff',
+          };
+        } else if (requiredTier) {
+          // Tier-locked: send user to /pricing with the right tier deep link
+          ctaHref = `/pricing?tier=${requiredTier}`;
+          ctaLabel = `Upgrade to ${tierDisplayName(requiredTier)} →`;
+          ctaStyle = {
+            background: '#FFB81C',
+            color: '#0a0a0a',
+          };
+        } else {
+          // Fully available
+          ctaHref = ws.primaryHref;
+          ctaLabel = `Open ${ws.name} Workspace →`;
+          ctaStyle = {
+            background: 'rgba(20,184,166,0.15)',
+            border: '1px solid rgba(20,184,166,0.5)',
+            color: '#14B8A6',
+          };
+        }
+
+        return (
+          <div
+            key={ws.id}
+            data-testid={`workspace-card-${ws.id}`}
+            data-locked={locked ? 'true' : 'false'}
+            style={{
+              background: '#0f0f0f',
+              border: locked ? '1px solid rgba(255,255,255,0.15)' : '1px solid #1e1e1e',
+              borderRadius: 12,
+              padding: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              opacity: cardOpacity,
+              transition: 'opacity 0.2s, border-color 0.2s',
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span aria-hidden style={{ fontSize: '1.75rem' }}>{ws.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{
+                  fontFamily: "'Bebas Neue', Impact, sans-serif",
+                  fontSize: '1.25rem',
+                  color: locked ? 'rgba(255,255,255,0.7)' : '#fff',
+                  letterSpacing: '0.05em',
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}>
+                  {locked ? <span aria-label="locked" title="Locked">🔒</span> : null}
+                  {ws.name.toUpperCase()} WORKSPACE
+                </h3>
+                <p style={{
+                  color: 'rgba(255,255,255,0.55)',
+                  fontSize: '0.8rem',
+                  margin: '0.125rem 0 0',
+                  lineHeight: 1.45,
+                }}>
+                  {ws.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Subpages list */}
+            <ul style={{
+              listStyle: 'none',
+              margin: 0,
+              padding: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem',
+            }}>
+              {ws.subpages.map((sp) => (
+                <li key={sp.href}>
+                  {fullyAvailable ? (
+                    <Link
+                      href={sp.href}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '0.4rem 0.5rem',
+                        borderRadius: 6,
+                        color: 'rgba(255,255,255,0.85)',
+                        fontSize: '0.875rem',
+                        textDecoration: 'none',
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      {sp.emoji ? <span aria-hidden>{sp.emoji}</span> : null}
+                      <span style={{ flex: 1 }}>{sp.label}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>→</span>
+                    </Link>
+                  ) : (
+                    // Locked subpage: shown with 🔒, but clickable to either
+                    // /dashboard/roles (account-type-locked) or /pricing?tier=...
+                    // (tier-locked). User can still see what they'd unlock.
+                    <Link
+                      href={ctaHref}
+                      title={sp.description ?? sp.label}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '0.4rem 0.5rem',
+                        borderRadius: 6,
+                        color: 'rgba(255,255,255,0.45)',
+                        fontSize: '0.875rem',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <span aria-hidden>🔒</span>
+                      {sp.emoji ? <span aria-hidden style={{ opacity: 0.6 }}>{sp.emoji}</span> : null}
+                      <span style={{ flex: 1 }}>{sp.label}</span>
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            {/* Primary CTA */}
+            <Link
+              href={ctaHref}
+              data-testid={`workspace-cta-${ws.id}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '0.65rem 1rem',
+                borderRadius: 6,
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                marginTop: 'auto',
+                letterSpacing: '0.02em',
+                ...ctaStyle,
+              }}
+            >
+              {ctaLabel}
+            </Link>
           </div>
-        ) : (
-          <TeamList myTeams={myTeams} />
-        )}
-      </div>
+        );
+      })}
     </div>
   );
 }
