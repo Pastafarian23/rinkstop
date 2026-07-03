@@ -20,7 +20,8 @@ import { useId } from 'react';
 interface Props {
   basePath: string;
   currentYear: number;
-  liveYear: number;
+  /** Years that have a full pick-data archive (status='live'). */
+  liveYears: number[];
   years: number[];
 }
 
@@ -64,7 +65,7 @@ const labelStyle: React.CSSProperties = {
   letterSpacing: '1px',
 };
 
-export default function YearDropdown({ basePath, currentYear, liveYear, years }: Props) {
+export default function YearDropdown({ basePath, currentYear, liveYears, years }: Props) {
   const router = useRouter();
   const selectId = useId();
 
@@ -86,7 +87,7 @@ export default function YearDropdown({ basePath, currentYear, liveYear, years }:
         aria-label="Select NHL draft year"
       >
         {years.map((y) => {
-          const isLive = y === liveYear;
+          const isLive = liveYears.includes(y);
           const isCurrent = y === currentYear;
           let suffix = '';
           if (isLive) suffix = ' ★ live';
@@ -107,9 +108,9 @@ export default function YearDropdown({ basePath, currentYear, liveYear, years }:
           letterSpacing: '0.04em',
         }}
       >
-        {currentYear === liveYear
+        {liveYears.includes(currentYear)
           ? 'Live archive'
-          : currentYear > liveYear
+          : currentYear > Math.max(...liveYears)
             ? 'Future'
             : 'Coming soon'}
       </span>
