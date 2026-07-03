@@ -174,11 +174,15 @@ export async function POST(req: NextRequest) {
           //   - canceled / unpaid → tier=null (user truly lost access)
           const isLiveStatus = subscription.status === 'active' || subscription.status === 'trialing';
           const isDunning = subscription.status === 'past_due' || subscription.status === 'incomplete' || subscription.status === 'incomplete_expired';
-          const tier: string | null = isLiveStatus
-            ? (metadata.tier || null)
+          // profiles.tier is NOT NULL. On true cancellation (canceled/unpaid),
+          // drop the user to 'free' rather than null — this matches the UI pattern
+          // (every read path handles 'free' correctly) and avoids the 23502
+          // violation that would otherwise fail the webhook and have Stripe retry.
+          const tier: string = isLiveStatus
+            ? (metadata.tier || 'free')
             : isDunning
-              ? (metadata.tier || null) // keep tier during dunning — user paid, we just haven't collected yet
-              : null; // canceled / unpaid → downgrade
+              ? (metadata.tier || 'free') // keep tier during dunning — user paid, we just haven't collected yet
+              : 'free'; // canceled / unpaid → downgrade
           await updateUserTier(metadata.clerk_user_id, tier, subscription.id, subscription.customer, subscription.status, expiresAt);
 
           // Funnel event: the user's subscription went live (or transitioned).
@@ -212,7 +216,11 @@ export async function POST(req: NextRequest) {
         const metadata = subscription.metadata || {};
 
         if (metadata.clerk_user_id) {
-          await updateUserTier(metadata.clerk_user_id, null, null, null, 'cancelled', null);
+          // Write tier='free' (not null) because profiles.tier is NOT NULL.
+          // A cancelled user is functionally a free user; dropping them to the
+          // free tier unlocks the same access tier-gate functions grant to free
+          // users, which is what every read path expects.
+          await updateUserTier(metadata.clerk_user_id, 'free', null, null, 'cancelled', null);
           break;
         }
       }
