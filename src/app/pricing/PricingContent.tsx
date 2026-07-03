@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useSearchParams } from 'next/navigation';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
 import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel } from '@/lib/pricing';
@@ -135,9 +136,31 @@ export default function PricingContent({
   cancelled?: boolean;
 } = {}) {
   const { isSignedIn, isLoaded } = useUser();
+  const searchParams = useSearchParams();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAccountType, setShowAccountType] = useState(false);
+  const [highlightTier, setHighlightTier] = useState<string | null>(null);
+
+  // Deep-link support: ?tier=club_starter scrolls to that card and highlights it.
+  // Fires once on mount. Cleans up the highlight after 2.5s.
+  useEffect(() => {
+    const target = searchParams?.get('tier');
+    if (!target) return;
+    const validIds = TIERS_DISPLAY.map((t) => t.id);
+    if (!validIds.includes(target as TierName)) return;
+
+    // Wait one frame so the tier cards are rendered before scrolling.
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(`tier-card-${target}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightTier(target);
+        window.setTimeout(() => setHighlightTier(null), 2500);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [searchParams]);
 
   async function handleCheckout(tier: Tier) {
     if (!isLoaded) return;
@@ -208,6 +231,7 @@ export default function PricingContent({
     return (
       <div
         key={tier.id}
+        id={`tier-card-${tier.id}`}
         data-testid={`tier-card-${tier.id}`}
         style={{
           position: 'relative',
@@ -217,6 +241,13 @@ export default function PricingContent({
           padding: '1.75rem 1.5rem',
           display: 'flex',
           flexDirection: 'column',
+          scrollMarginTop: '80px',
+          transition: 'box-shadow 250ms ease, transform 250ms ease',
+          boxShadow:
+            highlightTier === tier.id
+              ? `0 0 0 3px ${tier.color}, 0 8px 24px rgba(0,0,0,0.18)`
+              : 'none',
+          transform: highlightTier === tier.id ? 'translateY(-2px)' : 'none',
         }}
       >
         {tier.popular && (
