@@ -58,7 +58,17 @@ const LIVE_NHL_YEAR = 2026;
 // /draft/<league>/[year] and a parallel base URL.
 const DRAFT_NHL_BASE = '/draft/nhl';
 
+// All years that have a "coming soon" placeholder page (no full pick data yet).
+// 2025 is now "live" so it's not in this list (it's in PICKS_YEARS above).
 const PRIOR_YEARS = [2024, 2023, 2022, 2021, 2020, 2019];
+
+// Years the user can jump to: every "live" year (full data) + every "coming soon"
+// year. Newest first.
+const ALL_YEARS = [
+  ...Object.keys(PICKS_YEARS).map(Number).filter((y) => y !== LIVE_NHL_YEAR),
+  LIVE_NHL_YEAR,
+  ...PRIOR_YEARS,
+].sort((a, b) => b - a);
 
 export async function generateStaticParams() {
   return [...Object.keys(PICKS_YEARS).map((y) => ({ year: y })), ...PRIOR_YEARS.map((y) => ({ year: String(y) }))];
@@ -182,7 +192,7 @@ export default async function DraftArchivePage({ params }: { params: Promise<{ y
         basePath={DRAFT_NHL_BASE}
         currentYear={year}
         liveYear={LIVE_NHL_YEAR}
-        years={[LIVE_NHL_YEAR, ...PRIOR_YEARS.filter((y) => y !== LIVE_NHL_YEAR)].sort((a, b) => b - a)}
+        years={ALL_YEARS}
       />
 
       {/* Picks browser with filter/sort/search */}
@@ -298,7 +308,7 @@ function PriorYearStub({
         basePath={DRAFT_NHL_BASE}
         currentYear={year}
         liveYear={LIVE_NHL_YEAR}
-        years={[LIVE_NHL_YEAR, ...PRIOR_YEARS.filter((y) => y !== LIVE_NHL_YEAR)].sort((a, b) => b - a)}
+        years={ALL_YEARS}
       />
 
       <section style={{
