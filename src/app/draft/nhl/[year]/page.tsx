@@ -191,7 +191,7 @@ export default async function DraftArchivePage({ params }: { params: Promise<{ y
       <YearDropdown
         basePath={DRAFT_NHL_BASE}
         currentYear={year}
-        liveYear={LIVE_NHL_YEAR}
+        liveYears={Object.keys(PICKS_YEARS).map(Number)}
         years={ALL_YEARS}
       />
 
@@ -307,7 +307,7 @@ function PriorYearStub({
       <YearDropdown
         basePath={DRAFT_NHL_BASE}
         currentYear={year}
-        liveYear={LIVE_NHL_YEAR}
+        liveYears={Object.keys(PICKS_YEARS).map(Number)}
         years={ALL_YEARS}
       />
 
