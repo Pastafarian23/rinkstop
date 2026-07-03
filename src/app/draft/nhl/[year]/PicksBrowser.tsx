@@ -19,6 +19,7 @@
 
 import { useState, useMemo } from 'react';
 import type { Pick } from '../../picks-2026';
+import { nationalityMatches, displayNationality } from '../../nationality';
 
 interface Props {
   picks: Pick[];
@@ -67,7 +68,7 @@ export default function PicksBrowser({ picks, year }: Props) {
         p.player.toLowerCase().includes(q) ||
         p.team.toLowerCase().includes(q) ||
         p.league.toLowerCase().includes(q) ||
-        p.nationality.toLowerCase().includes(q)
+        nationalityMatches(p.nationality, q)
       )) return false;
       return true;
     });
@@ -152,7 +153,7 @@ export default function PicksBrowser({ picks, year }: Props) {
           <label htmlFor="nat" style={labelStyle}>Nationality</label>
           <select id="nat" value={nationalityFilter} onChange={(e) => setNationalityFilter(e.target.value)} style={{ ...inputStyle, width: '100%' }}>
             <option value="all">All countries</option>
-            {nationalities.map((n) => <option key={n} value={n}>{n}</option>)}
+            {nationalities.map((n) => <option key={n} value={n}>{displayNationality(n)}</option>)}
           </select>
         </div>
         <div>
@@ -223,7 +224,7 @@ function filterSummary(args: { roundFilter: string; nationalityFilter: string; l
   if (!args.hasFilters) return null;
   const parts: string[] = [];
   if (args.roundFilter !== 'all') parts.push(`Round ${args.roundFilter}`);
-  if (args.nationalityFilter !== 'all') parts.push(args.nationalityFilter);
+  if (args.nationalityFilter !== 'all') parts.push(displayNationality(args.nationalityFilter));
   if (args.leagueFilter !== 'all') parts.push(args.leagueFilter);
   if (args.query) parts.push(`"${args.query}"`);
   return <span> — {parts.join(' · ')}</span>;
@@ -347,7 +348,7 @@ function PickRow({ p }: { p: Pick }) {
         {!isForfeit && p.nationality && (
           <>
             <span style={{ opacity: 0.4 }}>·</span>
-            <span>{p.nationality}</span>
+            <span>{displayNationality(p.nationality)}</span>
           </>
         )}
       </div>
