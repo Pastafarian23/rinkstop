@@ -11,7 +11,7 @@ import UsernameBanner from '@/components/UsernameBanner';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
 import InboxCard from '@/components/dashboard/InboxCard';
-import { loadDashboardTypeData } from '@/components/dashboard/dashboardTypeData';
+import { loadDashboardTypeData, personalStatus, organizationStatus, businessStatus, type WorkspaceStatus } from '@/components/dashboard/dashboardTypeData';
 import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
@@ -403,6 +403,7 @@ async function renderDashboard(userId: string) {
       <WorkspaceHub
         userTier={profile?.tier ?? 'free'}
         accountTypes={types.map(t => String(t))}
+        typeData={typeData}
       />
 
       {/* Choose your roles — only when user has zero account types.
@@ -475,11 +476,22 @@ async function renderDashboard(userId: string) {
 function WorkspaceHub({
   userTier,
   accountTypes,
+  typeData,
 }: {
   userTier: string;
   accountTypes: string[];
+  typeData: import('@/components/dashboard/dashboardTypeData').TypeSectionData;
 }) {
   const access = getWorkspaceAccess(accountTypes, userTier, tierAtLeast);
+
+  // Step 7: per-workspace status one-liner. null = no data (hide line).
+  // Locked workspaces (unlocked=false) skip the status — their existing
+  // card already shows the lock UI.
+  const STATUS_BY_WS: Record<string, () => WorkspaceStatus | null> = {
+    personal: () => personalStatus(typeData),
+    organization: () => organizationStatus(typeData),
+    business: () => businessStatus(typeData),
+  };
 
   return (
     <div style={{
@@ -569,6 +581,28 @@ function WorkspaceHub({
                 }}>
                   {ws.description}
                 </p>
+                {/* Step 7: per-workspace status one-liner (additive).
+                    Only shown for unlocked workspaces that have data. */}
+                {unlocked && (() => {
+                  const status = STATUS_BY_WS[ws.id]?.();
+                  if (!status) return null;
+                  return (
+                    <p
+                      data-testid={`workspace-status-${ws.id}`}
+                      style={{
+                        color: status.empty
+                          ? 'rgba(255,184,28,0.85)'
+                          : 'rgba(20,184,166,0.9)',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        margin: '0.375rem 0 0',
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {status.text}
+                    </p>
+                  );
+                })()}
               </div>
             </div>
 
