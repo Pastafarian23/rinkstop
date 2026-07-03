@@ -142,9 +142,8 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   // single, dedicated entry point to /admin.
   //
   // Step 6: navLinks are now built from the WORKSPACES registry's subpages[]
-  // for the active workspace (read from cookie). The 11 per-role tab sets
-  // in TABS_BY_ROLE are no longer used; the registry is the single source
-  // of truth. Tabs still get badges (connections/messages) by href-match.
+  // for the active workspace (read from cookie). The registry is the single
+  // source of truth. Tabs still get badges (connections/messages) by href-match.
   const navLinks: Array<[string, string, number?]> = [];
 
   // Fetch account types for workspace access check.

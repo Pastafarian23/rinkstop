@@ -26,124 +26,16 @@ import {
   getWorkspaceAccess,
 } from '@/lib/dashboard/workspaces';
 import { migrateActiveRoleToWorkspace, getActiveWorkspace, type WorkspaceId } from '@/lib/dashboard/switchWorkspace';
+import { tierAtLeast as tierAtLeastShared } from '@/lib/tier';
 
 // ---------------------------------------------------------------------------
 // Tab definitions
 // ---------------------------------------------------------------------------
-
-export interface TabDef {
-  href: string;
-  label: string;
-  iconKey: string;
-  match: (p: string) => boolean;
-}
-
-const TABS_BY_ROLE: Record<string, TabDef[]> = {
-  player: [
-    { href: '/dashboard/coach-feed',  label: 'Coach Feed', iconKey: 'feed',     match: p => p.startsWith('/dashboard/coach-feed') },
-    { href: '/learn',                label: 'Learn',      iconKey: 'learn',    match: p => p === '/learn' || p.startsWith('/learn/') },
-    { href: '/dashboard/team',       label: 'Team',       iconKey: 'team',     match: p => p.startsWith('/dashboard/team') },
-    { href: '/dashboard/profile',    label: 'Profile',    iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
-  ],
-  parent: [
-    { href: '/dashboard/claims',     label: 'My Kid(s)',  iconKey: 'kid',      match: p => p === '/dashboard/claims' || p.startsWith('/dashboard/claims/') },
-    { href: '/dashboard/schedule',   label: 'Schedule',   iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
-    { href: '/dashboard/messages',   label: 'Inbox',      iconKey: 'chat',     match: p => p.startsWith('/dashboard/messages') },
-    { href: '/dashboard/profile',    label: 'Profile',    iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
-  ],
-  coach: [
-    { href: '/dashboard/team',       label: 'My Team',    iconKey: 'team',     match: p => p.startsWith('/dashboard/team') },
-    { href: '/dashboard/schedule',   label: 'Schedule',   iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
-    { href: '/dashboard/plans',      label: 'Plans',      iconKey: 'plans',    match: p => p.startsWith('/dashboard/plans') },
-    { href: '/dashboard/inbox',      label: 'Inbox',      iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
-  ],
-  scout: [
-    { href: '/dashboard/favorites',  label: 'Watchlist',  iconKey: 'star',     match: p => p.startsWith('/dashboard/favorites') },
-    { href: '/directory/players',    label: 'Search',     iconKey: 'search',   match: p => p.startsWith('/directory/players') },
-    { href: '/dashboard/compare',    label: 'Compare',    iconKey: 'compare',  match: p => p.startsWith('/dashboard/compare') },
-    { href: '/dashboard/profile',    label: 'Profile',    iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
-  ],
-  referee: [
-    { href: '/dashboard/referee/games', label: 'Games',   iconKey: 'whistle',  match: p => p.startsWith('/dashboard/referee') },
-    { href: '/dashboard/support',       label: 'Reports', iconKey: 'doc',      match: p => p.startsWith('/dashboard/support') },
-    { href: '/dashboard/schedule',      label: 'Schedule',iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
-    { href: '/dashboard/profile',       label: 'Profile', iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
-  ],
-  team_admin: [
-    { href: '/dashboard/team',                                       label: 'Roster',    iconKey: 'team',     match: p => p.startsWith('/dashboard/team') },
-    { href: '/dashboard/manage/team/_stub/payments',                label: 'Payments',  iconKey: 'wallet',   match: p => p.includes('/manage/team/') && p.includes('/payments') },
-    { href: '/dashboard/manage/team/_stub/compliance',              label: 'Compliance',iconKey: 'doc',      match: p => p.includes('/manage/team/') && p.includes('/compliance') },
-    { href: '/dashboard/inbox',                                      label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
-  ],
-  league_admin: [
-    { href: '/dashboard/manage/league',   label: 'Leagues',   iconKey: 'trophy',   match: p => p.startsWith('/dashboard/manage/league') },
-    { href: '/standings',                 label: 'Standings', iconKey: 'list',     match: p => p.startsWith('/standings') },
-    { href: '/dashboard/schedule',        label: 'Schedule',  iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
-    { href: '/dashboard/inbox',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
-  ],
-  rink_operator: [
-    { href: '/dashboard/manage/rink',     label: 'My Rink',   iconKey: 'rink',     match: p => p.startsWith('/dashboard/manage/rink') },
-    { href: '/dashboard/schedule',        label: 'Schedule',  iconKey: 'calendar', match: p => p.startsWith('/dashboard/schedule') },
-    { href: '/dashboard/bookings',        label: 'Bookings',  iconKey: 'book',     match: p => p.startsWith('/dashboard/bookings') },
-    { href: '/dashboard/inbox',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
-  ],
-  business: [
-    { href: '/dashboard/listings',        label: 'Listings',  iconKey: 'shop',     match: p => p.startsWith('/dashboard/listings') },
-    { href: '/dashboard/inbox',           label: 'Inbox',     iconKey: 'inbox',    match: p => p.startsWith('/dashboard/inbox') || p.startsWith('/dashboard/leads') || p.startsWith('/dashboard/messages') },
-    { href: '/dashboard/profile',         label: 'Profile',   iconKey: 'profile',  match: p => p.startsWith('/dashboard/profile') },
-    { href: '/directory/business',        label: 'Directory', iconKey: 'folder',   match: p => p.startsWith('/directory/business') },
-  ],
-  fan: [
-    { href: '/directory',                 label: 'Browse',    iconKey: 'folder',   match: p => p === '/directory' || p.startsWith('/directory/') },
-    { href: '/blog',                      label: 'News',      iconKey: 'news',     match: p => p.startsWith('/blog') || p.startsWith('/news') || p.startsWith('/guides') || p.startsWith('/rankings') },
-    { href: '/dashboard/favorites',       label: 'Favorites', iconKey: 'star',     match: p => p.startsWith('/dashboard/favorites') },
-    { href: '/dashboard/messages',        label: 'Inbox',     iconKey: 'chat',     match: p => p.startsWith('/dashboard/messages') },
-  ],
-};
-
-// Default for users with no account_type set — keep fan-style browse-only tabs.
-const DEFAULT_TABS: TabDef[] = TABS_BY_ROLE.fan;
-
+// Step 6 (2026-07-03): TABS_BY_ROLE / DEFAULT_TABS / FREE_TIER_ONLY_KEYS were
+// removed in the cleanup commit. The workspace registry (lib/dashboard/
+// workspaces.ts) is the single source of truth for tab/page definitions.
+// Tabs now come from WORKSPACES[active].subpages.
 // ---------------------------------------------------------------------------
-// Stubs that should be hidden on paid tiers (directory/news/browse surface).
-// ---------------------------------------------------------------------------
-const FREE_TIER_ONLY_KEYS = new Set(['folder', 'news']); // folder=Directory, news=News
-// (kept for back-compat — unused since Step 6)
-
-// ---------------------------------------------------------------------------
-// Local tier comparator (no supabase dep). Mirrors tierAtLeast() in
-// src/lib/connections.ts but for client-side use.
-// ---------------------------------------------------------------------------
-const TIER_RANK: Record<string, number> = {
-  free: 0,
-  verified_identity: 1,
-  identity_plus: 2,
-  club_starter: 3,
-  club_pro: 4,
-  club_elite: 5,
-  league: 6,
-  federation: 7,
-  business_listing: 1,
-  business_plus: 2,
-};
-const TIER_TRACK: Record<string, 'personal' | 'organization' | 'business'> = {
-  free: 'personal',
-  verified_identity: 'personal',
-  identity_plus: 'personal',
-  club_starter: 'organization',
-  club_pro: 'organization',
-  club_elite: 'organization',
-  league: 'organization',
-  federation: 'organization',
-  business_listing: 'business',
-  business_plus: 'business',
-};
-function tierAtLeastLocal(actual: string, min: string, _accountTypes: string[]): boolean {
-  const actualTrack = TIER_TRACK[actual] || 'personal';
-  const minTrack = TIER_TRACK[min] || 'personal';
-  if (actualTrack !== minTrack) return false;
-  return (TIER_RANK[actual] ?? 0) >= (TIER_RANK[min] ?? 0);
-}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -216,10 +108,7 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
     const wsAccess = getWorkspaceAccess(
       accountTypeNames,
       tier || 'free',
-      // tierAtLeast must be passed in; we don't import the connections
-      // version to avoid pulling the supabase client into a client component.
-      // Instead, we filter by exact minTier check here via a local comparator.
-      (actual, min) => tierAtLeastLocal(actual, min, accountTypeNames),
+      tierAtLeastShared,
     );
     const effective = wsAccess.find(a => a.workspace.id === (activeWorkspace || 'personal')) && wsAccess.find(a => a.workspace.id === (activeWorkspace || 'personal'))!.unlocked
       ? wsAccess.find(a => a.workspace.id === (activeWorkspace || 'personal'))!
@@ -229,7 +118,7 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
     // registry). Skip subpages above the user's tier.
     const result: Array<{ href: string; label: string; iconKey: string; match: (p: string) => boolean }> = [];
     for (const sub of effective.workspace.subpages) {
-      if (sub.minTier && !tierAtLeastLocal(tier || 'free', sub.minTier, accountTypeNames)) {
+      if (sub.minTier && !tierAtLeastShared(tier || 'free', sub.minTier)) {
         continue;
       }
       // Skip /dashboard (Overview) since it's the entry point; on mobile the
@@ -445,7 +334,7 @@ const ICONS: Record<string, () => React.JSX.Element> = {
 };
 
 // ---------------------------------------------------------------------------
-// Step 6 (2026-07-03): the per-role tab sets (TABS_BY_ROLE / DEFAULT_TABS /
-// FREE_TIER_ONLY_KEYS) are retained here for one more deploy as a safety
-// net. The dashboard layout no longer reads them. Delete on the next Step
-// 7 prep if everything's stable. Reference commit: see memory/2026-07-03.md.
+// Step 6 (2026-07-03) -> cleanup (2026-07-03): the per-role tab sets
+// (TABS_BY_ROLE / DEFAULT_TABS / FREE_TIER_ONLY_KEYS) are now removed.
+// The workspace registry (lib/dashboard/workspaces.ts) is the single
+// source of truth. Reference commit: see memory/2026-07-03.md.
