@@ -37,7 +37,7 @@ const POS_COLOR: Record<string, string> = {
 function inferLeagueCode(league: string): string {
   if (!league) return '';
   const u = league.toUpperCase();
-  for (const code of ['OHL', 'WHL', 'QMJHL', 'NCAA', 'SHL', 'LIIGA', 'USHL', 'DEL', 'NLA', 'AHL', 'ECHL']) {
+  for (const code of ['OHL', 'WHL', 'QMJHL', 'NCAA', 'SHL', 'LIIGA', 'USHL', 'DEL', 'NLA', 'AHL', 'ECHL', 'WCHA', 'HOCKEY EAST', 'ECAC', 'PWHPA', 'PHF', 'SDHL', 'ZHHL', 'U SPORTS']) {
     if (u.includes(code)) return code;
   }
   return '';
