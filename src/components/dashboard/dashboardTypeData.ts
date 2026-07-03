@@ -261,3 +261,105 @@ export async function loadDashboardTypeData(userId: string): Promise<TypeSection
 
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Step 7 — Workspace-level status (one-liner per hub card).
+// Returns a short status string for each workspace, derived from the per-
+// account-type data we already loaded. Null status means "no data" — caller
+// should hide the status line.
+// ---------------------------------------------------------------------------
+
+export interface WorkspaceStatus {
+  /** Short status line, e.g. "✓ 2 teams managed" or "No teams yet" */
+  text: string;
+  /** True when the workspace has zero counts across its relevant types. */
+  empty: boolean;
+}
+
+/**
+ * Compute the Personal workspace status.
+ * Sum across player, parent, scout, fan account types. The Personal workspace
+ * is unlocked for any user, so we always return a status when at least one
+ * of these types has data.
+ */
+export function personalStatus(data: TypeSectionData): WorkspaceStatus | null {
+  // Use `loaded` as the "we have data" gate. If none of the personal types
+  // loaded (rare), return null so the card hides the status line.
+  const loaded = data.player.loaded || data.parent.loaded || data.scout.loaded || data.fan.loaded;
+  if (!loaded) return null;
+
+  const pieces: string[] = [];
+  if (data.player.loaded && data.player.profileViews > 0) {
+    pieces.push(`${data.player.profileViews} profile view${data.player.profileViews === 1 ? '' : 's'}`);
+  }
+  if (data.parent.loaded && data.parent.linkedPlayers > 0) {
+    pieces.push(`${data.parent.linkedPlayers} linked player${data.parent.linkedPlayers === 1 ? '' : 's'}`);
+  }
+  if (data.fan.loaded && (data.fan.followedTeams + data.fan.followedPlayers) > 0) {
+    const total = data.fan.followedTeams + data.fan.followedPlayers;
+    pieces.push(`${total} followed`);
+  }
+  // Scouting watchlist is part of Personal too (the Personal workspace
+  // includes scout). Show as a separate count.
+  if (data.scout.loaded && data.scout.followedPlayers > 0) {
+    pieces.push(`${data.scout.followedPlayers} on watchlist`);
+  }
+
+  if (pieces.length === 0) {
+    return { text: 'No activity yet', empty: true };
+  }
+  // Cap to 2 pieces for card legibility; combine remaining as "+N more" if needed.
+  let text: string;
+  if (pieces.length <= 2) {
+    text = pieces.join(' \u00b7 ');
+  } else {
+    text = pieces.slice(0, 2).join(' \u00b7 ') + ' \u00b7 +' + (pieces.length - 2) + ' more';
+  }
+  return { text: '\u2713 ' + text, empty: false };
+}
+
+/**
+ * Compute the Organization workspace status.
+ * Sum across coach, team_admin, referee, league_admin.
+ */
+export function organizationStatus(data: TypeSectionData): WorkspaceStatus | null {
+  const loaded =
+    data.coach.loaded || data.team_admin.loaded || data.referee.loaded || data.league_admin.loaded;
+  if (!loaded) return null;
+
+  const teams = data.coach.loaded ? data.coach.teamsManaged : 0;
+  const teamAdmin = data.team_admin.loaded ? data.team_admin.teamCount : 0;
+  const totalTeams = teams + teamAdmin;
+  const leagues = data.league_admin.loaded ? data.league_admin.leagueCount : 0;
+  const games = data.referee.loaded ? data.referee.officiatedGames : 0;
+
+  if (totalTeams === 0 && leagues === 0 && games === 0) {
+    return { text: 'No teams or leagues yet', empty: true };
+  }
+  const pieces: string[] = [];
+  if (totalTeams > 0) pieces.push(`${totalTeams} team${totalTeams === 1 ? '' : 's'}`);
+  if (leagues > 0) pieces.push(`${leagues} league${leagues === 1 ? '' : 's'}`);
+  if (games > 0) pieces.push(`${games} game${games === 1 ? '' : 's'} officiated`);
+  return { text: '\u2713 ' + pieces.join(' \u00b7 '), empty: false };
+}
+
+/**
+ * Compute the Business workspace status.
+ * Sum across business + rink_operator (rink operators get business listings).
+ */
+export function businessStatus(data: TypeSectionData): WorkspaceStatus | null {
+  const loaded = data.business.loaded || data.rink_operator.loaded;
+  if (!loaded) return null;
+
+  const listings = data.business.loaded ? data.business.listings : 0;
+  const rinks = data.rink_operator.loaded ? data.rink_operator.rinkCount : 0;
+  const total = listings + rinks;
+
+  if (total === 0) {
+    return { text: 'No listings yet', empty: true };
+  }
+  const pieces: string[] = [];
+  if (listings > 0) pieces.push(`${listings} business listing${listings === 1 ? '' : 's'}`);
+  if (rinks > 0) pieces.push(`${rinks} rink${rinks === 1 ? '' : 's'}`);
+  return { text: '\u2713 ' + pieces.join(' \u00b7 '), empty: false };
+}
