@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { OWNER_EMAILS } from '@/lib/admin-auth';
@@ -9,6 +10,12 @@ import NotificationBell from '@/components/NotificationBell';
 import TeamSwitcher from '@/components/TeamSwitcher';
 import MobileMenu from '@/components/MobileMenu';
 import { getUserTier, tierAtLeast } from '@/lib/connections';
+import {
+  WORKSPACES,
+  getWorkspaceAccess,
+  type WorkspaceAccess,
+} from '@/lib/dashboard/workspaces';
+import { getActiveWorkspaceFromCookies, type WorkspaceId } from '@/lib/dashboard/switchWorkspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +63,13 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   const lastName = user?.lastName || '';
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
   const avatarUrl = user?.imageUrl || '';
+
+  // Step 6: read the active workspace from the cookie mirror written by
+  // switchWorkspace() on the client. Falls back to 'personal' so the nav
+  // is never empty. The client UserMenu / MobileMenu can correct this on
+  // hydration if the cookie is stale.
+  const cookieStore = await cookies();
+  const activeWorkspace: WorkspaceId = getActiveWorkspaceFromCookies(cookieStore) || 'personal';
 
   // Determine admin / super_admin status. Clerk publicMetadata is the source
   // of truth; fall back to profiles.role for defense in depth.
@@ -126,64 +140,30 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   // in the user-dashboard nav made it look pre-highlighted as if it were
   // the current section, which is confusing. The header shield is the
   // single, dedicated entry point to /admin.
+  //
+  // Step 6: navLinks are now built from the WORKSPACES registry's subpages[]
+  // for the active workspace (read from cookie). The 11 per-role tab sets
+  // in TABS_BY_ROLE are no longer used; the registry is the single source
+  // of truth. Tabs still get badges (connections/messages) by href-match.
   const navLinks: Array<[string, string, number?]> = [];
 
-  // Phase 2: Show "Listings" in the nav if the user holds the `business` account
-  // type. Cheaper than a join — one indexed query on profile_account_types.
-  let isBusinessUser = false;
+  // Fetch account types for workspace access check.
   let accountTypes: Array<{ account_type: string; is_primary: boolean }> = [];
   let activeRole: string | null = null;
   try {
-    const { count: bc } = await supabaseAdmin
-      .from('profile_account_types')
-      .select('user_id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('account_type', 'business');
-    isBusinessUser = (bc || 0) > 0;
-
-    // Day 4: fetch ALL account types for the role-switcher in the avatar menu.
     const { data: typesData } = await supabaseAdmin
       .from('profile_account_types')
       .select('account_type, is_primary')
       .eq('user_id', userId);
     accountTypes = (typesData || []) as Array<{ account_type: string; is_primary: boolean }>;
-
-    // activeRole is read client-side from localStorage; we can't read it server-side.
-    // Pass a hint to the UserMenu so it shows which one is "current" by default:
-    // the primary role (or the first one if no primary set).
     const primary = accountTypes.find(t => t.is_primary)?.account_type;
     activeRole = primary || accountTypes[0]?.account_type || null;
   } catch { /* table missing — keep nav as-is */ }
 
-  navLinks.push(
-    ['/dashboard', 'Overview'],
-    ['/dashboard/profile', 'Profile'],
-    ['/dashboard/roles', 'Roles & Records'],
-    ['/dashboard/connections', 'Connections', pendingConnectionCount],
-    ['/dashboard/messages', 'Messages', unreadMessageCount],
-  );
-  // Personal track: show Family section
-  if (!isBusinessUser) {
-    navLinks.push(
-      ['/dashboard/family', 'Family'],
-      ['/dashboard/claims', 'Claims'],
-    );
-  } else {
-    // Business track: show Listings section
-    navLinks.push(
-      ['/dashboard/listings', 'Listings'],
-    );
-  }
-  // Identity verification nav: gated to Roster+ (per design, 2026-06-17).
-  // Free users see the /pricing upsell instead of this link.
+  // Step 6: get current tier for workspace tier-gating.
   let currentTier = 'free';
   try {
     currentTier = await getUserTier(userId);
-    // Owner-email fallback: if the authed Clerk user_id resolves to a shadow
-    // row with tier=free (e.g. orphan Clerk account) and the user's email
-    // is in OWNER_EMAILS, fall through to the canonical profile row by
-    // email. Without this, the dashboard layout shows no tier badge for
-    // the owner because getUserTier reads the orphan row.
     if (OWNER_EMAILS.has(ownerEmail)) {
       const { data: byEmail } = await supabaseAdmin
         .from('profiles')
@@ -197,17 +177,43 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
         currentTier = await getUserTier(byEmail.user_id);
       }
     }
-    // Personal track: roster+ has ID verification. Business track: business_starter+ has verification.
-    // We check if user has ANY paid tier in their track (tierAtLeast returns true if same track).
-    if (tierAtLeast(currentTier, 'verified_identity')) {
-      navLinks.push(['/dashboard/identity', 'Verification']);
-    }
-  } catch { /* best-effort — don't break the layout if Supabase is down */ }
-  navLinks.push(
-    ['/dashboard/leads', 'Leads'],
-    ['/dashboard/subscription', 'Subscription'],
-    ['/dashboard/support', 'Support'],
+  } catch { /* best-effort */ }
+
+  // Build nav from active workspace's subpages, filtered by tier gate.
+  // The active workspace cookie is the source; we still show all 3 workspaces
+  // in the switcher (Step 5) so user can correct course.
+  const accountTypeNames = accountTypes.map(t => t.account_type);
+  const wsAccess: WorkspaceAccess[] = getWorkspaceAccess(
+    accountTypeNames,
+    currentTier,
+    tierAtLeast,
   );
+  const activeWsAccess = wsAccess.find(a => a.workspace.id === activeWorkspace);
+  // If user hasn't unlocked the active workspace (cookie stale, or they
+  // removed an account type), fall back to 'personal' which is always unlocked.
+  const effectiveWs: WorkspaceAccess =
+    activeWsAccess && activeWsAccess.unlocked
+      ? activeWsAccess
+      : wsAccess.find(a => a.workspace.id === 'personal')!;
+
+  // Build a map of subpage href -> badge for the badges we track.
+  const BADGE_BY_HREF: Record<string, number | undefined> = {
+    '/dashboard/connections': pendingConnectionCount,
+    '/dashboard/messages': unreadMessageCount,
+  };
+
+  navLinks.push(['/dashboard', 'Overview']);
+  for (const sub of effectiveWs.workspace.subpages) {
+    // Skip the subpage if the user's tier is below the gate. The workspace
+    // registry has the source of truth for minTier.
+    if (sub.minTier && !tierAtLeast(currentTier, sub.minTier)) {
+      continue;
+    }
+    // Some subpages match the dashboard root for badge purposes (e.g. /dashboard
+    // for "Overview" already added). Skip if we've already added this href.
+    if (navLinks.some(([h]) => h === sub.href)) continue;
+    navLinks.push([sub.href, sub.label, BADGE_BY_HREF[sub.href]]);
+  }
 
   // Icon mapping for the mobile menu (and any future iconified nav).
   // Keep keys aligned with navLinks hrefs above.

@@ -1,17 +1,19 @@
 'use client';
 
 /**
- * Role-aware bottom tab bar for mobile + Capacitor WebView.
+ * Workspace-aware bottom tab bar for mobile + Capacitor WebView.
  *
  * Day 4 feature (per Arnel's design 2026-06-18):
  * - Signed-out users: tab bar is hidden entirely (RinkStop = directory/news site)
- * - Signed-in users: 4 tabs based on profile_account_types.primary
- * - Multi-role users: see a "Switch role" entry in the avatar menu
- *   (active role drives which tabs render; defaults to primary)
+ * - Signed-in users: 4 tabs based on the active workspace (read from
+ *   rinkstop_active_workspace cookie + localStorage mirror)
  *
- * Tab definitions live in TABS_BY_ROLE below. Each role's tabs were designed
- * with Arnel during 2026-06-18 discussion. Tabs pointing to non-existent
- * routes get stub pages under /dashboard/_stubs/.
+ * Step 6 (2026-07-03): TABS_BY_ROLE per-role tab sets were retired. Tabs
+ * now come from WORKSPACES[activeWorkspace].subpages, filtered by tier.
+ * The registry is the single source of truth. Breaking change documented
+ * in the commit.
+ *
+ * Tab definitions live in src/lib/dashboard/workspaces.ts.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -19,6 +21,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import {
+  WORKSPACES,
+  getWorkspaceAccess,
+} from '@/lib/dashboard/workspaces';
+import { migrateActiveRoleToWorkspace, getActiveWorkspace, type WorkspaceId } from '@/lib/dashboard/switchWorkspace';
 
 // ---------------------------------------------------------------------------
 // Tab definitions
@@ -101,6 +108,42 @@ const DEFAULT_TABS: TabDef[] = TABS_BY_ROLE.fan;
 // Stubs that should be hidden on paid tiers (directory/news/browse surface).
 // ---------------------------------------------------------------------------
 const FREE_TIER_ONLY_KEYS = new Set(['folder', 'news']); // folder=Directory, news=News
+// (kept for back-compat — unused since Step 6)
+
+// ---------------------------------------------------------------------------
+// Local tier comparator (no supabase dep). Mirrors tierAtLeast() in
+// src/lib/connections.ts but for client-side use.
+// ---------------------------------------------------------------------------
+const TIER_RANK: Record<string, number> = {
+  free: 0,
+  verified_identity: 1,
+  identity_plus: 2,
+  club_starter: 3,
+  club_pro: 4,
+  club_elite: 5,
+  league: 6,
+  federation: 7,
+  business_listing: 1,
+  business_plus: 2,
+};
+const TIER_TRACK: Record<string, 'personal' | 'organization' | 'business'> = {
+  free: 'personal',
+  verified_identity: 'personal',
+  identity_plus: 'personal',
+  club_starter: 'organization',
+  club_pro: 'organization',
+  club_elite: 'organization',
+  league: 'organization',
+  federation: 'organization',
+  business_listing: 'business',
+  business_plus: 'business',
+};
+function tierAtLeastLocal(actual: string, min: string, _accountTypes: string[]): boolean {
+  const actualTrack = TIER_TRACK[actual] || 'personal';
+  const minTrack = TIER_TRACK[min] || 'personal';
+  if (actualTrack !== minTrack) return false;
+  return (TIER_RANK[actual] ?? 0) >= (TIER_RANK[min] ?? 0);
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -136,27 +179,15 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
   // early return statement.") and the user landed on global-error.tsx
   // ("Something went wrong / RinkStop hit an unexpected error").
   //
-  // Fix: declare every hook first, THEN early-return. This is the standard
-  // React rules-of-hooks pattern. Also moved useMemo role/tabs computation
-  // below the early return so it doesn't waste cycles when hidden.
-  const [activeRole, setActiveRole] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = window.localStorage.getItem('rinkstop_active_role');
-      if (saved) return saved;
-    }
-    return '';
-  });
-
+  // Step 6 (2026-07-03): activeRole is now derived from the active workspace.
+  // We still call migrateActiveRoleToWorkspace() to handle users with only
+  // the legacy rinkstop_active_role key set (e.g. accounts that haven't
+  // visited the switcher yet).
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId | null>(null);
   useEffect(() => {
-    // If saved role is no longer in their types, fall back to primary.
-    const typeList = accountTypes.map(t => t.account_type);
-    if (activeRole && !typeList.includes(activeRole)) {
-      const primary = accountTypes.find(t => t.is_primary)?.account_type;
-      const fallback = primary || typeList[0] || 'fan';
-      setActiveRole(fallback);
-      try { window.localStorage.setItem('rinkstop_active_role', fallback); } catch { /* noop */ }
-    }
-  }, [accountTypes, activeRole]);
+    migrateActiveRoleToWorkspace();
+    setActiveWorkspace(getActiveWorkspace());
+  }, []);
 
   // Pointer events fire once per gesture (touch, pen, mouse), so a single
   // handler is the source of truth for both haptic and visual feedback.
@@ -177,27 +208,55 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
                pathname.startsWith('/sign-') ||
                pathname === '/onboarding';
 
-  const role = useMemo(() => {
-    const typeList = accountTypes.map(t => t.account_type);
-    if (activeRole && typeList.includes(activeRole)) return activeRole;
-    const primary = accountTypes.find(t => t.is_primary)?.account_type;
-    return primary || typeList[0] || 'fan';
-  }, [accountTypes, activeRole]);
-
+  // Step 6: tabs come from the active workspace's subpages. Falls back to
+  // 'personal' if the cookie/storage is unset or the active workspace is no
+  // longer unlocked (e.g. user removed the account type).
   const tabs = useMemo(() => {
-    let set = TABS_BY_ROLE[role] || DEFAULT_TABS;
-    // Tier gating: paid profiles (roster+) don't see Browse/News/Directory tabs
-    // unless they're specifically the role's working tool.
-    // EXCEPTION: if the user hasn't picked an account_type yet (accountTypes is
-    // empty), don't tier-gate — they need every tab to navigate and find their
-    // way to /dashboard/welcome. This prevents the '2 tabs only' UX when
-    // account_types hasn't been set yet (Arnel hit this 2026-06-18).
-    const hasPickedRole = accountTypes.length > 0;
-    if (tier && tier !== 'free' && hasPickedRole) {
-      set = set.filter(t => !FREE_TIER_ONLY_KEYS.has(t.iconKey));
+    const accountTypeNames = accountTypes.map(t => t.account_type);
+    const wsAccess = getWorkspaceAccess(
+      accountTypeNames,
+      tier || 'free',
+      // tierAtLeast must be passed in; we don't import the connections
+      // version to avoid pulling the supabase client into a client component.
+      // Instead, we filter by exact minTier check here via a local comparator.
+      (actual, min) => tierAtLeastLocal(actual, min, accountTypeNames),
+    );
+    const effective = wsAccess.find(a => a.workspace.id === (activeWorkspace || 'personal')) && wsAccess.find(a => a.workspace.id === (activeWorkspace || 'personal'))!.unlocked
+      ? wsAccess.find(a => a.workspace.id === (activeWorkspace || 'personal'))!
+      : wsAccess.find(a => a.workspace.id === 'personal')!;
+
+    // Pick the first 4 subpages (already ordered by frequency-of-use in the
+    // registry). Skip subpages above the user's tier.
+    const result: Array<{ href: string; label: string; iconKey: string; match: (p: string) => boolean }> = [];
+    for (const sub of effective.workspace.subpages) {
+      if (sub.minTier && !tierAtLeastLocal(tier || 'free', sub.minTier, accountTypeNames)) {
+        continue;
+      }
+      // Skip /dashboard (Overview) since it's the entry point; on mobile the
+      // first tab is usually the most-frequent task, not the home.
+      if (sub.href === '/dashboard') continue;
+      result.push({
+        href: sub.href,
+        label: sub.label,
+        iconKey: sub.href,
+        match: (p) => p === sub.href || p.startsWith(sub.href + '/'),
+      });
+      if (result.length >= 4) break;
     }
-    return set.slice(0, 4);
-  }, [role, tier, accountTypes.length]);
+    // Always ensure at least 2 tabs (mobile UX minimum)
+    if (result.length < 2) {
+      const overview = {
+        href: '/dashboard',
+        label: 'Home',
+        iconKey: '/dashboard',
+        match: (p: string) => p === '/dashboard' || p.startsWith('/dashboard/'),
+      };
+      if (!result.find(r => r.href === '/dashboard')) {
+        result.unshift(overview);
+      }
+    }
+    return result;
+  }, [activeWorkspace, accountTypes, tier]);
 
   // ALL HOOKS ABOVE THIS POINT. Both early returns come AFTER every hook.
   // Day 7 hotfix (Arnel, 2026-06-23 16:14 CDT, second attempt): moving only
@@ -214,7 +273,7 @@ export default function RoleAwareTabBar({ userId: _userId, signedIn, accountType
   if (!signedIn && !isSignedIn) return null;
 
   return (
-    <nav className="mob-bottom-tabbar" aria-label={`Bottom navigation for ${role}`}>
+    <nav className="mob-bottom-tabbar" aria-label={`Bottom navigation for ${activeWorkspace || 'personal'}`}>
       {tabs.map(tab => {
         const Icon = ICONS[tab.iconKey] || ICONS.profile;
         const active = tab.match(pathname);
@@ -386,7 +445,7 @@ const ICONS: Record<string, () => React.JSX.Element> = {
 };
 
 // ---------------------------------------------------------------------------
-// Helper export — used by avatar menu to render the role-switcher
-// ---------------------------------------------------------------------------
-
-export { TABS_BY_ROLE, DEFAULT_TABS, FREE_TIER_ONLY_KEYS };
+// Step 6 (2026-07-03): the per-role tab sets (TABS_BY_ROLE / DEFAULT_TABS /
+// FREE_TIER_ONLY_KEYS) are retained here for one more deploy as a safety
+// net. The dashboard layout no longer reads them. Delete on the next Step
+// 7 prep if everything's stable. Reference commit: see memory/2026-07-03.md.

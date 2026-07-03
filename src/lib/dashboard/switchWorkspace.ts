@@ -14,6 +14,9 @@ import { WORKSPACES } from './workspaces';
 
 const ACTIVE_WORKSPACE_KEY = 'rinkstop_active_workspace';
 const ACTIVE_ROLE_KEY = 'rinkstop_active_role';
+const ACTIVE_WORKSPACE_COOKIE = 'rinkstop_active_workspace';
+// 1 year — workspace choice is a long-lived preference, not a session
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 /** All valid workspace IDs (typed) */
 export type WorkspaceId = 'personal' | 'organization' | 'business';
@@ -30,6 +33,13 @@ export function switchWorkspace(workspaceId: WorkspaceId): void {
     window.localStorage.setItem(ACTIVE_WORKSPACE_KEY, workspaceId);
   } catch {
     /* noop — localStorage blocked */
+  }
+  // Mirror to cookie so server-rendered layout can read it on next request
+  // (avoids a flash of wrong nav before hydration).
+  try {
+    document.cookie = `${ACTIVE_WORKSPACE_COOKIE}=${workspaceId}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+  } catch {
+    /* noop */
   }
   // Reload so RoleAwareTabBar (which reads on mount) and WorkspaceHub
   // re-render with the new value. Matches the existing switchRole pattern.
@@ -53,6 +63,38 @@ export function getActiveWorkspace(): WorkspaceId | null {
     /* noop */
   }
   return null;
+}
+
+/**
+ * Server-side variant: read the active workspace from the request cookie.
+ * Used by /dashboard layout to render the correct nav on first paint
+ * (avoids a flash of wrong nav before client hydration).
+ *
+ * Returns null if not set or invalid.
+ */
+export function getActiveWorkspaceFromCookie(
+  cookieValue: string | undefined,
+): WorkspaceId | null {
+  if (!cookieValue) return null;
+  if (
+    cookieValue === 'personal' ||
+    cookieValue === 'organization' ||
+    cookieValue === 'business'
+  ) {
+    return cookieValue;
+  }
+  return null;
+}
+
+/**
+ * Server-side variant: read the active workspace from a Next.js cookies()
+ * request store. Pass the cookie store from `next/headers`.
+ */
+export function getActiveWorkspaceFromCookies(
+  cookies: { get(name: string): { value: string } | undefined },
+): WorkspaceId | null {
+  const c = cookies.get(ACTIVE_WORKSPACE_COOKIE);
+  return getActiveWorkspaceFromCookie(c?.value);
 }
 
 /**
@@ -99,6 +141,12 @@ export function migrateActiveRoleToWorkspace(): WorkspaceId | null {
   if (derived) {
     try {
       window.localStorage.setItem(ACTIVE_WORKSPACE_KEY, derived);
+    } catch {
+      /* noop */
+    }
+    // Mirror to cookie so server-rendered layout picks it up on next nav.
+    try {
+      document.cookie = `${ACTIVE_WORKSPACE_COOKIE}=${derived}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
     } catch {
       /* noop */
     }
