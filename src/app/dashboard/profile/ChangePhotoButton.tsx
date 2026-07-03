@@ -79,14 +79,22 @@ export default function ChangePhotoButton() {
     try {
       // 1. Upload to Clerk
       await user!.setProfileImage({ file: pendingFile });
-      // 2. Read back the new imageUrl from the user (Clerk updates the
+      // 2. Force Clerk to refresh the user object so imageUrl reflects
+      //    the new photo. Without this, the client `user` object may
+      //    still hold the old (default-initials) imageUrl for a few
+      //    seconds, which causes the public profile to keep showing
+      //    initials after a successful upload. (Arnel hit this
+      //    2026-07-03 05:55 CDT — first photo save captured the
+      //    pre-upload URL.)
+      await user!.reload();
+      // 3. Read back the new imageUrl from the user (Clerk updates the
       //    user object on success). Falls back to publicUrl from the
       //    ImageResource return value (in case Clerk returns a different
       //    shape in some future version).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updated: any = user!;
       const newUrl: string | null = updated.imageUrl ?? updated.avatarUrl ?? null;
-      // 3. Tell RinkStop to also write to Supabase (so the public profile
+      // 4. Tell RinkStop to also write to Supabase (so the public profile
       //    page sees the new image immediately, without waiting for the
       //    webhook to fire). This also appends a history row.
       const res = await fetch('/api/profiles/me/photo', {
@@ -120,7 +128,9 @@ export default function ChangePhotoButton() {
     try {
       await user!.setProfileImage({ file: null });
       // After setProfileImage({file:null}), Clerk reverts to the
-      // generated-initials image. The user object reflects the new URL.
+      // generated-initials image. Reload the user so imageUrl reflects
+      // the post-removal state.
+      await user!.reload();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updated: any = user!;
       const newUrl: string | null = updated.imageUrl ?? updated.avatarUrl ?? null;
