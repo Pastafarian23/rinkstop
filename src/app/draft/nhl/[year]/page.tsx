@@ -16,6 +16,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PICKS_2026, DRAFT_2026_STATS, type Pick } from '../../picks-2026';
+import { PICKS_2025, DRAFT_2025_STATS } from '../../picks-2025';
+import type { PickStats } from '../../types';
 import PicksBrowser from './PicksBrowser';
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -24,7 +26,7 @@ interface YearArchive {
   year: number;
   eventLabel: string;     // e.g., "KeyBank Center, Buffalo, NY · June 26–27, 2026"
   picks: Pick[];
-  stats: typeof DRAFT_2026_STATS;
+  stats: PickStats;
   status: 'live' | 'coming-soon';
   rankingsUrl?: string;   // linked sister article, if any
 }
@@ -38,6 +40,13 @@ const PICKS_YEARS: Record<number, YearArchive> = {
     status: 'live',
     rankingsUrl: '/news/2026-nhl-draft-complete-results',
   },
+  2025: {
+    year: 2025,
+    eventLabel: 'Peacock Theater, Los Angeles, CA · June 27–28, 2025',
+    picks: PICKS_2025,
+    stats: DRAFT_2025_STATS,
+    status: 'live',
+  },
 };
 
 // Single live NHL year — the "go back to live" link points here.
@@ -48,7 +57,7 @@ const LIVE_NHL_YEAR = 2026;
 // /draft/<league>/[year] and a parallel base URL.
 const DRAFT_NHL_BASE = '/draft/nhl';
 
-const PRIOR_YEARS = [2025, 2024, 2023, 2022, 2021, 2020, 2019];
+const PRIOR_YEARS = [2024, 2023, 2022, 2021, 2020, 2019];
 
 export async function generateStaticParams() {
   return [...Object.keys(PICKS_YEARS).map((y) => ({ year: y })), ...PRIOR_YEARS.map((y) => ({ year: String(y) }))];

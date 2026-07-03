@@ -1,5 +1,6 @@
 // Auto-generated from /tmp/2026_picks.json (xlsx parse, 2026-06-30)
 // 224 picks total — 223 real + 1 forfeit at #63 (Vegas Golden Knights)
+import type { PickStats } from './types';
 export interface Pick {
   pick: number;
   round: number;
@@ -21,7 +22,7 @@ export const PICKS_2026: Pick[] = [
   { pick: 8, round: 1, team: 'Winnipeg Jets', player: 'Viggo Bjorck', position: 'C', league: 'Djurgarden (SWE)', nationality: 'SWE' },
   { pick: 9, round: 1, team: 'San Jose Sharks (from Florida)', player: 'Keaton Verhoeff', position: 'D', league: 'North Dakota (NCAA)', nationality: 'CAN' },
   { pick: 10, round: 1, team: 'Nashville Predators', player: 'Wyatt Cullen', position: 'LW', league: 'USA U-18 (NTDP-USHL)', nationality: 'USA' },
-  { pick: 11, round: 1, team: 'St. Louis Blues', player: 'Tynan Lawrence', position: 'C', league: 'Boston University (NCAA)', nationality: 'USA' },
+  { pick: 11, round: 1, team: 'St. Louis Blues', player: 'Tynan Lawrence', position: 'C', league: 'Boston University (Hockey East)', nationality: 'CAN' },
   { pick: 12, round: 1, team: 'New Jersey Devils', player: 'Alexander Command', position: 'C', league: 'Orebro Jr. (SWE-JR)', nationality: 'SWE' },
   { pick: 13, round: 1, team: 'New York Islanders', player: 'Malte Gustafsson', position: 'D', league: 'HV71 (SWE)', nationality: 'SWE' },
   { pick: 14, round: 1, team: 'Columbus Blue Jackets', player: 'Oscar Hemming', position: 'LW', league: 'Boston College (NCAA)', nationality: 'FIN' },
@@ -36,7 +37,7 @@ export const PICKS_2026: Pick[] = [
   { pick: 23, round: 1, team: 'Detroit Red Wings (from St. Louis)', player: 'JP Hurlbert', position: 'LW', league: 'Kamloops (WHL)', nationality: 'USA' },
   { pick: 24, round: 1, team: 'Vancouver Canucks (from Minnesota)', player: 'Adam Novotny', position: 'LW', league: 'Peterborough (OHL)', nationality: 'CZE' },
   { pick: 25, round: 1, team: 'Ottawa Senators (from Tampa Bay/Seattle/Florida)', player: 'Jonas Lagerberg Hoen', position: 'RW', league: 'Leksand Jr. (SWE-JR)', nationality: 'SWE' },
-  { pick: 26, round: 1, team: 'Montreal Canadiens (from NY Rangers via Vegas)', player: 'Gleb Pugachyov', position: 'RW', league: 'Nizhny Novgorod Jr. (RUS-JR)', nationality: 'RUS' },
+  { pick: 26, round: 1, team: 'Montreal Canadiens (from NY Rangers via Vegas)', player: 'Gleb Pugachyov', position: 'RW', league: 'Nizhny Novgorod Jr. (RUS-JR)', nationality: 'KAZ' },
   { pick: 27, round: 1, team: 'Philadelphia Flyers (from San Jose)', player: 'Maksim Sokolovskii', position: 'D', league: 'London (OHL)', nationality: 'KAZ' },
   { pick: 28, round: 1, team: 'Anaheim Ducks (from Montreal via Vegas)', player: 'Marcus Nordmark', position: 'LW', league: 'Djurgarden Jr. (SWE-JR)', nationality: 'SWE' },
   { pick: 29, round: 1, team: 'Vegas Golden Knights (from St. Louis via Anaheim)', player: 'Juho Piiparinen', position: 'D', league: 'Tappara (FIN)', nationality: 'FIN' },
@@ -117,7 +118,7 @@ export const PICKS_2026: Pick[] = [
   { pick: 104, round: 4, team: 'Boston Bruins', player: 'Matvei Kotkov', position: 'RW', league: 'Loko Yaroslavl (MHL)', nationality: 'RUS' },
   { pick: 105, round: 4, team: 'Carolina Hurricanes', player: 'Michael Berchild', position: 'LW', league: 'USA U-18 (NTDP-USHL)', nationality: 'USA' },
   { pick: 106, round: 4, team: 'Nashville Predators', player: 'Jakub Floris', position: 'D', league: 'Lukko (SM-sarja)', nationality: 'SVK' },
-  { pick: 107, round: 4, team: 'St. Louis Blues', player: 'Landon Nycz', position: 'D', league: 'UMass (NCAA)', nationality: 'USA' },
+  { pick: 107, round: 4, team: 'St. Louis Blues', player: 'Landon Nycz', position: 'D', league: 'UMass-Lowell (Hockey East)', nationality: 'USA' },
   { pick: 108, round: 4, team: 'Detroit Red Wings', player: 'Adam Levac', position: 'C', league: 'Peterborough (OHL)', nationality: 'CAN' },
   { pick: 109, round: 4, team: 'New York Islanders', player: 'Lincoln Kuehne', position: 'D', league: 'Arizona State (NCAA)', nationality: 'USA' },
   { pick: 110, round: 4, team: 'Ottawa Senators', player: 'Elliot Lennon', position: 'G', league: 'Deerfield (US-HS)', nationality: 'CAN' },
@@ -164,9 +165,9 @@ export const PICKS_2026: Pick[] = [
   { pick: 151, round: 5, team: 'Ottawa Senators', player: 'Harris Pangretitsch', position: 'D', league: 'Sault Ste. Marie (OHL)', nationality: 'CAN' },
   { pick: 152, round: 5, team: 'Colorado Avalanche', player: 'Theodore Lechner', position: 'D', league: 'Holy Angels (US-HS)', nationality: 'USA' },
   { pick: 153, round: 5, team: 'Los Angeles Kings', player: 'Giorgos Pantelas', position: 'D', league: 'Brandon (WHL)', nationality: 'CAN' },
-  { pick: 154, round: 5, team: 'Tampa Bay Lightning', player: 'Cooper Stoller', position: 'C', league: 'Sioux Falls (USHL)', nationality: 'USA' },
+  { pick: 154, round: 5, team: 'Tampa Bay Lightning', player: 'Cooper Soller', position: 'C', league: 'Sioux Falls (USHL)', nationality: 'USA' },
   { pick: 155, round: 5, team: 'Dallas Stars', player: 'Ryan Brown', position: 'LW', league: 'London (OHL)', nationality: 'CAN' },
-  { pick: 156, round: 5, team: 'Buffalo Sabres', player: 'Doman Szongoth', position: 'C', league: 'Kookoo (SM-sarja)', nationality: 'HUN' },
+  { pick: 156, round: 5, team: 'Buffalo Sabres', player: 'Doman Szongoth', position: 'C', league: 'Kookoo (SM-sarja)', nationality: 'HU' },
   { pick: 157, round: 5, team: 'Boston Bruins', player: 'Jacob Vandeven', position: 'D', league: 'Komoka (GOHL)', nationality: 'CAN' },
   { pick: 158, round: 5, team: 'Toronto Maple Leafs', player: 'Cooper Williams', position: 'C', league: 'Saskatoon (WHL)', nationality: 'CAN' },
   { pick: 159, round: 5, team: 'Vegas Golden Knights', player: 'Will McLaughlin', position: 'D', league: 'Portland (WHL)', nationality: 'CAN' },
@@ -237,7 +238,7 @@ export const PICKS_2026: Pick[] = [
   { pick: 224, round: 7, team: 'Montreal Canadiens', player: 'Tyler Deakos', position: 'RW', league: 'Waterloo (USHL)', nationality: 'CAN' },
 ];
 
-export const DRAFT_2026_STATS = {
+export const DRAFT_2026_STATS: PickStats = {
   totalPicks: 224,
   realPicks: 223,
   forfeits: 1,
@@ -245,4 +246,4 @@ export const DRAFT_2026_STATS = {
   rounds: 7,
   nationalities: 17,
   leagues: 138,
-} as const;
+};
