@@ -19,6 +19,7 @@ import { PICKS_2026, DRAFT_2026_STATS, type Pick } from '../../picks-2026';
 import { PICKS_2025, DRAFT_2025_STATS } from '../../picks-2025';
 import type { PickStats } from '../../types';
 import PicksBrowser from './PicksBrowser';
+import YearDropdown from './YearDropdown';
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 
@@ -177,7 +178,12 @@ export default async function DraftArchivePage({ params }: { params: Promise<{ y
       </header>
 
       {/* Year switcher */}
-      <YearSwitcher currentYear={year} />
+      <YearDropdown
+        basePath={DRAFT_NHL_BASE}
+        currentYear={year}
+        liveYear={LIVE_NHL_YEAR}
+        years={[LIVE_NHL_YEAR, ...PRIOR_YEARS.filter((y) => y !== LIVE_NHL_YEAR)].sort((a, b) => b - a)}
+      />
 
       {/* Picks browser with filter/sort/search */}
       <PicksBrowser picks={archive.picks} year={year} />
@@ -258,102 +264,6 @@ function Stat({ label, value, accent }: { label: string; value: number; accent?:
   );
 }
 
-function YearSwitcher({ currentYear }: { currentYear: number }) {
-  const allYears = [LIVE_NHL_YEAR, ...PRIOR_YEARS.filter((y) => y !== LIVE_NHL_YEAR)].sort((a, b) => b - a);
-  const liveLink = `${DRAFT_NHL_BASE}/${LIVE_NHL_YEAR}`;
-  return (
-    <div style={{
-      marginBottom: '1.5rem',
-    }}>
-      {/* Always-visible "Live archive" callout — visible on every page so 2026 is never lost */}
-      {currentYear !== LIVE_NHL_YEAR && (
-        <div style={{
-          marginBottom: '0.75rem',
-          padding: '0.65rem 1rem',
-          background: 'rgba(255,184,28,0.10)', border: '1px solid rgba(255,184,28,0.35)',
-          borderRadius: '8px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: '0.75rem', flexWrap: 'wrap',
-        }}>
-          <div style={{ color: '#FFB81C', fontWeight: 600, fontSize: '0.9rem' }}>
-            ⭐ The full archive is live: 2026 NHL Draft
-          </div>
-          <Link
-            href={liveLink}
-            style={{
-              padding: '0.4rem 0.9rem',
-              background: '#FFB81C', color: '#000',
-              borderRadius: '6px', textDecoration: 'none', fontWeight: 700,
-              fontSize: '0.85rem', whiteSpace: 'nowrap',
-            }}
-          >
-            Go to 2026 →
-          </Link>
-        </div>
-      )}
-
-      <div style={{
-        display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
-        padding: '0.625rem 0.75rem',
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '8px',
-      }}>
-        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', alignSelf: 'center', textTransform: 'uppercase', letterSpacing: '1px', marginRight: '0.5rem' }}>
-          Jump to year:
-        </span>
-        {allYears.map((y) => {
-          const isLive = y === LIVE_NHL_YEAR;
-          const isCurrent = y === currentYear;
-          // Live year always gold (not red) so it's never confused with a "stop" state.
-          // Current year gets a small "you are here" dot.
-          return (
-            <Link
-              key={y}
-              href={`${DRAFT_NHL_BASE}/${y}`}
-              style={{
-                padding: '0.4rem 0.85rem',
-                background: isCurrent
-                  ? '#C8102E'
-                  : isLive
-                    ? 'rgba(255,184,28,0.18)'
-                    : 'transparent',
-                color: isCurrent
-                  ? '#fff'
-                  : isLive
-                    ? '#FFB81C'
-                    : 'rgba(255,255,255,0.4)',
-                border: isCurrent
-                  ? 'none'
-                  : isLive
-                    ? '1px solid rgba(255,184,28,0.45)'
-                    : '1px solid rgba(255,255,255,0.15)',
-                borderRadius: '999px',
-                textDecoration: 'none',
-                fontWeight: isLive ? 700 : 600,
-                fontSize: '0.85rem',
-                whiteSpace: 'nowrap',
-                opacity: isCurrent ? 1 : isLive ? 1 : 0.7,
-              }}
-            >
-              {y}
-              {isLive && !isCurrent && (
-                <span style={{ marginLeft: '0.4rem', fontSize: '0.65rem', opacity: 0.85 }}>
-                  ★ live
-                </span>
-              )}
-              {!isLive && !isCurrent && (
-                <span style={{ marginLeft: '0.3rem', fontSize: '0.65rem', opacity: 0.6 }}>
-                  soon
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function PriorYearStub({
   year,
   crossArticles,
@@ -384,7 +294,12 @@ function PriorYearStub({
         </p>
       </header>
 
-      <YearSwitcher currentYear={year} />
+      <YearDropdown
+        basePath={DRAFT_NHL_BASE}
+        currentYear={year}
+        liveYear={LIVE_NHL_YEAR}
+        years={[LIVE_NHL_YEAR, ...PRIOR_YEARS.filter((y) => y !== LIVE_NHL_YEAR)].sort((a, b) => b - a)}
+      />
 
       <section style={{
         marginTop: '1.5rem', padding: '2rem 1.5rem',
