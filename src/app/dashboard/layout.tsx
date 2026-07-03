@@ -345,6 +345,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                   size={40}
                   accountTypes={accountTypes}
                   activeRole={activeRole}
+                  userTier={currentTier}
                 />
               </span>
               {/* Mobile/tablet hamburger (≤1023px). On desktop, the CSS below

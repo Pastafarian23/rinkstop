@@ -5,6 +5,17 @@ import Link from 'next/link';
 import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { ACCOUNT_TYPE_META, getAccountTypeMeta } from './AccountTypeBadges';
+import {
+  WORKSPACES,
+  getWorkspaceAccess,
+  type WorkspaceAccess,
+} from '@/lib/dashboard/workspaces';
+import {
+  switchWorkspace,
+  getActiveWorkspace,
+  migrateActiveRoleToWorkspace,
+  type WorkspaceId,
+} from '@/lib/dashboard/switchWorkspace';
 
 interface UserMenuProps {
   initials: string;
@@ -19,6 +30,11 @@ interface UserMenuProps {
   accountTypes?: Array<{ account_type: string; is_primary: boolean }>;
   /** Currently active role (drives the tab bar). */
   activeRole?: string | null;
+  /**
+   * User tier (drives the workspace switcher — Personal is always available,
+   * Organization requires club_starter, Business requires business_listing).
+   */
+  userTier?: string | null;
 }
 
 /**
@@ -49,11 +65,21 @@ export default function UserMenu({
   size = 40,
   accountTypes = [],
   activeRole = null,
+  userTier = 'free',
 }: UserMenuProps) {
   const { signOut } = useClerk();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Step 5 — workspace switcher. Migrate from legacy active_role on mount.
+  // The active workspace is stored in localStorage; this state holds the
+  // value once we've read it. Initialized lazily so SSR doesn't crash.
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId | null>(null);
+  useEffect(() => {
+    // Run migration first (idempotent), then read.
+    migrateActiveRoleToWorkspace();
+    setActiveWorkspace(getActiveWorkspace());
+  }, []);
 
   function switchRole(role: string) {
     try {
@@ -286,6 +312,106 @@ export default function UserMenu({
           {/* Day 4: Role switcher (Instagram-style profile switching). */}
           {accountTypes.length > 1 && (
             <>
+              <div
+                style={{
+                  height: 1,
+                  background: '#1e1e1e',
+                  margin: '0.375rem 0',
+                }}
+              />
+              <p
+                style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  padding: '0.5rem 0.75rem 0.25rem',
+                  margin: 0,
+                }}
+              >
+                Switch workspace
+              </p>
+              {(() => {
+                // Step 5 — workspace switcher. Show workspaces the user has
+                // access to based on account types + tier. Hidden = no entry,
+                // never locked here (the hub shows locked workspaces).
+                const typeStrings = accountTypes.map(t => t.account_type);
+                // Inline tierAtLeast for workspace gating. Mirrors the logic
+                // in getWorkspaceAccess() — duplicated here to avoid a heavy
+                // import of tierAtLeast from lib/connections.
+                const tierRank: Record<string, number> = {
+                  free: 0,
+                  verified_identity: 1,
+                  identity_plus: 2,
+                  business_listing: 1,
+                  business_plus: 2,
+                };
+                const userRank = tierRank[userTier || 'free'] ?? 0;
+                const meets = (min: string | null) => !min || (tierRank[min] ?? 0) <= userRank;
+                const access = WORKSPACES.map(ws => {
+                  const unlocked =
+                    ws.requiredAccountTypes.length === 0 ||
+                    ws.requiredAccountTypes.some(t => typeStrings.includes(t));
+                  const fullyAvailable = unlocked && meets(ws.minTier);
+                  return { workspace: ws, unlocked, fullyAvailable };
+                }).filter(a => a.unlocked);
+                if (access.length === 0) return null;
+                if (access.length === 1 && access[0].workspace.id === 'personal') {
+                  return (
+                    <div
+                      data-testid="user-menu-workspace-section"
+                      style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}
+                    >
+                      You only have one workspace — Personal
+                    </div>
+                  );
+                }
+                return (
+                  <div data-testid="user-menu-workspace-section">
+                    {access.map(({ workspace: ws, fullyAvailable }) => {
+                      const isActive = activeWorkspace === ws.id;
+                      return (
+                        <button
+                          key={ws.id}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => switchWorkspace(ws.id)}
+                          disabled={isActive || !fullyAvailable}
+                          data-testid={`user-menu-workspace-${ws.id}`}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '0.55rem 0.75rem',
+                            color: isActive ? 'rgba(255,255,255,0.45)' : '#fff',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: 6,
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            cursor: isActive ? 'default' : 'pointer',
+                            width: '100%',
+                            textAlign: 'left',
+                            fontFamily: 'inherit',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <span aria-hidden style={{ fontSize: '1rem' }}>{ws.icon}</span>
+                          <span style={{ flex: 1 }}>{ws.name}</span>
+                          {!fullyAvailable ? <span aria-label="locked">🔒</span> : null}
+                          {isActive ? <span aria-label="active" style={{ color: '#14B8A6' }}>✓</span> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
               <div
                 style={{
                   height: 1,

@@ -6,6 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
 import { getAccountTypeMeta } from '@/lib/accountTypeMeta';
 import { countryFlag } from '@/lib/team';
+import { WORKSPACES } from '@/lib/dashboard/workspaces';
+import {
+  switchWorkspace,
+  getActiveWorkspace,
+  migrateActiveRoleToWorkspace,
+  type WorkspaceId,
+} from '@/lib/dashboard/switchWorkspace';
 
 export interface MobileMenuTeam {
   id: string;
@@ -76,6 +83,15 @@ export default function MobileMenu({
   const [teams, setTeams] = useState<MobileMenuTeam[]>([]);
   const [teamsLoaded, setTeamsLoaded] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Step 5 — workspace switcher state. Mirrors the UserMenu implementation:
+  // migrate legacy rinkstop_active_role to rinkstop_active_workspace on mount,
+  // then read the active workspace for the active-state highlight.
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId | null>(null);
+  useEffect(() => {
+    migrateActiveRoleToWorkspace();
+    setActiveWorkspace(getActiveWorkspace());
+  }, []);
 
   // Close on route change
   useEffect(() => {
@@ -290,6 +306,89 @@ export default function MobileMenu({
                 )}
               </div>
             </div>
+
+            {/* Step 5 — workspace switcher (mobile equivalent of UserMenu section) */}
+            {(() => {
+              const typeStrings = accountTypes.map(t => t.account_type);
+              const tierRank: Record<string, number> = {
+                free: 0,
+                verified_identity: 1,
+                identity_plus: 2,
+                business_listing: 1,
+                business_plus: 2,
+              };
+              const userRank = tierRank[currentTier] ?? 0;
+              const meets = (min: string | null) => !min || (tierRank[min] ?? 0) <= userRank;
+              const access = WORKSPACES.map(ws => {
+                const unlocked =
+                  ws.requiredAccountTypes.length === 0 ||
+                  ws.requiredAccountTypes.some(t => typeStrings.includes(t));
+                const fullyAvailable = unlocked && meets(ws.minTier);
+                return { workspace: ws, unlocked, fullyAvailable };
+              }).filter(a => a.unlocked);
+              if (access.length === 0) return null;
+              return (
+                <div
+                  data-testid="mobile-menu-workspace-section"
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <div
+                    style={{
+                      color: 'rgba(255,255,255,0.4)',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      marginBottom: '0.5rem',
+                    }}
+                  >
+                    Switch workspace
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                    {access.map(({ workspace: ws, fullyAvailable }) => {
+                      const isActive = activeWorkspace === ws.id;
+                      return (
+                        <button
+                          key={ws.id}
+                          type="button"
+                          onClick={() => switchWorkspace(ws.id)}
+                          disabled={isActive || !fullyAvailable}
+                          data-testid={`mobile-menu-workspace-${ws.id}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            padding: '0.3rem 0.7rem',
+                            fontSize: '0.75rem',
+                            fontWeight: isActive ? 700 : 600,
+                            color: isActive ? '#0a0a0a' : '#fff',
+                            background: isActive
+                              ? '#14B8A6'
+                              : fullyAvailable
+                                ? 'rgba(255,255,255,0.08)'
+                                : 'rgba(255,255,255,0.04)',
+                            border: isActive
+                              ? '1px solid #14B8A6'
+                              : '1px solid rgba(255,255,255,0.15)',
+                            borderRadius: 999,
+                            cursor: isActive ? 'default' : 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          <span aria-hidden>{ws.icon}</span>
+                          <span>{ws.name}</span>
+                          {!fullyAvailable ? <span aria-label="locked">🔒</span> : null}
+                          {isActive ? <span aria-label="active">✓</span> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Account types (Day 4 multi-role) */}
             {accountTypes.length > 0 && (
