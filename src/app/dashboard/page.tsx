@@ -19,6 +19,7 @@ import { tierAtLeast } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
 import FamilySetupWizard from '@/components/family/FamilySetupWizard';
+import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
 
 /**
  * OWNER_EMAILS is defined in src/lib/admin-auth.ts — single source of truth.
@@ -341,6 +342,15 @@ async function renderDashboard(userId: string) {
     wizardTierOk &&
     profile?.family_setup_completed_at == null;
 
+  // Consumer dashboard cards data (Phase 1a, prep doc §3.3). Visible to
+  // ALL personal-workspace users (per Q2 confirmation). LoadConsumerCardData
+  // returns safe defaults on any error — never throws.
+  const consumerCardData = await loadConsumerCardData(
+    userId,
+    profile?.tier ?? 'free',
+    isIdentityVerifiedForUser
+  );
+
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
     { field: 'Display name', done: !!(profile?.display_name || firstName), href: '/dashboard/profile', hint: 'Add your first and last name' },
     { field: 'Avatar', done: !!avatarUrl, href: '/dashboard/profile', hint: 'Upload a profile photo' },
@@ -438,6 +448,14 @@ async function renderDashboard(userId: string) {
 
       {/* Inbox widget — quick access to messages, available to all users */}
       <InboxCard data={inbox} />
+
+      {/* Consumer dashboard cards (Phase 1a, prep doc §3.3).
+          Visible to ALL personal-workspace users. Empty-state CTAs are
+          account-type-aware (parent/player/scout/fan). */}
+      <ConsumerCards
+        primaryType={primary}
+        data={consumerCardData}
+      />
 
       {/* Workspace hub — three cards: Personal / Organization / Business.
           Per Arnel's 2026-07-02 directive, this replaces the previous
