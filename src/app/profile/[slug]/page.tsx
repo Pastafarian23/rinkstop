@@ -284,35 +284,116 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
             boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
           }}
         >
-          {/* ─── HEADER ─────────────────────────────────────────── */}
-          <div className="p-6 md:p-8">
-            <div className="flex items-start gap-5 md:gap-6">
+          {/* ─── COVER BANNER ─────────────────────────────────────
+              Brand-gradient banner with ghosted RINKSTOP wordmark.
+              Mimics the X/LinkedIn "cover photo" strip but uses the
+              navy → red brand gradient + ghosted wordmark so the page
+              reads as a social profile, not a card. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'relative',
+              height: 'clamp(140px, 22vw, 200px)',
+              background:
+                'linear-gradient(135deg, #041E42 0%, #0A2A5E 35%, #C8102E 100%)',
+              borderBottom: '3px solid var(--red)',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Ghosted RINKSTOP wordmark — the brand's "stripe" at the top */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+                fontSize: 'clamp(3.5rem, 12vw, 6rem)',
+                fontWeight: 900,
+                letterSpacing: '0.18em',
+                color: 'rgba(255,255,255,0.07)',
+                whiteSpace: 'nowrap',
+                userSelect: 'none',
+                pointerEvents: 'none',
+                lineHeight: 1,
+              }}
+            >
+              RINKSTOP
+            </div>
+            {/* Diagonal gold accent stripe (bottom-right corner) */}
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                bottom: 0,
+                width: '40%',
+                height: '4px',
+                background: 'linear-gradient(90deg, transparent 0%, var(--gold) 100%)',
+              }}
+            />
+            {/* Brand corner badge — top-left, matches the off-season strip */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 12,
+                left: 16,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                background: 'rgba(0,0,0,0.35)',
+                border: '1px solid rgba(255,184,28,0.5)',
+                borderRadius: 4,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.15em',
+                color: 'var(--gold)',
+                textTransform: 'uppercase',
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              🏒 HOCKEY PROFILE
+            </div>
+          </div>
+
+          {/* ─── AVATAR + IDENTITY ROW ───────────────────────────
+              Avatar overlaps the banner bottom. Name, badges, metadata
+              sit on the right. Stats row below. */}
+          <div className="px-5 md:px-8 pt-0 pb-5 md:pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:gap-5 md:gap-6 -mt-12 sm:-mt-14">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={displayName}
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-2 flex-shrink-0"
-                  style={{ borderColor: 'var(--red)' }}
+                  className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover flex-shrink-0"
+                  style={{
+                    border: '4px solid var(--red)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                  }}
                 />
               ) : (
                 <div
-                  className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-3xl md:text-4xl flex-shrink-0 font-sport"
+                  className="w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center flex-shrink-0 font-sport"
                   style={{
                     background: 'linear-gradient(135deg, var(--red) 0%, #8b0a1e 100%)',
                     color: '#fff',
+                    fontSize: '2.75rem',
+                    border: '4px solid var(--red)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
                   }}
                 >
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
 
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 mt-3 sm:mt-0 sm:pb-1">
                 {/* Name + verification badges */}
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <h1
                     className="font-sport text-white"
                     style={{
-                      fontSize: 'clamp(1.75rem, 5vw, 2.25rem)',
+                      fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
                       letterSpacing: '0.04em',
                       lineHeight: 0.95,
                       margin: 0,
@@ -344,6 +425,26 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               </div>
             </div>
 
+            {/* Stats row — real data only, no fabrication. Mimics the
+                "followers / following / posts" strip of social profiles. */}
+            <div
+              className="mt-5 grid gap-px rounded-lg overflow-hidden"
+              style={{
+                gridTemplateColumns: 'repeat(auto-fit, minmax(0, 1fr))',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              <StatCell value={managed.length} label="Profiles managed" accent="red" />
+              <StatCell value={accountTypes.length} label="Roles" accent="gold" />
+              <StatCell value={photoHistory.length} label="Photos" accent="navy" />
+              <StatCell
+                value={profile.created_at ? new Date(profile.created_at).getFullYear() : '—'}
+                label="Joined"
+                accent="muted"
+              />
+            </div>
+
             {/* Action row — three buttons, consistent style via scoped CSS */}
             <div className="rs-profile-actions flex flex-wrap gap-2 mt-5">
               <ConnectButton
@@ -365,12 +466,43 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
           {/* ─── DIVIDER ────────────────────────────────────────── */}
           {profile.bio && (
             <div
-              className="px-6 md:px-8 py-5"
+              className="px-5 md:px-8 py-5"
               style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
             >
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '2px 8px',
+                    background: 'rgba(255,184,28,0.12)',
+                    color: 'var(--gold)',
+                    border: '1px solid rgba(255,184,28,0.4)',
+                    borderRadius: 4,
+                    fontSize: 9,
+                    fontWeight: 800,
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  📌 Pinned
+                </span>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.3)',
+                  }}
+                >
+                  About
+                </span>
+              </div>
               <p
-                className="text-white/80 whitespace-pre-wrap"
-                style={{ fontSize: '0.9375rem', lineHeight: 1.6 }}
+                className="text-white/85 whitespace-pre-wrap"
+                style={{ fontSize: '1rem', lineHeight: 1.65, fontWeight: 400 }}
               >
                 {profile.bio}
               </p>
@@ -378,7 +510,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
           )}
 
           {/* ─── ROLES ──────────────────────────────────────────── */}
-          <div className="p-6 md:p-8">
+          <div className="p-5 md:p-8">
             <h2
               className="font-sport uppercase text-white/50 mb-3"
               style={{ fontSize: '0.875rem', letterSpacing: '0.1em' }}
@@ -478,7 +610,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
 
             return (
               <div
-                className="p-6 md:p-8"
+                className="p-5 md:p-8"
                 style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
               >
                 <h2
@@ -498,7 +630,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
           {/* ─── PHOTO HISTORY ──────────────────────────────────── */}
           {photoHistory.length >= 2 && (
             <div
-              className="p-6 md:p-8"
+              className="p-5 md:p-8"
               style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
             >
               <h2
@@ -575,5 +707,61 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
         </div>
       </div>
     </main>
+  );
+}
+
+// ─── Local helper: stats cell ───────────────────────────────────
+// Renders a single stat tile for the social-profile stats row.
+// Kept local to the page (not exported) so the visual style stays
+// scoped to the profile route and doesn't bleed into other surfaces.
+const ACCENT_COLORS = {
+  red:   '#FFB81C',  // count pop, matches the brand's gold-on-red feel
+  gold:  '#FFB81C',
+  navy:  '#fff',
+  muted: 'rgba(255,255,255,0.6)',
+} as const;
+
+function StatCell({
+  value,
+  label,
+  accent,
+}: {
+  value: number | string;
+  label: string;
+  accent: keyof typeof ACCENT_COLORS;
+}) {
+  return (
+    <div
+      style={{
+        background: 'rgba(0,0,0,0.25)',
+        padding: '0.75rem 1rem',
+        textAlign: 'center',
+        minWidth: 0,
+      }}
+    >
+      <div
+        className="font-sport"
+        style={{
+          fontSize: 'clamp(1.25rem, 3.5vw, 1.625rem)',
+          color: ACCENT_COLORS[accent],
+          lineHeight: 1,
+          letterSpacing: '0.02em',
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.45)',
+          marginTop: 4,
+        }}
+      >
+        {label}
+      </div>
+    </div>
   );
 }
