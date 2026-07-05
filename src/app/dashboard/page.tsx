@@ -16,7 +16,9 @@ import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
 import { tierAtLeast } from '@/lib/connections';
+import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
+import FamilySetupWizard from '@/components/family/FamilySetupWizard';
 
 /**
  * OWNER_EMAILS is defined in src/lib/admin-auth.ts — single source of truth.
@@ -209,7 +211,7 @@ async function renderDashboard(userId: string) {
   try {
     const { data } = await supabaseAdmin
       .from('profiles')
-      .select('bio, location, tier, is_founding_member, created_at, role, display_name, username')
+      .select('bio, location, tier, is_founding_member, created_at, role, display_name, username, avatar_url, family_setup_completed_at')
       .eq('user_id', profileUserId)
       .maybeSingle();
     profile = data;
@@ -295,6 +297,50 @@ async function renderDashboard(userId: string) {
   // closed — if any of the 3 conditions fail, banner shows.
   const isIdentityVerifiedForUser = await isIdentityVerified(userId);
 
+  // Family Setup Wizard state (Phase 1a, prep doc §3.2).
+  // Computed in parallel with the rest of the dashboard so the wizard
+  // renders on first paint with correct done/coming-next/pending states.
+  // Fail-closed: any query error yields 'false' for that piece of state,
+  // which means the step is shown as "not done" — never as silently done.
+  let wizardHasChildren = false;
+  let wizardHasTeamMembership = false;
+  try {
+    const [childrenRes, teamRes] = await Promise.all([
+      supabaseAdmin
+        .from('managed_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('manager_user_id', userId),
+      supabaseAdmin
+        .from('team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('left_at', null),
+    ]);
+    wizardHasChildren = (childrenRes.count ?? 0) > 0;
+    wizardHasTeamMembership = (teamRes.count ?? 0) > 0;
+  } catch (e) {
+    console.error('[dashboard] wizard state read failed:', e);
+  }
+
+  // Family Setup Wizard gate (Phase 1a, prep doc §1 + §3.5).
+  // Render only when ALL of the following are true:
+  //   1. account_type includes 'parent' (parent-only per spec)
+  //   2. tier is identity_plus+ OR business_listing+ (no free parent tier)
+  //   3. family_setup_completed_at IS NULL (parent has not dismissed)
+  // The column is nullable; if the migration has not been applied yet,
+  // .family_setup_completed_at will be undefined which IS NULL — the
+  // wizard will render for parents even before the migration runs.
+  // This is intentional: it lets the wizard be visible the moment the
+  // code ships, with the API route handling the migration-not-applied
+  // 503 error on dismiss.
+  const wizardTierOk =
+    tierAtLeastSameTrack(profile?.tier ?? 'free', 'identity_plus') ||
+    tierAtLeastSameTrack(profile?.tier ?? 'free', 'business_listing');
+  const wizardVisible =
+    types.includes('parent') &&
+    wizardTierOk &&
+    profile?.family_setup_completed_at == null;
+
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
     { field: 'Display name', done: !!(profile?.display_name || firstName), href: '/dashboard/profile', hint: 'Add your first and last name' },
     { field: 'Avatar', done: !!avatarUrl, href: '/dashboard/profile', hint: 'Upload a profile photo' },
@@ -373,6 +419,22 @@ async function renderDashboard(userId: string) {
           </Link>
         </div>
       </div>
+
+      {/* Family Setup Wizard (Phase 1a, prep doc §3.2). Parent-only,
+          identity_plus+ or business_listing+, hidden once dismissed.
+          Server-rendered gate (wizardVisible) keeps the component out
+          of the bundle for non-eligible users. */}
+      {wizardVisible ? (
+        <FamilySetupWizard
+          firstName={firstName}
+          state={{
+            identityVerified: isIdentityVerifiedForUser,
+            hasChildren: wizardHasChildren,
+            hasAvatar: !!profile?.avatar_url,
+            hasTeamMembership: wizardHasTeamMembership,
+          }}
+        />
+      ) : null}
 
       {/* Inbox widget — quick access to messages, available to all users */}
       <InboxCard data={inbox} />
