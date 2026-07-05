@@ -188,23 +188,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-// Canonical tier colors. Legacy values (roster, pro, etc.) fall through to
-// the muted yellow LEGACY_COLOR and the label from lib/pricing.getTierLabel.
-const TIER_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  free:              { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',  text: 'rgba(255,255,255,0.5)' },
-  verified_identity: { bg: 'rgba(255,184,28,0.18)',  border: 'rgba(255,184,28,0.5)',   text: '#FFB81C' },
-  identity_plus:     { bg: 'rgba(255,184,28,0.25)',  border: 'rgba(255,184,28,0.6)',   text: '#FFB81C' },
-  club_starter:      { bg: 'rgba(200,16,46,0.10)',   border: 'rgba(200,16,46,0.4)',    text: '#C8102E' },
-  club_pro:          { bg: 'rgba(200,16,46,0.15)',   border: 'rgba(200,16,46,0.5)',    text: '#C8102E' },
-  club_elite:        { bg: 'rgba(200,16,46,0.22)',   border: 'rgba(200,16,46,0.6)',    text: '#C8102E' },
-  league:            { bg: 'rgba(200,16,46,0.10)',   border: 'rgba(200,16,46,0.4)',    text: '#C8102E' },
-  federation:        { bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.4)',   text: '#818CF8' },
-  business_listing:  { bg: 'rgba(20,184,166,0.12)',  border: 'rgba(20,184,166,0.4)',   text: '#14B8A6' },
-  business_plus:     { bg: 'rgba(20,184,166,0.22)',  border: 'rgba(20,184,166,0.6)',   text: '#14B8A6' },
-};
-
-const LEGACY_COLOR = { bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.25)', text: 'rgba(255,184,28,0.7)' };
-
 export default async function ProfileBySlugPage({ params }: PageProps) {
   const { slug } = await params;
   const data = await fetchProfile(slug);
@@ -213,7 +196,6 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   const { profile, managed, accountTypes, photoHistory } = data;
   const displayName = profile.display_name ?? 'RinkStop user';
   const profileUrl = `https://rinkstop.com/profile/${profile.username}`;
-  const tierStyle = TIER_COLORS[profile.tier] ?? LEGACY_COLOR;
   const tierLabel = getTierLabel(profile.tier);
 
   // Piece C (2026-06-24): identity-verified gate uses the hardened helper,
@@ -231,88 +213,143 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[#041E42] text-white">
-      <div className="max-w-3xl mx-auto px-4 py-12">
-        {/* Header */}
-        <header className="flex items-start gap-6 mb-8">
-          {profile.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt={displayName}
-              className="w-24 h-24 rounded-full object-cover border-2 border-white/10"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center text-3xl">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-          )}
+      <div className="max-w-3xl mx-auto px-4 py-10 md:py-14">
+        {/* Scoped style block: overrides ConnectButton/SocialActions inline
+            styles so the three action-row buttons share a consistent
+            border-radius, padding, font-size, and transition. The original
+            component logic (6 connection states, share popover, etc.) is
+            untouched — we only restyle. */}
+        <style>{`
+          .rs-profile-actions > * {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px !important;
+            transition: all 0.15s !important;
+            line-height: 1.2 !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            min-height: 36px !important;
+          }
+          .rs-profile-actions > *:hover {
+            transform: translateY(-1px);
+          }
+          .rs-profile-actions a[href*="/dashboard/messages"] {
+            background: rgba(255,184,28,0.12) !important;
+            color: #FFB81C !important;
+            border: 1px solid rgba(255,184,28,0.4) !important;
+          }
+          .rs-profile-actions a[href*="/dashboard/messages"]:hover {
+            background: rgba(255,184,28,0.2) !important;
+            border-color: rgba(255,184,28,0.7) !important;
+          }
+          .rs-profile-actions a[href*="/login"],
+          .rs-profile-actions a[href*="/sign-in"] {
+            background: var(--red) !important;
+            color: #fff !important;
+            border: 1px solid var(--red-dark) !important;
+          }
+          .rs-profile-actions a[href*="/login"]:hover,
+          .rs-profile-actions a[href*="/sign-in"]:hover {
+            background: var(--red-dark) !important;
+          }
+          .rs-profile-actions [data-testid="share-button"] {
+            background: rgba(255,255,255,0.05) !important;
+            color: #fff !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+          }
+          .rs-profile-actions [data-testid="share-button"]:hover {
+            background: rgba(255,255,255,0.1) !important;
+            border-color: rgba(255,255,255,0.3) !important;
+          }
+          .rs-profile-actions a[href*="/dashboard/profile"] {
+            background: var(--red) !important;
+            color: #fff !important;
+            border: 1px solid var(--red-dark) !important;
+          }
+          .rs-profile-actions a[href*="/dashboard/profile"]:hover {
+            background: var(--red-dark) !important;
+          }
+        `}</style>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h1 className="text-2xl font-bold">{displayName}</h1>
-              {(() => {
-                // Identity verification is the ONLY check. Tier is shown as
-                // a text pill below this row. The previous teal check on
-                // every Pro+ profile is removed.
-                //
-                // Piece C (2026-06-24): verifiedAt/expiresAt are gated by
-                // the hardened helper above. If the helper returned false
-                // (no real Didit session), verifiedAt is null here and the
-                // shield doesn't render.
-                if (!verifiedAt || !expiresAt) return null;
-                return (
-                  <IdentityVerified
-                    verifiedAt={verifiedAt}
-                    expiresAt={expiresAt}
-                  />
-                );
-              })()}
-              <FoundingMemberBadge />
-            </div>
-            <p className="text-white/50 text-sm mb-3 -mt-0.5">
-              <span className="text-white/30">@</span>{profile.username}
-            </p>
-
-            {/* Tier pill (kept compact, single line) */}
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span
-                className="text-xs px-2 py-1 rounded"
-                style={{ background: tierStyle.bg, border: `1px solid ${tierStyle.border}`, color: tierStyle.text }}
-              >
-                {tierLabel}
-              </span>
-            </div>
-
-            {/* Roles row — promoted to its own labelled line (Piece 1.1).
-                Larger badges, clearer primary. When the user has no roles set,
-                show a CTA to the dashboard picker so empty profiles don't
-                look "unfinished" (Piece 1.4). */}
-            {accountTypes.length > 0 ? (
-              <div className="mb-4">
-                <p className="text-[11px] uppercase tracking-wider text-white/40 mb-1.5">Roles</p>
-                <AccountTypeBadges
-                  types={accountTypes.map((t) => t.account_type)}
-                  primary={accountTypes.find((t) => t.is_primary)?.account_type ?? null}
-                  size="md"
+        {/* Single card container — matches the rest of the dark-theme site */}
+        <div
+          className="rounded-2xl border overflow-hidden"
+          style={{
+            background: 'linear-gradient(180deg, #0A1A33 0%, #041E42 100%)',
+            borderColor: 'rgba(255,255,255,0.08)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          }}
+        >
+          {/* ─── HEADER ─────────────────────────────────────────── */}
+          <div className="p-6 md:p-8">
+            <div className="flex items-start gap-5 md:gap-6">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={displayName}
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-2 flex-shrink-0"
+                  style={{ borderColor: 'var(--red)' }}
                 />
-              </div>
-            ) : (
-              <div className="mb-4">
-                <p className="text-[11px] uppercase tracking-wider text-white/40 mb-1.5">Roles</p>
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-1.5 text-sm text-[#FFB81C] hover:text-[#FFB81C]/80 border border-[#FFB81C]/30 hover:border-[#FFB81C]/60 rounded-full px-3 py-1 transition-colors"
+              ) : (
+                <div
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center text-3xl md:text-4xl flex-shrink-0 font-sport"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--red) 0%, #8b0a1e 100%)',
+                    color: '#fff',
+                  }}
                 >
-                  Add your roles <span aria-hidden>→</span>
-                </Link>
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0">
+                {/* Name + verification badges */}
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h1
+                    className="font-sport text-white"
+                    style={{
+                      fontSize: 'clamp(1.75rem, 5vw, 2.25rem)',
+                      letterSpacing: '0.04em',
+                      lineHeight: 0.95,
+                      margin: 0,
+                    }}
+                  >
+                    {displayName}
+                  </h1>
+                  {verifiedAt && expiresAt && (
+                    <IdentityVerified verifiedAt={verifiedAt} expiresAt={expiresAt} />
+                  )}
+                  <FoundingMemberBadge />
+                </div>
+
+                {/* Metadata strip: @handle · location · tier */}
+                <div className="flex items-center gap-2 flex-wrap text-sm text-white/60">
+                  <span>
+                    <span className="text-white/30">@</span>
+                    {profile.username}
+                  </span>
+                  {profile.location && (
+                    <>
+                      <span className="text-white/25">·</span>
+                      <span>📍 {profile.location}</span>
+                    </>
+                  )}
+                  <span className="text-white/25">·</span>
+                  <TierBadge tier={profile.tier} size="xs" />
+                </div>
               </div>
-            )}
+            </div>
 
-            {profile.location && (
-              <p className="text-sm text-white/50 mb-2">📍 {profile.location}</p>
-            )}
-
-            <div className="flex flex-wrap gap-2 mt-3">
-              <ConnectButton otherUserId={profile.user_id} otherDisplayName={displayName.split(' ')[0] || 'this user'} />
+            {/* Action row — three buttons, consistent style via scoped CSS */}
+            <div className="rs-profile-actions flex flex-wrap gap-2 mt-5">
+              <ConnectButton
+                otherUserId={profile.user_id}
+                otherDisplayName={displayName.split(' ')[0] || 'this user'}
+              />
               <SocialActions
                 share={{
                   title: `${displayName} (@${profile.username}) on RinkStop`,
@@ -324,139 +361,218 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               />
             </div>
           </div>
-        </header>
 
-        {/* Bio */}
-        {profile.bio && (
-          <section className="mb-8">
-            <p className="text-white/80 whitespace-pre-wrap">{profile.bio}</p>
-          </section>
-        )}
+          {/* ─── DIVIDER ────────────────────────────────────────── */}
+          {profile.bio && (
+            <div
+              className="px-6 md:px-8 py-5"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <p
+                className="text-white/80 whitespace-pre-wrap"
+                style={{ fontSize: '0.9375rem', lineHeight: 1.6 }}
+              >
+                {profile.bio}
+              </p>
+            </div>
+          )}
 
-        {/* Managed profiles (Piece 1.2 — sectioned by relationship).
-            Buckets: records I steward (self), teams I run, leagues I admin,
-            family I manage. Hidden entirely if the user has none. */}
-        {managed.length > 0 && (() => {
-          const labelFor = (m: ManagedProfile): string => {
-            const p = m.profile;
-            if (!p) return 'Unnamed';
-            if (m.profile_type === 'player') {
-              return [p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || 'Unnamed';
-            }
-            return p.name || p.display_name || 'Unnamed';
-          };
-          const imgFor = (m: ManagedProfile): string | null => {
-            const p = m.profile;
-            if (!p) return null;
-            if (m.profile_type === 'player') return p.headshot_url ?? null;
-            return p.logo_url ?? null;
-          };
-          const bucket = (rel: string, type: string) => {
-            if (rel === 'self') return 'records';
-            if (type === 'team') return 'teams';
-            if (type === 'league') return 'leagues';
-            return 'family';
-          };
-          // Canonical detail URL per profile_type. Players → /players/[id] (Piece 2).
-          // Teams → /directory/teams/[slug-or-id]; leagues → /directory/leagues/[id].
-          const hrefFor = (m: ManagedProfile): string => {
-            const p = m.profile;
-            if (m.profile_type === 'player') return `/players/${m.profile_id}`;
-            if (m.profile_type === 'team') return `/directory/teams/${p?.slug || m.profile_id}`;
-            if (m.profile_type === 'league') return `/directory/leagues/${m.profile_id}`;
-            return `/directory/${m.profile_type}s/${m.profile_id}`;
-          };
-          const groups: Record<string, ManagedProfile[]> = { records: [], teams: [], leagues: [], family: [] };
-          for (const m of managed) groups[bucket(m.relationship, m.profile_type)].push(m);
+          {/* ─── ROLES ──────────────────────────────────────────── */}
+          <div className="p-6 md:p-8">
+            <h2
+              className="font-sport uppercase text-white/50 mb-3"
+              style={{ fontSize: '0.875rem', letterSpacing: '0.1em' }}
+            >
+              Roles
+            </h2>
+            {accountTypes.length > 0 ? (
+              <AccountTypeBadges
+                types={accountTypes.map((t) => t.account_type)}
+                primary={accountTypes.find((t) => t.is_primary)?.account_type ?? null}
+                size="md"
+              />
+            ) : (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 text-sm text-[#FFB81C] hover:text-[#FFB81C]/80 border border-[#FFB81C]/30 hover:border-[#FFB81C]/60 rounded-full px-3 py-1 transition-colors"
+              >
+                Add your roles <span aria-hidden>→</span>
+              </Link>
+            )}
+          </div>
 
-          const section = (key: string, title: string, hint: string, rows: ManagedProfile[]) => {
-            if (rows.length === 0) return null;
-            return (
-              <div key={key} className="mb-6">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <h3 className="text-sm uppercase text-white/50">{title}</h3>
-                  <span className="text-[11px] text-white/30">{hint}</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {rows.map((m) => (
-                    <Link
-                      key={m.id}
-                      href={hrefFor(m)}
-                      className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 transition-colors"
+          {/* ─── CONNECTED PROFILES ─────────────────────────────── */}
+          {managed.length > 0 && (() => {
+            const labelFor = (m: ManagedProfile): string => {
+              const p = m.profile;
+              if (!p) return 'Unnamed';
+              if (m.profile_type === 'player') {
+                return [p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || 'Unnamed';
+              }
+              return p.name || p.display_name || 'Unnamed';
+            };
+            const imgFor = (m: ManagedProfile): string | null => {
+              const p = m.profile;
+              if (!p) return null;
+              if (m.profile_type === 'player') return p.headshot_url ?? null;
+              return p.logo_url ?? null;
+            };
+            const bucket = (rel: string, type: string) => {
+              if (rel === 'self') return 'records';
+              if (type === 'team') return 'teams';
+              if (type === 'league') return 'leagues';
+              return 'family';
+            };
+            const hrefFor = (m: ManagedProfile): string => {
+              const p = m.profile;
+              if (m.profile_type === 'player') return `/players/${m.profile_id}`;
+              if (m.profile_type === 'team') return `/directory/teams/${p?.slug || m.profile_id}`;
+              if (m.profile_type === 'league') return `/directory/leagues/${m.profile_id}`;
+              return `/directory/${m.profile_type}s/${m.profile_id}`;
+            };
+            const groups: Record<string, ManagedProfile[]> = { records: [], teams: [], leagues: [], family: [] };
+            for (const m of managed) groups[bucket(m.relationship, m.profile_type)].push(m);
+
+            const section = (key: string, title: string, hint: string, rows: ManagedProfile[]) => {
+              if (rows.length === 0) return null;
+              return (
+                <div key={key} className="mb-6 last:mb-0">
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <h3
+                      className="font-sport uppercase text-white/70"
+                      style={{ fontSize: '0.8125rem', letterSpacing: '0.1em' }}
                     >
-                      {imgFor(m) ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={imgFor(m)!} alt="" className="w-10 h-10 rounded object-cover bg-white/5 flex-shrink-0" />
-                      ) : (
-                        <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center text-white/40 flex-shrink-0">
-                          {m.profile_type === 'player' ? '🏒' : m.profile_type === 'team' ? '🛡️' : '🏆'}
+                      {title}
+                    </h3>
+                    <span className="text-[11px] text-white/30">{hint}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {rows.map((m) => (
+                      <Link
+                        key={m.id}
+                        href={hrefFor(m)}
+                        className="flex items-center gap-3 rounded-lg p-3 transition-colors"
+                        style={{
+                          background: 'rgba(255,255,255,0.04)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        {imgFor(m) ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={imgFor(m)!} alt="" className="w-10 h-10 rounded object-cover bg-white/5 flex-shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded bg-white/5 flex items-center justify-center text-white/40 flex-shrink-0">
+                            {m.profile_type === 'player' ? '🏒' : m.profile_type === 'team' ? '🛡️' : '🏆'}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold truncate">{labelFor(m)}</p>
+                          <p className="text-xs text-white/50 capitalize">{m.profile_type} · {m.relationship.replace(/_/g, ' ')}</p>
                         </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold truncate">{labelFor(m)}</p>
-                        <p className="text-xs text-white/50 capitalize">{m.profile_type} · {m.relationship.replace(/_/g, ' ')}</p>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
+              );
+            };
+
+            return (
+              <div
+                className="p-6 md:p-8"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <h2
+                  className="font-sport uppercase text-white/50 mb-4"
+                  style={{ fontSize: '0.875rem', letterSpacing: '0.1em' }}
+                >
+                  Connected profiles
+                </h2>
+                {section('records', 'Records I steward', 'player or team records this person owns', groups.records)}
+                {section('teams', 'Teams I run', 'head coach / manager / staff', groups.teams)}
+                {section('leagues', 'Leagues I admin', 'league administrators', groups.leagues)}
+                {section('family', 'Family I manage', 'parent / guardian / spouse', groups.family)}
               </div>
             );
-          };
+          })()}
 
-          return (
-            <section className="mb-8">
-              <h2 className="text-sm uppercase text-white/40 mb-3">Connected profiles</h2>
-              {section('records', 'Records I steward', 'player or team records this person owns', groups.records)}
-              {section('teams', 'Teams I run', 'head coach / manager / staff', groups.teams)}
-              {section('leagues', 'Leagues I admin', 'league administrators', groups.leagues)}
-              {section('family', 'Family I manage', 'parent / guardian / spouse', groups.family)}
-            </section>
-          );
-        })()}
-
-        {/* Photo history (Day 7, Arnel 2026-06-23 05:13 CDT — public).
-            Shows the user's previous profile photos in reverse-chronological
-            order. The current photo is the first tile (highlighted). The
-            section is hidden when there's only ever been one photo or zero
-            photos — no point showing an empty strip. */}
-        {photoHistory.length >= 2 && (
-          <section className="mb-8">
-            <h2 className="text-sm uppercase text-white/40 mb-3">Photo history</h2>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {photoHistory.map((p, i) => {
-                const isCurrent = i === 0 && !p.removed_at;
-                return (
-                  <div
-                    key={p.id}
-                    className="flex-shrink-0"
-                    style={{ width: 96 }}
-                  >
-                    {p.url ? (
-                      <img
-                        src={p.url}
-                        alt={isCurrent ? 'Current profile photo' : 'Previous profile photo'}
-                        className={`w-24 h-24 rounded-lg object-cover border-2 ${
-                          isCurrent ? 'border-[#FFB81C]' : 'border-white/10'
-                        }`}
-                      />
-                    ) : (
-                      <div className="w-24 h-24 rounded-lg bg-white/5 border border-white/10" />
-                    )}
-                    <p className="text-xs text-white/40 mt-1">
-                      {new Date(p.set_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })}
-                      {isCurrent && <span className="ml-1 text-[#FFB81C]">· now</span>}
-                    </p>
-                  </div>
-                );
-              })}
+          {/* ─── PHOTO HISTORY ──────────────────────────────────── */}
+          {photoHistory.length >= 2 && (
+            <div
+              className="p-6 md:p-8"
+              style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <h2
+                className="font-sport uppercase text-white/50 mb-4"
+                style={{ fontSize: '0.875rem', letterSpacing: '0.1em' }}
+              >
+                Photo history
+              </h2>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {photoHistory.map((p, i) => {
+                  const isCurrent = i === 0 && !p.removed_at;
+                  return (
+                    <div
+                      key={p.id}
+                      className="flex-shrink-0 relative"
+                      style={{ width: 80 }}
+                    >
+                      {p.url ? (
+                        <img
+                          src={p.url}
+                          alt={isCurrent ? 'Current profile photo' : 'Previous profile photo'}
+                          className="w-20 h-20 rounded-lg object-cover"
+                          style={{
+                            border: isCurrent ? '2px solid var(--red)' : '1px solid rgba(255,255,255,0.1)',
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="w-20 h-20 rounded-lg"
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                          }}
+                        />
+                      )}
+                      {isCurrent && (
+                        <div
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
+                          style={{
+                            background: 'var(--gold)',
+                            color: '#041E42',
+                            fontWeight: 700,
+                          }}
+                          aria-label="Current photo"
+                        >
+                          ✓
+                        </div>
+                      )}
+                      <p
+                        className="mt-1.5 text-center text-white/40"
+                        style={{ fontSize: '10px', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+                      >
+                        {new Date(p.set_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </section>
-        )}
+          )}
 
-        {/* Footer / metadata */}
-        <footer className="text-xs text-white/40 mt-12">
-          Joined {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'recently'}
-        </footer>
+          {/* ─── FOOTER ─────────────────────────────────────────── */}
+          <div
+            className="px-6 md:px-8 py-5"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <p className="text-xs text-white/40">
+              Joined {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'recently'}
+              {tierLabel && tierLabel !== 'Free' && (
+                <span className="ml-2 text-white/30">· {tierLabel} member</span>
+              )}
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );
