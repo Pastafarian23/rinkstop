@@ -70,6 +70,13 @@ interface TeamMembership {
   role: string;
 }
 
+interface PendingDocumentSummary {
+  childId: string;
+  childName: string;
+  activeCount: number;
+  expiredCount: number;
+}
+
 export interface ConsumerCardData {
   todayEvents: TodayEvent[];
   upcomingTournaments: UpcomingTournament[];
@@ -77,6 +84,9 @@ export interface ConsumerCardData {
   teamMemberships: TeamMembership[];
   identityVerified: boolean;
   tier: string;
+  /** Phase 1b-1. Per-child active/expired document counts. Empty array
+   *  if the user has no linked children. */
+  pendingDocuments: PendingDocumentSummary[];
 }
 
 /**
@@ -92,6 +102,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
     teamMemberships: [],
     identityVerified,
     tier,
+    pendingDocuments: [],
   };
 
   try {
@@ -101,7 +112,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
     const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [membershipsRes, scheduleRes, fixturesRes, paymentsRes] = await Promise.all([
+    const [membershipsRes, scheduleRes, fixturesRes, paymentsRes, childIdsRes] = await Promise.all([
       supabaseAdmin
         .from('team_members')
         .select('role, team_workspaces:team_id ( id, slug, name )')
@@ -145,6 +156,11 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
           .order('due_at', { ascending: true })
           .limit(5);
       })(),
+      supabaseAdmin
+        .from('managed_profiles')
+        .select('profile_id, players:profile_id ( first_name, last_name )')
+        .eq('manager_user_id', userId)
+        .eq('profile_type', 'player'),
     ]);
 
     const memberships: TeamMembership[] = ((membershipsRes.data || []) as any[])
@@ -181,6 +197,47 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
       league: null,
     }));
 
+    // Phase 1b-1: per-child active/expired document counts for the
+    // "PENDING DOCUMENTS" card. One query against player_documents, then
+    // join to the player names we already loaded via managed_profiles.
+    const childNameById: Record<string, string> = {};
+    const childIds: string[] = [];
+    for (const r of (childIdsRes.data || []) as any[]) {
+      const p = r.players;
+      const name = p
+        ? `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Child'
+        : 'Child';
+      childNameById[r.profile_id] = name;
+      childIds.push(r.profile_id);
+    }
+    const pendingDocuments: PendingDocumentSummary[] = [];
+    if (childIds.length > 0) {
+      const { data: docs } = await supabaseAdmin
+        .from('player_documents')
+        .select('player_id, status, expires_at')
+        .in('player_id', childIds);
+      const today = new Date().toISOString().slice(0, 10);
+      const bucket: Record<string, { active: number; expired: number }> = {};
+      for (const d of (docs || []) as any[]) {
+        const b = bucket[d.player_id] ?? (bucket[d.player_id] = { active: 0, expired: 0 });
+        let status = d.status;
+        if (status === 'active' && d.expires_at && d.expires_at < today) {
+          status = 'expired';
+        }
+        if (status === 'active') b.active++;
+        else if (status === 'expired') b.expired++;
+      }
+      for (const childId of childIds) {
+        const b = bucket[childId] ?? { active: 0, expired: 0 };
+        pendingDocuments.push({
+          childId,
+          childName: childNameById[childId] || 'Child',
+          activeCount: b.active,
+          expiredCount: b.expired,
+        });
+      }
+    }
+
     return {
       todayEvents,
       upcomingTournaments,
@@ -188,6 +245,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
       teamMemberships: memberships,
       identityVerified,
       tier,
+      pendingDocuments,
     };
   } catch (e) {
     console.error('[ConsumerCards] load failed:', e);
@@ -340,12 +398,52 @@ export default function ConsumerCards({
         )}
       </div>
 
-      {/* Pending Documents (1b-1 placeholder) */}
-      <div data-testid="consumer-card-documents" style={{ ...cardStyle, opacity: 0.7 }}>
+      {/* Pending Documents (1b-1 — live). Per-child active/expired counts.
+          Empty state directs non-parents to the directory, parents without
+          children to Family Hub, parents with no docs to upload. */}
+      <div data-testid="consumer-card-documents" style={cardStyle}>
         <CardHeader emoji="📄" title="PENDING DOCUMENTS" />
-        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-          Document storage ships in the next release. Birth certificates, waivers, and medical forms will live here.
-        </p>
+        {data.pendingDocuments.length === 0 ? (
+          primaryType === 'parent' ? (
+            <EmptyMessage
+              headline="No linked children yet"
+              body="Link your first child to start uploading documents."
+              cta={{ label: 'Open Family Hub', href: '/dashboard/family' }}
+            />
+          ) : (
+            <EmptyMessage
+              headline="Documents are parent-only"
+              body="Parents upload birth certificates, waivers, and medical forms for each linked child."
+              cta={{ label: 'Browse the directory', href: '/directory' }}
+            />
+          )
+        ) : (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {data.pendingDocuments.slice(0, 4).map((d) => (
+              <li key={d.childId} style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem' }}>
+                <Link href={`/dashboard/family#${d.childId}`} style={{ color: '#fff', textDecoration: 'none' }}>
+                  {d.childName}
+                </Link>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem' }}>
+                  {d.activeCount} active{d.expiredCount > 0 ? ` · ${d.expiredCount} expired` : ''}
+                </div>
+              </li>
+            ))}
+            {data.pendingDocuments.length > 4 ? (
+              <li style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
+                +{data.pendingDocuments.length - 4} more
+              </li>
+            ) : null}
+            <li style={{ marginTop: 4 }}>
+              <Link
+                href="/dashboard/family"
+                style={{ color: '#14B8A6', fontSize: '0.75rem', textDecoration: 'none', fontWeight: 600 }}
+              >
+                Manage in Family Hub →
+              </Link>
+            </li>
+          </ul>
+        )}
       </div>
 
       {/* Recent Achievements (1b-2 placeholder) */}

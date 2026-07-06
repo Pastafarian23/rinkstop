@@ -305,8 +305,9 @@ async function renderDashboard(userId: string) {
   // which means the step is shown as "not done" — never as silently done.
   let wizardHasChildren = false;
   let wizardHasTeamMembership = false;
+  let wizardHasDocuments = false;
   try {
-    const [childrenRes, teamRes] = await Promise.all([
+    const [childrenRes, teamRes, childIdsRes] = await Promise.all([
       supabaseAdmin
         .from('managed_profiles')
         .select('id', { count: 'exact', head: true })
@@ -316,9 +317,29 @@ async function renderDashboard(userId: string) {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
         .is('left_at', null),
+      supabaseAdmin
+        .from('managed_profiles')
+        .select('profile_id')
+        .eq('manager_user_id', userId)
+        .eq('profile_type', 'player'),
     ]);
     wizardHasChildren = (childrenRes.count ?? 0) > 0;
     wizardHasTeamMembership = (teamRes.count ?? 0) > 0;
+
+    // Phase 1b-1: count any active player_documents for any linked child.
+    // If the user has linked children, run a second scoped count. If they
+    // have zero linked children, the count stays false (no docs possible).
+    const childIds = ((childIdsRes.data || []) as any[])
+      .map((r: any) => r.profile_id)
+      .filter(Boolean);
+    if (childIds.length > 0) {
+      const { count: docsCount } = await supabaseAdmin
+        .from('player_documents')
+        .select('id', { count: 'exact', head: true })
+        .in('player_id', childIds)
+        .eq('status', 'active');
+      wizardHasDocuments = (docsCount ?? 0) > 0;
+    }
   } catch (e) {
     console.error('[dashboard] wizard state read failed:', e);
   }
@@ -442,6 +463,7 @@ async function renderDashboard(userId: string) {
             hasChildren: wizardHasChildren,
             hasAvatar: !!profile?.avatar_url,
             hasTeamMembership: wizardHasTeamMembership,
+            hasDocuments: wizardHasDocuments,
           }}
         />
       ) : null}
