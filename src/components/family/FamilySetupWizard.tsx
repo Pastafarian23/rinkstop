@@ -40,6 +40,8 @@ export interface FamilySetupWizardState {
   hasAvatar: boolean;
   /** User has at least one team_member row */
   hasTeamMembership: boolean;
+  /** User has at least one active player_document for any linked child (Phase 1b-1) */
+  hasDocuments: boolean;
 }
 
 interface FamilySetupWizardProps {
@@ -85,10 +87,11 @@ export default function FamilySetupWizard({ state, firstName }: FamilySetupWizar
     {
       number: 3,
       title: 'Upload important hockey documents',
-      description: 'Document storage ships in Phase 1b. We are building secure parent-controlled storage for birth certificates, waivers, and medical forms.',
-      cta: { label: 'Coming next', href: '#' },
-      done: false,
-      comingNext: true,
+      description: state.hasDocuments
+        ? 'Your child\u2019s documents are uploaded and ready.'
+        : 'Upload a birth certificate, waiver, or medical form to start your child\u2019s Hockey Passport.',
+      cta: { label: state.hasDocuments ? 'Manage documents' : 'Upload a document', href: '/dashboard/family' },
+      done: state.hasDocuments,
     },
     {
       number: 4,

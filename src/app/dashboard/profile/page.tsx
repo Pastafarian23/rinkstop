@@ -8,6 +8,7 @@ import { isIdentityVerified } from '@/lib/identity-verified';
 import ProfileEditForm from './ProfileEditForm';
 import FollowingList from './FollowingList';
 import ChangePhotoButton from './ChangePhotoButton';
+import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,12 +43,7 @@ export default async function ProfilePage() {
     identityVerified = false;
   }
 
-  let parentRelationships: Array<{
-    id: string;
-    relationship: string;
-    player_name: string;
-    player_slug: string | null;
-  }> = [];
+  let parentRelationships: any[] = [];
   try {
     const { data: relationships } = await supabaseAdmin
       .from('managed_profiles')
@@ -67,6 +63,47 @@ export default async function ProfilePage() {
     });
   } catch {
     parentRelationships = [];
+  }
+
+  // Player Documents (Phase 1b-1). One batch query for all linked children,
+  // mirroring the dashboard/family page wire. Computed-on-read
+  // status='expired' lives here too.
+  let documentsByPlayer: Record<string, any[]> = {};
+  let consentRevokedByPlayer: Record<string, boolean> = {};
+  try {
+    const playerIds = parentRelationships
+      .map((r) => r.profile_id)
+      .filter((id): id is string => !!id);
+    if (playerIds.length > 0) {
+      const { data: docs } = await supabaseAdmin
+        .from('player_documents')
+        .select(
+          'id, player_id, category, title, description, file_name, file_size_bytes, mime_type, expires_at, status, created_at, updated_at'
+        )
+        .in('player_id', playerIds)
+        .order('created_at', { ascending: false });
+      const today = new Date().toISOString().slice(0, 10);
+      for (const d of docs || []) {
+        let status = d.status;
+        if (status === 'active' && d.expires_at && d.expires_at < today) {
+          status = 'expired';
+        }
+        const arr = documentsByPlayer[d.player_id] ?? (documentsByPlayer[d.player_id] = []);
+        arr.push({ ...d, status });
+      }
+
+      const { data: links } = await supabaseAdmin
+        .from('managed_profiles')
+        .select('profile_id, minor_consent_revoked_at')
+        .eq('manager_user_id', userId)
+        .in('profile_id', playerIds);
+      for (const l of links || []) {
+        consentRevokedByPlayer[l.profile_id] = !!l.minor_consent_revoked_at;
+      }
+    }
+  } catch {
+    documentsByPlayer = {};
+    consentRevokedByPlayer = {};
   }
 
   // Clerk-managed fields (kept for the Edit modal, but sectioned under
@@ -300,17 +337,91 @@ export default async function ProfilePage() {
         )}
       </PassportSection>
 
-      {/* Section 4: Documents (1b-1 placeholder) */}
+      {/* Section 4: Documents (1b-1 — live). Per linked child. Read-write from
+          here (upload + archive) — mirrors dashboard/family. The Family Hub
+          CTA at the top is a convenience shortcut for the heavier surface. */}
       <PassportSection
         emoji="📄"
         title="DOCUMENTS"
-        description="Birth certificates, waivers, and medical forms. Coming soon."
+        description="Birth certificates, waivers, and medical forms for each linked child."
         testId="passport-section-documents"
-        placeholder
       >
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-          Secure document storage ships in the next release. You will control who sees each document.
-        </p>
+        <div style={{ marginBottom: '0.85rem' }}>
+          <Link
+            href="/dashboard/family"
+            style={{
+              color: '#14B8A6',
+              fontSize: '0.78rem',
+              textDecoration: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Open Family Hub for the full management view →
+          </Link>
+        </div>
+
+        {parentRelationships.length === 0 ? (
+          <div
+            data-testid="passport-empty-documents"
+            style={{
+              padding: '1rem',
+              background: '#0a0a0a',
+              border: '1px dashed rgba(255,255,255,0.15)',
+              borderRadius: 10,
+              textAlign: 'center',
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: '0.85rem',
+            }}
+          >
+            Link a player first to start uploading documents.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {parentRelationships.map((r) => {
+              const docs = documentsByPlayer[r.profile_id] || [];
+              const consentRevoked = !!consentRevokedByPlayer[r.profile_id];
+              return (
+                <div
+                  key={r.id}
+                  data-testid="passport-documents-child"
+                  style={{
+                    padding: '0.85rem',
+                    background: '#0a0a0a',
+                    border: '1px solid #141414',
+                    borderRadius: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: '0.6rem' }}>
+                    <h3
+                      style={{
+                        fontFamily: "'Bebas Neue', Impact, sans-serif",
+                        fontSize: '0.9rem',
+                        color: '#fff',
+                        letterSpacing: '0.05em',
+                        margin: 0,
+                      }}
+                    >
+                      {r.player_name.toUpperCase()}&rsquo;S DOCUMENTS
+                    </h3>
+                    <span
+                      style={{
+                        color: 'rgba(255,255,255,0.4)',
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      {docs.filter((d: any) => d.status !== 'archived').length} active
+                    </span>
+                  </div>
+                  <PlayerDocumentSection
+                    playerId={r.profile_id}
+                    documents={docs}
+                    consentRevoked={consentRevoked}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </PassportSection>
 
       {/* Section 5: Achievements (1b-2 placeholder) */}

@@ -8,6 +8,7 @@ import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import FamilySearch from '@/components/family/FamilySearch';
 import FamilySetupResume from '@/components/family/FamilySetupResume';
+import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +70,47 @@ export default async function FamilyPage() {
       .in('id', profileIds);
     for (const p of players || []) {
       playerMap[p.id] = p;
+    }
+  }
+
+  // Fetch existing player_documents for all linked children in one batch.
+  // The component is passed the per-child array; PlayerDocumentList is a
+  // server-fed client component so it reads the seed list directly and
+  // refetches via GET after the user does an action.
+  // We compute status='expired' on read here too, mirroring the GET endpoint,
+  // so the list renders correctly without an HTTP roundtrip on first paint.
+  const documentsByPlayer: Record<string, any[]> = {};
+  if (profileIds.length > 0) {
+    const { data: docs } = await supabaseAdmin
+      .from('player_documents')
+      .select(
+        'id, player_id, category, title, description, file_name, file_size_bytes, mime_type, expires_at, status, created_at, updated_at'
+      )
+      .in('player_id', profileIds)
+      .order('created_at', { ascending: false });
+    const today = new Date().toISOString().slice(0, 10);
+    for (const d of docs || []) {
+      let status = d.status;
+      if (status === 'active' && d.expires_at && d.expires_at < today) {
+        status = 'expired';
+      }
+      const arr = documentsByPlayer[d.player_id] ?? (documentsByPlayer[d.player_id] = []);
+      arr.push({ ...d, status });
+    }
+  }
+
+  // Per-child consent state — used to gate the upload form when a parent's
+  // consent was previously revoked. The link row itself is the source of
+  // truth; the upload component re-asserts on submit.
+  const consentRevokedByPlayer: Record<string, boolean> = {};
+  if (profileIds.length > 0) {
+    const { data: links } = await supabaseAdmin
+      .from('managed_profiles')
+      .select('profile_id, minor_consent_revoked_at')
+      .eq('manager_user_id', userId)
+      .in('profile_id', profileIds);
+    for (const l of links || []) {
+      consentRevokedByPlayer[l.profile_id] = !!l.minor_consent_revoked_at;
     }
   }
 
@@ -408,7 +450,10 @@ export default async function FamilyPage() {
         )}
       </section>
 
-      {/* Documents (1b-1 placeholder) */}
+      {/* Documents (1b-1 — live). One per linked child. Server-side seeds
+          the list from `player_documents`; PlayerDocumentSection handles
+          the post-action `router.refresh()`. We never POST from the page
+          itself. */}
       <section
         data-testid="family-documents"
         style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}
@@ -419,10 +464,78 @@ export default async function FamilyPage() {
         }}>
           DOCUMENTS
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
-          Secure document storage for birth certificates, waivers, and medical forms ships in the next release.
-          Parents will control who sees each document.
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
+          Secure document storage for birth certificates, waivers, and medical forms. You control who sees each document.
         </p>
+
+        {!managedProfiles || managedProfiles.length === 0 ? (
+          <div
+            data-testid="family-documents-empty"
+            style={{
+              padding: '1rem',
+              background: '#0a0a0a',
+              border: '1px dashed rgba(255,255,255,0.15)',
+              borderRadius: 10,
+              textAlign: 'center',
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: '0.85rem',
+            }}
+          >
+            Link a player first to start uploading documents.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {managedProfiles.map((mp: any) => {
+              const player = playerMap[mp.profile_id] || {};
+              const docs = documentsByPlayer[mp.profile_id] || [];
+              const consentRevoked = !!consentRevokedByPlayer[mp.profile_id];
+              const childName =
+                player.first_name && player.last_name
+                  ? `${player.first_name} ${player.last_name}`
+                  : 'Unknown Player';
+              return (
+                <div
+                  key={mp.id}
+                  data-testid="family-documents-child"
+                  style={{
+                    padding: '1rem',
+                    background: '#0a0a0a',
+                    border: '1px solid #141414',
+                    borderRadius: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: '0.85rem' }}>
+                    <h3
+                      style={{
+                        fontFamily: "'Bebas Neue', Impact, sans-serif",
+                        fontSize: '0.95rem',
+                        color: '#fff',
+                        letterSpacing: '0.05em',
+                        margin: 0,
+                      }}
+                    >
+                      {childName.toUpperCase()}&rsquo;S DOCUMENTS
+                    </h3>
+                    <span
+                      style={{
+                        color: 'rgba(255,255,255,0.4)',
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      {docs.filter((d: any) => d.status !== 'archived').length} active
+                    </span>
+                  </div>
+
+                  <PlayerDocumentSection
+                    playerId={mp.profile_id}
+                    documents={docs}
+                    consentRevoked={consentRevoked}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Achievements (1b-2 placeholder) */}
