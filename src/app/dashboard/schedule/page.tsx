@@ -48,19 +48,59 @@ export default async function SchedulePage({ searchParams }: PageProps) {
         <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '2rem', color: '#fff', letterSpacing: '0.05em', margin: 0 }}>
           SCHEDULE
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.55)', marginTop: 8 }}>
-          You&rsquo;re not on any team rosters yet. Join a team to see its events here.
-        </p>
-        <Link
-          href="/directory/teams"
+        {/* Phase 1a (Consumer-First Growth) — prep doc §3.7. Spec-style
+            empty state with headline + body + CTA. Replaces the prior
+            one-line 'You're not on any team rosters yet' note. */}
+        <div
+          data-testid="schedule-empty-state"
           style={{
-            display: 'inline-block', marginTop: 16, padding: '0.6rem 1.25rem',
-            background: '#FFB81C', color: '#0D1117', borderRadius: 6,
-            fontSize: 14, fontWeight: 700, textDecoration: 'none',
+            marginTop: 24,
+            padding: '2rem 1.5rem',
+            background: '#0a0a0a',
+            border: '1px dashed rgba(255,255,255,0.15)',
+            borderRadius: 12,
+            textAlign: 'center',
           }}
         >
-          Browse teams
-        </Link>
+          <div style={{ fontSize: '2rem', marginBottom: 8 }} aria-hidden>📅</div>
+          <h2 style={{
+            fontFamily: "'Bebas Neue', Impact, sans-serif",
+            fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em',
+            margin: '0 0 0.5rem',
+          }}>
+            NO TEAMS YET
+          </h2>
+          <p style={{
+            color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem',
+            margin: '0 0 1.25rem', maxWidth: 420, marginLeft: 'auto', marginRight: 'auto',
+            lineHeight: 1.5,
+          }}>
+            Join a team to see their games, practices, and tournaments on your schedule.
+          </p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link
+              href="/directory/teams"
+              style={{
+                display: 'inline-block', padding: '0.6rem 1.25rem',
+                background: '#14B8A6', color: '#0a0a0a', borderRadius: 6,
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+              }}
+            >
+              Browse teams →
+            </Link>
+            <Link
+              href="/dashboard/family"
+              style={{
+                display: 'inline-block', padding: '0.6rem 1.25rem',
+                background: 'transparent', color: '#fff', borderRadius: 6,
+                fontSize: 14, fontWeight: 600, textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.2)',
+              }}
+            >
+              Open Family Hub
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
