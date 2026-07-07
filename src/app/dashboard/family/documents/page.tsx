@@ -50,7 +50,7 @@ export default async function FamilyDocumentsPage() {
   const docIds = Array.from(new Set(recipientList.map((r) => r.document_id as string)));
   const { data: docs } = await supabaseAdmin
     .from('team_documents')
-    .select('id, team_id, title, description, file_name, file_size_bytes, mime_type, required, due_date, created_at')
+    .select('id, team_id, title, description, file_name, file_size_bytes, mime_type, required, due_date, created_at, file_url')
     .in('id', docIds);
   const docById = new Map((docs || []).map((d) => [d.id as string, d]));
 
@@ -79,6 +79,24 @@ export default async function FamilyDocumentsPage() {
       return { r, doc, team };
     })
     .filter((it) => it.doc && it.team);
+
+  // A-v: pre-issue signed URLs for the Print buttons so users can open the
+  // source file in a new tab and use browser print. 60s expiry is plenty
+  // for a user to click. Skip silently on failure (button just won't show).
+  const printUrlByDoc = new Map<string, string>();
+  await Promise.all(
+    items.map(async ({ doc }) => {
+      if (!doc!.file_url) return;
+      try {
+        const { data: signed } = await supabaseAdmin.storage
+          .from('team-documents')
+          .createSignedUrl(doc!.file_url as string, 60);
+        if (signed?.signedUrl) printUrlByDoc.set(doc!.id as string, signed.signedUrl);
+      } catch {
+        // Skip — Print button just won't render for this row.
+      }
+    })
+  );
 
   return (
     <div style={{ maxWidth: 880, padding: '2rem 1.5rem' }}>
@@ -130,6 +148,17 @@ export default async function FamilyDocumentsPage() {
               >
                 Open
               </a>
+              {printUrlByDoc.has(doc!.id as string) && (
+                <a
+                  href={printUrlByDoc.get(doc!.id as string)}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ background: '#fff', border: '1px solid #041E42', color: '#041E42', padding: '0.375rem 0.875rem', borderRadius: 4, fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}
+                  title="Open document to print (use Ctrl/Cmd+P)"
+                >
+                  🖨 Print
+                </a>
+              )}
             </div>
           );
         })}
