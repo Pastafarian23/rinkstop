@@ -49,6 +49,20 @@ export default async function TeamDocumentsPage({ params }: PageProps) {
 
   const isAdmin = ADMIN_ROLES.includes(myMembership.role);
 
+  // Fetch roster for recipient picker (A-i). Non-admins don't see this UI.
+  // Limited to active members with a non-empty user_id. Admins can opt to
+  // "broadcast" by leaving picker empty (backwards-compatible behavior).
+  let roster: { user_id: string; role: string }[] = [];
+  if (isAdmin) {
+    const { data: rosterRows } = await supabaseAdmin
+      .from('team_members')
+      .select('user_id, role')
+      .eq('team_id', team.id)
+      .is('left_at', null)
+      .not('user_id', 'is', null);
+    roster = (rosterRows || []).filter((r) => !!r.user_id);
+  }
+
   // Fetch documents
   const { data: docs } = await supabaseAdmin
     .from('team_documents')
@@ -85,6 +99,7 @@ export default async function TeamDocumentsPage({ params }: PageProps) {
       teamName={team.name}
       userId={userId}
       isAdmin={isAdmin}
+      roster={roster}
       documents={enrichedDocs}
     />
   );
