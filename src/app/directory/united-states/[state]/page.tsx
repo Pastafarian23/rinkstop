@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import StateProvincePageContent, { type CityRow } from '@/components/StateProvincePageContent';
 import { buildRegionIntro, buildStateFAQs } from '@/lib/state-faq-builder';
 import { getStateHockeyFacts } from '@/lib/state-hockey-facts';
-import { statePageDecision, robotsMeta } from '@/lib/seo';
+import { robotsMeta } from '@/lib/seo';
 
 /**
  * US state page: /directory/united-states/{state}
@@ -81,7 +81,13 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
       .in('city', cityNames);
     totalTeamCount = tc || 0;
   }
-  const decision = statePageDecision(cityNames.length, totalRinkCount + totalTeamCount, 0);
+  // Tier 1f: binary gate — a state page is indexable if it has cities with
+  // listings. The full statePageDecision weights word count too, but the
+  // StateProvincePageContent component always renders 500+ words when it
+  // has data, so a positive count = a useful page. Pages with 0 cities are
+  // noindex (truly empty) — covered by the cityNames.length check.
+  const hasContent = cityNames.length > 0 && (totalRinkCount + totalTeamCount) > 0;
+  const decision = { indexable: hasContent, reason: hasContent ? 'has content' : 'empty', uniquenessScore: hasContent ? 50 : 0 };
 
   return {
     title: `${stateName} Hockey - Ice Rinks, Teams & Leagues`,

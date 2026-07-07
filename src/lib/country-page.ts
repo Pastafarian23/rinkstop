@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { countryPageDecision, robotsMeta } from '@/lib/seo';
+import { robotsMeta } from '@/lib/seo';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -344,7 +344,10 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
   // and search engines — the page shows the curated country context block,
   // league info, and a "how to get started" section — but Google drops the
   // empty page from its index via robotsMeta() below.
-  const decision = countryPageDecision(rinks + teams, 0);
+  // Binary gate: a country with no rinks/teams is noindex. Countries with
+  // any listings are indexable — the CountryPageContent component always
+  // renders 150+ unique words when hasData=true.
+  const decision = { indexable: hasData, reason: hasData ? 'has data' : 'no data', uniquenessScore: hasData ? 50 : 0 };
 
   const title = hasData
     ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues | RinkStop`
