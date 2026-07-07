@@ -3,7 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import { getCityPageData, resolveCAProvince, slugToTitle } from '@/lib/city-page';
 import CityPageContent from '@/components/CityPageContent';
 import { PROVINCE_SLUGS, type ProvinceAbbr } from '@/lib/ca-provinces';
-import { cityPageDecision, robotsMeta } from '@/lib/seo';
+import { robotsMeta } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +37,9 @@ export async function generateMetadata({
     regionSlug: canonicalSlug,
     regionAbbr: resolved.abbr,
   });
-  const decision = cityPageDecision(data.teamCount + data.rinkCount, 0, false);
+  // Tier 1f: simple listing-count gate — see united-states/[state]/[city]
+  const hasListings = data.teamCount + data.rinkCount > 0;
+  const decision = { indexable: hasListings, reason: hasListings ? 'has listings' : 'no listings', uniquenessScore: hasListings ? 50 : 0 };
 
   return {
     title: `${location} Hockey - Rinks & Teams`,

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getCityPageData, resolveUSState, resolveCityName } from '@/lib/city-page';
-import { cityPageDecision, robotsMeta } from '@/lib/seo';
+import { robotsMeta } from '@/lib/seo';
 import CityPageContent from '@/components/CityPageContent';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +40,12 @@ export async function generateMetadata({
     regionSlug: stateSlug,
     regionAbbr: abbr,
   });
-  const decision = cityPageDecision(data.teamCount + data.rinkCount, 0, false);
+  // Tier 1f: simple listing-count gate. Pages with 0 rinks AND 0 teams are
+  // noindex. The full city decision (which weighs word count and
+  // hockey-scene content) lives in the page component because it has the
+  // full data; the metadata only has the count and uses a binary rule.
+  const hasListings = data.teamCount + data.rinkCount > 0;
+  const decision = { indexable: hasListings, reason: hasListings ? 'has listings' : 'no listings', uniquenessScore: hasListings ? 50 : 0 };
 
   return {
     title: `${location} Hockey - Rinks & Teams`,

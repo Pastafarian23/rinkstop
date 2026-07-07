@@ -9,7 +9,7 @@ import {
   countryNameFromSlug,
   resolveCityBranding,
 } from '@/lib/city-context';
-import { cityPageDecision, robotsMeta } from '@/lib/seo';
+import { robotsMeta } from '@/lib/seo';
 import CityPageContent from '@/components/CityPageContent';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +60,9 @@ export async function generateMetadata({
     cityName,
     citySlug,
   });
-  const decision = cityPageDecision(data.teamCount + data.rinkCount, 0, false);
+  // Tier 1f: simple listing-count gate — see united-states/[state]/[city]
+  const hasListings = data.teamCount + data.rinkCount > 0;
+  const decision = { indexable: hasListings, reason: hasListings ? 'has listings' : 'no listings', uniquenessScore: hasListings ? 50 : 0 };
 
   const description =
     branding.description ??

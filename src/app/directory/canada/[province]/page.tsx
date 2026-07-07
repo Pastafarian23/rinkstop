@@ -5,7 +5,7 @@ import { PROVINCE_FROM_SLUG_OR_ABBR, PROVINCE_FULL_NAMES, PROVINCE_SLUGS, type P
 import StateProvincePageContent, { type CityRow } from '@/components/StateProvincePageContent';
 import { buildRegionIntro, buildProvinceFAQs } from '@/lib/state-faq-builder';
 import { getProvinceHockeyFacts } from '@/lib/state-hockey-facts';
-import { statePageDecision, robotsMeta } from '@/lib/seo';
+import { robotsMeta } from '@/lib/seo';
 import HockeyCanadaAd from '@/components/HockeyCanadaAd';
 
 /**
@@ -60,7 +60,9 @@ export async function generateMetadata({
     .eq('province_state', resolved.abbr)
     .eq('is_active', true);
   const citySet = new Set((rinks || []).map(r => r.city).filter(Boolean));
-  const decision = statePageDecision(citySet.size, (rinks || []).length + (teamTotal || 0), 0);
+  // Tier 1f: binary gate — see united-states/[state]/page.tsx for rationale
+  const hasContent = citySet.size > 0 && ((rinks || []).length + (teamTotal || 0)) > 0;
+  const decision = { indexable: hasContent, reason: hasContent ? 'has content' : 'empty', uniquenessScore: hasContent ? 50 : 0 };
 
   return {
     title: `Hockey in ${provinceName}`,
