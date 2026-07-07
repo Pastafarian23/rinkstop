@@ -43,7 +43,6 @@ const COUNTRY_NAME_TO_CODE: Record<string, string> = {
   'Portugal': 'PT',
   'Poland': 'PL',
   'Czech Republic': 'CZ',
-  'Czechia': 'CZ',
   'Slovakia': 'SK',
   'Hungary': 'HU',
   'Romania': 'RO',

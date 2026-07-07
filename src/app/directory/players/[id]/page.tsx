@@ -18,7 +18,7 @@ const POSITION_FULL: Record<string, string> = {
 
 const COUNTRY_NAMES: Record<string, string> = {
   CAN: 'Canada', USA: 'United States', US: 'United States',
-  RUS: 'Russia', SWE: 'Sweden', FIN: 'Finland', CZE: 'Czechia',
+  RUS: 'Russia', SWE: 'Sweden', FIN: 'Finland', CZE: 'Czech Republic',
   SVK: 'Slovakia', DEU: 'Germany', GER: 'Germany', CHE: 'Switzerland',
   NOR: 'Norway', DNK: 'Denmark', FRA: 'France', AUT: 'Austria',
   GBR: 'United Kingdom', LAT: 'Latvia', BLR: 'Belarus', SVN: 'Slovenia',

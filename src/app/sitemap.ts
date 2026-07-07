@@ -381,7 +381,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     'United Arab Emirates': 'united-arab-emirates',
     'New Zealand': 'new-zealand',
     'South Korea': 'south-korea',
-    'Czech Republic': 'czechia',
+    'Czech Republic': 'czech-republic',
     'Russian Federation': 'russia',
     'Russian Federation (Russia)': 'russia',
   };

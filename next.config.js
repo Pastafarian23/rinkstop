@@ -87,6 +87,28 @@ const nextConfig = {
         destination: '/directory/staff',
         permanent: true,
       },
+      // /directory/locations/czechia/* and /directory/czechia → /directory/locations/czech-republic/* and /directory/czech-republic
+      // (canonical URL is now czech-republic; czechia was the legacy slug).
+      {
+        source: '/directory/locations/czechia/:path*',
+        destination: '/directory/locations/czech-republic/:path*',
+        permanent: true,
+      },
+      {
+        source: '/directory/czechia',
+        destination: '/directory/czech-republic',
+        permanent: true,
+      },
+      {
+        source: '/hockey/czechia',
+        destination: '/hockey/czech-republic',
+        permanent: true,
+      },
+      {
+        source: '/hockey/czechia/:path*',
+        destination: '/hockey/czech-republic/:path*',
+        permanent: true,
+      },
       // /news/2026-nhl-draft-complete-results → /news/2026-nhl-draft-round-1-storylines
       // The article title changed in iteration 2 but the slug wasn't updated
       // until iteration 3. Old slug URL no longer matches the content; redirect
