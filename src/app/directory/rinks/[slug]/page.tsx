@@ -268,12 +268,22 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         ...(Array.isArray((rink.opening_hours_json as OpeningHoursJson | null)?.periods)
           ? { openingHoursSpecification: ((): any[] => {
               const periods = (rink.opening_hours_json as OpeningHoursJson).periods || [];
-              return periods.map((p) => ({
-                '@type': 'OpeningHoursSpecification',
-                dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][p.open.day],
-                opens: `${p.open.time.slice(0, 2)}:${p.open.time.slice(2, 4)}`,
-                closes: `${p.close.time.slice(0, 2)}:${p.close.time.slice(2, 4)}`,
-              }));
+              // Defensive filter (Tier 1h, 2026-07-07): skip malformed periods
+              // rather than letting p.open.time.slice() throw and 500 the page.
+              // Some rinks imported from international data sources have
+              // partial opening_hours_json (missing close.time, etc.).
+              return periods
+                .filter((p: any) =>
+                  p && p.open && typeof p.open.time === 'string' && p.open.time.length >= 4 &&
+                  typeof p.open.day === 'number' && p.open.day >= 0 && p.open.day <= 6 &&
+                  p.close && typeof p.close.time === 'string' && p.close.time.length >= 4
+                )
+                .map((p: any) => ({
+                  '@type': 'OpeningHoursSpecification',
+                  dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][p.open.day],
+                  opens: `${p.open.time.slice(0, 2)}:${p.open.time.slice(2, 4)}`,
+                  closes: `${p.close.time.slice(0, 2)}:${p.close.time.slice(2, 4)}`,
+                }));
             })() }
           : {}),
         sport: 'Ice Hockey',
