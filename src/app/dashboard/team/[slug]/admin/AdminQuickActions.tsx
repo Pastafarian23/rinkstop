@@ -67,6 +67,13 @@ export function AdminQuickActions({ teamSlug, counts }: Props) {
       hint: 'See what visitors see when they look you up',
       accent: 'gold',
     },
+    {
+      href: `/dashboard/team/${teamSlug}/reports`,
+      icon: '📊',
+      label: 'Financial reports',
+      hint: 'Aggregated invoicing, paid, and outstanding amounts',
+      accent: 'teal',
+    },
   ];
 
   return (
