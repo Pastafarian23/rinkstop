@@ -97,7 +97,7 @@ export default async function TeamDocumentsPage({ params }: PageProps) {
   const docIds = (docs || []).map(d => d.id);
   const { data: sigs } = await supabaseAdmin
     .from('document_signatures')
-    .select('document_id, player_id, signed_by_name, signed_by_role, acknowledged_at, signed_by_user_id')
+    .select('document_id, player_id, signed_by_name, signed_by_role, acknowledged_at, signed_by_user_id, signature_payload, signature_width, signature_height')
     .in('document_id', docIds);
 
   // Fetch payment titles if any docs are linked to payments
