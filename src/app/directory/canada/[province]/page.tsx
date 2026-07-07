@@ -5,6 +5,7 @@ import { PROVINCE_FROM_SLUG_OR_ABBR, PROVINCE_FULL_NAMES, PROVINCE_SLUGS, type P
 import StateProvincePageContent, { type CityRow } from '@/components/StateProvincePageContent';
 import { buildRegionIntro, buildProvinceFAQs } from '@/lib/state-faq-builder';
 import { getProvinceHockeyFacts } from '@/lib/state-hockey-facts';
+import { statePageDecision, robotsMeta } from '@/lib/seo';
 import HockeyCanadaAd from '@/components/HockeyCanadaAd';
 
 /**
@@ -41,16 +42,33 @@ export async function generateMetadata({
   const resolved = resolveProvince(provinceSegment);
   if (!resolved) return { title: 'Province not found' };
   const provinceName = PROVINCE_FULL_NAMES[resolved.abbr];
+
+  // Tier 1f (2026-07-07): noindex decision for empty provinces. The province
+  // page never had a notFound() gate, so this is just adding the robots
+  // signal so empty provinces aren't indexed.
+  const { data: rinks } = await supabase
+    .from('rinks')
+    .select('city')
+    .eq('country', 'Canada')
+    .eq('province_state', resolved.abbr)
+    .eq('is_active', true)
+    .not('city', 'is', null);
+  const { count: teamTotal } = await supabase
+    .from('teams')
+    .select('id', { count: 'exact', head: true })
+    .eq('country', 'Canada')
+    .eq('province_state', resolved.abbr)
+    .eq('is_active', true);
+  const citySet = new Set((rinks || []).map(r => r.city).filter(Boolean));
+  const decision = statePageDecision(citySet.size, (rinks || []).length + (teamTotal || 0), 0);
+
   return {
     title: `Hockey in ${provinceName}`,
     description: `Hockey teams, rinks, and cities in ${provinceName}, Canada. Browse local hockey listings in this province.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/canada/${resolved.slug}`,
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: robotsMeta(decision),
     openGraph: {
       title: `Hockey in ${provinceName}`,
       description: `Hockey teams, rinks, and cities in ${provinceName}, Canada.`,
