@@ -9,6 +9,14 @@ import SignaturePad from '@/components/team-documents/SignaturePad';
 const DEFAULT_CONSENT_TEXT =
   'I agree this electronic signature is the legal equivalent of my manual signature on this document. I understand that my signature, name, role, timestamp, IP address, and user agent will be recorded for audit purposes.';
 
+interface ManagedKid {
+  player_id: string;        // == players.id (managed_profiles.profile_id)
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  relationship: string;
+}
+
 interface Doc {
   id: string;
   title: string;
@@ -20,6 +28,7 @@ interface Doc {
   due_date: string | null;
   payment_id: string | null;
   payment: { id: string; title: string } | null;
+  kind?: string | null;       // A-ii: free-text kind from A-0 migration. Used to drive child-picker policy.
   created_at: string;
   signatures: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; acknowledged_at: string }[];
   my_signature: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; acknowledged_at: string } | null;
@@ -37,6 +46,7 @@ interface Props {
   userId: string;
   isAdmin: boolean;
   roster: RosterEntry[];
+  managedKids: ManagedKid[];
   documents: Doc[];
 }
 
@@ -47,7 +57,7 @@ function fmtSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function DocumentsClient({ teamId, teamSlug, teamName, userId, isAdmin, roster, documents }: Props) {
+export default function DocumentsClient({ teamId, teamSlug, teamName, userId, isAdmin, roster, managedKids, documents }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -69,6 +79,10 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
   const [consentChecked, setConsentChecked] = useState(false);
   const [signSubmitting, setSignSubmitting] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
+  // A-ii: which kid (player) the parent/guardian is signing on behalf of.
+  //   Empty string = signing for themselves (player_id omitted from POST,
+  //   the route falls back to user_id for player role, or NULL for parent/guardian).
+  const [signingForPlayerId, setSigningForPlayerId] = useState<string>('');
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
@@ -169,18 +183,24 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
     setSignSubmitting(true);
     setSignError(null);
     try {
+      const signBody: Record<string, unknown> = {
+        consent_to_electronic: true,
+        consent_text: DEFAULT_CONSENT_TEXT,
+        signature_payload: signatureSvg,
+        signature_width: signatureDims.w,
+        signature_height: signatureDims.h,
+        signed_by_name: signedName,
+        signed_by_role: signingRole,
+      };
+      // A-ii: only include player_id when the parent/guardian picked a kid.
+      // Route validates: must be in caller's managed_profiles, role must be parent/guardian.
+      if (signingForPlayerId && (signingRole === 'parent' || signingRole === 'guardian')) {
+        signBody.player_id = signingForPlayerId;
+      }
       const resp = await fetch(`/api/team/${teamSlug}/documents/${signingDoc.id}/sign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          consent_to_electronic: true,
-          consent_text: DEFAULT_CONSENT_TEXT,
-          signature_payload: signatureSvg,
-          signature_width: signatureDims.w,
-          signature_height: signatureDims.h,
-          signed_by_name: signedName,
-          signed_by_role: signingRole,
-        }),
+        body: JSON.stringify(signBody),
       });
       if (!resp.ok) {
         const body = await resp.json();
@@ -194,6 +214,7 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
       setSignatureDims({ w: 0, h: 0 });
       setConsentChecked(false);
       setSignSubmitting(false);
+      setSigningForPlayerId(''); // A-ii: reset kid picker on success
       router.refresh();
     } catch (err) {
       setSignError(err instanceof Error ? err.message : 'Unknown');
@@ -382,6 +403,39 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
               </select>
             </div>
 
+            {/* A-ii: Child picker (only when signing on behalf of a kid).
+                Required for liability_waiver / medical_consent / code_of_conduct.
+                Optional for other informational docs when parent has kids in roster.
+                Hidden when parent has 0 managed kids. */}
+            {(signingRole === 'parent' || signingRole === 'guardian') && managedKids.length > 0 && (() => {
+              const kidRequiredKinds = new Set(['liability_waiver', 'medical_consent', 'code_of_conduct']);
+              const isRequired = kidRequiredKinds.has(((signingDoc.kind || '') as string).toLowerCase());
+              return (
+                <div style={{ marginBottom: '0.75rem', background: isRequired ? 'rgba(200,16,46,0.06)' : '#f9fafb', padding: '0.625rem', borderRadius: 4, border: isRequired ? '1px solid #C8102E' : '1px solid #e5e7eb' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+                    {isRequired ? 'Sign on behalf of *' : 'Sign on behalf of (optional)'}
+                  </label>
+                  <select
+                    value={signingForPlayerId}
+                    onChange={(e) => setSigningForPlayerId(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}
+                  >
+                    <option value="">— Myself (no kid) —</option>
+                    {managedKids.map((k) => (
+                      <option key={k.player_id} value={k.player_id}>
+                        {k.full_name} ({k.relationship})
+                      </option>
+                    ))}
+                  </select>
+                  {isRequired && (
+                    <div style={{ fontSize: '0.75rem', color: '#C8102E', marginTop: '0.25rem' }}>
+                      Required for this document type. Pick which child this signature applies to.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             <div style={{ marginBottom: '0.75rem' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Your full name *</label>
               <input
@@ -429,6 +483,7 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
                   setSignatureDims({ w: 0, h: 0 });
                   setConsentChecked(false);
                   setSignError(null);
+                  setSigningForPlayerId(''); // A-ii: reset kid picker on cancel
                 }}
                 style={{ padding: '0.5rem 1rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 4, cursor: 'pointer' }}
               >
@@ -436,7 +491,16 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
               </button>
               <button
                 onClick={handleSign}
-                disabled={signSubmitting || !consentChecked || !signatureSvg || !signedName.trim()}
+                disabled={(function () {
+                  if (signSubmitting || !consentChecked || !signatureSvg || !signedName.trim()) return true;
+                  // A-ii: gate submit when kid picker is required but empty.
+                  if (!signingDoc) return true;
+                  if (signingDoc && signingRole !== 'parent' && signingRole !== 'guardian') return false;
+                  if (managedKids.length === 0) return false;
+                  const kidRequired = new Set(['liability_waiver','medical_consent','code_of_conduct']);
+                  if (!kidRequired.has(((signingDoc.kind || '') as string).toLowerCase())) return false;
+                  return !signingForPlayerId;
+                })()}
                 style={{
                   padding: '0.5rem 1.25rem',
                   background: (signSubmitting || !consentChecked || !signatureSvg || !signedName.trim()) ? '#9ca3af' : '#041E42',
