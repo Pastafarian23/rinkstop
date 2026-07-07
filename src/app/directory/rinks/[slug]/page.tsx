@@ -315,7 +315,12 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     };
   }
 
-  return (
+  // Tier 1h v3 (2026-07-07): catch ALL throws from the page body so we can
+  // serve 200 instead of 500 even when something goes wrong. Logs the actual
+  // error to Vercel so we can fix the root cause.
+  return (() => {
+    try {
+      return (
     <>
       <script
         type="application/ld+json"
@@ -832,5 +837,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
       </div>
     </>
-  );
+      );
+    } catch (renderErr) {
+      console.error('[rink-debug] page render threw for rink', rink.id, rink.slug, 'err=', (renderErr as Error).message, (renderErr as Error).stack);
+      // Return a minimal page so the rink at least renders as 200.
+      return (
+        <>
+          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{rink.name}</h1>
+            <p style={{ color: '#cbd5e1' }}>{rink.notes || `${rink.name} is an ice rink in ${rink.city || 'the area'}, ${rink.country || ''}.`}</p>
+          </div>
+        </>
+      );
+    }
+  })();
 }
