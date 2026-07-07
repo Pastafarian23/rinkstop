@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import StateProvincePageContent, { type CityRow } from '@/components/StateProvincePageContent';
 import { buildRegionIntro, buildStateFAQs } from '@/lib/state-faq-builder';
 import { getStateHockeyFacts } from '@/lib/state-hockey-facts';
+import { statePageDecision, robotsMeta } from '@/lib/seo';
 
 /**
  * US state page: /directory/united-states/{state}
@@ -56,16 +57,39 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
   const stateAbbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
   const stateName = STATE_NAMES[stateAbbr.toLowerCase()] || stateSlug.replace(/-/g, ' ');
 
+  // Tier 1f (2026-07-07): run the same data query as the page so we can
+  // make a noindex decision based on the same numbers. Empty states (e.g.
+  // a state with 0 rinks/teams) render with noindex rather than going to
+  // 404 — a state URL is still a real estate for /claim-your-listing.
+  const { data: rinks } = await supabase
+    .from('rinks')
+    .select('city')
+    .eq('country', 'United States')
+    .or(`province_state.eq.${stateAbbr},province_state.eq.${stateName}`)
+    .eq('is_active', true)
+    .not('city', 'is', null);
+
+  const cityNames = Array.from(new Set((rinks || []).map(r => r.city).filter(Boolean)));
+  let totalRinkCount = (rinks || []).length;
+  let totalTeamCount = 0;
+  if (cityNames.length > 0) {
+    const { count: tc } = await supabase
+      .from('teams')
+      .select('id', { count: 'exact', head: true })
+      .eq('country', 'United States')
+      .eq('is_active', true)
+      .in('city', cityNames);
+    totalTeamCount = tc || 0;
+  }
+  const decision = statePageDecision(cityNames.length, totalRinkCount + totalTeamCount, 0);
+
   return {
     title: `${stateName} Hockey - Ice Rinks, Teams & Leagues`,
     description: `Find every hockey rink, team, and league in ${stateName}. Discover youth programs, adult leagues, and NCAA teams near you.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}`,
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: robotsMeta(decision),
     openGraph: {
       title: `${stateName} Hockey`,
       description: `Hockey in ${stateName}: ice rinks, teams, leagues, and youth programs.`,

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { countryPageDecision, robotsMeta } from '@/lib/seo';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -337,6 +338,14 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
   const teams = data.teamCount;
   const hasData = data.hasData;
 
+  // Tier 1f (2026-07-07): apply noindex to country pages with no data. The
+  // decision lives in one helper because all 155 country routes call this
+  // function. Empty countries (hasData=false) are kept reachable for users
+  // and search engines — the page shows the curated country context block,
+  // league info, and a "how to get started" section — but Google drops the
+  // empty page from its index via robotsMeta() below.
+  const decision = countryPageDecision(rinks + teams, 0);
+
   const title = hasData
     ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues | RinkStop`
     : `Hockey in ${countryName} — Directory, Leagues & How to Get Started | RinkStop`;
@@ -349,6 +358,7 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
     title,
     description,
     alternates: { canonical: `https://rinkstop.com/directory/${countrySlug}` },
+    robots: robotsMeta(decision),
     openGraph: { title, description, type: 'website' },
   };
 }

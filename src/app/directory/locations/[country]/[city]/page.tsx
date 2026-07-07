@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import {
   getCityPageData,
   slugToTitle,
@@ -10,6 +9,7 @@ import {
   countryNameFromSlug,
   resolveCityBranding,
 } from '@/lib/city-context';
+import { cityPageDecision, robotsMeta } from '@/lib/seo';
 import CityPageContent from '@/components/CityPageContent';
 
 export const dynamic = 'force-dynamic';
@@ -48,6 +48,20 @@ export async function generateMetadata({
   const displayCountry = branding.countryDisplayName || countryName;
   const displayCity = branding.cityDisplayName || cityName;
 
+  // Tier 1f (2026-07-07): check data and decide noindex before render. Was:
+  //   robots: { index: true, follow: true }
+  // for every page regardless of content. Empty cities now noindex instead
+  // of 404'ing (gated out of the page component below). Pre-fetches the
+  // same data the page needs — Supabase client reuses the same connection
+  // per request so this is one roundtrip, not two.
+  const data = await getCityPageData({
+    countryName,
+    countrySlug,
+    cityName,
+    citySlug,
+  });
+  const decision = cityPageDecision(data.teamCount + data.rinkCount, 0, false);
+
   const description =
     branding.description ??
     `Hockey teams, rinks, and youth programs in ${displayCity}, ${displayCountry}. Browse local hockey listings on RinkStop.`;
@@ -58,10 +72,7 @@ export async function generateMetadata({
     alternates: {
       canonical: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: robotsMeta(decision),
     openGraph: {
       title: `Hockey in ${displayCity}`,
       description,
@@ -98,12 +109,10 @@ export default async function LocationCityPage({
     citySlug,
   });
 
-  // 404 if there are no listings at all — empty pages hurt SEO more than
-  // they help. The same gate lives in CountryPageContent but enforcing it
-  // here keeps the route out of the index entirely.
-  if (data.teamCount === 0 && data.rinkCount === 0) {
-    notFound();
-  }
+  // Tier 1f (2026-07-07): removed the notFound() gate. Empty pages now
+  // render with noindex in metadata. The URL exists, the claim-your-listing
+  // CTA is visible, and Google drops the empty page from its index on its
+  // own. This is the 64-city fix from the 2026-07-07 audit.
 
   // Pull the top items off data for the FAQ builder. These are real DB
   // values — no invention, only what's already on the page.

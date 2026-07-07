@@ -6,6 +6,7 @@ import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { countryFlag } from '@/lib/team';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { timezoneForCountry } from '@/lib/team-timezone';
+import { teamPageDecision, robotsMeta } from '@/lib/seo';
 
 interface TeamWithLocation {
   country_code: string | null;
@@ -157,6 +158,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       t.level ? `Plays at the ${t.level.replace(/_/g, ' ')} level. ` : ''
     }${t.age_label ? `Age group: ${t.age_label}. ` : ''}Roster, schedule, and recent results on RinkStop.`;
 
+  // Tier 1f (2026-07-07): thin-team noindex. The default
+  // `robots: { index: true, follow: true }` indexed every team page even
+  // ones with name + nothing else. Now we count how many of the team
+  // detail fields are populated and noindex when the page is too thin
+  // to rank for anything useful. The page still renders — only the
+  // index signal changes.
+  const teamFields = [t.name, t.description, t.home_city, t.home_country, t.age_label, t.level];
+  const fieldCount = teamFields.filter(f => f && String(f).trim().length > 0).length;
+  const wordCount = (t.description || desc).split(/\s+/).filter(Boolean).length;
+  const decision = teamPageDecision(fieldCount, wordCount);
+
   return {
     title,
     description: desc,
@@ -173,7 +185,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: t.name,
       description: desc,
     },
-    robots: { index: true, follow: true },
+    robots: robotsMeta(decision),
   };
 }
 
