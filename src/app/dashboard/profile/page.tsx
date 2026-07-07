@@ -10,6 +10,7 @@ import FollowingList from './FollowingList';
 import ChangePhotoButton from './ChangePhotoButton';
 import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
 import PlayerTimelineSection from '@/components/player-achievements/PlayerTimelineSection';
+import PlayerMediaSection from '@/components/player-media/PlayerMediaSection';
 import { buildTimeline } from '@/lib/timeline-builder';
 
 export const dynamic = 'force-dynamic';
@@ -133,6 +134,26 @@ export default async function ProfilePage() {
     }
   } catch {
     achievementsByPlayer = {};
+  }
+
+  // Phase 1b-3: player_media per linked child.
+  let mediaByPlayer: Record<string, any[]> = {};
+  try {
+    const playerIds = parentRelationships
+      .map((r) => r.profile_id)
+      .filter((id): id is string => !!id);
+    if (playerIds.length > 0) {
+      const { data: media } = await supabaseAdmin
+        .from('player_media')
+        .select('id, player_id, media_type, caption, storage_paths, width_px, height_px, duration_sec, file_size_bytes, is_primary, status, created_at, updated_at')
+        .in('player_id', playerIds)
+        .order('created_at', { ascending: false });
+      for (const m of media || []) {
+        (mediaByPlayer[m.player_id] = mediaByPlayer[m.player_id] || []).push(m);
+      }
+    }
+  } catch {
+    mediaByPlayer = {};
   }
 
   // Clerk-managed fields (kept for the Edit modal, but sectioned under
@@ -479,6 +500,36 @@ export default async function ProfilePage() {
               playerId={r.profile_id}
               achievements={achievementsByPlayer[r.profile_id] || []}
               timelineEvents={timelineByPlayer[r.profile_id] || []}
+            />
+          </PassportSection>
+        ))
+      )}
+
+      {/* Section 7: Media (1b-3 — live). Per linked child, render the
+          gallery + upload. */}
+      {parentRelationships.length === 0 ? (
+        <PassportSection
+          emoji="🖼️"
+          title="MEDIA"
+          description="Link a player to start uploading photos and videos."
+          testId="passport-section-media"
+        >
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
+            Once you link a child, add photos and short videos. Set one as primary to use as the avatar.
+          </p>
+        </PassportSection>
+      ) : (
+        parentRelationships.map((r) => (
+          <PassportSection
+            key={`media-${r.id}`}
+            emoji="🖼️"
+            title={`${r.player_name.toUpperCase()}'S MEDIA`}
+            description="Photos and short videos. Set one as primary to use as the avatar."
+            testId="passport-section-media"
+          >
+            <PlayerMediaSection
+              playerId={r.profile_id}
+              media={mediaByPlayer[r.profile_id] || []}
             />
           </PassportSection>
         ))

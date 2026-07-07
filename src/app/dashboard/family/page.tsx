@@ -10,6 +10,7 @@ import FamilySearch from '@/components/family/FamilySearch';
 import FamilySetupResume from '@/components/family/FamilySetupResume';
 import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
 import PlayerTimelineSection from '@/components/player-achievements/PlayerTimelineSection';
+import PlayerMediaSection from '@/components/player-media/PlayerMediaSection';
 import { buildTimeline } from '@/lib/timeline-builder';
 
 export const dynamic = 'force-dynamic';
@@ -93,6 +94,19 @@ export default async function FamilyPage() {
       .order('achieved_at', { ascending: false });
     for (const a of achs || []) {
       (achievementsByPlayer[a.player_id] = achievementsByPlayer[a.player_id] || []).push(a);
+    }
+  }
+
+  // Phase 1b-3: fetch player_media for all linked children in one batch.
+  const mediaByPlayer: Record<string, any[]> = {};
+  if (profileIds.length > 0) {
+    const { data: media } = await supabaseAdmin
+      .from('player_media')
+      .select('id, player_id, media_type, caption, storage_paths, width_px, height_px, duration_sec, file_size_bytes, is_primary, status, created_at, updated_at')
+      .in('player_id', profileIds)
+      .order('created_at', { ascending: false });
+    for (const m of media || []) {
+      (mediaByPlayer[m.player_id] = mediaByPlayer[m.player_id] || []).push(m);
     }
   }
   // The component is passed the per-child array; PlayerDocumentList is a
@@ -613,6 +627,84 @@ export default async function FamilyPage() {
           })}
         </div>
       )}
+
+      {/* Media (1b-3 — live). Per linked child, render the gallery + upload. */}
+      <section
+        data-testid="family-media"
+        style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}
+      >
+        <h2 style={{
+          fontFamily: "'Bebas Neue', Impact, sans-serif",
+          fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 0.5rem',
+        }}>
+          MEDIA
+        </h2>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
+          Photos and short videos. Set one as primary to use as the avatar.
+        </p>
+        {!managedProfiles || managedProfiles.length === 0 ? (
+          <div
+            data-testid="family-media-empty"
+            style={{
+              padding: '1rem',
+              background: '#0a0a0a',
+              border: '1px dashed rgba(255,255,255,0.15)',
+              borderRadius: 10,
+              textAlign: 'center',
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: '0.85rem',
+            }}
+          >
+            Link a player first to start uploading media.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {managedProfiles.map((mp: any) => {
+              const player = playerMap[mp.profile_id] || {};
+              const childMedia = mediaByPlayer[mp.profile_id] || [];
+              const childName =
+                player.first_name && player.last_name
+                  ? `${player.first_name} ${player.last_name}`
+                  : 'Unknown Player';
+              return (
+                <div
+                  key={mp.id}
+                  data-testid="family-media-child"
+                  style={{
+                    padding: '1rem',
+                    background: '#0a0a0a',
+                    border: '1px solid #141414',
+                    borderRadius: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: '0.85rem' }}>
+                    <h3
+                      style={{
+                        fontFamily: "'Bebas Neue', Impact, sans-serif",
+                        fontSize: '0.95rem',
+                        color: '#fff',
+                        letterSpacing: '0.05em',
+                        margin: 0,
+                      }}
+                    >
+                      {childName.toUpperCase()}&rsquo;S MEDIA
+                    </h3>
+                    <span
+                      style={{
+                        color: 'rgba(255,255,255,0.4)',
+                        fontSize: '0.7rem',
+                      }}
+                    >
+                      {childMedia.filter((m: any) => m.status !== 'archived').length} item{childMedia.filter((m: any) => m.status !== 'archived').length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <PlayerMediaSection playerId={mp.profile_id} media={childMedia} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
