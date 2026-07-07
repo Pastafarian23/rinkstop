@@ -70,6 +70,9 @@ export async function POST(
       title: doc.label,
       description: doc.note ?? null,
       required: true,
+      // file_url intentionally omitted — admin uploads the real file later.
+      // See migration 2026-07-06_team_documents_kind_nullable_file_url.sql
+      // which made file_url nullable. kind column added in same migration.
       // due_date: null — admin sets it later
     }));
 
