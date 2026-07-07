@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getCityPageData, resolveUSState, slugToTitle } from '@/lib/city-page';
+import { getCityPageData, resolveUSState, resolveCityName } from '@/lib/city-page';
 import CityPageContent from '@/components/CityPageContent';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { state: stateSlug, city: citySlug } = await params;
   const { abbr, name: stateName } = resolveUSState(stateSlug);
-  const cityName = slugToTitle(citySlug);
+  const cityName = resolveCityName(citySlug);
   const location = `${cityName}, ${stateName}`;
 
   return {
@@ -36,7 +36,7 @@ export default async function USStateCityPage({
 }) {
   const { state: stateSlug, city: citySlug } = await params;
   const { abbr: stateAbbr, name: stateName } = resolveUSState(stateSlug);
-  const cityName = slugToTitle(citySlug);
+  const cityName = resolveCityName(citySlug);
 
   const data = await getCityPageData({
     countryName: 'United States',

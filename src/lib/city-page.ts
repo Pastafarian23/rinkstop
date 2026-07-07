@@ -15,7 +15,7 @@ export const US_STATES: Record<string, string> = {
   'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new-hampshire': 'NH', 'new-jersey': 'NJ',
   'new-mexico': 'NM', 'new-york': 'NY', 'north-carolina': 'NC', 'north-dakota': 'ND', 'ohio': 'OH',
   'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode-island': 'RI', 'south-carolina': 'SC',
-  'south-dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'ututah': 'UT', 'vermont': 'VT',
+  'south-dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
   'virginia': 'VA', 'washington': 'WA', 'west-virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
   'district-of-columbia': 'DC',
 };
@@ -155,9 +155,32 @@ export interface CityPageData {
 
 /**
  * Convert a slug like "new-york" to "New York".
+ *
+ * NOTE: slugToTitle cannot perfectly reverse all slugifications because some
+ * city names lose information when lowercased + stripped (e.g. "St. Cloud"
+ * and "St Cloud" both slugify to "st-cloud"). The CITY_NAME_OVERRIDES map
+ * below handles the 4 known cases identified in the 2026-07-07 404 audit
+ * (Coeur d'Alene, Sault Ste. Marie, St. Cloud, St. Louis). If new cities
+ * with periods/apostrophes are added, append them here.
  */
+const CITY_NAME_OVERRIDES: Record<string, string> = {
+  'coeur-d-alene': "Coeur d'Alene",
+  'sault-ste-marie': 'Sault Ste. Marie',
+  'st-cloud': 'St. Cloud',
+  'st-louis': 'St. Louis',
+};
+
 export function slugToTitle(slug: string): string {
   return slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+/**
+ * Resolve a city slug to its canonical DB display name.
+ * Uses CITY_NAME_OVERRIDES for cities where the default slugToTitle() drops
+ * information (apostrophes, periods).
+ */
+export function resolveCityName(slug: string): string {
+  return CITY_NAME_OVERRIDES[slug] || slugToTitle(slug);
 }
 
 /**
@@ -236,15 +259,22 @@ export async function getCityPageData(opts: {
     .eq('country', countryName)
     .eq('is_active', true);
 
+  // Some rinks are tagged with the FULL state/province name (e.g. 'Alabama')
+  // rather than the abbreviation ('AL'). Defensive OR clause recovers both.
+  // Verified 2026-07-07: 18 rinks across 9 states use full-name tagging.
+  const applyRegionTag = (q: typeof rinksQuery) => {
+    if (!regionAbbr && !regionName) return q;
+    const orClause = `province_state.eq.${regionAbbr || regionName},province_state.eq.${regionName || regionAbbr}`;
+    return q.or(orClause);
+  };
   if (countrySlug === 'united-states' || countrySlug === 'usa') {
     teamsQuery = teamsQuery.or(`city.ilike.${cityName}`);
-    rinksQuery = rinksQuery
-      .eq('province_state', regionAbbr || '')
+    rinksQuery = applyRegionTag(rinksQuery)
       .or(`city.ilike.${cityName},address.ilike.%${cityName}%`);
   } else if (countrySlug === 'canada') {
     // Teams table has no province_state column; use exact city match (filtered by country)
     teamsQuery = teamsQuery.eq('city', cityName);
-    rinksQuery = rinksQuery.eq('province_state', regionAbbr || '').eq('city', cityName);
+    rinksQuery = applyRegionTag(rinksQuery).eq('city', cityName);
   } else if (countrySlug === 'united-kingdom' || countrySlug === 'uk') {
     teamsQuery = teamsQuery.ilike('city', `%${cityName}%`);
     rinksQuery = rinksQuery.ilike('city', `%${cityName}%`);

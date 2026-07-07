@@ -85,12 +85,14 @@ export default async function USStatePage({ params }: { params: Promise<{ state:
   const stateAbbr = US_STATES[stateSlug] || stateSlug.toUpperCase();
   const stateName = STATE_NAMES[stateAbbr.toLowerCase()] || stateSlug.replace(/-/g, ' ');
 
-  // Get rinks in this state
+  // Get rinks in this state. Defensive OR clause recovers rows tagged with
+  // the FULL state name (e.g. 'Alabama') rather than the abbreviation.
+  // Verified 2026-07-07: 18 rinks across 9 states use full-name tagging.
   const { data: rinks } = await supabase
     .from('rinks')
     .select('city')
     .eq('country', 'United States')
-    .eq('province_state', stateAbbr)
+    .or(`province_state.eq.${stateAbbr},province_state.eq.${stateName}`)
     .eq('is_active', true)
     .not('city', 'is', null);
 
