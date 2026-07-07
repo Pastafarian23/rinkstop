@@ -7,7 +7,8 @@
  *
  * Sources (4 in v1):
  *   1. player_documents.expires_at → document_expiring_* / document_expired
- *   2. profiles.identity_verified_at → identity_renewal_due (after 365 days)
+ *   2. profiles.identity_verified_at → identity_renewal_due (after 730 days — matches
+ *      the 'Verification renewal every two years' claim on /pricing)
  *   3. (achievement_added — feature-flagged; 1b-2 source is fully wired in route)
  *
  * Cost: ~10ms per `/dashboard` page load. Reads are O(player-scoped) and small.
@@ -117,7 +118,7 @@ export async function deriveNotifications(
   if (profileRes.data?.identity_verified_at) {
     const verifiedAt = profileRes.data.identity_verified_at.slice(0, 10);
     const days = daysBetween(verifiedAt, today);
-    if (days >= 365) {
+    if (days >= 730) {
       notifications.push({
         user_id: userId,
         kind: 'identity_renewal_due',
