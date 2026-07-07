@@ -89,6 +89,8 @@ export interface ConsumerCardData {
   pendingDocuments: PendingDocumentSummary[];
   /** Phase 1b-2. Most recent achievements across all linked children. */
   recentAchievements: RecentAchievement[];
+  /** Phase 1b-4. Top consumer notifications for the user. */
+  consumerNotifications: ConsumerNotificationSummary[];
 }
 
 export interface RecentAchievement {
@@ -98,6 +100,14 @@ export interface RecentAchievement {
   title: string;
   category: string;
   achieved_at: string;
+}
+
+export interface ConsumerNotificationSummary {
+  id: string;
+  title: string;
+  kind: string;
+  read_at: string | null;
+  created_at: string;
 }
 
 /**
@@ -115,6 +125,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
     tier,
     pendingDocuments: [],
     recentAchievements: [],
+    consumerNotifications: [],
   };
 
   try {
@@ -224,6 +235,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
     }
     const pendingDocuments: PendingDocumentSummary[] = [];
     const recentAchievements: RecentAchievement[] = [];
+    const consumerNotifications: ConsumerNotificationSummary[] = [];
     if (childIds.length > 0) {
       const { data: docs } = await supabaseAdmin
         .from('player_documents')
@@ -268,6 +280,23 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
           achieved_at: a.achieved_at,
         });
       }
+
+      // Phase 1b-4: top 4 consumer notifications for this user.
+      const { data: notifs } = await supabaseAdmin
+        .from('consumer_notifications')
+        .select('id, title, kind, read_at, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      for (const n of (notifs || []) as any[]) {
+        consumerNotifications.push({
+          id: n.id,
+          title: n.title,
+          kind: n.kind,
+          read_at: n.read_at,
+          created_at: n.created_at,
+        });
+      }
     }
 
     return {
@@ -279,6 +308,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
       tier,
       pendingDocuments,
       recentAchievements,
+      consumerNotifications,
     };
   } catch (e) {
     console.error('[ConsumerCards] load failed:', e);
@@ -514,6 +544,58 @@ export default function ConsumerCards({
                 style={{ color: '#14B8A6', fontSize: '0.75rem', textDecoration: 'none', fontWeight: 600 }}
               >
                 Manage in Family Hub →
+              </Link>
+            </li>
+          </ul>
+        )}
+      </div>
+
+      {/* Notifications (1b-4 — live). Per-user inbox. Re-derived on dashboard load
+          by /dashboard page. Top 4 most recent. */}
+      <div data-testid="consumer-card-notifications" style={cardStyle}>
+        <CardHeader emoji="🔔" title="NOTIFICATIONS" />
+        {data.consumerNotifications.length === 0 ? (
+          primaryType === 'parent' ? (
+            <EmptyMessage
+              headline="No notifications"
+              body="You'll see doc-expiry alerts, identity renewals, and achievement updates here."
+              cta={{ label: 'Open Family Hub', href: '/dashboard/family' }}
+            />
+          ) : (
+            <EmptyMessage
+              headline="Notifications are for parents"
+              body="Parents see doc-expiry alerts and identity renewals here."
+              cta={{ label: 'Browse the directory', href: '/directory' }}
+            />
+          )
+        ) : (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {data.consumerNotifications.map((n) => (
+              <li
+                key={n.id}
+                style={{
+                  color: n.read_at ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.95)',
+                  fontSize: '0.85rem',
+                  fontWeight: n.read_at ? 400 : 600,
+                }}
+              >
+                <Link
+                  href="/dashboard/notifications"
+                  style={{ color: 'inherit', textDecoration: 'none' }}
+                >
+                  {n.title}
+                </Link>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem' }}>
+                  {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+              </li>
+            ))}
+            <li style={{ marginTop: 4 }}>
+              <Link
+                href="/dashboard/notifications"
+                style={{ color: '#14B8A6', fontSize: '0.75rem', textDecoration: 'none', fontWeight: 600 }}
+              >
+                See all notifications →
               </Link>
             </li>
           </ul>
