@@ -22,8 +22,8 @@ interface Doc {
   payment: { id: string; title: string } | null;
   kind?: string | null;       // A-ii: drives child-picker policy. Optional kinds: liability_waiver, medical_consent, code_of_conduct trigger required picker for parents.
   created_at: string;
-  signatures: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; signed_by_user_id: string; acknowledged_at: string }[];
-  my_signature: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; signed_by_user_id: string; acknowledged_at: string } | null;
+  signatures: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; signed_by_user_id: string; acknowledged_at: string; signature_payload: string | null; signature_width: number | null; signature_height: number | null }[];
+  my_signature: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; signed_by_user_id: string; acknowledged_at: string; signature_payload: string | null; signature_width: number | null; signature_height: number | null } | null;
 }
 
 interface RosterEntry {
@@ -83,24 +83,35 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
   //   Empty string = signing for themselves (player_id omitted from POST).
   const [signingForPlayerId, setSigningForPlayerId] = useState<string>('');
 
+  // A-v: wet-ink upload modal state. Parallel to canvas state above, but
+  // uploads an image/PDF instead of capturing an SVG. Same legal moment.
+  const [uploadingDoc, setUploadingDoc] = useState<Doc | null>(null);
+  const [wetInkFile, setWetInkFile] = useState<File | null>(null);
+  const [wetInkSigningRole, setWetInkSigningRole] = useState<'player' | 'parent' | 'guardian' | 'coach' | 'staff'>('player');
+  const [wetInkSignedName, setWetInkSignedName] = useState('');
+  const [wetInkForPlayerId, setWetInkForPlayerId] = useState<string>('');
+  const [wetInkConsentChecked, setWetInkConsentChecked] = useState(false);
+  const [wetInkSubmitting, setWetInkSubmitting] = useState(false);
+  const [wetInkError, setWetInkError] = useState<string | null>(null);
+
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setUploadError('Pick a file');
+      setWetInkError('Pick a file');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Max 10MB');
+      setWetInkError('Max 10MB');
       return;
     }
     if (!uploadTitle) {
-      setUploadError('Title required');
+      setWetInkError('Title required');
       return;
     }
 
     setUploading(true);
-    setUploadError(null);
+    setWetInkError(null);
 
     try {
       // Upload to Supabase Storage
@@ -110,7 +121,7 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
         .upload(path, file, { contentType: file.type });
 
       if (uploadErr) {
-        setUploadError(`Upload failed: ${uploadErr.message}`);
+        setWetInkError(`Upload failed: ${uploadErr.message}`);
         setUploading(false);
         return;
       }
@@ -137,7 +148,7 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
 
       if (!resp.ok) {
         const body = await resp.json();
-        setUploadError(body.error || 'Failed to save');
+        setWetInkError(body.error || 'Failed to save');
         setUploading(false);
         return;
       }
@@ -153,7 +164,7 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
       setUploading(false);
       router.refresh();
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Unknown error');
+      setWetInkError(err instanceof Error ? err.message : 'Unknown error');
       setUploading(false);
     }
   }
@@ -212,6 +223,79 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
       setSignError(err instanceof Error ? err.message : 'Unknown');
       setSignSubmitting(false);
     }
+  }
+
+  // A-v: wet-ink upload handler. Same legal moment as canvas (consent captured
+  // + signature artifact stored), but the artifact is an image/PDF uploaded
+  // to Supabase Storage. Audit trail (ip/ua/document_hash) is captured server-side.
+  async function handleWetInkUpload() {
+    if (!uploadingDoc) return;
+    if (!wetInkFile) { setWetInkError('Pick a file to upload'); return; }
+    if (!wetInkConsentChecked) { setWetInkError('You must agree to the consent statement'); return; }
+    if (wetInkSignedName.trim().length < 2) { setWetInkError('Enter your full name'); return; }
+    // A-ii gate: kid-required kinds.
+    if (uploadingDoc) {
+      const kidRequired = new Set(['liability_waiver','medical_consent','code_of_conduct']);
+      const isKidRequired = kidRequired.has(((uploadingDoc.kind || '') as string).toLowerCase());
+      if (isKidRequired && (wetInkSigningRole === 'parent' || wetInkSigningRole === 'guardian') && managedKids.length > 0 && !wetInkForPlayerId) {
+        setWetInkError('Pick which child this signature applies to');
+        return;
+      }
+    }
+
+    setWetInkSubmitting(true);
+    setWetInkError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', wetInkFile);
+      fd.append('consent_to_electronic', 'true');
+      fd.append('consent_text', DEFAULT_CONSENT_TEXT);
+      fd.append('signed_by_name', wetInkSignedName.trim());
+      fd.append('signed_by_role', wetInkSigningRole);
+      if (wetInkForPlayerId && (wetInkSigningRole === 'parent' || wetInkSigningRole === 'guardian')) {
+        fd.append('player_id', wetInkForPlayerId);
+      }
+      const resp = await fetch(`/api/team/${teamSlug}/documents/${uploadingDoc.id}/signatures/upload`, {
+        method: 'POST',
+        body: fd,
+      });
+      if (!resp.ok) {
+        let msg = 'Upload failed';
+        try { const body = await resp.json(); msg = body.error || msg; } catch {}
+        setWetInkError(msg);
+        setWetInkSubmitting(false);
+        return;
+      }
+      setUploadingDoc(null);
+      setWetInkFile(null);
+      setWetInkSignedName('');
+      setWetInkConsentChecked(false);
+      setWetInkSigningRole('player');
+      setWetInkForPlayerId('');
+      setWetInkSubmitting(false);
+      router.refresh();
+    } catch (err) {
+      setWetInkError(err instanceof Error ? err.message : 'Unknown');
+      setWetInkSubmitting(false);
+    }
+  }
+
+  function resetWetInkModal() {
+    setUploadingDoc(null);
+    setWetInkFile(null);
+    setWetInkSignedName('');
+    setWetInkConsentChecked(false);
+    setWetInkError(null);
+    setWetInkSigningRole('player');
+    setWetInkForPlayerId('');
+  }
+
+  // A-v helper: is a signature e-sign (SVG) or wet-ink (URL)? Used for badge.
+  function signatureKind(s: { signature_payload: string | null }): 'e_sign' | 'wet_ink' | 'unknown' {
+    const p = s.signature_payload || '';
+    if (p.startsWith('<svg') || p.includes('<svg')) return 'e_sign';
+    if (p.startsWith('https://') || p.startsWith('http://')) return 'wet_ink';
+    return 'unknown';
   }
 
   async function downloadDoc(doc: Doc) {
@@ -353,15 +437,24 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
                       View
                     </button>
                     {!mySigned && (
-                      <button onClick={() => setSigningDoc(doc)} style={{ background: '#041E42', color: '#fff', border: 'none', padding: '0.375rem 0.75rem', borderRadius: 4, fontSize: '0.85rem', cursor: 'pointer', fontWeight: 700 }}>
-                        Sign
-                      </button>
+                      <>
+                        <button onClick={() => setSigningDoc(doc)} style={{ background: '#041E42', color: '#fff', border: 'none', padding: '0.375rem 0.75rem', borderRadius: 4, fontSize: '0.85rem', cursor: 'pointer', fontWeight: 700 }} title="Draw your signature on screen">
+                          ✍ Sign
+                        </button>
+                        <button onClick={() => setUploadingDoc(doc)} style={{ background: '#fff', border: '1px solid #041E42', color: '#041E42', padding: '0.375rem 0.75rem', borderRadius: 4, fontSize: '0.85rem', cursor: 'pointer', fontWeight: 700 }} title="Print, sign on paper, then upload the signed image">
+                          📄 Sign on paper
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
                 {mySigned && (
-                  <div style={{ marginTop: '0.5rem', background: '#dcfce7', color: '#166534', padding: '0.5rem 0.75rem', borderRadius: 4, fontSize: '0.85rem' }}>
-                    ✓ You signed as <strong>{doc.my_signature!.signed_by_name}</strong> ({doc.my_signature!.signed_by_role}) on {new Date(doc.my_signature!.acknowledged_at).toLocaleDateString()}
+                  <div style={{ marginTop: '0.5rem', background: '#dcfce7', color: '#166534', padding: '0.5rem 0.75rem', borderRadius: 4, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span>✓ You signed as <strong>{doc.my_signature!.signed_by_name}</strong> ({doc.my_signature!.signed_by_role}) on {new Date(doc.my_signature!.acknowledged_at).toLocaleDateString()}</span>
+                    {/* A-v: badge — e-sign vs wet-ink. Same legal record, different capture. */}
+                    <span style={{ background: '#041E42', color: '#fff', padding: '0.0625rem 0.375rem', borderRadius: 3, fontSize: '0.65rem', fontWeight: 700 }}>
+                      {signatureKind(doc.my_signature!) === 'e_sign' ? '✍ E-SIGN' : signatureKind(doc.my_signature!) === 'wet_ink' ? '📄 WET-INK' : 'SIGNED'}
+                    </span>
                   </div>
                 )}
                 {isAdmin && doc.signatures.length > 0 && (
@@ -504,6 +597,151 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
                 }}
               >
                 {signSubmitting ? 'Signing…' : 'Sign & acknowledge'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* A-v: wet-ink upload modal — print, sign on paper, upload image/PDF. */}
+      {uploadingDoc && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', maxWidth: 540, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#041E42', fontSize: '1.125rem', fontWeight: 800 }}>Sign on paper: {uploadingDoc.title}</h3>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+              Print this document, sign on paper, then upload a photo or scan of the signed page.
+            </p>
+
+            <div style={{ marginBottom: '0.75rem', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 4, padding: '0.625rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.375rem' }}>Step 1 — print & sign</div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => downloadDoc(uploadingDoc)}
+                  style={{ background: '#041E42', color: '#fff', border: 'none', padding: '0.375rem 0.75rem', borderRadius: 4, fontSize: '0.85rem', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  Open document
+                </button>
+                <a
+                  href={`/api/team/${teamSlug}/documents/${uploadingDoc.id}/download-url`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ background: '#fff', border: '1px solid #041E42', color: '#041E42', padding: '0.375rem 0.75rem', borderRadius: 4, fontSize: '0.85rem', textDecoration: 'none', fontWeight: 700 }}
+                  onClick={(e) => { e.preventDefault(); downloadDoc(uploadingDoc); }}
+                >
+                  Open in new tab to print
+                </a>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.375rem' }}>
+                Open the document, use your browser's Print (Ctrl/Cmd+P), sign the printed page, then come back here.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Step 2 — upload signed image *</label>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={(e) => setWetInkFile(e.target.files?.[0] || null)}
+                style={{ width: '100%', padding: '0.375rem', border: '1px solid #d1d5db', borderRadius: 4, fontSize: '0.85rem' }}
+              />
+              {wetInkFile && (
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                  {wetInkFile.name} ({(wetInkFile.size / 1024 / 1024).toFixed(2)}MB · {wetInkFile.type})
+                </div>
+              )}
+              <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.25rem' }}>
+                JPEG, PNG, WEBP, or PDF. Max 10MB.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Signing as</label>
+              <select value={wetInkSigningRole} onChange={(e) => setWetInkSigningRole(e.target.value as any)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}>
+                <option value="player">Player (myself)</option>
+                <option value="parent">Parent</option>
+                <option value="guardian">Guardian</option>
+                <option value="coach">Coach</option>
+                <option value="staff">Staff</option>
+              </select>
+            </div>
+
+            {/* A-ii: child picker (same policy as canvas path) */}
+            {(wetInkSigningRole === 'parent' || wetInkSigningRole === 'guardian') && managedKids.length > 0 && (() => {
+              const kidRequired = new Set(['liability_waiver', 'medical_consent', 'code_of_conduct']);
+              const isRequired = kidRequired.has(((uploadingDoc.kind || '') as string).toLowerCase());
+              return (
+                <div style={{ marginBottom: '0.75rem', background: isRequired ? 'rgba(200,16,46,0.06)' : '#f9fafb', padding: '0.625rem', borderRadius: 4, border: isRequired ? '1px solid #C8102E' : '1px solid #e5e7eb' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+                    {isRequired ? 'Sign on behalf of *' : 'Sign on behalf of (optional)'}
+                  </label>
+                  <select
+                    value={wetInkForPlayerId}
+                    onChange={(e) => setWetInkForPlayerId(e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}
+                  >
+                    <option value="">— Myself (no kid) —</option>
+                    {managedKids.map((k) => (
+                      <option key={k.player_id} value={k.player_id}>
+                        {k.full_name} ({k.relationship})
+                      </option>
+                    ))}
+                  </select>
+                  {isRequired && (
+                    <div style={{ fontSize: '0.75rem', color: '#C8102E', marginTop: '0.25rem' }}>
+                      Required for this document type. Pick which child this signature applies to.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Your full name *</label>
+              <input
+                type="text"
+                required
+                value={wetInkSignedName}
+                onChange={(e) => setWetInkSignedName(e.target.value)}
+                placeholder="e.g., Maria Santos"
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4, fontSize: '1rem' }}
+              />
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'start', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#374151', lineHeight: 1.4 }}>
+              <input
+                type="checkbox"
+                checked={wetInkConsentChecked}
+                onChange={(e) => setWetInkConsentChecked(e.target.checked)}
+                style={{ marginTop: 3, flexShrink: 0 }}
+              />
+              <span>{DEFAULT_CONSENT_TEXT}</span>
+            </label>
+
+            {wetInkError && (
+              <div style={{ background: 'rgba(200,16,46,0.10)', color: '#C8102E', padding: '0.5rem', borderRadius: 4, marginBottom: '0.75rem', fontSize: '0.875rem' }}>{wetInkError}</div>
+            )}
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={resetWetInkModal}
+                disabled={wetInkSubmitting}
+                style={{ padding: '0.5rem 1rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 4, cursor: wetInkSubmitting ? 'not-allowed' : 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleWetInkUpload}
+                disabled={wetInkSubmitting || !wetInkFile || !wetInkConsentChecked || wetInkSignedName.trim().length < 2}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  background: (wetInkSubmitting || !wetInkFile || !wetInkConsentChecked || wetInkSignedName.trim().length < 2) ? '#9ca3af' : '#041E42',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontWeight: 700,
+                  cursor: (wetInkSubmitting || !wetInkFile || !wetInkConsentChecked || wetInkSignedName.trim().length < 2) ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {wetInkSubmitting ? 'Uploading…' : 'Submit signed document'}
               </button>
             </div>
           </div>
