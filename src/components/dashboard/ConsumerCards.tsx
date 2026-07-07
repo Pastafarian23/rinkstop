@@ -87,6 +87,17 @@ export interface ConsumerCardData {
   /** Phase 1b-1. Per-child active/expired document counts. Empty array
    *  if the user has no linked children. */
   pendingDocuments: PendingDocumentSummary[];
+  /** Phase 1b-2. Most recent achievements across all linked children. */
+  recentAchievements: RecentAchievement[];
+}
+
+export interface RecentAchievement {
+  id: string;
+  childId: string;
+  childName: string;
+  title: string;
+  category: string;
+  achieved_at: string;
 }
 
 /**
@@ -103,6 +114,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
     identityVerified,
     tier,
     pendingDocuments: [],
+    recentAchievements: [],
   };
 
   try {
@@ -211,6 +223,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
       childIds.push(r.profile_id);
     }
     const pendingDocuments: PendingDocumentSummary[] = [];
+    const recentAchievements: RecentAchievement[] = [];
     if (childIds.length > 0) {
       const { data: docs } = await supabaseAdmin
         .from('player_documents')
@@ -236,6 +249,25 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
           expiredCount: b.expired,
         });
       }
+
+      // Phase 1b-2: most recent achievements across all linked children.
+      // Top 4 by achieved_at desc, joined to the child names we already loaded.
+      const { data: achs } = await supabaseAdmin
+        .from('player_achievements')
+        .select('id, player_id, title, category, achieved_at')
+        .in('player_id', childIds)
+        .order('achieved_at', { ascending: false })
+        .limit(4);
+      for (const a of (achs || []) as any[]) {
+        recentAchievements.push({
+          id: a.id,
+          childId: a.player_id,
+          childName: childNameById[a.player_id] || 'Child',
+          title: a.title,
+          category: a.category,
+          achieved_at: a.achieved_at,
+        });
+      }
     }
 
     return {
@@ -246,6 +278,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
       identityVerified,
       tier,
       pendingDocuments,
+      recentAchievements,
     };
   } catch (e) {
     console.error('[ConsumerCards] load failed:', e);
@@ -446,12 +479,45 @@ export default function ConsumerCards({
         )}
       </div>
 
-      {/* Recent Achievements (1b-2 placeholder) */}
-      <div data-testid="consumer-card-achievements" style={{ ...cardStyle, opacity: 0.7 }}>
+      {/* Recent Achievements (1b-2 — live). Top 4 most recent. */}
+      <div data-testid="consumer-card-achievements" style={cardStyle}>
         <CardHeader emoji="🏅" title="RECENT ACHIEVEMENTS" />
-        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-          Achievements unlock as your kids play. Building that now.
-        </p>
+        {data.recentAchievements.length === 0 ? (
+          primaryType === 'parent' ? (
+            <EmptyMessage
+              headline="No achievements yet"
+              body="Add the first one on the Family Hub."
+              cta={{ label: 'Open Family Hub', href: '/dashboard/family' }}
+            />
+          ) : (
+            <EmptyMessage
+              headline="Achievements are parent-curated"
+              body="Parents add tournament wins, milestones, and team events on the Family Hub."
+              cta={{ label: 'Browse the directory', href: '/directory' }}
+            />
+          )
+        ) : (
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {data.recentAchievements.map((a) => (
+              <li key={a.id} style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem' }}>
+                <Link href={`/dashboard/family#${a.childId}`} style={{ color: '#fff', textDecoration: 'none' }}>
+                  {a.title}
+                </Link>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem' }}>
+                  {a.childName} · {new Date(a.achieved_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+              </li>
+            ))}
+            <li style={{ marginTop: 4 }}>
+              <Link
+                href="/dashboard/family"
+                style={{ color: '#14B8A6', fontSize: '0.75rem', textDecoration: 'none', fontWeight: 600 }}
+              >
+                Manage in Family Hub →
+              </Link>
+            </li>
+          </ul>
+        )}
       </div>
     </div>
   );

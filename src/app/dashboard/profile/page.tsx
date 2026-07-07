@@ -9,6 +9,8 @@ import ProfileEditForm from './ProfileEditForm';
 import FollowingList from './FollowingList';
 import ChangePhotoButton from './ChangePhotoButton';
 import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
+import PlayerTimelineSection from '@/components/player-achievements/PlayerTimelineSection';
+import { buildTimeline } from '@/lib/timeline-builder';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,6 +106,33 @@ export default async function ProfilePage() {
   } catch {
     documentsByPlayer = {};
     consentRevokedByPlayer = {};
+  }
+
+  // Player Achievements + Career Timeline (Phase 1b-2). One batch query for
+  // achievements per linked child, then build the timeline from the same
+  // 5 sources as the family page (team_members, profiles, player_documents,
+  // player_achievements). Mirrors dashboard/family.
+  let achievementsByPlayer: Record<string, any[]> = {};
+  const timelineByPlayer: Record<string, any[]> = {};
+  try {
+    const playerIds = parentRelationships
+      .map((r) => r.profile_id)
+      .filter((id): id is string => !!id);
+    if (playerIds.length > 0) {
+      const { data: achs } = await supabaseAdmin
+        .from('player_achievements')
+        .select('id, player_id, title, description, category, achieved_at, created_at, updated_at')
+        .in('player_id', playerIds)
+        .order('achieved_at', { ascending: false });
+      for (const a of achs || []) {
+        (achievementsByPlayer[a.player_id] = achievementsByPlayer[a.player_id] || []).push(a);
+      }
+      for (const pid of playerIds) {
+        timelineByPlayer[pid] = await buildTimeline(pid, userId);
+      }
+    }
+  } catch {
+    achievementsByPlayer = {};
   }
 
   // Clerk-managed fields (kept for the Edit modal, but sectioned under
@@ -424,31 +453,36 @@ export default async function ProfilePage() {
         )}
       </PassportSection>
 
-      {/* Section 5: Achievements (1b-2 placeholder) */}
-      <PassportSection
-        emoji="🏅"
-        title="ACHIEVEMENTS"
-        description="Awards and milestones. Coming soon."
-        testId="passport-section-achievements"
-        placeholder
-      >
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-          Achievements unlock as your kids play. We will show them here as they earn them.
-        </p>
-      </PassportSection>
-
-      {/* Section 6: Career Timeline (1b-2 placeholder) */}
-      <PassportSection
-        emoji="📅"
-        title="CAREER TIMELINE"
-        description="A permanent record of your hockey career. Coming soon."
-        testId="passport-section-career-timeline"
-        placeholder
-      >
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
-          Started Learn-to-Skate, joined team, won tournament, verified identity. Every moment lives here.
-        </p>
-      </PassportSection>
+      {/* Section 5: Achievements (1b-2 — live). Per linked child, render
+          the achievements list + add form. */}
+      {parentRelationships.length === 0 ? (
+        <PassportSection
+          emoji="🏅"
+          title="ACHIEVEMENTS"
+          description="Link a player to start tracking achievements."
+          testId="passport-section-achievements"
+        >
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: 0, lineHeight: 1.5 }}>
+            Once you link a child, add achievements and watch the career timeline fill in.
+          </p>
+        </PassportSection>
+      ) : (
+        parentRelationships.map((r) => (
+          <PassportSection
+            key={r.id}
+            emoji="🏅"
+            title={`${r.player_name.toUpperCase()}'S ACHIEVEMENTS & TIMELINE`}
+            description="Awards, milestones, and career events."
+            testId="passport-section-achievements"
+          >
+            <PlayerTimelineSection
+              playerId={r.profile_id}
+              achievements={achievementsByPlayer[r.profile_id] || []}
+              timelineEvents={timelineByPlayer[r.profile_id] || []}
+            />
+          </PassportSection>
+        ))
+      )}
 
       {/* Editable profile fields (bio, location) — kept from previous surface */}
       <ProfileEditForm

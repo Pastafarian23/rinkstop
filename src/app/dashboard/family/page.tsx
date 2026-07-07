@@ -9,6 +9,8 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import FamilySearch from '@/components/family/FamilySearch';
 import FamilySetupResume from '@/components/family/FamilySetupResume';
 import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
+import PlayerTimelineSection from '@/components/player-achievements/PlayerTimelineSection';
+import { buildTimeline } from '@/lib/timeline-builder';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,7 +75,26 @@ export default async function FamilyPage() {
     }
   }
 
-  // Fetch existing player_documents for all linked children in one batch.
+  // Phase 1b-2: build the career timeline for each child from on-read joins.
+  // The list of (player_id → events[]) is passed to the page so each
+  // <PlayerTimelineSection> can render without re-fetching.
+  const timelineByPlayer: Record<string, any[]> = {};
+  for (const mp of managedProfiles || []) {
+    timelineByPlayer[mp.profile_id] = await buildTimeline(mp.profile_id, userId);
+  }
+
+  // Phase 1b-2: fetch player_achievements for all linked children in one batch.
+  const achievementsByPlayer: Record<string, any[]> = {};
+  if (profileIds.length > 0) {
+    const { data: achs } = await supabaseAdmin
+      .from('player_achievements')
+      .select('id, player_id, title, description, category, achieved_at, created_at, updated_at')
+      .in('player_id', profileIds)
+      .order('achieved_at', { ascending: false });
+    for (const a of achs || []) {
+      (achievementsByPlayer[a.player_id] = achievementsByPlayer[a.player_id] || []).push(a);
+    }
+  }
   // The component is passed the per-child array; PlayerDocumentList is a
   // server-fed client component so it reads the seed list directly and
   // refetches via GET after the user does an action.
@@ -538,37 +559,60 @@ export default async function FamilyPage() {
         )}
       </section>
 
-      {/* Achievements (1b-2 placeholder) */}
-      <section
-        data-testid="family-achievements"
-        style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}
-      >
-        <h2 style={{
-          fontFamily: "'Bebas Neue', Impact, sans-serif",
-          fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 0.5rem',
-        }}>
-          ACHIEVEMENTS
-        </h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
-          Achievements, awards, and milestones unlock as your kids play. Building that now.
-        </p>
-      </section>
-
-      {/* Career Timeline (1b-2 placeholder) */}
-      <section
-        data-testid="family-timeline"
-        style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}
-      >
-        <h2 style={{
-          fontFamily: "'Bebas Neue', Impact, sans-serif",
-          fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 0.5rem',
-        }}>
-          CAREER TIMELINE
-        </h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
-          A permanent record of every player&rsquo;s hockey career: started L2S, joined team, won tournament, verified identity, and more. Coming next.
-        </p>
-      </section>
+      {/* Achievements + Career Timeline (1b-2 — live). Per linked child, render
+          the achievements list + add form, then the career timeline below.
+          Server-side pre-computes both from player_achievements, team_members,
+          player_documents, and profiles in lib/timeline-builder. */}
+      {!managedProfiles || managedProfiles.length === 0 ? (
+        <section
+          data-testid="family-achievements-empty"
+          style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}
+        >
+          <h2 style={{
+            fontFamily: "'Bebas Neue', Impact, sans-serif",
+            fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 0.5rem',
+          }}>
+            ACHIEVEMENTS &amp; TIMELINE
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
+            Link a player first to start tracking achievements and the career timeline.
+          </p>
+        </section>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {managedProfiles.map((mp: any) => {
+            const player = playerMap[mp.profile_id] || {};
+            const achs = achievementsByPlayer[mp.profile_id] || [];
+            const events = timelineByPlayer[mp.profile_id] || [];
+            const childName =
+              player.first_name && player.last_name
+                ? `${player.first_name} ${player.last_name}`
+                : 'Unknown Player';
+            return (
+              <section
+                key={mp.id}
+                data-testid="family-achievements-child"
+                style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}
+              >
+                <h2 style={{
+                  fontFamily: "'Bebas Neue', Impact, sans-serif",
+                  fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 0.5rem',
+                }}>
+                  {childName.toUpperCase()}&rsquo;S ACHIEVEMENTS &amp; TIMELINE
+                </h2>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
+                  Add achievements and watch the career timeline fill in.
+                </p>
+                <PlayerTimelineSection
+                  playerId={mp.profile_id}
+                  achievements={achs}
+                  timelineEvents={events}
+                />
+              </section>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
