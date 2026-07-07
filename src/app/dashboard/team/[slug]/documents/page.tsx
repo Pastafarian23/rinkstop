@@ -63,6 +63,29 @@ export default async function TeamDocumentsPage({ params }: PageProps) {
     roster = (rosterRows || []).filter((r) => !!r.user_id);
   }
 
+  // Fetch parent's managed profiles (kids) for the A-ii child picker. Only
+  // matters when the caller is signing as parent/guardian and the doc is a
+  // liability waiver / medical consent / code of conduct. Defensive: if the
+  // caller has no kids, the picker is hidden in the UI.
+  const { data: managedRows } = await supabaseAdmin
+    .from('managed_profiles')
+    .select('profile_id, relationship, players:profile_id (id, first_name, last_name)')
+    .eq('manager_user_id', userId)
+    .eq('profile_type', 'player');
+  const managedKids = (managedRows || [])
+    .map((m: { profile_id: string; relationship: string; players: { id: string; first_name: string; last_name: string } | { id: string; first_name: string; last_name: string }[] | null }) => {
+      const p = Array.isArray(m.players) ? m.players[0] : m.players;
+      if (!p) return null;
+      return {
+        player_id: m.profile_id as string,
+        first_name: p.first_name,
+        last_name: p.last_name,
+        full_name: `${p.first_name} ${p.last_name}`.trim(),
+        relationship: m.relationship as string,
+      };
+    })
+    .filter((k): k is NonNullable<typeof k> => k !== null);
+
   // Fetch documents
   const { data: docs } = await supabaseAdmin
     .from('team_documents')
@@ -100,6 +123,7 @@ export default async function TeamDocumentsPage({ params }: PageProps) {
       userId={userId}
       isAdmin={isAdmin}
       roster={roster}
+      managedKids={managedKids}
       documents={enrichedDocs}
     />
   );
