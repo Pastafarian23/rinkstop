@@ -4,6 +4,10 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import SignaturePad from '@/components/team-documents/SignaturePad';
+
+const DEFAULT_CONSENT_TEXT =
+  'I agree this electronic signature is the legal equivalent of my manual signature on this document. I understand that my signature, name, role, timestamp, IP address, and user agent will be recorded for audit purposes.';
 
 interface Doc {
   id: string;
@@ -47,10 +51,13 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // E-sig state
+  // E-sig state (A-iii: real signature capture + consent)
   const [signingDoc, setSigningDoc] = useState<Doc | null>(null);
   const [signedName, setSignedName] = useState('');
   const [signingRole, setSigningRole] = useState<'player' | 'parent' | 'guardian'>('player');
+  const [signatureSvg, setSignatureSvg] = useState<string | null>(null);
+  const [signatureDims, setSignatureDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  const [consentChecked, setConsentChecked] = useState(false);
   const [signSubmitting, setSignSubmitting] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
 
@@ -126,7 +133,15 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
   async function handleSign() {
     if (!signingDoc) return;
     if (!signedName.trim()) {
-      setSignError('Type your name');
+      setSignError('Type your full name');
+      return;
+    }
+    if (!consentChecked) {
+      setSignError('You must agree to the consent statement');
+      return;
+    }
+    if (!signatureSvg) {
+      setSignError('Sign in the signature pad');
       return;
     }
     setSignSubmitting(true);
@@ -136,6 +151,11 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          consent_to_electronic: true,
+          consent_text: DEFAULT_CONSENT_TEXT,
+          signature_payload: signatureSvg,
+          signature_width: signatureDims.w,
+          signature_height: signatureDims.h,
           signed_by_name: signedName,
           signed_by_role: signingRole,
         }),
@@ -148,6 +168,9 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
       }
       setSigningDoc(null);
       setSignedName('');
+      setSignatureSvg(null);
+      setSignatureDims({ w: 0, h: 0 });
+      setConsentChecked(false);
       setSignSubmitting(false);
       router.refresh();
     } catch (err) {
@@ -181,7 +204,7 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
         Documents
       </h1>
       <p style={{ margin: '0 0 1.5rem', color: '#6b7280' }}>
-        Waivers, forms, and other documents. Sign with your typed name — legally binding under RA 8792.
+        Waivers, forms, and other documents. Sign electronically — legally binding under RA 8792 and ESIGN.
       </p>
 
       {isAdmin && (
@@ -279,32 +302,91 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
         </div>
       )}
 
-      {/* Sign modal */}
+      {/* Sign modal — A-iii real signature capture + consent */}
       {signingDoc && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', maxWidth: 480, width: '100%' }}>
-            <h3 style={{ margin: '0 0 1rem', color: '#041E42', fontSize: '1.125rem', fontWeight: 800 }}>Sign: {signingDoc.title}</h3>
+          <div style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', maxWidth: 540, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#041E42', fontSize: '1.125rem', fontWeight: 800 }}>Sign: {signingDoc.title}</h3>
             <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280' }}>
-              By signing below, you acknowledge that you have read and agree to this document. Your typed name, role, timestamp, and IP address are recorded for audit purposes.
+              You are signing this document electronically. Your signature image, name, role, timestamp, IP address, user agent, and a hash of the document at sign-time are recorded for audit.
             </p>
+
             <div style={{ marginBottom: '0.75rem' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Signing as</label>
               <select value={signingRole} onChange={(e) => setSigningRole(e.target.value as any)} style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4 }}>
                 <option value="player">Player (myself)</option>
                 <option value="parent">Parent</option>
                 <option value="guardian">Guardian</option>
+                <option value="coach">Coach</option>
+                <option value="staff">Staff</option>
               </select>
             </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Type your full name *</label>
-              <input type="text" required value={signedName} onChange={(e) => setSignedName(e.target.value)} placeholder="e.g., Maria Santos" style={{ width: '100%', padding: '0.625rem', border: '2px solid #041E42', borderRadius: 4, fontSize: '1.25rem', fontFamily: 'cursive' }} />
+
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Your full name *</label>
+              <input
+                type="text"
+                required
+                value={signedName}
+                onChange={(e) => setSignedName(e.target.value)}
+                placeholder="e.g., Maria Santos"
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4, fontSize: '1rem' }}
+              />
             </div>
+
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Sign below *</label>
+              <SignaturePad
+                width={480}
+                height={160}
+                onChange={(svg, w, h) => {
+                  setSignatureSvg(svg);
+                  setSignatureDims({ w, h });
+                }}
+                disabled={signSubmitting}
+              />
+            </div>
+
+            <label style={{ display: 'flex', alignItems: 'start', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem', color: '#374151', lineHeight: 1.4 }}>
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={(e) => setConsentChecked(e.target.checked)}
+                style={{ marginTop: 3, flexShrink: 0 }}
+              />
+              <span>{DEFAULT_CONSENT_TEXT}</span>
+            </label>
+
             {signError && (
               <div style={{ background: 'rgba(200,16,46,0.10)', color: '#C8102E', padding: '0.5rem', borderRadius: 4, marginBottom: '0.75rem', fontSize: '0.875rem' }}>{signError}</div>
             )}
             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setSigningDoc(null); setSignedName(''); setSignError(null); }} style={{ padding: '0.5rem 1rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 4, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSign} disabled={signSubmitting} style={{ padding: '0.5rem 1.25rem', background: signSubmitting ? '#9ca3af' : '#041E42', color: '#fff', border: 'none', borderRadius: 4, fontWeight: 700, cursor: signSubmitting ? 'not-allowed' : 'pointer' }}>
+              <button
+                onClick={() => {
+                  setSigningDoc(null);
+                  setSignedName('');
+                  setSignatureSvg(null);
+                  setSignatureDims({ w: 0, h: 0 });
+                  setConsentChecked(false);
+                  setSignError(null);
+                }}
+                style={{ padding: '0.5rem 1rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 4, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSign}
+                disabled={signSubmitting || !consentChecked || !signatureSvg || !signedName.trim()}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  background: (signSubmitting || !consentChecked || !signatureSvg || !signedName.trim()) ? '#9ca3af' : '#041E42',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontWeight: 700,
+                  cursor: (signSubmitting || !consentChecked || !signatureSvg || !signedName.trim()) ? 'not-allowed' : 'pointer',
+                }}
+              >
                 {signSubmitting ? 'Signing…' : 'Sign & acknowledge'}
               </button>
             </div>
