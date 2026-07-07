@@ -30,8 +30,8 @@ interface Doc {
   payment: { id: string; title: string } | null;
   kind?: string | null;       // A-ii: free-text kind from A-0 migration. Used to drive child-picker policy.
   created_at: string;
-  signatures: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; acknowledged_at: string }[];
-  my_signature: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; acknowledged_at: string } | null;
+  signatures: { id: string; document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; signed_by_user_id: string; acknowledged_at: string; withdrawn_at: string | null }[];
+  my_signature: { id: string; document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; signed_by_user_id: string; acknowledged_at: string; withdrawn_at: string | null } | null;
 }
 
 interface RosterEntry {
@@ -83,6 +83,12 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
   //   Empty string = signing for themselves (player_id omitted from POST,
   //   the route falls back to user_id for player role, or NULL for parent/guardian).
   const [signingForPlayerId, setSigningForPlayerId] = useState<string>('');
+
+  // A-iv: withdrawal flow state.
+  const [withdrawDoc, setWithdrawDoc] = useState<Doc | null>(null);
+  const [withdrawReason, setWithdrawReason] = useState('');
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
 
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
@@ -367,14 +373,32 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
                     )}
                   </div>
                 </div>
-                {mySigned && (
-                  <div style={{ marginTop: '0.5rem', background: '#dcfce7', color: '#166534', padding: '0.5rem 0.75rem', borderRadius: 4, fontSize: '0.85rem' }}>
-                    ✓ You signed as <strong>{doc.my_signature!.signed_by_name}</strong> ({doc.my_signature!.signed_by_role}) on {new Date(doc.my_signature!.acknowledged_at).toLocaleDateString()}
+                {mySigned && doc.my_signature && !doc.my_signature.withdrawn_at && (
+                  <div style={{ marginTop: '0.5rem', background: '#dcfce7', color: '#166534', padding: '0.5rem 0.75rem', borderRadius: 4, fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                    <span>
+                      ✓ You signed as <strong>{doc.my_signature.signed_by_name}</strong> ({doc.my_signature.signed_by_role}) on {new Date(doc.my_signature.acknowledged_at).toLocaleDateString()}
+                    </span>
+                    <button
+                      onClick={() => { setWithdrawDoc(doc); setWithdrawReason(''); setWithdrawError(null); }}
+                      style={{ background: '#fff', border: '1px solid #C8102E', color: '#C8102E', padding: '0.25rem 0.625rem', borderRadius: 3, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      Withdraw
+                    </button>
+                  </div>
+                )}
+                {mySigned && doc.my_signature?.withdrawn_at && (
+                  <div style={{ marginTop: '0.5rem', background: '#fef3c7', color: '#92400e', padding: '0.5rem 0.75rem', borderRadius: 4, fontSize: '0.85rem' }}>
+                    ⚠ Signature withdrawn on {new Date(doc.my_signature.withdrawn_at).toLocaleDateString()}
                   </div>
                 )}
                 {isAdmin && doc.signatures.length > 0 && (
                   <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#6b7280' }}>
                     {doc.signatures.length} signature(s): {doc.signatures.slice(0, 5).map(s => s.signed_by_name).join(', ')}{doc.signatures.length > 5 && `, +${doc.signatures.length - 5} more`}
+                    {doc.signatures.some(s => s.withdrawn_at) && (
+                      <span style={{ color: '#92400e', marginLeft: '0.5rem' }}>
+                        ({doc.signatures.filter(s => s.withdrawn_at).length} withdrawn, not counted as active)
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -512,6 +536,87 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
                 }}
               >
                 {signSubmitting ? 'Signing…' : 'Sign & acknowledge'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Withdraw modal — A-iv */}
+      {withdrawDoc && withdrawDoc.my_signature && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+          <div style={{ background: '#fff', borderRadius: 8, padding: '1.5rem', maxWidth: 480, width: '100%' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#041E42', fontSize: '1.125rem', fontWeight: 800 }}>Withdraw signature: {withdrawDoc.title}</h3>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+              Withdrawing removes your signature from this document. You may be asked to sign again. The withdrawal is recorded in the audit trail with your reason.
+            </p>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>Reason *</label>
+              <textarea
+                value={withdrawReason}
+                onChange={(e) => setWithdrawReason(e.target.value)}
+                rows={3}
+                placeholder="Why are you withdrawing? (min 10 chars)"
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: 4, fontSize: '0.95rem', resize: 'vertical' }}
+              />
+              <div style={{ fontSize: '0.75rem', color: withdrawReason.trim().length >= 10 ? '#166534' : '#6b7280', marginTop: '0.25rem' }}>
+                {withdrawReason.trim().length}/10+ characters
+              </div>
+            </div>
+            {withdrawError && (
+              <div style={{ background: 'rgba(200,16,46,0.10)', color: '#C8102E', padding: '0.5rem', borderRadius: 4, marginBottom: '0.75rem', fontSize: '0.875rem' }}>
+                {withdrawError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setWithdrawDoc(null); setWithdrawReason(''); setWithdrawError(null); }}
+                style={{ padding: '0.5rem 1rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 4, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (withdrawReason.trim().length < 10) {
+                    setWithdrawError('Reason required (min 10 chars)');
+                    return;
+                  }
+                  if (!withdrawDoc.my_signature) return;
+                  setWithdrawSubmitting(true);
+                  setWithdrawError(null);
+                  try {
+                    const resp = await fetch(`/api/team/${teamSlug}/documents/${withdrawDoc.id}/signatures/${withdrawDoc.my_signature.id}/withdraw`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ reason: withdrawReason.trim() }),
+                    });
+                    if (!resp.ok) {
+                      const body = await resp.json().catch(() => ({}));
+                      setWithdrawError(body.error || 'Failed');
+                      setWithdrawSubmitting(false);
+                      return;
+                    }
+                    setWithdrawDoc(null);
+                    setWithdrawReason('');
+                    setWithdrawSubmitting(false);
+                    router.refresh();
+                  } catch (err) {
+                    setWithdrawError(err instanceof Error ? err.message : 'Unknown');
+                    setWithdrawSubmitting(false);
+                  }
+                }}
+                disabled={withdrawSubmitting || withdrawReason.trim().length < 10}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  background: withdrawSubmitting || withdrawReason.trim().length < 10 ? '#9ca3af' : '#C8102E',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontWeight: 700,
+                  cursor: withdrawSubmitting || withdrawReason.trim().length < 10 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {withdrawSubmitting ? 'Withdrawing…' : 'Withdraw signature'}
               </button>
             </div>
           </div>

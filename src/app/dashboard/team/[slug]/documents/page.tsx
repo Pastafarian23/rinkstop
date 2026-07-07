@@ -97,7 +97,7 @@ export default async function TeamDocumentsPage({ params }: PageProps) {
   const docIds = (docs || []).map(d => d.id);
   const { data: sigs } = await supabaseAdmin
     .from('document_signatures')
-    .select('document_id, player_id, signed_by_name, signed_by_role, acknowledged_at')
+    .select('id, document_id, player_id, signed_by_name, signed_by_role, acknowledged_at, signed_by_user_id, withdrawn_at')
     .in('document_id', docIds);
 
   // Fetch payment titles if any docs are linked to payments
@@ -112,7 +112,13 @@ export default async function TeamDocumentsPage({ params }: PageProps) {
     ...d,
     payment: d.payment_id ? paymentMap.get(d.payment_id) : null,
     signatures: (sigs || []).filter(s => s.document_id === d.id),
-    my_signature: (sigs || []).find(s => s.document_id === d.id && s.player_id === userId) || null,
+    my_signature: (sigs || []).find(s => s.document_id === d.id && s.signed_by_user_id === userId) || null,
+    // A-iv: filter change. The previous filter used `s.player_id === userId`,
+    // which never matched (player_id is a UUID; userId is Clerk's `user_xxx`).
+    // Effect: the "you signed this" banner was always hidden for parents.
+    // With the correct filter on signed_by_user_id, the banner correctly
+    // surfaces, and the Withdraw button can be wired to the same row.
+    // Pre-existing quirk fixed in A-iv as a small bonus.
   }));
 
   return (
