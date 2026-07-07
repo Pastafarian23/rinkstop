@@ -3,12 +3,18 @@ import type { CityPageData } from '@/lib/city-page';
 import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
 import CityHockeyScene from '@/components/CityHockeyScene';
 import HockeyCanadaAd from '@/components/HockeyCanadaAd';
+import type { CityFAQEntry } from '@/lib/city-context';
 
 interface Props {
   data: CityPageData;
+  /** Optional FAQ entries (built by buildCityFAQs in lib/city-context.ts).
+   *  When provided, renders a server-rendered accordion beneath the pro
+   *  team cross-reference block. All text is sourced from CITY_FACTS,
+   *  COUNTRY_HOCKEY_CONTEXT, or DB counts — no fabrication. */
+  faqs?: CityFAQEntry[];
 }
 
-export default function CityPageContent({ data }: Props) {
+export default function CityPageContent({ data, faqs }: Props) {
   const {
     countryName,
     countrySlug,
@@ -552,6 +558,71 @@ export default function CityPageContent({ data }: Props) {
                   View All NHL Teams →
                 </Link>
               )}
+            </div>
+          </section>
+        )}
+
+        {/* CITY FAQ — accordion, facts only (added 2026-07-07) */}
+        {faqs && faqs.length > 0 && (
+          <section
+            aria-label={`Hockey FAQs about ${cityName}`}
+            style={{ marginBottom: '3rem', maxWidth: '820px' }}
+          >
+            <h2
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 800,
+                marginBottom: '1rem',
+                color: textMain,
+                borderLeft: `4px solid ${red}`,
+                paddingLeft: '0.875rem',
+                letterSpacing: '0.02em',
+              }}
+            >
+              Frequently Asked Questions About Hockey in {cityName}
+            </h2>
+            <div style={{ display: 'grid', gap: '0.625rem' }}>
+              {faqs.map((q, i) => (
+                <details
+                  key={i}
+                  style={{
+                    background: card,
+                    border: `1px solid ${border}`,
+                    borderRadius: '8px',
+                    padding: '0.875rem 1.125rem',
+                  }}
+                >
+                  <summary
+                    style={{
+                      fontWeight: 700,
+                      fontSize: '0.9375rem',
+                      color: textMain,
+                      cursor: 'pointer',
+                      listStyle: 'none',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                    }}
+                  >
+                    <span>{q.question}</span>
+                    <span aria-hidden style={{ color: red, fontSize: '1.125rem', flexShrink: 0, lineHeight: 1 }}>
+                      +
+                    </span>
+                  </summary>
+                  <p
+                    style={{
+                      color: textMuted,
+                      fontSize: '0.875rem',
+                      lineHeight: 1.65,
+                      marginTop: '0.625rem',
+                      marginBottom: 0,
+                    }}
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: q.answer }}
+                  />
+                </details>
+              ))}
             </div>
           </section>
         )}
