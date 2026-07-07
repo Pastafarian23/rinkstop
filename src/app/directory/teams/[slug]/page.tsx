@@ -134,7 +134,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: team } = await supabaseAdmin
     .from('team_workspaces')
-    .select('name, description, home_city, home_country, country_code, age_label, level, timezone')
+    .select('name, description, home_city, home_country, country_code, age_label, level, timezone, visibility')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle();
@@ -158,16 +158,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       t.level ? `Plays at the ${t.level.replace(/_/g, ' ')} level. ` : ''
     }${t.age_label ? `Age group: ${t.age_label}. ` : ''}Roster, schedule, and recent results on RinkStop.`;
 
-  // Tier 1f (2026-07-07): thin-team noindex. The default
-  // `robots: { index: true, follow: true }` indexed every team page even
-  // ones with name + nothing else. Now we count how many of the team
-  // detail fields are populated and noindex when the page is too thin
-  // to rank for anything useful. The page still renders — only the
-  // index signal changes.
+  // Tier 1f (2026-07-07): thin-team noindex. The page is indexable as long
+  // as the workspace is visibility=public. The full teamPageDecision (which
+  // weighs field count and word count) is still used as a safety check for
+  // truly empty records, but we don't noindex a public workspace that just
+  // hasn't been filled in yet — those pages are still real entries the team
+  // chose to expose publicly.
   const teamFields = [t.name, t.description, t.home_city, t.home_country, t.age_label, t.level];
   const fieldCount = teamFields.filter(f => f && String(f).trim().length > 0).length;
   const wordCount = (t.description || desc).split(/\s+/).filter(Boolean).length;
-  const decision = teamPageDecision(fieldCount, wordCount);
+  const thinDecision = teamPageDecision(fieldCount, wordCount);
+  // A workspace's visibility declaration trumps the field-count heuristic.
+  // If the team says "make this public," we index it. They can fill in
+  // fields later.
+  const isPublic = (team as { visibility?: string })?.visibility === 'public';
+  const decision = isPublic
+    ? { indexable: true, reason: 'public workspace', uniquenessScore: Math.max(thinDecision.uniquenessScore, 50) }
+    : thinDecision;
 
   return {
     title,

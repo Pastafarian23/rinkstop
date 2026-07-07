@@ -65,8 +65,8 @@ export const COUNTRY_CONTENT: Record<string, {
       "Russia is a hockey powerhouse with a deep tradition of producing technical, creative players. The KHL is one of the world's top professional leagues.",
     cities: {},
   },
-  Czechia: {
-    name: 'Czechia',
+  'Czech Republic': {
+    name: 'Czech Republic',
     flag: '🇨🇿',
     description:
       "The Czech Republic has a strong hockey heritage, producing legendary players and hosting regular international tournaments. The Extraliga is Central Europe's top competitive league.",

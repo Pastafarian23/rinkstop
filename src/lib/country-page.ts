@@ -17,7 +17,7 @@ export const COUNTRY_MAP: Record<string, string> = {
   'finland': 'Finland',
   'germany': 'Germany',
   'switzerland': 'Switzerland',
-  'czech-republic': 'Czech Republic', 'czechia': 'Czech Republic',
+  'czech-republic': 'Czech Republic', 'czechia': 'Czech Republic', // czechia = legacy alias; canonical URL is czech-republic
   'norway': 'Norway',
   'france': 'France',
   'austria': 'Austria',
