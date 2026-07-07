@@ -28,6 +28,9 @@ export interface Listing {
   photos: string[];
   hours: Record<string, string> | null;
   is_published: boolean;
+  is_featured?: boolean;
+  featured_at?: string | null;
+  featured_until?: string | null;
   tier: string;
   created_at: string;
   updated_at: string;
@@ -43,7 +46,7 @@ const DAYS = [
   { key: 'sun', label: 'Sun' },
 ];
 
-export default function ListingsManager() {
+export default function ListingsManager({ userTier = 'free' }: { userTier?: string } = {}) {
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [editing, setEditing] = useState<Listing | 'new' | null>(null);
   const [busy, setBusy] = useState(false);
@@ -107,6 +110,8 @@ export default function ListingsManager() {
                   listing={l}
                   onEdit={() => setEditing(l)}
                   onDeleted={load}
+                  userTier={userTier}
+                  onChange={load}
                 />
               ))}
             </div>
@@ -155,7 +160,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   );
 }
 
-function ListingCard({ listing, onEdit, onDeleted }: { listing: Listing; onEdit: () => void; onDeleted: () => void }) {
+function ListingCard({ listing, onEdit, onDeleted, userTier, onChange }: { listing: Listing; onEdit: () => void; onDeleted: () => void; userTier: string; onChange: () => void }) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -223,6 +228,7 @@ function ListingCard({ listing, onEdit, onDeleted }: { listing: Listing; onEdit:
           >
             Edit
           </button>
+          <FeatureButton listing={listing} userTier={userTier} onChange={onChange} />
           {!confirming ? (
             <button
               type="button"
@@ -657,5 +663,88 @@ function PhotoManager({ listingId, photos, onChange }: { listingId: string | nul
         <div style={{ marginTop: 6, color: '#FF6B7A', fontSize: '0.8rem' }}>{error}</div>
       )}
     </div>
+  );
+}
+
+// Phase 1c-2: Featured placement toggle. Tier-gated on Business Plus+.
+// Free feature in v1 (no payment); v2 will gate behind a payment flow.
+function FeatureButton({ listing, userTier, onChange }: { listing: Listing; userTier: string; onChange: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const tierOk = userTier === 'business_plus' || userTier === 'founding_member' || (userTier as string) === 'club_elite' || (userTier as string) === 'club_pro';
+  // The pricing page promises Featured Placement at Business Plus ($299/yr).
+  // We also allow Founding Member and Club Pro/Elite (tier hierarchy; the gate
+  // function is the same one used in the API route — kept inline here to
+  // avoid a circular import).
+  const isFeatured = listing.is_featured === true && (!listing.featured_until || listing.featured_until > new Date().toISOString());
+  const canFeature = tierOk;
+
+  if (!canFeature) {
+    return (
+      <span
+        title="Featured placement requires Business Plus or higher"
+        style={{
+          background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)',
+          borderRadius: 6, padding: '0.4rem 0.85rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'not-allowed',
+        }}
+      >
+        ⭐ Featured (Business Plus)
+      </span>
+    );
+  }
+
+  async function toggle() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/listings/${listing.id}/feature`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: !isFeatured, duration_days: 30 }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `Failed (${res.status})`);
+      }
+      onChange();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={toggle}
+        disabled={busy}
+        data-testid="listing-feature-toggle"
+        title={isFeatured ? 'Click to remove featured placement' : 'Promote to top of directory search (30 days)'}
+        style={{
+          background: isFeatured ? 'rgba(255,184,28,0.12)' : 'transparent',
+          border: `1px solid ${isFeatured ? 'rgba(255,184,28,0.4)' : 'rgba(255,255,255,0.15)'}`,
+          color: isFeatured ? '#FFB81C' : 'rgba(255,255,255,0.7)',
+          borderRadius: 6,
+          padding: '0.4rem 0.85rem', fontSize: '0.8rem', fontWeight: 600,
+          cursor: busy ? 'wait' : 'pointer',
+        }}
+      >
+        {busy ? '…' : isFeatured ? '⭐ Featured (click to remove)' : '⭐ Promote to Featured'}
+      </button>
+      {error ? (
+        <div
+          role="alert"
+          style={{
+            marginTop: 4, fontSize: '0.75rem', color: '#FF6B7A',
+            background: 'rgba(200,16,46,0.12)', border: '1px solid rgba(200,16,46,0.4)',
+            borderRadius: 4, padding: '0.3rem 0.5rem',
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
+    </>
   );
 }

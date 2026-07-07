@@ -18,9 +18,12 @@ export default async function BusinessesIndexPage() {
   // but the service role bypasses RLS so we filter explicitly.
   const { data, error } = await supabaseAdmin
     .from('listings')
-    .select('id, owner_user_id, business_name, category, description, location, contact_email, contact_phone, website, logo_url, photos, hours, tier, is_published, created_at, updated_at')
+    .select('id, owner_user_id, business_name, category, description, location, contact_email, contact_phone, website, logo_url, photos, hours, tier, is_published, is_featured, featured_until, created_at, updated_at')
     .eq('listing_type', 'business')
     .eq('is_published', true)
+    // Phase 1c-2: featured listings surface first. The `featured_until` check
+    // excludes expired placements. Order: featured (active) → updated_at desc.
+    .order('is_featured', { ascending: false })
     .order('updated_at', { ascending: false });
 
   const initial: BusinessListing[] = (data || [])

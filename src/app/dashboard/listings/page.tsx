@@ -61,7 +61,7 @@ export default async function ListingsPage() {
         </div>
       </div>
 
-      <ListingsManager />
+      <ListingsManager userTier={profile?.tier || 'free'} />
     </div>
   );
 }
