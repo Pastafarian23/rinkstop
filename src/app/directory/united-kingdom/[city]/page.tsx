@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getCityPageData, slugToTitle } from '@/lib/city-page';
+import { getCityPageData, resolveCityName } from '@/lib/city-page';
 import CityPageContent from '@/components/CityPageContent';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ city: string }>;
 }): Promise<Metadata> {
   const { city: citySlug } = await params;
-  const cityName = slugToTitle(citySlug);
+  const cityName = resolveCityName(citySlug);
 
   return {
     title: `${cityName} Hockey - Ice Rinks & Teams`,
@@ -27,7 +27,7 @@ export default async function UKCityPage({
   params: Promise<{ city: string }>;
 }) {
   const { city: citySlug } = await params;
-  const cityName = slugToTitle(citySlug);
+  const cityName = resolveCityName(citySlug);
 
   const data = await getCityPageData({
     countryName: 'United Kingdom',

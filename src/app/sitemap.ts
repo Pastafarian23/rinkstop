@@ -198,6 +198,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // filter. Players already has an explicit .limit(500) — leaving as-is.
   // Each paginated call covers 1,000 rows. 3 calls = 3,000 row ceiling.
   // Current DB sizes: rinks 1,917, teams 2,275. The 3rd call is defensive.
+  // Fetch team_workspaces slugs so the team filter can drop sitemap URLs for
+  // teams that don't have a public workspace profile (which would 404 at
+  // /directory/teams/[slug]). Verified 2026-07-07: 486 team URLs were 404ing
+  // because the page handler reads from team_workspaces, not teams.
+  const teamWorkspacesResult = await supabaseAdmin
+    .from('team_workspaces')
+    .select('slug')
+    .eq('is_active', true);
+
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult, caRinksResult, ukRinksResult] = await Promise.all([
     Promise.all([
       supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true).range(0, 999),
@@ -245,7 +254,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return !!(p.position || p.nationality || p.headshot_url);
   }
 
-  const filteredTeams = (teamsResult.data || []).filter(isHighQualityTeam);
+  // Build the set of slugs that have a public workspace profile. Sitemap URLs
+  // for teams without a workspace are 404 (page reads from team_workspaces).
+  // Verified 2026-07-07: 486 team URLs in the old sitemap were 404ing.
+  const workspaceSlugs = new Set(
+    (teamWorkspacesResult.data || []).map((w: { slug: string }) => w.slug)
+  );
+  const filteredTeams = (teamsResult.data || []).filter(
+    (t: { slug: string }) => isHighQualityTeam(t) && workspaceSlugs.has(t.slug)
+  );
   const filteredRinks = (rinksResult.data || []).filter(isHighQualityRink);
   const filteredLeagues = (leaguesResult.data || []).filter(isHighQualityLeague);
   const filteredPlayers = (playersResult.data || []).filter(isHighQualityPlayer);
