@@ -19,6 +19,8 @@ export interface BusinessListing {
   hours: Record<string, string> | null;
   tier: string;
   is_published: boolean;
+  is_featured?: boolean;
+  featured_until?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +35,7 @@ export default function BusinessesIndexClient({ initial }: Props) {
   const [q, setQ] = useState('');
 
   const filtered = useMemo(() => {
+    const today = new Date().toISOString();
     return listings.filter((l) => {
       if (category !== 'all' && l.category !== category) return false;
       if (q.trim()) {
@@ -41,7 +44,17 @@ export default function BusinessesIndexClient({ initial }: Props) {
         if (!hay.includes(needle)) return false;
       }
       return true;
-    });
+    // Phase 1c-2: trim the expired-featured flag so sort order reflects
+    // reality. The server already sorts by is_featured desc + updated_at
+    // desc, but a row with featured_until in the past shouldn't surface as
+    // featured. We just hide the badge here; the row stays in the list.
+    }).map((l) => ({
+      ...l,
+      // Display-only: clear the featured flag if expired so the badge
+      // doesn't render. The DB keeps is_featured=true (for audit) until
+      // the next time the owner re-features or an admin unfeatures.
+      is_featured: l.is_featured && (!l.featured_until || l.featured_until > today) ? true : false,
+    }));
   }, [listings, category, q]);
 
   return (
@@ -149,9 +162,29 @@ function ListingCard({ listing }: { listing: BusinessListing }) {
         style={{
           aspectRatio: '16/9', background: cover ? `url(${cover}) center/cover` : 'linear-gradient(135deg, #1e1e1e 0%, #0a0a0a 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '2.5rem',
+          position: 'relative',
         }}
       >
         {!cover && (cat?.emoji || '🛍️')}
+        {listing.is_featured ? (
+          <span
+            data-testid="listing-featured-badge"
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              background: '#FFB81C',
+              color: '#0a0a0a',
+              fontSize: '0.65rem',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              padding: '0.2rem 0.5rem',
+              borderRadius: 4,
+            }}
+          >
+            ⭐ FEATURED
+          </span>
+        ) : null}
       </div>
       <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <h3 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.1rem', color: '#fff', letterSpacing: '0.05em', margin: 0 }}>
