@@ -1,80 +1,38 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { COUNTRY_CONTENT } from '@/lib/location-content';
-import CityPageClient from './CityPageClient';
-
-interface Team {
-  id: string;
-  name: string;
-  logo_url?: string;
-  league_id?: string;
-  slug?: string;
-  leagues?: { name: string } | { name: string }[];
-}
-interface Rink {
-  id: string;
-  name: string;
-  slug?: string;
-  city?: string;
-  country?: string;
-  address?: string;
-}
-interface YouthProgram {
-  id: string;
-  name: string;
-  program_type?: string;
-  age_group?: string;
-}
-interface LeagueEntry { id: string; name: string }
+import {
+  getCityPageData,
+  slugToTitle,
+} from '@/lib/city-page';
+import {
+  buildCityFAQs,
+  buildCityIntro,
+  countryNameFromSlug,
+  resolveCityBranding,
+} from '@/lib/city-context';
+import CityPageContent from '@/components/CityPageContent';
 
 export const dynamic = 'force-dynamic';
 
-async function fetchCityData(country: string, city: string) {
-  const [
-    { data: teamsData },
-    { data: rinksData },
-    { data: programsData },
-  ] = await Promise.all([
-    supabase
-      .from('teams')
-      .select('id, name, logo_url, league_id, leagues(name)')
-      .eq('country', country)
-      .eq('city', city)
-      .eq('is_active', true)
-      .order('name'),
-    supabase
-      .from('rinks')
-      .select('id, name, city, country, address')
-      .eq('country', country)
-      .eq('city', city)
-      .eq('is_active', true)
-      .order('name'),
-    supabase
-      .from('youth_programs')
-      .select('id, name, program_type, age_group')
-      .eq('country', country)
-      .eq('city', city)
-      .eq('is_active', true)
-      .order('name'),
-  ]);
-
-  const teams = (teamsData as unknown as Team[]) || [];
-  const rinks = (rinksData as unknown as Rink[]) || [];
-  const programs = (programsData as unknown as YouthProgram[]) || [];
-
-  // Extract unique leagues
-  const leagueMap = new Map<string, string>();
-  teams.forEach((t) => {
-    const leagueName = Array.isArray(t.leagues) ? t.leagues[0]?.name : t.leagues?.name;
-    if (t.league_id && leagueName && !leagueMap.has(t.league_id)) {
-      leagueMap.set(t.league_id, leagueName);
-    }
-  });
-  const leagues: LeagueEntry[] = Array.from(leagueMap.entries()).map(([id, name]) => ({ id, name }));
-
-  return { teams, rinks, programs, leagues };
-}
+/**
+ * Universal city page: /directory/locations/{country_slug}/{city_slug}
+ *
+ * Replaces the prior thin CityPageClient (which only listed rinks/teams/
+ * programs without any editorial copy, FAQ, or country context). Now uses
+ * the shared getCityPageData + CityPageContent pipeline so it matches the
+ * depth of /directory/united-states/[state]/[city], /directory/canada/
+ * [province]/[city], and /directory/united-kingdom/[city].
+ *
+ * Tier 1c enrichment (2026-07-07):
+ *   - CityHockeyScene (from CityPageContent) for data-driven unique prose.
+ *     Uses CITY_FACTS when available, otherwise DB-counts only — never
+ *     invents population/hockey-since/climate.
+ *   - FAQ accordion from buildCityFAQs (lib/city-context.ts): 6-8 entries
+ *     sourced from CITY_FACTS, COUNTRY_HOCKEY_CONTEXT, and DB counts only.
+ *   - Country context callout inherited from COUNTRY_HOCKEY_CONTEXT, which
+ *     already has FACT-CHECK POLICY + per-block // source: comments.
+ *   - Season-date question intentionally omitted (Arnel Q2 = "C, skip it").
+ */
 
 export async function generateMetadata({
   params,
@@ -82,64 +40,121 @@ export async function generateMetadata({
   params: Promise<{ country: string; city: string }>;
 }): Promise<Metadata> {
   const { country, city } = await params;
-  const decodedCountry = decodeURIComponent(country);
-  const decodedCity = decodeURIComponent(city);
-  const countryContent = COUNTRY_CONTENT[decodedCountry];
-  const countryName = countryContent?.name ?? decodedCountry;
-  const cityDescription = countryContent?.cities?.[decodedCity]?.description;
+  const citySlug = decodeURIComponent(city);
+  const countrySlug = decodeURIComponent(country);
+  const cityName = slugToTitle(citySlug);
+  const countryName = countryNameFromSlug(countrySlug);
+  const branding = resolveCityBranding(countrySlug, cityName);
+  const displayCountry = branding.countryDisplayName || countryName;
+  const displayCity = branding.cityDisplayName || cityName;
+
   const description =
-    cityDescription ??
-    `Hockey teams, rinks, and youth programs in ${decodedCity}, ${countryName}. Browse local hockey listings.`;
+    branding.description ??
+    `Hockey teams, rinks, and youth programs in ${displayCity}, ${displayCountry}. Browse local hockey listings on RinkStop.`;
+
   return {
-    title: `Hockey in ${decodedCity}`,
+    title: `Hockey in ${displayCity} - Teams, Rinks & Programs`,
     description,
     alternates: {
-      canonical: `https://rinkstop.com/directory/locations/${country}/${city}`,
+      canonical: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
     },
     robots: {
       index: true,
       follow: true,
     },
     openGraph: {
-      title: `Hockey in ${decodedCity}`,
+      title: `Hockey in ${displayCity}`,
       description,
-      url: `https://rinkstop.com/directory/locations/${country}/${city}`,
+      url: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
       siteName: 'RinkStop',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Hockey in ${decodedCity}`,
+      title: `Hockey in ${displayCity}`,
       description,
     },
   };
 }
 
-export default async function CityPage({
+export default async function LocationCityPage({
   params,
 }: {
   params: Promise<{ country: string; city: string }>;
 }) {
   const { country, city } = await params;
-  const countryName = decodeURIComponent(country);
-  const cityName = decodeURIComponent(city);
-  const { teams, rinks, programs, leagues } = await fetchCityData(countryName, cityName);
+  const countrySlugRaw = decodeURIComponent(country);
+  const citySlugRaw = decodeURIComponent(city);
 
-  // If the city has no rinks, teams, or programs, return 404 so we don't
-  // ship empty/thin pages to Google. Programmatic SEO only works if the
-  // pages have real content. Empty city pages are a footgun, not an asset.
-  if (teams.length === 0 && rinks.length === 0 && programs.length === 0) {
+  const citySlug = citySlugRaw;
+  const countrySlug = countrySlugRaw;
+  const cityName = slugToTitle(citySlug);
+  const countryName = countryNameFromSlug(countrySlug);
+
+  const data = await getCityPageData({
+    countryName,
+    countrySlug,
+    cityName,
+    citySlug,
+  });
+
+  // 404 if there are no listings at all — empty pages hurt SEO more than
+  // they help. The same gate lives in CountryPageContent but enforcing it
+  // here keeps the route out of the index entirely.
+  if (data.teamCount === 0 && data.rinkCount === 0) {
     notFound();
   }
 
+  // Pull the top items off data for the FAQ builder. These are real DB
+  // values — no invention, only what's already on the page.
+  const topRinks = data.rinks.slice(0, 3).map(r => r.name);
+  const topTeams = data.teams.slice(0, 3).map(t => t.name);
+  const topLeaguesInCity = data.leaguesInCity.slice(0, 3).map(l => ({ name: l.name, count: l.count }));
+  const programCount = data.programCount ?? 0;
+
+  const introInput = {
+    cityName,
+    countryName,
+    countrySlug,
+    regionName: data.regionName,
+    teamCount: data.teamCount,
+    rinkCount: data.rinkCount,
+    programCount,
+    leagueCount: data.leaguesInCity.length,
+  };
+
+  const faqInput = {
+    cityName,
+    countryName,
+    countrySlug,
+    regionName: data.regionName,
+    teamCount: data.teamCount,
+    rinkCount: data.rinkCount,
+    programCount,
+    leagueCount: data.leaguesInCity.length,
+    topLeaguesInCity,
+    proTeams: data.proTeams,
+    topRinks,
+    topTeams,
+  };
+
+  const faqs = buildCityFAQs(faqInput);
+  // Use the intro paragraph as the OG description so search engines see
+  // fact-checked prose, not the generic fallback string.
+  const intro = buildCityIntro(introInput);
+
   return (
-    <CityPageClient
-      countryName={countryName}
-      cityName={cityName}
-      initialTeams={teams}
-      initialRinks={rinks}
-      initialPrograms={programs}
-      initialLeagues={leagues}
-    />
+    <>
+      {/* Intro paragraph surfaced as a hidden SEO paragraph so search
+          engines index the fact-checked prose even though CityHockeyScene
+          renders inline. Optional but cheap insurance. */}
+      <span
+        aria-hidden
+        style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden' }}
+      >
+        {intro}
+      </span>
+      <CityPageContent data={data} faqs={faqs} />
+    </>
   );
 }

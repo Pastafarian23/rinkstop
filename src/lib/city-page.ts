@@ -133,6 +133,10 @@ export interface CityPageData {
   rinks: CityRink[];
   teamCount: number;
   rinkCount: number;
+  /** Youth programs listed in RinkStop's directory for this city. Added
+   *  2026-07-07 as part of Tier 1c enrichment — sourced from the live
+   *  youth_programs table, country + city match. */
+  programCount: number;
 
   // Leagues present in this city (derived from teams data, with counts)
   leaguesInCity: { name: string; count: number; slug: string }[];
@@ -249,10 +253,21 @@ export async function getCityPageData(opts: {
   teamsQuery = teamsQuery.order('name');
   rinksQuery = rinksQuery.order('name');
 
-  const [{ data: teamsData }, { data: rinksData }] = await Promise.all([
+  const [{ data: teamsData }, { data: rinksData }, { data: programsData }] = await Promise.all([
     teamsQuery,
     rinksQuery,
+    // Programs use country + city exact match (same query shape as the
+    // prior /directory/locations/[country]/[city]/CityPageClient before
+    // Tier 1c enrichment). Ilike patterns aren't needed because the
+    // youth_programs table has clean city values.
+    supabase
+      .from('youth_programs')
+      .select('id')
+      .eq('country', countryName)
+      .eq('city', cityName)
+      .eq('is_active', true),
   ]);
+  const programCount = (programsData || []).length;
 
   // Dedupe rinks by id (in case both city and address match returned same row)
   const seenRinkIds = new Set<string>();
@@ -308,6 +323,7 @@ export async function getCityPageData(opts: {
     rinks,
     teamCount: teams.length,
     rinkCount: rinks.length,
+    programCount,
     leaguesInCity,
     proTeams,
     breadcrumb,
