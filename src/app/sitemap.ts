@@ -204,7 +204,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // because the page handler reads from team_workspaces, not teams.
   const teamWorkspacesResult = await supabaseAdmin
     .from('team_workspaces')
-    .select('slug')
+    .select('slug, updated_at')
     .eq('is_active', true);
 
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult, caRinksResult, ukRinksResult] = await Promise.all([
@@ -254,15 +254,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return !!(p.position || p.nationality || p.headshot_url);
   }
 
-  // Build the set of slugs that have a public workspace profile. Sitemap URLs
-  // for teams without a workspace are 404 (page reads from team_workspaces).
-  // Verified 2026-07-07: 486 team URLs in the old sitemap were 404ing.
-  const workspaceSlugs = new Set(
-    (teamWorkspacesResult.data || []).map((w: { slug: string }) => w.slug)
-  );
-  const filteredTeams = (teamsResult.data || []).filter(
-    (t: { slug: string }) => isHighQualityTeam(t) && workspaceSlugs.has(t.slug)
-  );
+  // Sitemap team URLs come from team_workspaces, NOT teams. The page handler
+  // at /directory/teams/[slug] reads from team_workspaces (workspace concept
+  // with news/results/events/members). Verified 2026-07-07: 486 URLs emitted
+  // by the old sitemap (using teams.slug) were 404. Using team_workspaces as
+  // the source means we emit exactly the slugs that have a public profile.
+  const filteredTeams = (teamWorkspacesResult.data || []).map((w: any) => ({
+    slug: w.slug,
+    updated_at: w.updated_at,
+  }));
   const filteredRinks = (rinksResult.data || []).filter(isHighQualityRink);
   const filteredLeagues = (leaguesResult.data || []).filter(isHighQualityLeague);
   const filteredPlayers = (playersResult.data || []).filter(isHighQualityPlayer);
