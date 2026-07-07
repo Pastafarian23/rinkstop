@@ -81,8 +81,9 @@ const POSITION_LONG: Record<string, { name: string; role: string; paragraph: str
     paragraph:
       'A defenseman in ice hockey typically plays at the back of the formation, with the responsibility of breaking out the puck, ' +
       'defending the slot, and joining the offensive rush when appropriate. Modern defensemen are categorized as shutdown defensemen, ' +
-      'two-way defensemen, or offensive defensemen. Top-pair defensemen log 24-28 minutes per game and drive possession at 5-on-5. ' +
-      'The position has grown more offensively focused in modern NHL play, with several defensemen routinely producing 60+ points per season.',
+      'two-way defensemen, or offensive defensemen. Top-pair defensemen in the NHL typically log 24 to 28 minutes per game and ' +
+      'drive possession at 5-on-5. The position has grown more offensively focused in modern NHL play, with several defensemen ' +
+      'routinely producing 60+ points per season.',
   },
   defensE: {
     name: 'Defenseman',
@@ -90,25 +91,28 @@ const POSITION_LONG: Record<string, { name: string; role: string; paragraph: str
     paragraph:
       'A defenseman in ice hockey typically plays at the back of the formation, with the responsibility of breaking out the puck, ' +
       'defending the slot, and joining the offensive rush when appropriate. Modern defensemen are categorized as shutdown defensemen, ' +
-      'two-way defensemen, or offensive defensemen. Top-pair defensemen log 24-28 minutes per game and drive possession at 5-on-5.',
+      'two-way defensemen, or offensive defensemen. Top-pair defensemen in the NHL typically log 24 to 28 minutes per game.',
   },
   goalie: {
     name: 'Goalie',
     role: 'Goalies are the last line of defense and the team\'s primary shot-stopper at even strength and on the penalty kill.',
     paragraph:
-      'A goaltender (or goalie) in ice hockey is the only player allowed to use their hands to handle the puck within the trapezoid behind ' +
-      'the net and is the last line of defense against opposing shots. Goalies play the position with a unique combination of reflexes, ' +
-      'positioning, and hockey sense, and no other position has the same individual impact on a game. Modern goalies are tracked by ' +
-      'save percentage, goals-against average, and increasingly advanced shot-quality metrics like expected goals against and high-danger ' +
-      'save rate. Top NHL starters play 55-65 games per season.',
+      'A goaltender (or goalie) in ice hockey is the only player allowed to use their hands to handle the puck in the area behind ' +
+      'the net. In the NHL, this is restricted to the trapezoid (a 2014 rule clarification); IIHF, NCAA, and most other leagues allow ' +
+      'the goalie to play the puck anywhere in the defensive zone. Goalies are the last line of defense against opposing shots and ' +
+      'play the position with a unique combination of reflexes, positioning, and hockey sense. Modern goalies are tracked by save ' +
+      'percentage, goals-against average, and increasingly advanced shot-quality metrics like expected goals against and high-danger ' +
+      'save rate. Top NHL starters typically play 50 to 65 games per season, though workload sharing across two goalies has become ' +
+      'more common in recent years.',
   },
   goaltender: {
     name: 'Goaltender',
     role: 'Goaltenders are the team\'s primary shot-stopper at even strength and on the penalty kill.',
     paragraph:
-      'A goaltender (or goalie) in ice hockey is the only player allowed to use their hands to handle the puck within the trapezoid behind ' +
-      'the net and is the last line of defense against opposing shots. Modern goaltenders are tracked by save percentage, goals-against ' +
-      'average, and increasingly advanced shot-quality metrics like expected goals against and high-danger save rate.',
+      'A goaltender (or goalie) in ice hockey is the only player allowed to use their hands to handle the puck in the area behind ' +
+      'the net. In the NHL, this is restricted to the trapezoid; IIHF, NCAA, and most other leagues allow the goalie to play the puck ' +
+      'anywhere in the defensive zone. Modern goaltenders are tracked by save percentage, goals-against average, and increasingly ' +
+      'advanced shot-quality metrics like expected goals against and high-danger save rate.',
   },
 };
 
