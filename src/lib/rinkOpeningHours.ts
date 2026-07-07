@@ -93,6 +93,12 @@ export function computeOpenState(oh: OpeningHoursJson | null | undefined, now: D
 
   // 1) Check if we're inside a period right now.
   for (const p of oh.periods) {
+    // Tier 1h (2026-07-07): defensive. Some rinks have malformed periods
+    // (e.g., {open: {day, time}} with no close key, or vice versa). We were
+    // crashing on `p.close.day` for 4 specific rinks, causing 500s on their
+    // pages. Skip malformed periods silently; the rink still renders fine.
+    if (!p || !p.open || typeof p.open.day !== 'number' || typeof p.open.time !== 'string') continue;
+    if (!p.close || typeof p.close.day !== 'number' || typeof p.close.time !== 'string') continue;
     const openMin = p.open.day * 24 * 60 + parseHHMM(p.open.time).hours * 60 + parseHHMM(p.open.time).minutes;
     const closeMin = p.close.day * 24 * 60 + parseHHMM(p.close.time).hours * 60 + parseHHMM(p.close.time).minutes;
     if (nowAbs >= openMin && nowAbs < closeMin) {
