@@ -161,6 +161,9 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     .single();
 
   if (error || !rink) {
+    // Tier 1h (2026-07-07): log the actual reason for notFound so we can
+    // debug the 4 accented-rink 500s. Logs go to Vercel function logs.
+    console.error('[rink-debug] notFound path. param=', param, 'error=', JSON.stringify(error), 'rink=', rink ? `${rink.name} (${rink.id})` : 'null');
     notFound();
   }
 
@@ -233,7 +236,13 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   const BASE_URL = 'https://rinkstop.com';
 
   // Schema for SEO — includes IceCreamStore + SportsActivityLocation + FAQ if we have notes
-  const schema: any = {
+  // Tier 1h (2026-07-07): wrap schema build in try/catch so a malformed-data
+  // throw doesn't 500 the whole page. On failure, fall back to a minimal
+  // schema (just the breadcrumb) so the page still renders. Logs go to
+  // Vercel function logs.
+  let schema: any;
+  try {
+    schema = {
     '@context': 'https://schema.org',
     '@graph': [
       {
@@ -291,6 +300,20 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       },
     ],
   };
+  } catch (schemaErr) {
+    console.error('[rink-debug] schema build failed for rink', rink.id, rink.slug, 'opening_hours_json=', JSON.stringify(rink.opening_hours_json), 'err=', (schemaErr as Error).message, (schemaErr as Error).stack);
+    schema = {
+      '@context': 'https://schema.org',
+      '@graph': [{
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+          { '@type': 'ListItem', position: 2, name: 'Rinks', item: `${BASE_URL}/directory/rinks` },
+          { '@type': 'ListItem', position: 3, name: rink.name, item: `${BASE_URL}/directory/rinks/${rink.slug}` },
+        ],
+      }],
+    };
+  }
 
   return (
     <>
