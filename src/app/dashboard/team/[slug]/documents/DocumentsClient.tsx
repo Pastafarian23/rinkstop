@@ -25,12 +25,18 @@ interface Doc {
   my_signature: { document_id: string; player_id: string; signed_by_name: string; signed_by_role: string; acknowledged_at: string } | null;
 }
 
+interface RosterEntry {
+  user_id: string;
+  role: string;
+}
+
 interface Props {
   teamId: string;
   teamSlug: string;
   teamName: string;
   userId: string;
   isAdmin: boolean;
+  roster: RosterEntry[];
   documents: Doc[];
 }
 
@@ -41,7 +47,7 @@ function fmtSize(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function DocumentsClient({ teamId, teamSlug, teamName, userId, isAdmin, documents }: Props) {
+export default function DocumentsClient({ teamId, teamSlug, teamName, userId, isAdmin, roster, documents }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -50,6 +56,9 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
   const [uploadRequired, setUploadRequired] = useState(true);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // A-i: recipient picker state. Empty set = broadcast-behavior (existing flow).
+  const [recipientUserIds, setRecipientUserIds] = useState<Set<string>>(new Set());
+  const [broadcast, setBroadcast] = useState(true); // when true, recipientUserIds is ignored
 
   // E-sig state (A-iii: real signature capture + consent)
   const [signingDoc, setSigningDoc] = useState<Doc | null>(null);
@@ -94,24 +103,35 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
       }
 
       // Create document record
+      const payload: Record<string, unknown> = {
+        team_id: teamId,
+        title: uploadTitle,
+        description: uploadDesc || null,
+        file_url: path,
+        file_name: file.name,
+        file_size_bytes: file.size,
+        mime_type: file.type,
+        required: uploadRequired,
+      };
+      if (!broadcast && recipientUserIds.size > 0) {
+        payload.recipient_user_ids = Array.from(recipientUserIds);
+      }
       const resp = await fetch(`/api/team/${teamSlug}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          team_id: teamId,
-          title: uploadTitle,
-          description: uploadDesc || null,
-          file_url: path,
-          file_name: file.name,
-          file_size_bytes: file.size,
-          mime_type: file.type,
-          required: uploadRequired,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!resp.ok) {
         const body = await resp.json();
         setUploadError(body.error || 'Failed to save');
+        setUploading(false);
+        return;
+      }
+      const body = await resp.json().catch(() => ({}));
+      if (body.fanout_warning) {
+        // Uploaded ok, but recipients partially failed. Surface but still treat as success.
+        setUploadError(`Uploaded, but recipient fan-out failed: ${body.fanout_warning}`);
         setUploading(false);
         return;
       }
@@ -121,6 +141,8 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
       setUploadDesc('');
       setUploadRequired(true);
       setShowUploadForm(false);
+      setRecipientUserIds(new Set());
+      setBroadcast(true);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setUploading(false);
       router.refresh();
@@ -230,6 +252,44 @@ export default function DocumentsClient({ teamId, teamSlug, teamName, userId, is
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>File (PDF, JPG, PNG · max 10MB) *</label>
                 <input ref={fileInputRef} type="file" accept=".pdf,image/jpeg,image/png,image/webp" required style={{ width: '100%' }} />
               </div>
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={broadcast}
+                    onChange={(e) => setBroadcast(e.target.checked)}
+                  />
+                  Send to all team members (broadcast)
+                </label>
+              </div>
+              {!broadcast && (
+                <div style={{ marginBottom: '1rem', border: '1px solid #e5e7eb', borderRadius: 4, padding: '0.625rem', maxHeight: 200, overflowY: 'auto' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.375rem' }}>
+                    Recipients ({recipientUserIds.size} of {roster.length} selected)
+                  </div>
+                  {roster.length === 0 ? (
+                    <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>Roster is empty.</div>
+                  ) : (
+                    roster.map((r) => (
+                      <label key={r.user_id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', padding: '0.125rem 0' }}>
+                        <input
+                          type="checkbox"
+                          checked={recipientUserIds.has(r.user_id)}
+                          onChange={(e) => {
+                            setRecipientUserIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(r.user_id);
+                              else next.delete(r.user_id);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span>{r.user_id} <span style={{ color: '#9ca3af' }}>({r.role})</span></span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              )}
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
                   <input type="checkbox" checked={uploadRequired} onChange={(e) => setUploadRequired(e.target.checked)} />
