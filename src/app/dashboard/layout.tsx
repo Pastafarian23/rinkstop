@@ -131,6 +131,22 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
         unreadMessageCount = um || 0;
       }
     }
+
+    // Phase 1c-1: add unread DM count (direct_messages table).
+    // Combines with the existing connections-messages count for the unified
+    // /dashboard/messages badge.
+    const { count: dmUnread } = await supabaseAdmin
+      .from('direct_messages')
+      .select('id', { count: 'exact', head: true })
+      .is('read_at', null)
+      .neq('sender_id', userId)
+      .in('thread_id', (
+        await supabaseAdmin
+          .from('direct_message_threads')
+          .select('id')
+          .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
+      ).data?.map((t: any) => t.id) || []);
+    if (dmUnread) unreadMessageCount += dmUnread;
   } catch {
     // Silently degrade — nav still works, just no badges.
   }
