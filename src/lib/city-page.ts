@@ -144,6 +144,19 @@ export interface CityPageData {
   // Pro cross-reference
   proTeams: { name: string; league: string }[];
 
+  // PR4 (2026-07-08): peer cities in the same state/province with at least
+  // one rink or team. Sorted by total (teams + rinks) descending, limit 12.
+  // Used by CityPageContent to render an "Other hockey cities in {region}"
+  // cross-link section. Empty array when no region context (international
+  // city pages) or when no peers exist.
+  peerCities: Array<{
+    name: string;
+    slug: string;
+    teamCount: number;
+    rinkCount: number;
+    href: string;
+  }>;
+
   // Breadcrumb items
   breadcrumb: { name: string; href: string }[];
 
@@ -297,6 +310,61 @@ export async function getCityPageData(opts: {
       .eq('city', cityName)
       .eq('is_active', true),
   ]);
+
+  // PR4 (2026-07-08): peer cities in the same region. We over-fetch rinks
+  // + teams in this region (excluding current city), then aggregate by
+  // city in JS. Region filter only applied when state/province context
+  // is available; international city pages (no region) skip the section.
+  let peerCities: CityPageData['peerCities'] = [];
+  if (regionAbbr || regionName) {
+    const peerRegionOr = `province_state.eq.${regionAbbr || regionName},province_state.eq.${regionName || regionAbbr}`;
+    const [peerRinksRes, peerTeamsRes] = await Promise.all([
+      supabase
+        .from('rinks')
+        .select('city')
+        .eq('country', countryName)
+        .or(peerRegionOr)
+        .neq('city', cityName)
+        .not('city', 'is', null)
+        .eq('is_active', true)
+        .limit(500),
+      supabase
+        .from('teams')
+        .select('city')
+        .eq('country', countryName)
+        .or(peerRegionOr)
+        .neq('city', cityName)
+        .not('city', 'is', null)
+        .eq('is_active', true)
+        .limit(500),
+    ]);
+    const counts = new Map<string, { teamCount: number; rinkCount: number }>();
+    for (const r of peerRinksRes.data || []) {
+      if (!r.city) continue;
+      const entry = counts.get(r.city) || { teamCount: 0, rinkCount: 0 };
+      entry.rinkCount += 1;
+      counts.set(r.city, entry);
+    }
+    for (const t of peerTeamsRes.data || []) {
+      if (!t.city) continue;
+      const entry = counts.get(t.city) || { teamCount: 0, rinkCount: 0 };
+      entry.teamCount += 1;
+      counts.set(t.city, entry);
+    }
+    peerCities = Array.from(counts.entries())
+      .map(([name, c]) => {
+        const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        return {
+          name,
+          slug,
+          teamCount: c.teamCount,
+          rinkCount: c.rinkCount,
+          href: `/directory/${countrySlug}/${regionSlug}/${slug}`,
+        };
+      })
+      .sort((a, b) => (b.teamCount + b.rinkCount) - (a.teamCount + a.rinkCount))
+      .slice(0, 12);
+  }
   const programCount = (programsData || []).length;
 
   // Dedupe rinks by id (in case both city and address match returned same row)
@@ -356,6 +424,7 @@ export async function getCityPageData(opts: {
     programCount,
     leaguesInCity,
     proTeams,
+    peerCities,
     breadcrumb,
     title: `${locationDesc} Hockey - Teams, Rinks & Leagues | RinkStop`,
     description: `Find hockey teams, ice rinks, and leagues in ${locationDesc}. Discover youth programs, adult leagues, and professional hockey near you.`,
