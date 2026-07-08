@@ -4,6 +4,7 @@ import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';
 import ShareButton from '@/components/ShareButton';
 import ArticleCtaBlock from '@/components/ArticleCtaBlock';
+import RelatedDirectorySection from '@/components/RelatedDirectorySection';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
@@ -608,6 +609,9 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         </section>
       )}
+
+      {/* Phase 7: article→directory link equity */}
+      <RelatedDirectorySection tags={post.tags} category={post.category} />
     </>
   );
 }
