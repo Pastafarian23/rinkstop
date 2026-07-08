@@ -3,6 +3,11 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Fix 3 followup (2026-07-08): skip Next.js's default trailing-slash
+  // redirect. Combined with our /index.php/* catch-all sources below, this
+  // means /index.php/news/ -> /news in a single 308 hop instead of going
+  // through /index.php/news first. Cleaner redirect chain, same SEO.
+  skipTrailingSlashRedirect: true,
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname, 'src');
     return config;
