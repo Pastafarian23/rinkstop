@@ -395,6 +395,35 @@ export default async function PublicTeamPage({ params }: PageProps) {
     { wins: 0, losses: 0, ties: 0, total: 0 }
   );
 
+  // PR3 (2026-07-08): cross-link discovery. Two parallel queries gated on
+  // team.home_city being set. Same defensive pattern as PR1 on the rink
+  // detail page. team_workspaces is sparse (1 active public team as of
+  // 2026-07-08 — Cebu Ice Datus test, which has home_city=null so this
+  // path no-ops anyway). Cross-links fire automatically as the directory
+  // grows.
+  const [cityTeamsRes, cityRinksRes] = await Promise.all([
+    team.home_city
+      ? supabase
+          .from('team_workspaces')
+          .select('id, slug, name, home_city, home_country')
+          .eq('home_city', team.home_city)
+          .eq('is_active', true)
+          .eq('visibility', 'public')
+          .neq('id', team.id)
+          .limit(8)
+      : Promise.resolve({ data: [] as Array<{ id: string; slug: string | null; name: string; home_city: string | null; home_country: string | null }> }),
+    team.home_city
+      ? supabase
+          .from('rinks')
+          .select('id, slug, name, city, province_state, country')
+          .ilike('city', team.home_city)
+          .eq('is_active', true)
+          .limit(8)
+      : Promise.resolve({ data: [] as Array<{ id: string; slug: string | null; name: string; city: string | null; province_state: string | null; country: string | null }> }),
+  ]);
+  const cityTeams = (cityTeamsRes.data || []) as Array<{ id: string; slug: string | null; name: string; home_city: string | null; home_country: string | null }>;
+  const cityRinks = (cityRinksRes.data || []) as Array<{ id: string; slug: string | null; name: string; city: string | null; province_state: string | null; country: string | null }>;
+
   return (
     <PublicTeamProfile
       team={team}
@@ -410,6 +439,8 @@ export default async function PublicTeamPage({ params }: PageProps) {
       claimantDisplayName={claimantDisplayName}
       claimantRole={claimantRole}
       teamTimezone={await deriveTeamTimezone(team, teamEventsRows)}
+      cityTeams={cityTeams}
+      cityRinks={cityRinks}
     />
   );
 }
