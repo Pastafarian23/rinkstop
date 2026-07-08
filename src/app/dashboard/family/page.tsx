@@ -11,6 +11,7 @@ import FamilySetupResume from '@/components/family/FamilySetupResume';
 import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
 import PlayerTimelineSection from '@/components/player-achievements/PlayerTimelineSection';
 import PlayerMediaSection from '@/components/player-media/PlayerMediaSection';
+import PlayerAnalyticsClient from '@/components/player-analytics/PlayerAnalyticsClient';
 import { buildTimeline } from '@/lib/timeline-builder';
 
 export const dynamic = 'force-dynamic';
@@ -705,6 +706,13 @@ export default async function FamilyPage() {
           </div>
         )}
       </section>
+
+      {/* Advanced player analytics (1c-4 — Identity Plus). Tier-gated on
+          the server via the API route; the page shell is already restricted
+          to Identity Plus+ so we only render the component for eligible users. */}
+      <PlayerAnalyticsClient
+        players={Object.values(playerMap).map((p: any) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, slug: p.slug, birth_date: p.birth_date }))}
+      />
     </div>
   );
 }
