@@ -3,8 +3,20 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import MessagesClient from './MessagesClient';
+import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 
 export const dynamic = 'force-dynamic';
+
+// Phase 1c-1 tier gate — per Arnel 2026-07-07 correction: ALL paid tiers can
+// send direct messages. Verified Identity ($24.99/yr) is the personal-track
+// floor; Business Listing ($99/yr) is the business-track floor. Free users
+// see the inbox + receive messages but cannot compose.
+function canDM(tier: string | null | undefined): boolean {
+  return (
+    tierAtLeastSameTrack(tier, 'verified_identity') ||
+    tierAtLeastSameTrack(tier, 'business_listing')
+  );
+}
 
 export default async function MessagesPage() {
   const session = await auth();
@@ -12,6 +24,14 @@ export default async function MessagesPage() {
   const userEmail = (await currentUser())?.emailAddresses?.[0]?.emailAddress || '';
   const userId = await resolveCanonicalUserId(session.userId, userEmail);
   if (!userId) redirect('/login');
+
+  // Fetch profile tier for the tier-gate affordance in the UI.
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const userTier = (profile?.tier as string) || 'free';
 
   // Initial server-render: load threads + first 5 of each. The client component
   // refreshes on action.
@@ -60,5 +80,5 @@ export default async function MessagesPage() {
     };
   });
 
-  return <MessagesClient userId={userId} initialThreads={initialThreads} />;
+  return <MessagesClient userId={userId} initialThreads={initialThreads} canDM={canDM(userTier)} userTier={userTier} />;
 }

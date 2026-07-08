@@ -32,9 +32,14 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+// Phase 1c-1 tier gate — per Arnel 2026-07-07 correction: ALL paid tiers can
+// send direct messages. Verified Identity ($24.99/yr) is the floor. The
+// 'advanced' features (group DMs, attachments) are v2 and will gate at
+// Identity Plus+ / Business Plus+ separately. For now, basic 1:1 DMs are
+// available to every tier that has spent money.
 function canDM(tier: string | null | undefined): boolean {
   return (
-    tierAtLeastSameTrack(tier, 'identity_plus') ||
+    tierAtLeastSameTrack(tier, 'verified_identity') ||
     tierAtLeastSameTrack(tier, 'business_listing')
   );
 }
@@ -177,7 +182,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (!canDM((profile?.tier as string) ?? 'free')) {
     const res = NextResponse.json(
-      { error: 'Direct messaging requires Identity Plus or Business Plus.', code: 'tier_required' },
+      { error: 'Direct messaging requires a paid tier (Verified Identity or higher).', code: 'tier_required' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);
