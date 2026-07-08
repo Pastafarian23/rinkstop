@@ -26,6 +26,7 @@ export default function CityPageContent({ data, faqs }: Props) {
     teamCount,
     rinkCount,
     proTeams,
+    peerCities = [],
     breadcrumb,
     leaguesInCity = [],
   } = data;
@@ -558,6 +559,57 @@ export default function CityPageContent({ data, faqs }: Props) {
                   View All NHL Teams →
                 </Link>
               )}
+            </div>
+          </section>
+        )}
+
+        {/* PR4 (2026-07-08): OTHER HOCKEY CITIES IN {region} — internal
+            linking hub. Peer cities in the same state/province with at
+            least one rink or team. Skipped when no region context OR no
+            peers exist. Same dark-card pattern as PR1/PR3. */}
+        {peerCities.length > 0 && regionName && (
+          <section style={{ marginBottom: '3rem' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.25rem', borderLeft: `4px solid ${red}`, paddingLeft: 14 }}>
+              <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.5rem', letterSpacing: '0.04em', color: textMain, margin: 0 }}>
+                Other hockey cities in {regionName}
+              </h2>
+              <span style={{ fontSize: '0.75rem', color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {peerCities.length} {peerCities.length === 1 ? 'city' : 'cities'}
+              </span>
+            </div>
+            <p style={{ color: textMuted, fontSize: '0.875rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+              {peerCities.length} other {regionName} {peerCities.length === 1 ? 'city has' : 'cities have'} hockey teams, rinks, or youth programs in the RinkStop directory. {cityName !== regionName ? `Browse other ${regionName} hockey cities below or ` : ''}
+              <Link href={regionSlug ? `/directory/${countrySlug}/${regionSlug}` : `/directory/${countrySlug}`} style={{ color: red, textDecoration: 'none', fontWeight: 600 }}>
+                see all {regionName} hockey →
+              </Link>
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+              {peerCities.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={c.href}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.25rem',
+                    padding: '0.875rem 1rem',
+                    background: card,
+                    border: `1px solid ${border}`,
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    transition: 'border-color 0.15s',
+                  }}
+                >
+                  <span style={{ color: textMain, fontSize: '0.9375rem', fontWeight: 700, lineHeight: 1.3 }}>{c.name}</span>
+                  <span style={{ color: textMuted, fontSize: '0.75rem' }}>
+                    {c.rinkCount > 0 && <span>⛸️ {c.rinkCount} {c.rinkCount === 1 ? 'rink' : 'rinks'}</span>}
+                    {c.rinkCount > 0 && c.teamCount > 0 && <span> · </span>}
+                    {c.teamCount > 0 && <span>🏒 {c.teamCount} {c.teamCount === 1 ? 'team' : 'teams'}</span>}
+                    {c.rinkCount === 0 && c.teamCount === 0 && <span>Programs listed</span>}
+                  </span>
+                </Link>
+              ))}
             </div>
           </section>
         )}
