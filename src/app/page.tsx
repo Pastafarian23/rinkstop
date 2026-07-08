@@ -128,6 +128,32 @@ export default async function Home() {
   const recentTeams = stats.recent_teams || [];
   const upcomingGames = stats.upcoming_games || [];
 
+  // Phase 8 Path B — Featured Rinks on homepage.
+  // Definition: active rinks with photos, ordered by updated_at DESC.
+  // Rationale: today, no paid featured-placement customers exist yet (the
+  // listings.is_featured column is for businesses, not rinks). A "featured"
+  // block that uses activity recency is honest: the listed rinks are being
+  // actively maintained. When Business Plus+ customers start paying for
+  // rink placement, this query becomes a two-tier check (is_featured first,
+  // then recency fallback).
+  type FeaturedRink = {
+    id: string;
+    slug: string;
+    name: string;
+    city: string | null;
+    country: string | null;
+    cover_photo_url: string | null;
+    updated_at: string | null;
+  };
+  const { data: featuredRinksData } = await supabase
+    .from('rinks')
+    .select('id, slug, name, city, country, cover_photo_url, updated_at')
+    .eq('is_active', true)
+    .not('cover_photo_url', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(6);
+  const featuredRinks: FeaturedRink[] = (featuredRinksData || []) as FeaturedRink[];
+
   const ldJson = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -476,6 +502,91 @@ export default async function Home() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ---- FEATURED RINKS (Phase 8 Path B) ---------------------------------------------- */}
+      {featuredRinks.length > 0 && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '3rem 0' }}>
+          <div className="container">
+            <div className="sec-head">
+              <div>
+                <div className="label" style={{ color: '#FFB81C' }}>Featured</div>
+                <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>
+                  FEATURED RINKS
+                </h2>
+              </div>
+              <Link href="/directory/rinks" className="sec-link">View All →</Link>
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: '1rem',
+            }}>
+              {featuredRinks.map((rink) => {
+                const location = [rink.city, rink.country].filter(Boolean).join(', ');
+                return (
+                  <Link
+                    key={rink.id}
+                    href={`/directory/rinks/${rink.slug}`}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      background: '#0f0f0f',
+                      border: '1px solid #1e1e1e',
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                      textDecoration: 'none',
+                      transition: 'transform 0.18s, border-color 0.18s',
+                    }}
+                  >
+                    <div style={{
+                      position: 'relative',
+                      width: '100%',
+                      aspectRatio: '16 / 10',
+                      backgroundImage: rink.cover_photo_url ? `url(${rink.cover_photo_url})` : 'linear-gradient(135deg, #041E42 0%, #0a2a5a 100%)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}>
+                      <span style={{
+                        position: 'absolute',
+                        top: '0.5rem',
+                        left: '0.5rem',
+                        background: '#FFB81C',
+                        color: '#041E42',
+                        fontSize: '0.625rem',
+                        fontWeight: 800,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: 2,
+                      }}>
+                        FEATURED
+                      </span>
+                    </div>
+                    <div style={{ padding: '0.85rem 1rem', flex: 1 }}>
+                      <div style={{
+                        color: '#fff',
+                        fontWeight: 700,
+                        fontSize: '0.9375rem',
+                        marginBottom: '0.25rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {rink.name}
+                      </div>
+                      {location && (
+                        <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
+                          {location}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
