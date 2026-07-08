@@ -310,6 +310,8 @@ export default function PublicTeamProfile({
   claimantDisplayName,
   claimantRole,
   teamTimezone,
+  cityTeams = [],
+  cityRinks = [],
 }: Props) {
   const flag = countryFlag(team.country_code);
   const levelLabel = team.level ? (LEVEL_LABELS[team.level] ?? team.level) : null;
@@ -669,6 +671,93 @@ export default function PublicTeamProfile({
           </section>
         </div>
       </div>
+
+      {/* PR3 (2026-07-08): OTHER TEAMS IN {city} — internal linking hub.
+          Other public team_workspaces in the team's home_city. Skipped
+          when home_city is not set OR no peers exist. Note: this section
+          is sparse today (team_workspaces has 1 active public team — Cebu
+          Ice Datus test, which has home_city=null so this path no-ops).
+          Cross-links fire automatically as the directory grows. */}
+      {cityTeams.length > 0 && team.home_city && (
+        <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginTop: '1.5rem' }}>
+          <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '4px' }}>
+            Other teams in {team.home_city}
+          </h2>
+          <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '16px' }}>
+            {cityTeams.length === 1
+              ? `One other public team in ${team.home_city} is in the RinkStop directory.`
+              : `${cityTeams.length} other public teams in ${team.home_city} are in the RinkStop directory.`}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {cityTeams.map((t) => (
+              <Link
+                key={t.id}
+                href={t.slug ? `/directory/teams/${t.slug}` : '/directory/teams'}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  textDecoration: 'none',
+                }}
+              >
+                <div style={{ width: 28, height: 28, borderRadius: '4px', background: 'rgba(56,189,248,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>🏒</div>
+                <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{t.name}</span>
+              </Link>
+            ))}
+          </div>
+          <p style={{ marginTop: '12px', fontSize: '13px' }}>
+            <Link href={`/directory/teams?city=${encodeURIComponent(team.home_city)}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>
+              See all teams in {team.home_city} →
+            </Link>
+          </p>
+        </section>
+      )}
+
+      {/* PR3 (2026-07-08): RINKS IN {city} — internal linking hub.
+          Active rinks in the team's home_city. Skipped when home_city is
+          not set OR no rinks exist. */}
+      {cityRinks.length > 0 && team.home_city && (
+        <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginTop: '1.5rem' }}>
+          <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '4px' }}>
+            Rinks in {team.home_city}
+          </h2>
+          <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '16px' }}>
+            {cityRinks.length === 1
+              ? `One rink in ${team.home_city} is in the RinkStop directory.`
+              : `${cityRinks.length} rinks in ${team.home_city} are in the RinkStop directory.`}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+            {cityRinks.map((r) => (
+              <Link
+                key={r.id}
+                href={r.slug ? `/directory/rinks/${r.slug}` : '/directory/rinks'}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  textDecoration: 'none',
+                }}
+              >
+                <div style={{ width: 28, height: 28, borderRadius: '4px', background: 'rgba(56,189,248,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>⛸️</div>
+                <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{r.name}</span>
+              </Link>
+            ))}
+          </div>
+          <p style={{ marginTop: '12px', fontSize: '13px' }}>
+            <Link href={`/directory/rinks?city=${encodeURIComponent(team.home_city)}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>
+              See all rinks in {team.home_city} →
+            </Link>
+          </p>
+        </section>
+      )}
     </div>
   );
 }
