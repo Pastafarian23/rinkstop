@@ -299,6 +299,14 @@ export default async function PlayerDetailPage({ params }: PageProps) {
                 Manage profile →
               </Link>
             )}
+            {/* Suggest a correction — anyone can submit, even without claim */}
+            <Link
+              href={`/corrections/new?entity_type=player&entity_id=${id}`}
+              className="inline-flex items-center gap-1.5 text-sm text-white/55 hover:text-white border border-white/15 hover:border-white/30 rounded-full px-3 py-1.5 transition-colors"
+              data-testid="suggest-correction-link"
+            >
+              Suggest correction
+            </Link>
           </div>
         </header>
 
