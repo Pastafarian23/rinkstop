@@ -137,6 +137,53 @@ const nextConfig = {
         destination: 'https://rinkstop.com/:path*',
         permanent: true,
       },
+      // Legacy WordPress URLs (Fix 3, 2026-07-08). The old /index.php/*
+      // paths were indexed by Google before the rebuild and still 404.
+      // 301 redirects to current routes pass any residual link equity
+      // instead of dropping it. Both bare and trailing-slash variants
+      // are caught, plus a :path* catch-all for any deeper URLs.
+      // Verified 2026-07-08: all targets ( /news, /pricing, /contact,
+      // /terms ) exist and return 200. Sitemap is already clean.
+      {
+        source: '/index.php/news',
+        destination: '/news',
+        permanent: true,
+      },
+      {
+        source: '/index.php/news/:path*',
+        destination: '/news',
+        permanent: true,
+      },
+      {
+        source: '/index.php/store',
+        destination: '/pricing',
+        permanent: true,
+      },
+      {
+        source: '/index.php/store/:path*',
+        destination: '/pricing',
+        permanent: true,
+      },
+      {
+        source: '/index.php/contacts-us',
+        destination: '/contact',
+        permanent: true,
+      },
+      {
+        source: '/index.php/contacts-us/:path*',
+        destination: '/contact',
+        permanent: true,
+      },
+      {
+        source: '/index.php/terms-and-conditions',
+        destination: '/terms',
+        permanent: true,
+      },
+      {
+        source: '/index.php/terms-and-conditions/:path*',
+        destination: '/terms',
+        permanent: true,
+      },
       {
         source: '/(.*)',
         has: [
