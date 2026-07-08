@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-type ClaimType = 'rink' | 'team';
+type ClaimType = 'rink' | 'team' | 'player';
 
 interface ClaimResult {
   id: string;
@@ -37,6 +37,10 @@ interface ClaimResult {
   type: ClaimType;
   has_claim: boolean;
   claim_status: string | null;
+  // Player-only fields
+  is_self_managed?: boolean;
+  nationality?: string | null;
+  birth_year?: number | null;
 }
 
 async function searchEntities(query: string, type: ClaimType): Promise<ClaimResult[]> {
@@ -45,8 +49,19 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
 
   // Pick the right table + columns based on type. We use ilike with %q% for
   // the name column. For rinks we also match city (operators often search by
-  // city name). For teams we match city.
-  let rows: Array<{ id: string; slug: string; name: string; city: string | null; country: string | null }> = [];
+  // city name). For teams we match city. For players we match first/last name.
+  type RowShape = {
+    id: string;
+    slug: string;
+    name: string;
+    city: string | null;
+    country: string | null;
+    // Player extras:
+    user_id?: string | null;
+    nationality?: string | null;
+    birth_date?: string | null;
+  };
+  let rows: RowShape[] = [];
   if (type === 'rink') {
     const { data, error } = await supabaseAdmin
       .from('rinks')
@@ -55,7 +70,7 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
       .eq('is_active', true)
       .limit(20);
     if (error || !data) return [];
-    rows = data as typeof rows;
+    rows = data as RowShape[];
   } else if (type === 'team') {
     const { data, error } = await supabaseAdmin
       .from('teams')
@@ -63,7 +78,25 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
       .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
       .limit(20);
     if (error || !data) return [];
-    rows = data as typeof rows;
+    rows = data as RowShape[];
+  } else if (type === 'player') {
+    const { data, error } = await supabaseAdmin
+      .from('players')
+      .select('id, slug, first_name, last_name, nationality, birth_date, user_id, is_active')
+      .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`)
+      .eq('is_active', true)
+      .limit(20);
+    if (error || !data) return [];
+    rows = (data || []).map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.slug,
+      city: null,
+      country: p.nationality, // display the country code in the city slot to keep the shape
+      user_id: p.user_id,
+      nationality: p.nationality,
+      birth_date: p.birth_date,
+    }));
   }
 
   // Get the claim status for each returned entity. claims.claim_type must
@@ -83,16 +116,24 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
     }
   }
 
-  return rows.map((r) => ({
-    id: r.id,
-    slug: r.slug,
-    name: r.name,
-    city: r.city,
-    country: r.country,
-    type,
-    has_claim: claimByEntityId.has(r.id),
-    claim_status: claimByEntityId.get(r.id) || null,
-  }));
+  return rows.map((r) => {
+    const out: ClaimResult = {
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      city: r.city,
+      country: r.country,
+      type,
+      has_claim: claimByEntityId.has(r.id),
+      claim_status: claimByEntityId.get(r.id) || null,
+    };
+    if (type === 'player') {
+      out.is_self_managed = !!r.user_id;
+      out.nationality = r.nationality ?? null;
+      out.birth_year = r.birth_date ? Number(r.birth_date.slice(0, 4)) : null;
+    }
+    return out;
+  });
 }
 
 export default async function ClaimYourListingPage({
@@ -103,7 +144,8 @@ export default async function ClaimYourListingPage({
   const { q, type: typeParam } = await searchParams;
   const query = (q || '').trim();
   // Validate the type param. Default to rink if missing or invalid.
-  const type: ClaimType = typeParam === 'team' ? typeParam : 'rink';
+  const type: ClaimType =
+    typeParam === 'team' || typeParam === 'player' ? typeParam : 'rink';
   const results = query.length >= 2 ? await searchEntities(query, type) : [];
 
   // Server-side analytics: track this page view with the search query
@@ -169,6 +211,7 @@ export default async function ClaimYourListingPage({
         >
           <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=rink` : '?type=rink'}`} label="Rinks" active={type === 'rink'} />
           <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=team` : '?type=team'}`} label="Teams" active={type === 'team'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=player` : '?type=player'}`} label="Players" active={type === 'player'} />
         </nav>
 
         {/* Search box */}
@@ -242,8 +285,8 @@ export default async function ClaimYourListingPage({
             <div style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
               {results.length} result{results.length === 1 ? '' : 's'} for &ldquo;{query}&rdquo;
             </div>
-            {results.map((rink) => (
-              <RinkResultCard key={rink.id} rink={rink} query={query} />
+            {results.map((result) => (
+              <RinkResultCard key={result.id} rink={result} query={query} />
             ))}
           </div>
         )}
@@ -398,9 +441,19 @@ function TypeTab({ href, label, active }: { href: string; label: string; active:
 }
 
 function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
-  const location = [rink.city, rink.country].filter(Boolean).join(', ');
+  const isPlayer = rink.type === 'player';
+  const location = isPlayer
+    ? [rink.nationality, rink.birth_year ? `b. ${rink.birth_year}` : null].filter(Boolean).join(' · ')
+    : [rink.city, rink.country].filter(Boolean).join(', ');
   const alreadyClaimed = rink.has_claim && rink.claim_status === 'approved';
   const pending = rink.has_claim && rink.claim_status === 'pending';
+  const isSelfManaged = isPlayer && rink.is_self_managed;
+
+  const viewHref = isPlayer
+    ? rink.slug
+      ? `/directory/players/${rink.slug}`
+      : `/directory/players/${rink.id}`
+    : `/${rink.type === 'team' ? 'directory/teams' : 'directory/rinks'}/${rink.slug}`;
 
   return (
     <div
@@ -430,35 +483,18 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
         >
           {rink.name}
           {alreadyClaimed && (
-            <span
-              style={{
-                fontSize: '0.7rem',
-                background: 'rgba(20,184,166,0.15)',
-                color: '#14B8A6',
-                border: '1px solid rgba(20,184,166,0.4)',
-                padding: '0.15rem 0.5rem',
-                borderRadius: 6,
-                fontWeight: 600,
-                letterSpacing: '0.04em',
-              }}
-            >
+            <span style={{ fontSize: '0.7rem', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)', padding: '0.15rem 0.5rem', borderRadius: 6, fontWeight: 600, letterSpacing: '0.04em' }}>
               CLAIMED
             </span>
           )}
           {pending && (
-            <span
-              style={{
-                fontSize: '0.7rem',
-                background: 'rgba(255,184,28,0.15)',
-                color: '#FFB81C',
-                border: '1px solid rgba(255,184,28,0.4)',
-                padding: '0.15rem 0.5rem',
-                borderRadius: 6,
-                fontWeight: 600,
-                letterSpacing: '0.04em',
-              }}
-            >
+            <span style={{ fontSize: '0.7rem', background: 'rgba(255,184,28,0.15)', color: '#FFB81C', border: '1px solid rgba(255,184,28,0.4)', padding: '0.15rem 0.5rem', borderRadius: 6, fontWeight: 600, letterSpacing: '0.04em' }}>
               PENDING
+            </span>
+          )}
+          {isSelfManaged && (
+            <span style={{ fontSize: '0.7rem', background: 'rgba(20,184,166,0.08)', color: 'rgba(20,184,166,0.8)', border: '1px solid rgba(20,184,166,0.3)', padding: '0.15rem 0.5rem', borderRadius: 6, fontWeight: 600, letterSpacing: '0.04em' }}>
+              SELF-MANAGED
             </span>
           )}
         </div>
@@ -468,7 +504,7 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
       </div>
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <Link
-          href={`/directory/rinks/${rink.slug}`}
+          href={viewHref}
           style={{
             background: 'transparent',
             color: '#9ca3af',
@@ -482,14 +518,31 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
         >
           View
         </Link>
-        {!alreadyClaimed && !pending && (
+        {!alreadyClaimed && !pending && !isSelfManaged && (
           <ClaimButton
             href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}`)}`}
             rinkId={rink.id}
             rinkSlug={rink.slug}
             query={query}
-            priceTier={rink.type === 'team' ? 'club_starter' : 'business_listing'}
+            priceTier={rink.type === 'team' ? 'club_starter' : rink.type === 'player' ? 'verified_identity' : 'business_listing'}
           />
+        )}
+        {isSelfManaged && (
+          <Link
+            href={`/dashboard/analytics/${rink.id}`}
+            style={{
+              background: '#14B8A6',
+              color: '#0a0a0a',
+              border: 'none',
+              padding: '0.55rem 1rem',
+              borderRadius: 8,
+              textDecoration: 'none',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+            }}
+          >
+            Your analytics →
+          </Link>
         )}
       </div>
     </div>
