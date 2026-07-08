@@ -5,6 +5,7 @@ import BlogRelated from '@/components/BlogRelated';
 import ShareButton from '@/components/ShareButton';
 import ArticleCtaBlock from '@/components/ArticleCtaBlock';
 import RelatedDirectorySection from '@/components/RelatedDirectorySection';
+import LocationHeader from '@/components/LocationHeader';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
@@ -37,6 +38,14 @@ interface Post {
   og_image_url?: string;
   updated_at?: string;
   view_count?: number;
+  // Phase 7 (Option B): explicit location context for article→directory links.
+  // Slug-based to match directory URL structure. All nullable.
+  country_slug?: string | null;
+  state_slug?: string | null;
+  city_slug?: string | null;
+  country_label?: string | null;
+  state_label?: string | null;
+  city_label?: string | null;
 }
 
 interface Props {
@@ -303,6 +312,14 @@ export default async function BlogPostPage({ params }: Props) {
                 {post.category}
               </div>
             )}
+            <LocationHeader
+              country_slug={post.country_slug}
+              state_slug={post.state_slug}
+              city_slug={post.city_slug}
+              country_label={post.country_label}
+              state_label={post.state_label}
+              city_label={post.city_label}
+            />
             <h1 style={{
               fontFamily: '"Bebas Neue", sans-serif',
               fontSize: 'clamp(1.75rem, 5vw, 3rem)',
