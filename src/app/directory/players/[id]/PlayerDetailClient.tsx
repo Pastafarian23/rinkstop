@@ -509,7 +509,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                   }}
                 >
                   {player.teams?.logo_url ? (
-                    <img src={player.teams.logo_url} alt="" style={{ width: 24, height: 24 }} />
+                    <img src={player.teams.logo_url} alt={`${teamName} logo`} style={{ width: 24, height: 24 }} />
                   ) : null}
                   <span style={{ fontWeight: 600, fontSize: '1rem' }}>{teamName}</span>
                 </Link>
@@ -838,7 +838,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                 }}
               >
                 {p.headshot_url ? (
-                  <img src={p.headshot_url} alt="" style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', background: '#1a1a1a', flexShrink: 0 }} />
+                  <img src={p.headshot_url} alt={`${p.first_name} ${p.last_name} headshot`} style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover', background: '#1a1a1a', flexShrink: 0 }} />
                 ) : (
                   <div style={{
                     width: 36, height: 36, borderRadius: '4px', background: '#1a1a1a',

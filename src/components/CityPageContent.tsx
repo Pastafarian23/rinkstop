@@ -345,7 +345,7 @@ export default function CityPageContent({ data, faqs }: Props) {
                   {team.logo_url ? (
                     <img
                       src={team.logo_url}
-                      alt=""
+                      alt={`${team.name} logo`}
                       style={{ width: 44, height: 44, objectFit: 'contain', position: 'relative', zIndex: 1 }}
                     />
                   ) : (

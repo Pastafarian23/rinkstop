@@ -300,7 +300,7 @@ export default function PlayersIndexClient({ initialData }: Props) {
                   {player.headshot_url ? (
                     <img
                       src={player.headshot_url}
-                      alt=""
+                      alt={`${player.first_name} ${player.last_name} headshot`}
                       style={{ width: 44, height: 44, borderRadius: '4px', objectFit: 'cover', flexShrink: 0, background: '#1a1a1a' }}
                     />
                   ) : (

@@ -117,7 +117,7 @@ export default function GamePage() {
           {/* Away */}
           <div style={{ textAlign: 'center' }}>
             {game.away_team?.logo_url && (
-              <img src={game.away_team.logo_url} alt="" style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
+              <img src={game.away_team.logo_url} alt={`${awayName} logo`} style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
             )}
             <p style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff' }}>{awayName}</p>
             {game.away_team && (
@@ -154,7 +154,7 @@ export default function GamePage() {
           {/* Home */}
           <div style={{ textAlign: 'center' }}>
             {game.home_team?.logo_url && (
-              <img src={game.home_team.logo_url} alt="" style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
+              <img src={game.home_team.logo_url} alt={`${homeName} logo`} style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
             )}
             <p style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff' }}>{homeName}</p>
             {game.home_team && (

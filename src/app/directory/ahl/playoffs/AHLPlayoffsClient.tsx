@@ -98,7 +98,7 @@ function SeriesCard({ s }: { s: StoredSeries }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            {getLogoUrl(s.awayAbbr) && <img src={getLogoUrl(s.awayAbbr)} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
+            {getLogoUrl(s.awayAbbr) && <img src={getLogoUrl(s.awayAbbr)} alt={`${s.awayTeam} logo`} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.awayWins >= 4 ? AHL_GOLD : '#fff' }}>{s.awayTeam.split(' ').pop()}</span>
           </div>
           <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.awayWins >= 4 ? AHL_GOLD : '#fff' }}>{s.awayWins}</span>
@@ -106,7 +106,7 @@ function SeriesCard({ s }: { s: StoredSeries }) {
         <div style={{ height: '1px', background: 'var(--border)' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-            {getLogoUrl(s.homeAbbr) && <img src={getLogoUrl(s.homeAbbr)} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
+            {getLogoUrl(s.homeAbbr) && <img src={getLogoUrl(s.homeAbbr)} alt={`${s.homeTeam} logo`} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />}
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.homeWins >= 4 ? AHL_GOLD : '#fff' }}>{s.homeTeam.split(' ').pop()}</span>
           </div>
           <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.homeWins >= 4 ? AHL_GOLD : '#fff' }}>{s.homeWins}</span>

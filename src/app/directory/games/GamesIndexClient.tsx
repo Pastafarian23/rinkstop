@@ -81,7 +81,7 @@ function GameCard({ game }: { game: Game }) {
         {homeSlug ? (
           <Link href={`/directory/teams/${homeSlug}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {game.home_team?.logo_url && (
-              <img src={game.home_team.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+              <img src={game.home_team.logo_url} alt={`${homeName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             )}
             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{homeName}</p>
           </Link>
@@ -118,7 +118,7 @@ function GameCard({ game }: { game: Game }) {
           <Link href={`/directory/teams/${awaySlug}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
             <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{awayName}</p>
             {game.away_team?.logo_url && (
-              <img src={game.away_team.logo_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+              <img src={game.away_team.logo_url} alt={`${awayName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             )}
           </Link>
         ) : (

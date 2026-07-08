@@ -393,7 +393,7 @@ export default function CountryPageContent({ data }: Props) {
                 {leagues.map(l => (
                   <Link key={l.id} href={`/directory/leagues/${l.slug}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
                     {l.logo_url ? (
-                      <img src={l.logo_url} alt="" style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0, borderRadius: 4 }} />
+                      <img src={l.logo_url} alt={`${l.name} logo`} style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0, borderRadius: 4 }} />
                     ) : (
                       <div style={{ width: 32, height: 32, borderRadius: 4, background: '#1a1a1a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🏆</div>
                     )}
@@ -422,7 +422,7 @@ export default function CountryPageContent({ data }: Props) {
                 {teams.map(team => (
                   <Link key={team.id} href={`/directory/teams/${team.slug || team.id}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 16px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
                     {team.logo_url ? (
-                      <img src={team.logo_url} alt="" style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0, borderRadius: 4 }} />
+                      <img src={team.logo_url} alt={`${team.name} logo`} style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0, borderRadius: 4 }} />
                     ) : (
                       <div style={{ width: 28, height: 28, borderRadius: 4, background: '#1a1a1a', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🏒</div>
                     )}
@@ -459,7 +459,7 @@ export default function CountryPageContent({ data }: Props) {
                 {players.map(p => (
                   <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 12px', textDecoration: 'none', textAlign: 'center', position: 'relative' }}>
                     {p.headshot_url ? (
-                      <img src={p.headshot_url} alt="" style={{ width: 56, height: 56, objectFit: 'cover', flexShrink: 0, borderRadius: '50%', margin: '0 auto 8px', display: 'block' }} />
+                      <img src={p.headshot_url} alt={`${p.first_name} ${p.last_name} headshot`} style={{ width: 56, height: 56, objectFit: 'cover', flexShrink: 0, borderRadius: '50%', margin: '0 auto 8px', display: 'block' }} />
                     ) : (
                       <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#1a1a1a', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🧑</div>
                     )}

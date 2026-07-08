@@ -409,7 +409,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem', paddingRight: team.claimed_by_tier ? 70 : 0 }}>
                   {team.source === 'nhl' && (team as NHLTeam).logo_url ? (
-                    <img src={(team as NHLTeam).logo_url} alt="" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
+                    <img src={(team as NHLTeam).logo_url} alt={`${team.name} logo`} style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #C8102E, #041E42)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 700, color: '#fff', flexShrink: 0 }}>🏒</div>
                   )}

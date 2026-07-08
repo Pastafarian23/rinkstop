@@ -74,7 +74,7 @@ function GameRow({ game }: { game: NhlMatch }) {
         marginBottom: '0.4rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-          {game.away_team_logo && <img src={game.away_team_logo} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />}
+          {game.away_team_logo && <img src={game.away_team_logo} alt={`${game.away_team_name} logo`} style={{ width: 24, height: 24, objectFit: 'contain' }} />}
           <span style={{ color: isAwayWinner ? '#34d399' : '#fff', fontSize: '0.8125rem', fontWeight: isAwayWinner ? 700 : 500 }}>
             {game.away_team_name}
           </span>
@@ -93,7 +93,7 @@ function GameRow({ game }: { game: NhlMatch }) {
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {game.home_team_logo && <img src={game.home_team_logo} alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />}
+          {game.home_team_logo && <img src={game.home_team_logo} alt={`${game.home_team_name} logo`} style={{ width: 24, height: 24, objectFit: 'contain' }} />}
           <span style={{ color: isHomeWinner ? '#34d399' : '#fff', fontSize: '0.8125rem', fontWeight: isHomeWinner ? 700 : 500 }}>
             {game.home_team_name}
           </span>

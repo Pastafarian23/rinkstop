@@ -164,7 +164,7 @@ export default function NHLPlayoffsClient({ initialRounds, initialUpdates }: Pro
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                            <img src={getLogoUrl(s.awayAbbr)} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />
+                            <img src={getLogoUrl(s.awayAbbr)} alt={`${s.awayTeam} logo`} style={{ width: 28, height: 28, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />
                             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.awayWins === 4 ? '#C8102E' : '#fff' }}>{s.awayTeam.split(' ').pop()}</span>
                           </div>
                           <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.awayWins === 4 ? '#C8102E' : '#fff' }}>{s.awayWins}</span>
@@ -172,7 +172,7 @@ export default function NHLPlayoffsClient({ initialRounds, initialUpdates }: Pro
                         <div style={{ height: '1px', background: 'var(--border)' }} />
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                            <img src={getLogoUrl(s.homeAbbr)} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />
+                            <img src={getLogoUrl(s.homeAbbr)} alt={`${s.homeTeam} logo`} style={{ width: 28, height: 28, objectFit: 'contain' }} onError={(e: any) => { e.target.style.display = 'none'; }} />
                             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: seriesOver && s.homeWins === 4 ? '#C8102E' : '#fff' }}>{s.homeTeam.split(' ').pop()}</span>
                           </div>
                           <span style={{ fontSize: '1rem', fontWeight: 800, color: seriesOver && s.homeWins === 4 ? '#C8102E' : '#fff' }}>{s.homeWins}</span>

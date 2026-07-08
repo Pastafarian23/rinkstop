@@ -86,7 +86,7 @@ export default function TeamDetailClient({
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {team.logo_url ? (
-            <img src={team.logo_url} alt="" style={{ width: 52, height: 52, objectFit: 'contain', flexShrink: 0 }} />
+            <img src={team.logo_url} alt={`${team.name} logo`} style={{ width: 52, height: 52, objectFit: 'contain', flexShrink: 0 }} />
           ) : (
             <div style={{ width: 52, height: 52, borderRadius: '8px', background: 'linear-gradient(135deg, #C8102E, #041E42)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', flexShrink: 0 }}>🏒</div>
           )}
@@ -339,7 +339,7 @@ export default function TeamDetailClient({
             {players.map(p => (
               <Link key={p.id} href={`/directory/players/${p.id}`} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.875rem 1rem', display: 'flex', alignItems: 'center', gap: '0.625rem', textDecoration: 'none' }}>
                 {p.headshot_url ? (
-                  <img src={p.headshot_url} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: '#1a2D45' }} />
+                  <img src={p.headshot_url} alt={`${p.first_name} ${p.last_name} headshot`} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: '#1a2D45' }} />
                 ) : (
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a2D45', flexShrink: 0 }} />
                 )}
