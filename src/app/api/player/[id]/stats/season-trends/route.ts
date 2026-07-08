@@ -120,6 +120,32 @@ export async function GET(
     created_at: string;
   }>;
 
+  // ---- RinkStop history counts (Phase 1c-5) ----
+  // For youth players with no highlightly data, surface the data they DO
+  // have. All three counts are scoped to this single player_id and respect
+  // the existing ownership check above. service-role bypasses RLS so we
+  // rely on the linkRow check + the player_id filter.
+  const [achievementsCountRes, documentsCountRes, membershipsCountRes] = await Promise.all([
+    supabaseAdmin
+      .from('player_achievements')
+      .select('id', { count: 'exact', head: true })
+      .eq('player_id', id),
+    supabaseAdmin
+      .from('player_documents')
+      .select('id', { count: 'exact', head: true })
+      .eq('player_id', id)
+      .neq('status', 'archived'),
+    supabaseAdmin
+      .from('team_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_minor', true)
+      .eq('parent_user_id', userId)
+      .is('left_at', null),
+  ]);
+  const achievementsCount = achievementsCountRes.count ?? 0;
+  const documentsCount = documentsCountRes.count ?? 0;
+  const membershipsCount = membershipsCountRes.count ?? 0;
+
   const res = NextResponse.json({
     ok: true,
     player: {
@@ -150,6 +176,11 @@ export async function GET(
       description: m.description,
       achieved_at: m.achieved_at,
     })),
+    counts: {
+      achievements: achievementsCount,
+      documents: documentsCount,
+      memberships: membershipsCount,
+    },
   });
   return applyRateLimitHeaders(res, rl);
 }

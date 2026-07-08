@@ -38,6 +38,12 @@ interface Milestone {
   achieved_at: string | null;
 }
 
+interface Counts {
+  achievements: number;
+  documents: number;
+  memberships: number;
+}
+
 function StatName({ label }: { label: string }) {
   return (
     <span
@@ -96,10 +102,68 @@ function BarCell({
   );
 }
 
+function RinkStopHistory({ counts }: { counts: Counts }) {
+  return (
+    <section
+      data-testid="family-analytics-history"
+      style={{
+        background: '#0a0a0a',
+        border: '1px solid #141414',
+        borderRadius: 10,
+        padding: '1rem 1.1rem',
+        marginBottom: '1rem',
+      }}
+    >
+      <div
+        style={{
+          color: 'rgba(255,255,255,0.45)',
+          fontSize: '0.7rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '0.65rem',
+        }}
+      >
+        RinkStop history
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem' }}>
+        {[
+          { label: 'Achievements', value: counts.achievements, href: '#achievements' },
+          { label: 'Documents', value: counts.documents, href: '#documents' },
+          { label: 'Teams', value: counts.memberships, href: null },
+        ].map((c) => (
+          <div key={c.label} style={{ minWidth: 72 }}>
+            <StatName label={c.label} />
+            <div
+              style={{
+                color: '#fff',
+                fontSize: '1.6rem',
+                fontWeight: 700,
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+              }}
+            >
+              {c.value}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem' }}>
+              {c.value === 0
+                ? c.href
+                  ? `add your first →`
+                  : `none yet`
+                : c.href
+                ? `view →`
+                : `on rosters`}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function PlayerAnalyticsClient({ players }: Props) {
   const [selectedId, setSelectedId] = useState<string>(players[0]?.id || '');
   const [stats, setStats] = useState<SeasonRow[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [counts, setCounts] = useState<Counts | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState<string>('');
@@ -119,12 +183,14 @@ export default function PlayerAnalyticsClient({ players }: Props) {
     setError(null);
     setStats([]);
     setMilestones([]);
+    setCounts(null);
     fetch(`/api/player/${selectedId}/stats/season-trends`)
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
       .then((d) => {
         if (!d.ok) throw new Error(d.error || 'Failed to load stats');
         setStats(d.career_stats || []);
         setMilestones(d.milestones || []);
+        setCounts(d.counts || { achievements: 0, documents: 0, memberships: 0 });
       })
       .catch((e) => {
         setError(e instanceof Error ? e.message : String(e));
@@ -217,18 +283,13 @@ export default function PlayerAnalyticsClient({ players }: Props) {
           ) : loading ? (
             <div style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '2rem 0' }}>Loading analytics…</div>
           ) : stats.length === 0 ? (
-            <div
-              data-testid="family-analytics-no-stats"
-              style={{
-                padding: '1rem', background: '#0a0a0a',
-                border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 10,
-                color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', textAlign: 'center',
-              }}
-            >
-              No career stats found for this player. Stats appear once they&rsquo;re synced from highlightly.
-            </div>
+            counts ? (
+              <RinkStopHistory counts={counts} />
+            ) : null
           ) : (
             <>
+              {/* RinkStop history (1c-5) — shown alongside highlightly stats */}
+              {counts ? <RinkStopHistory counts={counts} /> : null}
               {/* Season card */}
               <div
                 data-testid="family-analytics-season-card"
