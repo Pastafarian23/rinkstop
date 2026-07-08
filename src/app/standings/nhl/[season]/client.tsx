@@ -97,7 +97,7 @@ function StandingsTable({ rows }: { rows: EnrichedRow[] }) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={row.team_logo}
-                        alt=""
+                        alt={`${row.team_name} logo`}
                         width={22}
                         height={22}
                         style={{ objectFit: 'contain', marginRight: 8, flexShrink: 0 }}

@@ -262,7 +262,7 @@ export default async function PlayerDetailPage({ params }: PageProps) {
                 >
                   {team.logo_url && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={team.logo_url} alt="" className="w-4 h-4 rounded object-contain" />
+                    <img src={team.logo_url} alt={`${team.name} logo`} className="w-4 h-4 rounded object-contain" />
                   )}
                   {team.name}
                 </Link>
