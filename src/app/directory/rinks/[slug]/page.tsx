@@ -21,6 +21,10 @@ import { provinceDisplayName } from '@/lib/ca-provinces';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
+// PR1 (2026-07-08): nearby-rinks cross-links. Other rinks in the same city
+// or province/state, excluding the current rink. These sections create the
+// geographic hub-and-spoke linking that the rink detail page was missing.
+type NearbyRink = { id: string; slug: string | null; name: string; city: string | null; province_state: string | null; country: string | null };
 
 /**
  * Build a unique editorial paragraph about a rink.
@@ -174,8 +178,9 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     redirect(`/directory/rinks/${rink.slug}`);
   }
 
-  // Fetch in parallel: upcoming games, teams in same city, leagues in same country, reviews
-  const [gamesRes, teamsRes, leaguesRes, reviewsRes] = await Promise.all([
+  // Fetch in parallel: upcoming games, teams in same city, leagues in same country,
+  // other rinks in same city (PR1), other rinks in same state (PR1), reviews
+  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -197,6 +202,29 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           .eq('country', rink.country)
           .limit(8)
       : Promise.resolve({ data: [] as LocalLeague[] }),
+    // PR1: other rinks in the same city (excluding current rink). Empty
+    // array fallback when the rink has no city set.
+    rink.city
+      ? supabase
+          .from('rinks')
+          .select('id, slug, name, city, province_state, country')
+          .ilike('city', rink.city)
+          .neq('id', rink.id)
+          .eq('is_active', true)
+          .limit(8)
+      : Promise.resolve({ data: [] as NearbyRink[] }),
+    // PR1: other rinks in the same province/state (excluding current rink).
+    // We dedupe against the same-city set below so a rink doesn't appear in
+    // both sections. Empty array fallback when no province/state is set.
+    rink.province_state
+      ? supabase
+          .from('rinks')
+          .select('id, slug, name, city, province_state, country')
+          .eq('province_state', rink.province_state)
+          .neq('id', rink.id)
+          .eq('is_active', true)
+          .limit(8)
+      : Promise.resolve({ data: [] as NearbyRink[] }),
     supabase
       .from('rink_reviews')
       .select('id, rating, review_text, reviewer_name, created_at')
@@ -209,6 +237,13 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   const games = gamesRes.data || [];
   const localTeams = (teamsRes.data || []) as LocalTeam[];
   const localLeagues = (leaguesRes.data || []) as LocalLeague[];
+  // PR1: destructure new nearby-rinks arrays and dedupe state results so
+  // a rink never appears in both the city section and the state section.
+  const cityRinks = (cityRinksRes.data || []) as NearbyRink[];
+  const cityRinkIds = new Set(cityRinks.map((r) => r.id));
+  const stateRinks = ((stateRinksRes.data || []) as NearbyRink[]).filter(
+    (r) => !cityRinkIds.has(r.id)
+  );
   const reviews = reviewsRes.data || [];
   const averageRating = reviews.length
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
@@ -687,6 +722,93 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             <p style={{ marginTop: '12px', fontSize: '13px' }}>
               <Link href={`/directory/leagues?country=${encodeURIComponent(rink.country || '')}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>
                 See all leagues in {rink.country} →
+              </Link>
+            </p>
+          </section>
+        )}
+
+        {/* PR1 (2026-07-08): OTHER RINKS IN CITY — internal linking hub.
+            Other active rinks in the same city. Skipped if the city has no
+            other rinks OR the current rink has no city set. Same dark-card
+            pattern as TEAMS IN THIS CITY and LEAGUES IN COUNTRY sections. */}
+        {cityRinks.length > 0 && (
+          <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+            <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '4px' }}>
+              Other rinks in {rink.city}
+            </h2>
+            <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '16px' }}>
+              {cityRinks.length === 1
+                ? `One other rink in ${rink.city} is in the RinkStop directory.`
+                : `${cityRinks.length} other rinks in ${rink.city} are in the RinkStop directory. Compare ice sizes, capacities, and amenities to find the right venue.`}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+              {cityRinks.map((r) => (
+                <Link
+                  key={r.id}
+                  href={r.slug ? `/directory/rinks/${r.slug}` : '/directory/rinks'}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <div style={{ width: 28, height: 28, borderRadius: '4px', background: 'rgba(56,189,248,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>🏒</div>
+                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{r.name}</span>
+                </Link>
+              ))}
+            </div>
+            <p style={{ marginTop: '12px', fontSize: '13px' }}>
+              <Link href={`/directory/rinks?city=${encodeURIComponent(rink.city || '')}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>
+                See all rinks in {rink.city} →
+              </Link>
+            </p>
+          </section>
+        )}
+
+        {/* PR1 (2026-07-08): MORE RINKS IN STATE — secondary internal link hub.
+            Other active rinks in the same province/state, with the same-city
+            set already shown above filtered out so we don't repeat links.
+            Skipped if the state has no other rinks OR the current rink has
+            no province_state set. */}
+        {stateRinks.length > 0 && rink.province_state && (
+          <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+            <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '4px' }}>
+              More rinks in {provinceLabel || rink.province_state}
+            </h2>
+            <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '16px' }}>
+              {stateRinks.length === 1
+                ? `One other rink in ${provinceLabel || rink.province_state} is in the RinkStop directory.`
+                : `${stateRinks.length} other rinks across ${provinceLabel || rink.province_state} are in the RinkStop directory.`}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+              {stateRinks.map((r) => (
+                <Link
+                  key={r.id}
+                  href={r.slug ? `/directory/rinks/${r.slug}` : '/directory/rinks'}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{r.name}</span>
+                  {r.city && <span style={{ color: 'var(--muted)', fontSize: '12px' }}>{r.city}</span>}
+                </Link>
+              ))}
+            </div>
+            <p style={{ marginTop: '12px', fontSize: '13px' }}>
+              <Link href={`/directory/rinks?province_state=${encodeURIComponent(rink.province_state)}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>
+                See all rinks in {provinceLabel || rink.province_state} →
               </Link>
             </p>
           </section>
