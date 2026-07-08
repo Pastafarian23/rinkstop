@@ -7,12 +7,12 @@ import { ClaimButton } from './ClaimButton';
 export const metadata: Metadata = {
   title: 'Claim Your Listing on RinkStop',
   description:
-    "Search for your rink's RinkStop listing and claim it. Verified rinks get a checkmark, lead capture, and featured rotation. Claiming requires a RinkStop membership.",
+    "Search for your rink or team's RinkStop listing and claim it. Verified listings get a checkmark, lead capture, and featured rotation.",
   alternates: { canonical: 'https://rinkstop.com/claim-your-listing' },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'Claim Your Listing on RinkStop',
-    description: "Search for your rink and claim your listing. Verified rinks get a checkmark, lead capture, and featured rotation.",
+    description: "Search for your rink or team and claim your listing. Verified listings get a checkmark, lead capture, and featured rotation.",
     url: 'https://rinkstop.com/claim-your-listing',
     siteName: 'RinkStop',
     type: 'website',
@@ -20,76 +20,91 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary',
     title: 'Claim Your Listing on RinkStop',
-    description: 'Search for your rink and claim your listing.',
+    description: 'Search for your rink or team and claim your listing.',
   },
 };
 
 export const dynamic = 'force-dynamic';
 
-interface RinkResult {
+type ClaimType = 'rink' | 'team';
+
+interface ClaimResult {
   id: string;
   slug: string;
   name: string;
   city: string | null;
   country: string | null;
-  is_active: boolean;
+  type: ClaimType;
   has_claim: boolean;
   claim_status: string | null;
 }
 
-async function searchRinks(query: string): Promise<RinkResult[]> {
+async function searchEntities(query: string, type: ClaimType): Promise<ClaimResult[]> {
   const q = query.trim();
   if (q.length < 2) return [];
 
-  // Search by name OR city. Limit 20 results.
-  // We use ilike with %query% — fast for ~2K row tables, no need for FTS.
-  const { data, error } = await supabaseAdmin
-    .from('rinks')
-    .select('id, slug, name, city, country, is_active')
-    .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
-    .eq('is_active', true)
-    .limit(20);
+  // Pick the right table + columns based on type. We use ilike with %q% for
+  // the name column. For rinks we also match city (operators often search by
+  // city name). For teams we match city.
+  let rows: Array<{ id: string; slug: string; name: string; city: string | null; country: string | null }> = [];
+  if (type === 'rink') {
+    const { data, error } = await supabaseAdmin
+      .from('rinks')
+      .select('id, slug, name, city, country, is_active')
+      .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
+      .eq('is_active', true)
+      .limit(20);
+    if (error || !data) return [];
+    rows = data as typeof rows;
+  } else if (type === 'team') {
+    const { data, error } = await supabaseAdmin
+      .from('teams')
+      .select('id, slug, name, city, country')
+      .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
+      .limit(20);
+    if (error || !data) return [];
+    rows = data as typeof rows;
+  }
 
-  if (error || !data) return [];
-
-  // Get the claim status for each returned rink.
-  // claims table has no FK to rinks (uses generic entity_id), so we can't join.
-  // Two queries: rinks first, then claims for the matching ids.
-  const rinkIds = data.map((r) => r.id);
+  // Get the claim status for each returned entity. claims.claim_type must
+  // match the selected entity type (rink/team) because the claims endpoint
+  // only accepts those two types.
+  const entityIds = rows.map((r) => r.id);
   const { data: claims } = await supabaseAdmin
     .from('claims')
     .select('entity_id, status, claim_type')
-    .eq('claim_type', 'rink')
-    .in('entity_id', rinkIds);
+    .eq('claim_type', type)
+    .in('entity_id', entityIds);
 
-  const claimByRinkId = new Map<string, string>();
+  const claimByEntityId = new Map<string, string>();
   for (const c of claims || []) {
-    // Keep the first claim we find per rink. Could be any status.
-    if (!claimByRinkId.has(c.entity_id)) {
-      claimByRinkId.set(c.entity_id, c.status);
+    if (!claimByEntityId.has(c.entity_id)) {
+      claimByEntityId.set(c.entity_id, c.status);
     }
   }
 
-  return data.map((r) => ({
+  return rows.map((r) => ({
     id: r.id,
     slug: r.slug,
     name: r.name,
     city: r.city,
     country: r.country,
-    is_active: r.is_active,
-    has_claim: claimByRinkId.has(r.id),
-    claim_status: claimByRinkId.get(r.id) || null,
+    type,
+    has_claim: claimByEntityId.has(r.id),
+    claim_status: claimByEntityId.get(r.id) || null,
   }));
 }
 
 export default async function ClaimYourListingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; type?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, type: typeParam } = await searchParams;
   const query = (q || '').trim();
-  const results = query.length >= 2 ? await searchRinks(query) : [];
+  // Validate the type param. Default to rink if missing or invalid.
+  const type: ClaimType = typeParam === 'team' ? typeParam : 'rink';
+  const results = query.length >= 2 ? await searchEntities(query, type) : [];
 
   // Server-side analytics: track this page view with the search query
   try {
@@ -117,7 +132,7 @@ export default async function ClaimYourListingPage({
         {/* Header */}
         <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '0.85rem', letterSpacing: '0.18em', color: '#FFB81C', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.75rem' }}>
-            For Rink Operators
+            For Rink Operators & Team Administrators
           </div>
           <h1
             style={{
@@ -133,16 +148,32 @@ export default async function ClaimYourListingPage({
             Claim Your Listing
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '1.05rem', marginTop: '0.75rem', lineHeight: 1.5 }}>
-            Search for your rink below. Verified operators get a checkmark, lead capture, and featured placement. Claiming requires a{' '}
-            <Link href="/pricing" style={{ color: '#FFB81C', fontWeight: 600, textDecoration: 'underline' }}>
-              RinkStop membership
-            </Link>
-            .
+            Search for your rink or team below. Claiming requires a Verified Hockey Identity or other paid plan — browse the directory is always free.
           </p>
         </div>
 
+        {/* Type tabs — pick which entity type to search */}
+        <nav
+          aria-label="Entity type"
+          style={{
+            display: 'flex',
+            gap: '0.25rem',
+            marginBottom: '1.25rem',
+            background: '#0a0a0a',
+            border: '1px solid #1e1e1e',
+            borderRadius: 10,
+            padding: '0.25rem',
+            width: 'fit-content',
+            margin: '0 auto 1.5rem',
+          }}
+        >
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=rink` : '?type=rink'}`} label="Rinks" active={type === 'rink'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=team` : '?type=team'}`} label="Teams" active={type === 'team'} />
+        </nav>
+
         {/* Search box */}
         <form action="/claim-your-listing" method="GET" style={{ marginBottom: '2rem' }}>
+          <input type="hidden" name="type" value={type} />
           <div
             style={{
               display: 'flex',
@@ -157,7 +188,7 @@ export default async function ClaimYourListingPage({
               type="text"
               name="q"
               defaultValue={query}
-              placeholder="Type your rink name or city…"
+              placeholder="Type your rink or team name or city…"
               autoFocus
               style={{
                 flex: 1,
@@ -242,7 +273,7 @@ export default async function ClaimYourListingPage({
           <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <BenefitRow icon="📍" text="Appear in search results for your city, state, and country" />
             <BenefitRow icon="📩" text="Receive direct messages from coaches, parents, and players" />
-            <BenefitRow icon="🚀" text="Featured placement, lead capture, and analytics on paid tiers" />
+            <BenefitRow icon="🚀" text="Claim your listing with a Verified Hockey Identity or organization plan" />
             <BenefitRow icon="✅" text="Verified checkmark builds trust with players and parents" />
           </ul>
           <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #1e1e1e' }}>
@@ -259,7 +290,7 @@ export default async function ClaimYourListingPage({
                 textDecoration: 'none',
               }}
             >
-              See Membership Plans →
+              See plans →
             </Link>
           </div>
         </div>
@@ -346,7 +377,27 @@ function BenefitRow({ icon, text }: { icon: string; text: string }) {
   );
 }
 
-function RinkResultCard({ rink, query }: { rink: RinkResult; query: string }) {
+function TypeTab({ href, label, active }: { href: string; label: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      style={{
+        padding: '0.5rem 1rem',
+        borderRadius: 8,
+        fontSize: '0.875rem',
+        fontWeight: 600,
+        textDecoration: 'none',
+        background: active ? 'rgba(200,16,46,0.15)' : 'transparent',
+        color: active ? '#fff' : '#9ca3af',
+        border: `1px solid ${active ? 'rgba(200,16,46,0.4)' : 'transparent'}`,
+      }}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
   const location = [rink.city, rink.country].filter(Boolean).join(', ');
   const alreadyClaimed = rink.has_claim && rink.claim_status === 'approved';
   const pending = rink.has_claim && rink.claim_status === 'pending';
@@ -433,10 +484,11 @@ function RinkResultCard({ rink, query }: { rink: RinkResult; query: string }) {
         </Link>
         {!alreadyClaimed && !pending && (
           <ClaimButton
-            href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?prefill_rink=${rink.id}`)}`}
+            href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}`)}`}
             rinkId={rink.id}
             rinkSlug={rink.slug}
             query={query}
+            priceTier={rink.type === 'team' ? 'club_starter' : 'business_listing'}
           />
         )}
       </div>
