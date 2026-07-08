@@ -572,20 +572,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           </div>
         )}
 
-        {/* Claimed by (if any) */}
-        <ClaimedBy entityType="rink" entityId={rink.id} entityName={rink.name} />
-
-        {/* Claim this listing — only renders on unclaimed rinks. Suppressed automatically
-            when an approved claim exists (ClaimedBy is showing instead). */}
-        <ClaimThisListingMount entityType="rink" entityId={rink.id} entityName={rink.name} />
-
-        {/* Pro-tier lead capture form */}
-        <ListingContactFormMount
-          listingType="rink"
-          listingId={rink.id}
-          listingName={rink.name}
-        />
-
         {/* ABOUT THIS RINK — unique editorial section. SEO-critical for thinness.
             Uses rink.notes when present; otherwise synthesizes from name + city +
             country + capacity + ice_size so every rink has 80-120+ unique words. */}
@@ -960,6 +946,14 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
         {/* Review Form */}
         <ReviewForm rinkId={rink.id} rinkName={rink.name} />
+
+        {/* Claim CTA — moved below all content per Arnel's request (2026-07-08) */}
+        <div style={{ borderTop: '1px solid var(--border)', marginBottom: '20px' }} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+          <ClaimedBy entityType="rink" entityId={rink.id} entityName={rink.name} />
+          <ClaimThisListingMount entityType="rink" entityId={rink.id} entityName={rink.name} />
+          <ListingContactFormMount listingType="rink" listingId={rink.id} listingName={rink.name} />
+        </div>
 
       </div>
     </>
