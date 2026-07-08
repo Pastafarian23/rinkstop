@@ -240,10 +240,6 @@ export default async function PlayerPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }}
         />
       )}
-      {/* Claim this listing — only renders on unclaimed players. Renders above
-          the main client component so the CTA is the first thing an unverified
-          visitor sees when they land on the page. */}
-      <ClaimThisListingMount entityType="player" entityId={id} />
       <PlayerDetail id={id} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} />
       {seoPlayer && (
         <PlayerSEOCopy
@@ -252,6 +248,10 @@ export default async function PlayerPage({ params }: Props) {
           intro={seoIntro}
         />
       )}
+      {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
+      <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
+        <ClaimThisListingMount entityType="player" entityId={id} />
+      </div>
     </>
   );
 }

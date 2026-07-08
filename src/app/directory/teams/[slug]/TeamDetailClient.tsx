@@ -113,25 +113,29 @@ export default function TeamDetailClient({
                 size="sm"
               />
             </div>
-            <ClaimedBy entityType="team" entityId={team.id} entityName={team.name} />
-            <div style={{ marginTop: '1rem' }}>
-              <EmailCaptureInline
-                pitch={`Get notified when ${team.name} has new games, schedule changes, or roster updates.`}
-                cta="Email me updates"
-                entityType="team"
-                entityId={team.id}
-                entityName={team.name}
-                intent="email_capture"
-              />
-            </div>
-            <div style={{ marginTop: '1rem' }}>
-              <ListingContactFormMount
-                listingType="team"
-                listingId={team.id}
-                listingName={team.name}
-              />
-            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
+      <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
+        <ClaimedBy entityType="team" entityId={team.id} entityName={team.name} />
+        <div style={{ marginTop: '1rem' }}>
+          <EmailCaptureInline
+            pitch={`Get notified when ${team.name} has new games, schedule changes, or roster updates.`}
+            cta="Email me updates"
+            entityType="team"
+            entityId={team.id}
+            entityName={team.name}
+            intent="email_capture"
+          />
+        </div>
+        <div style={{ marginTop: '1rem' }}>
+          <ListingContactFormMount
+            listingType="team"
+            listingId={team.id}
+            listingName={team.name}
+          />
         </div>
       </div>
 

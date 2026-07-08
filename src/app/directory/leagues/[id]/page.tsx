@@ -143,7 +143,6 @@ export default async function LeaguePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(leagueJsonLd) }}
         />
       )}
-      <ClaimThisListingMount entityType="league" entityId={id} />
       <LeagueDetailClient id={id} initialFollowersCount={initialFollowersCount} />
       {league && (
         <LeagueSEOCopy
@@ -154,6 +153,10 @@ export default async function LeaguePage({
           faqs={faqs}
         />
       )}
+      {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
+      <div style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
+        <ClaimThisListingMount entityType="league" entityId={id} />
+      </div>
     </>
   );
 }
