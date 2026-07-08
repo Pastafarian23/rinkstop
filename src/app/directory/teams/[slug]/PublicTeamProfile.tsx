@@ -85,6 +85,30 @@ interface Props {
   claimantDisplayName?: string | null;
   claimantRole?: string | null;
   teamTimezone?: string;
+  /**
+   * PR3 (2026-07-08): other public team_workspaces in the same home_city.
+   * Empty array (the default) hides the section entirely. Fires when
+   * team_workspaces grows beyond its current 1-row state.
+   */
+  cityTeams?: Array<{
+    id: string;
+    slug: string | null;
+    name: string;
+    home_city: string | null;
+    home_country: string | null;
+  }>;
+  /**
+   * PR3 (2026-07-08): active rinks in the same city as the team's home_city.
+   * Empty array (the default) hides the section entirely.
+   */
+  cityRinks?: Array<{
+    id: string;
+    slug: string | null;
+    name: string;
+    city: string | null;
+    province_state: string | null;
+    country: string | null;
+  }>;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
