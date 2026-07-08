@@ -35,6 +35,19 @@ export interface StateProvinceContentProps {
   intro: string;
   /** Optional curated flag emoji */
   flag?: string;
+  /**
+   * PR2 (2026-07-08): top leagues in the country this state/province belongs
+   * to. Leagues table has no province_state column (verified 2026-07-08),
+   * so country is the most granular level we can filter on. Rendered as
+   * a cross-link section between the city list and the FAQs.
+   */
+  topLeagues?: Array<{
+    id: string;
+    name: string;
+    slug: string | null;
+    level: string | null;
+    logo_url: string | null;
+  }>;
 }
 
 export default function StateProvincePageContent({
@@ -51,6 +64,7 @@ export default function StateProvincePageContent({
   faqs,
   intro,
   flag,
+  topLeagues = [],
 }: StateProvinceContentProps) {
   const cityCount = cities.length;
   const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = '#888', textDim = '#555';
@@ -123,6 +137,49 @@ export default function StateProvincePageContent({
             <Link href="/add-listing" style={{ color: red, fontWeight: 600 }}>add a listing</Link>
             {' '}if you know a rink or team we&apos;re missing.
           </p>
+
+          {/* PR2 (2026-07-08): claim CTA strip. Operators landing on this
+              state hub should see a single, prominent path to claim their
+              listing. Previously the only path to /claim-your-listing was
+              the footer nav, which is below the fold. Inline red-accent
+              strip with one button + one secondary link. */}
+          <div
+            role="region"
+            aria-label={`Claim your listing in ${regionName}`}
+            style={{
+              marginTop: '1.25rem',
+              padding: '1rem 1.25rem',
+              background: 'rgba(200,16,46,0.08)',
+              border: `1px solid ${red}`,
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ color: textMain, fontSize: '0.9375rem', lineHeight: 1.5 }}>
+              <strong style={{ color: red }}>Run a rink or team in {regionName}?</strong>{' '}
+              Claim your listing to get a verified checkmark, lead capture, and direct messages from coaches and parents.
+            </div>
+            <Link
+              href={`/claim-your-listing?type=${countryCode === 'CA' ? 'rink' : 'rink'}`}
+              style={{
+                display: 'inline-block',
+                background: red,
+                color: '#fff',
+                padding: '0.6rem 1.1rem',
+                borderRadius: '6px',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Claim your {regionName} listing →
+            </Link>
+          </div>
         </header>
 
         {/* Hockey Canada Ad slot — Canada only, matches country page */}
@@ -182,6 +239,59 @@ export default function StateProvincePageContent({
             </div>
           )}
         </section>
+
+        {/* PR2 (2026-07-08): Top Leagues in {countryName} — cross-link hub.
+            Leagues table has no province_state column (verified 2026-07-08),
+            so country is the most granular level we can show. Same leagues
+            surface on the rink detail page; rendering them here gives the
+            state hub a second internal-link path to the league directory.
+            Skipped when no leagues match. */}
+        {topLeagues.length > 0 && (
+          <section style={{ marginBottom: '3rem' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.25rem', borderLeft: `4px solid ${red}`, paddingLeft: 14 }}>
+              <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.5rem', letterSpacing: '0.04em', color: textMain, margin: 0 }}>
+                Hockey leagues in {countryName}
+              </h2>
+              <span style={{ fontSize: '0.75rem', color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {topLeagues.length} {topLeagues.length === 1 ? 'league' : 'leagues'}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+              {topLeagues.map((l) => (
+                <Link
+                  key={l.id}
+                  href={l.slug ? `/directory/leagues/${l.slug}` : '/directory/leagues'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.625rem',
+                    padding: '0.75rem 1rem',
+                    background: card,
+                    border: `1px solid ${border}`,
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                  }}
+                >
+                  {l.logo_url ? (
+                    <img src={l.logo_url} alt={`${l.name} logo`} style={{ width: 28, height: 28, borderRadius: '4px', objectFit: 'contain', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }} loading="lazy" />
+                  ) : (
+                    <div style={{ width: 28, height: 28, borderRadius: '4px', background: 'rgba(56,189,248,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>🏆</div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ color: textMain, fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.3 }}>{l.name}</div>
+                    {l.level && <div style={{ color: textMuted, fontSize: '0.75rem', textTransform: 'capitalize' }}>{l.level}</div>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <p style={{ marginTop: '0.875rem', fontSize: '0.8125rem' }}>
+              <Link href="/directory/leagues" style={{ color: red, textDecoration: 'none' }}>
+                See all leagues →
+              </Link>
+            </p>
+          </section>
+        )}
 
         {/* FAQ Section (accordion + schema) */}
         <section style={{ marginBottom: '3rem', maxWidth: 820 }}>

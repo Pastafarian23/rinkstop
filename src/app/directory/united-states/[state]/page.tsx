@@ -183,6 +183,16 @@ export default async function USStatePage({ params }: { params: Promise<{ state:
   const intro = buildRegionIntro(faqInput, facts);
   const faqs = buildStateFAQs(faqInput);
 
+  // PR2 (2026-07-08): top leagues for cross-link section. Leagues table
+  // has no province_state column, so country is the most granular filter.
+  // Same query shape as the rink detail page's "leagues in country" section.
+  const { data: topLeagues } = await supabase
+    .from('leagues')
+    .select('id, name, slug, level, logo_url')
+    .eq('country', 'United States')
+    .eq('is_active', true)
+    .limit(8);
+
   return (
     <StateProvincePageContent
       regionName={stateName}
@@ -196,6 +206,7 @@ export default async function USStatePage({ params }: { params: Promise<{ state:
       teamCount={totalTeamCount}
       faqs={faqs}
       intro={intro}
+      topLeagues={topLeagues || []}
     />
   );
 }
