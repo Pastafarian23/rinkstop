@@ -880,10 +880,12 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                   <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{rink.address}</dd>
                 </div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Ice</dt>
-                <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{rink.ice_size} · {rink.surface_type}</dd>
-              </div>
+              {(rink.ice_size || rink.surface_type) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Ice</dt>
+                  <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{rink.ice_size}{rink.ice_size && rink.surface_type ? ' · ' : ''}{rink.surface_type}</dd>
+                </div>
+              )}
               {rink.capacity && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Capacity</dt>
@@ -893,9 +895,10 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             </dl>
           </div>
 
-          <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <h2 style={{ fontWeight: 600, marginBottom: '12px', color: '#fff', fontSize: '16px' }}>Contact</h2>
-            <dl style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {(rink.phone || rink.email || rink.website_url) && (
+            <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+              <h2 style={{ fontWeight: 600, marginBottom: '12px', color: '#fff', fontSize: '16px' }}>Contact</h2>
+              <dl style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {rink.phone && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Phone</dt>
@@ -920,6 +923,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               )}
             </dl>
           </div>
+        )}
 
           {/* Map */}
           {(rink.latitude && rink.longitude) ? (
