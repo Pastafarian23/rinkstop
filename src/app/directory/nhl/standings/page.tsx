@@ -56,7 +56,7 @@ function StandingTable({ title, rows }: { title: string; rows: NhlStanding[] }) 
               }}>
                 <div style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{r.rank}</div>
                 <div style={{ color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {r.team_logo && <img src={r.team_logo} alt="" style={{ width: 20, height: 20, objectFit: 'contain', marginRight: '0.5rem', verticalAlign: 'middle' }} />}
+                  {r.team_logo && <img src={r.team_logo} alt={`${r.team_name} logo`} style={{ width: 20, height: 20, objectFit: 'contain', marginRight: '0.5rem', verticalAlign: 'middle' }} />}
                   {r.team_name}
                 </div>
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.7)' }}>{r.played}</div>

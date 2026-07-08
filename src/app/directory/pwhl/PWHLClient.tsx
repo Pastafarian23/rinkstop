@@ -130,7 +130,7 @@ export default function PWHLClient({ league, teams }: Props) {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
                   {team.logo_url ? (
-                    <img src={team.logo_url} alt="" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
+                    <img src={team.logo_url} alt={`${team.name} logo`} style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
                   ) : (
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%',

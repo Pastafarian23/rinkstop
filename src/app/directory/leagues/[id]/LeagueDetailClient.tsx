@@ -48,7 +48,7 @@ export default function LeagueDetailClient({ id, initialFollowersCount = 0 }: { 
       ]} />
       <Link href="/directory/leagues" className="text-teal-400 text-sm mb-4 inline-block">&larr; Back to Leagues</Link>
       <div className="flex items-center gap-4 mb-6">
-        {league.logo_url && <img src={league.logo_url} alt="" className="w-16 h-16 rounded-lg object-contain bg-slate-700" />}
+        {league.logo_url && <img src={league.logo_url} alt={`${league.name} logo`} className="w-16 h-16 rounded-lg object-contain bg-slate-700" />}
         <div>
           <h1 className="text-3xl font-bold text-white">{league.name}</h1>
           <p className="text-teal-400 capitalize">{league.level?.replace('_', ' ')}</p>
