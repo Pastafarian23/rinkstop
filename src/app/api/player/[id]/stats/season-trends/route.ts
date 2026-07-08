@@ -65,14 +65,29 @@ export async function GET(
     return applyRateLimitHeaders(res, rl);
   }
 
-  const { data: linkRow } = await supabaseAdmin
-    .from('managed_profiles')
-    .select('id')
-    .eq('manager_user_id', userId)
-    .eq('profile_id', id)
-    .limit(1)
-    .maybeSingle();
-  if (!linkRow) {
+  // Ownership check (Phase 1c-6): viewer is allowed if EITHER
+  //   (a) they manage this player via managed_profiles (parent/kid link), OR
+  //   (b) players.user_id = their Clerk id (self-managed player).
+  // We run both checks in parallel and OR the results.
+  const [managedRow, selfRow] = await Promise.all([
+    supabaseAdmin
+      .from('managed_profiles')
+      .select('id')
+      .eq('manager_user_id', userId)
+      .eq('profile_id', id)
+      .limit(1)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('players')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const isManaged = !!managedRow.data;
+  const isSelf = !!selfRow.data;
+  if (!isManaged && !isSelf) {
     const res = NextResponse.json({ error: 'Not your player.' }, { status: 403 });
     return applyRateLimitHeaders(res, rl);
   }
@@ -120,11 +135,30 @@ export async function GET(
     created_at: string;
   }>;
 
-  // ---- RinkStop history counts (Phase 1c-5) ----
+  // ---- RinkStop history counts (Phase 1c-5, role-aware in 1c-6) ----
   // For youth players with no highlightly data, surface the data they DO
   // have. All three counts are scoped to this single player_id and respect
-  // the existing ownership check above. service-role bypasses RLS so we
-  // rely on the linkRow check + the player_id filter.
+  // the ownership check above. service-role bypasses RLS so we rely on the
+  // isManaged/isSelf checks + the player_id filter.
+  //
+  // Team memberships query branches on ownership mode:
+  //   - isManaged: viewer is the parent of a minor player; team_members row
+  //     uses parent_user_id = viewer's clerk id, is_minor = true.
+  //   - isSelf:    viewer IS the player; team_members row uses
+  //     user_id = viewer's clerk id.
+  const membershipsQuery = isManaged
+    ? supabaseAdmin
+        .from('team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_minor', true)
+        .eq('parent_user_id', userId)
+        .is('left_at', null)
+    : supabaseAdmin
+        .from('team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('left_at', null);
+
   const [achievementsCountRes, documentsCountRes, membershipsCountRes] = await Promise.all([
     supabaseAdmin
       .from('player_achievements')
@@ -135,12 +169,7 @@ export async function GET(
       .select('id', { count: 'exact', head: true })
       .eq('player_id', id)
       .neq('status', 'archived'),
-    supabaseAdmin
-      .from('team_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_minor', true)
-      .eq('parent_user_id', userId)
-      .is('left_at', null),
+    membershipsQuery,
   ]);
   const achievementsCount = achievementsCountRes.count ?? 0;
   const documentsCount = documentsCountRes.count ?? 0;
@@ -181,6 +210,7 @@ export async function GET(
       documents: documentsCount,
       memberships: membershipsCount,
     },
+    viewer_mode: isSelf ? 'self' : 'managed',
   });
   return applyRateLimitHeaders(res, rl);
 }
