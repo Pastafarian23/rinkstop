@@ -25,6 +25,8 @@ interface Message {
 interface MessagesClientProps {
   userId: string;
   initialThreads: Thread[];
+  canDM: boolean;
+  userTier: string;
 }
 
 function formatTime(iso: string): string {
@@ -42,7 +44,7 @@ function displayName(t: Thread): string {
   return t.other_user.display_name || t.other_user.username || t.other_user.user_id;
 }
 
-export default function MessagesClient({ userId, initialThreads }: MessagesClientProps) {
+export default function MessagesClient({ userId, initialThreads, canDM, userTier }: MessagesClientProps) {
   const router = useRouter();
   const [activeThreadId, setActiveThreadId] = useState<string | null>(initialThreads[0]?.id || null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -165,23 +167,43 @@ export default function MessagesClient({ userId, initialThreads }: MessagesClien
           >
             MESSAGES
           </h2>
-          <button
-            type="button"
-            onClick={() => setComposing((c) => !c)}
-            data-testid="messages-new"
-            style={{
-              padding: '0.3rem 0.6rem',
-              background: '#14B8A6',
-              color: '#0a0a0a',
-              border: 'none',
-              borderRadius: 4,
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            + New
-          </button>
+          {canDM ? (
+            <button
+              type="button"
+              onClick={() => setComposing((c) => !c)}
+              data-testid="messages-new"
+              style={{
+                padding: '0.3rem 0.6rem',
+                background: '#14B8A6',
+                color: '#0a0a0a',
+                border: 'none',
+                borderRadius: 4,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              + New
+            </button>
+          ) : (
+            <a
+              href="/pricing"
+              data-testid="messages-upgrade"
+              style={{
+                padding: '0.3rem 0.6rem',
+                background: 'transparent',
+                color: '#FFB81C',
+                border: '1px solid rgba(255,184,28,0.4)',
+                borderRadius: 4,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+              title="Direct messaging requires Verified Identity (\$24.99/yr) or any paid org tier"
+            >
+              Verify to message
+            </a>
+          )}
         </div>
         {composing ? (
           <div
@@ -399,7 +421,8 @@ export default function MessagesClient({ userId, initialThreads }: MessagesClien
                 {error}
               </div>
             ) : null}
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            {canDM ? (
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               <input
                 type="text"
                 value={draft}
@@ -443,6 +466,43 @@ export default function MessagesClient({ userId, initialThreads }: MessagesClien
                 {sending ? '…' : 'Send'}
               </button>
             </div>
+            ) : (
+              <div
+                data-testid="messages-upgrade-prompt"
+                style={{
+                  marginTop: 8,
+                  padding: '0.6rem 0.75rem',
+                  background: 'rgba(255,184,28,0.06)',
+                  border: '1px solid rgba(255,184,28,0.25)',
+                  borderRadius: 6,
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: '0.8rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}
+              >
+                <span>
+                  Direct messaging requires a paid tier.
+                </span>
+                <a
+                  href="/pricing"
+                  style={{
+                    padding: '0.35rem 0.7rem',
+                    background: '#FFB81C',
+                    color: '#0a0a0a',
+                    borderRadius: 4,
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    fontSize: '0.78rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  See plans
+                </a>
+              </div>
+            )}
           </>
         ) : (
           <div style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '4rem 0' }}>

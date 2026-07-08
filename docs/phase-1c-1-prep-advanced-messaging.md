@@ -4,6 +4,12 @@
 **Author:** KiloClaw
 **Date:** 2026-07-07
 **Source of truth:** Pricing page (https://rinkstop.com/pricing) — "Advanced messaging" advertised at Identity Plus ($59.99/yr) and Business Plus ($299/yr).
+
+> **UPDATE 2026-07-07 (Arnel correction, msg #35077):** Arnel asked whether Direct Messaging is available to Verified Identity. **Answer was no** — the original gate was Identity Plus+ / Business Plus+. Arnel decided this was wrong: **all paid tiers should have basic DMs, with advanced features tiered higher.** Updated tier gate: **Verified Identity ($24.99/yr) or Business Listing ($99/yr) floor**. This unlocks messaging for the entire paid population.
+>
+> The pricing page promise ("advanced messaging") still applies, but the floor was lowered to the cheapest paid tier. v2 features (group DMs, attachments, broadcasts) remain gated at Identity Plus+ / Business Plus+ as the "advanced" half of the name.
+>
+> C) Org-scoped DMs (free with a paid org, gated cross-org) is on the v2 backlog — see the Round 1 audit report for the full discussion.
 **Related:** `team_messages` table (org-side broadcast, ships differently; not in scope for this piece).
 
 ---
@@ -21,7 +27,7 @@ This piece adds the missing DM layer.
 - Adds API routes: GET threads, GET thread messages, POST new message, POST mark-read
 - Adds a `/dashboard/messages` page (left-rail thread list + right pane conversation)
 - Adds a small Messages bell/link in the dashboard nav (matches the existing NotificationBell pattern)
-- Tier gate: Identity Plus+ OR Business Plus+ (matches the advertising)
+- Tier gate: Verified Identity+ OR Business Listing+ (per Arnel 2026-07-07 correction — was Identity Plus+ / Business Plus+)
 - "Send a message" CTA on a coach's profile page (Identity Plus only)
 - "Send a message" CTA on a business listing page (Business Plus only)
 - No group messaging, no DMs to non-users, no file attachments (v2)
