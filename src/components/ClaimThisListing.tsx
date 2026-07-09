@@ -121,7 +121,7 @@ export default function ClaimThisListing({
             lineHeight: 1.5,
           }}>
             <strong style={{ color: '#FFB81C' }}>Want a Premium tier with up to 25 claims and featured placement?</strong>{' '}
-            <Link href="/pricing?tier=pro" style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
+            <Link href="/pricing?tier=verified_identity" style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
               See tier benefits →
             </Link>
           </div>
