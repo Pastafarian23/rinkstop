@@ -20,6 +20,7 @@ import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
 import FamilySetupWizard from '@/components/family/FamilySetupWizard';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
+import PlayerPracticePulse, { loadPracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
 
 /**
  * OWNER_EMAILS is defined in src/lib/admin-auth.ts — single source of truth.
@@ -261,6 +262,14 @@ async function renderDashboard(userId: string) {
   // visible on first paint (no client-side fetch on dashboard load).
   const inbox = await loadInboxSummary(userId);
 
+  // Player improvement-loop data (Phase 3 dashboard wedge, 2026-07-13).
+  // Only loaded when the user holds the 'player' account type — others
+  // (parents viewing kids, coaches, league admins) don't see this card.
+  // Same fail-closed pattern as the rest of the dashboard render.
+  const practicePulse = types.includes('player')
+    ? await loadPracticePulseData(userId)
+    : { suggestions: [], activeSession: null, weeklyCount: 0, monthlyCount: 0, loaded: false };
+
   // Private team workspaces the user is a member of (Day 3 team hub).
   // v2: also fetches age_label, age_min, age_max, parent_org for grouping.
   // Wrapped in try/catch so a missing table doesn't 500 the whole dashboard.
@@ -501,6 +510,18 @@ async function renderDashboard(userId: string) {
           RinkStop organizes your dashboard into three workspaces based on what you do in hockey. Pick the one that fits your current focus.
         </p>
       </div>
+
+      {/* Phase 3 dashboard wedge (2026-07-13): Player Improvement Loop.
+          Only shown when the user holds the 'player' account type.
+          Surfaces practice plans + tracks weekly/monthly cadence to nudge
+          'more involved' + 'better hockey player' — both halves of the
+          product goal. Sits above the workspaces so the pulse is the first
+          thing a player sees on /dashboard. */}
+      {types.includes('player') ? (
+        <div id="practice" style={{ scrollMarginTop: 80 }}>
+          <PlayerPracticePulse data={practicePulse} />
+        </div>
+      ) : null}
 
       <WorkspaceHub
         userTier={profile?.tier ?? 'free'}
