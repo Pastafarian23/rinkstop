@@ -7,6 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import ClaimsForm from './ClaimsForm';
 import { getUserTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
+import { trackEvent } from '@/lib/analytics';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +17,41 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; border: string;
   rejected: { bg: 'rgba(200,16,46,0.12)', color: '#FF6B7A', border: 'rgba(200,16,46,0.4)', label: 'Rejected' },
 };
 
-export default async function ClaimsPage() {
+export default async function ClaimsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ entity?: string; id?: string; name?: string; source?: string }>;
+}) {
   const session = await auth();
   const cu = await currentUser();
   const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
   const userId = await resolveCanonicalUserId(session.userId, userEmail);
   if (!session.userId) redirect('/login');
+
+  // Funnel: emit claim_started when a logged-in user lands here via a deep-link
+  // with a pre-filled entity param. This is the conversion surface that the
+  // funnel view (/admin/funnel) needs in order to actually measure conversions.
+  // Anonymous redirects (handled by /login?redirect_url=...) come through here
+  // AFTER signing in, so we capture the funnel event at that point.
+  const sp = searchParams ? await searchParams : undefined;
+  const entity = sp?.entity;
+  if (entity && (entity === 'rink' || entity === 'team' || entity === 'player')) {
+    try {
+      await trackEvent({
+        name: 'claim_started',
+        userId,
+        pathname: '/dashboard/claims',
+        props: {
+          entity_kind: entity,
+          entity_id: sp?.id ?? null,
+          entity_name: sp?.name ?? null,
+          source: sp?.source ?? null,
+        },
+      });
+    } catch {
+      // never let analytics break the page
+    }
+  }
 
   // Tier + cap for the form
   const [tier, currentCount] = await Promise.all([
