@@ -21,6 +21,7 @@ import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces'
 import FamilySetupWizard from '@/components/family/FamilySetupWizard';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
 import PlayerPracticePulse, { loadPracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
+import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/FreeAgentToggle';
 
 /**
  * OWNER_EMAILS is defined in src/lib/admin-auth.ts — single source of truth.
@@ -269,6 +270,13 @@ async function renderDashboard(userId: string) {
   const practicePulse = types.includes('player')
     ? await loadPracticePulseData(userId)
     : { suggestions: [], activeSession: null, weeklyCount: 0, monthlyCount: 0, loaded: false };
+
+  // Free-agent profile (Phase 3 dashboard wedge #2, 2026-07-13).
+  // Lets adult players opt in to be findable in /directory/free-agents.
+  // Same fail-closed / player-only-gated pattern as practicePulse.
+  const freeAgentProfile = types.includes('player')
+    ? await loadFreeAgentProfile(userId)
+    : null;
 
   // Private team workspaces the user is a member of (Day 3 team hub).
   // v2: also fetches age_label, age_min, age_max, parent_org for grouping.
@@ -520,6 +528,15 @@ async function renderDashboard(userId: string) {
       {types.includes('player') ? (
         <div id="practice" style={{ scrollMarginTop: 80 }}>
           <PlayerPracticePulse data={practicePulse} />
+        </div>
+      ) : null}
+
+      {/* Phase 3 dashboard wedge #2 (2026-07-13): Adult free-agent toggle.
+          Sits below the practice pulse for player-type users. Lets adult
+          players mark themselves visible in /directory/free-agents. */}
+      {types.includes('player') && freeAgentProfile ? (
+        <div id="free-agent" style={{ scrollMarginTop: 80 }}>
+          <FreeAgentToggle profile={freeAgentProfile} />
         </div>
       ) : null}
 
