@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'FAQ',
-  description: 'Frequently asked questions about RinkStop - the world\'s hockey directory. Find answers about accounts, listings, memberships, claims, and more.',
+  description: 'Frequently asked questions about RinkStop - the world\'s hockey directory. Find answers about accounts, listings, memberships, claims, hockey passports, coach verification, and more.',
   alternates: { canonical: 'https://rinkstop.com/faq' },
   openGraph: {
     title: 'FAQ',
-    description: 'Accounts, listings, memberships, claims, and more - everything you need to know about RinkStop.',
+    description: 'Accounts, listings, memberships, claims, hockey passports, coach verification, and more.',
     url: 'https://rinkstop.com/faq',
     siteName: 'RinkStop',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 // All Q&A content is defined here as data so we can render it both as visible
 // <details> accordions AND as a JSON-LD FAQPage schema (for Google rich results).
-// Every answer is verified against the live code as of 2026-06-11.
+// Every answer is verified against the live code as of 2026-07-10.
 
 type QA = { q: string; a: string };
 
@@ -65,7 +65,7 @@ const sections: Array<{
       },
       {
         q: 'What is identity verification and how does it work?',
-        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier - you can be verified at any paid tier (Verified Identity, Identity Plus, Club plans, League, Federation, Business Listing, or Business Plus). Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. The verification uses a government ID document and a live selfie, processed by our vendor Didit. The check is valid for two years before a re-verification is prompted. Verified Identity members and above can start the process at /dashboard/identity.',
+        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier. Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. Identity verification is required to hold trusted roles on RinkStop — including coach, referee, scorekeeper, team manager, rink operator, and federation admin. The check is valid for two years before a re-verification is prompted. Verified Identity members and above can start the process at /dashboard/identity.',
       },
       {
         q: 'Why would I verify my identity?',
@@ -127,7 +127,7 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Verified Identity members can claim 1 listing (their player profile). Identity Plus adds Family Hub and unlocks up to 5 roles under one identity. Business Listing claims 1 business listing. Business Plus claims up to 25 with featured placement. Federation is custom for 25+ listings. Free accounts can browse the directory and submit new listings, but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
+        a: 'Verified Identity members can claim 1 listing (player profile). Identity Plus adds Family Hub and up to 5 roles under one identity. Business Listing claims 1 business listing. Business Plus claims up to 25 with featured placement. Federation is custom for 25+ listings. Free accounts can browse and submit listings but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
@@ -135,7 +135,7 @@ const sections: Array<{
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
-        a: 'Yes. On your kid\'s player profile page, click "I am this player\'s parent" and submit the form. The kid\'s profile shows "Managed by [your name]". All messages sent to the kid route to your inbox, with the kid\'s name and stats visible in the thread. One parent account can manage multiple kids.',
+        a: 'Yes. On your kid\'s player profile page, click "I am this player\'s parent" and submit the form. The kid\'s profile shows "Managed by [your name]." You can manage the kid\'s team history, season stats, federation numbers, and track coach verifications and endorsements from your account. All messages sent to the kid route to your inbox. One parent account can manage multiple kids.',
       },
       {
         q: 'Can I update hours, contacts, and socials for a listing I claimed?',
@@ -187,6 +187,45 @@ const sections: Array<{
     ],
   },
   {
+    id: 'passport',
+    title: 'Hockey Passport & Coach Verification',
+    icon: '📋',
+    qa: [
+      {
+        q: 'What is a hockey passport?',
+        a: 'Your hockey passport is a verified record of your hockey career on RinkStop. It appears on your public profile at /profile/[username] and shows team history, per-season stats, federation registration numbers (USA Hockey, Hockey Canada), coach endorsements, and coach verifications. Self-reported rows start as "self-reported." Once a coach verifies a row, it flips to "coach-verified" with the coach\'s name and verification date. Only authenticated users can submit data; the passport itself is viewable by anyone.',
+      },
+      {
+        q: 'How do I add my team history to my passport?',
+        a: 'Sign in, go to /dashboard/passport, and click "Add Team History." Choose a team and season, enter your jersey number, position (Forward, Defense, or Goalie), and start/end dates. Submitted rows start as "self-reported." You can manage all entries from your dashboard.',
+      },
+      {
+        q: 'How do I add my stats to my passport?',
+        a: 'From /dashboard/passport, click "Add Season Stats." Select a season, level, and team, then enter your numbers. Skaters enter games played, goals, assists, and plus/minus. Goalies enter games played, wins, losses, goals against, save percentage, and shutouts. Each season+level can only be entered once — duplicate submissions return an error.',
+      },
+      {
+        q: 'How do I add my USA Hockey or Hockey Canada number?',
+        a: 'From /dashboard/passport, click "Edit Federation Numbers." Both fields are optional — you can add one, the other, or neither. You can update them at any time.',
+      },
+      {
+        q: 'How does coach verification work?',
+        a: 'When you add self-reported team history for a team, any registered coach who is on record coaching that team can verify your row. Verification only works for rows marked "self-reported." Once a coach verifies, the row flips to "coach-verified" with the coach\'s name and verification date. Coaches can only verify rows for teams they actually coach (checked against their current team + team history). Coaches cannot re-verify rows that are already verified.',
+      },
+      {
+        q: 'How do coach endorsements work?',
+        a: 'Registered coaches can write an endorsement for any player. Endorsements cover skills, character, leadership, eligibility for the next level, or recruitment readiness. The coach chooses visibility — sport-scoped (visible everywhere), cross-sport (visible in other sports), or private (only the player + coach). Endorsements appear on the player\'s passport with the coach\'s name and date. No two coaches can issue the same endorsement type for the same player — duplicate submissions are blocked.',
+      },
+      {
+        q: 'How do I become a verified coach on RinkStop?',
+        a: 'Go to /dashboard/coach to register. Fill in your license number or issuing authority, your current team, and a short bio. Identity verification (government ID + selfie) is required — your coach profile is only issued after your identity is confirmed. Once registered, your coach profile is visible to players and you can issue endorsements and verify self-reported rows for teams you coach.',
+      },
+      {
+        q: 'Can a parent verify a youth player\'s passport entries?',
+        a: 'Parents manage a youth player\'s passport by claiming the kid\'s profile. The parent\'s account can add the kid\'s team history, stats, and federation numbers. Coach verification is the only thing a parent cannot do directly — only coaches physically involved with that team can verify. Coach endorsements are also written by coaches, not parents.',
+      },
+    ],
+  },
+  {
     id: 'messaging',
     title: 'Messaging & Connections',
     icon: '💬',
@@ -219,7 +258,7 @@ const sections: Array<{
     icon: '🤝',
     qa: [
       {
-        q: 'How can my league or team get featured on RinkStop? (unchanged)',
+        q: 'How can my league or team get featured on RinkStop?',
         a: 'Reach out at /partner or email support@rinkstop.com with your story. Business Plus and Club Elite members get automatic Featured Listing rotation in their city. Non-Premium members can be considered for editorial coverage in /highlights.',
       },
       {
