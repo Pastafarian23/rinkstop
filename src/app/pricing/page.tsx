@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { auth } from '@clerk/nextjs/server';
 import PricingContent from './PricingContent';
 import { trackPageView, trackEvent } from '@/lib/analytics';
@@ -36,7 +37,22 @@ export default async function FoundingMemberPage({
   const { userId } = await auth();
   const params = await searchParams;
   const cancelled = params.cancelled === '1';
-  const utmTier = params.tier || null;
+
+  // Server-side referer-based default tier (Pricing analysis 2026-07-10):
+  // When a visitor lands on /pricing from a directory detail page without an
+  // explicit ?tier= param, default to the cheapest tier that covers that entity
+  // type so they see one card highlighted, not all 8.
+  let utmTier = params.tier || null;
+  if (!utmTier) {
+    const h = await headers();
+    const refHeader = h.get('x-rinkstop-referer') || h.get('referer') || '';
+    if (/\/directory\/rinks\//.test(refHeader)) utmTier = 'business_listing';
+    else if (/\/directory\/teams\//.test(refHeader)) utmTier = 'club_starter';
+    else if (/\/directory\/leagues\//.test(refHeader)) utmTier = 'club_starter';
+    else if (/\/directory\/players\//.test(refHeader)) utmTier = 'verified_identity';
+    else if (/\/claim-your-listing/.test(refHeader)) utmTier = 'business_listing';
+  }
+
   const pathname = '/pricing';
 
   // Track pricing page view + sign the user in so we can correlate downstream

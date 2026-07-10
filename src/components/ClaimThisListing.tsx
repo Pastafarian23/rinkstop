@@ -2,6 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { formatTierPrice } from '@/lib/pricing';
+
+// Default tier per entity type (matches /claim-your-listing ClaimButton).
+// Used to display the entry price on the CTA so visitors know what they'll pay.
+const DEFAULT_TIER_BY_ENTITY: Record<ClaimEntityType, 'business_listing' | 'club_starter' | 'verified_identity'> = {
+  rink: 'business_listing',
+  team: 'club_starter',
+  league: 'club_starter',
+  player: 'verified_identity',
+};
 
 export type ClaimEntityType = 'rink' | 'team' | 'league' | 'player';
 
@@ -158,7 +168,7 @@ export default function ClaimThisListing({
               whiteSpace: 'nowrap',
             }}
           >
-            Sign in to claim
+            Sign in to claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr
           </Link>
         </div>
       </div>
@@ -180,7 +190,7 @@ export default function ClaimThisListing({
             </div>
           </div>
           <button
-            onClick={() => openCheckout(state.recommendedTier || 'verified_identity', 'inline-claim-free')}
+            onClick={() => openCheckout(state.recommendedTier || DEFAULT_TIER_BY_ENTITY[entityType], 'inline-claim-free')}
             style={{
               background: '#FFB81C',
               color: '#041E42',
@@ -194,7 +204,7 @@ export default function ClaimThisListing({
               cursor: 'pointer',
             }}
           >
-            Unlock claim →
+            Unlock claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr →
           </button>
         </div>
       </div>
