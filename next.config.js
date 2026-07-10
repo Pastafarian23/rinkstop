@@ -124,8 +124,8 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/gear-brands',
-        destination: '/gear-reviews',
+        source: '/gear-reviews',
+        destination: '/gear-brands',
         permanent: true,
       },
       // www.rinkstop.com → rinkstop.com (301)

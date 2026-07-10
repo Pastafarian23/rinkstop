@@ -2,16 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Equipment & Gear Brands | Reviews, Comparisons, Buying Guides',
-  description: 'Hockey equipment and gear brand directory. Reviews of Bauer, CCM, Warrior, True, and Easton for skates, sticks, pads, helmets, and protective gear. Buying guides for 2026.',
+  title: 'Hockey Equipment Brands — Bauer, CCM, Warrior, True & More (2026 Guide)',
+  description:
+    'Hockey equipment brands directory. Reviews of Bauer, CCM, Warrior, True, and Easton for skates, sticks, pads, helmets, and protective gear. Buying guides and brand comparisons for 2026.',
   alternates: {
-    canonical: 'https://rinkstop.com/gear-reviews',
+    canonical: 'https://rinkstop.com/gear-brands',
   },
   openGraph: {
-    title: 'Hockey Equipment & Gear Brands | RinkStop',
-    description: 'Hockey equipment reviews, brand comparisons, and buying guides for skates, sticks, pads, and more.',
+    title: 'Hockey Equipment Brands — Bauer, CCM, Warrior, True & More',
+    description:
+      'Hockey equipment brand directory: reviews, comparisons, and buying guides for skates, sticks, pads, and protective gear.',
     type: 'website',
-    url: 'https://rinkstop.com/gear-reviews',
+    url: 'https://rinkstop.com/gear-brands',
   },
 };
 
@@ -21,15 +23,15 @@ export default function GearBrandsPage() {
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Gear & Reviews</span>
+        <span style={{ color: '#A0A0A0' }}>Hockey Equipment Brands</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          GEAR & REVIEWS
+          HOCKEY EQUIPMENT BRANDS
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          Equipment reviews, brand comparisons, and what to buy  --  from skates to sticks.
+          Equipment brands, reviews, comparisons, and what to buy  --  from skates to sticks.
         </p>
       </div>
 
@@ -80,9 +82,11 @@ export default function GearBrandsPage() {
         ))}
       </div>
 
-      {/* Editorial section — added 2026-06-15 to lift position on
-          "hockey equipment" type queries. 250+ words, with h2s that
-          Google can extract featured snippets from. */}
+      {/* Editorial section — keyword-targeted for "hockey equipment", "hockey equipment brands",
+          "best hockey equipment", "hockey gear brands" (GSC queries at position 50-90 in 90d).
+          The page lives at /gear-brands because that is the URL Google already had impressions on.
+          Pre-2026-07-10 this route 308-redirected to /gear-reviews; GSC reports 213 impr/month
+          wasted on the redirect. Moving the content here matches the URL to the query intent. */}
       <section style={{ marginTop: '2.5rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
         <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
           What hockey equipment do you actually need?
@@ -104,6 +108,17 @@ export default function GearBrandsPage() {
           reputation in sticks and is now a full-line brand under the New Balance Hockey parent
           company. <strong>True</strong> is the disruptor, selling direct-to-consumer to cut
           retail markup and offering adjustable skate systems that grow with the player.
+        </p>
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          Best hockey equipment brands by category
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Skates:</strong> Bauer and CCM are the safe choices for most players. True is the
+          disruptor with its adjustable boot system and direct-to-consumer pricing. Easton is
+          still around but the skate line has been retired. <strong>Sticks:</strong> Bauer, CCM,
+          Warrior, and True dominate the senior market; Sherwood and Warrior own a lot of the
+          value tier. <strong>Helmets:</strong> Bauer Re-Akt and CCM Tacks are the most popular
+          senior models. For goalies, CCM and Bauer split the market about evenly.
         </p>
         <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
           How much does hockey equipment cost in 2026?
