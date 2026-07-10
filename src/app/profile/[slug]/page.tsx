@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import ConnectButton from '@/components/ConnectButton';
 import SocialActions from '@/components/SocialActions';
@@ -9,6 +10,7 @@ import { IdentityVerified } from '@/components/IdentityVerified';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { getTierLabel } from '@/lib/pricing';
+import { PassportSections } from './passport/PassportSections';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -197,6 +199,11 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   const displayName = profile.display_name ?? 'RinkStop user';
   const profileUrl = `https://rinkstop.com/profile/${profile.username}`;
   const tierLabel = getTierLabel(profile.tier);
+
+  // Determine ownership: is the viewer the owner of this profile?
+  // Used by passport sections to show edit CTAs.
+  const { userId: viewerUserId } = await auth();
+  const isOwner = !!viewerUserId && viewerUserId === profile.user_id;
 
   // Piece C (2026-06-24): identity-verified gate uses the hardened helper,
   // which also requires profiles.didit_session_id and a matching approved
@@ -691,6 +698,10 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               </div>
             </div>
           )}
+
+          {/* ─── HOCKEY PASSPORT (v1, 2026-07-10) ───────────────── */}
+          {/* Renders only when this user has a player record. */}
+          <PassportSections profileUserId={profile.user_id} isOwner={isOwner} />
 
           {/* ─── FOOTER ─────────────────────────────────────────── */}
           <div
