@@ -16,9 +16,10 @@ interface ClaimsFormProps {
   tier: string;
   maxClaims: number; // -1 means Federation/custom
   currentCount: number;
+  recommendedTier?: string;
 }
 
-export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsFormProps) {
+export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedTier }: ClaimsFormProps) {
   const searchParams = useSearchParams();
   // Read deep-link params (e.g. /dashboard/claims?entity=team&id=...&name=...)
   // and pre-fill the form. Supports entity=team|rink|player.
@@ -88,6 +89,10 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
   };
 
   const isUnlimited = maxClaims === -1;
+
+  // Tier to deep-link when the user clicks 'Upgrade'. Comes from /claim-your-listing
+  // -> /login -> /dashboard/claims?tier=X. Falls back to verified_identity.
+  const upgradeTier = recommendedTier || 'verified_identity';
   const isFree = tier === 'free' || maxClaims === 0;
   const atCap = !isUnlimited && !isFree && currentCount >= maxClaims;
   const usagePct = isUnlimited || isFree ? 0 : Math.min(100, Math.round((currentCount / Math.max(1, maxClaims)) * 100));
@@ -238,10 +243,10 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             Upgrade required to claim
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            The Free tier doesn't include claims. Verified Identity is {formatTierPrice('verified_identity')}/year (claim your profile + unlimited roles under one identity), Identity Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
+            The Free tier doesn&apos;t include claims. Verified Identity is {formatTierPrice('verified_identity')}/year (claim your profile + unlimited roles under one identity), Identity Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
           </p>
           <Link
-            href="/pricing"
+            href={`/pricing?tier=${upgradeTier}`}
             style={{
               display: 'inline-block',
               background: '#FFB81C',
@@ -272,7 +277,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount }: ClaimsForm
             {tier === 'business_plus' || tier === 'federation' ? `You've used all ${maxClaims} claim slots. Contact sales for Federation custom volume.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact sales for Federation.`}
           </p>
           <Link
-            href="/pricing"
+            href={tier === 'business_plus' || tier === 'federation' ? '/partner?source=claims-cap' : `/pricing?tier=${upgradeTier}`}
             style={{
               display: 'inline-block',
               background: '#C8102E',

@@ -20,7 +20,7 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; border: string;
 export default async function ClaimsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ entity?: string; id?: string; name?: string; source?: string }>;
+  searchParams?: Promise<{ entity?: string; id?: string; name?: string; source?: string; tier?: string }>;
 }) {
   const session = await auth();
   const cu = await currentUser();
@@ -163,6 +163,7 @@ export default async function ClaimsPage({
             tier={tier}
             maxClaims={maxForClient}
             currentCount={currentCount}
+            recommendedTier={sp?.tier || undefined}
           />
         </Suspense>
       </section>
