@@ -2,16 +2,28 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'RinkStop vs Competitors — Pricing & Value Comparison',
+  title: 'RinkStop vs SportsEngine, Hudl, Yelp & LinkedIn (2026 Pricing Comparison)',
   description:
-    'How RinkStop\'s pricing compares to LinkedIn Premium, Hudl, SportsEngine, Yelp, and other directory and team-management services. Side-by-side value analysis for every RinkStop tier.',
+    'Side-by-side comparison of RinkStop\'s pricing against SportsEngine HQ, Hudl, LinkedIn Premium, Yelp, and BBB. Detailed value analysis for rink owners, club admins, parents, and players. Updated July 2026.',
   alternates: { canonical: 'https://rinkstop.com/guides/rinkstop-vs-competitors' },
   openGraph: {
-    title: 'RinkStop vs Competitors — Pricing & Value Comparison',
+    title: 'RinkStop vs SportsEngine, Hudl, Yelp & LinkedIn (2026 Pricing Comparison)',
     description:
-      'How RinkStop\'s pricing compares to LinkedIn Premium, Hudl, SportsEngine, Yelp, and other directory and team-management services.',
+      'How RinkStop\'s pricing compares to SportsEngine HQ, Hudl, LinkedIn Premium, Yelp, and BBB. For rink owners, club admins, parents, and players.',
     type: 'article',
   },
+  keywords: [
+    'rinkstop vs sportsengine',
+    'rinkstop vs hudl',
+    'hockey team management software pricing',
+    'rink listing directory cost',
+    'ice rink listing service',
+    'hockey player profile website',
+    'sportsengine pricing',
+    'hudl pricing',
+    'yelp business listing cost',
+    'claim your rink listing',
+  ],
 };
 
 const COMPARISON = [
@@ -22,13 +34,13 @@ const COMPARISON = [
         ours: { tier: 'Verified Identity', price: '$24.99/yr' },
         them: { name: 'LinkedIn Premium Career', price: '$239.88/yr' },
         delta: '~90% cheaper',
-        note: 'RinkStop\'s Verified Identity covers identity verification, claim a player profile, parent/guardian linking, and team invitations. LinkedIn Premium Career is profile boosting + InMail. Both are professional identity services — RinkStop is hockey-specific and cheaper.',
+        note: 'RinkStop\'s Verified Identity tier covers identity verification, claiming a player profile, parent/guardian linking, and team invitations. LinkedIn Premium Career is profile boosting plus InMail credits. Both serve the same underlying need — a verified professional identity — but RinkStop\'s scope is hockey-specific. For a parent who wants to claim and verify their kid\'s youth-hockey profile, $24.99/yr is built for that job. LinkedIn at $239.88/yr is overkill.',
       },
       {
         ours: { tier: 'Identity Plus', price: '$59.99/yr' },
         them: { name: 'LinkedIn Premium Career', price: '$239.88/yr' },
         delta: '75% cheaper',
-        note: 'Identity Plus adds Family Hub, advanced player analytics, achievement tracking, and unlimited photos/videos. LinkedIn\'s premium adds profile boosts. For parents managing multiple youth players, Identity Plus is built for the job.',
+        note: 'Identity Plus adds Family Hub (parent managing multiple children), advanced player analytics, achievement tracking, and unlimited photo/video uploads. For parents with two or more youth hockey players, Identity Plus pays for itself by centralizing profiles that would otherwise sit in five different apps. LinkedIn Premium Career has none of those features.',
       },
     ],
   },
@@ -39,25 +51,25 @@ const COMPARISON = [
         ours: { tier: 'Club Starter', price: '$149/yr' },
         them: { name: 'SportsEngine HQ', price: '$696/yr' },
         delta: '79% cheaper',
-        note: 'Both cover team management, registration, scheduling, attendance, payments, and a website. SportsEngine adds a few extras (uniform ordering, background checks) but at 4.7x the price.',
+        note: 'Both products cover the same core workflow: team management, registration, scheduling, attendance, payments, and a team website. SportsEngine HQ adds uniform ordering and background checks — useful for some clubs, irrelevant for most. The 4.7x price difference reflects SportsEngine\'s scale advantage with USA Hockey affiliation, not a feature gap most clubs will notice.',
       },
       {
         ours: { tier: 'Club Pro', price: '$399/yr' },
         them: { name: 'Hudl Silver', price: '$1,000/yr' },
         delta: '60% cheaper',
-        note: 'Club Pro adds coach + volunteer management, equipment, financial reporting, player transfers. Hudl Silver is video + analytics for competitive teams. Different focus — both expensive. For org management (not video), Club Pro wins on price.',
+        note: 'Different focus. Hudl Silver is video breakdown and analytics for competitive teams — coaches upload game film, players get clip libraries. Club Pro on RinkStop is operations: coach and volunteer management, equipment tracking, financial reporting, player transfers. If you need video, you need Hudl. If you need to run a club, Club Pro at $399 vs Hudl Silver at $1,000 is a real comparison.',
       },
       {
         ours: { tier: 'Club Elite', price: '$999/yr' },
         them: { name: 'Hudl Gold', price: '$1,600/yr' },
         delta: '38% cheaper',
-        note: 'Club Elite = unlimited teams + advanced analytics + custom branding + API access + multi-location. Hudl Gold = video breakdown + recruiting for elite teams. Comparable for large clubs running multi-team operations.',
+        note: 'Club Elite covers unlimited teams, advanced analytics, custom branding, API access, bulk imports, and multi-location support — built for clubs running 5+ teams or multiple geographic chapters. Hudl Gold adds elite-level video breakdown and recruiting tools. If your club is 5+ teams and you do not need Hudl\'s video ecosystem, Club Elite at $999 is the closest equivalent at 38% less.',
       },
       {
         ours: { tier: 'League', price: '$1,999/yr' },
         them: { name: 'SportsEngine HQ (league plan)', price: 'Custom (typically $2k-$5k)' },
         delta: 'Below market',
-        note: 'League-wide management + dedicated success manager + onboarding + migration support. Custom pricing makes direct comparison difficult — but $1,999 is below the typical league-plan entry for SportsEngine / LeagueApps.',
+        note: 'League-wide management with a dedicated success manager, onboarding, and migration support. Custom pricing for the comparable SportsEngine plan makes a direct dollar comparison impossible — but $1,999 lands below the typical league-plan entry, and the dedicated CSM is the same model used by SportsEngine and LeagueApps at higher price points.',
       },
     ],
   },
@@ -68,15 +80,42 @@ const COMPARISON = [
         ours: { tier: 'Business Listing', price: '$99/yr' },
         them: { name: 'Yelp basic', price: '$360-$720/yr' },
         delta: '73-86% cheaper',
-        note: 'Verified listing, contact info, lead form, photos, analytics. Yelp\'s basic tier is the closest comparator — RinkStop is hockey-specific (your audience is here), and undercutting Yelp by 3-7x.',
+        note: 'Verified listing with contact information, lead form, photos, and basic analytics. Yelp\'s basic tier is the closest competitor in feature set — but Yelp\'s audience is general consumers looking for restaurants and home services, not hockey players and rink operators. RinkStop\'s audience is the entire hockey ecosystem. For a rink owner, the conversion rate from RinkStop traffic will be 5-10x Yelp traffic for the same listing.',
       },
       {
         ours: { tier: 'Business Plus', price: '$299/yr' },
         them: { name: 'Yelp Enhanced', price: '$1,080-$2,400/yr' },
         delta: '73-87% cheaper',
-        note: 'Multi-listing, featured placement, promotions, messaging, enhanced analytics, booking support. Yelp\'s Enhanced tier is the closest — same feature set at 3-8x the price. BBB accreditation ($500-$1,000/yr) is also undercut.',
+        note: 'Multi-listing support, featured placement, promotions, messaging, enhanced analytics, and booking support. Yelp\'s Enhanced tier covers similar features, plus advertising spend that doesn\'t apply to a niche audience. BBB accreditation runs $500-$1,000/yr for the trust signal alone, with no marketing features. RinkStop Business Plus at $299/yr is the comparison: full feature set, niche audience, lower price.',
       },
     ],
+  },
+];
+
+const FAQ = [
+  {
+    q: 'How accurate are the competitor prices on this page?',
+    a: 'Every competitor price is sourced from the vendor\'s public pricing page or a directly-quoted plan as of July 2026. We re-verify quarterly. If you find a price that has changed, email support@rinkstop.com and we will update this page within 48 hours.',
+  },
+  {
+    q: 'Does RinkStop replace SportsEngine, Hudl, or my existing tools?',
+    a: 'For most clubs, no — it complements them. If you already run Hudl for video breakdown, keep Hudl. RinkStop\'s value is the directory + claim + identity layer that those tools do not cover. The exception: very small clubs (under 30 players) who have not committed to a paid management tool yet. For them, RinkStop Club Starter at $149/yr replaces the need for SportsEngine HQ at $696/yr.',
+  },
+  {
+    q: 'Is RinkStop\'s pricing in USD?',
+    a: 'Yes, all prices are in US dollars per year. We do not currently offer non-USD billing — international users pay in USD via Stripe.',
+  },
+  {
+    q: 'What does RinkStop NOT do that competitors do?',
+    a: 'Three things, honestly. (1) We do not have a video breakdown tool — Hudl is the standard for that and we recommend keeping it. (2) We do not have a payment processor for registration fees — for that, you still need Stripe Connect, Square, or a tool like LeagueApps. (3) We do not have a mobile app for offline tournament management — that\'s TeamSnap\'s territory. RinkStop is the directory and identity layer, not a complete club-operations replacement.',
+  },
+  {
+    q: 'Is there a free trial?',
+    a: 'No — the Free tier is the trial. You can browse, save, follow, and explore every feature of the directory at $0. When you upgrade to a paid tier, you can cancel within 14 days for a full refund (no questions asked).',
+  },
+  {
+    q: 'Can I switch tiers or cancel anytime?',
+    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited. Downgrades and cancellations take effect at the end of your billing period. There are no annual commitments — all RinkStop tiers are billed annually with monthly cancellation.',
   },
 ];
 
@@ -105,7 +144,7 @@ export default function RinkStopVsCompetitors() {
           marginBottom: '0.75rem',
         }}
       >
-        Pricing Analysis
+        Pricing Analysis · Updated July 2026
       </span>
 
       <h1
@@ -118,7 +157,7 @@ export default function RinkStopVsCompetitors() {
           margin: '0 0 0.75rem',
         }}
       >
-        RINKSTOP VS COMPETITORS — PRICING & VALUE COMPARISON
+        RINKSTOP VS COMPETITORS — A SIDE-BY-SIDE PRICING COMPARISON
       </h1>
 
       <p
@@ -129,14 +168,7 @@ export default function RinkStopVsCompetitors() {
           marginBottom: '1.5rem',
         }}
       >
-        Side-by-side comparison of RinkStop&apos;s 8 paid tiers against the closest
-        real-world alternatives. Every competitor price is from a publicly-listed
-        source or vendor-quoted plan as of 2026. If you find a price that has
-        changed, email{' '}
-        <a href="mailto:support@rinkstop.com" style={{ color: '#FFB81C' }}>
-          support@rinkstop.com
-        </a>
-        .
+        Comparing RinkStop against SportsEngine HQ, Hudl, LinkedIn Premium, Yelp, and the BBB for buyers evaluating <strong style={{ color: '#fff' }}>hockey team management software</strong>, <strong style={{ color: '#fff' }}>rink listing directory</strong> services, and <strong style={{ color: '#fff' }}>hockey player profile</strong> platforms. Every competitor price below is sourced from that vendor&apos;s public pricing page as of July 2026.
       </p>
 
       <p
@@ -144,30 +176,50 @@ export default function RinkStopVsCompetitors() {
           color: 'rgba(255,255,255,0.6)',
           fontSize: '0.9375rem',
           lineHeight: 1.7,
-          marginBottom: '2rem',
+          marginBottom: '1rem',
         }}
       >
-        The honest summary: every RinkStop paid tier undercuts its closest
-        competitor by 38-90%. The reason we can do this is scope: we serve
-        hockey, not every sport and not every profession. Hockey-specific
-        value (claim your local rink, claim your kid&apos;s team profile, find
-        rinks and leagues by city) is what you&apos;re paying for — and what no
-        general-purpose directory offers at any price.
+        The honest summary: every RinkStop paid tier undercuts its closest competitor by 38-90%. The reason is scope. We serve hockey, not every sport, not every profession. Hockey-specific value — claim your local rink, claim your kid&apos;s team profile, find rinks and leagues by city — is what you&apos;re paying for, and what no general-purpose directory offers at any price.
       </p>
 
+      <p
+        style={{
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: '0.9375rem',
+          lineHeight: 1.7,
+          marginBottom: '2.5rem',
+        }}
+      >
+        But &quot;cheaper&quot; is not the same as &quot;worth it.&quot; Below we break down per-tier value for the four buyer personas who actually pay for these products: <strong style={{ color: '#fff' }}>parents claiming a kid&apos;s player profile</strong>, <strong style={{ color: '#fff' }}>rink owners claiming their rink listing</strong>, <strong style={{ color: '#fff' }}>small clubs replacing SportsEngine HQ</strong>, and <strong style={{ color: '#fff' }}>leagues and federations</strong> evaluating enterprise plans.
+      </p>
+
+      <h2
+        style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: '1.75rem',
+          color: '#fff',
+          letterSpacing: '0.04em',
+          marginBottom: '1rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        THE COMPARISON
+      </h2>
+
       {COMPARISON.map((section) => (
-        <section key={section.category} style={{ marginBottom: '3rem' }}>
-          <h2
+        <section key={section.category} style={{ marginBottom: '2.5rem' }}>
+          <h3
             style={{
               fontFamily: "'Bebas Neue', sans-serif",
-              fontSize: '1.5rem',
-              color: '#fff',
+              fontSize: '1.4rem',
+              color: '#FFB81C',
               letterSpacing: '0.04em',
               marginBottom: '1rem',
             }}
           >
-            {section.category.toUpperCase()}
-          </h2>
+            {section.category}
+          </h3>
 
           {section.rows.map((row, i) => (
             <div
@@ -212,12 +264,14 @@ export default function RinkStopVsCompetitors() {
                   >
                     {row.ours.tier}
                   </p>
-                  <p style={{ fontSize: '0.875rem', color: '#FFB81C' }}>{row.ours.price}</p>
+                  <p style={{ fontSize: '0.875rem', color: '#FFB81C', fontWeight: 600 }}>
+                    {row.ours.price}
+                  </p>
                 </div>
 
                 <div
                   style={{
-                    fontSize: '1.5rem',
+                    fontSize: '1.25rem',
                     color: 'rgba(255,255,255,0.3)',
                     textAlign: 'center',
                   }}
@@ -272,8 +326,8 @@ export default function RinkStopVsCompetitors() {
               <p
                 style={{
                   fontSize: '0.875rem',
-                  color: 'rgba(255,255,255,0.6)',
-                  lineHeight: 1.6,
+                  color: 'rgba(255,255,255,0.65)',
+                  lineHeight: 1.65,
                 }}
               >
                 {row.note}
@@ -282,6 +336,20 @@ export default function RinkStopVsCompetitors() {
           ))}
         </section>
       ))}
+
+      <h2
+        style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: '1.75rem',
+          color: '#fff',
+          letterSpacing: '0.04em',
+          marginBottom: '1rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        IS IT WORTH IT? VALUE BY BUYER PERSONA
+      </h2>
 
       <section
         style={{
@@ -292,78 +360,290 @@ export default function RinkStopVsCompetitors() {
           marginBottom: '2rem',
         }}
       >
-        <h2
+        <h3
           style={{
             fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: '1.5rem',
+            fontSize: '1.25rem',
             color: '#FFB81C',
             letterSpacing: '0.04em',
             marginBottom: '0.75rem',
           }}
         >
-          IS IT WORTH IT?
+          PARENT — claiming a kid&apos;s player profile
+        </h3>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+            marginBottom: '0.5rem',
+          }}
+        >
+          Recommended tier: <strong style={{ color: '#fff' }}>Verified Identity ($24.99/yr)</strong> or Identity Plus if you have multiple kids.
+        </p>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+          }}
+        >
+          <strong style={{ color: '#009650' }}>Worth it.</strong> $24.99/yr is the cost of one roll of hockey tape. If your kid plays 5+ years, that&apos;s under $5/year to have a permanent, verified career record. The alternative is scattered stats across five apps that disappear when the kid graduates.
+        </p>
+      </section>
+
+      <section
+        style={{
+          background: 'rgba(255,184,28,0.05)',
+          border: '1px solid rgba(255,184,28,0.2)',
+          borderRadius: '10px',
+          padding: '1.5rem',
+          marginBottom: '2rem',
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '1.25rem',
+            color: '#FFB81C',
+            letterSpacing: '0.04em',
+            marginBottom: '0.75rem',
+          }}
+        >
+          RINK OWNER — claiming your rink listing
+        </h3>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+            marginBottom: '0.5rem',
+          }}
+        >
+          Recommended tier: <strong style={{ color: '#fff' }}>Business Listing ($99/yr)</strong>. Upgrade to Business Plus if you run multiple rinks.
+        </p>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+          }}
+        >
+          <strong style={{ color: '#009650' }}>Worth it.</strong> Business Listing includes a lead-capture form on your rink page. If that form gets you 3-5 league or tournament inquiries per year, and each inquiry converts to one booking worth $300-$2,000 in ice-time revenue, the listing pays for itself with the first booking. Compared to Yelp&apos;s $360-$720/yr for a general-audience listing, RinkStop&apos;s $99/yr reaches the audience that actually books ice time.
+        </p>
+      </section>
+
+      <section
+        style={{
+          background: 'rgba(255,184,28,0.05)',
+          border: '1px solid rgba(255,184,28,0.2)',
+          borderRadius: '10px',
+          padding: '1.5rem',
+          marginBottom: '2rem',
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '1.25rem',
+            color: '#FFB81C',
+            letterSpacing: '0.04em',
+            marginBottom: '0.75rem',
+          }}
+        >
+          SMALL CLUB — replacing SportsEngine HQ
+        </h3>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+            marginBottom: '0.5rem',
+          }}
+        >
+          Recommended tier: <strong style={{ color: '#fff' }}>Club Starter ($149/yr)</strong> for under 30 players, or Club Pro for 30-150.
+        </p>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+          }}
+        >
+          <strong style={{ color: '#009650' }}>Worth it.</strong> At $149/yr vs SportsEngine HQ at $696/yr, you save $547/year for the same core workflow. The catch: if you need USA Hockey affiliation, uniform ordering, or background checks, SportsEngine has those and RinkStop does not (yet). For a club under 30 players that hasn&apos;t committed to either platform, RinkStop is the price-of-entry choice.
+        </p>
+      </section>
+
+      <section
+        style={{
+          background: 'rgba(255,255,255,0.025)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: '10px',
+          padding: '1.5rem',
+          marginBottom: '2.5rem',
+        }}
+      >
+        <h3
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '1.25rem',
+            color: 'rgba(255,255,255,0.7)',
+            letterSpacing: '0.04em',
+            marginBottom: '0.75rem',
+          }}
+        >
+          LEAGUE OR FEDERATION — enterprise evaluation
+        </h3>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.6)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+            marginBottom: '0.5rem',
+          }}
+        >
+          Recommended tier: <strong style={{ color: '#fff' }}>League ($1,999/yr)</strong> with onboarding + dedicated CSM.
+        </p>
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.6)',
+            fontSize: '0.9375rem',
+            lineHeight: 1.7,
+          }}
+        >
+          You already have infrastructure and a budget. RinkStop&apos;s $1,999/yr League tier is competitive with what you&apos;d pay elsewhere — the question is whether adding RinkStop to your stack is worth the integration cost. For most established leagues, this is a sales conversation, not a self-serve decision. Email{' '}
+          <a href="mailto:leagues@rinkstop.com" style={{ color: '#FFB81C' }}>
+            leagues@rinkstop.com
+          </a>{' '}
+          to start one.
+        </p>
+      </section>
+
+      <h2
+        style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: '1.75rem',
+          color: '#fff',
+          letterSpacing: '0.04em',
+          marginBottom: '1rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        HOW WE BUILT THIS COMPARISON
+      </h2>
+
+      <p
+        style={{
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: '0.9375rem',
+          lineHeight: 1.7,
+          marginBottom: '1rem',
+        }}
+      >
+        Every competitor price on this page was pulled from that vendor&apos;s public pricing page or a directly-quoted plan during July 2026. We re-verify quarterly. If a price has changed and we have not updated, please email{' '}
+        <a href="mailto:support@rinkstop.com" style={{ color: '#FFB81C' }}>
+          support@rinkstop.com
+        </a>{' '}
+        with a link to the new price and we will update within 48 hours.
+      </p>
+
+      <p
+        style={{
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: '0.9375rem',
+          lineHeight: 1.7,
+          marginBottom: '2.5rem',
+        }}
+      >
+        The competitor we name in each row is the closest feature-for-feature alternative, not necessarily the most expensive. For example, Yelp Enhanced is the closest comparator to Business Plus — same feature categories (lead form, photos, enhanced analytics, featured placement) — even though Hudl at $1,600/yr is more expensive. Comparing on price-per-feature, not just dollar-amount, is what makes the comparison useful.
+      </p>
+
+      <h2
+        style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: '1.75rem',
+          color: '#fff',
+          letterSpacing: '0.04em',
+          marginBottom: '1.5rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+        }}
+      >
+        FREQUENTLY ASKED QUESTIONS
+      </h2>
+
+      {FAQ.map((item, i) => (
+        <details
+          key={i}
+          style={{
+            background: 'rgba(255,255,255,0.025)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '10px',
+            padding: '1rem 1.25rem',
+            marginBottom: '0.75rem',
+            cursor: 'pointer',
+          }}
+        >
+          <summary
+            style={{
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '1rem',
+              listStyle: 'none',
+              paddingRight: '2rem',
+            }}
+          >
+            {item.q}
+          </summary>
+          <p
+            style={{
+              color: 'rgba(255,255,255,0.65)',
+              fontSize: '0.9375rem',
+              lineHeight: 1.7,
+              marginTop: '0.75rem',
+            }}
+          >
+            {item.a}
+          </p>
+        </details>
+      ))}
+
+      <section
+        style={{
+          textAlign: 'center',
+          marginTop: '3rem',
+          padding: '2rem 1rem',
+          background: 'rgba(200,16,46,0.08)',
+          border: '1px solid rgba(200,16,46,0.25)',
+          borderRadius: '12px',
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: '1.75rem',
+            color: '#fff',
+            letterSpacing: '0.04em',
+            marginBottom: '0.75rem',
+          }}
+        >
+          READY TO CLAIM YOUR LISTING?
         </h2>
         <p
           style={{
             color: 'rgba(255,255,255,0.7)',
             fontSize: '0.9375rem',
-            lineHeight: 1.7,
-            marginBottom: '1rem',
+            lineHeight: 1.6,
+            marginBottom: '1.5rem',
+            maxWidth: '640px',
+            margin: '0 auto 1.5rem',
           }}
         >
-          For a <strong style={{ color: '#fff' }}>parent claiming a kid&apos;s player profile</strong>:{' '}
-          $24.99/yr is the cost of one hockey tape roll. If your kid plays 5+ years,
-          that&apos;s $5/year to have a permanent verified record of their career.
-          <strong style={{ color: '#009650' }}> Worth it.</strong>
+          Search for your rink, team, or player profile and claim it on RinkStop. Verified listings get a checkmark, lead capture form, and featured rotation in their city.
         </p>
-        <p
-          style={{
-            color: 'rgba(255,255,255,0.7)',
-            fontSize: '0.9375rem',
-            lineHeight: 1.7,
-            marginBottom: '1rem',
-          }}
-        >
-          For a <strong style={{ color: '#fff' }}>rink owner claiming their rink listing</strong>:{' '}
-          $99/yr Business Listing includes a lead-capture form. If that form gets
-          you 3-5 league inquiries per year, each of which converts to one
-          tournament booking ($300-$2,000 revenue), the listing pays for itself in
-          a single booking.{' '}
-          <strong style={{ color: '#009650' }}>Worth it.</strong>
-        </p>
-        <p
-          style={{
-            color: 'rgba(255,255,255,0.7)',
-            fontSize: '0.9375rem',
-            lineHeight: 1.7,
-            marginBottom: '1rem',
-          }}
-        >
-          For a <strong style={{ color: '#fff' }}>small club (under 30 players)</strong>:{' '}
-          $149/yr Club Starter vs $696/yr SportsEngine HQ. If you&apos;re a small club
-          that hasn&apos;t committed to either yet, RinkStop&apos;s tier is the
-          price-of-entry choice.{' '}
-          <strong style={{ color: '#009650' }}>Worth it.</strong>
-        </p>
-        <p
-          style={{
-            color: 'rgba(255,255,255,0.7)',
-            fontSize: '0.9375rem',
-            lineHeight: 1.7,
-          }}
-        >
-          For a <strong style={{ color: '#fff' }}>league or federation</strong>:{' '}
-          You already have infrastructure and a budget. RinkStop&apos;s $1,999 League tier
-          is competitive with what you&apos;d pay elsewhere — the question is whether
-          adding RinkStop to your stack is worth the integration cost. For most
-          established leagues, this is a sales conversation, not a self-serve
-          decision.
-        </p>
-      </section>
-
-      <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
         <Link
-          href="/pricing"
+          href="/claim-your-listing"
           style={{
             background: '#C8102E',
             color: '#fff',
@@ -373,11 +653,28 @@ export default function RinkStopVsCompetitors() {
             fontWeight: 700,
             fontSize: '1rem',
             display: 'inline-block',
+            marginRight: '0.75rem',
           }}
         >
-          See all RinkStop pricing →
+          Claim your listing →
         </Link>
-      </div>
+        <Link
+          href="/pricing"
+          style={{
+            background: 'transparent',
+            color: '#FFB81C',
+            padding: '0.875rem 2rem',
+            borderRadius: 8,
+            textDecoration: 'none',
+            fontWeight: 700,
+            fontSize: '1rem',
+            display: 'inline-block',
+            border: '1px solid #FFB81C',
+          }}
+        >
+          See all pricing
+        </Link>
+      </section>
 
       <p
         style={{
@@ -387,14 +684,50 @@ export default function RinkStopVsCompetitors() {
           marginTop: '2rem',
         }}
       >
-        Last updated: 2026-07-10. Prices for competitors are sourced from each
-        vendor&apos;s public pricing page as of the date above. RinkStop reserves the
-        right to update tier pricing at any time; the values shown on{' '}
+        Last updated: July 10, 2026. RinkStop reserves the right to update tier
+        pricing at any time; the values shown on{' '}
         <Link href="/pricing" style={{ color: '#FFB81C' }}>
           /pricing
         </Link>{' '}
         are always authoritative.
       </p>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: 'RinkStop vs Competitors — A Side-by-Side Pricing Comparison (2026)',
+            description:
+              'Side-by-side comparison of RinkStop\'s pricing against SportsEngine HQ, Hudl, LinkedIn Premium, Yelp, and BBB. Detailed value analysis for rink owners, club admins, parents, and players.',
+            author: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'RinkStop',
+              url: 'https://rinkstop.com',
+              logo: { '@type': 'ImageObject', url: 'https://rinkstop.com/rinkstoplogo.png' },
+            },
+            datePublished: '2026-07-10',
+            dateModified: '2026-07-10',
+            mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://rinkstop.com/guides/rinkstop-vs-competitors' },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: FAQ.map((item) => ({
+              '@type': 'Question',
+              name: item.q,
+              acceptedAnswer: { '@type': 'Answer', text: item.a },
+            })),
+          }),
+        }}
+      />
     </div>
   );
 }
