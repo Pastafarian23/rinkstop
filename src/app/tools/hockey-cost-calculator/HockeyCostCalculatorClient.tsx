@@ -483,7 +483,7 @@ export default function HockeyCostCalculatorClient() {
             Now find rinks in your area
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 1.5rem', fontSize: '1.05rem' }}>
-            RinkStop is the global directory of hockey rinks, teams, and leagues. Browse {stateSlug === 'united-states' ? 'US' : stateSlug === 'canada' ? 'Canadian' : 'international'} rinks, claim your local rink, or list your team — all free to start.
+            RinkStop is the global directory of hockey rinks, teams, and leagues. Browse {stateSlug === 'united-states' ? 'US' : stateSlug === 'canada' ? 'Canadian' : 'international'} rinks, claim your local rink, or list your team.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link

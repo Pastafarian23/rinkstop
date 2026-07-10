@@ -347,7 +347,7 @@ export default async function Home() {
             tracking <Link href="/directory/players" style={{ color: '#FFB81C', textDecoration: 'underline' }}>player profiles and career stats</Link>,
             or following your favorite <Link href="/directory/leagues" style={{ color: '#FFB81C', textDecoration: 'underline' }}>league</Link>’s schedule,
             RinkStop puts the whole hockey world in one place. Browse NHL, AHL, KHL, NCAA, IIHF, PWHL, and hundreds of junior, women’s, and amateur leagues.
-            Every listing is open to the public, free to browse, and free to claim.
+            Every listing is open to the public and free to browse.
           </p>
         </div>
       </section>
