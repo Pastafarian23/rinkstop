@@ -13,6 +13,7 @@ import SocialActions from '@/components/SocialActions';
 import EmailCaptureInline from '@/components/EmailCaptureInline';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
+import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 
 interface TeamData {
   id: string;
@@ -120,6 +121,9 @@ export default function TeamDetailClient({
       {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
       <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
         <ClaimedBy entityType="team" entityId={team.id} entityName={team.name} />
+        <div style={{ marginTop: '1rem' }}>
+          <ClaimThisListingMount entityType="team" entityId={team.id} entityName={team.name} />
+        </div>
         <div style={{ marginTop: '1rem' }}>
           <EmailCaptureInline
             pitch={`Get notified when ${team.name} has new games, schedule changes, or roster updates.`}
