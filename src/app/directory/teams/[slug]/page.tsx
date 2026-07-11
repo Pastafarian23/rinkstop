@@ -72,6 +72,8 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+interface HierarchyRef { id: string; name: string; slug: string | null }
+
 interface TeamRow {
   id: string;
   slug: string;
@@ -95,6 +97,12 @@ interface TeamRow {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  federation_id: string | null;
+  organization_id: string | null;
+  league_id: string | null;
+  federation: HierarchyRef | null;
+  organization: HierarchyRef | null;
+  league: HierarchyRef | null;
 }
 
 interface NewsRow {
@@ -206,7 +214,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // this is a server-rendered page that only exposes public-profile fields.)
   const { data: teamData } = await supabaseAdmin
     .from('team_workspaces')
-    .select('*')
+    .select('*, federation:federations(id,name,slug), organization:organizations(id,name,slug), league:leagues(id,name,slug)')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle<TeamRow>();
