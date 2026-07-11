@@ -1,3 +1,4 @@
+import Link from 'next/link';
 // src/app/dashboard/passport/team-history/new/page.tsx
 // Server page. Owner detection + data fetch for season dropdown.
 // Client form component does the actual UI + submit.
@@ -31,7 +32,14 @@ export default async function NewTeamHistoryPage() {
   if (!player) {
     return (
       <main className="min-h-screen bg-[#041E42] text-white">
-        <div className="max-w-3xl mx-auto px-5 py-10">
+        <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
+        <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.5)' }}>Dashboard</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <Link href="/dashboard/passport" style={{ color: 'rgba(255,255,255,0.5)' }}>Passport</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: 'rgba(255,255,255,0.4)' }}>Add team history</span>
+      </nav>
+      <div className="max-w-3xl mx-auto px-5 py-10">
           <h1 className="font-sport text-2xl mb-4" style={{ letterSpacing: '0.04em' }}>
             ADD A TEAM AFFILIATION
           </h1>

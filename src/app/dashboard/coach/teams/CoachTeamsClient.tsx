@@ -62,6 +62,7 @@ export default function CoachTeamsClient({
   const [adding, setAdding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const [form, setForm] = useState({
     team_id: '',
@@ -101,6 +102,7 @@ export default function CoachTeamsClient({
       }
       setAdding(false);
       setForm({ team_id: '', role: 'head_coach', season_id: '', start_date: '', end_date: '' });
+      setSaved(true);
       router.refresh();
     } catch (e: any) {
       setError(e?.message ?? 'Network error.');
@@ -164,6 +166,7 @@ export default function CoachTeamsClient({
           >
             {adding ? 'Cancel' : '+ Add team'}
           </button>
+          {saved && !error && (<div style={{ padding: "0.75rem 1rem", background: "rgba(0,150,80,0.18)", color: "#009650", borderRadius: 6, fontSize: "0.875rem" }}>Team saved. <Link href="/dashboard/coach/endorsements" style={{ color: "#009650", textDecoration: "underline" }}>Endorse players</Link> or <Link href="/dashboard/coach/pending-verifications" style={{ color: "#009650", textDecoration: "underline" }}>review verifications</Link>.</div>)}
         </div>
 
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>

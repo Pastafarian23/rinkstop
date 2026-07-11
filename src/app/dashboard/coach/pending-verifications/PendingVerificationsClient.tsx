@@ -61,6 +61,13 @@ export default function PendingVerificationsClient({ rows }: { rows: Row[] }) {
           <span style={{ margin: '0 0.4rem' }}>›</span>
           <span style={{ color: 'rgba(255,255,255,0.4)' }}>Pending verifications</span>
         </nav>
+        <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
+          <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.5)' }}>Dashboard</Link>
+          <span style={{ margin: '0 0.4rem' }}>›</span>
+          <Link href="/dashboard/coach" style={{ color: 'rgba(255,255,255,0.5)' }}>Coach</Link>
+          <span style={{ margin: '0 0.4rem' }}>›</span>
+          <span style={{ color: 'rgba(255,255,255,0.4)' }}>Pending verifications</span>
+        </nav>
 
         <h1
           style={{

@@ -6,6 +6,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import { PassportCompletenessBadge } from '@/components/PassportCompletenessBadge';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -57,6 +58,13 @@ export default async function PassportHubPage() {
     endorsements: endorsementCount.count ?? 0,
   };
 
+  const completeSections = [
+    counts.history > 0,
+    counts.stats > 0,
+    !!(player.usa_hockey_number || player.hockey_canada_number),
+  ].filter(Boolean).length;
+  const completenessPercent = Math.round((completeSections / 3) * 100);
+
   const playerName = [player.first_name, player.last_name].filter(Boolean).join(' ') || 'this player';
 
   const cardStyle: React.CSSProperties = {
@@ -91,6 +99,8 @@ export default async function PassportHubPage() {
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>
           Manage {playerName}&apos;s verified record. Everything here shows on your public profile.
         </p>
+
+        <PassportCompletenessBadge completed={completeSections} total={3} size="md" />
 
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           <Link href="/dashboard/passport/team-history/new" style={cardStyle}>
