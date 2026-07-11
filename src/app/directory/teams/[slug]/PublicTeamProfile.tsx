@@ -6,6 +6,8 @@ import { buildTeamShare } from '@/lib/share';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
 
+interface HierarchyRef { id: string; name: string; slug: string | null }
+
 interface Team {
   id: string;
   slug: string;
@@ -23,6 +25,12 @@ interface Team {
   season_label: string | null;
   description: string | null;
   contact_email: string | null;
+  federation_id?: string | null;
+  organization_id?: string | null;
+  league_id?: string | null;
+  federation?: HierarchyRef | null;
+  organization?: HierarchyRef | null;
+  league?: HierarchyRef | null;
   contact_phone: string | null;
   created_at: string;
 }
@@ -462,9 +470,45 @@ export default function PublicTeamProfile({
                 <span style={{ opacity: 0.6 }}>📅</span> {team.season_label}
               </span>
             )}
-            {team.parent_org && (
+            {team.organization?.name && (
+              <span>
+                <span style={{ opacity: 0.6 }}>🏢</span>{' '}
+                {team.organization.slug ? (
+                  <Link href={`/organizations/${team.organization.slug}`} style={{ color: '#FFB81C', textDecoration: 'none' }}>
+                    {team.organization.name}
+                  </Link>
+                ) : (
+                  team.organization.name
+                )}
+              </span>
+            )}
+            {!team.organization?.name && team.parent_org && (
               <span>
                 <span style={{ opacity: 0.6 }}>🏢</span> {team.parent_org}
+              </span>
+            )}
+            {team.league?.name && (
+              <span>
+                <span style={{ opacity: 0.6 }}>🏆</span>{' '}
+                {team.league.slug ? (
+                  <Link href={`/leagues/${team.league.slug}`} style={{ color: '#FFB81C', textDecoration: 'none' }}>
+                    {team.league.name}
+                  </Link>
+                ) : (
+                  team.league.name
+                )}
+              </span>
+            )}
+            {team.federation?.name && (
+              <span>
+                <span style={{ opacity: 0.6 }}>🌐</span>{' '}
+                {team.federation.slug ? (
+                  <Link href={`/federations/${team.federation.slug}`} style={{ color: '#FFB81C', textDecoration: 'none' }}>
+                    {team.federation.name}
+                  </Link>
+                ) : (
+                  team.federation.name
+                )}
               </span>
             )}
           </div>
@@ -614,7 +658,18 @@ export default function PublicTeamProfile({
               {team.level && <InfoRow label="Level" value={levelLabel ?? team.level} />}
               {ageGroup && <InfoRow label="Age group" value={ageGroup} />}
               {team.season_label && <InfoRow label="Season" value={team.season_label} />}
-              {team.parent_org && <InfoRow label="Organization" value={team.parent_org} />}
+              {team.organization?.name && (
+                <InfoRow label="Organization" value={team.organization.slug ? `/organizations/${team.organization.slug}` : null} linkLabel={team.organization.name} />
+              )}
+              {!team.organization?.name && team.parent_org && (
+                <InfoRow label="Organization" value={team.parent_org} />
+              )}
+              {team.league?.name && (
+                <InfoRow label="League" value={team.league.slug ? `/leagues/${team.league.slug}` : null} linkLabel={team.league.name} />
+              )}
+              {team.federation?.name && (
+                <InfoRow label="Federation" value={team.federation.slug ? `/federations/${team.federation.slug}` : null} linkLabel={team.federation.name} />
+              )}
               {team.home_city && <InfoRow label="Home city" value={`${flag} ${team.home_city}`} />}
               {team.home_country && team.home_country !== team.home_city && (
                 <InfoRow label="Country" value={`${countryFlag(team.country_code)} ${team.home_country}`} />
@@ -950,7 +1005,7 @@ function NewsCard({ item }: { item: NewsRow }) {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+function InfoRow({ label, value, linkHref, linkLabel }: { label: string; value: React.ReactNode; linkHref?: string | null; linkLabel?: string }) {
   return (
     <div
       style={{
@@ -964,7 +1019,9 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
       }}
     >
       <span style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>{label}</span>
-      <span style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'right' }}>{value}</span>
+      <span style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'right' }}>
+        {linkHref ? <Link href={linkHref} style={{ color: '#FFB81C', textDecoration: 'none' }}>{linkLabel ?? value}</Link> : value}
+      </span>
     </div>
   );
 }
