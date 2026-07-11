@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { COUNTRY_OPTIONS, COUNTRY_CURRENCY } from '@/lib/federations';
 
@@ -12,6 +12,9 @@ interface InitialValues {
   pending_short_name: string | null;
   pending_submitted_at: string | null;
   parent_org: string;
+  federation_id: string;
+  organization_id: string;
+  league_id: string;
   home_city: string;
   home_country: string;
   country_code: string;
@@ -95,6 +98,33 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
   const [pendingName, setPendingName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [federations, setFederations] = useState<{id:string;name:string}[]>([]);
+  const [orgs, setOrgs] = useState<{id:string;name:string}[]>([]);
+  const [leagues, setLeagues] = useState<{id:string;name:string}[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!base || !key) return;
+        const headers = { apikey: key, Authorization: `Bearer ${key}` };
+        const [fRes, oRes, lRes] = await Promise.all([
+          fetch(`${base}/rest/v1/federations?select=id,name&is_active=eq.true&order=name`, { headers }),
+          fetch(`${base}/rest/v1/organizations?select=id,name&is_active=eq.true&order=name`, { headers }),
+          fetch(`${base}/rest/v1/leagues?select=id,name&is_active=eq.true&order=name`, { headers }),
+        ]);
+        if (!cancelled) {
+          if (fRes.ok) setFederations(await fRes.json());
+          if (oRes.ok) setOrgs(await oRes.json());
+          if (lRes.ok) setLeagues(await lRes.json());
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
@@ -131,6 +161,9 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       name: form.name,
       short_name: form.short_name === '' ? null : form.short_name,
       parent_org: form.parent_org === '' ? null : form.parent_org,
+      federation_id: form.federation_id === '' ? null : form.federation_id,
+      organization_id: form.organization_id === '' ? null : form.organization_id,
+      league_id: form.league_id === '' ? null : form.league_id,
       home_city: form.home_city === '' ? null : form.home_city,
       home_country: form.home_country === '' ? null : form.home_country,
       country_code: form.country_code === '' ? null : form.country_code.toUpperCase(),
@@ -267,7 +300,34 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
             style={inputStyle}
           />
         </Field>
-        <Field label="Parent organization" hint="Optional. League or governing body (e.g. 'IIHF', 'USA Hockey', 'FIHL — Hockey Philippines').">
+        <Field label="Federation" hint="Optional. Governing body for this team.">
+          <select value={form.federation_id} onChange={updateStr('federation_id')} style={inputStyle}>
+            <option value="">— None —</option>
+            {(federations || []).map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Organization / Club" hint="Optional. Parent club or organization.">
+          <select value={form.organization_id} onChange={updateStr('organization_id')} style={inputStyle}>
+            <option value="">— None —</option>
+            {(orgs || []).map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="League" hint="Optional. League this team plays in.">
+          <select value={form.league_id} onChange={updateStr('league_id')} style={inputStyle}>
+            <option value="">— None —</option>
+            {(leagues || []).map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Legacy parent org" hint="Kept during migration. Prefer the Federation / Organization fields above.">
           <input
             type="text"
             value={form.parent_org}
