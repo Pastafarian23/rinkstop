@@ -11,6 +11,7 @@ import UsernameBanner from '@/components/UsernameBanner';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
 import InboxCard from '@/components/dashboard/InboxCard';
+import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import { loadDashboardTypeData, personalStatus, organizationStatus, businessStatus, type WorkspaceStatus } from '@/components/dashboard/dashboardTypeData';
 import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
@@ -596,6 +597,13 @@ async function renderDashboard(userId: string) {
           </Link>
         </div>
       )}
+
+      {/* Onboarding checklist */}
+      <OnboardingChecklist
+        userId={userId}
+        profile={profile}
+        types={types}
+      />
 
     </div>
   );
