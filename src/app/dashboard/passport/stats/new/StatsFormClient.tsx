@@ -60,6 +60,7 @@ export default function StatsFormClient({
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const isGoalieDefault = positionCategory === 'goalie';
 
@@ -127,6 +128,7 @@ export default function StatsFormClient({
         setSubmitting(false);
         return;
       }
+      setSaved(true);
       router.push('/dashboard/passport');
     } catch (e: any) {
       setError(e?.message ?? 'Network error.');
@@ -334,6 +336,15 @@ export default function StatsFormClient({
           {error && (
             <div style={{ padding: '0.75rem', background: 'rgba(200,16,46,0.18)', color: '#FF6B7A', borderRadius: 6, fontSize: '0.875rem' }}>
               {error}
+            </div>
+          )}
+
+          {saved && !error && (
+            <div style={{ padding: '0.75rem', background: 'rgba(0,150,80,0.18)', color: '#009650', borderRadius: 6, fontSize: '0.875rem' }}>
+              Added to your passport.{" "}
+              <Link href="/dashboard/passport" style={{ color: '#009650', textDecoration: 'underline' }}>
+                View your full passport →
+              </Link>
             </div>
           )}
 

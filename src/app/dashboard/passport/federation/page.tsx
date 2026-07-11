@@ -1,3 +1,4 @@
+import Link from 'next/link';
 // src/app/dashboard/passport/federation/page.tsx
 // Server page for editing federation registration numbers + position category.
 
@@ -29,7 +30,14 @@ export default async function FederationPage() {
   if (!player) {
     return (
       <main className="min-h-screen bg-[#041E42] text-white">
-        <div className="max-w-3xl mx-auto px-5 py-10">
+        <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
+        <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.5)' }}>Dashboard</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <Link href="/dashboard/passport" style={{ color: 'rgba(255,255,255,0.5)' }}>Passport</Link>
+        <span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: 'rgba(255,255,255,0.4)' }}>Federation numbers</span>
+      </nav>
+      <div className="max-w-3xl mx-auto px-5 py-10">
           <h1 className="font-sport text-2xl mb-4">FEDERATION REGISTRATION</h1>
           <p className="text-white/70">
             You need to claim a player profile before setting federation numbers.{' '}
