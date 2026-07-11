@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   let q = supabaseAdmin
     .from('team_workspaces')
     .select(
-      'id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, parent_org'
+      'id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, parent_org, organization_id, league_id, federation_id'
     )
     .eq('is_active', true)
     .limit(limit);

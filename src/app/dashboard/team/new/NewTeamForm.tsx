@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { suggestSlug } from '@/lib/team';
+import { useFederationOrgLeague } from '@/lib/use-federation-org-league';
 
 interface RinkOption {
   id: string;
@@ -102,6 +103,10 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
   const [ageMin, setAgeMin] = useState('');
   const [ageMax, setAgeMax] = useState('');
   const [parentOrg, setParentOrg] = useState('');
+  const [federationId, setFederationId] = useState('');
+  const [organizationId, setOrganizationId] = useState('');
+  const [leagueId, setLeagueId] = useState('');
+  const { federations, orgs, leagues } = useFederationOrgLeague();
   const [season, setSeason] = useState('');
   const [level, setLevel] = useState('');
   const [description, setDescription] = useState('');
@@ -164,6 +169,9 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
         p_age_min: ageMin.trim() !== '' ? parseInt(ageMin, 10) : null,
         p_age_max: ageMax.trim() !== '' ? parseInt(ageMax, 10) : null,
         p_parent_org: parentOrg.trim() || null,
+        p_federation_id: federationId || null,
+        p_organization_id: organizationId || null,
+        p_league_id: leagueId || null,
       });
       if (error) {
         setError(error.message);
@@ -354,16 +362,45 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
         </Field>
       </div>
 
-      <Field label="Parent org / Club" hint="Optional. If this is one of several teams in the same club, name the club here. Dashboard groups by club.">
-        <input
-          type="text"
-          value={parentOrg}
-          onChange={(e) => setParentOrg(e.target.value)}
-          maxLength={100}
-          placeholder="Cebu Ice Datus"
-          style={inputStyle}
-        />
-      </Field>
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flexDirection: 'column' }}>
+        <Field label="Federation" hint="Optional. Governing body (e.g. IIHF, national hockey federation).">
+          <select value={federationId} onChange={(e) => setFederationId(e.target.value)} style={inputStyle}>
+            <option value="">— None —</option>
+            {(federations || []).map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Organization / Club" hint="Optional. Parent club so multi-team orgs can group in the dashboard.">
+          <select value={organizationId} onChange={(e) => setOrganizationId(e.target.value)} style={inputStyle}>
+            <option value="">— None —</option>
+            {(orgs || []).map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="League" hint="Optional. If this team plays in a league.">
+          <select value={leagueId} onChange={(e) => setLeagueId(e.target.value)} style={inputStyle}>
+            <option value="">— None —</option>
+            {(leagues || []).map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Legacy club name (optional)" hint="Kept temporarily during migration. Prefer Organization above.">
+          <input
+            type="text"
+            value={parentOrg}
+            onChange={(e) => setParentOrg(e.target.value)}
+            maxLength={100}
+            placeholder="Legacy club name"
+            style={inputStyle}
+          />
+        </Field>
+      </div>
 
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         <Field label="Season" hint="e.g. '2026-2027'">
