@@ -178,6 +178,7 @@ export async function POST(req: NextRequest) {
               {
                 email,
                 user_id: null,
+                stripe_session_id: session.id,
                 tier: metadata.tier,
                 stripe_subscription_id: subscriptionId,
                 stripe_customer_id: customerId,

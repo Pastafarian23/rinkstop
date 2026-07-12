@@ -118,13 +118,80 @@ const TIER_COLOR: Record<TierId, string> = {
 export default async function WelcomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ tier?: string; session_id?: string }>;
+  searchParams: Promise<{ tier?: string; session_id?: string; next?: string }>;
 }) {
   const session = await auth();
   const cu = await currentUser();
   const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
-  const userId = await resolveCanonicalUserId(session.userId, userEmail);
-  if (!session.userId) redirect('/login');
+  const userId = session.userId
+    ? await resolveCanonicalUserId(session.userId, userEmail)
+    : null;
+  const params = await searchParams;
+  const urlTier = (params.tier || 'verified_identity') as TierId;
+  const sessionId = params.session_id || null;
+  const nextPath = params.next || null;
+
+  // ── Guest checkout path ──────────────────────────────────────────────────
+  // Reached when: the user completed Stripe Checkout as a guest (no Clerk
+  // session). They land here with tier + session_id in the URL.
+  // Their payment email is stored in the profile keyed by stripe_session_id.
+  // We prompt them to sign up with that exact email so the Clerk webhook
+  // can link their new account to the existing paid profile.
+  if (!userId && sessionId) {
+    const { data: guestProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('email, tier')
+      .eq('stripe_session_id', sessionId)
+      .maybeSingle();
+
+    if (guestProfile?.email) {
+      const guestTier = (guestProfile.tier as TierId) || urlTier;
+      const signUpUrl = `/sign-up?email=${encodeURIComponent(guestProfile.email)}&redirect_url=${encodeURIComponent(`/dashboard/welcome?tier=${guestTier}${nextPath ? `&next=${encodeURIComponent(nextPath)}` : ''}`)}`;
+
+      return (
+        <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center', padding: 'clamp(2rem, 6vw, 4rem) 1rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💳</div>
+          <h1 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', color: '#fff', marginBottom: '0.75rem' }}>
+            Payment received
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.0625rem', marginBottom: '0.5rem' }}>
+            You purchased <strong style={{ color: '#fff' }}>{guestTier.replace(/_/g, ' ')}</strong>.
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginBottom: '2rem' }}>
+            Check your inbox at <strong style={{ color: '#FFB81C' }}>{guestProfile.email}</strong> — we sent a magic link to activate your account.
+          </p>
+
+          <a
+            href={signUpUrl}
+            style={{
+              display: 'inline-block',
+              padding: '0.875rem 2rem',
+              background: '#FFB81C',
+              color: '#041E42',
+              fontWeight: 700,
+              fontSize: '1rem',
+              borderRadius: 8,
+              textDecoration: 'none',
+              marginBottom: '1rem',
+            }}
+          >
+            Sign up with {guestProfile.email}
+          </a>
+
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8125rem' }}>
+            Use the same email you entered at checkout.{' '}
+            <Link href="/pricing" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>
+              Change email
+            </Link>
+          </p>
+        </div>
+      );
+    }
+  }
+
+  // ── Signed-in path ────────────────────────────────────────────────────────
+  // Normal authenticated welcome page.
+  if (!userId) redirect('/login');
 
   // Pull both the URL param and the current profile tier - they should match
   // by the time the user lands here (the webhook fires on
