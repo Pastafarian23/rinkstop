@@ -102,7 +102,7 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
   const [ageLabel, setAgeLabel] = useState('');
   const [ageMin, setAgeMin] = useState('');
   const [ageMax, setAgeMax] = useState('');
-  const [parentOrg, setParentOrg] = useState('');
+
   const [federationId, setFederationId] = useState('');
   const [organizationId, setOrganizationId] = useState('');
   const [leagueId, setLeagueId] = useState('');
@@ -131,7 +131,7 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
     }
     // BUG #6 FIX: catch invalid numeric input before submitting.
     // "abc" or other non-numeric strings used to silently become NULL because
-    // !isNaN(Number("abc")) is false — the user got no feedback that their
+    // !isNaN(Number("abc")) is false - the user got no feedback that their
     // input was lost. Now we surface a friendly error.
     if (ageMin.trim() !== '' && !/^\d+$/.test(ageMin.trim())) {
       setError('Min age must be a whole number 0-99.');
@@ -164,12 +164,11 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
         p_season: season.trim() || null,
         p_level: level.trim() || null,
         p_age_label: ageLabel.trim() || null,
-        // IMPORTANT: use regex check, not isNaN — "0" is valid but "abc" must error.
+        // IMPORTANT: use regex check, not isNaN - "0" is valid but "abc" must error.
         // Regex /^\d+$/ requires the string to be entirely digits.
         p_age_min: ageMin.trim() !== '' ? parseInt(ageMin, 10) : null,
         p_age_max: ageMax.trim() !== '' ? parseInt(ageMax, 10) : null,
-        p_parent_org: parentOrg.trim() || null,
-        p_federation_id: federationId || null,
+p_federation_id: federationId || null,
         p_organization_id: organizationId || null,
         p_league_id: leagueId || null,
       });
@@ -264,11 +263,11 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
           onChange={(e) => setRinkId(e.target.value)}
           style={inputStyle}
         >
-          <option value="">— No home rink (select later) —</option>
+          <option value="">- No home rink (select later) -</option>
           {rinks.map((r) => (
             <option key={r.id} value={r.id}>
               {r.name}
-              {r.city ? ` — ${r.city}` : ''}
+              {r.city ? ` - ${r.city}` : ''}
               {r.country ? `, ${r.country}` : ''}
             </option>
           ))}
@@ -293,7 +292,7 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
           }}
           style={inputStyle}
         >
-          <option value="">— Use United States —</option>
+          <option value="">- Use United States -</option>
           <option value="PH">🇵🇭 Philippines</option>
           <option value="US">🇺🇸 United States</option>
           <option value="CA">🇨🇦 Canada</option>
@@ -365,7 +364,7 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flexDirection: 'column' }}>
         <Field label="Federation" hint="Optional. Governing body (e.g. IIHF, national hockey federation).">
           <select value={federationId} onChange={(e) => setFederationId(e.target.value)} style={inputStyle}>
-            <option value="">— None —</option>
+            <option value="">- None -</option>
             {(federations || []).map((item) => (
               <option key={item.id} value={item.id}>{item.name}</option>
             ))}
@@ -374,7 +373,7 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
 
         <Field label="Organization / Club" hint="Optional. Parent club so multi-team orgs can group in the dashboard.">
           <select value={organizationId} onChange={(e) => setOrganizationId(e.target.value)} style={inputStyle}>
-            <option value="">— None —</option>
+            <option value="">- None -</option>
             {(orgs || []).map((item) => (
               <option key={item.id} value={item.id}>{item.name}</option>
             ))}
@@ -383,23 +382,13 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
 
         <Field label="League" hint="Optional. If this team plays in a league.">
           <select value={leagueId} onChange={(e) => setLeagueId(e.target.value)} style={inputStyle}>
-            <option value="">— None —</option>
+            <option value="">- None -</option>
             {(leagues || []).map((item) => (
               <option key={item.id} value={item.id}>{item.name}</option>
             ))}
           </select>
         </Field>
 
-        <Field label="Legacy club name (optional)" hint="Kept temporarily during migration. Prefer Organization above.">
-          <input
-            type="text"
-            value={parentOrg}
-            onChange={(e) => setParentOrg(e.target.value)}
-            maxLength={100}
-            placeholder="Legacy club name"
-            style={inputStyle}
-          />
-        </Field>
       </div>
 
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -452,7 +441,7 @@ export default function NewTeamForm({ rinks }: { rinks: RinkOption[] }) {
             opacity: busy || !name || !effectiveSlug ? 0.6 : 1,
           }}
         >
-          {busy ? 'Creating…' : 'Create team'}
+          {busy ? 'Creating...' : 'Create team'}
         </button>
         <a
           href="/dashboard"

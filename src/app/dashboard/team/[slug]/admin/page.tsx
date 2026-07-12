@@ -27,7 +27,6 @@ interface TeamRow {
   age_label: string | null;
   age_min: number | null;
   age_max: number | null;
-  parent_org: string | null;
   season_label: string | null;
   level: string | null;
   is_active: boolean;
@@ -209,8 +208,7 @@ export default async function TeamAdminsHubPage({ params }: PageProps) {
         ageLabel={team.age_label}
         ageMin={team.age_min}
         ageMax={team.age_max}
-        parentOrg={team.parent_org}
-        seasonLabel={team.season_label}
+seasonLabel={team.season_label}
         level={team.level}
         slug={team.slug}
         memberCount={admins.length}

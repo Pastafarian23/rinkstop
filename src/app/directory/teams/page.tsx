@@ -129,7 +129,7 @@ async function fetchInitialTeams(opts: {
 
   let userQuery = supabaseAdmin
     .from('team_workspaces')
-    .select('id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, parent_org, organization_id, league_id, federation_id, organization:organizations(name,slug), league:leagues(name,slug), federation:federations(name,slug)')
+    .select('id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, organization_id, league_id, federation_id, organization:organizations(name,slug), league:leagues(name,slug), federation:federations(name,slug)')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -166,8 +166,7 @@ async function fetchInitialTeams(opts: {
     country: t.home_country || null,
     country_code: t.country_code || null,
     source: 'user' as const,
-    // Legacy: text-based parent_org grouping (kept during migration).
-    league_or_org: t.parent_org || null,
+
     // New: structured federation → league → organization references.
     organization_id: t.organization_id ?? null,
     league_id: t.league_id ?? null,

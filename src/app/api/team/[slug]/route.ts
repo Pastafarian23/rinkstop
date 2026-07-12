@@ -165,14 +165,6 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
   }
 
-  const parentOrg = asStringOrNull(body.parent_org);
-  if (parentOrg !== undefined) {
-    if (parentOrg !== null && (typeof parentOrg !== 'string' || parentOrg.length > 120)) {
-      return NextResponse.json({ error: 'invalid_parent_org' }, { status: 400 });
-    }
-    patch.parent_org = parentOrg;
-  }
-
   const homeCity = asStringOrNull(body.home_city);
   if (homeCity !== undefined) {
     if (homeCity !== null && (typeof homeCity !== 'string' || homeCity.length > 80)) {
@@ -402,7 +394,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     .from('team_workspaces')
     .update(patch)
     .eq('id', team.id)
-    .select('id, slug, name, short_name, pending_name, pending_short_name, pending_submitted_at, parent_org, home_city, home_country, country_code, currency, age_category, age_label, age_min, age_max, season_label, level, founded_on, description, contact_email, contact_phone, visibility')
+    .select('id, slug, name, short_name, pending_name, pending_short_name, pending_submitted_at, home_city, home_country, country_code, currency, age_category, age_label, age_min, age_max, season_label, level, founded_on, description, contact_email, contact_phone, visibility')
     .single();
 
   if (updateErr || !updated) {

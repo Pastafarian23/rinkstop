@@ -11,7 +11,6 @@ export interface TeamHeaderProps {
   ageLabel?: string | null;
   ageMin?: number | null;
   ageMax?: number | null;
-  parentOrg?: string | null;
   seasonLabel?: string | null;
   level?: string | null;
   slug: string;
@@ -29,8 +28,7 @@ export function TeamHeader({
   ageLabel,
   ageMin,
   ageMax,
-  parentOrg,
-  seasonLabel,
+seasonLabel,
   level,
   slug,
   memberCount,
@@ -110,13 +108,7 @@ export function TeamHeader({
           ) : (
             <span>{formatAgeCategory(ageCategory)}</span>
           )}
-          {parentOrg && (
-            <span>
-              🏛️{' '}
-              <span style={{ color: 'rgba(255,255,255,0.55)' }}>{parentOrg}</span>
-            </span>
-          )}
-          {seasonLabel && <span>🏆 {seasonLabel}</span>}
+{seasonLabel && <span>🏆 {seasonLabel}</span>}
           {level && <span>Level: {level}</span>}
         </div>
       </div>

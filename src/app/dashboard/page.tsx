@@ -280,12 +280,12 @@ async function renderDashboard(userId: string) {
     : null;
 
   // Private team workspaces the user is a member of (Day 3 team hub).
-  // v2: also fetches age_label, age_min, age_max, parent_org for grouping.
+  // v2: also fetches age_label, age_min, age_max for grouping.
   // Wrapped in try/catch so a missing table doesn't 500 the whole dashboard.
   let myTeams: Array<{
     id: string; slug: string; name: string; short_name: string | null;
     country_code: string | null; age_label: string | null;
-    age_min: number | null; age_max: number | null; parent_org: string | null;
+    age_min: number | null; age_max: number | null;
     organization_id: string | null;
     organization: { id: string; name: string; slug: string | null } | null;
     role: string;
@@ -293,7 +293,7 @@ async function renderDashboard(userId: string) {
   try {
     const { data } = await supabaseAdmin
       .from('team_members')
-      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, parent_org, organization_id, is_active, organization:organizations(id, name, slug) )')
+      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, organization_id, is_active, organization:organizations(id, name, slug) )')
       .eq('user_id', userId)
       .is('left_at', null)
       .order('joined_at', { ascending: false })
@@ -838,11 +838,10 @@ function WorkspaceHub({
 }
 
 function TeamList({ myTeams }: { myTeams: any[] }) {
-  // Group by organization.name (preferred, FK-based) → parent_org (legacy text)
-  // → "__unaffiliated__" when neither is set.
+  // Group by organization.name (FK). "__unaffiliated__" when no org is set.
   const groups = new Map<string, any[]>();
   for (const t of myTeams) {
-    const key = t.organization?.name || t.parent_org || '__unaffiliated__';
+    const key = t.organization?.name || '__unaffiliated__';
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(t);
   }

@@ -11,8 +11,7 @@ interface InitialValues {
   pending_name: string | null;
   pending_short_name: string | null;
   pending_submitted_at: string | null;
-  parent_org: string;
-  federation_id: string;
+federation_id: string;
   organization_id: string;
   league_id: string;
   home_city: string;
@@ -160,8 +159,7 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
       ...(form.slug && form.slug !== slug ? { slug: form.slug } : {}),
       name: form.name,
       short_name: form.short_name === '' ? null : form.short_name,
-      parent_org: form.parent_org === '' ? null : form.parent_org,
-      federation_id: form.federation_id === '' ? null : form.federation_id,
+    federation_id: form.federation_id === '' ? null : form.federation_id,
       organization_id: form.organization_id === '' ? null : form.organization_id,
       league_id: form.league_id === '' ? null : form.league_id,
       home_city: form.home_city === '' ? null : form.home_city,
@@ -327,16 +325,7 @@ export default function TeamSettingsForm({ slug, initial }: Props) {
           </select>
         </Field>
 
-        <Field label="Legacy parent org" hint="Kept during migration. Prefer the Federation / Organization fields above.">
-          <input
-            type="text"
-            value={form.parent_org}
-            onChange={updateStr('parent_org')}
-            maxLength={120}
-            style={inputStyle}
-          />
-        </Field>
-        <Field label="Description" hint="Optional. Up to 1,000 chars. Shown on your team page.">
+<Field label="Description" hint="Optional. Up to 1,000 chars. Shown on your team page.">
           <textarea
             value={form.description}
             onChange={updateStr('description')}
