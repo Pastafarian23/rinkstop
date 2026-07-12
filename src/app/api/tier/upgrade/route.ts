@@ -57,8 +57,15 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   const cu = await currentUser();
   const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
-  const userId = await resolveCanonicalUserId(session.userId, userEmail);
-  if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const userId = session.userId
+    ? await resolveCanonicalUserId(session.userId, userEmail)
+    : null;
+
+  // Guest checkout: anonymous users can now start a Stripe Checkout session.
+  // Stripe will collect their email on the hosted page; the webhook (see
+  // /api/webhooks/stripe/route.ts) creates the Clerk account + magic link
+  // after payment completes.
+  const isGuest = !userId;
 
   const ip = getClientIP(req);
   const result = await checkRateLimit(`tier-upgrade:${ip}`, RATE_LIMIT);
@@ -79,7 +86,7 @@ export async function POST(req: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  let body: { tier?: string | null; track?: string | null };
+  let body: { tier?: string | null; track?: string | null; original_pathname?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -89,6 +96,21 @@ export async function POST(req: NextRequest) {
 
   const requestedTier = typeof body.tier === 'string' ? body.tier : '';
   const requestedTrack = typeof body.track === 'string' ? body.track : null;
+
+  // `original_pathname` lets us round-trip the user back to where they started
+  // (e.g. /dashboard/claims?entity=rink&id=...) AFTER the magic-link sign-in
+  // lands them in their dashboard. Validated as a relative path to prevent
+  // open-redirect attacks.
+  const rawOriginalPath =
+    typeof body.original_pathname === 'string' ? body.original_pathname : null;
+  const originalPathname =
+    rawOriginalPath &&
+    rawOriginalPath.startsWith('/') &&
+    !rawOriginalPath.startsWith('//') &&
+    !rawOriginalPath.startsWith('/\\') &&
+    !rawOriginalPath.toLowerCase().includes('javascript:')
+      ? rawOriginalPath.slice(0, 500)
+      : null;
 
   // Federation has no Stripe product (contact sales only) — short-circuit with 303 redirect.
   // League is also contact-sales but DOES have a Stripe price (lower-friction purchase).
@@ -127,76 +149,104 @@ export async function POST(req: NextRequest) {
   // Server-side funnel event: user reached the Stripe checkout start.
   await trackEvent({
     name: 'checkout_started',
-    userId,
+    userId: userId ?? null,
     pathname: '/pricing',
-    props: { tier, track: TIER_TO_TRACK[tier], priceEnv },
+    props: { tier, track: TIER_TO_TRACK[tier], priceEnv, is_guest: isGuest },
   });
 
-  // Look up profile for downgrade guard
-  const { data: profile, error: profileErr } = await supabaseAdmin
-    .from('profiles')
-    .select('stripe_customer_id, email, display_name, tier, stripe_subscription_id, subscription_status')
-    .eq('user_id', userId)
-    .maybeSingle();
+  // Profile lookup, downgrade guard, and Stripe Customer creation only run for
+  // signed-in users. Guests bypass these — Stripe will collect the email on
+  // the hosted page, and the webhook (see /api/webhooks/stripe/route.ts)
+  // creates the Clerk account + profile post-payment.
+  let customerId: string | undefined;
+  if (!isGuest && userId) {
+    // Look up profile for downgrade guard
+    const { data: profile, error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .select('stripe_customer_id, email, display_name, tier, stripe_subscription_id, subscription_status')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-  // GUARD: Reject downgrades. Self-serve cancel/downgrade is intentionally not supported.
-  const currentTier = (profile?.tier || 'free') as TierName | 'free';
-  const currentUserTrack = TIER_TO_TRACK[currentTier as TierName] ?? 'personal';
-  const requestedUserTrack = TIER_TO_TRACK[tier] ?? 'personal';
-  
-  // Cross-track upgrades allowed, but downgrades within track blocked
-  if (profile?.stripe_subscription_id) {
-    const isActive = subscriptionIsActive(profile.subscription_status);
-    const currentRank = TIER_RANK[currentTier as TierName] ?? 0;
-    const requestedRank = TIER_RANK[tier] ?? 0;
-    
-    // Block downgrade if same track and requested rank <= current
-    if (isActive && currentUserTrack === requestedUserTrack && requestedRank <= currentRank) {
-      const res = NextResponse.json(
-        {
-          error: 'downgrade_not_self_serve',
-          message: 'To change or cancel your paid membership, please contact support@rinkstop.com. We respond within 24 hours.',
-        },
-        { status: 403 }
-      );
+    // GUARD: Reject downgrades. Self-serve cancel/downgrade is intentionally not supported.
+    const currentTier = (profile?.tier || 'free') as TierName | 'free';
+    const currentUserTrack = TIER_TO_TRACK[currentTier as TierName] ?? 'personal';
+    const requestedUserTrack = TIER_TO_TRACK[tier] ?? 'personal';
+
+    // Cross-track upgrades allowed, but downgrades within track blocked
+    if (profile?.stripe_subscription_id) {
+      const isActive = subscriptionIsActive(profile.subscription_status);
+      const currentRank = TIER_RANK[currentTier as TierName] ?? 0;
+      const requestedRank = TIER_RANK[tier] ?? 0;
+
+      // Block downgrade if same track and requested rank <= current
+      if (isActive && currentUserTrack === requestedUserTrack && requestedRank <= currentRank) {
+        const res = NextResponse.json(
+          {
+            error: 'downgrade_not_self_serve',
+            message: 'To change or cancel your paid membership, please contact support@rinkstop.com. We respond within 24 hours.',
+          },
+          { status: 403 }
+        );
+        return applyRateLimitHeaders(res, result);
+      }
+    }
+
+    if (profileErr) {
+      console.error('profile lookup err', profileErr);
+      const res = NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
       return applyRateLimitHeaders(res, result);
     }
-  }
 
-  if (profileErr) {
-    console.error('profile lookup err', profileErr);
-    const res = NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
-    return applyRateLimitHeaders(res, result);
-  }
-
-  let customerId = profile?.stripe_customer_id;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      metadata: { clerk_user_id: userId },
-      ...(profile?.email ? { email: profile.email } : {}),
-      ...(profile?.display_name ? { name: profile.display_name } : {}),
-    });
-    customerId = customer.id;
-    await supabaseAdmin
-      .from('profiles')
-      .update({ stripe_customer_id: customerId })
-      .eq('user_id', userId);
+    customerId = profile?.stripe_customer_id;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        metadata: { clerk_user_id: userId },
+        ...(profile?.email ? { email: profile.email } : {}),
+        ...(profile?.display_name ? { name: profile.display_name } : {}),
+      });
+      customerId = customer.id;
+      await supabaseAdmin
+        .from('profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('user_id', userId);
+    }
   }
 
   const origin = req.headers.get('origin') || `https://${req.headers.get('host')}`;
 
-  const checkoutSession = await stripe.checkout.sessions.create({
-    customer: customerId,
+  // Stripe Checkout Session parameters.
+  //   - Signed-in: pass `customer` (existing or new); no `customer_email`.
+  //   - Guest: omit `customer` (Stripe creates one); metadata carries is_guest=true
+  //     so the webhook knows to create the Clerk account post-payment.
+  const sessionMetadata: Record<string, string> = {
+    tier,
+    track: TIER_TO_TRACK[tier],
+  };
+  if (userId) sessionMetadata.clerk_user_id = userId;
+  if (isGuest) sessionMetadata.is_guest = 'true';
+  if (originalPathname) sessionMetadata.original_pathname = originalPathname;
+
+  const subscriptionMetadata: Record<string, string> = {
+    tier,
+    track: TIER_TO_TRACK[tier],
+  };
+  if (userId) subscriptionMetadata.clerk_user_id = userId;
+  if (isGuest) subscriptionMetadata.is_guest = 'true';
+
+  const checkoutSessionParams: any = {
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/dashboard/welcome?tier=${tier}&session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${origin}/dashboard/welcome?tier=${tier}&session_id={CHECKOUT_SESSION_ID}${originalPathname ? `&next=${encodeURIComponent(originalPathname)}` : ''}`,
     cancel_url: `${origin}/pricing?cancelled=1`,
-    metadata: { clerk_user_id: userId, tier, track: TIER_TO_TRACK[tier] },
-    subscription_data: { metadata: { clerk_user_id: userId, tier, track: TIER_TO_TRACK[tier] } },
+    metadata: sessionMetadata,
+    subscription_data: { metadata: subscriptionMetadata },
     allow_promotion_codes: true,
-  });
+  };
+  if (customerId) checkoutSessionParams.customer = customerId;
 
-  console.log(`[conversion] checkout_started user_id=${userId} tier=${tier} track=${TIER_TO_TRACK[tier]} customer_id=${customerId} session_id=${checkoutSession.id}`);
+  const checkoutSession = await stripe.checkout.sessions.create(checkoutSessionParams);
+
+  console.log(`[conversion] checkout_started user_id=${userId ?? 'guest'} tier=${tier} track=${TIER_TO_TRACK[tier]} customer_id=${customerId ?? 'stripe-created'} session_id=${checkoutSession.id}`);
 
   const res = NextResponse.json({ url: checkoutSession.url, sessionId: checkoutSession.id, tier, track: TIER_TO_TRACK[tier] });
   return applyRateLimitHeaders(res, result);

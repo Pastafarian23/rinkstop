@@ -205,7 +205,12 @@ export default function PricingContent({
       const res = await fetch('/api/tier/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: tier.id }),
+        body: JSON.stringify({
+          tier: tier.id,
+          // Round-trip the user back to where they started after the magic-link
+          // sign-in lands them in their dashboard (e.g. /dashboard/claims?entity=...).
+          original_pathname: typeof window !== 'undefined' ? window.location.pathname + window.location.search : null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {

@@ -136,6 +136,86 @@ export async function POST(req: NextRequest) {
           }
           break;
         }
+
+        // ── Guest checkout path ─────────────────────────────────────────────
+        // Reached when:
+        //   - metadata.is_guest === 'true'  (set by /api/tier/upgrade for anonymous users)
+        //   - session.customer_details?.email is the email the user typed into Stripe's form
+        //   - metadata.tier is the tier they purchased
+        //
+        // Flow:
+        //   1. Upsert a profile row with user_id=NULL and the email from Stripe.
+        //      The row stays "pending" until the user signs up via Clerk.
+        //   2. The Clerk user.created webhook (see /api/webhooks/clerk) matches
+        //      by email and links the new Clerk user_id to the pending profile.
+        //   3. /dashboard/welcome shows a "check your email to activate" prompt.
+        //
+        // Edge case: if the user signs up with a DIFFERENT email than the one
+        // they typed into Stripe, their Clerk account and their paid profile will
+        // have different emails and they won't auto-link. Mitigation: /welcome
+        // prompts them to sign up with the exact email from Stripe.
+        if (metadata.is_guest === 'true' && session.customer_details?.email && metadata.tier) {
+          const email = session.customer_details.email as string;
+          const subscriptionId = session.subscription as string;
+          const customerId = session.customer as string;
+          let subscription: any;
+          try {
+            subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          } catch (e: any) {
+            console.error(`[Webhook] guest: subscriptions.retrieve failed for ${subscriptionId}:`, e.message);
+            throw e;
+          }
+          const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+
+          // Upsert: use email as unique key so a retry of this webhook (Stripe
+          // can fire session.completed more than once for the same session) is
+          // safely idempotent. The existing row (if any) keeps its tier if
+          // already set; otherwise we set it to the purchased tier.
+          const supabase = getSupabase() as any;
+          const { error: upsertErr } = await supabase
+            .from('profiles')
+            .upsert(
+              {
+                email,
+                user_id: null,
+                tier: metadata.tier,
+                stripe_subscription_id: subscriptionId,
+                stripe_customer_id: customerId,
+                subscription_status: subscription.status === 'active' ? 'active' : subscription.status,
+                tier_expires_at: expiresAt,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'email' }
+            );
+          if (upsertErr) {
+            // Log but don't 500 — the purchase succeeded; we can recover via
+            // the Clerk webhook linking once the user signs up.
+            console.error('[Webhook] guest profile upsert failed:', upsertErr.message, { email, tier: metadata.tier });
+          } else {
+            console.log(`[Webhook] guest checkout completed: email=${email} tier=${metadata.tier} subscription=${subscriptionId}`);
+          }
+
+          // Funnel event (guest path — userId is null until they sign up)
+          console.log('[analytics]', JSON.stringify({
+            name: 'checkout_completed',
+            userId: null,
+            pathname: '/pricing',
+            props: { tier: metadata.tier, sessionId: session.id, is_guest: true },
+            ts: new Date().toISOString(),
+          }));
+          try {
+            const _supa = getSupabase() as any;
+            await _supa.from('analytics_events').insert({
+              name: 'checkout_completed',
+              user_id: null,
+              pathname: '/pricing',
+              props: { tier: metadata.tier, sessionId: session.id, is_guest: true },
+            });
+          } catch {
+            // ignore
+          }
+          break;
+        }
       }
 
       case 'customer.subscription.updated': {
