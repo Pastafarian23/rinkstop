@@ -54,7 +54,7 @@ export default function HomeCtaButtons() {
 
   const isPaid = tierLoaded && isSignedIn && tier && tier !== 'free';
   const ctaLabel = isPaid ? 'Go to Dashboard' : 'Join Now';
-  const ctaHref = isPaid ? '/dashboard' : '/sign-up';
+  const ctaHref = isPaid ? '/dashboard' : '/pricing';
   const ctaClass = isPaid ? 'btn btn-red' : 'btn btn-yellow';
 
   return (

@@ -193,14 +193,8 @@ export default async function WelcomePage({
   // Normal authenticated welcome page.
   if (!userId) redirect('/login');
 
-  // Pull both the URL param and the current profile tier - they should match
-  // by the time the user lands here (the webhook fires on
-  // checkout.session.completed), but we tolerate a slight race by preferring
-  // the profile's actual current tier.
-  const params = await searchParams;
   // Default to 'verified_identity' if no tier in URL (post-checkout redirect).
-  const urlTier = (params.tier || 'verified_identity') as TierId;
-  const sessionId = params.session_id || null;
+  // sessionId is already extracted in the shared params block above.
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
