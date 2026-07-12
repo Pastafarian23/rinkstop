@@ -7,7 +7,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
 import { TierName, TIER_TO_TRACK, MAX_CLAIMS_PER_TIER } from '@/lib/pricing';
 
-const RATE_LIMIT = { maxRequests: 5, windowMs: 10 * 60 * 1000 };
+// Tier-upgrade is a high-intent checkout endpoint, but legitimate users often
+// browse 3-5+ tiers before picking one. Old limit (5 per 10 min) blocked users
+// after a few comparisons. Bumped to 30 per 10 min so a user exploring all
+// tier options in one session isn't blocked; bot abuse is still throttled.
+const RATE_LIMIT = { maxRequests: 30, windowMs: 10 * 60 * 1000 };
 
 function subscriptionIsActive(status: string | null | undefined): boolean {
   return status === 'active' || status === 'trialing';
