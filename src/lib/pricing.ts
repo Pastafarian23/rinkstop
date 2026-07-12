@@ -241,7 +241,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     priceUsd: 1999,
     stripePriceEnv: 'STRIPE_PRICE_LEAGUE',
     tagline: 'League-wide management features.',
-    cta: 'Contact Sales',
+    cta: 'Get Started',
     features: [
       'League-wide management features',
       'Custom pricing based on scope',
