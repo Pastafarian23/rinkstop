@@ -7,6 +7,8 @@ import { isAdminRole } from '@/lib/team';
 
 export const dynamic = 'force-dynamic';
 
+interface HierarchyRef { id: string; name: string; slug: string | null }
+
 interface TeamMembership {
   id: string;
   slug: string;
@@ -17,6 +19,8 @@ interface TeamMembership {
   age_min: number | null;
   age_max: number | null;
   parent_org: string | null;
+  organization_id: string | null;
+  organization: HierarchyRef | null;
   role: string;
 }
 
@@ -38,7 +42,8 @@ export default async function TeamIndexPage() {
         role,
         team_workspaces:team_id (
           id, slug, name, short_name, country_code,
-          age_label, age_min, age_max, parent_org, is_active
+          age_label, age_min, age_max, parent_org, organization_id, is_active,
+          organization:organizations(id, name, slug)
         )
       `)
       .eq('user_id', userId)
@@ -57,10 +62,11 @@ export default async function TeamIndexPage() {
     queryError = e?.message || 'Failed to load teams';
   }
 
-  // Group teams: active first, then by parent_org so multi-team orgs cluster.
+  // Group teams: active first, then by organization (preferred) so multi-team
+  // orgs cluster. Fall back to parent_org text (legacy) when no org FK exists.
   const grouped = new Map<string, TeamMembership[]>();
   for (const t of teams) {
-    const key = t.parent_org || 'Independent';
+    const key = t.organization?.name || t.parent_org || 'Independent';
     const list = grouped.get(key) || [];
     list.push(t);
     grouped.set(key, list);
