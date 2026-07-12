@@ -50,3 +50,13 @@ Management API PAT from `/root/.openclaw/credentials/supabase.json`
 ```sql
 ALTER TABLE public.profiles DROP COLUMN IF EXISTS family_setup_completed_at;
 ```
+
+**2026-07-12 — `2026-07-12_drop_parent_org.sql`**
+Applied: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+Method: Supabase Management API (curl, PAT via credentials/supabase.json)
+Verified:
+- `parent_org` column dropped (information_schema check: 0 rows returned)
+- `create_team_workspace` RPC replaced (p_parent_org param removed)
+- `team_workspaces_parent_org_idx` dropped
+- 2 teams in table, 0 had data in parent_org
+- Code removed from all 13 src files

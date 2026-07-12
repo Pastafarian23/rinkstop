@@ -195,7 +195,7 @@ async function handleUserCreated(data: ClerkUserPayload) {
   if (email) {
     const { data: existing } = await supabaseAdmin
       .from('profiles')
-      .select('tier, role, is_founding_member, user_id')
+      .select('tier, role, is_founding_member, user_id, stripe_subscription_id')
       .ilike('email', email)
       .neq('user_id', data.id) // never inherit from the row we're about to write
       .order('updated_at', { ascending: false })
@@ -215,6 +215,49 @@ async function handleUserCreated(data: ClerkUserPayload) {
       console.log(
         `[clerk-webhook] user.created for new Clerk id ${data.id} matched existing profile row by email ${email}; inheriting tier=${inheritedTier} role=${inheritedRole}${shouldDeleteNewUser ? ' (will delete new Clerk user)' : ''}`,
       );
+      // PENDING GUEST PAYMENT: a profile row exists for this email but has
+      // user_id=NULL. This is a guest checkout that completed before the user
+      // signed up. We link the new Clerk user to the pending profile by updating
+      // the existing row's user_id, display_name, and avatar — we do NOT create
+      // a new row or delete the new Clerk user. The pending profile moves from
+      // "unclaimed" to "owned" in one targeted update.
+      //
+      // We also back-fill clerk_user_id into the Stripe subscription metadata
+      // so that future renewal webhooks (customer.subscription.updated) can find
+      // this user without an email lookup.
+      if (existing && !existing.user_id) {
+        await supabaseAdmin
+          .from('profiles')
+          .update({
+            user_id: data.id,
+            display_name: displayName ?? null,
+            avatar_url: avatarUrl,
+            username: username ?? null,
+          })
+          .ilike('email', email);
+
+        // Back-fill clerk_user_id into Stripe subscription metadata for renewals
+        if (existing.stripe_subscription_id) {
+          const clerkStripeKey = process.env.STRIPE_SECRET_KEY;
+          if (clerkStripeKey) {
+            try {
+              const { Stripe } = await import('stripe');
+              const stripeInst = new Stripe(clerkStripeKey, { apiVersion: '2026-04-22.dahlia' as any });
+              await stripeInst.subscriptions.update(existing.stripe_subscription_id, {
+                metadata: { clerk_user_id: data.id },
+              });
+            } catch (e: any) {
+              console.warn(`[clerk-webhook] failed to back-fill clerk_user_id into subscription ${existing.stripe_subscription_id}: ${e.message}`);
+            }
+          }
+        }
+
+        console.log(
+          `[clerk-webhook] user.created linked Clerk id ${data.id} to existing pending-guest profile for email=${email}; tier=${inheritedTier}`,
+        );
+        // Skip the upsert entirely — the update above is the only write needed.
+        return NextResponse.json({ ok: true, event: 'user.created', linkedPendingProfile: true });
+      }
     }
   } else if (displayName) {
     // Fallback: a Clerk user may have no email (older/test accounts) but
