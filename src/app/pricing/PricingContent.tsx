@@ -176,10 +176,9 @@ export default function PricingContent({
       return;
     }
 
-    if (!isSignedIn) {
-      window.location.href = `/sign-up?redirect_url=${encodeURIComponent('/pricing')}`;
-      return;
-    }
+    // Guest checkout: anonymous users now go straight to Stripe. /api/tier/upgrade
+    // accepts guests and creates a Clerk account post-payment via the welcome page.
+    // No more pre-auth gate.
 
     setBusy(tier.id);
     try {

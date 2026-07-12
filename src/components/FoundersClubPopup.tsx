@@ -101,15 +101,19 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
-            <span style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#C8102E', textTransform: 'uppercase' }}>RinkStop Founding Club</span>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
+            <span style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#FFB81C', textTransform: 'uppercase' }}>Most Hockey People Start Here</span>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
           </div>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.5rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-            JOIN FREE TODAY
+            VERIFY YOUR IDENTITY
           </h2>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.75rem' }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
+            <span style={{ color: '#888', fontSize: '0.875rem' }}>/ year</span>
+          </div>
           <p style={{ fontSize: '0.9rem', color: '#888', margin: '0 auto', maxWidth: 360, lineHeight: 1.6 }}>
-            Create your free account. Unlock verified profiles, save favorites, leave reviews, and more.
+            Claim your player profile, link unlimited roles under one identity, and unlock the only verified checkmark in hockey.
           </p>
         </div>
 
@@ -117,9 +121,9 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
           {[
             '✅ Verified player, coach & team profiles',
-            '✅ Save your favorite rinks & players',
-            '✅ Leave reviews on any rink',
+            '✅ Unlimited role claims under one identity',
             '✅ Priority support access',
+            '✅ Free tier included — browse, save, review',
           ].map(benefit => (
             <div key={benefit} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span style={{ color: '#4ade80', fontSize: '1rem', flexShrink: 0 }}>{benefit.slice(0, 2)}</span>
@@ -131,7 +135,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
         {/* CTA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <Link
-            href="/sign-up"
+            href="/pricing?tier=verified_identity"
             onClick={() => setShowPopup(false)}
             style={{
               display: 'block',
@@ -147,17 +151,31 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               boxShadow: '0 4px 16px rgba(255,215,0,0.25)',
             }}
           >
-            Join Free →
+            Verify My Identity →
+          </Link>
+          <Link
+            href="/pricing"
+            onClick={() => setShowPopup(false)}
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              padding: '0.625rem',
+              color: '#FFB81C',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            See all plans
           </Link>
           <button
             onClick={() => setShowPopup(false)}
             style={{
               background: 'none',
-              border: '1px solid #1e2d3d',
-              borderRadius: '8px',
-              padding: '0.75rem',
+              border: 'none',
+              padding: '0.5rem',
               color: '#555',
-              fontSize: '0.875rem',
+              fontSize: '0.8125rem',
               cursor: 'pointer',
               width: '100%',
             }}
@@ -182,20 +200,24 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
 
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
-            <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#C8102E', textTransform: 'uppercase' }}>RinkStop Founding Club</span>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C8102E', display: 'inline-block' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
+            <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.15em', color: '#FFB81C', textTransform: 'uppercase' }}>Most Hockey People Start Here</span>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
           </div>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-            JOIN FREE TODAY
+            VERIFY YOUR IDENTITY
           </h2>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.625rem' }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
+            <span style={{ color: '#888', fontSize: '0.75rem' }}>/ year</span>
+          </div>
           <p style={{ fontSize: '0.8rem', color: '#888', lineHeight: 1.55 }}>
-            Free account. Verified profiles, saved items, reviews & more.
+            Claim your profile, link unlimited roles, get verified.
           </p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.5rem' }}>
-          {['✅ Verified profiles', '✅ Save favorites', '✅ Leave reviews', '✅ Priority support'].map(benefit => (
+          {['✅ Verified player, coach & team profiles', '✅ Unlimited role claims', '✅ Priority support', '✅ Free tier included'].map(benefit => (
             <div key={benefit} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ color: '#4ade80', fontSize: '0.875rem', flexShrink: 0 }}>{benefit.slice(0, 2)}</span>
               <span style={{ color: '#ccc', fontSize: '0.8rem' }}>{benefit.slice(2)}</span>
@@ -205,7 +227,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           <Link
-            href="/sign-up"
+            href="/pricing?tier=verified_identity"
             onClick={() => setShowPopup(false)}
             style={{
               display: 'block',
@@ -220,17 +242,31 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               letterSpacing: '0.02em',
             }}
           >
-            Join Free →
+            Verify My Identity →
+          </Link>
+          <Link
+            href="/pricing"
+            onClick={() => setShowPopup(false)}
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              padding: '0.5rem',
+              color: '#FFB81C',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            See all plans
           </Link>
           <button
             onClick={() => setShowPopup(false)}
             style={{
               background: 'none',
-              border: '1px solid #1e2d3d',
-              borderRadius: '8px',
-              padding: '0.625rem',
+              border: 'none',
+              padding: '0.5rem',
               color: '#555',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
               cursor: 'pointer',
               width: '100%',
             }}
