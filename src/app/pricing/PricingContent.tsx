@@ -172,7 +172,7 @@ export default function PricingContent({
     }
 
     if (tier.ctaStyle === 'contact') {
-      window.location.href = `/partner?source=${tier.id}`;
+      window.location.href = '/contact';
       return;
     }
 
