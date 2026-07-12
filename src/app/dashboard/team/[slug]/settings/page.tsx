@@ -111,7 +111,6 @@ export default async function TeamSettingsPage({ params }: PageProps) {
     slug: team.slug ?? '',
     name: team.name ?? '',
     short_name: team.short_name ?? '',
-    parent_org: team.parent_org ?? '',
     federation_id: team.federation_id ?? '',
     organization_id: team.organization_id ?? '',
     league_id: team.league_id ?? '',

@@ -13,7 +13,7 @@ interface Team {
   slug: string;
   name: string;
   short_name: string | null;
-  parent_org: string | null;
+
   country_code: string | null;
   home_city: string | null;
   home_country: string | null;
@@ -482,11 +482,7 @@ export default function PublicTeamProfile({
                 )}
               </span>
             )}
-            {!team.organization?.name && team.parent_org && (
-              <span>
-                <span style={{ opacity: 0.6 }}>🏢</span> {team.parent_org}
-              </span>
-            )}
+
             {team.league?.name && (
               <span>
                 <span style={{ opacity: 0.6 }}>🏆</span>{' '}
@@ -661,9 +657,7 @@ export default function PublicTeamProfile({
               {team.organization?.name && (
                 <InfoRow label="Organization" value={team.organization.slug ? `/organizations/${team.organization.slug}` : null} linkLabel={team.organization.name} />
               )}
-              {!team.organization?.name && team.parent_org && (
-                <InfoRow label="Organization" value={team.parent_org} />
-              )}
+
               {team.league?.name && (
                 <InfoRow label="League" value={team.league.slug ? `/leagues/${team.league.slug}` : null} linkLabel={team.league.name} />
               )}

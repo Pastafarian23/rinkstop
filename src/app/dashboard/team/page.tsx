@@ -18,7 +18,6 @@ interface TeamMembership {
   age_label: string | null;
   age_min: number | null;
   age_max: number | null;
-  parent_org: string | null;
   organization_id: string | null;
   organization: HierarchyRef | null;
   role: string;
@@ -42,7 +41,7 @@ export default async function TeamIndexPage() {
         role,
         team_workspaces:team_id (
           id, slug, name, short_name, country_code,
-          age_label, age_min, age_max, parent_org, organization_id, is_active,
+          age_label, age_min, age_max, organization_id, is_active,
           organization:organizations(id, name, slug)
         )
       `)
@@ -62,18 +61,18 @@ export default async function TeamIndexPage() {
     queryError = e?.message || 'Failed to load teams';
   }
 
-  // Group teams: active first, then by organization (preferred) so multi-team
-  // orgs cluster. Fall back to parent_org text (legacy) when no org FK exists.
+  // Group teams: active first, then by organization (FK). Unaffiliated teams
+  // appear last.
   const grouped = new Map<string, TeamMembership[]>();
   for (const t of teams) {
-    const key = t.organization?.name || t.parent_org || 'Independent';
+    const key = t.organization?.name || '__unaffiliated__';
     const list = grouped.get(key) || [];
     list.push(t);
     grouped.set(key, list);
   }
   const sortedKeys = Array.from(grouped.keys()).sort((a, b) => {
-    if (a === 'Independent') return 1;
-    if (b === 'Independent') return -1;
+    if (a === '__unaffiliated__') return 1;
+    if (b === '__unaffiliated__') return -1;
     return a.localeCompare(b);
   });
 

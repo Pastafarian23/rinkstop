@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   let q = supabaseAdmin
     .from('team_workspaces')
     .select(
-      'id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, parent_org, organization_id, league_id, federation_id'
+      'id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, organization_id, league_id, federation_id'
     )
     .eq('is_active', true)
     .limit(limit);
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   if (search) {
     q = q.or(
-      `name.ilike.%${search}%,home_city.ilike.%${search}%,parent_org.ilike.%${search}%`
+      `name.ilike.%${search}%,home_city.ilike.%${search}%`
     );
   }
 
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     country_code: t.country_code || null,
     source: 'user' as const,
     // directory card fields
-    league_or_org: t.parent_org || null,
+
     level: t.level || null,
     age_label: t.age_label || null,
     age_category: t.age_category || null,

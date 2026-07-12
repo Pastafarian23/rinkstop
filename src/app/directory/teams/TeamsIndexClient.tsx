@@ -28,8 +28,7 @@ interface UserTeam {
   city?: string | null;
   country?: string | null;
   country_code?: string | null;
-  parent_org?: string | null;
-  organization_id?: string | null;
+organization_id?: string | null;
   league_id?: string | null;
   federation_id?: string | null;
   organization?: HierarchyRef | null;
@@ -442,12 +441,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                         🏢 {(team as UserTeam).organization!.name}
                       </span>
                     )}
-                    {!((team as UserTeam).organization?.name) && (team as UserTeam).parent_org && (
-                      <span style={{ display: 'inline-block', marginTop: '0.5rem', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(255,184,28,0.12)', color: '#FFB81C' }}>
-                        {(team as UserTeam).parent_org}
-                      </span>
-                    )}
-                    {(team as UserTeam).league?.name && (
+{(team as UserTeam).league?.name && (
                       <span style={{ display: 'inline-block', marginTop: '0.5rem', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(200,16,46,0.15)', color: 'var(--red)' }}>
                         🏆 {(team as UserTeam).league!.name}
                       </span>

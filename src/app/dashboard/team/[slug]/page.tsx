@@ -296,8 +296,7 @@ export default async function TeamHubPage({ params }: PageProps) {
         ageLabel={team.age_label}
         ageMin={team.age_min}
         ageMax={team.age_max}
-        parentOrg={team.parent_org}
-        seasonLabel={team.season_label}
+seasonLabel={team.season_label}
         level={team.level}
         slug={team.slug}
         memberCount={members.length}

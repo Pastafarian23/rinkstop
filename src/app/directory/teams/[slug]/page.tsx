@@ -79,7 +79,7 @@ interface TeamRow {
   slug: string;
   name: string;
   short_name: string | null;
-  parent_org: string | null;
+
   country_code: string | null;
   home_city: string | null;
   home_country: string | null;
