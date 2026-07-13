@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { formatTierPrice } from '@/lib/pricing';
 
 // Default tier per entity type (matches /claim-your-listing ClaimButton).
@@ -142,6 +143,9 @@ export default function ClaimThisListing({
 
   // === SIGNED OUT ===
   if (state.kind === 'signed_out') {
+    const pathname = usePathname() || '/';
+    const search = useSearchParams()?.toString() || '';
+    const currentPath = search ? `${pathname}?${search}` : pathname;
     return (
       <div style={containerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -155,7 +159,7 @@ export default function ClaimThisListing({
             </div>
           </div>
           <Link
-            href={`/login?redirect_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}
+            href={`/login?redirect_url=${encodeURIComponent(currentPath)}`}
             onClick={NOOP}
             style={{
               background: '#FFB81C',
