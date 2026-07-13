@@ -209,6 +209,12 @@ export default function PricingContent({
           // Round-trip the user back to where they started after the magic-link
           // sign-in lands them in their dashboard (e.g. /dashboard/claims?entity=...).
           original_pathname: typeof window !== 'undefined' ? window.location.pathname + window.location.search : null,
+          // Resume context: if the user came here from a "Claim this listing"
+          // CTA, forward the entity so the success_url can drop them back on
+          // /dashboard/claims with their draft and auto-submit.
+          entity: searchParams?.get('entity') || null,
+          entity_id: searchParams?.get('id') || null,
+          entity_name: searchParams?.get('name') || null,
         }),
       });
       const data = await res.json();

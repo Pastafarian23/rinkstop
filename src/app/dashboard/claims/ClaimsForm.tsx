@@ -40,6 +40,12 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
   })();
   const initialName = searchParams?.get('name') || '';
   const initialId = searchParams?.get('id') || '';
+  // Resume mode: ?resume=1 was appended to the success_url by /api/tier/upgrade
+  // when the user clicked "Upgrade to claim" on a listing. After payment we
+  // drop them here so the form auto-submits their saved draft.
+  // Only auto-submit ONCE (use a ref so re-renders don't re-fire).
+  const resumeMode = searchParams?.get('resume') === '1';
+  const hasAutoSubmittedRef = useRef(false);
 
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -181,6 +187,30 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
   // -> /login -> /dashboard/claims?tier=X. Falls back to verified_identity.
   const upgradeTier = recommendedTier || 'verified_identity';
   const usagePct = isUnlimited || isFree ? 0 : Math.min(100, Math.round((currentCount / Math.max(1, maxClaims)) * 100));
+
+  // === Auto-submit on resume ===
+  // When the user returns from Stripe checkout (?resume=1), we wait for the
+  // draft to load, then submit it for them. They land on the "Claim submitted"
+  // success state with zero extra clicks.
+  //
+  // Guards (all must pass):
+  //   - resumeMode is true (came from /api/tier/upgrade success_url)
+  //   - draft has finished loading (so we know whether we have content)
+  //   - form has entityName + reason (the two required fields)
+  //   - not already submitting or submitted
+  //   - user is not gated (free / at-cap)
+  //   - hasAutoSubmittedRef ensures this only fires once per page load
+  useEffect(() => {
+    if (!resumeMode) return;
+    if (hasAutoSubmittedRef.current) return;
+    if (submitted || submitting) return;
+    if (isFree || atCap) return;
+    if (!draftLoaded) return; // wait for draft to load
+    if (!form.entityName || !form.reason) return;
+    hasAutoSubmittedRef.current = true;
+    handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeMode, draftLoaded, form.entityName, form.reason, submitted, submitting, isFree, atCap]);
 
   if (submitted) {
     return (
@@ -336,7 +366,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
             The Free tier doesn&apos;t include claims. Verified Identity is {formatTierPrice('verified_identity')}/year (claim your profile + unlimited roles under one identity), Identity Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
           </p>
           <Link
-            href={`/pricing?tier=${upgradeTier}`}
+            href={`/pricing?tier=${upgradeTier}${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`}
             style={{
               display: 'inline-block',
               background: '#FFB81C',
@@ -367,7 +397,9 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
             {tier === 'business_plus' || tier === 'federation' ? `You've used all ${maxClaims} claim slots. Contact sales for Federation custom volume.` : `You've used all ${maxClaims} claim slots on the ${tier} tier. Upgrade for more claims. For more than 25, contact sales for Federation.`}
           </p>
           <Link
-            href={tier === 'business_plus' || tier === 'federation' ? '/partner?source=claims-cap' : `/pricing?tier=${upgradeTier}`}
+            href={tier === 'business_plus' || tier === 'federation'
+              ? `/partner?source=claims-cap${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`
+              : `/pricing?tier=${upgradeTier}${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`}
             style={{
               display: 'inline-block',
               background: '#C8102E',
