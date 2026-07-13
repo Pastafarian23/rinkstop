@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  let body: { tier?: string | null; track?: string | null; original_pathname?: string | null };
+  let body: { tier?: string | null; track?: string | null; original_pathname?: string | null; entity?: string | null; entity_id?: string | null; entity_name?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -114,6 +114,26 @@ export async function POST(req: NextRequest) {
     !rawOriginalPath.startsWith('/\\') &&
     !rawOriginalPath.toLowerCase().includes('javascript:')
       ? rawOriginalPath.slice(0, 500)
+      : null;
+
+  // Resume context: when the user clicks "Upgrade to claim" on a listing page,
+  // the success_url should send them back to the claim form with their saved
+  // draft, so they don't have to re-pick the listing. Validated strictly:
+  //   - entity must be a known claim type
+  //   - entity_id must be a non-empty string
+  //   - entity_name is optional (cosmetic, used in the URL for analytics)
+  const requestedEntity = typeof body.entity === 'string' ? body.entity : null;
+  const requestedEntityId = typeof body.entity_id === 'string' && body.entity_id.trim() ? body.entity_id.trim() : null;
+  const requestedEntityName = typeof body.entity_name === 'string' ? body.entity_name.slice(0, 200) : null;
+  const resumeToClaims =
+    requestedEntity &&
+    ['rink', 'team', 'player'].includes(requestedEntity) &&
+    requestedEntityId
+      ? {
+          entity: requestedEntity,
+          entityId: requestedEntityId,
+          entityName: requestedEntityName,
+        }
       : null;
 
   // Federation has no Stripe product (contact sales only) — short-circuit with 303 redirect.
@@ -240,8 +260,14 @@ export async function POST(req: NextRequest) {
   const checkoutSessionParams: any = {
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/dashboard/welcome?tier=${tier}&session_id={CHECKOUT_SESSION_ID}${originalPathname ? `&next=${encodeURIComponent(originalPathname)}` : ''}`,
-    cancel_url: `${origin}/pricing?cancelled=1`,
+    // Default success: /dashboard/welcome (shows next steps + badge).
+    // Resume flow: when the user clicked "Upgrade to claim" on a listing,
+    // we send them straight back to /dashboard/claims?resume=1 so the form
+    // auto-submits their saved draft. They never have to re-pick the listing.
+    success_url: resumeToClaims
+      ? `${origin}/dashboard/claims?entity=${resumeToClaims.entity}&id=${encodeURIComponent(resumeToClaims.entityId)}${resumeToClaims.entityName ? `&name=${encodeURIComponent(resumeToClaims.entityName)}` : ''}&resume=1&session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/dashboard/welcome?tier=${tier}&session_id={CHECKOUT_SESSION_ID}${originalPathname ? `&next=${encodeURIComponent(originalPathname)}` : ''}`,
+    cancel_url: `${origin}/pricing?cancelled=1${resumeToClaims ? `&entity=${resumeToClaims.entity}&id=${encodeURIComponent(resumeToClaims.entityId)}` : ''}`,
     metadata: sessionMetadata,
     subscription_data: { metadata: subscriptionMetadata },
     allow_promotion_codes: true,
