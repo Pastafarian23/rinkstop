@@ -50,6 +50,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [errorAction, setErrorAction] = useState<{ checkoutUrl: string; reason: string; tier?: string } | null>(null);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
   const [form, setForm] = useState<ClaimForm>({
@@ -153,10 +154,12 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
     e.preventDefault();
     if (!form.entityName || !form.reason) {
       setError('Please fill in all required fields.');
+      setErrorAction(null);
       return;
     }
     setSubmitting(true);
     setError('');
+    setErrorAction(null);
     try {
       const res = await fetch('/api/claims', {
         method: 'POST',
@@ -172,12 +175,26 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
       if (res.ok) {
         setSubmitted(true);
         setDraftSavedAt(null);
+        setErrorAction(null);
       } else {
         const data = await res.json();
         setError(data.error || 'Something went wrong. Please try again.');
+        // If the server returned a structured 403 with a checkout URL,
+        // surface it as a single upgrade button. The form hides the raw
+        // error text in favor of the button when the action is present.
+        if (res.status === 403 && data.checkoutUrl) {
+          setErrorAction({
+            checkoutUrl: data.checkoutUrl,
+            reason: data.reason || 'unknown',
+            tier: data.tier,
+          });
+        } else {
+          setErrorAction(null);
+        }
       }
     } catch {
       setError('Network error. Please try again.');
+      setErrorAction(null);
     } finally {
       setSubmitting(false);
     }
@@ -561,6 +578,52 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
             <p style={{ color: '#f87171', fontSize: '0.875rem', background: 'rgba(248,113,113,0.1)', padding: '0.75rem 1rem', borderRadius: 6, border: '1px solid rgba(248,113,113,0.2)', margin: 0 }}>
               {error}
             </p>
+          )}
+
+          {errorAction && (
+            <div
+              data-testid="claim-403-upgrade-cta"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,184,28,0.10) 0%, rgba(200,16,46,0.08) 100%)',
+                border: '1px solid rgba(255,184,28,0.4)',
+                borderRadius: 12,
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem',
+              }}
+            >
+              <p style={{ color: '#FFB81C', fontSize: '0.95rem', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>
+                {errorAction.reason === 'no_claim_tier'
+                  ? `Claiming is a paid feature. Upgrade to claim this listing.`
+                  : `You've hit your claim cap. Upgrade for more claims.`}
+              </p>
+              {error && (
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
+                  {error}
+                </p>
+              )}
+              <Link
+                href={errorAction.checkoutUrl}
+                data-testid="claim-403-upgrade-link"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#FFB81C',
+                  color: '#041E42',
+                  borderRadius: 8,
+                  padding: '0.75rem 1.25rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  letterSpacing: '0.02em',
+                  alignSelf: 'flex-start',
+                }}
+              >
+                Upgrade to claim this listing — from {formatTierPrice((errorAction.tier as any) || 'verified_identity')}/yr →
+              </Link>
+            </div>
           )}
 
           <button

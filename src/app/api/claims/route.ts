@@ -42,6 +42,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid claim type.' }, { status: 400 });
     }
 
+    // Build the deep-link back into the pricing flow. Carries the entity
+    // context so the post-Stripe success_url can resume the claim.
+    // The form reads this in the 403 handler and renders a single "Upgrade
+    // to claim" button instead of a wall of text.
+    const buildCheckoutUrl = (upgradeTier: string) => {
+      const params = new URLSearchParams({ tier: upgradeTier });
+      if (entity_id) {
+        params.set('entity', claim_type);
+        params.set('id', String(entity_id));
+        if (entity_name) params.set('name', String(entity_name));
+      }
+      return `/pricing?${params.toString()}`;
+    };
+
     // === Save the draft first ===
     // The user may have typed a long reason/proof. We want to preserve it even
     // if a 403 (tier cap) blocks the actual submission. The draft is keyed on
@@ -75,21 +89,42 @@ export async function POST(request: NextRequest) {
     // Counts only APPROVED claims (pending claims can be in flight while the user submits more).
     // Special case: 'parent_managed' claims (parent claims kid's player profile) bypass the cap
     // because they're a different use case — one parent can manage many kids.
+    //
+    // Both 403 paths now return a `checkoutUrl` so the form can render a
+    // structured "Upgrade to claim" button instead of just showing the raw
+    // error text. Recommended tier is per-entity-type: player claims route
+    // to verified_identity (the cheapest claim-enabled tier), team/rink
+    // claims to business_listing.
     const isParentManagedClaim = typeof reason === 'string' && reason.startsWith('parent_managed:');
     if (!isParentManagedClaim) {
       const tier = await getUserTier(userId);
       const maxClaims = getMaxClaimsForTier(tier);
       if (maxClaims === 0) {
         return NextResponse.json(
-          { error: `Claiming listings requires a paid membership. Upgrade to Verified Identity (1 claim), Identity Plus (up to 5), Business Plus (up to 25), or Federation for more. See /pricing.` },
+          {
+            error: `Claiming listings requires a paid membership. Upgrade to Verified Identity, Identity Plus, Business Plus, or Federation to claim.`,
+            reason: 'no_claim_tier',
+            checkoutUrl: buildCheckoutUrl(claim_type === 'player' ? 'verified_identity' : 'business_listing'),
+            tier: claim_type === 'player' ? 'verified_identity' : 'business_listing',
+          },
           { status: 403 }
         );
       }
       if (maxClaims !== Infinity) {
         const currentCount = await getUserApprovedClaimCount(userId);
         if (currentCount >= maxClaims) {
+          // Pick the next tier up within the same track. For simplicity we
+          // use business_plus as the universal upgrade target for any tier
+          // that's hit the cap — it covers up to 25 claims which is the
+          // most common "I need more claims" path. Federation (custom) is
+          // shown in the copy but the button goes to pricing to compare.
           return NextResponse.json(
-            { error: `You have reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Identity Plus for up to 5 claims or Business Plus for up to 25, or contact sales for Federation custom volume. See /pricing.` },
+            {
+              error: `You've reached the ${maxClaims}-claim limit on the ${tier} tier. Upgrade to Business Plus for up to 25 claims, or contact sales for Federation custom volume.`,
+              reason: 'at_cap',
+              checkoutUrl: buildCheckoutUrl('business_plus'),
+              tier: 'business_plus',
+            },
             { status: 403 }
           );
         }
