@@ -1,8 +1,17 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
+
+function formatRelativeTime(d: Date): string {
+  const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (seconds < 5) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return d.toLocaleTimeString();
+}
 
 interface ClaimForm {
   claimType: 'rink' | 'team' | 'player';
@@ -35,6 +44,8 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
   const [form, setForm] = useState<ClaimForm>({
     claimType: initialEntity,
     entityName: initialName,
@@ -43,17 +54,94 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
     proof: '',
   });
 
-  // Keep form in sync if URL params change (e.g. user navigates with new
-  // ?entity=... after the form mounted). Most cases this is a no-op.
+  // === Tier state (used by hooks below — must be declared first) ===
+  const isUnlimited = maxClaims === -1;
+  const isFree = tier === 'free' || maxClaims === 0;
+  const atCap = !isUnlimited && !isFree && currentCount >= maxClaims;
+  // === Draft persistence ===
+  // On mount, if we have an entity_id, load any existing draft from
+  // /api/claims/draft. This handles two flows:
+  //   1. User typed a draft, hit Stripe checkout, came back via success_url
+  //   2. User typed a draft, was blocked by tier cap (403), the draft was
+  //      already saved on the POST, and now they're back to retry.
+  // Without a draft key (no entity_id, no name) we skip the load — there's
+  // nothing to resume.
   useEffect(() => {
-    setForm((prev) => ({
-      ...prev,
-      claimType: initialEntity,
-      entityName: prev.entityName || initialName,
-      entityId: prev.entityId || initialId,
-    }));
+    if (draftLoaded) return;
+    if (isFree || atCap) return; // No point loading drafts when the form is gated
+    const draftKey = initialId || (initialName ? `name:${initialName}` : null);
+    if (!draftKey) {
+      setDraftLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/claims/draft?entity_id=${encodeURIComponent(draftKey)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.draft) return;
+        const d = data.draft;
+        // Only overlay if the form is currently empty (don't clobber the deep-link
+        // data the user just navigated in with).
+        setForm((prev) => ({
+          ...prev,
+          claimType: (d.entity_type as ClaimForm['claimType']) || prev.claimType,
+          entityName: prev.entityName || d.entity_name || prev.entityName,
+          entityId: prev.entityId || draftKey,
+          reason: d.reason || prev.reason,
+          proof: d.proof || prev.proof,
+        }));
+      })
+      .catch(() => {
+        // silent
+      })
+      .finally(() => {
+        if (!cancelled) setDraftLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialEntity, initialName, initialId]);
+  }, [initialId, initialName, isFree, atCap, draftLoaded]);
+
+  // Debounced save on every form change. Only runs when the form is active
+  // (i.e. user is paid and has room). Uses a ref for the timeout to avoid
+  // stale-closure issues. The ref for the form value lets the debounced
+  // callback always see the latest state.
+  const formRef = useRef(form);
+  formRef.current = form;
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    // Don't auto-save when gated, after submit, or when the draft is being loaded.
+    if (isFree || atCap || submitted || !draftLoaded) return;
+    if (!form.entityName && !form.reason && !form.proof) return;
+    // Compute the same synthetic key the API uses
+    const draftKey = form.entityId || (form.entityName ? `name:${form.entityName}` : null);
+    if (!draftKey) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      const f = formRef.current;
+      fetch('/api/claims/draft', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entity_type: f.claimType,
+          entity_id: draftKey,
+          entity_name: f.entityName,
+          reason: f.reason,
+          proof: f.proof,
+        }),
+      })
+        .then((r) => {
+          if (r.ok) setDraftSavedAt(new Date());
+        })
+        .catch(() => {
+          // silent — drafts are best-effort
+        });
+    }, 500);
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [form, isFree, atCap, submitted, draftLoaded]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +165,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
       });
       if (res.ok) {
         setSubmitted(true);
+        setDraftSavedAt(null);
       } else {
         const data = await res.json();
         setError(data.error || 'Something went wrong. Please try again.');
@@ -88,13 +177,9 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
     }
   };
 
-  const isUnlimited = maxClaims === -1;
-
   // Tier to deep-link when the user clicks 'Upgrade'. Comes from /claim-your-listing
   // -> /login -> /dashboard/claims?tier=X. Falls back to verified_identity.
   const upgradeTier = recommendedTier || 'verified_identity';
-  const isFree = tier === 'free' || maxClaims === 0;
-  const atCap = !isUnlimited && !isFree && currentCount >= maxClaims;
   const usagePct = isUnlimited || isFree ? 0 : Math.min(100, Math.round((currentCount / Math.max(1, maxClaims)) * 100));
 
   if (submitted) {
@@ -191,6 +276,11 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
         <p style={{ color: '#666', fontSize: '0.875rem', margin: 0, lineHeight: 1.6 }}>
           Found your rink, team, or player without an owner? Submit a claim and we'll verify your association.
         </p>
+        {draftSavedAt && !submitted && !isFree && !atCap && (
+          <p style={{ color: 'rgba(20,184,166,0.85)', fontSize: '0.75rem', margin: '0.5rem 0 0', letterSpacing: '0.02em' }}>
+            ✓ Draft saved {formatRelativeTime(draftSavedAt)} — you can leave and come back.
+          </p>
+        )}
       </div>
 
       {/* Claim usage meter - only for paid tiers. Free tier skips the meter and goes straight to the upgrade panel. */}

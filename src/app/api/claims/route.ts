@@ -42,6 +42,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid claim type.' }, { status: 400 });
     }
 
+    // === Save the draft first ===
+    // The user may have typed a long reason/proof. We want to preserve it even
+    // if a 403 (tier cap) blocks the actual submission. The draft is keyed on
+    // (user_id, entity_id) so subsequent edits overwrite in place.
+    // entity_id is the deep-link param (player/rink/team UUID); if the user
+    // didn't deep-link, fall back to a synthetic key derived from entity_name
+    // so we still capture their work. parent_managed claims use the player id.
+    const draftEntityId = (entity_id && String(entity_id).trim()) || `name:${entity_name}`;
+    {
+      const { error: draftErr } = await supabaseAdmin
+        .from('claim_drafts')
+        .upsert(
+          {
+            user_id: userId,
+            entity_type: claim_type,
+            entity_id: draftEntityId,
+            entity_name: entity_name || null,
+            reason: reason || null,
+            proof: proof || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id,entity_id' }
+        );
+      if (draftErr) {
+        // Don't block the claim on a draft save failure, but log it.
+        console.error('claim_drafts upsert error (non-fatal):', draftErr);
+      }
+    }
+
     // Tier-based claim cap enforcement.
     // Counts only APPROVED claims (pending claims can be in flight while the user submits more).
     // Special case: 'parent_managed' claims (parent claims kid's player profile) bypass the cap
@@ -84,6 +113,20 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Claims insert error:', error);
       return NextResponse.json({ error: 'Failed to submit claim.' }, { status: 500 });
+    }
+
+    // === Clear the draft on successful submission ===
+    // Don't leave a stale draft lying around. The user submitted, no need
+    // to remind them of in-progress work.
+    {
+      const { error: clearErr } = await supabaseAdmin
+        .from('claim_drafts')
+        .delete()
+        .eq('user_id', userId)
+        .eq('entity_id', draftEntityId);
+      if (clearErr) {
+        console.error('claim_drafts clear on submit (non-fatal):', clearErr);
+      }
     }
 
     // Track claim_submitted server-side. Best-effort, never throws.
