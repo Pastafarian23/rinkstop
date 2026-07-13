@@ -23,8 +23,6 @@ export type ClaimCtaState =
   | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'identity_plus' | 'business_plus' | 'club_elite' | 'league' | 'federation' }
   | { kind: 'pending'; tier: string };
 
-const NOOP = (e: React.MouseEvent) => { e.preventDefault(); };
-
 async function openCheckout(tier: 'verified_identity' | 'identity_plus' | 'business_listing' | 'business_plus' | 'club_starter' | 'club_pro' | 'club_elite', context: string) {
   try {
     const res = await fetch('/api/tier/upgrade', {
@@ -160,7 +158,6 @@ export default function ClaimThisListing({
           </div>
           <Link
             href={`/login?redirect_url=${encodeURIComponent(currentPath)}`}
-            onClick={NOOP}
             style={{
               background: '#FFB81C',
               color: '#041E42',
