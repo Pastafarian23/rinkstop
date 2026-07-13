@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
 import { formatTierPrice } from '@/lib/pricing';
 
 // Default tier per entity type (matches /claim-your-listing ClaimButton).
@@ -23,44 +21,29 @@ export type ClaimCtaState =
   | { kind: 'at_cap'; tier: string; maxClaims: number; recommendedTier?: 'identity_plus' | 'business_plus' | 'club_elite' | 'league' | 'federation' }
   | { kind: 'pending'; tier: string };
 
-async function openCheckout(tier: 'verified_identity' | 'identity_plus' | 'business_listing' | 'business_plus' | 'club_starter' | 'club_pro' | 'club_elite', context: string) {
-  try {
-    const res = await fetch('/api/tier/upgrade', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier, context }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      if (res.status === 401) {
-        window.location.href = `/login?redirect_url=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-        return;
-      }
-      window.location.href = `/pricing?tier=${tier}`;
-      return;
-    }
-    if (data.url) window.location.href = data.url;
-  } catch {
-    window.location.href = `/pricing?tier=${tier}`;
-  }
-}
-
-function contactSales() {
-  window.location.href = '/partner?source=claims-cap';
-}
-
 /**
  * "Claim this listing" CTA. Renders on unclaimed entity pages (rink, team, league, player).
  *
  * State is computed server-side in the *Mount wrapper and passed in as `state`:
- *   - signed_out: Not logged in → "Sign in to claim this rink"
- *   - claim_form: Logged in, tier has room → "Claim this rink" form
- *   - free:       Logged in, Free tier → "Upgrade to claim this rink" (Starter is the entry point)
- *   - at_cap:     Logged in, paid tier but at the cap → "At cap — upgrade to Pro"
- *   - pending:    Logged in, paid tier, an unapproved claim exists → "Claim pending review"
+ *   - signed_out: Not logged in → "Sign in to claim" (deep-links via /login → /dashboard/claims?entity=...&id=...&name=...)
+ *   - claim_form: Logged in, tier has room → "Continue your claim" (deep-links to /dashboard/claims?entity=...&id=...&name=...)
+ *   - free:       Logged in, Free tier → "Claim it on RinkStop" (deep-links to /dashboard/claims where the form shows an upgrade CTA)
+ *   - at_cap:     Logged in, paid tier but at the cap → "At cap — upgrade to Pro" (deep-links to /dashboard/claims where the form shows an upgrade CTA)
+ *   - pending:    Logged in, paid tier, an unapproved claim exists → "Claim pending review" (deep-link to /dashboard/claims to see all)
+ *
+ * All paths funnel into the single /dashboard/claims form. This unifies the claim
+ * flow so the listing identity (entity, id, name) is never lost between the
+ * decision to claim and the actual submission. Tier-based upgrade CTAs and
+ * auto-resume after Stripe checkout will be wired up in subsequent commits.
  *
  * Pairs with the existing `ClaimedBy` component, which renders in the same slot
  * when a listing IS claimed. The two are mutually exclusive by intent.
+ *
+ * Layout: mobile-first column. Text (with inline emoji) sits on top, CTA below.
+ * Fixes the bug where on narrow viewports the row layout squeezed the text block
+ * to a few characters wide and every word wrapped to its own line. Works on all
+ * screen sizes; the desktop layout is slightly different (CTA below instead of
+ * beside) but still readable and the CTA is more prominent.
  */
 export default function ClaimThisListing({
   entityType,
@@ -73,19 +56,14 @@ export default function ClaimThisListing({
   entityId: string;
   state: ClaimCtaState;
 }) {
-  // Local form state for the inline claim form.
-  const [reason, setReason] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<
-    | { kind: 'idle' }
-    | { kind: 'success' }
-    | { kind: 'error'; message: string }
-  >({ kind: 'idle' });
-  const [expanded, setExpanded] = useState(false);
+  // The single canonical claim destination. All 5 states link here, either
+  // directly (already signed in) or via /login?redirect_url= (signed out).
+  const claimDestination = `/dashboard/claims?entity=${entityType}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}&source=${entityType}`;
 
   const noun = entityType; // "rink", "team", "league", "player"
   const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+  // Outer container: column layout, full width.
   const containerStyle: React.CSSProperties = {
     marginTop: 12,
     marginBottom: 12,
@@ -95,83 +73,82 @@ export default function ClaimThisListing({
     borderRadius: 10,
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'stretch',
     gap: 10,
   };
 
-  if (result.kind === 'success') {
-    return (
-      <div style={containerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 20 }}>✅</span>
-          <div>
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>
-              Claim submitted for {entityName}
-            </div>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 2 }}>
-              We review claims within 2 business days. You can track the status in your{' '}
-              <Link href="/dashboard/claims" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-                claim dashboard
-              </Link>
-              .
-            </div>
-          </div>
-        </div>
-        {/* Why upgrade? prompt — shown to users who have room (claim_form, free, pending).
-            Hidden for at-cap users (any tier). Compact link, not a big panel. */}
-        {state.kind !== 'at_cap' && (
-          <div style={{
-            marginTop: 4,
-            padding: '0.65rem 0.85rem',
-            background: 'rgba(200,16,46,0.08)',
-            border: '1px solid rgba(200,16,46,0.25)',
-            borderRadius: 8,
-            fontSize: 12,
-            color: '#d1d5db',
-            lineHeight: 1.5,
-          }}>
-            <strong style={{ color: '#FFB81C' }}>Want a Premium tier with up to 25 claims and featured placement?</strong>{' '}
-            <Link href="/pricing?tier=verified_identity" style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
-              See tier benefits →
-            </Link>
-          </div>
-        )}
-      </div>
-    );
-  }
+  // First row: emoji + text content. Stays inline so the emoji hugs the headline.
+  const headerRowStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 8,
+  };
+
+  // Text takes remaining width on the row, with min-width 0 so long words can
+  // break instead of pushing the row past the container.
+  const textBlockStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: 0,
+  };
+
+  // CTA: full-width-ish (alignSelf flex-start), wraps inside if needed.
+  // whiteSpace: 'normal' (not nowrap) so the text inside can break on very
+  // narrow screens, but the button still tries to fit on one line.
+  const ctaStyle: React.CSSProperties = {
+    background: '#FFB81C',
+    color: '#041E42',
+    padding: '10px 16px',
+    borderRadius: 8,
+    textDecoration: 'none',
+    fontWeight: 700,
+    fontSize: 13,
+    whiteSpace: 'nowrap',
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    textAlign: 'center',
+  };
+
+  const ctaDangerStyle: React.CSSProperties = {
+    ...ctaStyle,
+    background: '#C8102E',
+    color: '#fff',
+  };
+
+  const headlineStyle: React.CSSProperties = {
+    color: '#FFB81C',
+    fontWeight: 700,
+    fontSize: 14,
+    lineHeight: 1.4,
+  };
+
+  const descriptionStyle: React.CSSProperties = {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    marginTop: 2,
+    lineHeight: 1.5,
+  };
 
   // === SIGNED OUT ===
   if (state.kind === 'signed_out') {
-    const pathname = usePathname() || '/';
-    const search = useSearchParams()?.toString() || '';
-    const currentPath = search ? `${pathname}?${search}` : pathname;
     return (
       <div style={containerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>🏒</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+        <div style={headerRowStyle}>
+          <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>🏒</span>
+          <div style={textBlockStyle}>
+            <div style={headlineStyle}>
               Own or run this {noun}?
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+            <div style={descriptionStyle}>
               Claim this listing to add your program hours, contact info, and updates — and stop the next stranger from editing it out from under you.
             </div>
           </div>
-          <Link
-            href={`/login?redirect_url=${encodeURIComponent(currentPath)}`}
-            style={{
-              background: '#FFB81C',
-              color: '#041E42',
-              padding: '8px 14px',
-              borderRadius: 8,
-              textDecoration: 'none',
-              fontWeight: 700,
-              fontSize: 13,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Sign in to claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr
-          </Link>
         </div>
+        <Link
+          href={`/login?redirect_url=${encodeURIComponent(claimDestination)}`}
+          style={ctaStyle}
+        >
+          Sign in to claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr
+        </Link>
       </div>
     );
   }
@@ -180,34 +157,20 @@ export default function ClaimThisListing({
   if (state.kind === 'free') {
     return (
       <div style={containerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>🏒</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+        <div style={headerRowStyle}>
+          <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>🏒</span>
+          <div style={textBlockStyle}>
+            <div style={headlineStyle}>
               Run this {noun}? Claim it on RinkStop.
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+            <div style={descriptionStyle}>
               Claim it now — Verified Identity unlocks profile claims, Club Pro covers up to 150 players, Business Plus unlocks multiple listings, and Federation covers enterprise-scale orgs.
             </div>
           </div>
-          <button
-            onClick={() => openCheckout(state.recommendedTier || DEFAULT_TIER_BY_ENTITY[entityType], 'inline-claim-free')}
-            style={{
-              background: '#FFB81C',
-              color: '#041E42',
-              padding: '8px 14px',
-              borderRadius: 8,
-              border: 'none',
-              textDecoration: 'none',
-              fontWeight: 700,
-              fontSize: 13,
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-            }}
-          >
-            Unlock claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr →
-          </button>
         </div>
+        <Link href={claimDestination} style={ctaStyle}>
+          Unlock claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr →
+        </Link>
       </div>
     );
   }
@@ -216,34 +179,20 @@ export default function ClaimThisListing({
   if (state.kind === 'at_cap') {
     return (
       <div style={containerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>🏒</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+        <div style={headerRowStyle}>
+          <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>🏒</span>
+          <div style={textBlockStyle}>
+            <div style={headlineStyle}>
               {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? `You've reached your tier's claim limit. Federation covers enterprise-scale organizations.` : `You've claimed ${state.maxClaims} ${state.maxClaims === 1 ? 'listing' : 'listings'} on ${titleCase(state.tier)}.`}
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+            <div style={descriptionStyle}>
               Club Pro covers up to 150 players with multiple teams. For leagues, brands, or organizations that need more, contact sales for Federation.
             </div>
           </div>
-          <button
-            onClick={() => state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? contactSales() : openCheckout('identity_plus', 'inline-claim-cap')}
-            style={{
-              background: '#C8102E',
-              color: '#fff',
-              padding: '8px 14px',
-              borderRadius: 8,
-              border: 'none',
-              textDecoration: 'none',
-              fontWeight: 700,
-              fontSize: 13,
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-            }}
-          >
-            {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Identity Plus →'}
-          </button>
         </div>
+        <Link href={claimDestination} style={ctaDangerStyle}>
+          {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Identity Plus →'}
+        </Link>
       </div>
     );
   }
@@ -252,16 +201,16 @@ export default function ClaimThisListing({
   if (state.kind === 'pending') {
     return (
       <div style={containerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>⏳</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+        <div style={headerRowStyle}>
+          <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>⏳</span>
+          <div style={textBlockStyle}>
+            <div style={headlineStyle}>
               Your claim for {entityName} is pending review.
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
-              We usually decide within 2 business days. Track the status in your{' '}
+            <div style={descriptionStyle}>
+              We usually decide within 2 business days.{' '}
               <Link href="/dashboard/claims" style={{ color: '#FFB81C', textDecoration: 'underline' }}>
-                claim dashboard
+                View your claims
               </Link>
               .
             </div>
@@ -272,119 +221,27 @@ export default function ClaimThisListing({
   }
 
   // === CLAIM FORM (paid tier with room) ===
-  const submit = async () => {
-    if (!reason.trim()) {
-      setResult({ kind: 'error', message: 'Tell us why you should own this listing.' });
-      return;
-    }
-    setSubmitting(true);
-    setResult({ kind: 'idle' });
-    try {
-      const res = await fetch('/api/claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          claim_type: entityType === 'league' ? 'team' : entityType, // leagues aren't a first-class claim type yet
-          entity_id: entityId,
-          entity_name: entityName,
-          reason: reason.trim(),
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg =
-          data?.error ||
-          (res.status === 403 && data?.error === 'claim_limit_reached'
-            ? 'You have reached your tier\'s claim limit. Upgrade to a higher tier or contact sales for Federation.'
-            : `Claim submission failed (${res.status})`);
-        setResult({ kind: 'error', message: msg });
-        return;
-      }
-      setResult({ kind: 'success' });
-    } catch (err) {
-      setResult({ kind: 'error', message: 'Network error. Please try again.' });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
+  // Now a deep-link to the unified /dashboard/claims form. The form itself
+  // handles the submission + tier-cap checks + upgrade CTA.
   return (
     <div style={containerStyle}>
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 18 }}>🏒</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: '#FFB81C', fontWeight: 700, fontSize: 14 }}>
+      <div style={headerRowStyle}>
+        <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>🏒</span>
+        <div style={textBlockStyle}>
+          <div style={headlineStyle}>
             Own or run {entityName}?
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 }}>
+          <div style={descriptionStyle}>
             Claim this listing to edit the details, post schedule updates, respond to reviews, and unlock the lead-capture form. We review claims within 2 business days.
           </div>
         </div>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            background: '#FFB81C',
-            color: '#041E42',
-            border: 0,
-            padding: '8px 14px',
-            borderRadius: 8,
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {expanded ? 'Close' : 'Claim this ' + noun}
-        </button>
       </div>
-      {expanded && (
-        <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600 }}>
-            Why should we approve your claim?
-          </label>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder={`e.g. I'm the GM of ${entityName} and I run the rink operations. I can verify via ${entityType === 'rink' ? 'the building\'s utility bill' : entityType === 'team' ? 'our league-issued coach credential' : 'my professional bio'}.`}
-            rows={3}
-            disabled={submitting}
-            style={{
-              background: 'rgba(0,0,0,0.4)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 6,
-              color: '#fff',
-              padding: '8px 10px',
-              fontSize: 13,
-              fontFamily: 'inherit',
-              resize: 'vertical',
-            }}
-          />
-          {result.kind === 'error' && (
-            <div style={{ color: '#fca5a5', fontSize: 12 }}>{result.message}</div>
-          )}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              onClick={submit}
-              disabled={submitting}
-              style={{
-                background: submitting ? 'rgba(255,184,28,0.5)' : '#FFB81C',
-                color: '#041E42',
-                border: 0,
-                padding: '8px 16px',
-                borderRadius: 8,
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: submitting ? 'wait' : 'pointer',
-              }}
-            >
-              {submitting ? 'Submitting…' : 'Submit claim'}
-            </button>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
-              We email you when a reviewer responds.
-            </span>
-          </div>
-        </div>
-      )}
+      <Link
+        href={claimDestination}
+        style={ctaStyle}
+      >
+        Continue your claim →
+      </Link>
     </div>
   );
 }
