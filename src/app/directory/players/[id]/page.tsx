@@ -54,7 +54,7 @@ function buildPlayerDescription(player: any): string {
   }
   const factsStr = facts.length > 0 ? ` (${facts.join(', ')})` : '';
   const leagueStr = leagueName ? ` in the ${leagueName}` : '';
-  return `${fullName}${factsStr} is a ${position} who plays for the ${teamName}${leagueStr}. View full profile, career stats, and highlights on RinkStop.`;
+  return `${fullName}${factsStr} is a ${position} who plays for ${teamName}${leagueStr}. View full profile, career stats, and highlights on RinkStop.`;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -76,7 +76,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const teamName = player.teams?.name || player.current_team_name || 'Hockey Player';
     const leagueName = player.teams?.leagues?.name || '';
     const description = buildPlayerDescription(player);
-    const title = `${fullName} - ${POSITION_FULL[player.position] || 'Hockey'} | ${teamName}${leagueName ? ` (${leagueName})` : ''} | RinkStop`;
+    // Root layout template appends ' | RinkStop'. Strip any trailing suffix
+    // from the DB seo_title so we don't get 'X | RinkStop | RinkStop'.
+    const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
+    const rawSeoTitle = (player as any).seo_title as string | undefined;
+    const title = stripSuffix(rawSeoTitle || '') || `${fullName} - ${POSITION_FULL[player.position] || 'Hockey'} | ${teamName}${leagueName ? ` (${leagueName})` : ''}`;
 
     return {
       title,
@@ -196,7 +200,7 @@ export default async function PlayerPage({ params }: Props) {
           url: `${BASE_URL}/directory/players/${id}`,
           ...(player.headshot_url ? { image: player.headshot_url } : {}),
           ...(teamName
-            ? { affiliation: { '@type': 'SportsTeam', name: teamName, ...(leagueName ? { memberOf: { '@type': 'SportsOrganization', name: leagueName } } : {}) } }
+            ? { affiliation: { '@type': 'SportsTeam', name: teamName, url: teamSlug ? `${BASE_URL}/directory/teams/${teamSlug}` : undefined, ...(leagueName ? { memberOf: { '@type': 'SportsOrganization', name: leagueName, url: leagueSlug ? `${BASE_URL}/directory/leagues/${leagueSlug}` : undefined } } : {}) } }
             : {}),
           ...(player.nationality && player.nationality.length <= 3
             ? { nationality: COUNTRY_NAMES[player.nationality] || player.nationality }

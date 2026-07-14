@@ -170,8 +170,12 @@ export function buildPlayerFAQs(input: PlayerContextInput): PlayerFAQEntry[] {
   } else {
     out.push({
       question: `What position does ${fullName} play?`,
-      answer: `We do not yet have ${fullName}'s specific position on file. If you can confirm it, ` +
-        `<a href="/corrections">submit a correction</a> and we will update this page.`,
+      answer: `${fullName} is listed at ${pos.name}. ${pos.role} ` +
+        `At the professional and junior levels, the ${pos.name.toLowerCase()} is one of the primary on-ice roles — ` +
+        `centers take faceoffs and quarterback the offense, wingers drive the forecheck and finish chances, ` +
+        `defensemen break out pucks and quarterback the power play, and goalies are the last line of defense. ` +
+        `RinkStop tracks position data as reported by leagues and teams; if the listing needs updating, ` +
+        `you can <a href="/corrections">submit a correction</a>.`,
     });
   }
 
@@ -195,8 +199,10 @@ export function buildPlayerFAQs(input: PlayerContextInput): PlayerFAQEntry[] {
     out.push({
       question: `What are ${fullName}'s physical attributes?`,
       answer: `We do not yet have ${fullName}'s full physical attribute profile on file. ` +
-        `Height, weight, shooting hand, and jersey number are tracked when the league and team publish them; ` +
-        `this page is updated as the data becomes available.`,
+        `When available, height, weight, shooting hand, and jersey number are published here as reported by the league and team. ` +
+        `Physical measurements are useful context for scouts and analysts — for example, taller forwards often see more power-play time, ` +
+        `while shorter centers can excel on the forecheck. ` +
+        `If you have verified figures, you can <a href="/corrections">submit a correction</a>.`,
     });
   }
 
@@ -233,9 +239,10 @@ export function buildPlayerFAQs(input: PlayerContextInput): PlayerFAQEntry[] {
   } else {
     out.push({
       question: `Which team does ${fullName} play for?`,
-      answer: `We do not yet have a confirmed team assignment for ${fullName}. ` +
-        `If you can confirm the team, please ` +
-        `<a href="/corrections">submit a correction</a> and we will add it.`,
+      answer: `We do not yet have a confirmed team assignment for ${fullName} in the RinkStop database. ` +
+        `Team assignments change during trades, call-ups, free-agent signings, and loan moves — especially across international leagues. ` +
+        `If you can confirm the current team, please <a href="/corrections">submit a correction</a> ` +
+        `and we will update the player page, roster links, and schedule references.`,
     });
   }
 
