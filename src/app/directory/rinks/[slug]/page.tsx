@@ -490,18 +490,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           />
         </div>
 
-        {/* Soft-signup email capture — shown to anonymous users reading about this rink */}
-        <div style={{ marginBottom: '24px' }}>
-          <EmailCaptureInline
-            pitch={`Get notified when ${rink.name} has new games, schedule changes, or operator updates.`}
-            cta="Email me updates"
-            entityType="rink"
-            entityId={rink.id}
-            entityName={rink.name}
-            intent="email_capture"
-          />
-        </div>
-
         {/* LIVE OPEN/CLOSED PILL + GOOGLE CONTACT ROW
             Driven by rink.opening_hours_json (Google Places data) and
             rink.google_phone / rink.google_website / rink.google_maps_url.
@@ -953,6 +941,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           <ClaimedBy entityType="rink" entityId={rink.id} entityName={rink.name} />
           <ClaimThisListingMount entityType="rink" entityId={rink.id} entityName={rink.name} />
           <ListingContactFormMount listingType="rink" listingId={rink.id} listingName={rink.name} />
+        </div>
+
+        {/* Soft-signup email capture — shown to anonymous users reading about this rink */}
+        <div style={{ marginBottom: '24px' }}>
+          <EmailCaptureInline
+            pitch={`Get notified when ${rink.name} has new games, schedule changes, or operator updates.`}
+            cta="Email me updates"
+            entityType="rink"
+            entityId={rink.id}
+            entityName={rink.name}
+            intent="email_capture"
+          />
         </div>
 
       </div>
