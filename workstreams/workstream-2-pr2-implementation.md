@@ -278,4 +278,28 @@ After commit 5 lands: write the three reports, get Arnel's review, then move to 
 - Card polish: animations, a11y, skeletons (Step 3, after Step 2 lands)
 - Wallet passes (WS6)
 - Physical Passport (WS5)
-- Tour
+- Tournament verification kiosk (WS4)
+- Recruiter view (WS6)
+
+## Decision Authority
+
+This implementation plan is **Arnel-flagged**. Specifically:
+- The Step 1 / Step 2 / Step 3 sequencing (architecture-first, not UI-first)
+- The Passport Assets Service abstraction (Card must not know how QR works)
+- The opaque `qrIdentifier` strategy (never encode Passport URL in QR)
+- Server-rendered QR only (no client generation, ever)
+- The immutable `qr_identifier` column with SECURITY DEFINER override for revocation
+
+Any deviation requires explicit Arnel approval.
+
+## What This Means for Next Session
+
+When this session ends, the next session should:
+
+1. Read this file first.
+2. Confirm Step 1 work hasn't started (no commits beyond this plan).
+3. Begin with Step 1.1 (schema migration) — additive, idempotent, IF NOT EXISTS everywhere.
+4. Run `tsc --noEmit` after each commit.
+5. Stop after the first commit lands (migration) and confirm with Arnel before continuing to Step 1.2.
+
+This staged-confirmation pattern is intentional. Schema → repo → service → endpoint → UI each deserve a checkpoint.
