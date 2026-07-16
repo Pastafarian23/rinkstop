@@ -20,7 +20,7 @@ const POSITION_MAP: Record<string, string> = {
   forward: 'forward', winger: 'right_wing',
 };
 
-function formatNhlPlayer(p: any) {
+function formatNhlPlayer(p: any): Record<string, any> {
   const name = p.full_name || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim();
   const [first, ...rest] = name.split(' ');
   const last = rest.join(' ');

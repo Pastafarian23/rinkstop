@@ -126,7 +126,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 // Returns id as `legacy_schedule_id` if present (back-compat with old clients
 // that stored team_schedule ids), else `evt_<team_events.id>` for clients that
 // recognise the prefix, else the raw uuid.
-function eventRowToSchedule(e: { id: string; event_kind: string; starts_at: string; opposing_team: string | null; location_note: string | null; status: string; description: string | null; created_at: string; legacy_schedule_id: string | null; }) {
+function eventRowToSchedule(e: { id: string; event_kind: string; starts_at: string; opposing_team: string | null; location_note: string | null; status: string; description: string | null; created_at: string; legacy_schedule_id: string | null; }): { id: string; scheduled_at: string; opponent: string | null; kind: string; venue: string | null; home_away: null; notes: string | null; is_cancelled: boolean; is_published: boolean; published_at: string; created_at: string } {
   return {
     id: e.legacy_schedule_id || `evt_${e.id}`,
     scheduled_at: e.starts_at,

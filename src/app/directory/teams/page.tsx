@@ -158,7 +158,7 @@ async function fetchInitialTeams(opts: {
   if (userRes.error) console.error('User teams initial fetch failed:', userRes.error);
 
   const nhlTeams = (nhlRes.data || []) as Team[];
-  const userTeams = ((userRes.data || []) as any[]).map(t => ({
+  const userTeams = ((userRes.data || []) as any[]).map((t: any): Team => ({
     id: t.id,
     name: t.name,
     slug: t.slug,

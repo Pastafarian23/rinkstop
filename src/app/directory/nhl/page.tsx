@@ -94,7 +94,7 @@ export default async function NHLHubPage() {
   const [todaysGames, latestSeason, allStandings] = await Promise.all([
     getTodaysNhlGames(),
     getLatestSeason(),
-    getLatestSeason().then(s => s ? getStandingsForSeason(s) : []),
+    getLatestSeason().then((s): Promise<NhlStanding[]> => s ? getStandingsForSeason(s) : Promise.resolve([])),
   ]);
 
   // Group standings by division

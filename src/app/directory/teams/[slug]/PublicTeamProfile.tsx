@@ -190,7 +190,7 @@ function countryFlag(code: string | null): string {
     return (code as any)
       .toUpperCase()
       .split('')
-      .map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
+      .map((c: string) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
       .join('');
   } catch {
     return '🏳️';

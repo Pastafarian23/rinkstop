@@ -310,7 +310,7 @@ export default function GamesIndexClient({ initialData }: Props) {
         { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/games` },
       ],
     };
-    const events = games.map(g => ({
+    const events = games.map((g: any): Record<string, any> => ({
       '@type': 'SportsEvent',
       name: `${g.home_team?.name || 'Home'} vs ${g.away_team?.name || 'Away'}`,
       startDate: g.scheduled_at,

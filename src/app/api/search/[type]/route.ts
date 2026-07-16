@@ -117,7 +117,7 @@ export async function GET(
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const res = NextResponse.json({
-    results: (data || []).map((l: any) => ({
+    results: (data || []).map((l: any): Record<string, any> => ({
       id: l.id,
       name: l.name,
       meta: null,

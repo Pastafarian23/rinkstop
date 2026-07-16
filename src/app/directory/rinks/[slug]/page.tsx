@@ -127,8 +127,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
-  const fields = ['city', 'country', 'province_state', 'notes', 'website_url', 'phone', 'email', 'address', 'capacity', 'ice_size', 'surface_type'];
-  const fieldCount = fields.filter(f => rink[f] && (Array.isArray(rink[f]) ? rink[f].length > 0 : String(rink[f]).trim().length > 0)).length;
+  const fields: Array<keyof typeof rink> = ['city', 'country', 'province_state', 'notes', 'website_url', 'phone', 'email', 'address', 'capacity', 'ice_size', 'surface_type'];
+  const fieldCount = fields.filter(f => rink[f] && (Array.isArray(rink[f]) ? (rink[f] as any[]).length > 0 : String(rink[f]).trim().length > 0)).length;
   const uniqueWordCount = estimateRinkUniqueWordCount(rink);
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 

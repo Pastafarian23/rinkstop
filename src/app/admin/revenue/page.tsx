@@ -11,7 +11,7 @@ async function getInitialRevenue() {
   const r = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/admin/revenue`, {
     headers: { cookie: '' }, // We're already in admin context; the route uses supabaseAdmin + auth header check, but for SSR we re-call with service.
     cache: 'no-store',
-  }).catch(() => null);
+  }).catch((): null => null);
   if (!r || !r.ok) return { error: 'fetch_failed' as const, status: r?.status };
   return { data: await r.json() };
 }

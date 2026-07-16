@@ -35,7 +35,7 @@ async function fetchAPI<T>(endpoint: string): Promise<T> {
 
 // 1. Sync all NHL and NCAA teams
 async function syncTeams(): Promise<{ nhl: number; ncaa: number; errors: string[] }> {
-  const result = { nhl: 0, ncaa: 0, errors: [] };
+  const result: { nhl: number; ncaa: number; errors: string[] } = { nhl: 0, ncaa: 0, errors: [] };
   
   const teams = await fetchAPI<any[]>('/teams');
   console.log(`[Sync] Total teams from API: ${teams.length}`);
@@ -72,7 +72,7 @@ async function syncTeams(): Promise<{ nhl: number; ncaa: number; errors: string[
 // 2. Sync standings (NHL and NCAA conferences)
 // Schema: id, league_name, season, rank, team_id, team_name, team_logo, played, wins, losses, overtime_losses, points, goals_for, goals_against, last_synced
 async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
-  const result = { synced: 0, errors: [] };
+  const result: { synced: number; errors: string[] } = { synced: 0, errors: [] };
   
   const standingsData = await fetchAPI<any[]>('/standings');
   console.log(`[Sync] Standing groups: ${standingsData.length}`);
@@ -131,7 +131,7 @@ async function syncStandings(): Promise<{ synced: number; errors: string[] }> {
 // 3. Sync recent matches
 // Schema: id, date, status, home_team_id, home_team_name, home_team_logo, home_score, away_team_id, away_team_name, away_team_logo, away_score, period, clock, league_name, venue, last_synced
 async function syncMatches(limit: number = 50): Promise<{ synced: number; errors: string[] }> {
-  const result = { synced: 0, errors: [] };
+  const result: { synced: number; errors: string[] } = { synced: 0, errors: [] };
   
   const matches = await fetchAPI<any[]>('/matches?limit=' + limit);
   console.log(`[Sync] Total matches: ${matches.length}`);

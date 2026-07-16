@@ -660,7 +660,7 @@ export default function MapClient({ initialRinks }: Props) {
 
 // Inject the Maps JS SDK in the browser only. Avoids next/script's SSR pass
 // which can interfere with React hydration on this page.
-function ScriptInjector({ apiKey, onLoad, onError }: { apiKey: string; onLoad: () => void; onError: () => void }) {
+function ScriptInjector({ apiKey, onLoad, onError }: { apiKey: string; onLoad: () => void; onError: () => void }): null {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (document.querySelector('script[data-google-maps-sdk]')) return;

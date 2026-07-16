@@ -64,7 +64,7 @@ async function fetchInitial(): Promise<{
   pageSize: number;
 }> {
   const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
-  const empty = { players: [], totalCount: 0, totalPages: 1, leagues: [], page: 1, pageSize: PAGE_SIZE };
+  const empty: { players: Player[]; totalCount: number; totalPages: number; leagues: League[]; page: number; pageSize: number } = { players: [], totalCount: 0, totalPages: 1, leagues: [], page: 1, pageSize: PAGE_SIZE };
   try {
     const [playersRes, leaguesRes] = await Promise.all([
       fetch(`${base}/api/players?page=1&limit=${PAGE_SIZE}`, { cache: 'no-store' }),
@@ -72,11 +72,13 @@ async function fetchInitial(): Promise<{
     ]);
     const playersJson = await playersRes.json();
     const leaguesJson = await leaguesRes.json();
+    const players = (playersJson?.data || []) as Player[];
+    const leagues = (leaguesJson?.data || []) as League[];
     return {
-      players: playersJson?.data || [],
+      players,
       totalCount: playersJson?.count || 0,
       totalPages: playersJson?.totalPages || 1,
-      leagues: leaguesJson?.data || [],
+      leagues,
       page: 1,
       pageSize: PAGE_SIZE,
     };

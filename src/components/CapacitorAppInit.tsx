@@ -15,7 +15,7 @@ import { useEffect } from 'react';
  * This component is a no-op on web. It only activates when running
  * inside the native WebView (Capacitor.isNativePlatform() === true).
  */
-export default function CapacitorAppInit() {
+export default function CapacitorAppInit(): null {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 

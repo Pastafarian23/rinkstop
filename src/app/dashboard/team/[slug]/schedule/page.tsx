@@ -77,7 +77,7 @@ export default async function TeamSchedulePage({ params, searchParams }: PagePro
 
   const teamsList: CalendarTeam[] = [{ id: team.id, name: team.name, short_name: null, slug: team.slug }];
 
-  const events: CalendarEvent[] = (eventsRaw || []).map((e) => ({
+  const events: CalendarEvent[] = (eventsRaw || []).map((e: any): CalendarEvent => ({
     id: e.id,
     team_id: team.id,
     team_name: team.name,

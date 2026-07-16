@@ -41,6 +41,28 @@ const nextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains',
           },
+          // Content Security Policy. Clerk's hosted components require
+          // 'unsafe-inline' / 'unsafe-eval' for their bundled scripts.
+          // Supabase, Stripe, and Zoho need their own origins in connect-src.
+          // Tighten iteratively after Clerk publishes a nonce-based mode.
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.stripe.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data: https://*.clerk.accounts.dev https://*.clerk.com",
+              "connect-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.supabase.co https://api.stripe.com https://*.highlightly.net wss://*.supabase.co",
+              "frame-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com",
+              "worker-src 'self' blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
+            ].join('; '),
+          },
         ],
       },
       // Immutable 1-year cache for static images in /public/images/.

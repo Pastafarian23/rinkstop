@@ -35,7 +35,21 @@ export async function GET(request: NextRequest) {
   const { data, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const teams = (data || []).map((t: any) => ({
+  const teams = (data || []).map((t: any): {
+    id: string;
+    name: string;
+    slug: string;
+    city: string | null;
+    country: string | null;
+    country_code: string | null;
+    source: 'user';
+    level: string | null;
+    age_label: string | null;
+    age_category: string | null;
+    description: string | null;
+    season_label: string | null;
+    claimed_by_tier: null;
+  } => ({
     id: t.id,
     name: t.name,
     slug: t.slug,

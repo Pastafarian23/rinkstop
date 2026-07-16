@@ -123,10 +123,15 @@ async function postToTelegram(text: string): Promise<{ message_id?: number } | n
 }
 
 export async function GET(req: NextRequest) {
-  // 1. Auth — Vercel Cron sends a Bearer token equal to CRON_SECRET
+  // 1. Auth — Vercel Cron sends a Bearer token equal to CRON_SECRET.
+  //    CRON_SECRET is auto-set by Vercel for cron jobs. If it is unset,
+  //    refuse to run rather than bypass auth (defense in depth).
   const authHeader = req.headers.get('authorization') || '';
   const expected = process.env.CRON_SECRET;
-  if (expected && authHeader !== `Bearer ${expected}`) {
+  if (!expected) {
+    return NextResponse.json({ error: 'cron_secret_unset' }, { status: 503 });
+  }
+  if (authHeader !== `Bearer ${expected}`) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 

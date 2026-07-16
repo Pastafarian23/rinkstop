@@ -87,7 +87,7 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
       .eq('is_active', true)
       .limit(20);
     if (error || !data) return [];
-    rows = (data || []).map((p) => ({
+    rows = (data || []).map((p: any): RowShape => ({
       id: p.id,
       slug: p.slug,
       name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.slug,

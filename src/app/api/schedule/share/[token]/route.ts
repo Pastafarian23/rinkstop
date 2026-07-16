@@ -4,36 +4,15 @@ import { teamShortLabel } from '@/lib/team-color';
 
 export const dynamic = 'force-dynamic';
 
-// We re-import the token store. In Next.js, each route file gets its own
-// module instance in dev, but in production both route files share the same
-// Node.js module cache for /api/schedule/share* handlers since they're in
-// different paths. To be safe, we re-define a tiny accessor here too — but
-// since module cache works on file path, the simpler approach is to share via
-// a global symbol. Use a globalThis key to survive module boundaries.
-
-// NOTE: In Next.js production, each route file is bundled separately and
-// won't share module state with sibling routes. The cleaner pattern is a
-// database table. For G1c we use a globalThis map so both routes see the
-// same store even when bundled separately. Tokens are short-lived and
-// ephemeral — that's an explicit tradeoff documented in the prep doc.
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __rinkstopShareStore: Map<string, { userId: string; createdAt: number; expiresAt: number }> | undefined;
-}
-
-function getStore(): Map<string, { userId: string; createdAt: number; expiresAt: number }> {
-  if (!globalThis.__rinkstopShareStore) {
-    globalThis.__rinkstopShareStore = new Map();
-  }
-  return globalThis.__rinkstopShareStore;
-}
+// Schedule share tokens are stored in the public.schedule_share_tokens table.
+// See migration 2026-07-16_schedule_share_tokens.sql. Replaces the prior
+// in-memory globalThis Map (which lost tokens on every Vercel cold start).
 
 /**
  * GET /api/schedule/share/[token]
  *
  * Returns a JSON blob of the user's shared events. No auth required —
- * the token IS the credential. Excludes cancelled events.
+ * the token IS the credential (bearer-style). Excludes cancelled events.
  *
  * Query params:
  *   days  — how many days ahead (default 90, max 365)
@@ -52,23 +31,36 @@ export async function GET(
     });
   }
 
-  const store = getStore();
-  const meta = store.get(token);
+  // Look up the token in the database. Tokens are bearer-style: knowing
+  // the 192-bit secret grants read access. No enumeration possible.
+  const { data: meta, error: lookupErr } = await supabaseAdmin
+    .from('schedule_share_tokens')
+    .select('user_id, expires_at')
+    .eq('token', token)
+    .maybeSingle();
+
+  if (lookupErr) {
+    return new NextResponse(JSON.stringify({ error: 'lookup_failed' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   if (!meta) {
     return new NextResponse(JSON.stringify({ error: 'token_not_found_or_revoked' }), {
       status: 404,
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  if (meta.expiresAt < Date.now()) {
-    store.delete(token);
+
+  if (new Date(meta.expires_at) < new Date()) {
     return new NextResponse(JSON.stringify({ error: 'token_expired' }), {
       status: 410,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const userId = meta.userId;
+  const userId = meta.user_id;
 
   // 1. Get user's teams
   const { data: memberships } = await supabaseAdmin
@@ -87,7 +79,7 @@ export async function GET(
   if (teamsList.length === 0) {
     return NextResponse.json({
       user_id: userId,
-      expires_at: new Date(meta.expiresAt).toISOString(),
+      expires_at: meta.expires_at,
       events: [],
     });
   }
@@ -133,7 +125,7 @@ export async function GET(
 
   return NextResponse.json({
     user_id: userId,
-    expires_at: new Date(meta.expiresAt).toISOString(),
+    expires_at: meta.expires_at,
     events: out,
   });
 }

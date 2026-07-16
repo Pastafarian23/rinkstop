@@ -78,7 +78,22 @@ export async function GET(request: NextRequest) {
   const sortedGames = [...completed, ...upcoming, ...other].slice(0, limit);
 
   // Map id fields to expected frontend shape
-  const games = sortedGames.map(m => ({
+  const games = sortedGames.map((m: any): {
+    id: string;
+    date: string;
+    status: string;
+    home_team_id: string;
+    away_team_id: string;
+    home_score: number | null;
+    away_score: number | null;
+    scheduled_at: string;
+    home_team: null;
+    away_team: null;
+    league: { name: string } | null;
+    venue_details: unknown;
+    period_scores: unknown;
+    referees: unknown;
+  } => ({
     id: m.id,
     date: m.date,
     status: m.status,

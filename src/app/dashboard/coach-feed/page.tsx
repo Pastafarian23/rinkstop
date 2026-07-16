@@ -135,9 +135,9 @@ export default async function CoachFeedPage({
         .in('team_id', teamIds)
         .order('starts_at', { ascending: false })
         .limit(50);
-      if (error) return { data: null, error };
+      if (error) return { data: [] as any[], error };
       // Normalise into the flat shape the feed expects
-      const flat = (data || []).map((e: any) => ({
+      const flat = (data || []).map((e: any): Record<string, any> => ({
           ...e,
           opponent: e.team_schedule?.opponent ?? null,
           home_away: e.team_schedule?.home_away ?? null,
