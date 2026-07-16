@@ -192,6 +192,41 @@ export class PassportService implements PassportServiceLike {
   async hasPassport(internalUserId: string): Promise<boolean> {
     return passportAdapter.hasPassport(internalUserId);
   }
+
+  /**
+   * Read-only dashboard state for a user.
+   *
+   * Workstream 2 (Phase 2A — Passport Dashboard): composed read for the
+   * /dashboard/passport page. Returns the unified identity view, the
+   * Passport record (if any), and recent events.
+   *
+   * All data flows through this service and the Identity Resolver. No
+   * direct queries to passport* tables from UI components.
+   *
+   * Returns null if PASSPORT_ENABLED is false (so the page can fall back
+   * to the existing editor without leaking flag state).
+   */
+  async getDashboardState(internalUserId: string, eventLimit = 5): Promise<PassportDashboardState | null> {
+    if (!isPassportEnabled()) return null;
+
+    const view = await passportAdapter.getUnifiedView(internalUserId);
+    const passport = await passportRepository.findByInternalUserId(internalUserId);
+    const recentEvents = passport
+      ? await passportRepository.getEventsForPassport(passport.passportId, eventLimit)
+      : [];
+
+    return {
+      view,
+      passport,
+      recentEvents,
+    };
+  }
+}
+
+export interface PassportDashboardState {
+  view: import('./types').PassportUnifiedView;
+  passport: import('./types').PassportRecord | null;
+  recentEvents: import('./types').PassportEvent[];
 }
 
 export const passportService = new PassportService();
