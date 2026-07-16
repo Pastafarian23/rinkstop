@@ -1,0 +1,23 @@
+{
+  "root": true,
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "rules": {
+    "@next/next/no-html-link-for-pages": "warn",
+    "react/no-unescaped-entities": "off",
+    "react-hooks/exhaustive-deps": "warn",
+    "@next/next/no-img-element": "warn"
+  },
+  "ignorePatterns": [
+    ".next/**",
+    "node_modules/**",
+    "android/**",
+    "scripts/**",
+    "supabase/migrations/**",
+    "*.config.js",
+    "*.config.ts",
+    "capacitor.config.ts",
+    "next-env.d.ts"
+  ]
+}
