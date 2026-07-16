@@ -1,0 +1,68 @@
+-- RinkStop public.profiles Schema Baseline (v0)
+-- Date: 2026-07-16
+-- Author: KiloClaw (per QA audit MED-3)
+--
+-- Purpose: Document the schema of public.profiles that exists in
+-- production but whose CREATE TABLE is not in version control.
+--
+-- STATUS: This migration is documentation-only. The table is already
+-- in production. This file captures the inferred schema so that future
+-- developers can understand the baseline.
+--
+-- This file does NOT run any CREATE/ALTER/DROP statements — it would
+-- error if it did because the table already exists. It only documents.
+--
+-- To regenerate the actual DDL against production, run:
+--   pg_dump --schema-only --table=public.profiles "$DATABASE_URL" \
+--     >> supabase/migrations/2026-07-16_profiles_actual_ddl.sql
+
+-- ============================================================================
+-- public.profiles — Inferred Schema (v0)
+-- ============================================================================
+--
+-- Per migration history and RLS policy references, public.profiles has:
+--
+--   user_id              TEXT PRIMARY KEY   -- Clerk user ID
+--   account_type         TEXT               -- Added 2026-06-12 (fan/player/coach/scout/business/team/league/rink)
+--   display_name         TEXT               -- Display name shown in UI
+--   email                TEXT               -- User's email
+--   avatar_url           TEXT               -- Profile photo URL
+--   tier                 TEXT               -- Subscription tier (free/verified_identity/identity_plus/club_*/etc.)
+--   role                 TEXT               -- User role (user/admin/super_admin)
+--   is_founding_member   BOOLEAN            -- Founding Member flag
+--   stripe_customer_id   TEXT               -- Stripe Customer ID
+--   stripe_subscription_id TEXT             -- Stripe Subscription ID
+--   subscription_status  TEXT               -- Stripe Subscription status
+--   email_preferences    JSONB              -- Email opt-in preferences
+--   email_verified_at    TIMESTAMPTZ        -- Email verification timestamp
+--   tier_changed_at      TIMESTAMPTZ        -- When tier last changed
+--   created_at           TIMESTAMPTZ        -- Profile creation timestamp
+--   updated_at           TIMESTAMPTZ        -- Last update timestamp
+--
+-- INDEXES (likely):
+--   profiles_user_id_idx            PRIMARY KEY (user_id)
+--   profiles_email_idx              (email)
+--   profiles_tier_idx               (tier)
+--   profiles_role_idx               (role)
+--   profiles_stripe_customer_id_idx (stripe_customer_id)
+--   profiles_account_type_idx       (account_type) — added 2026-06-12
+--
+-- CONSTRAINTS (likely):
+--   profiles_tier_check             CHECK (tier IN ('free', 'verified_identity', ...))
+--   profiles_role_check             CHECK (role IN ('user', 'admin', 'super_admin'))
+--
+-- RLS POLICIES (confirmed in migrations):
+--   profiles_select_authenticated   — auth users can read all rows
+--   profiles_upsert_own             — user can upsert their own row
+--   (see 2026-06-08_profile_tiers.sql and 2026-06-16-critical-rls-fixes.sql)
+
+-- ============================================================================
+-- Action item for Arnel:
+-- ============================================================================
+--
+-- Run `pg_dump --schema-only --table=public.profiles` against the production
+-- database and append the output below. This will replace the inferred
+-- schema above with the actual DDL and remove the "inferred" annotation.
+--
+-- Until then, this file documents what we know from migration history.
+-- ============================================================================
