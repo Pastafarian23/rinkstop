@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     return applyRateLimitHeaders(res, rl);
   }
 
-  const formData = await request.formData().catch(() => null);
+  const formData = await request.formData().catch((): null => null);
   if (!formData) {
     const res = badRequest('invalid_formdata');
     return applyRateLimitHeaders(res, rl);

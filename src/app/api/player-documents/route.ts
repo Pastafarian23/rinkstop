@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
   }
 
   // ---- FormData parse ----
-  const formData = await request.formData().catch(() => null);
+  const formData = await request.formData().catch((): null => null);
   if (!formData) {
     const res = badRequest('invalid_formdata');
     return applyRateLimitHeaders(res, rl);
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       return applyRateLimitHeaders(res, rl);
     }
     if (typeof title !== 'string' || title.length < 1 || title.length > 100) {
-      const res = badRequest('invalid_title', { index: i, length: title?.length ?? 0 });
+      const res = badRequest('invalid_title', { index: i, length: typeof title === 'string' ? title.length : 0 });
       return applyRateLimitHeaders(res, rl);
     }
     if (description !== null && description !== undefined && typeof description !== 'string') {

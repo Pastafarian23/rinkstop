@@ -94,8 +94,8 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
 
     // Fetch both NHL (or directory) teams + user-created teams in parallel.
     Promise.all([
-      fetch(`/api/teams?${params}`).then(r => r.json()).catch(() => ({ data: [] })),
-      fetch(`/api/user-teams?${params}`).then(r => r.json()).catch(() => ({ data: [] })),
+      fetch(`/api/teams?${params}`).then(r => r.json()).catch((): { data: never[] } => ({ data: [] })),
+      fetch(`/api/user-teams?${params}`).then(r => r.json()).catch((): { data: never[] } => ({ data: [] })),
     ]).then(([nhl, user]) => {
       const nhlTeams: NHLTeam[] = nhl?.data || [];
       const userTeams: UserTeam[] = user?.data || [];

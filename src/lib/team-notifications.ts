@@ -148,7 +148,7 @@ export async function fanOutTeamEmail(args: FanoutArgs): Promise<number> {
             authorName: actorName,
           },
           tag: `team-${args.kind}`,
-        }).then(() => undefined)
+        }).then((): void => undefined)
       )
     );
 

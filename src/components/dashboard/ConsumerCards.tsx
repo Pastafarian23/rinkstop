@@ -135,20 +135,20 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
     const thirtyDaysOut = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [membershipsRes, scheduleRes, fixturesRes, paymentsRes, childIdsRes] = await Promise.all([
-      supabaseAdmin
+    const membershipsRes = await supabaseAdmin
         .from('team_members')
         .select('role, team_workspaces:team_id ( id, slug, name )')
         .eq('user_id', userId)
         .is('left_at', null)
         .order('joined_at', { ascending: false })
-        .limit(8),
+        .limit(8);
+    const [scheduleRes, fixturesRes, paymentsRes, childIdsRes] = await Promise.all([
       (async () => {
         // Need team_ids first to scope team_schedule
         const teamIds = ((membershipsRes.data || []) as any[])
           .map((m: any) => m.team_workspaces?.id)
           .filter(Boolean);
-        if (teamIds.length === 0) return { data: [] };
+        if (teamIds.length === 0) return { data: [] as any[] };
         return supabaseAdmin
           .from('team_schedule')
           .select('id, title, starts_at, kind, team_id')
@@ -170,7 +170,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
         const teamIds = ((membershipsRes.data || []) as any[])
           .map((m: any) => m.team_workspaces?.id)
           .filter(Boolean);
-        if (teamIds.length === 0) return { data: [] };
+        if (teamIds.length === 0) return { data: [] as any[] };
         return supabaseAdmin
           .from('team_payments')
           .select('id, amount, status, due_at, team_id')
@@ -212,7 +212,7 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
       due_at: p.due_at,
     }));
 
-    const upcomingTournaments: UpcomingTournament[] = ((fixturesRes.data || []) as any[]).map((f: any) => ({
+    const upcomingTournaments: UpcomingTournament[] = ((fixturesRes.data || []) as any[]).map((f: any): UpcomingTournament => ({
       id: f.id,
       scheduled_at: f.scheduled_at,
       home_team: 'TBD',

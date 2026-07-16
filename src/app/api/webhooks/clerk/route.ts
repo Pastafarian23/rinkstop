@@ -35,6 +35,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
+import { passportService, isPassportEnabled } from '@/lib/passport';
 
 export const dynamic = 'force-dynamic';
 
@@ -375,6 +376,24 @@ async function handleUserCreated(data: ClerkUserPayload) {
       data: { displayName, username },
       tag: 'welcome',
     });
+  }
+
+  // === Passport issuance (Workstream 1) ===
+  // Per Q4 decision: new signups get a Passport at account creation.
+  // Per Rule 5: gated behind PASSPORT_ENABLED. Per Rule 6: only writes
+  // to new Passport tables (no existing record mutation). Per Rule 7:
+  // called as a service-level adapter, not by direct DB write.
+  //
+  // Non-blocking: if Passport issuance fails, we log and continue.
+  // The profile row is already created above; we don't want to fail
+  // signup if the Passport subsystem has an issue.
+  if (isPassportEnabled()) {
+    try {
+      await passportService.ensurePassport(data.id, 'signup');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[clerk-webhook] Passport issuance failed for ${data.id}: ${msg}`);
+    }
   }
 
   return NextResponse.json({ ok: true, event: 'user.created', userId: data.id });

@@ -274,7 +274,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     rink_id?: string | null;
     timezone?: string | null;
   }>;
-  const upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e) => ({
+  const upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e): ScheduleRow => ({
     id: `evt_${e.id}`, // prefix to avoid ID collision with team_schedule rows
     scheduled_at: e.starts_at,
     opponent: e.opposing_team,

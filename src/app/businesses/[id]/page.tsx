@@ -129,7 +129,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
             gap: 8,
           }}
         >
-          {data.photos.map((url, i) => (
+          {data.photos.map((url: string, i: number) => (
             <a
               key={url} href={url} target="_blank" rel="noopener noreferrer"
               style={{ aspectRatio: '4/3', borderRadius: 8, overflow: 'hidden', border: '1px solid #1e1e1e' }}

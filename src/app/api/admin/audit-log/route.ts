@@ -127,7 +127,7 @@ async function fetchReviewEvents(params: URLSearchParams) {
     return true;
   });
 
-  return rows.map((r: any) => ({
+  return rows.map((r: any): AuditEvent => ({
     id: `review-${r.id}`,
     source: 'review' as Source,
     occurred_at: r.reviewed_at,

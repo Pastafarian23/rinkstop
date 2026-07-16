@@ -26,7 +26,7 @@ export async function GET() {
 
     if (error) throw error;
 
-    const games = (data || []).map((f: any) => {
+    const games = (data || []).map((f: any): Record<string, any> => {
       const home = f.home_team;
       const away = f.away_team;
       const league = f.league;

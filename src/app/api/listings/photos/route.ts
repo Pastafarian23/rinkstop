@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const userId = await resolveCanonicalUserId(session.userId, userEmail);
   if (!session.userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const formData = await req.formData().catch(() => null);
+  const formData = await req.formData().catch((): null => null);
   if (!formData) return NextResponse.json({ error: 'invalid_formdata' }, { status: 400 });
 
   const file = formData.get('file');

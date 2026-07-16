@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
+import { checkRateLimit, getClientIP, applyRateLimitHeaders } from '@/lib/rateLimit';
 
 const MATON_API_KEY = process.env.MATON_API_KEY;
 if (!MATON_API_KEY) {
@@ -104,6 +105,22 @@ Review in Supabase → listing_submissions table.
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 submissions per IP per hour. This is a public endpoint that
+  // writes to the DB and sends Telegram + email notifications — unrate-limited
+  // it can be trivially abused to spam admins.
+  const ip = getClientIP(request);
+  const rl = await checkRateLimit(`listings-submit:${ip}`, {
+    maxRequests: 5,
+    windowMs: 60 * 60 * 1000, // 1 hour
+  });
+  if (!rl.allowed) {
+    const res = NextResponse.json(
+      { error: 'rate_limited', retryAfter: rl.retryAfter },
+      { status: 429 }
+    );
+    return applyRateLimitHeaders(res, rl);
+  }
+
   try {
     const body = await request.json();
     const { listingType, name, city, country, website, description, email } = body;
