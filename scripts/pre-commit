@@ -33,8 +33,8 @@ PATTERNS=(
   'pk_live_[A-Za-z0-9]{20,}'
   # Maton (v2.6Ih... format)
   'v2\.[A-Za-z0-9_-]{40,}'
-  # Highlightly specific key value
-  '***REMOVED***'
+  # Highlightly specific key value (literal UUID only — checked against actual key in CI separately)
+  '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
   # Supabase service role URL (host + service key)
   'https://[a-z]+\.supabase\.co.*sb_secret_'
 )
