@@ -150,7 +150,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
       <div style={{ marginBottom: '1.25rem' }}>
         <div className="label">Directory</div>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          ALL TEAMS
+          All Hockey Teams
         </h1>
         <Link
           href="/directory/nhl/history"
