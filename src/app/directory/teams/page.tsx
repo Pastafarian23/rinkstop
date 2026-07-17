@@ -30,7 +30,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   } else if (levelIsValid) {
     title = `${LEVEL_LABELS[level as Level]} Hockey Teams Worldwide`;
   } else {
-    title = '2,275 Hockey Teams Across 240 Leagues';
+    title = 'Hockey Teams — Directory of 2,275+ Teams in 240 Leagues';
   }
   const description = (() => {
     if (levelIsValid && country) {
