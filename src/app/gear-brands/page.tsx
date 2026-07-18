@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Equipment Brands — Bauer, CCM, Warrior, True & More (2026 Guide)',
+  title: 'Hockey Equipment Brands — The 2026 Buyer\'s Guide to Bauer, CCM, Warrior & More',
   description:
     'Hockey equipment brands directory. Reviews of Bauer, CCM, Warrior, True, and Easton for skates, sticks, pads, helmets, and protective gear. Buying guides and brand comparisons for 2026.',
   alternates: {
@@ -28,7 +28,7 @@ export default function GearBrandsPage() {
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          HOCKEY EQUIPMENT BRANDS
+          Hockey Equipment Brands — Bauer, CCM, Warrior & More
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
           Equipment brands, reviews, comparisons, and what to buy  --  from skates to sticks.
