@@ -54,3 +54,7 @@ UPDATE rinks SET seo_h1 = 'Planet Ice Widnes — Ice Rink & Skating in Widnes',
 UPDATE rinks SET seo_h1 = 'Ice Skating in Noida — Snow World at DLF Mall of India',
                   seo_title = 'Snow World Noida — DLF Mall Ice Skating & Skating Rink'
   WHERE slug = 'snow-world-noida-dlf-mall-of-india';
+
+UPDATE rinks SET seo_h1 = 'Ice Skating in Liverpool (NSW) — LCC Ice Rink',
+                  seo_title = 'LCC Ice Rink — Liverpool Ice Skating at Liverpool Catholic Club'
+  WHERE slug = 'lcc-ice-rink-liverpool-catholic-club';
