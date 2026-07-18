@@ -106,7 +106,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email, status')
+    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email, status, seo_h1, seo_title')
     .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
@@ -137,7 +137,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const provinceLabel = provinceDisplayName(rink.province_state);
 
   return {
-    title: `${rink.name} -- Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}`,
+    title: rink.seo_title || `${rink.name} -- Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}`,
     description,
     robots: robotsMeta(decision),
     alternates: {
@@ -160,7 +160,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league, seo_h1, seo_title')
     .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
@@ -470,7 +470,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         ) : null}
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
-          {rink.name}
+          {rink.seo_h1 || rink.name}
         </h1>
 
         {/* Actions: Save to favorites */}
@@ -964,7 +964,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       return (
         <>
           <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{rink.name}</h1>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{rink.seo_h1 || rink.name}</h1>
             <p style={{ color: '#cbd5e1' }}>{rink.notes || `${rink.name} is an ice rink in ${rink.city || 'the area'}, ${rink.country || ''}.`}</p>
           </div>
         </>
