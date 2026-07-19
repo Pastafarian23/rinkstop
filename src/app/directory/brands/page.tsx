@@ -277,6 +277,19 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
         <span style={{ color: '#c8102e' }}>↗</span>{' '}
         and may earn a commission at no cost to you. We only link to brands we trust.
       </p>
+
+      {/* Cross-link to /gear-brands buying-guide content (SEO Batch 2 internal linking). */}
+      <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+        <Link
+          href="/gear-brands"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.25rem', background: 'linear-gradient(135deg, #FFD700, #FCC419)', color: '#000', fontWeight: 700, fontSize: '0.875rem', borderRadius: '8px', textDecoration: 'none', boxShadow: '0 2px 8px rgba(255,215,0,0.2)' }}
+        >
+          Compare gear brands and what to buy
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+          </svg>
+        </Link>
+      </div>
     </div>
   );
 }
