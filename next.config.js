@@ -199,6 +199,29 @@ const nextConfig = {
         destination: 'https://rinkstop.com/$1',
         permanent: true,
       },
+      // Rink 404 redirects (SEO cleanup, 2026-07-19).
+      // Source: /tmp/coverage-2026-07-19/Table.csv (GSC crawl errors).
+      // Audit: rinkstop-content/seo/audit-404-slugs.mjs re-ran 2026-07-19,
+      // resolved each old slug against the live Supabase `rinks` table.
+      // 8 redirects go to a current canonical slug (verified to exist);
+      // 8 redirect to the /directory/rinks listing because no exact or
+      // fuzzy match was found in the DB.
+      { source: '/directory/rinks/versowood-arena-heinola', destination: '/directory/rinks/versowood-arena', permanent: true },
+      { source: '/directory/rinks/scheels-arena', destination: '/directory/rinks/scheels-arena-fargo', permanent: true },
+      { source: '/directory/rinks/td-place', destination: '/directory/rinks/td-place-arena', permanent: true },
+      { source: '/directory/rinks/joynext-arena', destination: '/directory/rinks/joynext-arena-rudolf-harbig-halle', permanent: true },
+      { source: '/directory/rinks/beijing-world-ice-arena-skating-rink-qinghe-mixc', destination: '/directory/rinks/world-ice-arena', permanent: true },
+      { source: '/directory/rinks/olympia-eishalle', destination: '/directory/rinks/olympia-eishalle-munich', permanent: true },
+      { source: '/directory/rinks/kisapuisto-kisapuiston-jaahalli', destination: '/directory/rinks/kisapuisto', permanent: true },
+      { source: '/directory/rinks/rogers-arena-vancouver', destination: '/directory/rinks/rogers-arena', permanent: true },
+      { source: '/directory/rinks/skellefte-kraft-arena', destination: '/directory/rinks', permanent: true },
+      { source: '/directory/rinks/psd-bank-n-rnberg-arena', destination: '/directory/rinks', permanent: true },
+      { source: '/directory/rinks/probonio-arena-kasseler-sportsworld', destination: '/directory/rinks', permanent: true },
+      { source: '/directory/rinks/colee-financiere-sun-life', destination: '/directory/rinks', permanent: true },
+      { source: '/directory/rinks/slush-puppie-place', destination: '/directory/rinks', permanent: true },
+      { source: '/directory/rinks/st-ngebro-ishall', destination: '/directory/rinks', permanent: true },
+      { source: '/directory/rinks/upplands-bilforum-arena-gr-nby-ishall', destination: '/directory/rinks', permanent: true },
+      { source: '/directory/rinks/brantford-civic-centre', destination: '/directory/rinks', permanent: true },
     ];
   },
 };
