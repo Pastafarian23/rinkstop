@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'IIHF | International Ice Hockey Federation',
-  description: 'Coverage of the International Ice Hockey Federation (IIHF), including World Championships, U20 World Junior Championship, U18, and women\'s tournaments.',
+  title: 'IIHF — International Ice Hockey Federation: Tournaments, Rankings & Member Nations',
+  description: 'Coverage of the International Ice Hockey Federation (IIHF), including World Championships, U20 World Junior Championship, U18, women\'s tournaments, and 60+ member nations.',
 };
 
 export default function IIHFPage() {
