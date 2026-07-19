@@ -349,13 +349,30 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
   // renders 150+ unique words when hasData=true.
   const decision = { indexable: hasData, reason: hasData ? 'has data' : 'no data', uniquenessScore: hasData ? 50 : 0 };
 
-  const title = hasData
-    ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues | RinkStop`
-    : `Hockey in ${countryName} — Directory, Leagues & How to Get Started | RinkStop`;
+  // SEO Batch 4 (2026-07-19): per-country title/description overrides for
+  // home market + key GSC page-2 candidates. Default template below still
+  // applies to all other 150+ countries.
+  const COUNTRY_METADATA_OVERRIDES: Record<string, { title: string; description: string }> = {
+    Philippines: {
+      title: `Hockey in the Philippines — ${rinks} Rinks, ${teams} Teams & Growing Programs`,
+      description: `Find ice hockey in the Philippines. ${rinks} rinks, ${teams} teams, and learn-to-play programs across Metro Manila, Cebu, and beyond. The Philippine Ice Hockey Federation is growing the sport from Cebu to the national stage.`,
+    },
+    'United States': {
+      title: `Hockey in the United States — Rinks, NHL, NCAA & Youth Programs by State`,
+      description: `Find ice hockey rinks, NHL teams, NCAA programs, and youth leagues across the United States. Browse by state, city, or league — from Boston to Los Angeles.`,
+    },
+  };
 
-  const description = hasData
-    ? `Find ice hockey rinks, teams, and leagues in ${countryName}. Browse ${rinks} rinks, ${teams} active teams, and the top leagues. ${data.info?.note || 'Complete hockey directory for players, parents, and fans.'}`
-    : `Hockey directory for ${countryName}. Find nearby rinks, learn-to-play programs, and ${LEAGUE_INFO[countryName]?.note || 'how to get started in the sport.'}`;
+  const override = COUNTRY_METADATA_OVERRIDES[countryName];
+  const title = override?.title
+    || (hasData
+      ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues | RinkStop`
+      : `Hockey in ${countryName} — Directory, Leagues & How to Get Started | RinkStop`);
+
+  const description = override?.description
+    || (hasData
+      ? `Find ice hockey rinks, teams, and leagues in ${countryName}. Browse ${rinks} rinks, ${teams} active teams, and the top leagues. ${data.info?.note || 'Complete hockey directory for players, parents, and fans.'}`
+      : `Hockey directory for ${countryName}. Find nearby rinks, learn-to-play programs, and ${LEAGUE_INFO[countryName]?.note || 'how to get started in the sport.'}`);
 
   return {
     title,
