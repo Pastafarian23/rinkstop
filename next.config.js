@@ -199,6 +199,44 @@ const nextConfig = {
         destination: 'https://rinkstop.com/$1',
         permanent: true,
       },
+      // SEO Batch 4 follow-up: ambiguous cross-slug 404 candidates
+      // (2026-07-19). Resolved from the original 5 deferred from
+      // Batch 2 (see memory/todo/seo-404-to-do-2026-07-19.md):
+      //   - altay-torpedo   → vhl-dyn-altay (only Altay match in DB;
+      //     the 'KZ' hint was wrong — VHL/Dyn Altay is in Russia, but
+      //     it's still the correct team by name)
+      //   - skalica         → skalica-1liga (HK 36 Skalica, senior
+      //     Slovak team; skalica-u20 was Canadian test data)
+      //   - frankfurt       → lowen-frankfurt (Löwen Frankfurt DEL)
+      //   - delaware-thunder → SKIPPED. No match in DB. Likely USPHL
+      //     team not yet imported. Send to listing.
+      //   - dragons         → SKIPPED. 7 matches across KHL/CNCAA/
+      //     EIHL/NCAA. Generic term. Send to listing.
+      {
+        source: '/directory/teams/altay-torpedo',
+        destination: '/directory/teams/vhl-dyn-altay',
+        permanent: true,
+      },
+      {
+        source: '/directory/teams/skalica',
+        destination: '/directory/teams/skalica-1liga',
+        permanent: true,
+      },
+      {
+        source: '/directory/teams/frankfurt',
+        destination: '/directory/teams/lowen-frankfurt',
+        permanent: true,
+      },
+      {
+        source: '/directory/teams/delaware-thunder',
+        destination: '/directory/teams',
+        permanent: true,
+      },
+      {
+        source: '/directory/teams/dragons',
+        destination: '/directory/teams',
+        permanent: true,
+      },
     ];
   },
 };
