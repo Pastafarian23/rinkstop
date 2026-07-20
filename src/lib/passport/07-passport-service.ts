@@ -210,7 +210,25 @@ export class PassportService implements PassportServiceLike {
     if (!isPassportEnabled()) return null;
 
     const view = await passportAdapter.getUnifiedView(internalUserId);
-    const passport = await passportRepository.findByInternalUserId(internalUserId);
+    let passport = await passportRepository.findByInternalUserId(internalUserId);
+
+    // Activation: pending Passport on first dashboard visit -> activate.
+    // Single source of truth lives here, not in the page.
+    if (passport && passport.status === 'pending') {
+      try {
+        passport = await passportRepository.updateStatus(passport.passportId, 'active');
+        await passportEventService.append({
+          passportId: passport.passportId,
+          eventType: 'PASSPORT_ACTIVATED',
+          payload: {},
+          internalUserId,
+        });
+      } catch (err) {
+        // Activation is best-effort; surface in logs, keep pending state for next visit.
+        console.error('[passportService.getDashboardState] activation failed:', err);
+      }
+    }
+
     const recentEvents = passport
       ? await passportRepository.getEventsForPassport(passport.passportId, eventLimit)
       : [];
@@ -224,7 +242,7 @@ export class PassportService implements PassportServiceLike {
 }
 
 export interface PassportDashboardState {
-  view: import('./types').PassportUnifiedView;
+  view: import('./types').PassportUnifiedView | null;
   passport: import('./types').PassportRecord | null;
   recentEvents: import('./types').PassportEvent[];
 }
