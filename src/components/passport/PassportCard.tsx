@@ -16,8 +16,8 @@ import type {
 } from '@/lib/passport/types';
 
 interface PassportCardProps {
-  passport: PassportRecord | null;
-  view: PassportUnifiedView;
+  passport: PassportRecord;
+  view: PassportUnifiedView | null;
   holderName: string;
   photoUrl?: string | null;
 }
@@ -38,15 +38,13 @@ const VERIFICATION_LABEL: Record<PassportRecord['verificationLevel'], string> = 
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return '—';
-  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export function PassportCard({ passport, view, holderName, photoUrl }: PassportCardProps) {
@@ -179,7 +177,8 @@ export function PassportCard({ passport, view, holderName, photoUrl }: PassportC
   );
 }
 
-function deriveRoles(view: PassportUnifiedView): string {
+function deriveRoles(view: PassportUnifiedView | null): string {
+  if (!view) return '—';
   const roles: string[] = [];
   if (view.isPlayer) roles.push('Player');
   if (view.isCoach) roles.push('Coach');
