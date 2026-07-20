@@ -114,6 +114,9 @@ export interface PassportUnifiedView {
 
   // Federations
   federationAffiliations: string[];
+
+  // Profile (from profiles.avatar_url)
+  avatarUrl: string | null;
 }
 
 /**

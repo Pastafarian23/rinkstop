@@ -11,7 +11,7 @@ import Link from 'next/link';
 import type { PassportUnifiedView } from '@/lib/passport/types';
 
 interface PassportNextStepsProps {
-  view: PassportUnifiedView;
+  view: PassportUnifiedView | null;
   hasPlayerProfile: boolean;
 }
 
@@ -23,6 +23,15 @@ interface Step {
 }
 
 export function PassportNextSteps({ view, hasPlayerProfile }: PassportNextStepsProps) {
+  // If we couldn't build the unified view (profile row missing), render an empty
+  // pending list rather than crashing on `view.*` reads.
+  if (!view) {
+    return (
+      <section aria-label="Passport Next Steps" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
+        Complete your profile to see next steps.
+      </section>
+    );
+  }
   const steps: Step[] = [
     {
       id: 'claim',
@@ -52,12 +61,12 @@ export function PassportNextSteps({ view, hasPlayerProfile }: PassportNextStepsP
       id: 'photo',
       label: 'Upload a profile photo',
       href: '/dashboard/profile',
-      done: false, // we don't read avatar_url from passport surface
+      done: !!view.avatarUrl,
     },
     {
       id: 'bio',
       label: 'Complete your biography',
-      href: '/dashboard/passport/team-history/new',
+      href: '/dashboard/profile',
       done: view.hasHockeyHistory,
     },
   ];

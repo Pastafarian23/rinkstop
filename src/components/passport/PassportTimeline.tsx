@@ -26,17 +26,15 @@ const EVENT_META: Record<PassportEventType, { icon: string; title: string }> = {
 };
 
 function formatEventDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export function PassportTimeline({ events }: PassportTimelineProps) {
