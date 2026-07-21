@@ -18,7 +18,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { passportAssetsService } from '@/lib/passport';
-import { isPassportInternalApiEnabled } from '@/lib/passport';
+import { isPassportAssetsApiEnabled } from '@/lib/passport';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,7 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: { passportId: string } }
 ) {
-  if (!isPassportInternalApiEnabled()) {
+  if (!isPassportAssetsApiEnabled()) {
     return NextResponse.json(
       { error: 'Passport functionality is disabled' },
       { status: 403 }
