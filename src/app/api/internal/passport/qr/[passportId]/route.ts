@@ -22,10 +22,10 @@ import { isPassportAssetsApiEnabled } from '@/lib/passport';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(
-  _req: NextRequest,
-  { params }: { params: { passportId: string } }
-) {
+async function handle(
+  req: NextRequest,
+  ctx: { params: Promise<{ passportId: string }> }
+): Promise<NextResponse> {
   if (!isPassportAssetsApiEnabled()) {
     return NextResponse.json(
       { error: 'Passport functionality is disabled' },
@@ -33,7 +33,7 @@ export async function POST(
     );
   }
 
-  const { passportId } = params;
+  const { passportId } = await ctx.params;
   if (!passportId || typeof passportId !== 'string') {
     return NextResponse.json(
       { error: 'passportId is required' },
@@ -53,12 +53,18 @@ export async function POST(
   });
 }
 
-// Exported as default GET also so the URL works for browser-side img tags
-// (browser uses <img src=> which performs a GET). POST remains the canonical
-// internal call; this is just a courtesy for direct image loading.
+// Both POST and GET serve the same SVG. The Card UI uses GET (browser <img>);
+// the internal API service still calls POST.
+export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ passportId: string }> }
+): Promise<NextResponse> {
+  return handle(req, ctx);
+}
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { passportId: string } }
-) {
-  return POST(req, { params });
+  ctx: { params: Promise<{ passportId: string }> }
+): Promise<NextResponse> {
+  return handle(req, ctx);
 }

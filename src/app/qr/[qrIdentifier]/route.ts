@@ -72,13 +72,13 @@ function comingSoonPage(passportId: string): Response {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { qrIdentifier: string } }
+  ctx: { params: Promise<{ qrIdentifier: string }> }
 ) {
   if (!isPassportQrResolveEnabled()) {
     return new NextResponse('Not Found', { status: 404 });
   }
 
-  const { qrIdentifier } = params;
+  const { qrIdentifier } = await ctx.params;
   if (!qrIdentifier) {
     return new NextResponse('Not Found', { status: 404 });
   }
