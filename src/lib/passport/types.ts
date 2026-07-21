@@ -57,6 +57,12 @@ export interface PassportRecord {
   source: PassportSource;
   createdAt: string;
   updatedAt: string;
+  /**
+   * The opaque QR identifier (UUID, added in WS2 PR2 Step 1.1). Used to encode
+   * the Passport's QR code — opaque because the URL or passport_id is never
+   * encoded directly into the QR payload.
+   */
+  qrIdentifier: string;
 }
 
 /**
@@ -81,6 +87,20 @@ export interface PassportLink {
   entityId: string;
   linkedAt: string;
   linkedBy: string;
+}
+
+/**
+ * A QR identifier revocation record, stored in public.passport_qr_revocations.
+ * Each row represents one rotation of the qr_identifier for a Passport.
+ */
+export interface PassportQrRevocation {
+  id: string;
+  passportId: string;
+  oldQrIdentifier: string;
+  newQrIdentifier: string;
+  reason: string | null;
+  revokedBy: string | null;
+  revokedAt: string;
 }
 
 /**
