@@ -68,20 +68,6 @@ export default function GearBrandsPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
-        {[
-          { title: 'Skate Buying Guide', note: 'Width, fit, blade quality  --  what actually matters when buying hockey skates.' },
-          { title: 'Stick Flex Chart', note: 'Find the right flex based on weight and height. Too stiff or too whippy both hurt performance.' },
-          { title: 'Helmet Ratings Explained', note: 'CCE vs. HECC certifications, what the ratings mean, and how to spot an outdated helmet.' },
-          { title: 'Goalie Gear Differences', note: 'Leg pads, blockers, gloves, chest protectors  --  how goalie equipment differs from player gear.' },
-        ].map(guide => (
-          <div key={guide.title} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1rem' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff', marginBottom: '0.4rem' }}>{guide.title}</h3>
-            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>{guide.note}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Editorial section — keyword-targeted for "hockey equipment", "hockey equipment brands",
           "best hockey equipment", "hockey gear brands" (GSC queries at position 50-90 in 90d).
           The page lives at /gear-brands because that is the URL Google already had impressions on.
@@ -140,6 +126,145 @@ export default function GearBrandsPage() {
           CCM, True, Warrior) carry the same gear, often at lower prices, but you lose the
           fitting help. For used equipment, usedhockeyequipment.com and rink pro shops are
           worth a look, especially for kids who outgrow gear every season.
+        </p>
+
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          How to buy hockey skates (without wasting money)
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          Skates are the single most important piece of equipment a hockey player owns and the
+          one most often bought wrong. A bad fit causes pain, slows development, and turns new
+          players off the sport. A good pair will outlast three or four sticks.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Fit is everything.</strong> Hockey skates should fit 1 to 1.5 sizes smaller
+          than your street shoe. Your toes should lightly touch the front of the boot when
+          standing upright and pull back 3 to 5 millimeters when you flex your knees. Any
+          movement side-to-side means the boot is too wide. Width matters as much as length:
+          Bauer, CCM, and True each offer multiple lasts (D, EE, and fit-system equivalents),
+          and the right last for your foot is more important than the brand on the outside.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Get fitted at a pro shop.</strong> A trained fitter will measure both feet,
+          watch you stand and flex, and pull 3 or 4 pairs for you to try. This is not optional
+          for a first pair. Online retailers will not catch a heel lift or a toe pinch. If the
+          nearest pro shop is more than an hour away, Pure Hockey and HockeyMonkey both have
+          fit guides that help, but the in-person fitting is still preferable for a first pair.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Don't over-spend on a first pair.</strong> A $200 intermediate skate will
+          outperform a $700 senior skate for a player who is still growing or still learning.
+          The premium in senior skates is stiffness and weight savings, which only matter at
+          higher playing speeds. Buy the level that matches the player, not the level the
+          player aspires to.
+        </p>
+
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          How to choose hockey stick flex
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          Stick flex is the stiffness of the shaft, measured in pounds of force required to
+          bend the stick one inch. The right flex depends on the player's weight, height, and
+          shot style, not on the player's age or skill level.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>The standard rule of thumb.</strong> Flex should be roughly half the player's
+          body weight in pounds. A 160-pound player should use around an 80 flex. A 200-pound
+          player should use around a 100 flex. This is a starting point — players who take
+          mostly slap shots often prefer a stiffer stick (flex +10), and players who rely on
+          quick wrist shots often prefer a whippier stick (flex -10).
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Cut length matters as much as flex.</strong> A stick cut 4 inches shorter
+          behaves about 10 flex stiffer than its label. A player who cuts aggressively for
+          puck handling is effectively raising their flex and should buy one step lower to
+          compensate. The general rule: stick should reach the chin in skates for most playing
+          styles, or the nose for players who want maximum reach on shots.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Curve pattern is a preference, not a performance choice.</strong> Mid-curve
+          patterns (P92/Ovechkin, P88/Kane) suit most players. Deeper curves help toe drags
+          but reduce backhand control. Flatter curves improve backhands and saucer passes but
+          reduce shot lift. Pick the curve that matches the shot you actually take, not the
+          shot you wish you could take.
+        </p>
+
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          Hockey helmet certifications: what CCE and HECC actually mean
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          A hockey helmet is the one piece of equipment where certification standards are
+          non-negotiable. The two certifications that matter in North America are HECC
+          (Hockey Equipment Certification Council) and, more recently, the newer CCE
+          (Certified to CSA, in Canada). Both certify the helmet against impact tests at
+          multiple temperatures, but they are not interchangeable.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>HECC</strong> has been the standard for decades and is required by USA Hockey,
+          Hockey Canada, and the NCAA. A HECC-certified helmet carries a sticker on the back
+          with an expiration date. HECC certifications last about 6.5 years from manufacture;
+          after that, the helmet is no longer certified regardless of its condition.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>CCE</strong> is a newer Canadian standard (CSA Z262.1) that some manufacturers
+          are adopting. It is not yet accepted by all leagues, so a CCE-only helmet may not
+          pass equipment checks in some USA Hockey or NCAA contexts. Check league requirements
+          before buying.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>How to spot an outdated helmet.</strong> Look for the HECC sticker on the back
+          and check the expiration date. If there is no sticker, the helmet is either uncertified
+          (do not use it) or the sticker has been removed. If the foam inside the helmet feels
+          packed down or cracked, the protection has degraded even if the certification is
+          still valid. Replace it.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Mouthguards and cages/visors.</strong> HECC certification does not require a
+          cage or visor, but most youth leagues do. A full cage is required for most players
+          under 18 in USA Hockey. Half shields (visors) are permitted at older levels but offer
+          less protection against deflected pucks.
+        </p>
+
+        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginTop: '1.5rem', marginBottom: '0.75rem', letterSpacing: '0.01em' }}>
+          Goalie equipment: what is different and why
+        </h2>
+        <p style={{ marginBottom: '1rem' }}>
+          Goalie gear is built differently from player gear in almost every category. The
+          differences are not marketing — they reflect the actual physics of stopping pucks
+          traveling 80 to 100 miles per hour.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Leg pads</strong> are 11 inches wide (vs. 10 for players) and constructed with
+          layered foams over a stiff core. The wider surface area gives the goalie a blocking
+          plane; the layered foam absorbs shot impact without transmitting force to the knee.
+          A goalie's leg pad is also 1 to 2 inches taller than a player's shin guard because
+          the goalie drops into a butterfly position where the pad must cover the five-hole.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Blockers</strong> are rectangular boards worn on the hand used to grip the
+          stick. They have a flat blocking surface angled to redirect pucks away from the net.
+          A blocker is not a glove and cannot catch — that is what the catch glove is for.
+          Replacing one without the other breaks the catching-and-blocking system.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>The catch glove</strong> is a large mitt with a deep pocket designed to close
+          around the puck on impact. CCM and Bauer split the senior goalie market about evenly,
+          with True growing in the junior market. The break angle (the angle at which the
+          glove closes) is a personal preference; goalies who catch high prefer a 60- to
+          75-degree break, while low catchers prefer 90 degrees.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Chest protectors</strong> for goalies extend further down the thighs and have
+          wider shoulder caps than player chest protectors. The extended thigh coverage is what
+          allows the goalie to drop into the butterfly without exposing the five-hole. A
+          player's chest protector will not work for goalie — it ends too high and the shoulder
+          floats during butterfly.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          <strong>Cost difference.</strong> A full senior goalie set runs $1,500 to $3,500,
+          roughly 2x the cost of a comparable player set. The biggest line items are the leg
+          pads ($500 to $1,000 for senior) and the glove ($400 to $900). Used gear from
+          out-grown junior sets is the best entry point for new goalies.
         </p>
       </section>
     </main>
