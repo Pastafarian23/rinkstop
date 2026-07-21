@@ -35,6 +35,8 @@ export {
   isPublicPassportLookupEnabled,
   isPassportMigrationEnabled,
   isPassportEventLoggingEnabled,
+  isPassportQrResolveEnabled,
+  isPassportAssetsApiEnabled,
   isPassportFlagEnabled,
   PASSPORT_FLAGS,
   type PassportFlag,

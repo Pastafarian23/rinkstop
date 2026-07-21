@@ -14,15 +14,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { passportRepository } from '@/lib/passport';
+import { passportRepository, isPassportQrResolveEnabled } from '@/lib/passport';
 
 export const dynamic = 'force-dynamic';
-
-function isQrResolveEnabled(): boolean {
-  // PR2 Step 1.9 wires this into 02-feature-flags.ts; until that lands the
-  // explicit env check remains so we still respect the flag in deployment.
-  return process.env.PASSPORT_QR_RESOLVE === 'true';
-}
 
 function deactivatedPage(qrIdentifier: string): Response {
   const html = `<!doctype html>
@@ -80,7 +74,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { qrIdentifier: string } }
 ) {
-  if (!isQrResolveEnabled()) {
+  if (!isPassportQrResolveEnabled()) {
     return new NextResponse('Not Found', { status: 404 });
   }
 

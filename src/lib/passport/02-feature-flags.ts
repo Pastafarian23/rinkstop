@@ -35,6 +35,12 @@ export const PASSPORT_FLAGS = {
 
   // Dashboard Passport section visible.
   PASSPORT_DASHBOARD: false,
+
+  // PR2 Step 1.9 — Public QR resolver at /qr/[qrIdentifier].
+  PASSPORT_QR_RESOLVE: false,
+
+  // PR2 Step 1.9 — Internal QR asset API at /api/internal/passport/qr/[passportId].
+  PASSPORT_ASSETS_API: false,
 } as const;
 
 export type PassportFlag = keyof typeof PASSPORT_FLAGS;
@@ -90,5 +96,29 @@ export function isPassportMigrationEnabled(): boolean {
 export function isPassportEventLoggingEnabled(): boolean {
   return (
     isPassportEnabled() && isPassportFlagEnabled('PASSPORT_EVENT_LOGGING')
+  );
+}
+
+/**
+ * PR2 Step 1.9 — Public QR resolver gate.
+ * Gates GET /qr/[qrIdentifier].
+ */
+export function isPassportQrResolveEnabled(): boolean {
+  return (
+    isPassportEnabled() && isPassportFlagEnabled('PASSPORT_QR_RESOLVE')
+  );
+}
+
+/**
+ * PR2 Step 1.9 — Internal QR asset API gate.
+ * Gates POST/GET /api/internal/passport/qr/[passportId].
+ * Defense in depth: the route is already gated by isPassportInternalApiEnabled;
+ * this is the second gate the plan requires.
+ */
+export function isPassportAssetsApiEnabled(): boolean {
+  return (
+    isPassportEnabled()
+    && isPassportFlagEnabled('PASSPORT_INTERNAL_API')
+    && isPassportFlagEnabled('PASSPORT_ASSETS_API')
   );
 }
