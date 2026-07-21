@@ -34,7 +34,7 @@ export class PassportAdapter implements PassportAdapterLike {
     // 1. Profile (base identity)
     const { data: profile, error: profileErr } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, account_type')
+      .select('user_id, account_type, avatar_url')
       .eq('user_id', internalUserId)
       .maybeSingle();
 
@@ -124,6 +124,7 @@ export class PassportAdapter implements PassportAdapterLike {
       latestTeamName: hockeyRes.data?.[0]?.team_name_snapshot ?? null,
       managedProfileCount: managedRes.count ?? 0,
       federationAffiliations: [], // wired through federation/org tables in later phase
+      avatarUrl: profile?.avatar_url ?? null,
     };
   }
 
