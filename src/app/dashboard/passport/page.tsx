@@ -56,18 +56,8 @@ export default async function PassportHubPage() {
       })
     : null;
 
-  if (
-    passportDashboardEnabled &&
-    passportState?.passport &&
-    passportState.passport.status === 'pending'
-  ) {
-    try {
-      const activated = await passportService.activatePassport(userId);
-      passportState.passport = activated;
-    } catch (err) {
-      console.error('[dashboard/passport] activatePassport failed:', err);
-    }
-  }
+  // Activation now happens inside passportService.getDashboardState().
+  // No page-layer activation logic needed.
 
   // Resolve player
   const { data: player } = await supabaseAdmin
@@ -264,8 +254,7 @@ export default async function PassportHubPage() {
         </div>
 
         <p style={{ marginTop: '2rem', fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)' }}>
-          Your public profile: <Link href="/profile/{/* profile slug not in player row */}" className="text-[#FFB81C] underline">view profile</Link>
-          {' '}· The passport appears below your photo history on your public profile page.
+          The passport appears below your photo history on your public profile page.
         </p>
       </div>
     </main>
