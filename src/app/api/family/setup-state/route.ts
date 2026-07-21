@@ -13,8 +13,10 @@
  * Tier gate: caller must be on identity_plus+ or business_listing+ tier
  *   (matches the dashboard-level gate, so a user who downgrades cannot
  *   resume the wizard).
- * Account-type gate: caller must have 'parent' in profile_account_types.
- *   (Mirrors the dashboard-level gate; future-proofs against drift.)
+ * Account-type gate: caller must have at least one entry in
+ *   profile_account_types. 2026-07-21: widened from parent-only to any
+ *   persona; mirrors the dashboard-level gate. The wizard itself branches
+ *   on persona inside the component.
  *
  * Response: { ok: true, family_setup_completed_at: ISO | null }
  *
@@ -84,9 +86,9 @@ export async function POST(request: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  // Account-type gate — must be a parent. Non-parents (scout, fan, etc.)
-  // should never see the wizard per spec, so they should not be able to
-  // dismiss or resume it either.
+  // Account-type gate — 2026-07-21: widened from parent-only to any persona.
+  // The wizard now branches on persona inside the component; the gate just
+  // ensures the caller has at least one declared persona.
   const { data: types, error: typesErr } = await supabaseAdmin
     .from('profile_account_types')
     .select('account_type')
@@ -98,12 +100,12 @@ export async function POST(request: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  const isParent = (types || []).some(
-    (r: { account_type: string }) => isAccountType(r.account_type) && r.account_type === 'parent'
+  const hasAnyPersona = (types || []).some(
+    (r: { account_type: string }) => isAccountType(r.account_type)
   );
-  if (!isParent) {
+  if (!hasAnyPersona) {
     const res = NextResponse.json(
-      { error: 'Family Setup Wizard is for parents only.' },
+      { error: 'Set up your account type first to access the Setup Wizard.' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, result);
