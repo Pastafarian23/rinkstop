@@ -233,10 +233,13 @@ export class PassportService implements PassportServiceLike {
       ? await passportRepository.getEventsForPassport(passport.passportId, eventLimit)
       : [];
 
+    const qrIdentifier = passport ? passport.qrIdentifier : null;
+
     return {
       view,
       passport,
       recentEvents,
+      qrIdentifier,
     };
   }
 }
@@ -245,6 +248,13 @@ export interface PassportDashboardState {
   view: import('./types').PassportUnifiedView | null;
   passport: import('./types').PassportRecord | null;
   recentEvents: import('./types').PassportEvent[];
+  /**
+   * PR2 Step 1.8 — opaque QR identifier for the active Passport (or null if
+   * no Passport / no active passport). The Passport Card component renders
+   * this via <img src=/api/internal/passport/qr/[passportId]>; do not display
+   * the value itself outside of debug contexts.
+   */
+  qrIdentifier: string | null;
 }
 
 export const passportService = new PassportService();

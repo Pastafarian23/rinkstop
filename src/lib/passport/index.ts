@@ -26,6 +26,7 @@ export { passportAdapter, PassportAdapter } from './04-adapter';
 export { passportRepository, PassportRepository } from './03-repository';
 export { passportEventService, PassportEventService } from './05-event-service';
 export { passportIdGenerator, PassportIdGenerator } from './06-id-generator';
+export { passportAssetsService, type PassportAssetsService, type PassportQrAsset } from './12-assets-service';
 
 // Feature flags (re-export)
 export {
@@ -34,6 +35,8 @@ export {
   isPublicPassportLookupEnabled,
   isPassportMigrationEnabled,
   isPassportEventLoggingEnabled,
+  isPassportQrResolveEnabled,
+  isPassportAssetsApiEnabled,
   isPassportFlagEnabled,
   PASSPORT_FLAGS,
   type PassportFlag,
@@ -56,4 +59,5 @@ export type {
   PassportIdentityServiceLike,
   PassportLookupServiceLike,
   PassportMigrationServiceLike,
+  PassportAssetsServiceLike,
 } from './interfaces';
