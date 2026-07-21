@@ -137,7 +137,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const provinceLabel = provinceDisplayName(rink.province_state);
 
   return {
-    title: `${rink.name} -- Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}`,
+    title: `${rink.name} — Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}${rink.country ? ', ' + rink.country : ''} | Hours, Skating & Hockey`,
     description,
     robots: robotsMeta(decision),
     alternates: {
