@@ -51,17 +51,23 @@ CREATE UNIQUE INDEX IF NOT EXISTS passports_qr_identifier_active_uidx
 -- 2. Immutability trigger on qr_identifier
 -- ============================================================
 -- Trigger enforces immutability for normal updates but allows the SECURITY DEFINER
--- override function (regenerate_passport_qr_identifier) to perform the rotation,
--- since service_role is granted EXECUTE on the override. SECURITY DEFINER on the
--- trigger function lets the function check the calling role without recursive RLS
--- bypassing (the trigger is OWNED by the migration role, run as DEFINER for the
--- gate check).
+-- override function (regenerate_passport_qr_identifier) to perform the rotation.
+--
+-- Defense-in-depth only: the primary security boundary is the override function's
+-- EXECUTE privilege (REVOKE FROM PUBLIC at the bottom of section 3). The trigger
+-- here catches accidental app-layer UPDATEs that bypass the function.
+--
+-- Role check tolerates all four common Supabase owner-role names so the trigger
+-- functions under any of them. If your Supabase project uses a different name,
+-- add it here and update the comment block.
 CREATE OR REPLACE FUNCTION public.prevent_qr_identifier_update()
 RETURNS TRIGGER AS $$
 DECLARE
   v_caller_is_privileged boolean := (
-    pg_has_role(current_user, 'service_role', 'MEMBER')
+    pg_has_role(current_user, 'postgres',         'MEMBER')
     OR pg_has_role(current_user, 'supabase_admin', 'MEMBER')
+    OR pg_has_role(current_user, 'service_role',   'MEMBER')
+    OR pg_has_role(current_user, 'authenticator',  'MEMBER')
   );
 BEGIN
   IF v_caller_is_privileged THEN

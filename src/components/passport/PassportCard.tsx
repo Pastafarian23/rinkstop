@@ -14,12 +14,21 @@ import type {
   PassportRecord,
   PassportUnifiedView,
 } from '@/lib/passport/types';
+import { PassportCardActions } from './PassportCardActions';
 
 interface PassportCardProps {
   passport: PassportRecord;
   view: PassportUnifiedView | null;
   holderName: string;
   photoUrl?: string | null;
+  /**
+   * WS2 PR2 — QR image source. When provided, the Card renders the QR <img>
+   * in the footer area. Server-side rendered. The endpoint is gated by
+   * PASSPORT_INTERNAL_API + PASSPORT_ASSETS_API; the Card does not gate on
+   * those flags here (the page-level /dashboard/passport route is responsible
+   * for the master gate).
+   */
+  qrImageSrc?: string;
 }
 
 const STATUS_LABEL: Record<PassportRecord['status'], string> = {
@@ -47,7 +56,7 @@ function formatDate(iso: string | null): string {
   });
 }
 
-export function PassportCard({ passport, view, holderName, photoUrl }: PassportCardProps) {
+export function PassportCard({ passport, view, holderName, photoUrl, qrImageSrc }: PassportCardProps) {
   const cardStyle: React.CSSProperties = {
     background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
     border: '1px solid rgba(255,255,255,0.12)',
@@ -149,29 +158,65 @@ export function PassportCard({ passport, view, holderName, photoUrl }: PassportC
       </div>
 
       {/*
-        Share button is a placeholder per spec — public Passport sharing
-        ships in PR 2 (Phase 2E). When the feature flag for public lookup
-        is off (the default), this button is disabled.
+        WS2 PR2 — bottom action footer with QR image and the three action buttons
+        per workstreams/passport-card-design-system.md.
+        Copy/Share/View actions are extracted to PassportCardActions.tsx so the
+        Card itself stays server-rendered.
       */}
-      <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <button
-          type="button"
-          disabled
-          aria-disabled="true"
-          title="Public Passport sharing ships in a future release"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            color: 'rgba(255,255,255,0.4)',
-            padding: '0.5rem 0.875rem',
-            fontSize: '0.8125rem',
-            cursor: 'not-allowed',
-            fontFamily: 'inherit',
-          }}
-        >
-          Share Passport (coming soon)
-        </button>
+      <div
+        style={{
+          marginTop: '1.25rem',
+          paddingTop: '1rem',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+          <p style={fieldLabelStyle}>QR Code</p>
+          {qrImageSrc ? (
+            <img
+              src={qrImageSrc}
+              alt="Hockey Passport QR code — scan to look up this Passport"
+              width={120}
+              height={120}
+              style={{
+                display: 'block',
+                marginTop: '0.25rem',
+                borderRadius: 6,
+                background: '#fff',
+                padding: 6,
+              }}
+            />
+          ) : (
+            <div
+              aria-hidden="true"
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: 6,
+                background: 'rgba(255,184,28,0.1)',
+                border: '1px solid rgba(255,184,28,0.3)',
+                marginTop: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'Bebas Neue', sans-serif",
+                fontSize: '0.75rem',
+                color: '#FFB81C',
+                letterSpacing: '0.12em',
+              }}
+            >
+              QR
+            </div>
+          )}
+        </div>
+        <div style={{ flex: '0 0 auto' }}>
+          <PassportCardActions passportId={passport.passportId} />
+        </div>
       </div>
     </section>
   );

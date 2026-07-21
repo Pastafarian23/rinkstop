@@ -148,6 +148,11 @@ export default async function PassportHubPage() {
         view={passportState.view}
         holderName={playerName}
         photoUrl={cu?.imageUrl ?? null}
+        qrImageSrc={
+          passportState.passport
+            ? `/api/internal/passport/qr/${encodeURIComponent(passportState.passport.passportId)}`
+            : undefined
+        }
       />
 
       <PassportTimeline events={passportState.recentEvents} />
