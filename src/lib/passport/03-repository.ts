@@ -19,6 +19,7 @@ import type {
   PassportRecord,
   PassportEvent,
   PassportLink,
+  PassportQrRevocation,
   PassportStatus,
   VerificationLevel,
   PassportEntityType,
@@ -36,6 +37,7 @@ function rowToRecord(row: any): PassportRecord {
     source: row.source,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    qrIdentifier: row.qr_identifier,
   };
 }
 
@@ -262,6 +264,96 @@ export class PassportRepository {
 
     if (error) throw error;
     return count ?? 0;
+  }
+
+  /**
+   * Find a Passport by its opaque QR identifier (UUID).
+   *
+   * Used by the /qr/[qrIdentifier] public resolver (Step 1.7) and by the
+   * QR-code generation path (Step 1.5) when validating an inbound scan.
+   *
+   * Returns null if no active Passport matches. Note: the partial unique index
+   * `passports_qr_identifier_active_uidx` only enforces uniqueness on non-deactivated
+   * rows, so a revoked-and-deactivated Passport may still hold the old qr_identifier —
+   * query here naturally filters those out via deactivated status checks upstream.
+   */
+  async findByQrIdentifier(qrIdentifier: string): Promise<PassportRecord | null> {
+    const { data, error } = await supabaseAdmin
+      .from('passports')
+      .select('*')
+      .eq('qr_identifier', qrIdentifier)
+      .maybeSingle();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+    return data ? rowToRecord(data) : null;
+  }
+
+  /**
+   * Rotate a Passport's qr_identifier. Admin-only operation.
+   *
+   * Implementation: invokes the SECURITY DEFINER Postgres function
+   * `regenerate_passport_qr_identifier(passport_id, reason, revoked_by)` defined
+   * in migration 2026-07-16_passport_qr_identifier.sql.
+   *
+   * The function bypasses the immutability trigger via its SECURITY DEFINER
+   * privileges and writes an audit row to `passport_qr_revocations`. Returns the
+   * updated Passport (with the new qr_identifier).
+   *
+   * Errors:
+   * - PassportNotFoundError-shaped: if no row matches (PG raises via the SECURITY
+   *   DEFINER function with 'Passport % not found').
+   */
+  async regenerateQrIdentifier(
+    passportId: string,
+    reason: string,
+    revokedBy: string
+  ): Promise<PassportRecord> {
+    const { data, error } = await supabaseAdmin.rpc(
+      'regenerate_passport_qr_identifier',
+      {
+        p_passport_id: passportId,
+        p_reason: reason,
+        p_revoked_by: revokedBy,
+      }
+    );
+
+    if (error) throw error;
+
+    // The RPC returns the updated Passport row directly. Re-fetch via the standard
+    // finder to get a typed PassportRecord rather than relying on rpc() result type.
+    const fresh = await this.findByPassportId(passportId);
+    if (!fresh) {
+      throw new Error(
+        `regenerateQrIdentifier succeeded but findByPassportId(${passportId}) returned null immediately after`
+      );
+    }
+    return fresh;
+  }
+
+  /**
+   * Get all revocation records for a Passport, newest first.
+   * Used by the audit view in the PR2 Card UI.
+   */
+  async getRevocationsForPassport(passportId: string): Promise<PassportQrRevocation[]> {
+    const { data, error } = await supabaseAdmin
+      .from('passport_qr_revocations')
+      .select('*')
+      .eq('passport_id', passportId)
+      .order('revoked_at', { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      passportId: row.passport_id,
+      oldQrIdentifier: row.old_qr_identifier,
+      newQrIdentifier: row.new_qr_identifier,
+      reason: row.reason,
+      revokedBy: row.revoked_by,
+      revokedAt: row.revoked_at,
+    }));
   }
 }
 
