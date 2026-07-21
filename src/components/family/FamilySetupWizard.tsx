@@ -6,22 +6,21 @@
  * Phase 1a (Consumer-First Growth) — prep doc §3.2.
  * Approved by Arnel 2026-07-05 18:23 CDT.
  *
- * Renders a 6-step wizard card on /dashboard for parents on identity_plus+
- * (or business_listing+) who have not yet dismissed it. Hidden once
- * `profiles.family_setup_completed_at` is set.
+ * 2026-07-21: Persona-aware refactor (Arnel-flagged "setup is too parent-
+ * centric, optimize based on the user"). Now branches steps + copy on the
+ * user's primary persona. Personas are derived from `profile_account_types`
+ * in the dashboard, where `primary` wins, else the first entry in the
+ * array, else 'generic'. Categories:
+ *   - parent: current 6-step flow (unchanged)
+ *   - coach: identity → link team → credentials → passport → schedule → connect
+ *   - player: identity → join team → player profile → passport → schedule → connect
+ *   - official: identity → credentials → register league → passport → schedule → connect
+ *   - operator: identity → link org → invite coaches → org passport → schedule → set rosters
+ *   - generic (multi-persona or unrecognized): identity → profile → community → passport → schedule → connect
  *
- * Steps:
- *   1. Complete your Hockey Identity (Didit verification at /dashboard/identity)
- *   2. Add your children (FamilySearch at /dashboard/family)
- *   3. Upload important hockey documents (1b-1 placeholder)
- *   4. Create your first Hockey Passport (/dashboard/profile)
- *   5. Import your existing schedule (1b-1 placeholder)
- *   6. Invite your team or organization (Phase 2 — for 1a, browse directory)
- *
- * Dismiss behavior: POST /api/family/setup-state with {action: 'dismiss'}.
- * Sets profiles.family_setup_completed_at = NOW() server-side. The wizard
- * will not render again until the user clicks "Resume Hockey Passport setup"
- * on /dashboard/family, which POSTs {action: 'resume'} to clear the column.
+ * File name kept as `FamilySetupWizard.tsx` for git history continuity; the
+ * `family` directory is now misleading and a future rename can land
+ * separately. The wizard is the same component, just with a `persona` prop.
  *
  * Why client-side: the dismiss/resume action needs a button click handler
  * and a fetch to the API. The actual gating logic (whether to render at
@@ -31,23 +30,39 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
+export type WizardPersona =
+  | 'parent'
+  | 'coach'
+  | 'player'
+  | 'official'
+  | 'operator'
+  | 'generic';
+
 export interface FamilySetupWizardState {
   /** Identity verified via Didit (per isIdentityVerified helper) */
   identityVerified: boolean;
-  /** User has at least one linked child via managed_profiles */
+  /** User has at least one linked child via managed_profiles (parent-only) */
   hasChildren: boolean;
   /** User has an avatar set */
   hasAvatar: boolean;
-  /** User has at least one team_member row */
+  /** User has at least one team_member row (player: joined a team) */
   hasTeamMembership: boolean;
-  /** User has at least one active player_document for any linked child (Phase 1b-1) */
+  /** User has at least one active player_document for any linked child (parent-only) */
   hasDocuments: boolean;
+  /** User has at least one row in `coaches` for them (coach: profile created) */
+  hasCoachProfile: boolean;
+  /** User has at least one row in `organization_members` for them (operator: org linked) */
+  hasOrgMembership: boolean;
+  /** User has a referee/official profile — used as a proxy for step-2 done for official persona */
+  hasOfficialRegistration: boolean;
 }
 
 interface FamilySetupWizardProps {
   state: FamilySetupWizardState;
   /** First name for the greeting line (optional) */
   firstName?: string | null;
+  /** Persona selected by the server-side gate; drives copy + steps */
+  persona: WizardPersona;
 }
 
 interface Step {
@@ -60,62 +75,378 @@ interface Step {
   comingNext?: boolean;
 }
 
-export default function FamilySetupWizard({ state, firstName }: FamilySetupWizardProps) {
+/**
+ * Persona-specific copy bundle. Header line + dismiss suffix + the
+ * 6-step template. Steps 1, 4, 5 are universal; steps 2, 3, 6 vary.
+ */
+interface PersonaCopy {
+  /** Substring shown in the header paragraph (e.g. "your family's Hockey Identity") */
+  identityNoun: string;
+  /** Suffix shown in the dismiss row "You can come back anytime from the X" */
+  dismissSuffix: string;
+  steps: (
+    state: FamilySetupWizardState,
+    identityVerified: boolean
+  ) => Step[];
+}
+
+const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
+  parent: {
+    identityNoun: 'your family’s Hockey Identity',
+    dismissSuffix: 'the Family Hub',
+    steps: (s, identityVerified) => [
+      {
+        number: 1,
+        title: 'Complete your Hockey Identity',
+        description: identityVerified
+          ? 'Verified — your Hockey Identity is live.'
+          : 'Verify your identity (60 seconds) to earn the check on RinkStop.',
+        cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
+        done: identityVerified,
+      },
+      {
+        number: 2,
+        title: 'Add your children',
+        description: s.hasChildren
+          ? 'Your kids are linked — your Family Hub is alive.'
+          : 'Link your first child to start your Family Hub.',
+        cta: { label: 'Add a child', href: '/dashboard/family' },
+        done: s.hasChildren,
+      },
+      {
+        number: 3,
+        title: 'Upload important hockey documents',
+        description: s.hasDocuments
+          ? 'Your child’s documents are uploaded and ready.'
+          : 'Upload a birth certificate, waiver, or medical form to start your child’s Hockey Passport.',
+        cta: { label: s.hasDocuments ? 'Manage documents' : 'Upload a document', href: '/dashboard/family' },
+        done: s.hasDocuments,
+      },
+      {
+        number: 4,
+        title: 'Create your first Hockey Passport',
+        description: 'Your Hockey Passport is the permanent record of your child’s hockey career — verified identity, photo, achievements, and team history.',
+        cta: { label: 'View your passport', href: '/dashboard/profile' },
+        done: s.hasAvatar && identityVerified,
+      },
+      {
+        number: 5,
+        title: 'Import your existing schedule (optional)',
+        description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
+        cta: { label: 'Coming next', href: '#' },
+        done: false,
+        comingNext: true,
+      },
+      {
+        number: 6,
+        title: 'Invite your team or organization',
+        description: 'Find your club, coach, or league. (Family-initiated invitations ship in Phase 2 — for now, you can browse the directory.)',
+        cta: { label: 'Browse the directory', href: '/directory/teams' },
+        done: s.hasTeamMembership,
+      },
+    ],
+  },
+
+  coach: {
+    identityNoun: 'your Hockey Identity as a coach',
+    dismissSuffix: 'the Coach Hub',
+    steps: (s, identityVerified) => [
+      {
+        number: 1,
+        title: 'Complete your Hockey Identity',
+        description: identityVerified
+          ? 'Verified — your Hockey Identity is live.'
+          : 'Verify your identity (60 seconds) to earn the check on RinkStop.',
+        cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
+        done: identityVerified,
+      },
+      {
+        number: 2,
+        title: 'Link your team',
+        description: s.hasCoachProfile
+          ? 'Your team is linked to your coach profile.'
+          : 'Link your first team to start receiving roster and schedule updates.',
+        cta: { label: s.hasCoachProfile ? 'Manage teams' : 'Link a team', href: '/dashboard/coach' },
+        done: s.hasCoachProfile,
+      },
+      {
+        number: 3,
+        title: 'Set your coaching credentials',
+        description: 'Add your certification, league affiliation, and coaching history to earn the coach check.',
+        cta: { label: 'Add credentials', href: '/dashboard/coach' },
+        done: false,
+      },
+      {
+        number: 4,
+        title: 'Create your Hockey Passport',
+        description: 'Your Hockey Passport is the permanent record of your hockey career — verified identity, photo, teams you’ve coached, and credentials.',
+        cta: { label: 'View your passport', href: '/dashboard/profile' },
+        done: s.hasAvatar && identityVerified,
+      },
+      {
+        number: 5,
+        title: 'Import your existing schedule (optional)',
+        description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
+        cta: { label: 'Coming next', href: '#' },
+        done: false,
+        comingNext: true,
+      },
+      {
+        number: 6,
+        title: 'Connect with players and organizations',
+        description: 'Discover players and organizations to coach, mentor, or recruit.',
+        cta: { label: 'Browse the directory', href: '/directory/teams' },
+        done: s.hasTeamMembership,
+      },
+    ],
+  },
+
+  player: {
+    identityNoun: 'your Hockey Identity as a player',
+    dismissSuffix: 'your Player Hub',
+    steps: (s, identityVerified) => [
+      {
+        number: 1,
+        title: 'Complete your Hockey Identity',
+        description: identityVerified
+          ? 'Verified — your Hockey Identity is live.'
+          : 'Verify your identity (60 seconds) to earn the check on RinkStop.',
+        cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
+        done: identityVerified,
+      },
+      {
+        number: 2,
+        title: 'Join your first team',
+        description: s.hasTeamMembership
+          ? 'You’re on a team — your roster is live.'
+          : 'Join your first team to start your Hockey Passport.',
+        cta: { label: s.hasTeamMembership ? 'View teams' : 'Find a team', href: '/directory/teams' },
+        done: s.hasTeamMembership,
+      },
+      {
+        number: 3,
+        title: 'Set up your player profile',
+        description: 'Add your number, position, handedness, and equipment preferences.',
+        cta: { label: 'Edit player profile', href: '/dashboard/profile' },
+        done: s.hasAvatar,
+      },
+      {
+        number: 4,
+        title: 'Create your Hockey Passport',
+        description: 'Your Hockey Passport is the permanent record of your hockey career — verified identity, photo, team history, and achievements.',
+        cta: { label: 'View your passport', href: '/dashboard/profile' },
+        done: s.hasAvatar && identityVerified,
+      },
+      {
+        number: 5,
+        title: 'Import your existing schedule (optional)',
+        description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
+        cta: { label: 'Coming next', href: '#' },
+        done: false,
+        comingNext: true,
+      },
+      {
+        number: 6,
+        title: 'Connect with coaches and teams',
+        description: 'Find coaches in your area and teams that match your level.',
+        cta: { label: 'Browse the directory', href: '/directory/teams' },
+        done: false,
+      },
+    ],
+  },
+
+  official: {
+    identityNoun: 'your Hockey Identity as an official',
+    dismissSuffix: 'the Officials Hub',
+    steps: (s, identityVerified) => [
+      {
+        number: 1,
+        title: 'Complete your Hockey Identity',
+        description: identityVerified
+          ? 'Verified — your Hockey Identity is live.'
+          : 'Verify your identity (60 seconds) to earn the check on RinkStop.',
+        cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
+        done: identityVerified,
+      },
+      {
+        number: 2,
+        title: 'Register as an official',
+        description: s.hasOfficialRegistration
+          ? 'Your official registration is on file.'
+          : 'Add your officiating level, certification, and the leagues you work.',
+        cta: { label: s.hasOfficialRegistration ? 'View registration' : 'Register', href: '/dashboard/referee' },
+        done: s.hasOfficialRegistration,
+      },
+      {
+        number: 3,
+        title: 'Add your certification',
+        description: 'Upload your certification documents to earn the official check on RinkStop.',
+        cta: { label: 'Add certification', href: '/dashboard/referee' },
+        done: false,
+      },
+      {
+        number: 4,
+        title: 'Create your Hockey Passport',
+        description: 'Your Hockey Passport is the permanent record of your officiating career — verified identity, certification, and games worked.',
+        cta: { label: 'View your passport', href: '/dashboard/profile' },
+        done: s.hasAvatar && identityVerified,
+      },
+      {
+        number: 5,
+        title: 'Import your existing schedule (optional)',
+        description: 'Calendar import ships in Phase 1b. We will let you bring games and assignments from any calendar app.',
+        cta: { label: 'Coming next', href: '#' },
+        done: false,
+        comingNext: true,
+      },
+      {
+        number: 6,
+        title: 'Connect with leagues and assignors',
+        description: 'Find leagues and assignors who need officials at your level.',
+        cta: { label: 'Browse the directory', href: '/directory/teams' },
+        done: false,
+      },
+    ],
+  },
+
+  operator: {
+    identityNoun: 'your organization’s Hockey Identity',
+    dismissSuffix: 'the Organization Hub',
+    steps: (s, identityVerified) => [
+      {
+        number: 1,
+        title: 'Complete your Hockey Identity',
+        description: identityVerified
+          ? 'Verified — your Hockey Identity is live.'
+          : 'Verify your identity (60 seconds) to earn the check on RinkStop.',
+        cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
+        done: identityVerified,
+      },
+      {
+        number: 2,
+        title: 'Link your organization',
+        description: s.hasOrgMembership
+          ? 'Your organization is linked — your admin dashboard is live.'
+          : 'Link your organization (rink, club, league, or association) to unlock admin tools.',
+        cta: { label: s.hasOrgMembership ? 'Manage organization' : 'Link an org', href: '/dashboard/manage' },
+        done: s.hasOrgMembership,
+      },
+      {
+        number: 3,
+        title: 'Invite coaches and players',
+        description: 'Send invites to your coaches and players so they can claim profiles and join your org.',
+        cta: { label: 'Send invites', href: '/dashboard/coach-feed' },
+        done: false,
+      },
+      {
+        number: 4,
+        title: 'Create your organization’s passport',
+        description: 'Your organization’s Hockey Passport is the public profile for your club, rink, or league — verified identity, teams, and history.',
+        cta: { label: 'View your passport', href: '/dashboard/profile' },
+        done: s.hasAvatar && identityVerified,
+      },
+      {
+        number: 5,
+        title: 'Import your existing schedule (optional)',
+        description: 'Calendar import ships in Phase 1b. We will let you bring games and events from any calendar app.',
+        cta: { label: 'Coming next', href: '#' },
+        done: false,
+        comingNext: true,
+      },
+      {
+        number: 6,
+        title: 'Set your team rosters',
+        description: 'Add teams, assign coaches, and manage rosters from one place.',
+        cta: { label: 'Manage rosters', href: '/directory/teams' },
+        done: false,
+      },
+    ],
+  },
+
+  generic: {
+    identityNoun: 'your Hockey Identity',
+    dismissSuffix: 'your Hub',
+    steps: (s, identityVerified) => [
+      {
+        number: 1,
+        title: 'Complete your Hockey Identity',
+        description: identityVerified
+          ? 'Verified — your Hockey Identity is live.'
+          : 'Verify your identity (60 seconds) to earn the check on RinkStop.',
+        cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
+        done: identityVerified,
+      },
+      {
+        number: 2,
+        title: 'Build out your profile',
+        description: 'Add the details that make your Hockey Passport yours — display name, avatar, bio, location.',
+        cta: { label: 'Edit profile', href: '/dashboard/profile' },
+        done: s.hasAvatar,
+      },
+      {
+        number: 3,
+        title: 'Connect with the hockey community',
+        description: 'Find teams, coaches, and organizations that match what you do.',
+        cta: { label: 'Browse the directory', href: '/directory/teams' },
+        done: s.hasTeamMembership,
+      },
+      {
+        number: 4,
+        title: 'Create your Hockey Passport',
+        description: 'Your Hockey Passport is the permanent record of your hockey identity — verified, public, and yours forever.',
+        cta: { label: 'View your passport', href: '/dashboard/profile' },
+        done: s.hasAvatar && identityVerified,
+      },
+      {
+        number: 5,
+        title: 'Import your existing schedule (optional)',
+        description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
+        cta: { label: 'Coming next', href: '#' },
+        done: false,
+        comingNext: true,
+      },
+      {
+        number: 6,
+        title: 'Connect with teams and organizations',
+        description: 'Discover what’s around you — rinks, leagues, clubs, and tournaments.',
+        cta: { label: 'Browse the directory', href: '/directory/teams' },
+        done: false,
+      },
+    ],
+  },
+};
+
+/**
+ * Map an AccountType (from profile_account_types) to a WizardPersona category.
+ * Multiple AccountTypes collapse to one wizard category.
+ */
+export function accountTypeToPersona(accountType: string): WizardPersona {
+  switch (accountType) {
+    case 'parent':
+      return 'parent';
+    case 'coach':
+    case 'scout':
+      return 'coach';
+    case 'player':
+      return 'player';
+    case 'referee':
+      return 'official';
+    case 'team_admin':
+    case 'league_admin':
+    case 'rink_operator':
+      return 'operator';
+    default:
+      return 'generic';
+  }
+}
+
+export default function FamilySetupWizard({ state, firstName, persona }: FamilySetupWizardProps) {
   const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const steps: Step[] = [
-    {
-      number: 1,
-      title: 'Complete your Hockey Identity',
-      description: state.identityVerified
-        ? 'Verified — your Hockey Identity is live.'
-        : 'Verify your identity (60 seconds) to earn the check on RinkStop.',
-      cta: { label: state.identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
-      done: state.identityVerified,
-    },
-    {
-      number: 2,
-      title: 'Add your children',
-      description: state.hasChildren
-        ? 'Your kids are linked — your Family Hub is alive.'
-        : 'Link your first child to start your Family Hub.',
-      cta: { label: 'Add a child', href: '/dashboard/family' },
-      done: state.hasChildren,
-    },
-    {
-      number: 3,
-      title: 'Upload important hockey documents',
-      description: state.hasDocuments
-        ? 'Your child\u2019s documents are uploaded and ready.'
-        : 'Upload a birth certificate, waiver, or medical form to start your child\u2019s Hockey Passport.',
-      cta: { label: state.hasDocuments ? 'Manage documents' : 'Upload a document', href: '/dashboard/family' },
-      done: state.hasDocuments,
-    },
-    {
-      number: 4,
-      title: 'Create your first Hockey Passport',
-      description: 'Your Hockey Passport is the permanent record of your child\u2019s hockey career — verified identity, photo, achievements, and team history.',
-      cta: { label: 'View your passport', href: '/dashboard/profile' },
-      done: state.hasAvatar && state.identityVerified,
-    },
-    {
-      number: 5,
-      title: 'Import your existing schedule (optional)',
-      description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
-      cta: { label: 'Coming next', href: '#' },
-      done: false,
-      comingNext: true,
-    },
-    {
-      number: 6,
-      title: 'Invite your team or organization',
-      description: 'Find your club, coach, or league. (Family-initiated invitations ship in Phase 2 — for now, you can browse the directory.)',
-      cta: { label: 'Browse the directory', href: '/directory/teams' },
-      done: state.hasTeamMembership,
-    },
-  ];
+  const copy = PERSONA_COPY[persona] ?? PERSONA_COPY.generic;
+  const steps = copy.steps(state, state.identityVerified);
 
   const completedCount = steps.filter((s) => s.done).length;
   const progressPct = Math.round((completedCount / steps.length) * 100);
@@ -179,8 +510,8 @@ export default function FamilySetupWizard({ state, firstName }: FamilySetupWizar
             margin: '0.25rem 0 0',
             lineHeight: 1.5,
           }}>
-            {firstName ? `${firstName}, your ` : 'Your '}
-            family&rsquo;s Hockey Identity lives here. Six steps, ten minutes, yours forever.
+            {firstName ? `${firstName}, ` : ''}
+            {copy.identityNoun} lives here. Six steps, ten minutes, yours forever.
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
@@ -327,7 +658,7 @@ export default function FamilySetupWizard({ state, firstName }: FamilySetupWizar
           color: 'rgba(255,255,255,0.45)',
           fontSize: '0.75rem',
         }}>
-          You can come back anytime from the Family Hub.
+          You can come back anytime from {copy.dismissSuffix}.
         </span>
         <button
           type="button"

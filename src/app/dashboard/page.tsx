@@ -19,7 +19,7 @@ import type { AccountType } from '@/components/dashboard/dashboardTypes';
 import { tierAtLeast } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
-import FamilySetupWizard from '@/components/family/FamilySetupWizard';
+import FamilySetupWizard, { accountTypeToPersona } from '@/components/family/FamilySetupWizard';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
 import PlayerPracticePulse, { loadPracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
 import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/FreeAgentToggle';
@@ -319,15 +319,22 @@ async function renderDashboard(userId: string) {
   const isIdentityVerifiedForUser = await isIdentityVerified(userId);
 
   // Family Setup Wizard state (Phase 1a, prep doc §3.2).
-  // Computed in parallel with the rest of the dashboard so the wizard
-  // renders on first paint with correct done/coming-next/pending states.
+  // 2026-07-21: widened from parent-only to persona-aware (Arnel-flagged
+  // "setup is too parent-centric"). Now computes three additional state
+  // booleans for non-parent personas: hasCoachProfile, hasOrgMembership,
+  // hasOfficialRegistration. The persona itself is derived above from
+  // profile_account_types.primary (falls back to types[0], then 'generic').
+  //
   // Fail-closed: any query error yields 'false' for that piece of state,
   // which means the step is shown as "not done" — never as silently done.
   let wizardHasChildren = false;
   let wizardHasTeamMembership = false;
   let wizardHasDocuments = false;
+  let wizardHasCoachProfile = false;
+  let wizardHasOrgMembership = false;
+  let wizardHasOfficialRegistration = false;
   try {
-    const [childrenRes, teamRes, childIdsRes] = await Promise.all([
+    const [childrenRes, teamRes, childIdsRes, coachRes, orgRes, refereeRes] = await Promise.all([
       supabaseAdmin
         .from('managed_profiles')
         .select('id', { count: 'exact', head: true })
@@ -342,9 +349,24 @@ async function renderDashboard(userId: string) {
         .select('profile_id')
         .eq('manager_user_id', userId)
         .eq('profile_type', 'player'),
+      supabaseAdmin
+        .from('coaches')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      supabaseAdmin
+        .from('organization_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      supabaseAdmin
+        .from('referees')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
     ]);
     wizardHasChildren = (childrenRes.count ?? 0) > 0;
     wizardHasTeamMembership = (teamRes.count ?? 0) > 0;
+    wizardHasCoachProfile = (coachRes.count ?? 0) > 0;
+    wizardHasOrgMembership = (orgRes.count ?? 0) > 0;
+    wizardHasOfficialRegistration = (refereeRes.count ?? 0) > 0;
 
     // Phase 1b-1: count any active player_documents for any linked child.
     // If the user has linked children, run a second scoped count. If they
@@ -364,22 +386,37 @@ async function renderDashboard(userId: string) {
     console.error('[dashboard] wizard state read failed:', e);
   }
 
+  // Wizard persona selection (2026-07-21). Order of preference:
+  //   1. profile_account_types.primary (explicit user choice in onboarding)
+  //   2. first entry in profile_account_types.account_type array
+  //   3. 'generic' (multi-persona fan-only or unrecognized)
+  // Maps AccountType → WizardPersona via accountTypeToPersona() in the wizard.
+  let wizardPersonaRaw: string | null = primary;
+  if (!wizardPersonaRaw && types.length > 0) {
+    wizardPersonaRaw = types[0];
+  }
+  if (!wizardPersonaRaw) {
+    wizardPersonaRaw = 'fan';
+  }
+
   // Family Setup Wizard gate (Phase 1a, prep doc §1 + §3.5).
-  // Render only when ALL of the following are true:
-  //   1. account_type includes 'parent' (parent-only per spec)
-  //   2. tier is identity_plus+ OR business_listing+ (no free parent tier)
-  //   3. family_setup_completed_at IS NULL (parent has not dismissed)
+  // 2026-07-21: widened from `types.includes('parent')` to `types.length > 0`.
+  // The wizard now branches copy + steps on persona (parent/coach/player/
+  // official/operator/generic), so any persona with setup remaining sees a
+  // version of the wizard. Tier and dismissal gates are unchanged.
+  //   1. account_type is non-empty (any persona; branches on persona inside)
+  //   2. tier is identity_plus+ OR business_listing+ (no free tier)
+  //   3. family_setup_completed_at IS NULL (user has not dismissed)
   // The column is nullable; if the migration has not been applied yet,
   // .family_setup_completed_at will be undefined which IS NULL — the
-  // wizard will render for parents even before the migration runs.
-  // This is intentional: it lets the wizard be visible the moment the
-  // code ships, with the API route handling the migration-not-applied
-  // 503 error on dismiss.
+  // wizard will render even before the migration runs. This is intentional:
+  // it lets the wizard be visible the moment the code ships, with the API
+  // route handling the migration-not-applied 503 error on dismiss.
   const wizardTierOk =
     tierAtLeastSameTrack(profile?.tier ?? 'free', 'identity_plus') ||
     tierAtLeastSameTrack(profile?.tier ?? 'free', 'business_listing');
   const wizardVisible =
-    types.includes('parent') &&
+    types.length > 0 &&
     wizardTierOk &&
     profile?.family_setup_completed_at == null;
 
@@ -478,12 +515,16 @@ async function renderDashboard(userId: string) {
       {wizardVisible ? (
         <FamilySetupWizard
           firstName={firstName}
+          persona={accountTypeToPersona(wizardPersonaRaw)}
           state={{
             identityVerified: isIdentityVerifiedForUser,
             hasChildren: wizardHasChildren,
             hasAvatar: !!profile?.avatar_url,
             hasTeamMembership: wizardHasTeamMembership,
             hasDocuments: wizardHasDocuments,
+            hasCoachProfile: wizardHasCoachProfile,
+            hasOrgMembership: wizardHasOrgMembership,
+            hasOfficialRegistration: wizardHasOfficialRegistration,
           }}
         />
       ) : null}
