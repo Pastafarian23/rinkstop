@@ -9,8 +9,8 @@
  *   - When flag on: looks up Passport by qr_identifier.
  *     - If not found OR found but old (deactivated): "This QR code is no
  *       longer active" page.
- *     - If found and active: 302 redirect to /p/[passportId]. PR3 owns
- *       /p/[passportId]; until then a "Coming soon" page is returned.
+ *     - If found and active: 302 redirect to /passport/[passportId]. PR3
+ *       owns /passport/[passportId].
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -93,12 +93,12 @@ export async function GET(
     return deactivatedPage(qrIdentifier);
   }
 
-  // Try to redirect to /p/[passportId]; if the public profile route is not
-  // built yet (PR3), Next will return 404 from that route. Use 302 vs 307
-  // here is intentional — the redirect is permanent for this qr_identifier
-  // (no method preservation needed).
+  // 302 redirect to /passport/[passportId]. The public route is gated by
+  // PASSPORT_PUBLIC_LOOKUP — when off, that route 404s (intentional per
+  // Workstream 1 Rule 5). Use 302 vs 307 intentionally — the redirect is
+  // permanent for this qr_identifier (no method preservation needed).
   return NextResponse.redirect(
-    new URL(`/p/${record.passportId}`, _req.url),
+    new URL(`/passport/${record.passportId}`, _req.url),
     302
   );
 }
