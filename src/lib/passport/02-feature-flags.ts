@@ -41,6 +41,12 @@ export const PASSPORT_FLAGS = {
 
   // PR2 Step 1.9 — Internal QR asset API at /api/internal/passport/qr/[passportId].
   PASSPORT_ASSETS_API: false,
+
+  // WS3 PR1 — Stamp system. Gates /stamp/[qrIdentifier], /api/passport/stamp,
+  // the QR-resolver dispatch on stamp targets, and the public Passport
+  // attendance section. Defaults off; per Workstream 1 Rule 5, production
+  // behavior stays unchanged until flag is enabled.
+  STAMPS_ENABLED: false,
 } as const;
 
 export type PassportFlag = keyof typeof PASSPORT_FLAGS;
