@@ -1,0 +1,173 @@
+/**
+ * src/lib/passport/14-authorization.ts
+ *
+ * WS4 Chunk 1 — Account-type-aware authorization resolver.
+ *
+ * Replaces the binary `isStaff: boolean` parameter that WS3.5 PR2/PR3/PR4
+ * threaded through the stamp dispute service. Instead of asking "is this
+ * user staff?", callers ask `getAuthorizationContext(userId)` and get a
+ * structured AuthorizationContext object describing what the user can do.
+ *
+ * Chunk 1 scope: resolve staff + rink_operator (claim-gated) only. League
+ * admin and team admin paths return DENY (chunk 3 will wire those up).
+ * Referee and coach scopes are exposed but unused in chunk 1 (chunk 2 will
+ * consume them).
+ *
+ * Flag behavior:
+ *   STAMPS_PERMISSIONS_V2_ENABLED=false → callers should use the old
+ *     isStaff: boolean path. The resolver exists but is not consulted.
+ *   STAMPS_PERMISSIONS_V2_ENABLED=true  → service methods call the
+ *     resolver internally based on callerUserId.
+ *
+ * Why a flag: introducing a permission model that touches every auth check
+ * is risky. Gate the cutover so we can flip back instantly if chunk 1 has
+ * a bug. No migration to roll back, no data to clean up.
+ */
+
+import { supabaseAdmin } from '@/lib/supabase';
+import { isPassportFlagEnabled } from './02-feature-flags';
+
+/**
+ * What a user is allowed to do, computed from profile_account_types + claims
+ * + profiles.role. Empty arrays mean "no grants of this kind" — the caller
+ * decides whether that maps to 403 or to a public read.
+ */
+export interface AuthorizationContext {
+  userId: string;
+
+  /** System-wide admin. profiles.role IN ('admin', 'super_admin'). */
+  isStaff: boolean;
+
+  /** Rink operator via approved `claims` row. */
+  rinkOperator: {
+    rinkIds: string[];
+  };
+
+  /** League admin. Empty in chunk 1 — wired up in chunk 3. */
+  leagueAdmin: {
+    leagueIds: string[];
+  };
+
+  /** Team admin via team_workspaces. Empty in chunk 1 — chunk 3. */
+  teamAdmin: {
+    teamIds: string[];
+  };
+
+  /** Coach via team_members. Empty in chunk 1 — chunk 2 lights up referee tools. */
+  coach: {
+    teamIds: string[];
+  };
+
+  /** Referee self-identification. False unless `referee` in profile_account_types. */
+  isReferee: boolean;
+
+  /** Parent — has managed_profiles rows where they are the manager. */
+  parent: {
+    managedUserIds: string[];
+  };
+
+  /** True if the user has any operator/admin/staff permission at all. */
+  hasAnyOperatorGrant: boolean;
+}
+
+/**
+ * Per the spec: only staff + rink_operator are wired in chunk 1.
+ * Anything past that returns empty / false so the resolver is honest
+ * about what's currently usable.
+ */
+export async function getAuthorizationContext(
+  userId: string
+): Promise<AuthorizationContext> {
+  // Parallel fetches: profile role, account types, approved rink claims,
+  // managed profiles. League/team/coach fields stay empty for chunk 1.
+  const [profileRes, accountTypesRes, rinkClaimsRes, managedRes] = await Promise.all([
+    supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('user_id', userId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('profile_account_types')
+      .select('account_type')
+      .eq('user_id', userId),
+    supabaseAdmin
+      .from('claims')
+      .select('entity_id')
+      .eq('user_id', userId)
+      .eq('claim_type', 'rink')
+      .eq('status', 'approved'),
+    supabaseAdmin
+      .from('managed_profiles')
+      .select('id')
+      .eq('manager_user_id', userId),
+  ]);
+
+  const role = profileRes.data?.role as string | undefined;
+  const isStaff = role === 'admin' || role === 'super_admin';
+
+  const accountTypes = new Set(
+    (accountTypesRes.data ?? []).map((r) => r.account_type as string)
+  );
+  const isReferee = accountTypes.has('referee');
+
+  const rinkIds = (rinkClaimsRes.data ?? [])
+    .map((r) => r.entity_id as string)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  const managedUserIds = (managedRes.data ?? [])
+    .map((r) => r.id as string)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  const hasAnyOperatorGrant =
+    isStaff || rinkIds.length > 0 || managedUserIds.length > 0;
+
+  return {
+    userId,
+    isStaff,
+    rinkOperator: { rinkIds },
+    leagueAdmin: { leagueIds: [] }, // chunk 3
+    teamAdmin: { teamIds: [] },     // chunk 3
+    coach: { teamIds: [] },         // chunk 2
+    isReferee,
+    parent: { managedUserIds },
+    hasAnyOperatorGrant,
+  };
+}
+
+/**
+ * Returns true iff the V2 permission resolver should be consulted.
+ *
+ * Per spec: when this flag is false, callers should use the legacy
+ * `isStaff: boolean` parameter path. When true, service methods call
+ * getAuthorizationContext internally based on callerUserId.
+ */
+export function isPermissionsV2Enabled(): boolean {
+  return isPassportFlagEnabled('STAMPS_PERMISSIONS_V2_ENABLED');
+}
+
+/**
+ * Helper used by the dispute service (chunk 1): can this caller adjudicate
+ * a stamp against the given target? Encapsulates the staff-or-rink-operator
+ * decision that today's code inlines across 3 service methods.
+ *
+ * Chunk 1 only: staff → yes; rink operator → only if their rinkIds includes
+ * the target's rinkId. venue/event targets → only staff (matching today's
+ * behavior). League/team admin paths return false (chunk 3 wires them up).
+ */
+export function canAdjudicateOn(
+  authz: AuthorizationContext,
+  target: {
+    targetType: 'rink' | 'venue' | 'event';
+    targetRinkId?: string | null;
+  }
+): boolean {
+  if (authz.isStaff) return true;
+
+  if (target.targetType === 'rink') {
+    if (!target.targetRinkId) return false;
+    return authz.rinkOperator.rinkIds.includes(target.targetRinkId);
+  }
+
+  // venue / event — staff-only in v1.
+  return false;
+}
