@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'FAQ',
-  description: 'Frequently asked questions about RinkStop - the world\'s hockey directory. Find answers about accounts, listings, memberships, claims, hockey passports, coach verification, and more.',
+  description: 'Frequently asked questions about RinkStop - the world\'s hockey directory. Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, and more.',
   alternates: { canonical: 'https://rinkstop.com/faq' },
   openGraph: {
     title: 'FAQ',
-    description: 'Accounts, listings, memberships, claims, hockey passports, coach verification, and more.',
+    description: 'Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, and more.',
     url: 'https://rinkstop.com/faq',
     siteName: 'RinkStop',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
@@ -222,6 +222,126 @@ const sections: Array<{
       {
         q: 'Can a parent verify a youth player\'s passport entries?',
         a: 'Parents manage a youth player\'s passport by claiming the kid\'s profile. The parent\'s account can add the kid\'s team history, stats, and federation numbers. Coach verification is the only thing a parent cannot do directly — only coaches physically involved with that team can verify. Coach endorsements are also written by coaches, not parents.',
+      },
+    ],
+  },
+  {
+    id: 'family-hub',
+    title: 'Family Hub',
+    icon: '👨‍👩‍👧‍👦',
+    qa: [
+      {
+        q: 'What is Family Hub?',
+        a: 'Family Hub is a section of your dashboard that lives at /dashboard/family. It is part of Identity Plus and Business Plus tiers. It lets a parent link unlimited children (managed_profiles), and view per-child data in one place: Hockey Passport, schedule, payments, achievements, career timeline, photos, videos, and secure documents. The hub is built for parents managing multiple youth players — no more logging into each kid separately.',
+      },
+      {
+        q: 'Who is Family Hub for?',
+        a: 'Parents and guardians managing youth players. Coaches managing one team don\'t need Family Hub — they get team-level views in /dashboard/manage/team/[id]. The hub is designed for the household view.',
+      },
+      {
+        q: 'How do I link a child to my Family Hub?',
+        a: 'Sign in with Identity Plus or Business Plus, go to /dashboard/family, and use the Family Search box to find your child by name. If they don\'t have a RinkStop profile yet, you can create one from the same flow. Linking creates a managed_profiles row tied to your user_id — the child cannot accept or decline the link, but they can see it on their own profile.',
+      },
+      {
+        q: 'Can I unlink a child?',
+        a: 'Yes. From /dashboard/family, click the child and choose "Unlink". The child\'s data (passport, achievements, media) remains theirs; only the parental view is removed. If you re-link later, the data is restored.',
+      },
+      {
+        q: 'What documents can I store for my kids?',
+        a: 'Birth certificates, waivers, medical forms, vaccine records, travel documents. Documents live in /dashboard/family under "Documents." You control who sees each document — only you by default, but you can mark a document as visible to specific coaches or teams. Stored in Supabase with row-level security — only the linked parent and explicit grantees can read.',
+      },
+      {
+        q: 'Can my child opt out of the parental link?',
+        a: 'A child who is 18+ (or the age of digital consent in their country) can revoke a parent link from their own profile settings. For minors, the parent link stands until the child reaches the age threshold OR the parent removes it.',
+      },
+      {
+        q: 'What is the Family Setup Wizard?',
+        a: 'When you first sign in to Identity Plus or Business Plus with kids to link, a setup wizard walks you through linking each child and importing any existing data. You can dismiss it and run it again from /dashboard/family if you skipped it the first time.',
+      },
+    ],
+  },
+  {
+    id: 'stamps',
+    title: 'Stamps, QR Codes & Disputes',
+    icon: '🔖',
+    qa: [
+      {
+        q: 'What is a passport stamp?',
+        a: 'A stamp is a verifiable event recorded on your Hockey Passport. Stamps come from three sources: (1) a coach or operator scanning your QR code at a practice, game, or check-in — creates a "stamp" with context (practice/game/check-in) and the actor\'s identity; (2) a self-reported row you add directly to your passport; (3) a third-party scan where someone else scans their own QR and you are the subject (e.g., a coach scanning for a player who lost their phone). All stamps are timestamped and immutable.',
+      },
+      {
+        q: 'How do I get a passport QR code?',
+        a: 'Once you have a Verified Identity or higher, your passport gets a unique QR identifier. You can view it at /dashboard/passport. Operators print this QR and post it at their venue (rink, gym, clinic). Anyone can scan it with their phone to stamp your passport.',
+      },
+      {
+        q: 'Who can stamp my passport?',
+        a: 'Any signed-in RinkStop user. Stamps are gated only by the STAMPS_ENABLED feature flag, not by tier — so a Free user scanning a coach\'s QR still creates a valid stamp. This is intentional: stamping is a public-verifiability feature.',
+      },
+      {
+        q: 'Can I see who stamped me and when?',
+        a: 'Yes. /dashboard/passport shows your full stamp history with actor (who), timestamp (when), context (practice/game/check-in), and visibility (private or public). You can hide a stamp from your public passport without deleting it.',
+      },
+      {
+        q: 'What if a stamp is wrong or fraudulent?',
+        a: 'Open the stamp in /dashboard/passport and click "Dispute." The dispute goes to an operator queue (if it\'s a venue stamp) or a staff queue (if it crosses venue boundaries). Adjudicators can reject the stamp, which removes it from your passport and flags the actor\'s account. Both queues ship with full audit trails.',
+      },
+      {
+        q: 'How do operators manage their QR codes?',
+        a: 'Rink operators and team managers go to /dashboard/manage/rink/[id] (or /dashboard/manage/team/[id]). They get a printable QR card that they can rotate at any time for security. Rotation invalidates old QR codes immediately.',
+      },
+      {
+        q: 'Is my QR code safe to share publicly?',
+        a: 'Your QR encodes an opaque identifier, not your personal data. Scanning only creates a stamp; it does not reveal your email, phone, or full profile. QR rotation gives you a kill-switch if a QR is ever leaked or photographed by someone you don\'t want scanning it.',
+      },
+    ],
+  },
+  {
+    id: 'referee-tools',
+    title: 'Referee Tools',
+    icon: '🥅',
+    qa: [
+      {
+        q: 'What are referee tools on RinkStop?',
+        a: 'A read-only dashboard built for referees, at /dashboard/referee. It shows upcoming game assignments, recent attendance, payment summary (what you\'re owed vs what you\'ve been paid), and a per-game detail page with check-in / check-out. The tools are not a full assignment-management system — they are the referee\'s view into leagues that already assign them through RinkStop.',
+      },
+      {
+        q: 'Who can use referee tools?',
+        a: 'Anyone whose profile has the referee account type. You can request the referee account type from /dashboard/roles (requires Verified Identity or higher). League admins assign you games; the tools show what was assigned to you.',
+      },
+      {
+        q: 'How do I check in to a game?',
+        a: 'From /dashboard/referee/games, click an assignment and use the check-in button when you arrive at the rink. The check-in time is recorded against the assignment and visible to the league admin.',
+      },
+      {
+        q: 'How do I check out / log payment?',
+        a: 'After the game, open the assignment detail and click check-out. If the league pays through RinkStop, the system marks the assignment as paid. If the league pays outside RinkStop (cash, check, external invoice), you can manually mark it as paid.',
+      },
+      {
+        q: 'Where does my referee payment come from?',
+        a: 'Payment is set by the league that assigned you. RinkStop is the record-keeper, not the payer. The /dashboard/referee page shows your total earned this year and per-assignment status (paid / outstanding / overdue) so you can chase outstanding payments with one screen.',
+      },
+    ],
+  },
+  {
+    id: 'guest-checkout',
+    title: 'Buying & Guest Checkout',
+    icon: '💳',
+    qa: [
+      {
+        q: 'Can I buy a tier without creating an account first?',
+        a: 'Yes. Guest checkout is enabled — visit /pricing, pick a tier, enter your email and card details. Stripe processes the payment, your account is auto-created (or linked to your existing one if the email matches a Clerk user), and your tier activates within seconds. You land back on the dashboard.',
+      },
+      {
+        q: 'What happens after guest checkout?',
+        a: 'You receive a welcome email with a link to set your password. Clicking it signs you in to your new (or existing) account with the paid tier already applied. No "verify your email first" friction.',
+      },
+      {
+        q: 'Can I claim a listing before signing up?',
+        a: 'No. Claiming requires a signed-in user with a Verified Identity tier. Free accounts can browse and submit suggestions for missing listings, but cannot claim existing ones. Sign up free first, then upgrade to Verified Identity ($24.99/year) to claim.',
+      },
+      {
+        q: 'What payment methods are accepted?',
+        a: 'Visa, Mastercard, American Express, Discover, JCB, and most country-specific debit cards. We use Stripe Checkout, which handles 3D Secure and most regional payment methods automatically.',
       },
     ],
   },
