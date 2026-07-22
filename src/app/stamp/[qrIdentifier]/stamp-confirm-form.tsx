@@ -26,12 +26,29 @@ import type {
 
 type State = 'confirm' | 'submitting' | 'done';
 
+interface EligiblePassport {
+  passportId: string;
+  internalUserId: string;
+  displayName: string;
+  ageYears: number | null;
+  relationship: 'self' | 'parent' | 'guardian';
+  verificationLevel: string;
+}
+
 interface Props {
   qrIdentifier: string;
   target: ResolvedStampTarget;
   actorUserId: string;
   subjectUserId: string | null;
   subjectName: string | null;
+  /**
+   * WS3.5 PR5 — Passports the caller can stamp on behalf of. When
+   * familyPickerEnabled is true AND this list has 2+ entries, the picker
+   * shows. 1 entry = single-Passport mode (no picker, current WS3 PR2
+   * behavior). 0 entries = show the empty-state CTA.
+   */
+  eligiblePassports: EligiblePassport[];
+  familyPickerEnabled: boolean;
 }
 
 const CONTEXT_OPTIONS: { value: StampContext; label: string }[] = [
@@ -46,6 +63,8 @@ export function StampConfirmForm({
   target,
   subjectUserId,
   subjectName,
+  eligiblePassports,
+  familyPickerEnabled,
 }: Props) {
   const router = useRouter();
   const [state, setState] = useState<State>('confirm');
@@ -55,8 +74,43 @@ export function StampConfirmForm({
   const [error, setError] = useState<string | null>(null);
   const [alreadyStamped, setAlreadyStamped] = useState(false);
 
-  const isCoachScan = !!subjectUserId;
-  const questionText = buildQuestion(target, subjectName);
+  // WS3.5 PR5 — Passport picker state. When familyPickerEnabled is true
+  // AND eligiblePassports.length >= 2, we show the picker and the
+  // caller picks which Passport to stamp. Default: the caller's own
+  // Passport (always first after sort).
+  const showPicker =
+    familyPickerEnabled && eligiblePassports.length >= 2;
+  const showEmptyState =
+    familyPickerEnabled &&
+    eligiblePassports.length === 0 &&
+    !subjectUserId; // empty state doesn't apply to coach scans (?subject=)
+  const [pickedPassportId, setPickedPassportId] = useState<
+    string | null
+  >(eligiblePassports[0]?.passportId ?? null);
+
+  // Resolve the picked Passport for the POST body. When picker is
+  // hidden, fall back to subjectUserId (legacy WS3 coach-scan) or
+  // null (self-scan, server resolves actor's Passport).
+  const pickedPassport = showPicker
+    ? eligiblePassports.find((p) => p.passportId === pickedPassportId)
+    : undefined;
+  const effectiveSubjectUserId = showPicker
+    ? pickedPassport?.internalUserId ?? null
+    : subjectUserId ?? null;
+  const effectiveSubjectName = showPicker
+    ? pickedPassport?.displayName ?? subjectName
+    : subjectName;
+
+  const isCoachScan = showPicker
+    ? !!effectiveSubjectUserId &&
+      effectiveSubjectUserId !== eligiblePassports.find((p) => p.relationship === 'self')?.internalUserId
+    : !!subjectUserId;
+  const questionText = buildQuestion(
+    target,
+    effectiveSubjectName,
+    showPicker,
+    pickedPassport?.relationship
+  );
   const targetDisplayName = targetDisplay(target);
 
   async function handleConfirm() {
@@ -88,7 +142,8 @@ export function StampConfirmForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           qrIdentifier,
-          subjectUserId: subjectUserId ?? undefined,
+          subjectUserId: effectiveSubjectUserId ?? undefined,
+          subjectPassportId: showPicker ? pickedPassportId ?? undefined : undefined,
           context: isCoachScan ? context : undefined,
           visibility,
           geoLat,
@@ -134,9 +189,11 @@ export function StampConfirmForm({
             <>
               <h1 style={styles.title}>Stamped ✓</h1>
               <p style={styles.body}>
-                Your Passport now records {targetDisplayName}.
+                {pickedPassport && pickedPassport.relationship !== 'self'
+                  ? `${pickedPassport.displayName}'s Passport now records ${targetDisplayName}.`
+                  : `Your Passport now records ${targetDisplayName}.`}
                 {visibility === 'public'
-                  ? ' It is visible on your public Passport.'
+                  ? ' It is visible on the public Passport.'
                   : ' It is private — publish it from your dashboard to share.'}
               </p>
             </>
@@ -162,6 +219,32 @@ export function StampConfirmForm({
     );
   }
 
+  // Empty state: family picker is enabled but caller has 0 eligible
+  // Passports. Show a CTA to /dashboard/passport. (Per spec.)
+  if (showEmptyState) {
+    return (
+      <main style={styles.page}>
+        <div style={styles.card}>
+          <p style={styles.eyebrow}>Stamp a Passport</p>
+          <h1 style={styles.title}>You need a verified Passport</h1>
+          <p style={styles.body}>
+            Stamping at {targetDisplayName} requires a verified Passport
+            on your account or a linked child.
+          </p>
+          <div style={styles.row}>
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/passport')}
+              style={styles.primaryButton}
+            >
+              Open your dashboard
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main style={styles.page}>
       <div style={styles.card}>
@@ -169,6 +252,52 @@ export function StampConfirmForm({
           {isCoachScan ? 'Stamp a player' : 'Stamp your Passport'}
         </p>
         <h1 style={styles.title}>{questionText}</h1>
+
+        {showPicker && (
+          <div style={styles.section}>
+            <p style={styles.label}>Which Passport?</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {eligiblePassports.map((p) => {
+                const isPicked = p.passportId === pickedPassportId;
+                const ageText =
+                  p.ageYears !== null
+                    ? ` · age ${p.ageYears}`
+                    : '';
+                const selfBadge = p.relationship === 'self' ? ' (you)' : '';
+                return (
+                  <button
+                    key={p.passportId}
+                    type="button"
+                    onClick={() => setPickedPassportId(p.passportId)}
+                    style={{
+                      ...styles.passportPick,
+                      ...(isPicked ? styles.passportPickActive : {}),
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, color: SLATE_900 }}>
+                      {p.displayName}
+                      {selfBadge}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: SLATE_500,
+                        marginTop: 2,
+                      }}
+                    >
+                      {p.passportId}
+                      {ageText}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p style={styles.hint}>
+              Picked Passport receives the stamp. Visibility + geo apply
+              per the toggle below.
+            </p>
+          </div>
+        )}
 
         {isCoachScan && (
           <div style={styles.section}>
@@ -256,9 +385,21 @@ export function StampConfirmForm({
 
 function buildQuestion(
   target: ResolvedStampTarget,
-  subjectName: string | null
+  subjectName: string | null,
+  showPicker: boolean,
+  pickedRelationship: 'self' | 'parent' | 'guardian' | undefined
 ): string {
   const where = targetDisplay(target);
+  if (showPicker) {
+    // Picker is open — question reflects the pick, not the default.
+    if (pickedRelationship === 'self') {
+      return `Stamp your Passport at ${where}?`;
+    }
+    if (subjectName) {
+      return `Stamp ${subjectName}'s Passport at ${where}?`;
+    }
+    return `Stamp at ${where}?`;
+  }
   if (subjectName) {
     return `Stamp ${subjectName} at ${where}?`;
   }
@@ -348,6 +489,21 @@ const styles: Record<string, React.CSSProperties> = {
     borderColor: RINKSTOP_NAVY,
     background: RINKSTOP_NAVY,
     color: '#fff',
+  },
+  passportPick: {
+    border: '1px solid #cbd5e1',
+    background: '#fff',
+    color: SLATE_700,
+    borderRadius: 10,
+    padding: '10px 14px',
+    fontSize: 14,
+    textAlign: 'left' as const,
+    cursor: 'pointer',
+  },
+  passportPickActive: {
+    borderColor: RINKSTOP_NAVY,
+    background: 'rgba(4, 30, 66, 0.04)',
+    borderWidth: 2,
   },
   checkboxRow: {
     display: 'flex',

@@ -286,6 +286,9 @@ export interface StampRecord {
   actorUserId: string;
   actorType: StampActorType;
   subjectUserId: string | null;
+  // WS3.5 PR6 — the public Passport id this stamp attaches to. NULL on
+  // legacy WS3 rows that pre-date the column (backfilled on read).
+  subjectPassportId: string | null;
   subjectType: StampSubjectType | null;
   context: StampContext | null;
   source: StampSource;
@@ -406,6 +409,19 @@ export type DisputeNotificationKind =
 export interface CreateStampRequest {
   qrIdentifier: string;
   subjectUserId?: string;
+  /**
+   * WS3.5 PR6 — the public Passport ID the stamp attaches to. When
+   * caller is on their own Passport, this equals the caller's passport
+   * id (self-scan). When caller is a parent picking a kid's Passport
+   * (Family Hub Multi-Stamp), this equals the kid's passport id and
+   * subjectUserId is the kid's internal_user_id (third-party scan
+   * from the parent's device).
+   *
+   * Optional in the type for backward compat with WS3 clients, but the
+   * service layer requires it for new stamps (resolves it from the
+   * actor's or subject's passport when not provided).
+   */
+  subjectPassportId?: string;
   context?: StampContext;
   visibility?: StampVisibility;
   geoLat?: number;

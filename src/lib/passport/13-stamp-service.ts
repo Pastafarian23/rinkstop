@@ -85,6 +85,7 @@ function stampRowToRecord(row: Record<string, unknown>): StampRecord {
     actorUserId: row.actor_user_id as string,
     actorType: row.actor_type as StampRecord['actorType'],
     subjectUserId: (row.subject_user_id as string | null) ?? null,
+    subjectPassportId: (row.subject_passport_id as string | null) ?? null,
     subjectType: (row.subject_type as StampRecord['subjectType']) ?? null,
     context: (row.context as StampRecord['context']) ?? null,
     source: row.source as StampRecord['source'],
@@ -314,6 +315,175 @@ export class StampService {
   }
 
   /**
+   * WS3.5 PR5 — List the Passports that `userId` is eligible to stamp
+   * on behalf of. Used by the Family Hub Multi-Stamp picker UI on
+   * /stamp/[qrIdentifier] when the caller has 2+ eligible Passports.
+   *
+   * Eligibility rule (per WS3.5 spec):
+   *   1. Caller's own Passport (always eligible if they have one).
+   *   2. Passports owned by managed_profiles.profile_id where the caller
+   *      is the manager AND relationship IN ('parent', 'guardian') AND
+   *      the kid's Passport is verified (verification_level != 'none').
+   *
+   * Returns an empty array if the caller has 0 eligible Passports (the
+   * picker UI surfaces "you need a verified Passport or a linked
+   * child to stamp here"). Returns 1 entry if the caller only has
+   * their own Passport (picker hidden, behavior unchanged). Returns
+   * 2+ entries when the caller has their own + at least one linked
+   * kid — the picker shows.
+   *
+   * Sorting: own first, then kids by age (youngest first). Age comes
+   * from profiles.date_of_birth. Kids without a known age go last.
+   */
+  async listEligiblePassportsForStamping(
+    userId: string
+  ): Promise<Array<{
+    passportId: string;
+    internalUserId: string;
+    displayName: string;
+    ageYears: number | null;
+    relationship: 'self' | 'parent' | 'guardian';
+    verificationLevel: string;
+  }>> {
+    const out: Array<{
+      passportId: string;
+      internalUserId: string;
+      displayName: string;
+      ageYears: number | null;
+      relationship: 'self' | 'parent' | 'guardian';
+      verificationLevel: string;
+    }> = [];
+
+    // 1. Caller's own Passport.
+    const { data: ownPassport, error: ownErr } = await supabaseAdmin
+      .from('passports')
+      .select('passport_id, internal_user_id, verification_level')
+      .eq('internal_user_id', userId)
+      .maybeSingle();
+    if (ownErr) {
+      throw new Error(`Failed to load caller's Passport: ${ownErr.message}`);
+    }
+    if (ownPassport) {
+      const { data: ownProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('display_name, first_name, last_name, date_of_birth')
+        .eq('user_id', userId)
+        .maybeSingle();
+      const displayName =
+        ownProfile?.display_name ||
+        `${ownProfile?.first_name ?? ''} ${ownProfile?.last_name ?? ''}`.trim() ||
+        'You';
+      const ageYears = this.ageFromDob(ownProfile?.date_of_birth as string | null);
+      out.push({
+        passportId: ownPassport.passport_id as string,
+        internalUserId: ownPassport.internal_user_id as string,
+        displayName,
+        ageYears,
+        relationship: 'self',
+        verificationLevel: (ownPassport.verification_level as string) ?? 'none',
+      });
+    }
+
+    // 2. Linked kids via managed_profiles.
+    const { data: links, error: linksErr } = await supabaseAdmin
+      .from('managed_profiles')
+      .select('profile_id, relationship')
+      .eq('manager_user_id', userId)
+      .in('relationship', ['parent', 'guardian'])
+      .eq('profile_type', 'player');
+    if (linksErr) {
+      throw new Error(`Failed to load managed_profiles: ${linksErr.message}`);
+    }
+    if (links && links.length > 0) {
+      // managed_profiles.profile_id is a UUID pointing to a player
+      // profile. Resolve that profile → user_id → Passport.
+      const playerIds = links.map((l) => l.profile_id as string);
+      const { data: playerProfiles, error: playerErr } = await supabaseAdmin
+        .from('players')
+        .select('id, user_id')
+        .in('id', playerIds);
+      if (playerErr) {
+        // players table may have a different shape than expected — fail
+        // gracefully (no kids in picker, but caller's own still works).
+        console.warn(
+          '[stamp-service] listEligiblePassportsForStamping: players lookup failed:',
+          playerErr.message
+        );
+      } else if (playerProfiles && playerProfiles.length > 0) {
+        const userIds = playerProfiles
+          .map((p) => p.user_id as string | null)
+          .filter((u): u is string => typeof u === 'string' && u.length > 0);
+        if (userIds.length > 0) {
+          // Resolve kid Passports.
+          const { data: kidPassports } = await supabaseAdmin
+            .from('passports')
+            .select('passport_id, internal_user_id, verification_level, status')
+            .in('internal_user_id', userIds);
+          const kidPassportByUser = new Map<string, { passportId: string; verificationLevel: string; status: string }>();
+          for (const kp of kidPassports ?? []) {
+            kidPassportByUser.set(kp.internal_user_id as string, {
+              passportId: kp.passport_id as string,
+              verificationLevel: (kp.verification_level as string) ?? 'none',
+              status: (kp.status as string) ?? 'active',
+            });
+          }
+          // Resolve kid display name + DOB from profiles (the source of
+          // truth for first_name / last_name / date_of_birth — players
+          // table has user_id but not those columns in v1).
+          const { data: kidProfiles } = await supabaseAdmin
+            .from('profiles')
+            .select('user_id, display_name, first_name, last_name, date_of_birth')
+            .in('user_id', userIds);
+          const kidProfileByUser = new Map<string, { displayName: string; dateOfBirth: string | null }>();
+          for (const kp of kidProfiles ?? []) {
+            const displayName =
+              kp.display_name ||
+              `${kp.first_name ?? ''} ${kp.last_name ?? ''}`.trim() ||
+              'Linked player';
+            kidProfileByUser.set(kp.user_id as string, {
+              displayName,
+              dateOfBirth: (kp.date_of_birth as string | null) ?? null,
+            });
+          }
+          for (const link of links) {
+            const player = playerProfiles.find(
+              (p) => p.id === (link.profile_id as string)
+            );
+            if (!player || !player.user_id) continue;
+            const passport = kidPassportByUser.get(player.user_id as string);
+            if (!passport) continue;
+            // Skip kids with no verification (per spec: must be verified).
+            if (passport.verificationLevel === 'none') continue;
+            // Skip deactivated Passports.
+            if (passport.status === 'deactivated' || passport.status === 'suspended') continue;
+            const profile = kidProfileByUser.get(player.user_id as string);
+            out.push({
+              passportId: passport.passportId,
+              internalUserId: player.user_id as string,
+              displayName: profile?.displayName ?? 'Linked player',
+              ageYears: this.ageFromDob(profile?.dateOfBirth ?? null),
+              relationship: link.relationship as 'parent' | 'guardian',
+              verificationLevel: passport.verificationLevel,
+            });
+          }
+        }
+      }
+    }
+
+    // Sort: own first, then kids by age (youngest first), then kids
+    // with no known age last. Stable within age groups.
+    out.sort((a, b) => {
+      if (a.relationship === 'self' && b.relationship !== 'self') return -1;
+      if (b.relationship === 'self' && a.relationship !== 'self') return 1;
+      const aAge = a.ageYears ?? Number.MAX_SAFE_INTEGER;
+      const bAge = b.ageYears ?? Number.MAX_SAFE_INTEGER;
+      return aAge - bAge;
+    });
+
+    return out;
+  }
+
+  /**
    * Create a stamp. Returns the stamp id and target info. Audit row is written
    * regardless of outcome.
    *
@@ -345,6 +515,41 @@ export class StampService {
       ? 'third_party_scan'
       : 'self_scan';
     const visibility: StampVisibility = req.visibility ?? 'private';
+
+    // WS3.5 PR6 — resolve the subject_passport_id for this stamp.
+    //   - If caller provided subjectPassportId explicitly (Family Hub
+    //     picker UI passes the kid's passport_id), use it directly.
+    //   - Otherwise resolve from subject_user_id (third-party) or
+    //     actor_user_id (self-scan). Look up passports.internal_user_id.
+    //   - If resolution fails (caller/subject has no Passport), throw
+    //     a clear error so the UI can surface "verify your Passport
+    //     first".
+    let subjectPassportId: string | null = req.subjectPassportId ?? null;
+    if (!subjectPassportId) {
+      const resolveUserId = req.subjectUserId ?? actorUserId;
+      const { data: passportRow, error: passportErr } = await supabaseAdmin
+        .from('passports')
+        .select('passport_id, status')
+        .eq('internal_user_id', resolveUserId)
+        .maybeSingle();
+      if (passportErr) {
+        throw new Error(
+          `Failed to resolve subject passport: ${passportErr.message}`
+        );
+      }
+      if (!passportRow) {
+        throw new StampForbiddenError(
+          req.subjectUserId
+            ? 'Subject has no Passport; cannot stamp'
+            : 'You need a verified Passport to stamp here'
+        );
+      }
+      // Active or pending Passports are acceptable for stamping. We do
+      // not block on 'suspended' / 'deactivated' — those checks are
+      // elsewhere (Passport auth flow). v1: any Passport with a row
+      // counts as valid for stamp attribution.
+      subjectPassportId = passportRow.passport_id as string;
+    }
 
     // Third-party-scan validation. Coach→player requires shared team membership.
     if (source === 'third_party_scan') {
@@ -417,6 +622,7 @@ export class StampService {
       actor_user_id: actorUserId,
       actor_type: actorType,
       subject_user_id: req.subjectUserId ?? null,
+      subject_passport_id: subjectPassportId,
       subject_type: req.subjectUserId ? 'player' : null,
       context: req.context ?? null,
       source,
@@ -498,6 +704,21 @@ export class StampService {
       case 'event':
         return `${t.eventName} (at ${t.parentName})`;
     }
+  }
+
+  /**
+   * WS3.5 PR5 — Convert an ISO date_of_birth to an age in years (rounded
+   * down). Returns null if the input is null/invalid.
+   */
+  private ageFromDob(dob: string | null): number | null {
+    if (!dob) return null;
+    const dobDate = new Date(dob);
+    if (isNaN(dobDate.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - dobDate.getFullYear();
+    const m = now.getMonth() - dobDate.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < dobDate.getDate())) age--;
+    return age;
   }
 
   private async notifyStampReceived(params: {
