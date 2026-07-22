@@ -42,6 +42,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import {
   isPublicPassportLookupEnabled,
   passportLookupService,
+  isStampsEnabled,
+  stampService,
 } from '@/lib/passport';
 import type {
   PassportRecord,
@@ -232,6 +234,7 @@ async function ActivePassportCard({
           ]}
         />
         <FederationAffiliationsSection internalUserId={record.internalUserId} />
+        <AttendanceSection holderUserId={record.internalUserId} />
         <PassportFooter username={username} />
       </div>
     </main>
@@ -642,6 +645,186 @@ async function FederationAffiliationsSection({
         ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Attendance section — WS3 PR3.
+ *
+ * Public surface of the holder's stamp history. Per WS3 plan:
+ *   - Rink aggregate count + rink names (visited)
+ *   - Event names + parent venue/rink (attended)
+ *   - Venue-only stamps stay hidden (private aggregate only on dashboard)
+ *   - Federation count derived from rinks.league
+ *
+ * Per locked rule 2026-07-22 (with Arnel): counts include stamps where
+ * actor_user_id = holder OR subject_user_id = holder. That covers both
+ * self-scans and coach→player scans.
+ *
+ * Only renders when stamps feature flag is on AND there is data to show.
+ * Empty data → no section (per the "no empty state copy" rule used by
+ * FederationAffiliationsSection above).
+ */
+async function AttendanceSection({
+  holderUserId,
+}: {
+  holderUserId: string;
+}) {
+  if (!isStampsEnabled()) return null;
+
+  const attendance = await stampService
+    .getPublicAttendance(holderUserId)
+    .catch((err: unknown): null => {
+      console.error('[public-passport] getPublicAttendance failed:', err);
+      return null;
+    });
+
+  if (!attendance) return null;
+
+  const { rinkCount, eventCount, federationCount, events } = attendance;
+  const totalCount = rinkCount + eventCount;
+  if (totalCount === 0) return null;
+
+  return (
+    <section
+      style={{
+        background: '#fff',
+        border: '1px solid #e2e8f0',
+        borderRadius: 12,
+        padding: '16px 18px',
+        margin: '0 0 16px',
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+      }}
+    >
+      <h2
+        style={{
+          fontSize: 12,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: '#64748b',
+          fontWeight: 600,
+          margin: '0 0 12px',
+        }}
+      >
+        Attendance
+      </h2>
+
+      <dl
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          margin: '0 0 14px',
+        }}
+      >
+        <StatCell label="Rinks visited" value={rinkCount} />
+        <StatCell label="Events attended" value={eventCount} />
+        <StatCell label="Federations" value={federationCount} />
+      </dl>
+
+      {events.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <p
+            style={{
+              fontSize: 11,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: '#64748b',
+              fontWeight: 600,
+              margin: '0 0 8px',
+            }}
+          >
+            Recent events
+          </p>
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}
+          >
+            {events.slice(0, 5).map((ev) => (
+              <li
+                key={ev.id}
+                style={{
+                  fontSize: 14,
+                  color: '#0f172a',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}
+              >
+                <span
+                  style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {ev.name}
+                </span>
+                <span
+                  style={{ color: '#64748b', fontSize: 12, flexShrink: 0 }}
+                >
+                  {formatPublicDate(ev.startsAt)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {events.length > 5 && (
+        <p
+          style={{
+            fontSize: 12,
+            color: '#64748b',
+            margin: '8px 0 0',
+          }}
+        >
+          +{events.length - 5} more
+        </p>
+      )}
+    </section>
+  );
+}
+
+function StatCell({ label, value }: { label: string; value: number }) {
+  return (
+    <div
+      style={{
+        background: '#f8fafc',
+        borderRadius: 8,
+        padding: '10px 8px',
+        textAlign: 'center',
+      }}
+    >
+      <dt
+        style={{
+          fontSize: 10,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: '#64748b',
+          fontWeight: 600,
+          margin: 0,
+        }}
+      >
+        {label}
+      </dt>
+      <dd
+        style={{
+          fontSize: 22,
+          fontWeight: 700,
+          color: '#041E42',
+          margin: '2px 0 0',
+        }}
+      >
+        {value}
+      </dd>
+    </div>
   );
 }
 

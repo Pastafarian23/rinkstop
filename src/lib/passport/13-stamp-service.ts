@@ -48,6 +48,51 @@ const COACHING_ROLES = new Set([
 
 const GEO_DISTANCE_FLAG_THRESHOLD_METERS = 200_000; // 200 km
 
+// Federation league set — must match the migration's federation_verified
+// backfill list (supabase/migrations/2026-07-22_stamps_schema.sql §2c).
+// Single source of truth lives in the migration; this set mirrors it so
+// the public Passport aggregate counts only federation-verified leagues.
+const FEDERATION_LEAGUES = new Set([
+  'DEL',
+  'DEL2',
+  'DEL youth',
+  'SHL',
+  'Mestis',
+  'HockeyAllsvenskan',
+  'Hockeyettan',
+  'Liiga',
+  'Oberliga',
+  'Oberliga Nord',
+  'Division',
+]);
+
+/**
+ * Map a raw Supabase row from public.stamps (snake_case) to a
+ * StampRecord (camelCase). Mirrors the rowToRecord pattern in
+ * 03-repository.ts.
+ */
+function stampRowToRecord(row: Record<string, unknown>): StampRecord {
+  return {
+    id: row.id as string,
+    targetType: row.target_type as StampRecord['targetType'],
+    targetRinkId: (row.target_rink_id as string | null) ?? null,
+    targetVenueId: (row.target_venue_id as string | null) ?? null,
+    targetEventId: (row.target_event_id as string | null) ?? null,
+    actorUserId: row.actor_user_id as string,
+    actorType: row.actor_type as StampRecord['actorType'],
+    subjectUserId: (row.subject_user_id as string | null) ?? null,
+    subjectType: (row.subject_type as StampRecord['subjectType']) ?? null,
+    context: (row.context as StampRecord['context']) ?? null,
+    source: row.source as StampRecord['source'],
+    visibility: row.visibility as StampRecord['visibility'],
+    status: row.status as StampRecord['status'],
+    geoLat: (row.geo_lat as number | null) ?? null,
+    geoLng: (row.geo_lng as number | null) ?? null,
+    distanceMeters: (row.distance_meters as number | null) ?? null,
+    stampedAt: row.stamped_at as string,
+  };
+}
+
 export class StampNotFoundError extends Error {
   constructor(qrIdentifier: string) {
     super(`No active target found for QR ${qrIdentifier}`);
@@ -507,6 +552,378 @@ export class StampService {
       // shouldn't fail because the audit row didn't write.
       console.error('[stamp-service] scan_events insert failed:', error);
     }
+  }
+
+  /**
+   * Public attendance aggregate for a Passport holder.
+   *
+   * Per locked rule 2026-07-22: a holder's public Passport counts stamps
+   * where actor_user_id = holder OR subject_user_id = holder. That covers
+   * both self-scans and coach→player scans (the player was physically
+   * present regardless of who held the phone).
+   *
+   * Per WS3 plan: public surface shows rink aggregate count + event names.
+   * Venue-only stamps stay private (they're aggregate-only signals on the
+   * holder's dashboard, not public credits).
+   *
+   * Returns:
+   *   - rinks: distinct rink ids the holder has stamped publicly
+   *   - events: distinct event names + parent venue/rink names
+   *   - federations: count of distinct federation affiliations touched
+   *     (rink.league values for federation_verified rinks the holder
+   *     stamped). Derives from existing rinks.league column.
+   */
+  async getPublicAttendance(holderUserId: string): Promise<{
+    rinkCount: number;
+    eventCount: number;
+    federationCount: number;
+    rinks: Array<{ id: string; name: string; slug: string }>;
+    events: Array<{
+      id: string;
+      name: string;
+      parentType: 'rink' | 'venue';
+      parentName: string;
+      startsAt: string;
+    }>;
+  }> {
+    // Fetch public-visible confirmed stamps for the holder.
+    const { data: stamps, error } = await supabaseAdmin
+      .from('stamps')
+      .select(
+        'id, target_type, target_rink_id, target_venue_id, target_event_id, stamped_at'
+      )
+      .or(`actor_user_id.eq.${holderUserId},subject_user_id.eq.${holderUserId}`)
+      .eq('visibility', 'public')
+      .eq('status', 'confirmed');
+
+    if (error) {
+      console.error('[stamp-service] getPublicAttendance failed:', error);
+      return {
+        rinkCount: 0,
+        eventCount: 0,
+        federationCount: 0,
+        rinks: [],
+        events: [],
+      };
+    }
+
+    const rows = stamps ?? [];
+    const rinkIds = Array.from(
+      new Set(
+        rows
+          .filter((s) => s.target_type === 'rink' && s.target_rink_id)
+          .map((s) => s.target_rink_id as string)
+      )
+    );
+    const eventIds = Array.from(
+      new Set(
+        rows
+          .filter((s) => s.target_type === 'event' && s.target_event_id)
+          .map((s) => s.target_event_id as string)
+      )
+    );
+
+    let rinks: Array<{ id: string; name: string; slug: string }> = [];
+    if (rinkIds.length > 0) {
+      const { data: rinkRows } = await supabaseAdmin
+        .from('rinks')
+        .select('id, name, slug, league')
+        .in('id', rinkIds);
+      rinks = (rinkRows ?? []).map((r) => ({
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+      }));
+    }
+
+    let events: Array<{
+      id: string;
+      name: string;
+      parentType: 'rink' | 'venue';
+      parentName: string;
+      startsAt: string;
+    }> = [];
+    if (eventIds.length > 0) {
+      const { data: eventRows } = await supabaseAdmin
+        .from('venue_events')
+        .select(
+          'id, name, starts_at, parent_type, parent_rink_id, parent_venue_id'
+        )
+        .in('id', eventIds);
+
+      const parentRinkIds = (eventRows ?? [])
+        .filter((e) => e.parent_type === 'rink' && e.parent_rink_id)
+        .map((e) => e.parent_rink_id as string);
+      const parentVenueIds = (eventRows ?? [])
+        .filter((e) => e.parent_type === 'venue' && e.parent_venue_id)
+        .map((e) => e.parent_venue_id as string);
+
+      const [parentRinkRows, parentVenueRows] = await Promise.all([
+        parentRinkIds.length > 0
+          ? supabaseAdmin
+              .from('rinks')
+              .select('id, name')
+              .in('id', parentRinkIds)
+              .then((r) => r.data ?? [])
+          : Promise.resolve([] as Array<{ id: string; name: string }>),
+        parentVenueIds.length > 0
+          ? supabaseAdmin
+              .from('venues')
+              .select('id, name')
+              .in('id', parentVenueIds)
+              .then((r) => r.data ?? [])
+          : Promise.resolve([] as Array<{ id: string; name: string }>),
+      ]);
+
+      const rinkNameMap = new Map(
+        parentRinkRows.map((r) => [r.id, r.name] as const)
+      );
+      const venueNameMap = new Map(
+        parentVenueRows.map((v) => [v.id, v.name] as const)
+      );
+
+      events = (eventRows ?? []).map((e) => ({
+        id: e.id,
+        name: e.name,
+        parentType: e.parent_type as 'rink' | 'venue',
+        parentName:
+          e.parent_type === 'rink'
+            ? rinkNameMap.get(e.parent_rink_id ?? '') ?? ''
+            : venueNameMap.get(e.parent_venue_id ?? '') ?? '',
+        startsAt: e.starts_at,
+      }));
+    }
+
+    // Federation count: distinct league values on rinks the holder stamped
+    // publicly, restricted to known federation leagues (matches the
+    // verification_tier backfill list from PR1). Re-query with the league
+    // column after the rinks[] array was built so the earlier query stays
+    // lean (only id/name/slug).
+    let federationCount = 0;
+    if (rinkIds.length > 0) {
+      const { data: leagueRows } = await supabaseAdmin
+        .from('rinks')
+        .select('league')
+        .in('id', rinkIds);
+      const leagues = new Set(
+        (leagueRows ?? [])
+          .map((r) => r.league)
+          .filter((l): l is string => !!l && FEDERATION_LEAGUES.has(l))
+      );
+      federationCount = leagues.size;
+    }
+
+    return {
+      rinkCount: rinks.length,
+      eventCount: events.length,
+      federationCount,
+      rinks,
+      events,
+    };
+  }
+
+  /**
+   * Full stamp history for a holder (dashboard view).
+   *
+   * Returns ALL stamps where the holder is the actor or the subject,
+   * regardless of visibility. The dashboard is the holder's private
+   * space — they see everything attached to their Passport.
+   *
+   * Sort: most recent first.
+   */
+  async getHolderStamps(holderUserId: string): Promise<
+    Array<
+      StampRecord & {
+        rinkName: string | null;
+        venueName: string | null;
+        eventName: string | null;
+        parentName: string | null;
+      }
+    >
+  > {
+    const { data: stampRows, error } = await supabaseAdmin
+      .from('stamps')
+      .select('*')
+      .or(`actor_user_id.eq.${holderUserId},subject_user_id.eq.${holderUserId}`)
+      .order('stamped_at', { ascending: false })
+      .limit(200);
+
+    if (error) {
+      console.error('[stamp-service] getHolderStamps failed:', error);
+      return [];
+    }
+
+    const rows = (stampRows ?? []).map(stampRowToRecord);
+    if (rows.length === 0) return [];
+
+    const rinkIds = Array.from(
+      new Set(
+        rows
+          .filter((r) => r.targetRinkId)
+          .map((r) => r.targetRinkId as string)
+      )
+    );
+    const venueIds = Array.from(
+      new Set(
+        rows
+          .filter((r) => r.targetVenueId)
+          .map((r) => r.targetVenueId as string)
+      )
+    );
+    const eventIds = Array.from(
+      new Set(
+        rows
+          .filter((r) => r.targetEventId)
+          .map((r) => r.targetEventId as string)
+      )
+    );
+
+    const [rinkRows, venueRows, eventRows] = await Promise.all([
+      rinkIds.length > 0
+        ? supabaseAdmin
+            .from('rinks')
+            .select('id, name')
+            .in('id', rinkIds)
+            .then((r) => r.data ?? [])
+        : Promise.resolve([] as Array<{ id: string; name: string }>),
+      venueIds.length > 0
+        ? supabaseAdmin
+            .from('venues')
+            .select('id, name')
+            .in('id', venueIds)
+            .then((r) => r.data ?? [])
+        : Promise.resolve([] as Array<{ id: string; name: string }>),
+      eventIds.length > 0
+        ? supabaseAdmin
+            .from('venue_events')
+            .select(
+              'id, name, parent_type, parent_rink_id, parent_venue_id'
+            )
+            .in('id', eventIds)
+            .then((r) => r.data ?? [])
+        : Promise.resolve(
+            [] as Array<{
+              id: string;
+              name: string;
+              parent_type: string;
+              parent_rink_id: string | null;
+              parent_venue_id: string | null;
+            }>
+          ),
+    ]);
+
+    const rinkMap = new Map(rinkRows.map((r) => [r.id, r.name] as const));
+    const venueMap = new Map(venueRows.map((v) => [v.id, v.name] as const));
+    const parentRinkIds = (eventRows ?? [])
+      .filter((e) => e.parent_type === 'rink' && e.parent_rink_id)
+      .map((e) => e.parent_rink_id as string);
+    const parentVenueIds = (eventRows ?? [])
+      .filter((e) => e.parent_type === 'venue' && e.parent_venue_id)
+      .map((e) => e.parent_venue_id as string);
+
+    const [parentRinkRows, parentVenueRows] = await Promise.all([
+      parentRinkIds.length > 0
+        ? supabaseAdmin
+            .from('rinks')
+            .select('id, name')
+            .in('id', parentRinkIds)
+            .then((r) => r.data ?? [])
+        : Promise.resolve([] as Array<{ id: string; name: string }>),
+      parentVenueIds.length > 0
+        ? supabaseAdmin
+            .from('venues')
+            .select('id, name')
+            .in('id', parentVenueIds)
+            .then((r) => r.data ?? [])
+        : Promise.resolve([] as Array<{ id: string; name: string }>),
+    ]);
+
+    const eventParentRinkMap = new Map(
+      parentRinkRows.map((r) => [r.id, r.name] as const)
+    );
+    const eventParentVenueMap = new Map(
+      parentVenueRows.map((v) => [v.id, v.name] as const)
+    );
+
+    return rows.map((s) => {
+      let parentName: string | null = null;
+      if (s.targetEventId) {
+        const ev = (eventRows ?? []).find((e) => e.id === s.targetEventId);
+        if (ev) {
+          parentName =
+            ev.parent_type === 'rink'
+              ? ev.parent_rink_id
+                ? eventParentRinkMap.get(ev.parent_rink_id) ?? null
+                : null
+              : ev.parent_venue_id
+                ? eventParentVenueMap.get(ev.parent_venue_id) ?? null
+                : null;
+        }
+      }
+      return {
+        ...s,
+        rinkName: s.targetRinkId ? rinkMap.get(s.targetRinkId) ?? null : null,
+        venueName: s.targetVenueId
+          ? venueMap.get(s.targetVenueId) ?? null
+          : null,
+        eventName: s.targetEventId
+          ? (eventRows ?? []).find((e) => e.id === s.targetEventId)?.name ??
+            null
+          : null,
+        parentName,
+      };
+    });
+  }
+
+  /**
+   * Update a stamp's visibility. Per locked rule 2026-07-22:
+   *   - self-scan stamps: holder (actor_user_id) may toggle
+   *   - coach→player stamps: subject_user_id may toggle; actor (coach)
+   *     cannot toggle their own authored stamp
+   *   - anyone else: 403
+   *
+   * Returns the updated visibility, or throws.
+   */
+  async updateStampVisibility(
+    callerUserId: string,
+    stampId: string,
+    newVisibility: StampVisibility
+  ): Promise<StampVisibility> {
+    const { data: stamp, error } = await supabaseAdmin
+      .from('stamps')
+      .select('id, actor_user_id, subject_user_id, status')
+      .eq('id', stampId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to load stamp: ${error.message}`);
+    }
+    if (!stamp) {
+      throw new StampNotFoundError(stampId);
+    }
+    if (stamp.status === 'revoked') {
+      throw new StampForbiddenError(
+        'Cannot change visibility of a revoked stamp'
+      );
+    }
+
+    const isHolder = stamp.actor_user_id === callerUserId;
+    const isSubject = stamp.subject_user_id === callerUserId;
+    if (!isHolder && !isSubject) {
+      throw new StampForbiddenError(
+        'Only the holder or subject of this stamp can change its visibility'
+      );
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('stamps')
+      .update({ visibility: newVisibility })
+      .eq('id', stampId);
+
+    if (updateErr) {
+      throw new Error(`Failed to update visibility: ${updateErr.message}`);
+    }
+    return newVisibility;
   }
 }
 

@@ -25,9 +25,12 @@ import { PassportCompletenessBadge } from '@/components/PassportCompletenessBadg
 import { PassportCard } from '@/components/passport/PassportCard';
 import { PassportTimeline } from '@/components/passport/PassportTimeline';
 import { PassportNextSteps } from '@/components/passport/PassportNextSteps';
+import { StampHistoryList } from './stamp-history-list';
 import {
   isPassportFlagEnabled,
   passportService,
+  isStampsEnabled,
+  stampService,
 } from '@/lib/passport';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -262,6 +265,58 @@ export default async function PassportHubPage() {
           The passport appears below your photo history on your public profile page.
         </p>
       </div>
+      <StampHistorySection userId={userId} />
     </main>
+  );
+}
+
+/**
+ * WS3 PR3 — Stamp history section on the dashboard.
+ *
+ * Renders when STAMPS_ENABLED is on. Shows the holder's full stamp
+ * history (private + public, confirmed only) with a per-stamp visibility
+ * toggle. The toggle hits PATCH /api/passport/stamp/[stampId].
+ *
+ * Per locked rule 2026-07-22: only the actor (self-scan) or subject
+ * (coach→player) can toggle. The API route enforces this server-side;
+ * the client component just hides the toggle UI when neither applies,
+ * which in practice never happens because every stamp row this query
+ * returns is one the holder owns (actor or subject).
+ */
+async function StampHistorySection({ userId }: { userId: string }) {
+  if (!isStampsEnabled()) return null;
+
+  const stamps = await stampService
+    .getHolderStamps(userId)
+    .catch((): Awaited<ReturnType<typeof stampService.getHolderStamps>> => []);
+  if (stamps.length === 0) return null;
+
+  // Map to a serializable shape for the client component.
+  const rows = stamps.map((s: (typeof stamps)[number]) => ({
+    id: s.id,
+    targetType: s.targetType,
+    targetName:
+      s.targetType === 'rink'
+        ? s.rinkName ?? 'Rink'
+        : s.targetType === 'venue'
+          ? s.venueName ?? 'Venue'
+          : `${s.eventName ?? 'Event'}${s.parentName ? ` (at ${s.parentName})` : ''}`,
+    visibility: s.visibility,
+    status: s.status,
+    stampedAt: s.stampedAt,
+    isHolder: s.actorUserId === userId,
+    isSubject: s.subjectUserId === userId,
+  }));
+
+  return (
+    <div className="max-w-3xl mx-auto px-5 mt-10">
+      <h2
+        className="font-sport text-xl mb-3"
+        style={{ letterSpacing: '0.04em' }}
+      >
+        STAMPS
+      </h2>
+      <StampHistoryList rows={rows} />
+    </div>
   );
 }
