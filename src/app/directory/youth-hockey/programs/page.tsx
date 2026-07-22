@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
 };
 
-// Always render fresh — programs are added/updated by community.
+// ISR-cached for 1 hour (2026-07-22 perf pass).
 export const dynamic = 'force-dynamic';
 
 async function fetchPrograms(country: string): Promise<YouthProgram[]> {

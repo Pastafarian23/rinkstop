@@ -52,7 +52,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   };
 }
 
-// Always render fresh — directory data changes too often to cache statically.
+// ISR-cached for 1 hour (2026-07-22 perf pass).
 export const dynamic = 'force-dynamic';
 
 async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
