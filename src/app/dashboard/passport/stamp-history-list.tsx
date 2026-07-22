@@ -73,6 +73,42 @@ export function StampHistoryList({ rows }: { rows: StampRow[] }) {
     }
   }
 
+  async function disputeStamp(row: StampRow) {
+    if (row.status !== 'confirmed') return;
+    if (
+      !confirm(
+        'Mark this stamp as disputed? A RinkStop admin will review and follow up.'
+      )
+    ) {
+      return;
+    }
+    setBusyId(row.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/passport/stamp/${row.id}/dispute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        setError(body.error ?? `Request failed (${res.status})`);
+        return;
+      }
+      setItems((prev) =>
+        prev.map((r) =>
+          r.id === row.id ? { ...r, status: 'disputed' as const } : r
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div
       style={{
@@ -139,39 +175,98 @@ export function StampHistoryList({ rows }: { rows: StampRow[] }) {
             <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
               {formatDate(row.stampedAt)}
             </span>
-            <button
-              type="button"
-              onClick={() =>
-                startTransition(() => {
-                  void toggleVisibility(row);
-                })
-              }
-              disabled={pending && busyId === row.id}
-              title={
-                row.status !== 'confirmed'
-                  ? 'Cannot toggle a disputed or revoked stamp'
-                  : 'Toggle visibility'
-              }
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                padding: '6px 10px',
-                borderRadius: 999,
-                border: 'none',
-                cursor:
-                  row.status === 'confirmed' ? 'pointer' : 'not-allowed',
-                opacity:
-                  pending && busyId === row.id ? 0.6 : 1,
-                background:
-                  row.visibility === 'public' ? '#FFB81C' : 'rgba(255,255,255,0.15)',
-                color:
-                  row.visibility === 'public' ? '#041E42' : 'rgba(255,255,255,0.7)',
-              }}
-            >
-              {row.visibility === 'public' ? 'Public' : 'Private'}
-            </button>
+            {row.status === 'disputed' ? (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  padding: '6px 10px',
+                  borderRadius: 999,
+                  background: 'rgba(252, 165, 165, 0.15)',
+                  color: '#FCA5A5',
+                }}
+              >
+                Disputed
+              </span>
+            ) : row.status === 'revoked' ? (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  padding: '6px 10px',
+                  borderRadius: 999,
+                  background: 'rgba(148, 163, 184, 0.15)',
+                  color: '#cbd5e1',
+                }}
+              >
+                Revoked
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    startTransition(() => {
+                      void toggleVisibility(row);
+                    })
+                  }
+                  disabled={pending && busyId === row.id}
+                  title="Toggle visibility"
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    border: 'none',
+                    cursor: 'pointer',
+                    opacity: pending && busyId === row.id ? 0.6 : 1,
+                    background:
+                      row.visibility === 'public'
+                        ? '#FFB81C'
+                        : 'rgba(255,255,255,0.15)',
+                    color:
+                      row.visibility === 'public'
+                        ? '#041E42'
+                        : 'rgba(255,255,255,0.7)',
+                  }}
+                >
+                  {row.visibility === 'public' ? 'Public' : 'Private'}
+                </button>
+                {row.isSubject && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      startTransition(() => {
+                        void disputeStamp(row);
+                      })
+                    }
+                    disabled={pending && busyId === row.id}
+                    title="Dispute this stamp — a RinkStop admin will review"
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                      padding: '6px 10px',
+                      borderRadius: 999,
+                      border: '1px solid rgba(252, 165, 165, 0.5)',
+                      background: 'transparent',
+                      color: '#FCA5A5',
+                      cursor: 'pointer',
+                      opacity: pending && busyId === row.id ? 0.6 : 1,
+                    }}
+                  >
+                    Dispute
+                  </button>
+                )}
+              </>
+            )}
           </li>
         ))}
       </ul>

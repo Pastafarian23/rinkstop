@@ -33,6 +33,7 @@ import type {
   StampContext,
   StampSource,
   StampVisibility,
+  StampStatus,
   StampRecord,
 } from './types';
 
@@ -924,6 +925,291 @@ export class StampService {
       throw new Error(`Failed to update visibility: ${updateErr.message}`);
     }
     return newVisibility;
+  }
+
+  /**
+   * WS3 PR4 — Dispute a stamp.
+   *
+   * Per locked rule 2026-07-22: only the SUBJECT of a third-party scan can
+   * dispute. Self-scan disputes are not a thing (you stamped yourself; the
+   * 'undo' path is delete-via-dispute, which is silly).
+   *
+   * Behavior:
+   *   - Loads stamp; 404 if missing; 403 if caller isn't the subject
+   *   - Sets status='disputed' on the stamp row
+   *   - Writes an audit row to public.scan_events with outcome='flagged_dispute'
+   *     so fraud signals pick up the dispute
+   *   - Stays in 'disputed' status (not auto-revoked) — the WS3.5 admin queue
+   *     resolves disputes. Until then, the stamp hides from public aggregate
+   *     counts (getPublicAttendance filters status='confirmed').
+   */
+  async disputeStamp(
+    callerUserId: string,
+    stampId: string,
+    reason?: string
+  ): Promise<{ stampId: string; status: StampStatus }> {
+    const { data: stamp, error } = await supabaseAdmin
+      .from('stamps')
+      .select('id, subject_user_id, actor_user_id, status')
+      .eq('id', stampId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to load stamp: ${error.message}`);
+    }
+    if (!stamp) {
+      throw new StampNotFoundError(stampId);
+    }
+    if (stamp.subject_user_id !== callerUserId) {
+      throw new StampForbiddenError(
+        'Only the subject of a third-party stamp can dispute it'
+      );
+    }
+    if (stamp.status === 'revoked') {
+      throw new StampForbiddenError(
+        'Cannot dispute a revoked stamp'
+      );
+    }
+    if (stamp.status === 'disputed') {
+      // Idempotent — already disputed, return current state.
+      return { stampId, status: 'disputed' };
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('stamps')
+      .update({
+        status: 'disputed',
+        // Store the reason in details-style metadata via a separate column
+        // would require a schema change; v1 keeps the reason in the audit
+        // row only (public.scan_events.details).
+      })
+      .eq('id', stampId);
+
+    if (updateErr) {
+      throw new Error(`Failed to update stamp status: ${updateErr.message}`);
+    }
+
+    await this.writeScanEventForDispute(
+      stampId,
+      callerUserId,
+      reason ?? null
+    );
+
+    return { stampId, status: 'disputed' };
+  }
+
+  /**
+   * WS3 PR4 — QR rotation utility (rink | venue | event).
+   *
+   * Admin-only operation (gated by getAdminFromRequest in the route).
+   *
+   * Behavior:
+   *   - Generate new qr_identifier (uuid for rinks) or public_id (venue/event)
+   *   - Update the target's column
+   *   - Set qr_revoked_at on rinks (the schema column on rinks); venues and
+   *     events don't have qr_revoked_at in v1 (they use public_id which
+   *     rotates, and the audit trail in qr_revocations is the source of
+   *     truth for the old value)
+   *   - Insert audit row in public.qr_revocations with old + new + reason +
+   *     revoker
+   *
+   * Existing stamps stay valid (per WS3 plan: 'don't punish holders for
+   * venue compromise'). The QR resolver (src/app/qr/[qrIdentifier]/route.ts)
+   * resolves the new identifier going forward; old identifiers won't match
+   * any active target and fall through to the deactivated page.
+   */
+  async rotateQr(params: {
+    targetType: 'rink' | 'venue' | 'event';
+    targetId: string;
+    reason: string;
+    revokedByUserId: string;
+  }): Promise<{ targetType: string; oldQr: string; newQr: string }> {
+    const { targetType, targetId, reason, revokedByUserId } = params;
+
+    if (targetType === 'rink') {
+      const { data: rink, error } = await supabaseAdmin
+        .from('rinks')
+        .select('id, qr_identifier, qr_revoked_at')
+        .eq('id', targetId)
+        .maybeSingle();
+
+      if (error) throw new Error(`rink lookup failed: ${error.message}`);
+      if (!rink) throw new StampNotFoundError(`rink:${targetId}`);
+      if (!rink.qr_identifier) {
+        throw new StampForbiddenError(
+          'Rink has no qr_identifier; cannot rotate'
+        );
+      }
+      if (rink.qr_revoked_at) {
+        // Already revoked — don't double-rotate. Return current state.
+        return {
+          targetType: 'rink',
+          oldQr: rink.qr_identifier,
+          newQr: rink.qr_identifier,
+        };
+      }
+
+      const newQr = crypto.randomUUID();
+
+      const { error: updateErr } = await supabaseAdmin
+        .from('rinks')
+        .update({
+          qr_identifier: newQr,
+          qr_revoked_at: new Date().toISOString(),
+        })
+        .eq('id', targetId);
+
+      if (updateErr) {
+        throw new Error(`rink update failed: ${updateErr.message}`);
+      }
+
+      await supabaseAdmin.from('qr_revocations').insert({
+        target_type: 'rink',
+        target_rink_id: targetId,
+        target_venue_id: null,
+        target_event_id: null,
+        old_qr_identifier: rink.qr_identifier,
+        new_qr_identifier: newQr,
+        reason,
+        revoked_by_user_id: revokedByUserId,
+      });
+
+      return {
+        targetType: 'rink',
+        oldQr: rink.qr_identifier,
+        newQr,
+      };
+    }
+
+    if (targetType === 'venue') {
+      const { data: venue, error } = await supabaseAdmin
+        .from('venues')
+        .select('id, public_id, status')
+        .eq('id', targetId)
+        .maybeSingle();
+
+      if (error) throw new Error(`venue lookup failed: ${error.message}`);
+      if (!venue) throw new StampNotFoundError(`venue:${targetId}`);
+
+      const newQr = crypto.randomUUID();
+
+      const { error: updateErr } = await supabaseAdmin
+        .from('venues')
+        .update({ public_id: newQr })
+        .eq('id', targetId);
+
+      if (updateErr) {
+        throw new Error(`venue update failed: ${updateErr.message}`);
+      }
+
+      await supabaseAdmin.from('qr_revocations').insert({
+        target_type: 'venue',
+        target_rink_id: null,
+        target_venue_id: targetId,
+        target_event_id: null,
+        old_qr_identifier: venue.public_id,
+        new_qr_identifier: newQr,
+        reason,
+        revoked_by_user_id: revokedByUserId,
+      });
+
+      return {
+        targetType: 'venue',
+        oldQr: venue.public_id,
+        newQr,
+      };
+    }
+
+    if (targetType === 'event') {
+      const { data: event, error } = await supabaseAdmin
+        .from('venue_events')
+        .select('id, public_id, status')
+        .eq('id', targetId)
+        .maybeSingle();
+
+      if (error) throw new Error(`event lookup failed: ${error.message}`);
+      if (!event) throw new StampNotFoundError(`event:${targetId}`);
+
+      const newQr = crypto.randomUUID();
+
+      const { error: updateErr } = await supabaseAdmin
+        .from('venue_events')
+        .update({ public_id: newQr })
+        .eq('id', targetId);
+
+      if (updateErr) {
+        throw new Error(`event update failed: ${updateErr.message}`);
+      }
+
+      await supabaseAdmin.from('qr_revocations').insert({
+        target_type: 'event',
+        target_rink_id: null,
+        target_venue_id: null,
+        target_event_id: targetId,
+        old_qr_identifier: event.public_id,
+        new_qr_identifier: newQr,
+        reason,
+        revoked_by_user_id: revokedByUserId,
+      });
+
+      return {
+        targetType: 'event',
+        oldQr: event.public_id,
+        newQr,
+      };
+    }
+
+    throw new StampForbiddenError(`Unknown targetType: ${targetType}`);
+  }
+
+  private async writeScanEventForDispute(
+    stampId: string,
+    callerUserId: string,
+    reason: string | null
+  ): Promise<void> {
+    // Look up the stamp's qr_identifier so the audit row references the
+    // identifier, not the stamp id. This keeps scan_events and stamps
+    // queryable via the same key (qr_identifier) for fraud analysis.
+    const { data: stamp } = await supabaseAdmin
+      .from('stamps')
+      .select('target_rink_id, target_venue_id, target_event_id')
+      .eq('id', stampId)
+      .maybeSingle();
+
+    let qrIdentifier: string | null = null;
+    if (stamp?.target_rink_id) {
+      const { data: rink } = await supabaseAdmin
+        .from('rinks')
+        .select('qr_identifier')
+        .eq('id', stamp.target_rink_id)
+        .maybeSingle();
+      qrIdentifier = rink?.qr_identifier ?? null;
+    } else if (stamp?.target_venue_id) {
+      const { data: venue } = await supabaseAdmin
+        .from('venues')
+        .select('public_id')
+        .eq('id', stamp.target_venue_id)
+        .maybeSingle();
+      qrIdentifier = venue?.public_id ?? null;
+    } else if (stamp?.target_event_id) {
+      const { data: event } = await supabaseAdmin
+        .from('venue_events')
+        .select('public_id')
+        .eq('id', stamp.target_event_id)
+        .maybeSingle();
+      qrIdentifier = event?.public_id ?? null;
+    }
+
+    if (!qrIdentifier) {
+      // Stamp target has no qr_identifier (shouldn't happen for confirmed
+      // stamps, but degrade safely).
+      return;
+    }
+
+    await this.writeScanEvent(qrIdentifier, callerUserId, 'flagged_dispute', {
+      stamp_id: stampId,
+      reason,
+    });
   }
 }
 
