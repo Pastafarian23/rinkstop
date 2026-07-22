@@ -365,6 +365,24 @@ export interface DisputedStampRow {
 }
 
 /**
+ * WS3.5 PR3 — staff cross-target dispute row. Same shape as
+ * DisputedStampRow but adds targetId (so the UI can link to the public
+ * directory page) and uses a single targetDisplay + targetLocation string
+ * pair for compact rendering across mixed target types.
+ */
+export interface StaffDisputedStampRow {
+  stampId: string;
+  targetType: StampTargetType;
+  targetId: string;
+  targetDisplay: string;
+  targetLocation: string | null;
+  stamperDisplayName: string | null;
+  stamperRole: StampActorType;
+  stampedAt: string;
+  disputeReason: string | null;
+}
+
+/**
  * WS3.5 PR1 — notification kinds for the dispute workflow. Matches the
  * migration's CHECK extension on consumer_notifications.kind.
  *   stamp_disputed      → sent to the operator of the target

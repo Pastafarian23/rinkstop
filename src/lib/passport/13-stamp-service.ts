@@ -30,6 +30,7 @@ import type {
   CreateStampResponse,
   DisputedStampRow,
   ResolvedStampTarget,
+  StaffDisputedStampRow,
   StampActorType,
   StampContext,
   StampSource,
@@ -1399,6 +1400,247 @@ export class StampService {
         disputeFlaggedAt: r.stampedAt,
       };
     });
+  }
+
+  /**
+   * WS3.5 PR3 — List ALL disputed stamps across every target type, for
+   * the RinkStop staff dispute queue. Same authorization model as the
+   * adjudicate endpoint (staff-only); the operator queue method above is
+   * its target-scoped sibling.
+   *
+   * Returns rows spanning rinks/venues/events so staff can adjudicate
+   * any dispute from a single system-wide view. Optional targetType
+   * filter narrows the list to one target type. Each row carries the
+   * target id and a targetDisplay + targetLocation string pair so the
+   * UI can render mixed-target rows without extra roundtrips.
+   */
+  async listDisputedStampsForStaff(params: {
+    isStaff: boolean;
+    targetType?: 'rink' | 'venue' | 'event';
+    limit?: number;
+    offset?: number;
+  }): Promise<Array<StaffDisputedStampRow>> {
+    const { isStaff, targetType } = params;
+    const limit = Math.min(Math.max(params.limit ?? 100, 1), 500);
+    const offset = Math.max(params.offset ?? 0, 0);
+
+    if (!isStaff) {
+      throw new StampForbiddenError(
+        'System-wide dispute queue is staff-only'
+      );
+    }
+
+    // Pull disputed stamps. When a targetType filter is set, scope to the
+    // matching column; otherwise pull all disputed rows and let enrichment
+    // derive the type from the per-row target_*_id columns.
+    let query = supabaseAdmin
+      .from('stamps')
+      .select('*')
+      .eq('status', 'disputed')
+      .order('stamped_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (targetType === 'rink') {
+      query = query.not('target_rink_id', 'is', null);
+    } else if (targetType === 'venue') {
+      query = query.not('target_venue_id', 'is', null);
+    } else if (targetType === 'event') {
+      query = query.not('target_event_id', 'is', null);
+    }
+
+    const { data: stampRows, error: stampErr } = await query;
+    if (stampErr) {
+      console.error('[stamp-service] listDisputedStampsForStaff failed:', stampErr);
+      return [];
+    }
+    const rows = (stampRows ?? []).map(stampRowToRecord);
+    if (rows.length === 0) return [];
+
+    // Enrich with stamper display name from profiles (best-effort).
+    const stamperIds = Array.from(
+      new Set(
+        rows
+          .map((r) => r.subjectUserId ?? r.actorUserId)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      )
+    );
+    let stamperLookup = new Map<string, { displayName: string | null }>();
+    if (stamperIds.length > 0) {
+      const { data: profileRows } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, display_name')
+        .in('user_id', stamperIds);
+      stamperLookup = new Map(
+        (profileRows ?? []).map((p) => [
+          p.user_id as string,
+          { displayName: (p.display_name as string | null) ?? null },
+        ])
+      );
+    }
+
+    // Enrich with target context for each row in parallel. Three small
+    // lookups by id; safe because stamps rows are capped at 500/page.
+    const rinkIds = Array.from(
+      new Set(rows.map((r) => r.targetRinkId).filter((id): id is string => typeof id === 'string' && id.length > 0))
+    );
+    const venueIds = Array.from(
+      new Set(rows.map((r) => r.targetVenueId).filter((id): id is string => typeof id === 'string' && id.length > 0))
+    );
+    const eventIds = Array.from(
+      new Set(rows.map((r) => r.targetEventId).filter((id): id is string => typeof id === 'string' && id.length > 0))
+    );
+
+    const rinkLookup = new Map<string, { name: string; city: string | null; country: string | null }>();
+    if (rinkIds.length > 0) {
+      const { data: rinks } = await supabaseAdmin
+        .from('rinks')
+        .select('id, name, city, country')
+        .in('id', rinkIds);
+      for (const r of rinks ?? []) {
+        rinkLookup.set(r.id as string, {
+          name: r.name as string,
+          city: (r.city as string | null) ?? null,
+          country: (r.country as string | null) ?? null,
+        });
+      }
+    }
+
+    const venueLookup = new Map<string, { name: string; city: string | null; country: string | null }>();
+    if (venueIds.length > 0) {
+      const { data: venues } = await supabaseAdmin
+        .from('venues')
+        .select('id, name, city, country')
+        .in('id', venueIds);
+      for (const v of venues ?? []) {
+        venueLookup.set(v.id as string, {
+          name: v.name as string,
+          city: (v.city as string | null) ?? null,
+          country: (v.country as string | null) ?? null,
+        });
+      }
+    }
+
+    const eventLookup = new Map<string, { name: string; city: string | null; country: string | null }>();
+    if (eventIds.length > 0) {
+      const { data: events } = await supabaseAdmin
+        .from('venue_events')
+        .select('id, name, parent_rink_id, parent_venue_id')
+        .in('id', eventIds);
+      // For events, derive city/country from the parent rink or venue.
+      const parentRinkIds = Array.from(
+        new Set(
+          (events ?? [])
+            .map((e) => e.parent_rink_id as string | null)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+        )
+      );
+      const parentVenueIds = Array.from(
+        new Set(
+          (events ?? [])
+            .map((e) => e.parent_venue_id as string | null)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+        )
+      );
+      const parentRinkMap = new Map<string, { name: string; city: string | null; country: string | null }>();
+      if (parentRinkIds.length > 0) {
+        const { data: parents } = await supabaseAdmin
+          .from('rinks')
+          .select('id, name, city, country')
+          .in('id', parentRinkIds);
+        for (const p of parents ?? []) {
+          parentRinkMap.set(p.id as string, {
+            name: p.name as string,
+            city: (p.city as string | null) ?? null,
+            country: (p.country as string | null) ?? null,
+          });
+        }
+      }
+      const parentVenueMap = new Map<string, { name: string; city: string | null; country: string | null }>();
+      if (parentVenueIds.length > 0) {
+        const { data: parents } = await supabaseAdmin
+          .from('venues')
+          .select('id, name, city, country')
+          .in('id', parentVenueIds);
+        for (const p of parents ?? []) {
+          parentVenueMap.set(p.id as string, {
+            name: p.name as string,
+            city: (p.city as string | null) ?? null,
+            country: (p.country as string | null) ?? null,
+          });
+        }
+      }
+      for (const e of events ?? []) {
+        const parent = e.parent_rink_id
+          ? parentRinkMap.get(e.parent_rink_id as string)
+          : e.parent_venue_id
+            ? parentVenueMap.get(e.parent_venue_id as string)
+            : undefined;
+        eventLookup.set(e.id as string, {
+          name: (e.name as string | null) ?? parent?.name ?? 'Unknown event',
+          city: parent?.city ?? null,
+          country: parent?.country ?? null,
+        });
+      }
+    }
+
+    // Pull dispute reason from scan_events (best-effort, batched).
+    const reasonByStamp = new Map<string, string | null>();
+    const { data: scanEvents } = await supabaseAdmin
+      .from('scan_events')
+      .select('details, created_at')
+      .eq('outcome', 'flagged_dispute')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    const stampIdSet = new Set(rows.map((r) => r.id));
+    for (const se of scanEvents ?? []) {
+      const d = se.details as { stamp_id?: string; reason?: string } | null;
+      if (d?.stamp_id && stampIdSet.has(d.stamp_id) && !reasonByStamp.has(d.stamp_id)) {
+        reasonByStamp.set(d.stamp_id, d.reason ?? null);
+      }
+    }
+
+    const formatLocation = (city: string | null, country: string | null): string | null => {
+      if (city && country) return `${city}, ${country}`;
+      return city ?? country ?? null;
+    };
+
+    return rows
+      .map((r): StaffDisputedStampRow | null => {
+        const rowTargetType: 'rink' | 'venue' | 'event' | null = r.targetRinkId
+          ? 'rink'
+          : r.targetVenueId
+            ? 'venue'
+            : r.targetEventId
+              ? 'event'
+              : null;
+        if (!rowTargetType) return null;
+        const targetId =
+          rowTargetType === 'rink'
+            ? (r.targetRinkId as string)
+            : rowTargetType === 'venue'
+              ? (r.targetVenueId as string)
+              : (r.targetEventId as string);
+        const targetInfo =
+          rowTargetType === 'rink'
+            ? rinkLookup.get(targetId)
+            : rowTargetType === 'venue'
+              ? venueLookup.get(targetId)
+              : eventLookup.get(targetId);
+        const stamperId = r.subjectUserId ?? r.actorUserId;
+        const stamper = stamperId ? stamperLookup.get(stamperId) : undefined;
+        return {
+          stampId: r.id,
+          targetType: rowTargetType,
+          targetId,
+          targetDisplay: targetInfo?.name ?? 'Unknown target',
+          targetLocation: formatLocation(targetInfo?.city ?? null, targetInfo?.country ?? null),
+          stamperDisplayName: stamper?.displayName ?? null,
+          stamperRole: r.actorType,
+          stampedAt: r.stampedAt,
+          disputeReason: reasonByStamp.get(r.id) ?? null,
+        };
+      })
+      .filter((row): row is StaffDisputedStampRow => row !== null);
   }
 
   /**
