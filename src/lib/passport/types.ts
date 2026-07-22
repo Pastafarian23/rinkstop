@@ -453,3 +453,97 @@ export interface CreateStampResponse {
  * and chunk 3 (per-type dashboards) extend without changing this type.
  */
 export type { AuthorizationContext } from './14-authorization';
+
+// =============================================================================
+// WS4 Chunk 2 — Referee domain types
+// =============================================================================
+
+/** Status of a referee_game_assignments row. */
+export type RefereeAssignmentStatus =
+  | 'assigned'
+  | 'confirmed'
+  | 'declined'
+  | 'completed'
+  | 'cancelled';
+
+/** Role the referee is assigned for. */
+export type RefereeAssignmentRole = 'head_ref' | 'linesman' | 'standby';
+
+/** Status of a referee_attendance row. */
+export type RefereeAttendanceStatus =
+  | 'pending'
+  | 'present'
+  | 'absent'
+  | 'no_show'
+  | 'completed';
+
+/** Status of a referee_payments row. */
+export type RefereePaymentStatus =
+  | 'pending'
+  | 'owed'
+  | 'paid'
+  | 'waived'
+  | 'disputed';
+
+/** A referee_game_assignments row. */
+export interface RefereeAssignment {
+  id: string;
+  refereeUserId: string;
+  venueEventId: string;
+  role: RefereeAssignmentRole;
+  status: RefereeAssignmentStatus;
+  assignedAt: string;
+  assignedByUserId: string | null;
+  confirmedAt: string | null;
+  declinedAt: string | null;
+  declineReason: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A referee_attendance row. */
+export interface RefereeAttendance {
+  id: string;
+  refereeUserId: string;
+  assignmentId: string;
+  attendanceStatus: RefereeAttendanceStatus;
+  checkedInAt: string | null;
+  checkedOutAt: string | null;
+  notes: string | null;
+  recordedByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A referee_payments row. */
+export interface RefereePayment {
+  id: string;
+  refereeUserId: string;
+  assignmentId: string;
+  amount: number;
+  currency: string;
+  status: RefereePaymentStatus;
+  paidAt: string | null;
+  paidVia: string | null;
+  referenceNumber: string | null;
+  receiptUrl: string | null;
+  notes: string | null;
+  createdByUserId: string | null;
+  markedPaidByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Denormalized view used by /dashboard/referee — an assignment enriched
+ * with event metadata (name, starts_at, parent rink/venue) so the UI can
+ * render a single query without joining client-side.
+ */
+export interface RefereeAssignmentWithEvent extends RefereeAssignment {
+  eventName: string;
+  eventStartsAt: string;
+  eventEndsAt: string | null;
+  parentName: string | null;
+  parentType: 'rink' | 'venue' | null;
+}
