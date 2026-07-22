@@ -43,41 +43,25 @@ const PREFIX = 'RS1';
 const ENTROPY_BYTES = 10; // 80 bits → 16 Base32 chars
 
 /**
- * Base32 alphabet excluding confusing characters: 0, O, 1, I.
- * Includes: A-Z (minus I, O), 2-7.
- * Total: 26 letters - 2 (I, O) + 6 digits = 30 characters... we want 32.
- *
- * Final alphabet (Crockford-style):
- *   A B C D E F G H J K L M N P Q R S T V W X Y Z (23)
- *   2 3 4 5 6 7 (6)
- *   Total: 29... let me use a true 32-char alphabet.
- *
- * Using RFC 4648 Base32 with confused chars replaced:
- *   A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 2 3 4 5 6 7
- *
- * To exclude I and O (visually similar to 1 and 0):
- *   A B C D E F G H J K L M N P Q R S T U V W X Y Z (24, no I, no O)
- *   2 3 4 5 6 7 (6)
- *   Total: 30... need 32.
- *
- * Solution: use 30-char alphabet with 80-bit entropy. 10 bytes / log2(30) ≈ 16.09 chars.
- * We'll emit exactly 16 chars after encoding.
+ * Generation alphabet (Crockford-style, 32 chars): 24 letters (A-Z minus
+ * I and O) + 8 digits (2-9). Excludes 0, 1, I, O to avoid visual confusion
+ * with O, I, l, 0 when reading IDs off a printed card. Newly minted IDs
+ * always use this alphabet.
  */
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 30 chars, excludes I/O/0/1
-// Wait: '2', '3', '4', '5', '6', '7', '8', '9' — that's 8 digits.
-// Plus 24 letters (no I, no O).
-// Total: 32 chars. Good.
-
 const ALPHABET_REFINED = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 chars
 const ENCODED_CHARS = 16; // 80 bits / 5 bits per char = exactly 16 chars
 
-// Must match ALPHABET above (32 chars: A-Z minus I/O, plus 2-9 minus 0/1)
-// Accepts suffixes of length ≥ 12 chars. The generator emits exactly 16,
-// but legacy seed rows (notably RS1-PHASE4PLAYER01 = 18 chars) and future
-// format variations must still be findable. Existence is enforced by the
-// database primary key; this regex is just a sanity check to avoid hitting
-// the DB with obviously malformed input.
-const VALID_FORMAT_REGEX = /^RS1-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{12,32}$/i;
+// Validation alphabet is BROADER than the generation alphabet. Generated
+// IDs (RS1-{16 chars}) come from ALPHABET_REFINED below which excludes 0,
+// 1, I, O to avoid visual confusion. But legacy / seed rows in production
+// may contain 0 and 1 (e.g. RS1-PHASE4PLAYER01 = 14 chars with a literal
+// '0'). The lookup service must accept these so the public route can
+// render them. Existence is enforced by the database primary key; this
+// regex is just a sanity check.
+//
+// Validation alphabet: A-Z (all 26, including I and O) + 0-9 (all 10).
+// Accepts suffixes of length 12-32 chars.
+const VALID_FORMAT_REGEX = /^RS1-[A-Z0-9]{12,32}$/i;
 
 /**
  * Base32 encode bytes using our 32-char alphabet.
