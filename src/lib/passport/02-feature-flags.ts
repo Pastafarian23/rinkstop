@@ -80,6 +80,18 @@ export const PASSPORT_FLAGS = {
   // Defaults false — production stays unchanged until Arnel enables it
   // and verifies chunk 1's resolver on real dispute traffic.
   STAMPS_PERMISSIONS_V2_ENABLED: false,
+
+  // WS4 Chunk 2 — Referee tools.
+  //
+  // Gates /dashboard/referee, /dashboard/referee/games/[assignmentId],
+  // /dashboard/referee/payments, and the corresponding API routes.
+  // Also gates the WS4 PR2 referee tables (referee_game_assignments,
+  // referee_attendance, referee_payments) for application code; the
+  // tables themselves ship unconditionally (data, not behavior).
+  //
+  // Requires PASSPORT_ENABLED (per Workstream 1 Rule 5).
+  // Defaults false — production stays unchanged until Arnel enables it.
+  REFEREE_TOOLS_ENABLED: false,
 } as const;
 
 export type PassportFlag = keyof typeof PASSPORT_FLAGS;
@@ -236,4 +248,20 @@ export function isStampsPermissionsV2Enabled(): boolean {
     isStampsEnabled() &&
     isPassportFlagEnabled('STAMPS_PERMISSIONS_V2_ENABLED')
   );
+}
+
+/**
+ * WS4 Chunk 2 — Referee tools gate.
+ *
+ * Gates /dashboard/referee (calendar + recent attendance + payment summary),
+ * /dashboard/referee/games/[assignmentId] (assignment detail with check-in/out),
+ * /dashboard/referee/payments (payment ledger), and the corresponding API
+ * routes.
+ *
+ * Requires PASSPORT_ENABLED (the referee dashboard is a Passport feature
+ * surfacing the user's officiating history). Per Workstream 1 Rule 5,
+ * defaults false — production stays unchanged until Arnel enables it.
+ */
+export function isRefereeToolsEnabled(): boolean {
+  return isPassportEnabled() && isPassportFlagEnabled('REFEREE_TOOLS_ENABLED');
 }

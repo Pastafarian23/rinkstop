@@ -61,6 +61,17 @@ export interface AuthorizationContext {
   /** Referee self-identification. False unless `referee` in profile_account_types. */
   isReferee: boolean;
 
+  /**
+   * WS4 Chunk 2 — venue_event ids this user is assigned to officiate.
+   * Empty for non-referees. Used by /dashboard/referee to filter the
+   * referee's calendar and games list without a second roundtrip.
+   * Populated from public.referee_game_assignments regardless of
+   * REFEREE_TOOLS_ENABLED (resolver reads don't depend on the flag).
+   */
+  referee: {
+    assignedEventIds: string[];
+  };
+
   /** Parent — has managed_profiles rows where they are the manager. */
   parent: {
     managedUserIds: string[];
@@ -78,18 +89,31 @@ export interface AuthorizationContext {
 export async function getAuthorizationContext(
   userId: string
 ): Promise<AuthorizationContext> {
-  // Parallel fetches: profile role, account types, approved rink claims,
-  // managed profiles. League/team/coach fields stay empty for chunk 1.
-  const [profileRes, accountTypesRes, rinkClaimsRes, managedRes] = await Promise.all([
+  // Step 1: peek at account types so we know whether to fetch referee
+  // assignments (saves a query for non-referees).
+  const { data: accountTypesData } = await supabaseAdmin
+    .from('profile_account_types')
+    .select('account_type')
+    .eq('user_id', userId);
+  const accountTypes = new Set(
+    (accountTypesData ?? []).map((r) => r.account_type as string)
+  );
+  const isRefereeFlag = accountTypes.has('referee');
+
+  // Parallel fetches: profile role, rink claims, managed profiles, and
+  // (if referee) assigned event ids. League/team/coach fields stay empty
+  // for chunk 1; chunk 3 wires those up.
+  const [
+    profileRes,
+    rinkClaimsRes,
+    managedRes,
+    refereeEventRes,
+  ] = await Promise.all([
     supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('user_id', userId)
       .maybeSingle(),
-    supabaseAdmin
-      .from('profile_account_types')
-      .select('account_type')
-      .eq('user_id', userId),
     supabaseAdmin
       .from('claims')
       .select('entity_id')
@@ -100,15 +124,18 @@ export async function getAuthorizationContext(
       .from('managed_profiles')
       .select('id')
       .eq('manager_user_id', userId),
+    isRefereeFlag
+      ? supabaseAdmin
+          .from('referee_game_assignments')
+          .select('venue_event_id')
+          .eq('referee_user_id', userId)
+      : Promise.resolve({ data: [] as Array<{ venue_event_id: string }> | null, error: null }),
   ]);
 
   const role = profileRes.data?.role as string | undefined;
   const isStaff = role === 'admin' || role === 'super_admin';
 
-  const accountTypes = new Set(
-    (accountTypesRes.data ?? []).map((r) => r.account_type as string)
-  );
-  const isReferee = accountTypes.has('referee');
+  const isReferee = isRefereeFlag;
 
   const rinkIds = (rinkClaimsRes.data ?? [])
     .map((r) => r.entity_id as string)
@@ -116,6 +143,10 @@ export async function getAuthorizationContext(
 
   const managedUserIds = (managedRes.data ?? [])
     .map((r) => r.id as string)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+  const assignedEventIds = (refereeEventRes.data ?? [])
+    .map((r) => r.venue_event_id as string)
     .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
   const hasAnyOperatorGrant =
@@ -129,6 +160,7 @@ export async function getAuthorizationContext(
     teamAdmin: { teamIds: [] },     // chunk 3
     coach: { teamIds: [] },         // chunk 2
     isReferee,
+    referee: { assignedEventIds },
     parent: { managedUserIds },
     hasAnyOperatorGrant,
   };

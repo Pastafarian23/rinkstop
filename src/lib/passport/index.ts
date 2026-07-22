@@ -40,10 +40,27 @@ export {
   isStampsEnabled,
   isStampsAdminEnabled,
   isStampsFamilyPickerEnabled,
+  isStampsPermissionsV2Enabled,
+  isRefereeToolsEnabled,
   isPassportFlagEnabled,
   PASSPORT_FLAGS,
   type PassportFlag,
 } from './02-feature-flags';
+
+// Permissions resolver (WS4 PR1+)
+export {
+  getAuthorizationContext,
+  isPermissionsV2Enabled,
+  canAdjudicateOn,
+} from './14-authorization';
+
+// Referee service (WS4 PR2)
+export {
+  refereeService,
+  RefereeService,
+  RefereeForbiddenError,
+  RefereeNotFoundError,
+} from './15-referee-service';
 
 // Stamp service (WS3 PR2)
 export {
