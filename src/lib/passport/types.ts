@@ -438,3 +438,18 @@ export interface CreateStampResponse {
   visibility: StampVisibility;
   alreadyStampedToday?: boolean; // true if this is a duplicate (rate limit)
 }
+
+// =============================================================================
+// WS4 Chunk 1 — Account-type-aware permissions
+// =============================================================================
+
+/**
+ * Re-export of AuthorizationContext from the resolver. Lives in
+ * 14-authorization.ts; re-exported here so consumers can import from
+ * one place (project convention is `from '@/lib/passport/types'`).
+ *
+ * Chunk 1 wires staff + rink_operator; league/team/coach/parent scopes
+ * are exposed but currently return empty arrays. Chunk 2 (referee tools)
+ * and chunk 3 (per-type dashboards) extend without changing this type.
+ */
+export type { AuthorizationContext } from './14-authorization';

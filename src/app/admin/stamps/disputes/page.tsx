@@ -73,6 +73,10 @@ export default async function AdminDisputesPage({
 
   const disputes = await stampService.listDisputedStampsForStaff({
     isStaff: true,
+    // WS4 Chunk 1 — pass callerUserId so the service can re-resolve
+    // permissions when STAMPS_PERMISSIONS_V2_ENABLED is on. Today (flag
+    // off) the resolver is not consulted and isStaff=true is honored.
+    callerUserId: admin.userId,
     targetType: filterType,
     limit,
     offset,
