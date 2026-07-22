@@ -47,6 +47,14 @@ export const PASSPORT_FLAGS = {
   // attendance section. Defaults off; per Workstream 1 Rule 5, production
   // behavior stays unchanged until flag is enabled.
   STAMPS_ENABLED: false,
+
+  // WS3.5 PR1 — Dispute adjudication UI. Gates /dashboard/manage/.../disputes
+  // (operator queue), /admin/stamps/disputes (staff queue), and the POST
+  // adjudication endpoints. Requires STAMPS_ENABLED too. Per Workstream 1
+  // Rule 5, defaults off; the underlying schema (rejected_at, rejected_by_*
+  // columns; rejected status value; staff/operator RLS policies) ships with
+  // this PR — the flag gates behavior, not data.
+  STAMPS_ADMIN_ENABLED: false,
 } as const;
 
 export type PassportFlag = keyof typeof PASSPORT_FLAGS;
@@ -142,5 +150,25 @@ export function isPassportAssetsApiEnabled(): boolean {
 export function isStampsEnabled(): boolean {
   return (
     isPassportEnabled() && isPassportFlagEnabled('STAMPS_ENABLED')
+  );
+}
+
+/**
+ * WS3.5 PR1 — Dispute adjudication gate.
+ *
+ * Gates /dashboard/manage/.../disputes (operator queue),
+ * /admin/stamps/disputes (staff queue), and the POST adjudication endpoints.
+ * Requires isStampsEnabled() too — dispute workflow is meaningless without
+ * the stamp workflow itself.
+ *
+ * Per WS3.5 spec: this is the load-bearing addition behind WS3.5 PR1.
+ * Family Hub picker uses a separate flag (STAMPS_FAMILY_PICKER_ENABLED,
+ * added in PR5).
+ *
+ * Default false — production stays unchanged until this is enabled.
+ */
+export function isStampsAdminEnabled(): boolean {
+  return (
+    isStampsEnabled() && isPassportFlagEnabled('STAMPS_ADMIN_ENABLED')
   );
 }
