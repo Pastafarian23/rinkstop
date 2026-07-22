@@ -543,6 +543,143 @@ export class StampService {
     }
   }
 
+  /**
+   * WS3.5 PR4 — Notify the operator of a target that one of their stamps
+   * has been disputed. Fires from disputeStamp() after the stamp row
+   * moves to status='disputed'.
+   *
+   * Routing:
+   *   - rink target → all users with an approved rink claim on the rink
+   *     (one notification per operator, idempotent per (operator, stamp)).
+   *   - venue/event target → all users with profiles.role='admin'
+   *     (RinkStop staff; venue dispute access is staff-only per
+   *     WS3.5 PR1 RLS — venues are admin-curated with no claims table
+   *     for v1).
+   *
+   * Idempotency: source_key includes the recipient user id so the same
+   * operator + same stamp = one notification (UNIQUE on
+   * (user_id, source_key, kind)). Re-running disputeStamp for an
+   * already-disputed stamp short-circuits before reaching this method
+   * (status guard in disputeStamp), so we don't double-fire here either.
+   *
+   * Best-effort: a failure to insert any single recipient's notification
+   * is logged but does not throw — the dispute itself succeeded.
+   */
+  private async notifyOperatorOnDispute(params: {
+    stampId: string;
+    targetType: StampTargetType;
+    targetRinkId: string | null;
+    targetVenueId: string | null;
+    targetEventId: string | null;
+    subjectUserId: string;
+    reason: string | null;
+  }): Promise<void> {
+    // Resolve human-readable target name + recipient user ids.
+    let targetName: string | null = null;
+    let recipientIds: string[] = [];
+
+    if (params.targetType === 'rink' && params.targetRinkId) {
+      const { data: rink } = await supabaseAdmin
+        .from('rinks')
+        .select('name')
+        .eq('id', params.targetRinkId)
+        .maybeSingle();
+      targetName = (rink?.name as string | null) ?? null;
+
+      const { data: claims } = await supabaseAdmin
+        .from('claims')
+        .select('user_id')
+        .eq('entity_id', params.targetRinkId)
+        .eq('claim_type', 'rink')
+        .eq('status', 'approved');
+      recipientIds = (claims ?? [])
+        .map((c) => c.user_id as string)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    } else if (params.targetType === 'venue' || params.targetType === 'event') {
+      // Venues/events: admin-curated, no public.claims. Route to all staff
+      // (Clerk role='admin') — same authorization the WS3.5 PR1 RLS uses.
+      if (params.targetType === 'venue' && params.targetVenueId) {
+        const { data: venue } = await supabaseAdmin
+          .from('venues')
+          .select('name')
+          .eq('id', params.targetVenueId)
+          .maybeSingle();
+        targetName = (venue?.name as string | null) ?? null;
+      } else if (params.targetType === 'event' && params.targetEventId) {
+        const { data: event } = await supabaseAdmin
+          .from('venue_events')
+          .select('name')
+          .eq('id', params.targetEventId)
+          .maybeSingle();
+        targetName = (event?.name as string | null) ?? null;
+      }
+
+      const { data: staff } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .eq('role', 'admin');
+      recipientIds = (staff ?? [])
+        .map((p) => p.user_id as string)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    }
+
+    if (recipientIds.length === 0) {
+      // No operator / staff to notify (rink without approved claim, or
+      // venue/event with no admins). Quietly no-op; the dispute row is
+      // still in the public scan_events audit trail and will surface in
+      // any future operator-onboarding.
+      return;
+    }
+
+    const reasonSuffix = params.reason ? ` Reason: \u201C${params.reason.slice(0, 200)}\u201D.` : '';
+    const titles = {
+      rink: 'A stamp at your rink was disputed',
+      venue: 'A stamp at your venue was disputed',
+      event: 'A stamp at your event was disputed',
+    };
+    const targetLabel = targetName ?? (params.targetType === 'rink' ? 'your rink' : params.targetType === 'venue' ? 'your venue' : 'your event');
+    const body = `A holder disputed a stamp at ${targetLabel}.${reasonSuffix} Review the dispute queue to uphold or overturn.`;
+    const title = titles[params.targetType];
+
+    const rows = recipientIds.map((userId) => ({
+      user_id: userId,
+      kind: 'stamp_disputed' as const,
+      source_key: `stamp:${params.stampId}:operator:${userId}`,
+      title,
+      body,
+      metadata: {
+        stamp_id: params.stampId,
+        target_type: params.targetType,
+        target_name: targetName,
+        target_id:
+          params.targetType === 'rink'
+            ? params.targetRinkId
+            : params.targetType === 'venue'
+              ? params.targetVenueId
+              : params.targetEventId,
+        subject_user_id: params.subjectUserId,
+        dispute_reason: params.reason,
+        queue_url:
+          params.targetType === 'rink'
+            ? `/dashboard/manage/rink/${params.targetRinkId}/disputes`
+            : '/admin/stamps/disputes',
+      },
+    }));
+
+    const { error } = await supabaseAdmin
+      .from('consumer_notifications')
+      .insert(rows);
+
+    // ON CONFLICT DO NOTHING via UNIQUE (user_id, source_key, kind).
+    // Supabase returns 23505 on duplicate — treat as success.
+    if (error && error.code !== '23505') {
+      console.error(
+        '[stamp-service] notifyOperatorOnDispute insert failed:',
+        error
+      );
+    }
+  }
+
   private async writeScanEvent(
     qrIdentifier: string,
     actorUserId: string | null,
@@ -957,7 +1094,7 @@ export class StampService {
   ): Promise<{ stampId: string; status: StampStatus }> {
     const { data: stamp, error } = await supabaseAdmin
       .from('stamps')
-      .select('id, subject_user_id, actor_user_id, status')
+      .select('id, subject_user_id, actor_user_id, status, target_type, target_rink_id, target_venue_id, target_event_id')
       .eq('id', stampId)
       .maybeSingle();
 
@@ -1001,6 +1138,27 @@ export class StampService {
       callerUserId,
       reason ?? null
     );
+
+    // WS3.5 PR4 — notify the operator of the target that they have a
+    // dispute to review. Best-effort (a notification failure does not
+    // roll back the dispute). For rink targets, notify every user with
+    // an approved claim on the rink. For venue/event targets, venues
+    // are admin-curated in WS3 v1 (no public.claims row), so the
+    // WS3.5 PR1 RLS policy delegates venue/event dispute access to
+    // staff only — we notify staff (Clerk role='admin') for those.
+    try {
+      await this.notifyOperatorOnDispute({
+        stampId,
+        targetType: stamp.target_type as StampTargetType,
+        targetRinkId: (stamp.target_rink_id as string | null) ?? null,
+        targetVenueId: (stamp.target_venue_id as string | null) ?? null,
+        targetEventId: (stamp.target_event_id as string | null) ?? null,
+        subjectUserId: callerUserId,
+        reason: reason ?? null,
+      });
+    } catch (e) {
+      console.error('[stamp-service] notifyOperatorOnDispute threw:', e);
+    }
 
     return { stampId, status: 'disputed' };
   }
@@ -1401,7 +1559,6 @@ export class StampService {
       };
     });
   }
-
   /**
    * WS3.5 PR3 — List ALL disputed stamps across every target type, for
    * the RinkStop staff dispute queue. Same authorization model as the
@@ -1804,13 +1961,14 @@ export class StampService {
   }
 
   /**
-   * WS3.5 PR2 — Best-effort notification writer for adjudication outcomes.
-   * Same pattern as notifyStampReceived (private method already on this
-   * class — same idempotency via UNIQUE (user_id, source_key, kind)).
+   * WS3.5 PR4 — Notification writer for adjudication outcomes. Same
+   * pattern as notifyStampReceived (idempotent via UNIQUE
+   * (user_id, source_key, kind)). PR2 shipped a placeholder version with
+   * generic copy; PR4 ships the production templates with target
+   * context and a link back to the dashboard.
    *
-   * Per spec: title and body are generic placeholders. Real UX copy lands
-   * when PR4 (notifications PR) ships with full templates. Today this just
-   * creates the inbox row so the operator/stamper surfaces see *something*.
+   * Best-effort: a failure to insert does not throw — the adjudication
+   * itself succeeded. Logged for forensics.
    */
   private async notifyStamperOnAdjudication(params: {
     recipientUserId: string;
@@ -1818,13 +1976,14 @@ export class StampService {
     stampId: string;
     targetName: string | null;
   }): Promise<void> {
+    const targetLabel = params.targetName ?? 'the venue';
     const titles = {
-      dispute_upheld: 'A stamp you received was removed',
-      dispute_overturned: 'A stamp you received was restored',
+      dispute_upheld: `Stamp at ${targetLabel} removed`,
+      dispute_overturned: `Stamp at ${targetLabel} restored`,
     };
     const bodies = {
-      dispute_upheld: `Your stamp at ${params.targetName ?? 'the venue'} was disputed and removed.`,
-      dispute_overturned: `Your stamp at ${params.targetName ?? 'the venue'} was disputed but the dispute was overturned; the stamp counts.`,
+      dispute_upheld: `A stamp you received at ${targetLabel} was disputed and the dispute was upheld by the operator. The stamp no longer counts on your Passport.`,
+      dispute_overturned: `A stamp you received at ${targetLabel} was disputed, but the operator overturned the dispute. The stamp counts on your Passport.`,
     };
 
     try {
@@ -1839,6 +1998,8 @@ export class StampService {
           metadata: {
             stamp_id: params.stampId,
             kind: params.kind,
+            target_name: params.targetName,
+            dashboard_url: '/dashboard/passport',
           },
         });
       // ON CONFLICT DO NOTHING via UNIQUE constraint; 23505 = success.
