@@ -83,6 +83,18 @@ export async function GET(
     return new NextResponse('Not Found', { status: 404 });
   }
 
+  // qr_identifier is a UUID column in Postgres. The repository's
+  // findByQrIdentifier would otherwise bubble up a 500 ("invalid input
+  // syntax for type uuid") for any malformed identifier. Validate the
+  // format up front so we treat garbage input the same as "not found"
+  // — same response as a UUID that exists but belongs to a deactivated
+  // Passport. Defense in depth + avoids leaking DB error detail.
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(qrIdentifier)) {
+    return deactivatedPage(qrIdentifier);
+  }
+
   const record = await passportRepository.findByQrIdentifier(qrIdentifier);
 
   if (!record) {
