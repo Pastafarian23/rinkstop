@@ -107,12 +107,13 @@ WHERE slug IN (
   AND verification_tier = 'unverified';
 
 -- 2b. Approved rink claims = 'claimed'
+-- Note: claims.entity_id is TEXT, rinks.id is UUID — explicit cast required.
 UPDATE public.rinks r
 SET verification_tier = 'claimed'
 WHERE verification_tier = 'unverified'
   AND EXISTS (
     SELECT 1 FROM public.claims c
-    WHERE c.entity_id = r.id
+    WHERE c.entity_id = r.id::text
       AND c.claim_type = 'rink'
       AND c.status = 'approved'
   );
@@ -312,18 +313,21 @@ CREATE INDEX IF NOT EXISTS stamps_status_idx
 -- Partial unique indexes: one stamp per (target_*, actor_*, day) at most.
 -- Three indexes, one per target column, each scoped via WHERE so the
 -- NULL/non-null pattern doesn't cause conflicts across the three target
--- columns. Day boundary uses date_trunc('day', stamped_at) so all stamps
--- on the same calendar day for the same (target, actor) collide.
+-- columns. Day boundary uses date_trunc('day', stamped_at AT TIME ZONE 'UTC')
+-- — wrapping in AT TIME ZONE 'UTC' makes the cast to timestamp WITHOUT time
+-- zone, which is the only input type for which date_trunc is IMMUTABLE
+-- (date_trunc on timestamptz directly is STABLE, so it can't be used in
+-- an index expression). Dedupe basis is UTC calendar day.
 CREATE UNIQUE INDEX IF NOT EXISTS stamps_dedup_rink
-  ON public.stamps (target_rink_id, actor_user_id, date_trunc('day', stamped_at))
+  ON public.stamps (target_rink_id, actor_user_id, date_trunc('day', stamped_at AT TIME ZONE 'UTC'))
   WHERE target_rink_id IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS stamps_dedup_venue
-  ON public.stamps (target_venue_id, actor_user_id, date_trunc('day', stamped_at))
+  ON public.stamps (target_venue_id, actor_user_id, date_trunc('day', stamped_at AT TIME ZONE 'UTC'))
   WHERE target_venue_id IS NOT NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS stamps_dedup_event
-  ON public.stamps (target_event_id, actor_user_id, date_trunc('day', stamped_at))
+  ON public.stamps (target_event_id, actor_user_id, date_trunc('day', stamped_at AT TIME ZONE 'UTC'))
   WHERE target_event_id IS NOT NULL;
 
 -- ============================================================
