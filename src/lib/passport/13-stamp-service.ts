@@ -39,6 +39,11 @@ import type {
   StampStatus,
   StampRecord,
 } from './types';
+import {
+  canAdjudicateOn,
+  getAuthorizationContext,
+  isPermissionsV2Enabled,
+} from './14-authorization';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1579,9 +1584,13 @@ export class StampService {
     limit?: number;
     offset?: number;
   }): Promise<Array<DisputedStampRow>> {
-    const { callerUserId, isStaff, targetType, targetId } = params;
+    const { callerUserId, isStaff: legacyIsStaff, targetType, targetId } = params;
     const limit = Math.min(Math.max(params.limit ?? 50, 1), 200);
     const offset = Math.max(params.offset ?? 0, 0);
+
+    // WS4 Chunk 1 — when the V2 flag is on, recompute isStaff from the
+    // resolver. When off, use the caller-supplied value (legacy path).
+    const isStaff = await this.resolveEffectiveIsStaff(callerUserId, legacyIsStaff);
 
     // Authorization: rink targets require an approved claim. Venues/events
     // require staff. Throws StampForbiddenError if not authorized.
@@ -1794,13 +1803,26 @@ export class StampService {
    */
   async listDisputedStampsForStaff(params: {
     isStaff: boolean;
+    /**
+     * WS4 Chunk 1 — the staff user's internal id. When the V2 flag is on
+     * AND this is provided, the service recomputes isStaff from the
+     * resolver. When absent or flag is off, uses the `isStaff` literal.
+     */
+    callerUserId?: string;
     targetType?: 'rink' | 'venue' | 'event';
     limit?: number;
     offset?: number;
   }): Promise<Array<StaffDisputedStampRow>> {
-    const { isStaff, targetType } = params;
+    const { isStaff: legacyIsStaff, callerUserId, targetType } = params;
     const limit = Math.min(Math.max(params.limit ?? 100, 1), 500);
     const offset = Math.max(params.offset ?? 0, 0);
+
+    // WS4 Chunk 1 — re-resolve isStaff when the V2 flag is on AND we have
+    // a caller userId. Otherwise use the literal. Today's behavior is
+    // preserved when the flag is off.
+    const isStaff = callerUserId
+      ? await this.resolveEffectiveIsStaff(callerUserId, legacyIsStaff)
+      : legacyIsStaff;
 
     if (!isStaff) {
       throw new StampForbiddenError(
@@ -2060,8 +2082,13 @@ export class StampService {
     status: StampStatus;
     action: 'uphold' | 'overturn';
   }> {
-    const { callerUserId, isStaff, stampId, action } = params;
+    const { callerUserId, isStaff: legacyIsStaff, stampId, action } = params;
     const reason = params.reason?.slice(0, 1000) ?? null;
+
+    // WS4 Chunk 1 — re-resolve isStaff when the V2 flag is on. Legacy
+    // callers passing isStaff=false (rink operators) and isStaff=true
+    // (staff) still work exactly as before when the flag is off.
+    const isStaff = await this.resolveEffectiveIsStaff(callerUserId, legacyIsStaff);
 
     // Load stamp + its target columns.
     const { data: stamp, error: stampErr } = await supabaseAdmin
@@ -2375,6 +2402,31 @@ export class StampService {
       stamp_id: stampId,
       reason,
     });
+  }
+
+  /**
+   * WS4 Chunk 1 — Resolve the effective `isStaff` for this caller.
+   *
+   * When STAMPS_PERMISSIONS_V2_ENABLED is off, returns the caller-supplied
+   * `isStaff` unchanged (legacy behavior). When on, queries the
+   * AuthorizationContext and returns its `isStaff` field, ignoring the
+   * caller-supplied value.
+   *
+   * This makes chunk 1 strictly additive: when the flag is off, no
+   * resolver query happens and behavior matches today bit-for-bit. When
+   * the flag is on, the service uses the same staff-or-claim-gated
+   * decision the legacy code inlined (since chunk 1 only resolves staff
+   * + rink_operator; league/team/coach scopes stay empty until chunks 2/3).
+   */
+  private async resolveEffectiveIsStaff(
+    callerUserId: string,
+    legacyIsStaff: boolean
+  ): Promise<boolean> {
+    if (!isPermissionsV2Enabled()) {
+      return legacyIsStaff;
+    }
+    const authz = await getAuthorizationContext(callerUserId);
+    return authz.isStaff;
   }
 }
 

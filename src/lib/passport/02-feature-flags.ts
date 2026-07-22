@@ -63,6 +63,23 @@ export const PASSPORT_FLAGS = {
   // Passport behavior (the current WS3 PR2 path). Requires STAMPS_ENABLED.
   // Defaults false — production stays unchanged until Arnel enables it.
   STAMPS_FAMILY_PICKER_ENABLED: false,
+
+  // WS4 Chunk 1 — Account-type-aware permission resolver.
+  //
+  // Gates the cutover from the binary `isStaff: boolean` parameter (used
+  // by WS3.5 PR2/PR3/PR4) to the structured AuthorizationContext returned
+  // by getAuthorizationContext(). When false, dispute service methods use
+  // the legacy isStaff path exactly as today. When true, service methods
+  // resolve permissions internally from callerUserId.
+  //
+  // Chunk 1 is purely additive: when this flag is on, behavior is
+  // bit-for-bit identical to today (rink-operator via approved claim,
+  // staff via profiles.role). Future chunks (2 referee tools, 3 per-type
+  // dashboard tiles) extend the resolver without touching this flag.
+  //
+  // Defaults false — production stays unchanged until Arnel enables it
+  // and verifies chunk 1's resolver on real dispute traffic.
+  STAMPS_PERMISSIONS_V2_ENABLED: false,
 } as const;
 
 export type PassportFlag = keyof typeof PASSPORT_FLAGS;
@@ -198,5 +215,25 @@ export function isStampsFamilyPickerEnabled(): boolean {
   return (
     isStampsEnabled() &&
     isPassportFlagEnabled('STAMPS_FAMILY_PICKER_ENABLED')
+  );
+}
+
+/**
+ * WS4 Chunk 1 — Permissions V2 resolver gate.
+ *
+ * Gates the cutover from the WS3.5 binary `isStaff: boolean` parameter
+ * to the structured AuthorizationContext returned by getAuthorizationContext().
+ *
+ * When false, dispute service methods use the legacy isStaff path exactly
+ * as today (zero behavior change). When true, service methods resolve
+ * permissions internally from callerUserId.
+ *
+ * Default false — production stays unchanged until Arnel enables it and
+ * verifies chunk 1's resolver on real dispute traffic.
+ */
+export function isStampsPermissionsV2Enabled(): boolean {
+  return (
+    isStampsEnabled() &&
+    isPassportFlagEnabled('STAMPS_PERMISSIONS_V2_ENABLED')
   );
 }
