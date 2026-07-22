@@ -25,6 +25,7 @@ const NAV = [
   { href: '/admin/engagement', label: 'Engagement', icon: '📊' },
   { href: '/admin/rink-contact-discovery', label: 'Contact Discovery', icon: '🔍' },
   { href: '/admin/audit-log', label: 'Audit Log', icon: '🧾' },
+  { href: '/admin/stamps/disputes', label: 'Disputes', icon: '⚖️' },
 ];
 
 interface AdminShellProps {
