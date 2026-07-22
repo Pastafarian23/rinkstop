@@ -19,7 +19,7 @@ import type { AccountType } from '@/components/dashboard/dashboardTypes';
 import { tierAtLeast } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
-import FamilySetupWizard, { accountTypeToPersona } from '@/components/family/FamilySetupWizard';
+import FamilySetupWizard, { type WizardPersona } from '@/components/family/FamilySetupWizard';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
 import PlayerPracticePulse, { loadPracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
 import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/FreeAgentToggle';
@@ -32,6 +32,30 @@ import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/Fr
  * creating a separate duplicate user (e.g. when account-linking is off) —
  * the rendered dashboard still reflects ownership.
  */
+
+// Server-side mirror of accountTypeToPersona() in FamilySetupWizard.tsx.
+// FamilySetupWizard is a 'use client' component, so its helper can't be
+// called from a server component (Next.js will throw "client function from
+// the server"). Keep these two in sync.
+function accountTypeToPersona(accountType: string): WizardPersona {
+  switch (accountType) {
+    case 'parent':
+      return 'parent';
+    case 'coach':
+    case 'scout':
+      return 'coach';
+    case 'player':
+      return 'player';
+    case 'referee':
+      return 'official';
+    case 'team_admin':
+    case 'league_admin':
+    case 'rink_operator':
+      return 'operator';
+    default:
+      return 'generic';
+  }
+}
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -515,7 +539,7 @@ async function renderDashboard(userId: string) {
       {wizardVisible ? (
         <FamilySetupWizard
           firstName={firstName}
-          persona={accountTypeToPersona(wizardPersonaRaw)}
+          persona={accountTypeToPersona(wizardPersonaRaw ?? 'generic')}
           state={{
             identityVerified: isIdentityVerifiedForUser,
             hasChildren: wizardHasChildren,
