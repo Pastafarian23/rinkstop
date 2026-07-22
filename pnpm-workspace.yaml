@@ -1,3 +1,10 @@
+# Empty packages list — this is a single-package project, but the file
+# exists so pnpm can read the `allowBuilds` setting below. pnpm v9+ requires
+# the `packages:` field to be present (even as []) when this file exists;
+# without it, `pnpm install` fails with "packages field missing or empty".
+# This was breaking the `Build Android APK` CI workflow on every push.
+packages: []
+
 allowBuilds:
   '@clerk/shared': set this to true or false
   esbuild: set this to true or false
