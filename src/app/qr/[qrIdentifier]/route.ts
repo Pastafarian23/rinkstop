@@ -14,7 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { passportRepository, isPassportQrResolveEnabled } from '@/lib/passport';
+import { passportRepository, isPassportQrResolveEnabled, isStampsEnabled, stampService } from '@/lib/passport';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +93,22 @@ export async function GET(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!UUID_RE.test(qrIdentifier)) {
     return deactivatedPage(qrIdentifier);
+  }
+
+  // WS3 PR2 — Stamp dispatch. Stamp QRs (rink/venue/event) resolve to the
+  // stamp confirmation page. Stamps are feature-flagged independently of
+  // passport lookup, so a stamp QR won't accidentally hit the deactivated
+  // page when STAMPS_ENABLED is off — it falls through to passport lookup
+  // (which won't find it either, so the deactivated page still renders,
+  // just via the passport path).
+  if (isStampsEnabled()) {
+    const stampTarget = await stampService.resolveTarget(qrIdentifier);
+    if (stampTarget) {
+      return NextResponse.redirect(
+        new URL(`/stamp/${qrIdentifier}`, _req.url),
+        302
+      );
+    }
   }
 
   const record = await passportRepository.findByQrIdentifier(qrIdentifier);
