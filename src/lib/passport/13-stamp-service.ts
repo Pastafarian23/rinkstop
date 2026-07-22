@@ -28,10 +28,12 @@ import { supabaseAdmin } from '@/lib/supabase';
 import type {
   CreateStampRequest,
   CreateStampResponse,
+  DisputedStampRow,
   ResolvedStampTarget,
   StampActorType,
   StampContext,
   StampSource,
+  StampTargetType,
   StampVisibility,
   StampStatus,
   StampRecord,
@@ -1164,6 +1166,541 @@ export class StampService {
     }
 
     throw new StampForbiddenError(`Unknown targetType: ${targetType}`);
+  }
+
+  /**
+   * WS3.5 PR2 — List disputed stamps against a target, scoped to a caller
+   * who is allowed to adjudicate them.
+   *
+   * Caller scope:
+   *   - Operator with an approved claim on a rink target: passes callerUserId
+   *     + rinkId as `targetId`. Authorization happens before the query (we
+   *     accept the row only if claims has an approved row for that user+target).
+   *   - RinkStop staff (Clerk role='admin'): passes callerUserId + staff=true
+   *     flag. Bypasses the claim check; sees all disputed stamps at the target.
+   *
+   * Returns rows enriched with stamper display name (from profiles), target
+   * context (rink/venue/event name + city + country), and the dispute reason
+   * (pulled from the most recent scan_events row with outcome='flagged_dispute'
+   * for that stamp).
+   *
+   * Pagination: simple limit/offset. Operator queues are small (single-digit
+   * per day per target in v1); cursor pagination deferred to v2.
+   *
+   * Authorization check: throws StampForbiddenError if caller has no approved
+   * claim on the rink target AND caller is not staff. The endpoint layer
+   * catches this and returns 403.
+   */
+  async listDisputedStampsForOperator(params: {
+    callerUserId: string;
+    isStaff: boolean;
+    targetType: 'rink' | 'venue' | 'event';
+    targetId: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Array<DisputedStampRow>> {
+    const { callerUserId, isStaff, targetType, targetId } = params;
+    const limit = Math.min(Math.max(params.limit ?? 50, 1), 200);
+    const offset = Math.max(params.offset ?? 0, 0);
+
+    // Authorization: rink targets require an approved claim. Venues/events
+    // require staff. Throws StampForbiddenError if not authorized.
+    if (targetType === 'rink') {
+      if (isStaff) {
+        // Staff bypasses the claim check.
+      } else {
+        const { data: claim, error: claimErr } = await supabaseAdmin
+          .from('claims')
+          .select('id, status')
+          .eq('user_id', callerUserId)
+          .eq('entity_id', targetId)
+          .eq('claim_type', 'rink')
+          .eq('status', 'approved')
+          .maybeSingle();
+        if (claimErr) {
+          throw new Error(`Failed to verify operator claim: ${claimErr.message}`);
+        }
+        if (!claim) {
+          throw new StampForbiddenError(
+            'No approved claim on this rink; cannot view disputes'
+          );
+        }
+      }
+    } else {
+      // venue / event are staff-only in v1 (venues admin-curated, events
+      // belong to venues/rinks).
+      if (!isStaff) {
+        throw new StampForbiddenError(
+          'Venue and event disputes are visible to RinkStop staff only'
+        );
+      }
+    }
+
+    // Query disputed stamps against the target.
+    const targetColumn =
+      targetType === 'rink'
+        ? 'target_rink_id'
+        : targetType === 'venue'
+          ? 'target_venue_id'
+          : 'target_event_id';
+
+    const { data: stampRows, error: stampErr } = await supabaseAdmin
+      .from('stamps')
+      .select('*')
+      .eq(targetColumn, targetId)
+      .eq('status', 'disputed')
+      .order('stamped_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (stampErr) {
+      console.error('[stamp-service] listDisputedStampsForOperator failed:', stampErr);
+      return [];
+    }
+    const rows = (stampRows ?? []).map(stampRowToRecord);
+    if (rows.length === 0) return [];
+
+    // Enrich with stamper display name from profiles (best-effort; null if
+    // profile missing, anon stamper, or service-role can't read).
+    const stamperIds = Array.from(
+      new Set(
+        rows
+          .map((r) => r.subjectUserId ?? r.actorUserId)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      )
+    );
+    let stamperLookup = new Map<string, { displayName: string | null; role: string | null }>();
+    if (stamperIds.length > 0) {
+      const { data: profileRows } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, display_name, role')
+        .in('user_id', stamperIds);
+      stamperLookup = new Map(
+        (profileRows ?? []).map((p) => [
+          p.user_id as string,
+          {
+            displayName: (p.display_name as string | null) ?? null,
+            role: (p.role as string | null) ?? null,
+          },
+        ])
+      );
+    }
+
+    // Enrich with target context (rink/venue/event name + city + country).
+    // Rink: city + country on rinks table. Venues: same on venues table.
+    // Events: parent rink or venue name + city.
+    let targetContext: {
+      name: string;
+      city: string | null;
+      country: string | null;
+    } | null = null;
+    if (targetType === 'rink') {
+      const { data: rink } = await supabaseAdmin
+        .from('rinks')
+        .select('name, city, country')
+        .eq('id', targetId)
+        .maybeSingle();
+      if (rink) {
+        targetContext = {
+          name: rink.name as string,
+          city: (rink.city as string | null) ?? null,
+          country: (rink.country as string | null) ?? null,
+        };
+      }
+    } else if (targetType === 'venue') {
+      const { data: venue } = await supabaseAdmin
+        .from('venues')
+        .select('name, city, country')
+        .eq('id', targetId)
+        .maybeSingle();
+      if (venue) {
+        targetContext = {
+          name: venue.name as string,
+          city: (venue.city as string | null) ?? null,
+          country: (venue.country as string | null) ?? null,
+        };
+      }
+    } else {
+      // Events: derive city/country from parent rink or venue.
+      const { data: event } = await supabaseAdmin
+        .from('venue_events')
+        .select('name, parent_rink_id, parent_venue_id')
+        .eq('id', targetId)
+        .maybeSingle();
+      if (event) {
+        if (event.parent_rink_id) {
+          const { data: rink } = await supabaseAdmin
+            .from('rinks')
+            .select('name, city, country')
+            .eq('id', event.parent_rink_id as string)
+            .maybeSingle();
+          if (rink) {
+            targetContext = {
+              name: (event.name as string) ?? (rink.name as string),
+              city: (rink.city as string | null) ?? null,
+              country: (rink.country as string | null) ?? null,
+            };
+          }
+        } else if (event.parent_venue_id) {
+          const { data: venue } = await supabaseAdmin
+            .from('venues')
+            .select('name, city, country')
+            .eq('id', event.parent_venue_id as string)
+            .maybeSingle();
+          if (venue) {
+            targetContext = {
+              name: (event.name as string) ?? (venue.name as string),
+              city: (venue.city as string | null) ?? null,
+              country: (venue.country as string | null) ?? null,
+            };
+          }
+        }
+      }
+    }
+
+    // Pull dispute reason from the most-recent scan_events row for each stamp
+    // with outcome='flagged_dispute'. Best-effort; null if not found or unreadable.
+    const reasonByStamp = new Map<string, string | null>();
+    for (const stamp of rows) {
+      const { data: scanEvents } = await supabaseAdmin
+        .from('scan_events')
+        .select('details, created_at')
+        .eq('outcome', 'flagged_dispute')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      // Filter to rows whose details.stamp_id matches this stamp (we can't
+      // query jsonb directly without a key path; we filter in JS because
+      // scan_events is low-volume).
+      const matching = (scanEvents ?? []).find((se) => {
+        const d = se.details as { stamp_id?: string } | null;
+        return d?.stamp_id === stamp.id;
+      });
+      reasonByStamp.set(
+        stamp.id,
+        (matching?.details as { reason?: string } | null)?.reason ?? null
+      );
+    }
+
+    return rows.map((r) => {
+      const stamperId = r.subjectUserId ?? r.actorUserId;
+      const stamper = stamperId ? stamperLookup.get(stamperId) : undefined;
+      return {
+        stampId: r.id,
+        targetType,
+        targetName: targetContext?.name ?? 'Unknown target',
+        targetCity: targetContext?.city ?? null,
+        targetCountry: targetContext?.country ?? null,
+        stamperDisplayName: stamper?.displayName ?? null,
+        stamperRole: r.actorType,
+        stampedAt: r.stampedAt,
+        disputeReason: reasonByStamp.get(r.id) ?? null,
+        // Use stampedAt as a fallback for disputeFlaggedAt; service can't
+        // always pinpoint exactly when the dispute was filed vs when the
+        // original stamp was created. UI sorts by stampedAt.
+        disputeFlaggedAt: r.stampedAt,
+      };
+    });
+  }
+
+  /**
+   * WS3.5 PR2 — Adjudicate a disputed stamp (uphold or overturn).
+   *
+   * Authorization: caller must be (a) the operator on the target rink via
+   * an approved claim, OR (b) RinkStop staff (Clerk role='admin'). Venues and
+   * events are staff-only in v1.
+   *
+   * Behavior:
+   *   - action='uphold': status='disputed' → 'rejected'. Sets rejected_at,
+   *     rejected_by_user_id, optional rejected_reason. Writes a scan_events
+   *     row with outcome='dispute_upheld'. Notifies the stamper (or stamp
+   *     subject if third-party scan) with kind='dispute_upheld'.
+   *   - action='overturn': status='disputed' → 'confirmed'. No rejected_*
+   *     fields set. Writes a scan_events row with outcome='dispute_overturned'.
+   *     Notifies the stamper with kind='dispute_overturned'.
+   *
+   * Idempotent: re-adjudicating a stamp that's already in the target state
+   * returns success with current state, no audit row, no notification.
+   *
+   * Out of scope: notifications are best-effort (a failure to insert a
+   * notification does not roll back the adjudication). The stamp itself
+   * succeeds independent of notification writer.
+   *
+   * Throws:
+   *   - StampNotFoundError if stampId doesn't exist
+   *   - StampForbiddenError if caller is not authorized (not operator, not staff)
+   *   - Error if stamp is in an unexpected status (not 'disputed')
+   */
+  async adjudicateStamp(params: {
+    callerUserId: string;
+    isStaff: boolean;
+    stampId: string;
+    action: 'uphold' | 'overturn';
+    reason?: string;
+  }): Promise<{
+    stampId: string;
+    status: StampStatus;
+    action: 'uphold' | 'overturn';
+  }> {
+    const { callerUserId, isStaff, stampId, action } = params;
+    const reason = params.reason?.slice(0, 1000) ?? null;
+
+    // Load stamp + its target columns.
+    const { data: stamp, error: stampErr } = await supabaseAdmin
+      .from('stamps')
+      .select('*')
+      .eq('id', stampId)
+      .maybeSingle();
+
+    if (stampErr) {
+      throw new Error(`Failed to load stamp: ${stampErr.message}`);
+    }
+    if (!stamp) {
+      throw new StampNotFoundError(stampId);
+    }
+
+    // Idempotency: if stamp is already in the target state, no-op.
+    if (action === 'uphold' && stamp.status === 'rejected') {
+      return { stampId, status: 'rejected', action };
+    }
+    if (action === 'overturn' && stamp.status === 'confirmed') {
+      // Stamp was confirmed (probably after an overturn) but caller is
+      // adjudicating again. Treat as no-op.
+      const cur = stamp.status as StampStatus;
+      return { stampId, status: cur, action };
+    }
+
+    // Must be 'disputed' to adjudicate anything else.
+    if (stamp.status !== 'disputed') {
+      throw new StampForbiddenError(
+        `Cannot adjudicate stamp in status '${stamp.status}'; must be 'disputed'`
+      );
+    }
+
+    // Authorization per target type.
+    const targetType = stamp.target_type as StampTargetType;
+    if (targetType === 'rink') {
+      if (!isStaff) {
+        const targetRinkId = stamp.target_rink_id as string;
+        const { data: claim, error: claimErr } = await supabaseAdmin
+          .from('claims')
+          .select('id')
+          .eq('user_id', callerUserId)
+          .eq('entity_id', targetRinkId)
+          .eq('claim_type', 'rink')
+          .eq('status', 'approved')
+          .maybeSingle();
+        if (claimErr) {
+          throw new Error(`Failed to verify operator claim: ${claimErr.message}`);
+        }
+        if (!claim) {
+          throw new StampForbiddenError(
+            'No approved claim on this rink; cannot adjudicate'
+          );
+        }
+      }
+    } else {
+      // venue / event are staff-only.
+      if (!isStaff) {
+        throw new StampForbiddenError(
+          'Venue and event disputes are adjudicated by RinkStop staff only'
+        );
+      }
+    }
+
+    // Apply the status change.
+    const updatePayload: Record<string, unknown> = {};
+    if (action === 'uphold') {
+      updatePayload.status = 'rejected';
+      updatePayload.rejected_at = new Date().toISOString();
+      updatePayload.rejected_by_user_id = callerUserId;
+      if (reason) {
+        updatePayload.rejected_reason = reason;
+      }
+    } else {
+      // overturn
+      updatePayload.status = 'confirmed';
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('stamps')
+      .update(updatePayload)
+      .eq('id', stampId);
+
+    if (updateErr) {
+      throw new Error(`Failed to update stamp status: ${updateErr.message}`);
+    }
+
+    // Audit row.
+    await this.writeAdjudicationScanEvent(stampId, callerUserId, action, reason);
+
+    // Notifications (best-effort).
+    const recipientId = (stamp.subject_user_id as string | null) ?? (stamp.actor_user_id as string);
+    if (recipientId && recipientId !== callerUserId) {
+      // Don't notify the adjudicator about their own action.
+      const targetName = await this.resolveTargetName(stamp);
+      if (action === 'uphold') {
+        await this.notifyStamperOnAdjudication({
+          recipientUserId: recipientId,
+          kind: 'dispute_upheld',
+          stampId,
+          targetName,
+        });
+      } else {
+        await this.notifyStamperOnAdjudication({
+          recipientUserId: recipientId,
+          kind: 'dispute_overturned',
+          stampId,
+          targetName,
+        });
+      }
+    }
+
+    return {
+      stampId,
+      status: action === 'uphold' ? 'rejected' : 'confirmed',
+      action,
+    };
+  }
+
+  /**
+   * WS3.5 PR2 — Best-effort notification writer for adjudication outcomes.
+   * Same pattern as notifyStampReceived (private method already on this
+   * class — same idempotency via UNIQUE (user_id, source_key, kind)).
+   *
+   * Per spec: title and body are generic placeholders. Real UX copy lands
+   * when PR4 (notifications PR) ships with full templates. Today this just
+   * creates the inbox row so the operator/stamper surfaces see *something*.
+   */
+  private async notifyStamperOnAdjudication(params: {
+    recipientUserId: string;
+    kind: 'dispute_upheld' | 'dispute_overturned';
+    stampId: string;
+    targetName: string | null;
+  }): Promise<void> {
+    const titles = {
+      dispute_upheld: 'A stamp you received was removed',
+      dispute_overturned: 'A stamp you received was restored',
+    };
+    const bodies = {
+      dispute_upheld: `Your stamp at ${params.targetName ?? 'the venue'} was disputed and removed.`,
+      dispute_overturned: `Your stamp at ${params.targetName ?? 'the venue'} was disputed but the dispute was overturned; the stamp counts.`,
+    };
+
+    try {
+      const { error } = await supabaseAdmin
+        .from('consumer_notifications')
+        .insert({
+          user_id: params.recipientUserId,
+          kind: params.kind,
+          source_key: `stamp:${params.stampId}:adjudication`,
+          title: titles[params.kind],
+          body: bodies[params.kind],
+          metadata: {
+            stamp_id: params.stampId,
+            kind: params.kind,
+          },
+        });
+      // ON CONFLICT DO NOTHING via UNIQUE constraint; 23505 = success.
+      if (error && error.code !== '23505') {
+        console.error(
+          '[stamp-service] notifyStamperOnAdjudication insert failed:',
+          error
+        );
+      }
+    } catch (e) {
+      console.error('[stamp-service] notifyStamperOnAdjudication threw:', e);
+    }
+  }
+
+  /**
+   * WS3.5 PR2 — Resolve the human-readable target name for a stamp (used
+   * by notification writers and any consumer that needs to render
+   * "Rink X" / "Venue Y" / "Event Z" for a stamp).
+   */
+  private async resolveTargetName(stamp: Record<string, unknown>): Promise<string | null> {
+    if (stamp.target_rink_id) {
+      const { data } = await supabaseAdmin
+        .from('rinks')
+        .select('name')
+        .eq('id', stamp.target_rink_id as string)
+        .maybeSingle();
+      return (data?.name as string | null) ?? null;
+    }
+    if (stamp.target_venue_id) {
+      const { data } = await supabaseAdmin
+        .from('venues')
+        .select('name')
+        .eq('id', stamp.target_venue_id as string)
+        .maybeSingle();
+      return (data?.name as string | null) ?? null;
+    }
+    if (stamp.target_event_id) {
+      const { data } = await supabaseAdmin
+        .from('venue_events')
+        .select('name')
+        .eq('id', stamp.target_event_id as string)
+        .maybeSingle();
+      return (data?.name as string | null) ?? null;
+    }
+    return null;
+  }
+
+  /**
+   * WS3.5 PR2 — Write an adjudication audit row to scan_events. Mirrors
+   * the pattern of writeScanEventForDispute (resolve qr_identifier from
+   * the target, then call writeScanEvent with the new outcome).
+   */
+  private async writeAdjudicationScanEvent(
+    stampId: string,
+    callerUserId: string,
+    action: 'uphold' | 'overturn',
+    reason: string | null
+  ): Promise<void> {
+    // Look up target to resolve qr_identifier.
+    const { data: stamp } = await supabaseAdmin
+      .from('stamps')
+      .select('target_rink_id, target_venue_id, target_event_id')
+      .eq('id', stampId)
+      .maybeSingle();
+
+    let qrIdentifier: string | null = null;
+    if (stamp?.target_rink_id) {
+      const { data: rink } = await supabaseAdmin
+        .from('rinks')
+        .select('qr_identifier')
+        .eq('id', stamp.target_rink_id)
+        .maybeSingle();
+      qrIdentifier = rink?.qr_identifier ?? null;
+    } else if (stamp?.target_venue_id) {
+      const { data: venue } = await supabaseAdmin
+        .from('venues')
+        .select('public_id')
+        .eq('id', stamp.target_venue_id)
+        .maybeSingle();
+      qrIdentifier = venue?.public_id ?? null;
+    } else if (stamp?.target_event_id) {
+      const { data: event } = await supabaseAdmin
+        .from('venue_events')
+        .select('public_id')
+        .eq('id', stamp.target_event_id)
+        .maybeSingle();
+      qrIdentifier = event?.public_id ?? null;
+    }
+
+    if (!qrIdentifier) {
+      // Stamp target has no qr_identifier. Degrade safely — skip the
+      // scan event. The stamps.status UPDATE already happened.
+      return;
+    }
+
+    await this.writeScanEvent(
+      qrIdentifier,
+      callerUserId,
+      action === 'uphold' ? 'dispute_upheld' : 'dispute_overturned',
+      {
+        stamp_id: stampId,
+        reason,
+      }
+    );
   }
 
   private async writeScanEventForDispute(
