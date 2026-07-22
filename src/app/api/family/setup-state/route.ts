@@ -4,24 +4,29 @@
  * Phase 1a (Consumer-First Growth) — prep doc §3.2.
  * Approved by Arnel 2026-07-05 18:23 CDT.
  *
- * POST: dismiss or resume the Family Setup Wizard.
- *   Body: { action: 'dismiss' | 'resume' }
- *   - 'dismiss' sets profiles.family_setup_completed_at = NOW()
- *   - 'resume' sets profiles.family_setup_completed_at = NULL
+ * POST: mark the Family Setup Wizard complete.
+ *   Body: { action: 'mark_complete' }
+ *   - 'mark_complete' sets profiles.family_setup_completed_at = NOW()
+ *     (idempotent — if already set, leave it alone so we don't reset the
+ *     completion timestamp on every render)
+ *
+ * 2026-07-22 (Arnel): the wizard is now MANDATORY. The previous 'dismiss'
+ * and 'resume' actions are gone — users can no longer hide the wizard.
+ * The wizard component auto-calls this endpoint via useEffect when every
+ * reachable step is done or acknowledged (comingNext). The user no longer
+ * needs to take an explicit action.
  *
  * Auth: caller must be signed in.
  * Tier gate: caller must be on identity_plus+ or business_listing+ tier
  *   (matches the dashboard-level gate, so a user who downgrades cannot
- *   resume the wizard).
+ *   mark the wizard complete).
  * Account-type gate: caller must have at least one entry in
- *   profile_account_types. 2026-07-21: widened from parent-only to any
- *   persona; mirrors the dashboard-level gate. The wizard itself branches
- *   on persona inside the component.
+ *   profile_account_types. Mirrors the dashboard-level gate.
  *
  * Response: { ok: true, family_setup_completed_at: ISO | null }
  *
  * Why this lives in its own endpoint (not /api/profiles/me):
- *   - The action is binary (dismiss/resume), not a generic profile update.
+ *   - The action is a single intent (mark complete), not a generic profile update.
  *   - Keeps audit trail in one place (request logs).
  *   - Mirrors /api/players, /api/profiles/managed — small, focused endpoints.
  */
@@ -61,7 +66,7 @@ export async function POST(request: NextRequest) {
 
   // Tier gate — match the dashboard-level gate exactly. A user on a paid
   // business tier (business_listing+) is also allowed. Free fans cannot
-  // dismiss/resume a wizard they cannot see.
+  // mark the wizard complete (they cannot see it).
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles')
     .select('tier, family_setup_completed_at')
@@ -87,7 +92,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Account-type gate — 2026-07-21: widened from parent-only to any persona.
-  // The wizard now branches on persona inside the component; the gate just
+  // The wizard branches on persona inside the component; the gate just
   // ensures the caller has at least one declared persona.
   const { data: types, error: typesErr } = await supabaseAdmin
     .from('profile_account_types')
@@ -111,7 +116,8 @@ export async function POST(request: NextRequest) {
     return applyRateLimitHeaders(res, result);
   }
 
-  // Action
+  // Action — 2026-07-22: only 'mark_complete' is allowed. 'dismiss' and
+  // 'resume' were removed when the wizard became mandatory.
   let body: { action?: string };
   try {
     body = await request.json();
@@ -121,19 +127,28 @@ export async function POST(request: NextRequest) {
   }
 
   const action = body.action;
-  if (action !== 'dismiss' && action !== 'resume') {
+  if (action !== 'mark_complete') {
     const res = NextResponse.json(
-      { error: 'action must be "dismiss" or "resume".' },
+      { error: 'action must be "mark_complete".' },
       { status: 400 }
     );
     return applyRateLimitHeaders(res, result);
   }
 
-  const newValue = action === 'dismiss' ? new Date().toISOString() : null;
+  // Idempotent: if already complete, leave the original timestamp alone.
+  if (profile?.family_setup_completed_at) {
+    const res = NextResponse.json({
+      ok: true,
+      family_setup_completed_at: profile.family_setup_completed_at,
+      alreadyComplete: true,
+    });
+    return applyRateLimitHeaders(res, result);
+  }
 
+  const now = new Date().toISOString();
   const { data: updated, error: updateErr } = await supabaseAdmin
     .from('profiles')
-    .update({ family_setup_completed_at: newValue, updated_at: new Date().toISOString() })
+    .update({ family_setup_completed_at: now, updated_at: now })
     .eq('user_id', userId)
     .select('family_setup_completed_at')
     .maybeSingle();
