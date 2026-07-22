@@ -99,6 +99,22 @@ Same signature as PR2 (recipient, kind, stampId, targetName). Changes:
 - Source key is unchanged (`stamp:${stampId}:adjudication`) so any
   duplicate inserts still hit the UNIQUE constraint and no-op.
 
+**`resolveTargetNameInline()` — NEW private helper.**
+
+PR2 also adds a `resolveTargetName()` helper with identical shape
+(resolves rink/venue/event name from a stamp row). To avoid merge
+conflict when PR2 lands first, PR4's copy is renamed to
+`resolveTargetNameInline()`. Both helpers are private, both
+service-internal. When both PRs merge, the inline version can be
+removed and the call site updated to use PR2's helper in a follow-up.
+
+**`disputeStamp()` — load target columns.**
+
+Extended the `stamps` select from `id, subject_user_id, actor_user_id,
+status` to also pull `target_type, target_rink_id, target_venue_id,
+target_event_id` so `notifyOperatorOnDispute()` can route correctly
+without a second roundtrip.
+
 ### `src/app/dashboard/notifications/page.tsx` (NEW)
 
 Server component. Auth via `auth()` + `resolveCanonicalUserId()`. Loads
@@ -175,6 +191,14 @@ dark; this page is light — same as the dispute queue pages).
 
 ## Stack
 
-Built on top of main (post-PR1). Independent of PR2 / PR3 — PR4 only
-needs the PR1 schema (kind enum extension) which is on main. Mergeable
-in any order with PR2 / PR3 per spec.
+Built on top of main (post-PR1, commit 65cebcb). Independent of PR2 /
+PR3 — PR4 only needs the PR1 schema (kind enum extension) which is on
+main. Mergeable in any order with PR2 / PR3 per spec.
+
+**Merge-cleanliness notes:**
+- `resolveTargetNameInline()` in PR4 vs `resolveTargetName()` in PR2:
+  renamed to avoid the merge conflict when PR2 lands first. When both
+  PRs merge, the inline version is dead code and can be removed (or
+  PR2's helper can be deleted and the call site updated to inline).
+- PR4 does NOT touch `staff-dispute-actions.tsx`, `dispute-actions.tsx`,
+  the operator queue page, or any other PR2/PR3-only file.
