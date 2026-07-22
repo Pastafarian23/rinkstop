@@ -74,8 +74,9 @@ END $$;
 --
 -- rejected_at: timestamp of when the dispute was upheld.
 -- rejected_by_user_id: text (Clerk user_id of the operator or staff
---   who upheld). Not a UUID FK because clerk_user_id is text and the
---   profiles table keys are user_id (text). No FK constraint needed.
+--   who upheld). Not a UUID FK because profiles.user_id is text and we
+--   don't enforce FK constraints to profiles (the auth schema is the source
+--   of truth — profiles is a denormalized cache). No FK constraint needed.
 -- rejected_reason: optional free-text explanation. Optional in WS3.5
 --   per spec (defaults: don't require operator free-text). Stored but
 --   NOT surfaced to stamper in v1.
@@ -254,7 +255,7 @@ CREATE POLICY "stamps_operator_dispute_read" ON public.stamps
   USING (
     status = 'disputed'
     AND (
-      -- Operator on the target rink
+      -- Operator on the target rink (claim.status='approved' against this rink)
       (
         target_rink_id IS NOT NULL
         AND EXISTS (
@@ -262,18 +263,18 @@ CREATE POLICY "stamps_operator_dispute_read" ON public.stamps
           WHERE c.entity_id = target_rink_id::text
             AND c.claim_type = 'rink'
             AND c.status = 'approved'
-            AND c.user_id = (SELECT user_id FROM public.profiles WHERE clerk_user_id = auth.jwt() ->> 'sub' LIMIT 1)
+            AND c.user_id = (auth.uid()::text)
         )
       )
       OR
-      -- Operator on the target venue (venues don't have a public.claims row in WS3 v1
-      -- because admin-curated; venue admin access works via RinkStop staff role instead —
-      -- see below staff policy)
+      -- Venues are admin-curated in WS3 v1 (no public.claims row), so venue
+      -- dispute access is delegated to the staff policy (below). Caller must
+      -- have role='admin' to see a venue dispute.
       (
         target_venue_id IS NOT NULL
         AND EXISTS (
           SELECT 1 FROM public.profiles p
-          WHERE p.clerk_user_id = (auth.jwt() ->> 'sub')
+          WHERE p.user_id = (auth.uid()::text)
             AND p.role = 'admin'
         )
       )
@@ -282,7 +283,7 @@ CREATE POLICY "stamps_operator_dispute_read" ON public.stamps
         target_event_id IS NOT NULL
         AND EXISTS (
           SELECT 1 FROM public.profiles p
-          WHERE p.clerk_user_id = (auth.jwt() ->> 'sub')
+          WHERE p.user_id = (auth.uid()::text)
             AND p.role = 'admin'
         )
       )
@@ -298,7 +299,7 @@ CREATE POLICY "stamps_staff_dispute_read" ON public.stamps
     status IN ('disputed', 'rejected')
     AND EXISTS (
       SELECT 1 FROM public.profiles p
-      WHERE p.clerk_user_id = (auth.jwt() ->> 'sub')
+      WHERE p.user_id = (auth.uid()::text)
         AND p.role = 'admin'
     )
   );
