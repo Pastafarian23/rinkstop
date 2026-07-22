@@ -39,6 +39,7 @@ export {
   isPassportAssetsApiEnabled,
   isStampsEnabled,
   isStampsAdminEnabled,
+  isStampsFamilyPickerEnabled,
   isPassportFlagEnabled,
   PASSPORT_FLAGS,
   type PassportFlag,

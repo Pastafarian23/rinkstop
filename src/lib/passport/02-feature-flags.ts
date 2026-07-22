@@ -55,6 +55,14 @@ export const PASSPORT_FLAGS = {
   // columns; rejected status value; staff/operator RLS policies) ships with
   // this PR — the flag gates behavior, not data.
   STAMPS_ADMIN_ENABLED: false,
+
+  // WS3.5 PR5 — Family Hub Multi-Stamp Passport picker UI on
+  // /stamp/[qrIdentifier]. When enabled, the confirmation page shows a
+  // picker when the caller has 2+ eligible Passports (own + linked
+  // kids via managed_profiles). When disabled, the page uses single-
+  // Passport behavior (the current WS3 PR2 path). Requires STAMPS_ENABLED.
+  // Defaults false — production stays unchanged until Arnel enables it.
+  STAMPS_FAMILY_PICKER_ENABLED: false,
 } as const;
 
 export type PassportFlag = keyof typeof PASSPORT_FLAGS;
@@ -170,5 +178,25 @@ export function isStampsEnabled(): boolean {
 export function isStampsAdminEnabled(): boolean {
   return (
     isStampsEnabled() && isPassportFlagEnabled('STAMPS_ADMIN_ENABLED')
+  );
+}
+
+/**
+ * WS3.5 PR5 — Family Hub Multi-Stamp picker UI.
+ *
+ * Gates the Passport picker on /stamp/[qrIdentifier] when caller has
+ * 2+ eligible Passports. When disabled, the page uses the single-
+ * Passport WS3 PR2 behavior (no picker, the actor's own Passport is
+ * used; subjectUserId via ?subject= query param still works for
+ * coach→player scans).
+ *
+ * Requires isStampsEnabled() too — the picker is meaningless without
+ * the stamp workflow itself. PR6's subject_passport_id column ships
+ * unconditionally (data, not behavior); this flag gates the picker UI.
+ */
+export function isStampsFamilyPickerEnabled(): boolean {
+  return (
+    isStampsEnabled() &&
+    isPassportFlagEnabled('STAMPS_FAMILY_PICKER_ENABLED')
   );
 }

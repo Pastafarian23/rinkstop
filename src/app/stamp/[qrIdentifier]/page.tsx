@@ -26,7 +26,12 @@
 import { notFound, redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
-import { isStampsEnabled, stampService, StampNotFoundError } from '@/lib/passport';
+import {
+  isStampsEnabled,
+  isStampsFamilyPickerEnabled,
+  stampService,
+  StampNotFoundError,
+} from '@/lib/passport';
 import { StampConfirmForm } from './stamp-confirm-form';
 
 export const dynamic = 'force-dynamic';
@@ -96,6 +101,10 @@ export default async function StampPage({ params, searchParams }: PageProps) {
       actorUserId={actorUserId}
       subjectUserId={subject ?? null}
       subjectName={subjectName}
+      eligiblePassports={isStampsFamilyPickerEnabled()
+        ? await stampService.listEligiblePassportsForStamping(actorUserId)
+        : []}
+      familyPickerEnabled={isStampsFamilyPickerEnabled()}
     />
   );
 }
