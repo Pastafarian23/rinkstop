@@ -91,6 +91,10 @@ function stampRowToRecord(row: Record<string, unknown>): StampRecord {
     geoLng: (row.geo_lng as number | null) ?? null,
     distanceMeters: (row.distance_meters as number | null) ?? null,
     stampedAt: row.stamped_at as string,
+    // WS3.5 PR1 — adjudication fields, all nullable
+    rejectedAt: (row.rejected_at as string | null) ?? null,
+    rejectedByUserId: (row.rejected_by_user_id as string | null) ?? null,
+    rejectedReason: (row.rejected_reason as string | null) ?? null,
   };
 }
 

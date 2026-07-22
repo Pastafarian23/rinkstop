@@ -38,6 +38,7 @@ export {
   isPassportQrResolveEnabled,
   isPassportAssetsApiEnabled,
   isStampsEnabled,
+  isStampsAdminEnabled,
   isPassportFlagEnabled,
   PASSPORT_FLAGS,
   type PassportFlag,

@@ -233,8 +233,10 @@ export type StampVisibility = 'private' | 'public';
  * Stamp status — dispute/rotation states.
  * Per WS3 plan: 'disputed' is set by the holder (PR4); 'revoked' is set by
  * admin via QR rotation (PR4).
+ * Per WS3.5 PR1: 'rejected' is added as the terminal state for upheld
+ * disputes. Once a stamp is rejected, it stays rejected — no reversal path.
  */
-export type StampStatus = 'confirmed' | 'disputed' | 'revoked';
+export type StampStatus = 'confirmed' | 'disputed' | 'rejected' | 'revoked';
 
 /**
  * Stamp source — who initiated the scan mechanically.
@@ -293,6 +295,10 @@ export interface StampRecord {
   geoLng: number | null;
   distanceMeters: number | null;
   stampedAt: string;
+  // WS3.5 PR1 fields. All nullable — only set after a dispute is adjudicated.
+  rejectedAt: string | null;
+  rejectedByUserId: string | null;
+  rejectedReason: string | null;
 }
 
 /**
@@ -308,10 +314,67 @@ export interface ScanEventRecord {
     | 'rate_limited'
     | 'flagged_dispute'
     | 'invalid_target'
-    | 'error';
+    | 'error'
+    // WS3.5 PR1: written by the adjudication endpoint when an operator or
+    // staff upholds/overturns a dispute. The affected stamp_id goes in
+    // details; the adjudicator's user_id goes in actor_user_id.
+    | 'dispute_upheld'
+    | 'dispute_overturned';
   details: Record<string, unknown> | null;
   createdAt: string;
 }
+
+/**
+ * WS3.5 PR1 — request body for POST /api/passport/stamp/[stampId]/adjudicate.
+ * Endpoint planned for PR2.
+ *
+ * action: 'uphold' moves status='disputed' → 'rejected'. The stamp will
+ *   never count. Stamper (or subject) gets a `dispute_upheld` notification.
+ * action: 'overturn' moves status='disputed' → 'confirmed'. The stamp
+ *   counts normally. Stamper (or subject) gets a `dispute_overturned`
+ *   notification.
+ *
+ * reason: optional free-text, stored on stamps.rejected_reason. Not
+ *   surfaced to stamper in WS3.5 v1 (per spec open question #2, default = no).
+ *
+ * Authorization: caller must be (a) the operator of the target (approved
+ * claim against the target of the stamp), OR (b) RinkStop staff (Clerk role =
+ * 'admin'). Service-layer enforces; never trust the client.
+ */
+export interface AdjudicateStampRequest {
+  action: 'uphold' | 'overturn';
+  reason?: string;
+}
+
+/**
+ * WS3.5 PR1 — shape of an adjudication row as returned from the
+ * dispute queue UI. Operator dashboard calls the service-layer
+ * `listDisputedStampsForOperator()` (PR2 adds) which returns these.
+ */
+export interface DisputedStampRow {
+  stampId: string;
+  targetType: StampTargetType;
+  targetName: string;
+  targetCity: string | null;
+  targetCountry: string | null;
+  stamperDisplayName: string | null;
+  stamperRole: StampActorType;
+  stampedAt: string;
+  disputeReason: string | null;
+  disputeFlaggedAt: string;
+}
+
+/**
+ * WS3.5 PR1 — notification kinds for the dispute workflow. Matches the
+ * migration's CHECK extension on consumer_notifications.kind.
+ *   stamp_disputed      → sent to the operator of the target
+ *   dispute_upheld      → sent to the stamper (or subject) when upheld
+ *   dispute_overturned  → sent to the stamper (or subject) when overturned
+ */
+export type DisputeNotificationKind =
+  | 'stamp_disputed'
+  | 'dispute_upheld'
+  | 'dispute_overturned';
 
 /**
  * Body of POST /api/passport/stamp.
