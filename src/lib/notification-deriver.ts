@@ -22,7 +22,8 @@ export type ConsumerNotificationKind =
   | 'document_expiring_1d'
   | 'document_expired'
   | 'identity_renewal_due'
-  | 'achievement_added';
+  | 'achievement_added'
+  | 'stamp_received';
 
 export interface NewNotification {
   user_id: string;

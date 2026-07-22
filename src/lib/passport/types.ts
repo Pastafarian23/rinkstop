@@ -186,3 +186,158 @@ export class PassportCollisionError extends Error {
     this.name = 'PassportCollisionError';
   }
 }
+// =============================================================================
+// Workstream 3 — Stamp system types (PR2+)
+// =============================================================================
+
+/**
+ * Stamp target types — the polymorphic parent of a stamp row.
+ * Exactly one of target_rink_id / target_venue_id / target_event_id is set.
+ */
+export type StampTargetType = 'rink' | 'venue' | 'event';
+
+/**
+ * Stamp actor types — who initiated the scan.
+ * Determined server-side from the user's profile role.
+ */
+export type StampActorType =
+  | 'player'
+  | 'parent'
+  | 'coach'
+  | 'rink_operator'
+  | 'tournament_organizer';
+
+/**
+ * Stamp subject types — who got stamped (only set for third_party scans).
+ * For self-scan stamps, subject_user_id / subject_type are NULL.
+ */
+export type StampSubjectType = 'player' | 'coach' | 'team';
+
+/**
+ * Stamp context — what kind of visit this was.
+ * Optional. Used for coach→player stamps to disambiguate practice vs game.
+ */
+export type StampContext =
+  | 'practice'
+  | 'game'
+  | 'check-in'
+  | 'registration';
+
+/**
+ * Stamp visibility — controls whether the row surfaces on the public Passport.
+ * Per WS3 Decision 2: opt-in per stamp, default private.
+ */
+export type StampVisibility = 'private' | 'public';
+
+/**
+ * Stamp status — dispute/rotation states.
+ * Per WS3 plan: 'disputed' is set by the holder (PR4); 'revoked' is set by
+ * admin via QR rotation (PR4).
+ */
+export type StampStatus = 'confirmed' | 'disputed' | 'revoked';
+
+/**
+ * Stamp source — who initiated the scan mechanically.
+ */
+export type StampSource = 'self_scan' | 'third_party_scan';
+
+/**
+ * Resolved stamp target — what a QR identifier points at.
+ * The QR resolver (PR2) returns one of these shapes before /stamp/[qrIdentifier]
+ * renders the confirmation page.
+ */
+export type ResolvedStampTarget =
+  | {
+      targetType: 'rink';
+      rinkId: string;
+      rinkName: string;
+      rinkSlug: string;
+      verificationTier: string;
+      publicId: string;
+    }
+  | {
+      targetType: 'venue';
+      venueId: string;
+      venueName: string;
+      verificationTier: string;
+      publicId: string;
+    }
+  | {
+      targetType: 'event';
+      eventId: string;
+      eventName: string;
+      startsAt: string;
+      parentType: 'rink' | 'venue';
+      parentName: string;
+      publicId: string;
+    };
+
+/**
+ * Stamp record as stored in public.stamps.
+ */
+export interface StampRecord {
+  id: string;
+  targetType: StampTargetType;
+  targetRinkId: string | null;
+  targetVenueId: string | null;
+  targetEventId: string | null;
+  actorUserId: string;
+  actorType: StampActorType;
+  subjectUserId: string | null;
+  subjectType: StampSubjectType | null;
+  context: StampContext | null;
+  source: StampSource;
+  visibility: StampVisibility;
+  status: StampStatus;
+  geoLat: number | null;
+  geoLng: number | null;
+  distanceMeters: number | null;
+  stampedAt: string;
+}
+
+/**
+ * Scan-event audit row (public.scan_events). Internal — never API-exposed.
+ */
+export interface ScanEventRecord {
+  id: string;
+  qrIdentifier: string;
+  actorUserId: string | null;
+  outcome:
+    | 'stamp_created'
+    | 'duplicate'
+    | 'rate_limited'
+    | 'flagged_dispute'
+    | 'invalid_target'
+    | 'error';
+  details: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+/**
+ * Body of POST /api/passport/stamp.
+ * - qrIdentifier: required, opaque UUID (resolved server-side)
+ * - subjectUserId: optional, only valid for third_party scans (coach→player)
+ * - context: optional, only valid for third_party scans
+ * - visibility: optional, defaults to 'private' per WS3 Decision 2
+ * - geoLat / geoLng: optional, only stored if the holder opted in to geo on
+ *   the confirmation page (per WS3 geo decision — opt-in toggle)
+ */
+export interface CreateStampRequest {
+  qrIdentifier: string;
+  subjectUserId?: string;
+  context?: StampContext;
+  visibility?: StampVisibility;
+  geoLat?: number;
+  geoLng?: number;
+}
+
+/**
+ * Response of POST /api/passport/stamp on success.
+ */
+export interface CreateStampResponse {
+  stampId: string;
+  targetType: StampTargetType;
+  targetName: string;
+  visibility: StampVisibility;
+  alreadyStampedToday?: boolean; // true if this is a duplicate (rate limit)
+}

@@ -128,3 +128,19 @@ export function isPassportAssetsApiEnabled(): boolean {
     && isPassportFlagEnabled('PASSPORT_ASSETS_API')
   );
 }
+
+/**
+ * WS3 PR2 — Stamp system gate.
+ *
+ * Gates /stamp/[qrIdentifier] confirmation page, /api/passport/stamp endpoint,
+ * and the QR-resolver dispatch on stamp targets (rink/venue/event). Per
+ * Workstream 1 Rule 5, every stamp capability check MUST go through this
+ * function. Never read process.env directly elsewhere.
+ *
+ * Default false — production stays unchanged until this is enabled.
+ */
+export function isStampsEnabled(): boolean {
+  return (
+    isPassportEnabled() && isPassportFlagEnabled('STAMPS_ENABLED')
+  );
+}

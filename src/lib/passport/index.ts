@@ -37,10 +37,20 @@ export {
   isPassportEventLoggingEnabled,
   isPassportQrResolveEnabled,
   isPassportAssetsApiEnabled,
+  isStampsEnabled,
   isPassportFlagEnabled,
   PASSPORT_FLAGS,
   type PassportFlag,
 } from './02-feature-flags';
+
+// Stamp service (WS3 PR2)
+export {
+  stampService,
+  StampService,
+  StampNotFoundError,
+  StampRateLimitedError,
+  StampForbiddenError,
+} from './13-stamp-service';
 
 // ID generation (re-export)
 export {
