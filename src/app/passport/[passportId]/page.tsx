@@ -53,6 +53,17 @@ interface PageProps {
   params: Promise<{ passportId: string }>;
 }
 
+/**
+ * ISR — cache the rendered page for 5 minutes at the edge.
+ *
+ * Passports don't change every second: name, avatar, verification level,
+ * status, federations all shift on multi-day-to-multi-week cycles. A 5-min
+ * stale window keeps the public route fast for phone scanners in poor
+ * connectivity without showing meaningfully stale data. The dynamic
+ * /qr/[uuid]→302 redirect bypasses this cache because it's a route handler.
+ */
+export const revalidate = 300;
+
 interface HolderProfile {
   display_name: string | null;
   avatar_url: string | null;
@@ -694,16 +705,33 @@ function PassportFooter({ username }: { username: string | null }) {
  * If this query throws (table missing, schema drift), we swallow and
  * return []. Per Workstream 1 Rule 6, Passport code never mutates and is
  * allowed to degrade gracefully on read failures of legacy tables.
+ *
+ * Logging: every degraded path emits a [public-passport] tagged message
+ * with the specific failure (no player row / missing table / query error /
+ * thrown). Tagged so Vercel runtime logs can grep it without false-positives
+ * from other code paths.
  */
 async function fetchFederationNames(internalUserId: string): Promise<string[]> {
   try {
-    const { data: playerRows } = await supabaseAdmin
+    const { data: playerRows, error: playerErr } = await supabaseAdmin
       .from('players')
       .select('id')
       .eq('user_id', internalUserId);
 
+    if (playerErr) {
+      console.error('[public-passport] fetchFederationNames: player lookup failed', {
+        internalUserId,
+        code: playerErr.code,
+        message: playerErr.message,
+      });
+      return [];
+    }
+
     const playerIds = (playerRows ?? []).map((p: { id: string }) => p.id);
-    if (playerIds.length === 0) return [];
+    if (playerIds.length === 0) {
+      // Not a player — expected for coach-only / parent-only / fan Passports.
+      return [];
+    }
 
     // Try the federation affiliation link table. If it doesn't exist
     // (PostgREST returns 42P01 = undefined_table), degrade to empty.
@@ -713,10 +741,14 @@ async function fetchFederationNames(internalUserId: string): Promise<string[]> {
       .in('player_id', playerIds);
 
     if (linkErr) {
-      // Table missing or query unsupported — degrade gracefully.
+      // Table missing is expected in early rollout — silent degrade.
       if (linkErr.code === '42P01' || linkErr.code === 'PGRST116') return [];
-      // Other errors: log in server console, return empty.
-      console.error('[public-passport] federation link query failed', linkErr);
+      // Any other error: log loudly so we notice.
+      console.error('[public-passport] fetchFederationNames: link query failed', {
+        internalUserId,
+        code: linkErr.code,
+        message: linkErr.message,
+      });
       return [];
     }
 
@@ -731,7 +763,11 @@ async function fetchFederationNames(internalUserId: string): Promise<string[]> {
       .in('id', federationIds);
 
     if (fedErr) {
-      console.error('[public-passport] federation name query failed', fedErr);
+      console.error('[public-passport] fetchFederationNames: federation name query failed', {
+        internalUserId,
+        code: fedErr.code,
+        message: fedErr.message,
+      });
       return [];
     }
 
@@ -739,7 +775,7 @@ async function fetchFederationNames(internalUserId: string): Promise<string[]> {
       .map((f: { name: string | null }) => f.name)
       .filter((n): n is string => typeof n === 'string' && n.length > 0);
   } catch (err) {
-    console.error('[public-passport] fetchFederationNames threw', err);
+    console.error('[public-passport] fetchFederationNames: unexpected throw', err);
     return [];
   }
 }
