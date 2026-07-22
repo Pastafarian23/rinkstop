@@ -3,7 +3,9 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isStampsEnabled } from '@/lib/passport';
 import EntityEditForm from '../../EntityEditForm';
+import { RinkQrCard } from './rink-qr-card';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +75,20 @@ export default async function ManageRinkPage({ params }: PageProps) {
           </p>
         </div>
       </div>
+
+      {isStampsEnabled() && (entity as { qr_identifier?: string }).qr_identifier && (
+        <RinkQrCard
+          rinkId={id}
+          rinkName={(entity as { name: string }).name}
+          qrIdentifier={(entity as { qr_identifier: string }).qr_identifier}
+          verificationTier={
+            (entity as { verification_tier?: string }).verification_tier ?? 'unverified'
+          }
+          qrRevokedAt={
+            (entity as { qr_revoked_at?: string | null }).qr_revoked_at ?? null
+          }
+        />
+      )}
 
       <EntityEditForm
         type="rink"
