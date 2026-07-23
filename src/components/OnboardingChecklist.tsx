@@ -16,11 +16,10 @@ export async function OnboardingChecklist({ userId, profile, types }: { userId: 
     .then(r => ({ stats: r.count ?? 0 }));
 
   const fedRow = await supabaseAdmin
-    .from('players')
-    .select('usa_hockey_number,hockey_canada_number')
-    .eq('id', profile?.id)
-    .maybeSingle()
-    .then(r => ({ federation: !!(r.data?.usa_hockey_number || r.data?.hockey_canada_number) }));
+    .from('federation_registrations')
+    .select('id', { count: 'exact', head: true })
+    .eq('player_id', profile?.id)
+    .then(r => ({ federation: (r.count ?? 0) > 0 }));
 
   const firstMissing = {
     displayName: !(profile?.display_name),
