@@ -34,14 +34,14 @@
 
 | Sub-deliverable | Status | Notes / PR |
 |---|---|---|
-| `federations` + `federation_registrations` tables | ⏳ | Schema designed in roadmap, not built. Federation CTAs on pricing page exist but no registration table. |
-| USA Hockey # manual entry → verify by name+DOB match | ⏳ | Not built. |
-| Hockey Canada # manual entry | ⏳ | Not built. |
-| `/dashboard/identity/federation` | ⏳ | Not built. |
-| `coaches` + `coach_team_history` + `coach_endorsements` tables | 🟡 | Coach role + account-type-aware permissions shipped (WS4 PR1, PR #43; WS4 PR2 referee tools, PR #44). Endorsement tables not yet. |
+| `federations` + `federation_registrations` tables | ✅ | Both tables live (migrations applied 2026-07-23). 84 IIHF federations seeded. PR #49. |
+| USA Hockey # manual entry → verify by name+DOB match | ✅ | `/dashboard/passport/federation` form + PATCH API → submit → admin approve. PR #49. |
+| Hockey Canada # manual entry | ✅ | Same workflow. PR #49. |
+| `/dashboard/identity/federation` | ➖ | Renamed/routed to `/dashboard/passport/federation` for players; `/dashboard/coach/credentials` for coaches; `/dashboard/referee/credentials` for referees. |
+| `coaches` + `coach_team_history` + `coach_endorsements` tables | 🟡 | Coach role + permissions live (WS4 PR1+PR2). Coach credentials flow live (PR #49). Endorsement tables not yet. |
 | Coach profile (`/directory/coaches/[id]`) | ⏳ | Deferred to v2. |
 | `/dashboard/coach/endorsements` | ⏳ | Not built. |
-| **Tier 2 verdict** | 🟡 **Partial** | Federation tables = zero. Coach side = partial (role + permissions exist, endorsements not). |
+| **Tier 2 verdict** | 🟢 **Submission workflow live** | All three personas can submit; admin queue at `/admin/federation-registrations`. Endorsement tables still pending. Deprecation of legacy `players.usa_hockey_number` columns scheduled for PR3. |
 
 ### Tier 3 — Schema sport-agnostic refactor + data portability
 
@@ -123,14 +123,26 @@ These were NOT in the original roadmap. They emerged from daily ops, SEO, audit 
 - **PRs #1–#13** (June 13–14) — pricing single-source-of-truth, claim CTA on unclaimed pages, cap enforcement, 403 structured errors, draft persistence after Stripe checkout, welcome duplicate fix, guest checkout, etc.
 - **Status:** ✅ Complete for that batch. Analytics on the claim-to-paid funnel still pending.
 
-### WS7 — Partner Engagement (NEW, not in master list) 🟡 JUST STARTED
-- **WS7 PR1** (#48, **OPEN**) — Partner Passport activity surface + business rename
+### WS7 — Partner Engagement (NEW, not in master list) ✅ DONE
+- **WS7 PR1** (#48, **MERGED**) — Partner Passport activity surface + business rename
   - New page: `/partners/[id]/passport`
   - Renames: `/partner` → `/partner-with-us`, `/businesses` → `/partners`
   - Service: `16-partner-activity-service.ts` (gated, read-only)
   - Migration: `2026-07-23_venues_listing_id.sql` (venues.listing_id FK)
 - **WS7 PR2+** — ⏳ NOT PLANNED. Master list has no WS7. The only references to WS7 are in branch names and in `passport-card-design-system.md` (which uses WS5/WS6 differently than this).
-- **Status:** 🟡 PR1 in review. No written plan for what comes after.
+
+### WS8 — Federation Verification (NEW, not in master list) ✅ DONE
+- **WS8 PR1** (#49, **MERGED** at 2026-07-23T13:54Z, commit `b27e3d74`) — Federation submissions + admin verification across player/coach/referee
+  - New table: `federation_registrations` (polymorphic subject: player_id | coach_id | referee_user_id, exactly one set per row)
+  - New column: `federations.category` (player/coach/referee/all)
+  - 84 IIHF federations seeded (idempotent UPSERT)
+  - Player UI: `/dashboard/passport/federation` (status badges + submit/withdraw)
+  - Coach UI: `/dashboard/coach/credentials`
+  - Referee UI: `/dashboard/referee/credentials`
+  - Cross-persona summary: `/dashboard/credentials`
+  - Admin queue: `/admin/federation-registrations` (with inline reject reason input)
+  - 9 new API routes (player/coach/referee × edit/submit/withdraw + admin approve/reject)
+- **WS8 PR2/PR3 (deferred)** — Drop legacy `players.usa_hockey_number` and `players.hockey_canada_number` columns; convert `coach_profiles.license_issuing_authority` from free-text to derived view.
 
 ---
 
