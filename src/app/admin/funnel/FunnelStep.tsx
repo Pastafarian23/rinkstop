@@ -3,6 +3,9 @@
  *
  * One row in a funnel table. Shows event label, unique-user count,
  * % of top step, and % of previous step. Server-rendered (no client JS).
+ *
+ * WS9: now clickable. Passing `onClick` makes the row toggle the drill-down
+ * panel for that event; passing `isSelected` highlights it.
  */
 import { eventLabel, type FunnelStepResult } from '@/lib/funnel';
 
@@ -10,9 +13,11 @@ interface Props {
   step: FunnelStepResult;
   index: number;
   isBiggestDrop: boolean;
+  onClick?: () => void;
+  isSelected?: boolean;
 }
 
-export function FunnelStep({ step, index, isBiggestDrop }: Props) {
+export function FunnelStep({ step, index, isBiggestDrop, onClick, isSelected }: Props) {
   const pctOfPrevDisplay = step.pct_of_prev === null
     ? '—'
     : `${step.pct_of_prev.toFixed(1)}%`;
@@ -28,15 +33,31 @@ export function FunnelStep({ step, index, isBiggestDrop }: Props) {
     else pctColor = '#14B8A6';
   }
 
+  // Row background: biggest drop wins, but selected wins over biggest drop.
+  let rowBg: string | undefined;
+  if (isSelected) rowBg = 'rgba(20,184,166,0.10)';
+  else if (isBiggestDrop) rowBg = 'rgba(255,184,28,0.06)';
+
+  const interactive = typeof onClick === 'function';
+
   return (
-    <tr style={isBiggestDrop ? { background: 'rgba(255,184,28,0.06)' } : undefined}>
+    <tr
+      onClick={onClick}
+      style={{
+        ...(rowBg ? { background: rowBg } : {}),
+        cursor: interactive ? 'pointer' : 'default',
+        borderLeft: isSelected ? '2px solid #14B8A6' : '2px solid transparent',
+      }}
+      data-testid={`funnel-step-${step.event}`}
+      title={interactive ? `Click to view recent ${eventLabel(step.event)} events` : undefined}
+    >
       <td style={{ padding: '0.6rem 0.75rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', width: 32 }}>
         {index + 1}
         {isBiggestDrop && (
           <span title="Biggest drop in this funnel" style={{ marginLeft: 6, fontSize: '0.7rem' }}>⚠️</span>
         )}
       </td>
-      <td style={{ padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.9rem', fontWeight: isBiggestDrop ? 600 : 400 }}>
+      <td style={{ padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.9rem', fontWeight: isBiggestDrop || isSelected ? 600 : 400 }}>
         {eventLabel(step.event)}
         <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem', fontFamily: 'monospace' }}>
           {step.event}
