@@ -25,7 +25,7 @@ const TYPE_TO_HREF = {
   team: (id: string) => `/directory/teams/${id}`,
   player: (id: string) => `/directory/players/${id}`,
   league: (id: string) => `/directory/leagues/${id}`,
-  business: (id: string) => `/businesses/${id}`,
+  business: (id: string) => `/partners/${id}`,
 } as const;
 const TYPE_TO_ICON = {
   rink: '⛸️', team: '🏆', player: '🏒', league: '🏆', business: '🛒',

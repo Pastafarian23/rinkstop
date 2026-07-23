@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function BusinessDetailPage({ params }: PageProps) {
+export default async function PartnerDetailPage({ params }: PageProps) {
   const { id } = await params;
   const { data, error } = await supabaseAdmin
     .from('listings')
@@ -57,10 +57,10 @@ export default async function BusinessDetailPage({ params }: PageProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 900, margin: '0 auto' }}>
       <Link
-        href="/businesses"
+        href="/partners"
         style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontSize: '0.85rem' }}
       >
-        ← All businesses
+        ← All partners
       </Link>
 
       <header
@@ -235,9 +235,18 @@ export default async function BusinessDetailPage({ params }: PageProps) {
           background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
           borderRadius: 8, padding: '0.75rem 1rem', fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)',
           textAlign: 'center',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         }}
       >
-        Listed on RinkStop · {safeCategory.replace('_', ' ')}{data.tier !== 'free' ? ` · ${data.tier} tier` : ''}
+        <div>
+          Listed on RinkStop · {safeCategory.replace('_', ' ')}{data.tier !== 'free' ? ` · ${data.tier} tier` : ''}
+        </div>
+        <Link
+          href={`/partners/${data.id}/passport`}
+          style={{ color: '#14B8A6', textDecoration: 'none', fontWeight: 600 }}
+        >
+          📔 View passport activity (partner sign-in required)
+        </Link>
       </div>
     </div>
   );
