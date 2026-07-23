@@ -30,7 +30,9 @@ export default async function EndorsePlayerPage({
   const [{ data: coach }, { data: player }] = await Promise.all([
     supabaseAdmin
       .from('coach_profiles')
-      .select('id, verification_status, license_issuing_authority')
+      // WS8 PR4: license_issuing_authority was dropped from coach_profiles.
+      // Federation-level verification still flows through verification_status.
+      .select('id, verification_status')
       .eq('profile_id', userId)
       .maybeSingle(),
     supabaseAdmin
