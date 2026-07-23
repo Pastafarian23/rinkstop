@@ -495,7 +495,7 @@ export default async function ClaimYourListingPage({
 
         {/* Results */}
         {query.length === 0 ? (
-          <EmptyState />
+          <EmptyState type={type} />
         ) : query.length < 2 ? (
           <div
             style={{
@@ -516,7 +516,7 @@ export default async function ClaimYourListingPage({
               fallback={query}
             />
           ) : (
-            <NoResults query={query} />
+            <NoResults query={query} type={type} />
           )
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -579,7 +579,58 @@ export default async function ClaimYourListingPage({
   );
 }
 
-function EmptyState() {
+function EmptyState({ type }: { type: ClaimType }) {
+  // WS7 PR2: previously hardcoded 'rink' language regardless of tab.
+  // Now matches the type the user clicked and adds an /add-listing CTA so
+  // users whose entity doesn't exist can submit it instead of bouncing.
+  const copy: Record<ClaimType, { find: string; explain: string; addLabel: string; dirCount: string }> = {
+    rink: {
+      find: 'Find your rink',
+      explain: 'Type your rink name or city in the box above. We have 1,900+ rinks in the directory.',
+      addLabel: 'Add a new rink →',
+      dirCount: '1,900+ rinks',
+    },
+    team: {
+      find: 'Find your team',
+      explain: 'Type your team name or city in the box above. Thousands of teams across every league level.',
+      addLabel: 'Add a new team →',
+      dirCount: 'thousands of teams',
+    },
+    player: {
+      find: 'Find a player',
+      explain: 'Type a first or last name in the box above. Hundreds of thousands of players indexed.',
+      addLabel: 'Add a new player →',
+      dirCount: 'thousands of players',
+    },
+  };
+  const c = copy[type];
+
+  const handleClickAdd = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    try {
+      const payload = JSON.stringify({
+        name: 'add_listing_intent',
+        pathname: '/claim-your-listing',
+        props: {
+          entity_type: type,
+          source: 'empty_state',
+        },
+      });
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track', blob);
+      } else {
+        fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // never block on analytics
+    }
+  };
+
   return (
     <div
       style={{
@@ -593,11 +644,31 @@ function EmptyState() {
     >
       <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
       <div style={{ color: '#fff', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem' }}>
-        Find your rink
+        {c.find}
       </div>
-      <div style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
-        Type your rink name or city in the box above. We have 1,900+ rinks in the directory.
+      <div style={{ fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+        {c.explain}
       </div>
+      <Link
+        href={`/add-listing?type=${type}`}
+        onClick={handleClickAdd}
+        data-testid={`add-listing-${type}-empty`}
+        style={{
+          display: 'inline-block',
+          background: 'transparent',
+          color: '#FFB81C',
+          border: '1px solid #FFB81C',
+          padding: '0.5rem 1.1rem',
+          borderRadius: 8,
+          textDecoration: 'none',
+          fontWeight: 600,
+          fontSize: '0.85rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+        }}
+      >
+        {c.addLabel}
+      </Link>
     </div>
   );
 }
@@ -627,8 +698,28 @@ function FeaturedClaimableSection({
       <div style={{
         background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12,
         padding: '1.5rem', textAlign: 'center', color: '#9ca3af',
+        display: 'flex', flexDirection: 'column', gap: '0.85rem', alignItems: 'center',
       }}>
-        Type a rink, team, or player name above. Even 2 characters will start a search.
+        <div>Type a rink, team, or player name above. Even 2 characters will start a search.</div>
+        <Link
+          href="/add-listing"
+          data-testid="add-listing-featured-fallback"
+          style={{
+            display: 'inline-block',
+            background: 'transparent',
+            color: '#FFB81C',
+            border: '1px solid #FFB81C',
+            padding: '0.5rem 1.1rem',
+            borderRadius: 8,
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Can\u2019t find yours? Add a listing →
+        </Link>
       </div>
     );
   }
@@ -728,7 +819,62 @@ function FeaturedGroup({
   );
 }
 
-function NoResults({ query }: { query: string }) {
+function NoResults({ query, type }: { query: string; type: ClaimType }) {
+  // Per-entity-type copy. The previous version hardcoded rink language
+  // regardless of which tab the user was searching on, which read as a
+  // confusing bug — "team XYZ not found, Add Your Rink" made no sense.
+  const copy: Record<ClaimType, { notFound: string; addLabel: string; explanation: string; differentSearch: string }> = {
+    rink: {
+      notFound: 'No rinks found for',
+      addLabel: 'Add Your Rink →',
+      explanation: 'Try a different name, or just your city.',
+      differentSearch: 'If your rink isn\u2019t in our directory yet, you can add it.',
+    },
+    team: {
+      notFound: 'No teams found for',
+      addLabel: 'Add Your Team →',
+      explanation: 'Try a different team name or city.',
+      differentSearch: 'If your team isn\u2019t in our directory yet, you can add it.',
+    },
+    player: {
+      notFound: 'No players found for',
+      addLabel: 'Add This Player →',
+      explanation: 'Try a different name, or use last name only.',
+      differentSearch: 'If this player isn\u2019t in our directory yet, you can add them.',
+    },
+  };
+  const c = copy[type];
+
+  // WS7 PR2: sendBeacon on the Add Listing click so we can measure whether
+  // the add-listing funnel is actually being used and from which entity type.
+  const handleClickAdd = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    try {
+      const payload = JSON.stringify({
+        name: 'add_listing_intent',
+        pathname: '/claim-your-listing',
+        props: {
+          entity_type: type,
+          source: 'no_results',
+          query_hash: query ? simpleHash(query) : null,
+          query_length: query.length,
+        },
+      });
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track', blob);
+      } else {
+        fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // never block on analytics
+    }
+  };
+
   return (
     <div
       style={{
@@ -741,13 +887,15 @@ function NoResults({ query }: { query: string }) {
     >
       <div style={{ fontSize: '2.25rem', marginBottom: '0.5rem' }}>🤷</div>
       <div style={{ color: '#fff', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.4rem' }}>
-        No rinks found for &ldquo;{query}&rdquo;
+        {c.notFound} &ldquo;{query}&rdquo;
       </div>
       <div style={{ color: '#9ca3af', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-        Try a different name, or just your city. If your rink isn&apos;t in our directory yet, you can add it.
+        {c.explanation} {c.differentSearch}
       </div>
       <Link
-        href="/add-listing"
+        href={`/add-listing${type ? `?type=${type}` : ''}`}
+        onClick={handleClickAdd}
+        data-testid={`add-listing-${type}-noresults`}
         style={{
           display: 'inline-block',
           background: '#041E42',
@@ -759,7 +907,7 @@ function NoResults({ query }: { query: string }) {
           fontSize: '0.95rem',
         }}
       >
-        Add Your Rink →
+        {c.addLabel}
       </Link>
     </div>
   );

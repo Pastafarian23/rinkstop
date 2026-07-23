@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const LISTING_TYPES = [
   { value: 'team', label: 'Team' },
@@ -9,6 +9,10 @@ const LISTING_TYPES = [
   { value: 'tournament', label: 'Tournament' },
   { value: 'other', label: 'Other' },
 ];
+
+// Allowed ?type= values — keep in sync with /claim-your-listing ClaimType and
+// the directory tabs. Values not in this set are ignored.
+const ALLOWED_TYPE_PRESELECTS = new Set(['rink', 'team', 'player']);
 
 export default function AddListingForm() {
   const [form, setForm] = useState({
@@ -20,6 +24,45 @@ export default function AddListingForm() {
     description: '',
     email: '',
   });
+
+  // WS7 PR2: when navigated from /claim-your-listing no-results CTA, the
+  // URL has ?type=rink|team|player — auto-select that listing type so the
+  // user doesn't have to re-pick. Also fire `add_listing_intent_viewed` so
+  // we can join intent → submission in /admin/funnel.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('type');
+      if (t && ALLOWED_TYPE_PRESELECTS.has(t) && !form.listingType) {
+        setForm((prev) => ({ ...prev, listingType: t }));
+      }
+      // Best-effort analytics: load event so we can see intent -> form-view
+      // conversion rate.
+      const payload = JSON.stringify({
+        name: 'add_listing_intent_viewed',
+        pathname: '/add-listing',
+        props: {
+          preselect_type: ALLOWED_TYPE_PRESELECTS.has(t || '') ? t : null,
+          referrer: document.referrer || null,
+        },
+      });
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track', blob);
+      } else {
+        fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // never block
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -44,6 +87,32 @@ export default function AddListingForm() {
       });
       if (res.ok) {
         setSubmitted(true);
+        // Best-effort analytics: add_listing_submitted fires once per
+        // successful form submission. We don't await (never block).
+        try {
+          const payload = JSON.stringify({
+            name: 'add_listing_submitted',
+            pathname: '/add-listing',
+            props: {
+              listing_type: form.listingType || null,
+              had_website: !!form.website,
+              had_description: !!form.description,
+            },
+          });
+          const blob = new Blob([payload], { type: 'application/json' });
+          if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            navigator.sendBeacon('/api/track', blob);
+          } else {
+            fetch('/api/track', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: payload,
+              keepalive: true,
+            }).catch(() => {});
+          }
+        } catch {
+          // ignore
+        }
       } else {
         const data = await res.json();
         setError(data.error || 'Something went wrong. Please try again.');

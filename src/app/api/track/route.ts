@@ -49,6 +49,9 @@ export async function POST(req: NextRequest) {
     'claim_search_viewed',
     'claim_search_abandoned',
     'claim_sign_in_cta_clicked',
+    'add_listing_intent',
+    'add_listing_intent_viewed',
+    'add_listing_submitted',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });
