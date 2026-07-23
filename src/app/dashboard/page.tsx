@@ -19,6 +19,9 @@ import type { AccountType } from '@/components/dashboard/dashboardTypes';
 import { tierAtLeast } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
+import { getDismissedWorkspaceIds } from '@/lib/dashboard/dismissedWorkspaces';
+import DismissWorkspaceButton from '@/components/dashboard/DismissWorkspaceButton';
+import HiddenWorkspacesFooter from '@/components/dashboard/HiddenWorkspacesFooter';
 import FamilySetupWizard, { type WizardPersona } from '@/components/family/FamilySetupWizard';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
 import PlayerPracticePulse, { loadPracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
@@ -282,6 +285,11 @@ async function renderDashboard(userId: string) {
 
   // Per-type dashboard data. The query is wrapped so a missing table doesn't 500.
   const typeData = await loadDashboardTypeData(userId);
+
+  // Workspace dismiss state (2026-07-22). React-cached in the service layer,
+  // so calling getDismissedWorkspaceIds() again from WorkspaceHub's render
+  // shares the same result. We pre-resolve to a Set so the prop pass is cheap.
+  const dismissedIds = await getDismissedWorkspaceIds();
 
   // Inbox data for the overview's InboxCard. Same shape as /api/threads
   // returns, but trimmed to top-3 + counts. Server-rendered so it's
@@ -616,7 +624,14 @@ async function renderDashboard(userId: string) {
         userTier={profile?.tier ?? 'free'}
         accountTypes={types.map(t => String(t))}
         typeData={typeData}
+        dismissedIds={dismissedIds}
       />
+
+      {/* Hidden workspaces footer (2026-07-22). Renders only when the user
+          has dismissed at least one fully-available workspace. The
+          RestoreWorkspaceButton / RestoreAllWorkspacesButton inside
+          trigger router.refresh() so the main grid re-filters. */}
+      <HiddenWorkspacesFooter />
 
       {/* Choose your roles — only when user has zero account types.
           Shown AFTER the workspace hub so empty-state users can still see
@@ -696,12 +711,22 @@ function WorkspaceHub({
   userTier,
   accountTypes,
   typeData,
+  dismissedIds,
 }: {
   userTier: string;
   accountTypes: string[];
   typeData: import('@/components/dashboard/dashboardTypeData').TypeSectionData;
+  dismissedIds: Set<string>;
 }) {
   const access = getWorkspaceAccess(accountTypes, userTier, tierAtLeast);
+
+  // 2026-07-22 (Arnel): hide dismissed fully-available workspaces.
+  // Locked workspaces (unlocked=false OR fullyAvailable=false) ignore the
+  // dismiss flag — the 'never hide locked features' rule preserves the
+  // product signal of what's available to unlock.
+  const visibleAccess = access.filter(
+    (a) => !(a.fullyAvailable && dismissedIds.has(a.workspace.id)),
+  );
 
   // Step 7: per-workspace status one-liner. null = no data (hide line).
   // Locked workspaces (unlocked=false) skip the status — their existing
@@ -718,7 +743,7 @@ function WorkspaceHub({
       gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
       gap: '1rem',
     }}>
-      {access.map(({ workspace: ws, unlocked, fullyAvailable, requiredTier }) => {
+      {visibleAccess.map(({ workspace: ws, unlocked, fullyAvailable, requiredTier }) => {
         // 70% opacity when account-type-locked (Arnel-approved default).
         // Tier-locked (unlocked but no tier) keeps full opacity so users see
         // the upgrade CTA clearly.
@@ -776,7 +801,7 @@ function WorkspaceHub({
             }}
           >
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
               <span aria-hidden style={{ fontSize: '1.75rem' }}>{ws.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 style={{
@@ -792,6 +817,18 @@ function WorkspaceHub({
                   {locked ? <span aria-label="locked" title="Locked">🔒</span> : null}
                   {ws.name.toUpperCase()} WORKSPACE
                 </h3>
+                {/* 2026-07-22 (Arnel): dismiss button on fully-available cards.
+                    Locked cards do NOT show this — the 'never hide locked
+                    features' rule means dismissing them would silently flip
+                    their visibility and defeat the product signal. */}
+                {fullyAvailable ? (
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <DismissWorkspaceButton
+                      workspaceId={ws.id}
+                      workspaceName={ws.name}
+                    />
+                  </div>
+                ) : null}
                 <p style={{
                   color: 'rgba(255,255,255,0.55)',
                   fontSize: '0.8rem',
