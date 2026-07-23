@@ -8,10 +8,16 @@
  *
  * Server fetches the initial data on first render; this component then
  * manages refetch on user interaction.
+ *
+ * WS9: click a step row to open a drill-down panel below the table showing
+ * the most recent raw events for that step. Selection persists per step;
+ * clicking the same row again collapses the panel.
  */
 import { useEffect, useState, useTransition } from 'react';
 import { FunnelStep } from './FunnelStep';
+import { FunnelEventList } from './FunnelEventList';
 import type { FunnelResult } from '@/lib/funnel';
+import { eventLabel } from '@/lib/funnel';
 
 interface ApiResponse {
   window_days: number;
@@ -77,6 +83,9 @@ export function FunnelView({ initialData }: Props) {
             ))}
           </select>
         </label>
+        <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>
+          Click any step row to see recent events
+        </span>
         {data.degraded && (
           <span style={{ color: '#FFB81C', fontSize: '0.8rem' }}>
             ⚠️ {data.note ?? 'Analytics partially unavailable'}
@@ -94,8 +103,8 @@ export function FunnelView({ initialData }: Props) {
         )}
       </div>
 
-      <FunnelTable title={data.tracks.business.label} funnel={data.tracks.business} />
-      <FunnelTable title={data.tracks.personal.label} funnel={data.tracks.personal} />
+      <FunnelTable title={data.tracks.business.label} funnel={data.tracks.business} windowDays={days} />
+      <FunnelTable title={data.tracks.personal.label} funnel={data.tracks.personal} windowDays={days} />
     </div>
   );
 }
@@ -103,11 +112,17 @@ export function FunnelView({ initialData }: Props) {
 interface FunnelTableProps {
   title: string;
   funnel: FunnelResult;
+  windowDays: number;
 }
 
-function FunnelTable({ title, funnel }: FunnelTableProps) {
+function FunnelTable({ title, funnel, windowDays }: FunnelTableProps) {
   const biggestDrop = funnel.biggest_drop_index;
   const totalEntered = funnel.steps[0]?.unique_users ?? 0;
+  // Selected step (event name) for drill-down. null = nothing open.
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+
+  const toggle = (event: string) =>
+    setSelectedEvent((prev) => (prev === event ? null : event));
 
   return (
     <section style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.25rem 1.5rem' }}>
@@ -140,6 +155,8 @@ function FunnelTable({ title, funnel }: FunnelTableProps) {
                 step={step}
                 index={i}
                 isBiggestDrop={biggestDrop === i}
+                isSelected={selectedEvent === step.event}
+                onClick={() => toggle(step.event)}
               />
             ))}
           </tbody>
@@ -151,6 +168,15 @@ function FunnelTable({ title, funnel }: FunnelTableProps) {
           ⚠️ Biggest drop: {funnel.steps[biggestDrop - 1].event} → {funnel.steps[biggestDrop].event}{' '}
           ({(((funnel.steps[biggestDrop - 1].pct_of_prev ?? 0) - (funnel.steps[biggestDrop].pct_of_prev ?? 0))).toFixed(1)}pp loss)
         </p>
+      )}
+
+      {/* WS9 drill-down */}
+      {selectedEvent && (
+        <FunnelEventList
+          name={selectedEvent}
+          humanLabel={eventLabel(selectedEvent)}
+          days={windowDays}
+        />
       )}
     </section>
   );

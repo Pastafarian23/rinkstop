@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
     'calculator_used',
     'tool_viewed',
     'claim_search_viewed',
+    'claim_search_abandoned',
+    'claim_sign_in_cta_clicked',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });

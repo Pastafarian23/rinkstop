@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackPageView } from '@/lib/analytics';
 import { ClaimButton } from './ClaimButton';
+import { ClaimAbandonTracker } from './ClaimAbandonTracker';
 
 export const metadata: Metadata = {
   title: 'Claim Your Listing on RinkStop',
@@ -244,6 +247,33 @@ export default async function ClaimYourListingPage({
   // Validate the type param. Default to rink if missing or invalid.
   const type: ClaimType =
     typeParam === 'team' || typeParam === 'player' ? typeParam : 'rink';
+
+  // Auth context — used to (a) decide if we show a "sign in to claim"
+  // CTA above the search and (b) bucket funnel metrics by signed-in state.
+  // Failures here shouldn't break the page.
+  let signedInUserId: string | null = null;
+  let pendingDraftCount = 0;
+  try {
+    const session = await auth();
+    const cu = await currentUser();
+    const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+    const userId = await resolveCanonicalUserId(session.userId, userEmail);
+    if (userId) {
+      signedInUserId = userId;
+      // Count in-progress claim drafts for this user. If they have any,
+      // we surface a "Resume your draft" prompt above the search.
+      const { count } = await supabaseAdmin
+        .from('claim_drafts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      pendingDraftCount = count || 0;
+    }
+  } catch {
+    // ignore — page renders fine without auth context
+  }
+
+  const isSignedIn = signedInUserId !== null;
+
   const results = query.length >= 2 ? await searchEntities(query, type) : [];
 
   // Featured claimable listings — shown when the user lands with an empty
@@ -253,13 +283,23 @@ export default async function ClaimYourListingPage({
   const featuredClaimable = query.length < 2 ? await loadFeaturedClaimable() : null;
 
   // Server-side analytics: track this page view with the search query
+  // Plus: capture whether the user searched or landed empty (helps split
+  // "browse" traffic from "intent" traffic). query is hashed lightly if
+  // non-empty so we can group by similar terms without storing PII.
   try {
     await trackPageView({
       name: 'claim_search_viewed',
       pathname: '/claim-your-listing',
       props: {
         query_length: query.length,
+        query_hash: query ? simpleHash(query) : null,
         result_count: results.length,
+        had_query: query.length >= 2,
+        entity_type: type,
+        had_featured: !!featuredClaimable,
+        zero_results: query.length >= 2 && results.length === 0,
+        is_signed_in: isSignedIn,
+        pending_drafts: pendingDraftCount,
       },
     });
   } catch {
@@ -275,6 +315,15 @@ export default async function ClaimYourListingPage({
       }}
     >
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        {/* WS9: abandon tracker — fires claim_search_abandoned on pagehide
+            if the user typed a query but didn't click any claim button.
+            Pure client component, no UI impact. */}
+        <ClaimAbandonTracker
+          queryHash={query ? simpleHash(query) : null}
+          queryLength={query.length}
+          resultCount={results.length}
+          entityType={type}
+        />
         {/* Header */}
         <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '0.85rem', letterSpacing: '0.18em', color: '#FFB81C', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.75rem' }}>
@@ -297,6 +346,84 @@ export default async function ClaimYourListingPage({
             Search for your rink or team below. Claiming requires a Verified Hockey Identity or other paid plan — browse the directory is always free.
           </p>
         </div>
+
+        {/* Funnel CTA banners — aim to convert the 99.5% drop from search view
+            → button click. Two variants:
+              (a) anonymous + has draft in progress: tell them to sign in to claim
+              (b) anonymous + no draft: nudge them toward /pricing so they know
+                  the cost BEFORE they search and bounce.
+            Signed-in + has pending draft: encourage them to finish what they started. */}
+        {isSignedIn && pendingDraftCount > 0 && (
+          <div
+            style={{
+              background: 'rgba(20,184,166,0.08)',
+              border: '1px solid rgba(20,184,166,0.4)',
+              borderRadius: 10,
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 200, color: '#14B8A6', fontSize: '0.9rem' }}>
+              <strong style={{ color: '#fff' }}>You have {pendingDraftCount} claim draft{pendingDraftCount === 1 ? '' : 's'} in progress.</strong>{' '}
+              Finish your draft to submit it for review.
+            </div>
+            <Link
+              href="/dashboard/claims"
+              style={{
+                background: '#14B8A6',
+                color: '#0a0a0a',
+                padding: '0.55rem 1.1rem',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Resume draft →
+            </Link>
+          </div>
+        )}
+        {!isSignedIn && (
+          <div
+            style={{
+              background: 'rgba(255,184,28,0.06)',
+              border: '1px solid rgba(255,184,28,0.3)',
+              borderRadius: 10,
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 200, color: '#FFB81C', fontSize: '0.9rem' }}>
+              <strong style={{ color: '#fff' }}>Operators: </strong>
+              you&rsquo;ll need a RinkStop account and a paid Business plan to claim. See plans before you search.
+            </div>
+            <Link
+              href={`/pricing${query ? `?intent=claim&type=${type}` : '?intent=claim'}`}
+              style={{
+                background: 'transparent',
+                color: '#FFB81C',
+                border: '1px solid #FFB81C',
+                padding: '0.55rem 1.1rem',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              See plans →
+            </Link>
+          </div>
+        )}
 
         {/* Type tabs — pick which entity type to search */}
         <nav
@@ -783,4 +910,18 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Simple non-cryptographic 32-bit FNV-1a hash. Used to bucket search terms
+ * for funnel analysis without storing raw query strings (privacy + size).
+ * Collisions are fine for funnel bucketing (~4B buckets, queries are <100 chars).
+ */
+function simpleHash(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
 }
