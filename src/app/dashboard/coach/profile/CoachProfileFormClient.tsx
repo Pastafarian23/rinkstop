@@ -6,23 +6,17 @@ import Link from 'next/link';
 
 type Team = { id: string; name: string; slug: string; league_id: string | null; leagues: { name: string } | { name: string }[] | null };
 
-const AUTHORITIES = [
-  { value: '', label: '— Not set —' },
-  { value: 'USA Hockey', label: 'USA Hockey' },
-  { value: 'Hockey Canada', label: 'Hockey Canada' },
-  { value: 'IIHF', label: 'IIHF' },
-  { value: 'USHL', label: 'USHL' },
-  { value: 'NAHL', label: 'NAHL' },
-  { value: 'NCAA', label: 'NCAA' },
-  { value: 'Other', label: 'Other' },
-];
-
 function leagueName(league: Team['leagues']): string | null {
   if (!league) return null;
   if (Array.isArray(league)) return league[0]?.name ?? null;
   return league.name ?? null;
 }
 
+// WS8 PR4: license_number / license_issuing_authority / license_expires_at
+// were removed from coach_profiles. Federation registration goes through
+// /dashboard/coach/credentials (which writes to federation_registrations).
+// The form below handles only the personal-coach profile fields that remain:
+// years_coaching, current_team_id, bio.
 export default function CoachProfileFormClient({
   coachName,
   initial,
@@ -31,9 +25,6 @@ export default function CoachProfileFormClient({
 }: {
   coachName: string;
   initial: {
-    license_number: string;
-    license_issuing_authority: string;
-    license_expires_at: string;
     years_coaching: string;
     current_team_id: string;
     bio: string;
@@ -64,9 +55,6 @@ export default function CoachProfileFormClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          license_number: form.license_number || null,
-          license_issuing_authority: form.license_issuing_authority || null,
-          license_expires_at: form.license_expires_at || null,
           years_coaching: form.years_coaching === '' ? null : Number(form.years_coaching),
           current_team_id: form.current_team_id || null,
           bio: form.bio || null,
@@ -151,38 +139,56 @@ export default function CoachProfileFormClient({
           </strong>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div>
-              <label style={labelStyle}>License #</label>
-              <input type="text" value={form.license_number} onChange={handleChange('license_number')} style={inputStyle} />
+        {/* WS8 PR4: redirect federation/license registration here. */}
+        <div
+          data-testid="federation-credential-cta"
+          style={{
+            padding: '1rem 1.25rem',
+            background: 'rgba(20,184,166,0.06)',
+            border: '1px solid rgba(20,184,166,0.3)',
+            borderRadius: 10,
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 220, fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
+            <div style={{ color: '#14B8A6', fontWeight: 700, marginBottom: 4 }}>
+              Manage your federation registration
             </div>
-            <div>
-              <label style={labelStyle}>Issuing authority</label>
-              <select value={form.license_issuing_authority} onChange={handleChange('license_issuing_authority')} style={inputStyle}>
-                {AUTHORITIES.map((a) => (
-                  <option key={a.value} value={a.value}>{a.label}</option>
-                ))}
-              </select>
-            </div>
+            USA Hockey, Hockey Canada, IIHF, and other federation/license numbers are managed in the Credentials page. The admin team can verify them after submission.
           </div>
+          <Link
+            href="/dashboard/coach/credentials"
+            data-testid="coach-credentials-link"
+            style={{
+              padding: '0.6rem 1.1rem',
+              background: '#14B8A6',
+              color: '#0a0a0a',
+              borderRadius: 8,
+              textDecoration: 'none',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Open credentials →
+          </Link>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div>
-              <label style={labelStyle}>License expires</label>
-              <input type="date" value={form.license_expires_at} onChange={handleChange('license_expires_at')} style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Years coaching</label>
-              <input
-                type="number"
-                min={0}
-                max={80}
-                value={form.years_coaching}
-                onChange={handleChange('years_coaching')}
-                style={inputStyle}
-              />
-            </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label style={labelStyle}>Years coaching</label>
+            <input
+              type="number"
+              min={0}
+              max={80}
+              value={form.years_coaching}
+              onChange={handleChange('years_coaching')}
+              style={inputStyle}
+            />
           </div>
 
           <div>

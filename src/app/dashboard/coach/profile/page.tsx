@@ -21,10 +21,13 @@ export default async function CoachProfilePage() {
   if (!session.userId) redirect('/login?redirect_url=/dashboard/coach/profile');
 
   // Fetch existing coach profile if any + display name from profiles
+  // WS8 PR4: license_number / license_issuing_authority / license_expires_at
+  // columns were dropped from coach_profiles; those reads are gone. Federation
+  // registration lives in federation_registrations (separate page).
   const [{ data: existing }, { data: profile }, { data: teams }] = await Promise.all([
     supabaseAdmin
       .from('coach_profiles')
-      .select('id, license_number, license_issuing_authority, license_expires_at, years_coaching, current_team_id, bio, verification_status')
+      .select('id, years_coaching, current_team_id, bio, verification_status')
       .eq('profile_id', userId)
       .maybeSingle(),
     supabaseAdmin
@@ -46,9 +49,6 @@ export default async function CoachProfilePage() {
     <CoachProfileFormClient
       coachName={coachName}
       initial={{
-        license_number: existing?.license_number ?? '',
-        license_issuing_authority: existing?.license_issuing_authority ?? '',
-        license_expires_at: existing?.license_expires_at ?? '',
         years_coaching: existing?.years_coaching != null ? String(existing.years_coaching) : '',
         current_team_id: existing?.current_team_id ?? '',
         bio: existing?.bio ?? '',
