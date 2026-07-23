@@ -77,16 +77,34 @@ export async function POST(req: NextRequest) {
   console.log('[analytics]', JSON.stringify(log));
 
   try {
-    await supabaseAdmin.from('analytics_events').insert({
-      name: log.name,
-      user_id: log.userId,
-      pathname: log.pathname,
-      referrer: log.referrer,
-      utm_source: log.utm_source,
-      utm_medium: log.utm_medium,
-      utm_campaign: log.utm_campaign,
-      props: log.props,
-    });
+    // WS9 PR2: upsert + ignoreDuplicates. The partial UNIQUE indexes added in
+    // 2026-07-23_analytics_events_dedup.sql silently dedupe:
+    //   - same (name, user_id, pathname, 1-second bucket) for signed-in users
+    //   - same (name, props->>'sessionId') for Stripe events
+    // For events that match NEITHER index, upsert falls back to a plain
+    // insert (no conflict to ignore). The onConflict string is a no-op
+    // when the index doesn't fire.
+    await supabaseAdmin.from('analytics_events').upsert(
+      {
+        name: log.name,
+        // WS9 PR2: coalesce NULL user_id to '' so the non-partial UNIQUE
+        // index on (name, user_id, pathname, ts_second) treats two anonymous
+        // events in the same second as a single row. Postgres treats NULL
+        // as distinct in unique indexes, so without this the dedup wouldn't
+        // work for anonymous visitors.
+        user_id: log.userId ?? '',
+        pathname: log.pathname,
+        referrer: log.referrer,
+        utm_source: log.utm_source,
+        utm_medium: log.utm_medium,
+        utm_campaign: log.utm_campaign,
+        props: log.props,
+      },
+      {
+        onConflict: 'name,user_id,pathname,ts_second',
+        ignoreDuplicates: true,
+      }
+    );
   } catch (e: any) {
     console.error('[analytics] supabase insert failed:', e?.message ?? e);
   }
