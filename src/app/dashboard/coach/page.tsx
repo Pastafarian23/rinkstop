@@ -128,6 +128,20 @@ export default async function CoachHubPage() {
             </p>
           </Link>
 
+          {coach && (
+            <Link href="/dashboard/coach/credentials" style={cardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <p style={{ fontWeight: 700, fontSize: '1rem' }}>Federation credentials</p>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                  Verified federation-issued IDs
+                </span>
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+                Submit your coaching license numbers (USA Hockey, Hockey Canada, IIHF) for admin verification.
+              </p>
+            </Link>
+          )}
+
           <Link href="/dashboard/coach/teams" style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <p style={{ fontWeight: 700, fontSize: '1rem' }}>Team history</p>
