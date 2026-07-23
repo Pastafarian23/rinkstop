@@ -266,6 +266,26 @@ export default async function RefereeDashboardPage() {
             </div>
           </Link>
         </section>
+
+        {/* Federation credentials link */}
+        <section style={{ marginTop: '1rem' }}>
+          <Link
+            href="/dashboard/referee/credentials"
+            style={{
+              display: 'block',
+              padding: '1rem 1.25rem',
+              background: '#0f172a',
+              color: '#fff',
+              borderRadius: 8,
+              textDecoration: 'none',
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>Federation credentials →</div>
+            <div style={{ fontSize: '0.85rem', opacity: 0.85 }}>
+              Submit your officiating license numbers for admin verification
+            </div>
+          </Link>
+        </section>
       </div>
     </main>
   );

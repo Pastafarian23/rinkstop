@@ -26,7 +26,7 @@ async function getOwnedListing(listingId: string, userId: string) {
 }
 
 // GET /api/listings/[id]
-// Returns a single listing. Owner only (a public /businesses directory view
+// Returns a single listing. Owner only (a public /partners directory view
 // will be a separate read endpoint that hits Supabase directly with RLS).
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();

@@ -65,7 +65,7 @@ export default async function PassportHubPage() {
   // Resolve player
   const { data: player } = await supabaseAdmin
     .from('players')
-    .select('id, first_name, last_name, primary_position_category, usa_hockey_number, hockey_canada_number')
+    .select('id, first_name, last_name, primary_position_category')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -92,22 +92,24 @@ export default async function PassportHubPage() {
   }
 
   // Stats for the dashboard
-  const [historyCount, statsCount, endorsementCount] = await Promise.all([
+  const [historyCount, statsCount, endorsementCount, federationCount] = await Promise.all([
     supabaseAdmin.from('hockey_player_team_history').select('id', { count: 'exact', head: true }).eq('player_id', player.id),
     supabaseAdmin.from('hockey_player_stats_season').select('id', { count: 'exact', head: true }).eq('player_id', player.id),
     supabaseAdmin.from('coach_endorsements').select('id', { count: 'exact', head: true }).eq('player_id', player.id),
+    supabaseAdmin.from('federation_registrations').select('id', { count: 'exact', head: true }).eq('player_id', player.id),
   ]);
 
   const counts = {
     history: historyCount.count ?? 0,
     stats: statsCount.count ?? 0,
     endorsements: endorsementCount.count ?? 0,
+    federation: federationCount.count ?? 0,
   };
 
   const completeSections = [
     counts.history > 0,
     counts.stats > 0,
-    !!(player.usa_hockey_number || player.hockey_canada_number),
+    counts.federation > 0,
   ].filter(Boolean).length;
   const completenessPercent = Math.round((completeSections / 3) * 100);
 
@@ -241,7 +243,7 @@ export default async function PassportHubPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <p style={{ fontWeight: 700, fontSize: '1rem' }}>Federation registration</p>
               <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
-                {(player.usa_hockey_number || player.hockey_canada_number) ? 'Set' : 'Not set'}
+                {counts.federation > 0 ? 'Set' : 'Not set'}
               </span>
             </div>
             <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>

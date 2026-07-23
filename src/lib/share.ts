@@ -143,7 +143,7 @@ export function buildBusinessShare(listing: {
     text: where
       ? `${listing.business_name} — ${categoryLabel(listing.category)} in ${where}. Find it on ${SITE_NAME}.`
       : `${listing.business_name} on ${SITE_NAME}.`,
-    url: `${BASE_URL}/businesses/${listing.id}`,
+    url: `${BASE_URL}/partners/${listing.id}`,
   };
 }
 

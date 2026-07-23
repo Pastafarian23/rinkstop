@@ -3,6 +3,7 @@
 **Status:** Roadmap document. Companion to `passport-vision.md`. No code yet. Phasing is rough; weeks are estimates, not deadlines.
 
 **Last updated:** 2026-07-10
+**Status snapshot:** See `passport-roadmap-STATUS.md` for what shipped / what's partial / what's pending (updated 2026-07-23).
 
 ---
 

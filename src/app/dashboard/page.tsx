@@ -691,6 +691,33 @@ async function renderDashboard(userId: string) {
         types={types}
       />
 
+      {/* Cross-persona credentials shortcut — players/coaches/referees see
+          all their federation registrations in one place. */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <Link
+          href="/dashboard/credentials"
+          style={{
+            display: 'block',
+            padding: '0.85rem 1rem',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 6,
+            color: '#fff',
+            textDecoration: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>My credentials</p>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+              All roles →
+            </span>
+          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+            View all your federation-issued credentials across player, coach, and referee roles.
+          </p>
+        </Link>
+      </div>
+
     </div>
   );
 }

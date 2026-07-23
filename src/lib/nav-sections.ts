@@ -26,7 +26,7 @@ const EXPLORE: NavItem[] = [
   { href: '/directory/scouts',   label: 'Scouts'     },
   { href: '/directory/leagues',  label: 'Leagues'    },
   { href: '/directory/rinks',    label: 'Rinks'      },
-  { href: '/businesses',         label: 'Businesses' },
+  { href: '/partners',         label: 'Partners' },
   { href: '/directory/games',    label: 'Games'      },
 ];
 
@@ -83,7 +83,7 @@ const ABOUT_LINKS: NavItem[] = [
   { href: '/about',          label: 'About Us'        },
   { href: '/contact',        label: 'Contact Us'      },
   { href: '/advertise',      label: 'Advertise'       },
-  { href: '/partner',        label: 'Partner With Us' },
+  { href: '/partner-with-us', label: 'Partner With Us' },
   { href: '/add-listing',    label: 'Add Listing'     },
   { href: '/dashboard/listings', label: 'List Your Business' },
 ];
