@@ -228,7 +228,38 @@ export class PartnerActivityService {
       stampedAt: s.stamped_at as string,
     }));
 
-    // ─── 5. Per-venue summary counts ────────────────────────
+    // ─── 5. Recent scan_events ──────────────────────────────
+    // scan_events.venue_id is populated by the stamp service at insert time.
+    const { data: scanEventsData, error: scanEventsErr } = await supabaseAdmin
+      .from('scan_events')
+      .select('id, qr_identifier, outcome, actor_user_id, created_at, venue_id')
+      .in('venue_id', venueIds)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (scanEventsErr) {
+      throw new PartnerActivityNotFoundError(`scan_events lookup failed: ${scanEventsErr.message}`);
+    }
+
+    const scanEvents = (scanEventsData ?? []) as Array<Record<string, unknown>>;
+
+    // Build per-venue scan counts.
+    const scansByVenue = new Map<string, number>();
+    for (const scan of scanEvents) {
+      const vid = scan.venue_id as string | null;
+      if (vid) scansByVenue.set(vid, (scansByVenue.get(vid) ?? 0) + 1);
+    }
+
+    const recentScans: PartnerActivityScan[] = scanEvents.map((s) => ({
+      id: s.id as string,
+      qrIdentifier: s.qr_identifier as string,
+      outcome: s.outcome as string,
+      actorUserId: (s.actor_user_id as string | null) ?? null,
+      createdAt: s.created_at as string,
+    }));
+
+    // ─── 6. Per-venue summary counts ────────────────────────
     const stampsByVenue = new Map<string, number>();
     const lastStampedByVenue = new Map<string, string>();
     for (const s of allStamps) {
@@ -244,16 +275,9 @@ export class PartnerActivityService {
       venueId: v.id as string,
       venueName: v.name as string,
       stampCount: stampsByVenue.get(v.id as string) ?? 0,
-      scanCount: 0, // see note below; populated when scan_events.venue_id lands
+      scanCount: scansByVenue.get(v.id as string) ?? 0,
       lastStampedAt: lastStampedByVenue.get(v.id as string) ?? null,
     }));
-
-    // ─── 6. Recent scan_events ──────────────────────────────
-    // NOTE: scan_events doesn't carry venue_id — only qr_identifier.
-    // Until stamps.qr_identifier (or scan_events.venue_id) lands, we
-    // ship without scan visibility. The page shows a "v1.1" footnote
-    // so operators know it's a known gap, not a broken page.
-    const recentScans: PartnerActivityScan[] = [];
 
     return {
       listingId: listing.id as string,

@@ -502,6 +502,8 @@ export class StampService {
   ): Promise<CreateStampResponse> {
     const target = await this.resolveTarget(req.qrIdentifier);
     if (!target) {
+      // No target resolved — qr_identifier is malformed or no active target exists.
+      // venue_id cannot be determined without a resolved target.
       await this.writeScanEvent(req.qrIdentifier, actorUserId, 'invalid_target', {
         reason: 'qr_not_found',
       });
@@ -510,6 +512,9 @@ export class StampService {
 
     const actorType = await this.resolveActorType(actorUserId);
     if (!actorType) {
+      // Actor type unknown — cannot determine authorization. venue_id not
+      // available without a resolved target (actor check runs before target
+      // validation in the stamp flow).
       await this.writeScanEvent(req.qrIdentifier, actorUserId, 'error', {
         reason: 'unknown_actor_type',
       });
@@ -567,11 +572,13 @@ export class StampService {
           req.subjectUserId
         );
         if (!allowed) {
+          const venueId = await this.resolveVenueIdFromTarget(target);
           await this.writeScanEvent(
             req.qrIdentifier,
             actorUserId,
             'invalid_target',
-            { reason: 'coach_player_not_linked' }
+            { reason: 'coach_player_not_linked' },
+            venueId
           );
           throw new StampForbiddenError(
             'Coach must share an active team with the player to stamp'
@@ -649,9 +656,10 @@ export class StampService {
       // Partial unique index hit → already stamped today.
       // Postgres error code 23505 = unique_violation.
       if (error.code === '23505') {
+        const venueId = await this.resolveVenueIdFromTarget(target);
         await this.writeScanEvent(req.qrIdentifier, actorUserId, 'duplicate', {
           target_type: target.targetType,
-        });
+        }, venueId);
         return {
           stampId: '',
           targetType: target.targetType,
@@ -660,13 +668,15 @@ export class StampService {
           alreadyStampedToday: true,
         };
       }
+      const venueId = await this.resolveVenueIdFromTarget(target);
       await this.writeScanEvent(req.qrIdentifier, actorUserId, 'error', {
         code: error.code,
         message: error.message,
-      });
+      }, venueId);
       throw error;
     }
 
+    const venueId = await this.resolveVenueIdFromTarget(target);
     await this.writeScanEvent(
       req.qrIdentifier,
       actorUserId,
@@ -674,7 +684,8 @@ export class StampService {
       {
         target_type: target.targetType,
         distance_meters: distanceMeters,
-      }
+      },
+      venueId
     );
 
     // If this was a coach→player stamp, create a consumer notification for
@@ -709,6 +720,40 @@ export class StampService {
       case 'event':
         return `${t.eventName} (at ${t.parentName})`;
     }
+  }
+
+  /**
+   * Resolve the venue_id for RLS from a resolved stamp target.
+   * Used to populate scan_events.venue_id at write time.
+   *
+   *   rink:   look up venue_events.parent_venue_id for the rink (best-effort;
+   *            a rink may have zero or many venues; takes the first)
+   *   venue:  direct reference — target.venueId
+   *   event:  look up venue_events.parent_venue_id for the event
+   */
+  private async resolveVenueIdFromTarget(
+    target: ResolvedStampTarget
+  ): Promise<string | null> {
+    if (target.targetType === 'venue' && target.venueId) {
+      return target.venueId;
+    }
+    if (target.targetType === 'event' && target.eventId) {
+      const { data } = await supabaseAdmin
+        .from('venue_events')
+        .select('parent_venue_id')
+        .eq('id', target.eventId)
+        .maybeSingle();
+      return data?.parent_venue_id ?? null;
+    }
+    if (target.targetType === 'rink' && target.rinkId) {
+      const { data } = await supabaseAdmin
+        .from('venue_events')
+        .select('parent_venue_id')
+        .eq('parent_rink_id', target.rinkId)
+        .maybeSingle();
+      return data?.parent_venue_id ?? null;
+    }
+    return null;
   }
 
   /**
@@ -910,13 +955,15 @@ export class StampService {
     qrIdentifier: string,
     actorUserId: string | null,
     outcome: string,
-    details: Record<string, unknown>
+    details: Record<string, unknown>,
+    venueId?: string | null
   ): Promise<void> {
     const { error } = await supabaseAdmin.from('scan_events').insert({
       qr_identifier: qrIdentifier,
       actor_user_id: actorUserId,
       outcome,
       details,
+      venue_id: venueId ?? null,
     });
     if (error) {
       // Audit failures are logged but never propagated — the user's stamp
@@ -2306,35 +2353,48 @@ export class StampService {
     action: 'uphold' | 'overturn',
     reason: string | null
   ): Promise<void> {
-    // Look up target to resolve qr_identifier.
+    // Look up target to resolve qr_identifier and venue_id.
     const { data: stamp } = await supabaseAdmin
       .from('stamps')
       .select('target_rink_id, target_venue_id, target_event_id')
       .eq('id', stampId)
       .maybeSingle();
 
+    if (!stamp) return;
+
     let qrIdentifier: string | null = null;
-    if (stamp?.target_rink_id) {
-      const { data: rink } = await supabaseAdmin
-        .from('rinks')
-        .select('qr_identifier')
-        .eq('id', stamp.target_rink_id)
-        .maybeSingle();
-      qrIdentifier = rink?.qr_identifier ?? null;
-    } else if (stamp?.target_venue_id) {
+    let venueId: string | null = null;
+
+    if (stamp.target_venue_id) {
       const { data: venue } = await supabaseAdmin
         .from('venues')
         .select('public_id')
         .eq('id', stamp.target_venue_id)
         .maybeSingle();
       qrIdentifier = venue?.public_id ?? null;
-    } else if (stamp?.target_event_id) {
+      venueId = stamp.target_venue_id;
+    } else if (stamp.target_event_id) {
       const { data: event } = await supabaseAdmin
         .from('venue_events')
-        .select('public_id')
+        .select('public_id, parent_venue_id')
         .eq('id', stamp.target_event_id)
         .maybeSingle();
       qrIdentifier = event?.public_id ?? null;
+      venueId = event?.parent_venue_id ?? null;
+    } else if (stamp.target_rink_id) {
+      const { data: rink } = await supabaseAdmin
+        .from('rinks')
+        .select('qr_identifier')
+        .eq('id', stamp.target_rink_id)
+        .maybeSingle();
+      qrIdentifier = rink?.qr_identifier ?? null;
+      // Best-effort: resolve venue via first venue_events row for this rink.
+      const { data: ve } = await supabaseAdmin
+        .from('venue_events')
+        .select('parent_venue_id')
+        .eq('parent_rink_id', stamp.target_rink_id)
+        .maybeSingle();
+      venueId = ve?.parent_venue_id ?? null;
     }
 
     if (!qrIdentifier) {
@@ -2350,7 +2410,8 @@ export class StampService {
       {
         stamp_id: stampId,
         reason,
-      }
+      },
+      venueId
     );
   }
 
@@ -2359,37 +2420,49 @@ export class StampService {
     callerUserId: string,
     reason: string | null
   ): Promise<void> {
-    // Look up the stamp's qr_identifier so the audit row references the
-    // identifier, not the stamp id. This keeps scan_events and stamps
-    // queryable via the same key (qr_identifier) for fraud analysis.
+    // Look up the stamp's qr_identifier and venue_id so the audit row
+    // references the identifier (for fraud analysis) and venue (for RLS).
     const { data: stamp } = await supabaseAdmin
       .from('stamps')
       .select('target_rink_id, target_venue_id, target_event_id')
       .eq('id', stampId)
       .maybeSingle();
 
+    if (!stamp) return;
+
     let qrIdentifier: string | null = null;
-    if (stamp?.target_rink_id) {
-      const { data: rink } = await supabaseAdmin
-        .from('rinks')
-        .select('qr_identifier')
-        .eq('id', stamp.target_rink_id)
-        .maybeSingle();
-      qrIdentifier = rink?.qr_identifier ?? null;
-    } else if (stamp?.target_venue_id) {
+    let venueId: string | null = null;
+
+    if (stamp.target_venue_id) {
       const { data: venue } = await supabaseAdmin
         .from('venues')
         .select('public_id')
         .eq('id', stamp.target_venue_id)
         .maybeSingle();
       qrIdentifier = venue?.public_id ?? null;
-    } else if (stamp?.target_event_id) {
+      venueId = stamp.target_venue_id; // direct FK
+    } else if (stamp.target_event_id) {
       const { data: event } = await supabaseAdmin
         .from('venue_events')
-        .select('public_id')
+        .select('public_id, parent_venue_id')
         .eq('id', stamp.target_event_id)
         .maybeSingle();
       qrIdentifier = event?.public_id ?? null;
+      venueId = event?.parent_venue_id ?? null;
+    } else if (stamp.target_rink_id) {
+      const { data: rink } = await supabaseAdmin
+        .from('rinks')
+        .select('qr_identifier')
+        .eq('id', stamp.target_rink_id)
+        .maybeSingle();
+      qrIdentifier = rink?.qr_identifier ?? null;
+      // Best-effort: resolve venue via first venue_events row for this rink.
+      const { data: ve } = await supabaseAdmin
+        .from('venue_events')
+        .select('parent_venue_id')
+        .eq('parent_rink_id', stamp.target_rink_id)
+        .maybeSingle();
+      venueId = ve?.parent_venue_id ?? null;
     }
 
     if (!qrIdentifier) {
@@ -2401,7 +2474,7 @@ export class StampService {
     await this.writeScanEvent(qrIdentifier, callerUserId, 'flagged_dispute', {
       stamp_id: stampId,
       reason,
-    });
+    }, venueId);
   }
 
   /**
