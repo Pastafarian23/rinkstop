@@ -56,6 +56,10 @@ const ALLOWED_EVENT_NAMES = new Set<string>([
   'pricing_viewed',
   'tool_viewed',
   'calculator_used',
+  // WS7 PR2: add-listing funnel
+  'add_listing_intent',
+  'add_listing_intent_viewed',
+  'add_listing_submitted',
   // Operational (helps diagnose)
   'identity_verify_started',
   'lead_form_submitted',
