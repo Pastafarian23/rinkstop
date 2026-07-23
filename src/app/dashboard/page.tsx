@@ -427,15 +427,19 @@ async function renderDashboard(userId: string) {
   // 2026-07-21: widened from `types.includes('parent')` to `types.length > 0`.
   // The wizard now branches copy + steps on persona (parent/coach/player/
   // official/operator/generic), so any persona with setup remaining sees a
-  // version of the wizard. Tier and dismissal gates are unchanged.
+  // version of the wizard. Tier gate unchanged.
+  // 2026-07-22 (Arnel): the wizard is MANDATORY. No dismiss option. The
+  // wizard renders until family_setup_completed_at is set. The wizard
+  // component itself calls /api/family/setup-state (mark_complete) via
+  // useEffect when every reachable step is done or comingNext.
   //   1. account_type is non-empty (any persona; branches on persona inside)
   //   2. tier is identity_plus+ OR business_listing+ (no free tier)
-  //   3. family_setup_completed_at IS NULL (user has not dismissed)
+  //   3. family_setup_completed_at IS NULL (wizard not yet completed)
   // The column is nullable; if the migration has not been applied yet,
   // .family_setup_completed_at will be undefined which IS NULL — the
   // wizard will render even before the migration runs. This is intentional:
   // it lets the wizard be visible the moment the code ships, with the API
-  // route handling the migration-not-applied 503 error on dismiss.
+  // route handling the migration-not-applied 503 error on mark_complete.
   const wizardTierOk =
     tierAtLeastSameTrack(profile?.tier ?? 'free', 'identity_plus') ||
     tierAtLeastSameTrack(profile?.tier ?? 'free', 'business_listing');

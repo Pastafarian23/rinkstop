@@ -18,7 +18,8 @@ import HockeyCanadaAd from '@/components/HockeyCanadaAd';
  * (lib/state-hockey-facts.ts) — never fabricated.
  */
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 /** Resolve the URL segment (slug or abbr) to the province abbr + canonical slug. */
 function resolveProvince(segment: string): { abbr: ProvinceAbbr; slug: string } | null {

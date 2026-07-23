@@ -18,7 +18,8 @@ const DAYS_FULL: { key: string; label: string }[] = [
   { key: 'sun', label: 'Sunday' },
 ];
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 interface PageProps {
   params: Promise<{ id: string }>;

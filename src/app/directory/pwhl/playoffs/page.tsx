@@ -66,8 +66,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Always render fresh — playoff scores change constantly.
-export const dynamic = 'force-dynamic';
+// ISR-cached for 1 hour (2026-07-22 perf pass).
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 async function fetchRounds(): Promise<StoredRound[]> {
   try {

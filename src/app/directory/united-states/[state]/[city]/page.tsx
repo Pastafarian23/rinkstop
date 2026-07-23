@@ -3,7 +3,8 @@ import { getCityPageData, resolveUSState, resolveCityName } from '@/lib/city-pag
 import { robotsMeta } from '@/lib/seo';
 import CityPageContent from '@/components/CityPageContent';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 /**
  * US state city page: /directory/united-states/{state}/{city}

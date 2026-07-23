@@ -1,6 +1,7 @@
 // Shared helpers for the connections + DMs system.
 // All server-side, all use supabaseAdmin (RLS would block anon client reads on participant-only rows).
 
+import { cache } from 'react';
 import { supabaseAdmin } from '@/lib/supabase';
 import { auth } from '@clerk/nextjs/server';
 import { TierName, MAX_CLAIMS_PER_TIER as NEW_MAX_CLAIMS, TIER_TO_TRACK, AccountTrack } from '@/lib/pricing';
@@ -119,8 +120,18 @@ export async function requireUserId(): Promise<string | null> {
 /**
  * Get the caller's tier from profiles. Defaults to 'free' if no profile row exists yet
  * (Clerk webhook is eventually consistent — users can sign in before their profile row is created).
+ *
+ * Wrapped with React's `cache()` so multiple callsites within a single render
+ * (dashboard layout + dashboard page, claims page, family page, etc.) share
+ * one Supabase round-trip instead of N. Cache is request-scoped by default
+ * in Next.js 15, so cross-request isolation is preserved — a tier upgrade
+ * becomes visible on the next request, not mid-request.
+ *
+ * 2026-07-22 perf pass: this is the single biggest dashboard render speedup
+ * after the layout Promise.all, because the dashboard layout fetches tier
+ * once and the dashboard page fetches it again with the same args.
  */
-export async function getUserTier(userId: string): Promise<string> {
+export const getUserTier = cache(async (userId: string): Promise<string> => {
   const { data } = await supabaseAdmin
     .from('profiles')
     .select('tier, tier_expires_at, subscription_status')
@@ -140,7 +151,7 @@ export async function getUserTier(userId: string): Promise<string> {
   }
 
   return (data.tier as string) || 'free';
-}
+});
 
 /**
  * Normalize two userIds into (low, high) so the (user_low, user_high) constraint is order-independent.

@@ -29,7 +29,8 @@ export const metadata: Metadata = {
 };
 
 // Pure content page — render fresh so editors / future dynamic blocks are safe.
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 const SECTIONS = [
   {

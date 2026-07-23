@@ -5,7 +5,8 @@ import CityPageContent from '@/components/CityPageContent';
 import { PROVINCE_SLUGS, type ProvinceAbbr } from '@/lib/ca-provinces';
 import { robotsMeta } from '@/lib/seo';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 /**
  * Canadian province city page: /directory/canada/{province}/{city}

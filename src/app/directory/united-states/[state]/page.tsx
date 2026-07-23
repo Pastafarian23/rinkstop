@@ -15,7 +15,8 @@ import { robotsMeta } from '@/lib/seo';
  * STATE_HOCKEY_FACTS (lib/state-hockey-facts.ts) or DB.
  */
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 // US state slugs → abbreviation
 const US_STATES: Record<string, string> = {

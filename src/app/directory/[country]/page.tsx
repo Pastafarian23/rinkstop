@@ -12,7 +12,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return getCountryMetadata(countryName, countryToSlug(countryName));
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 export default async function CountryPage({ params }: Props) {
   const { country: countrySlug } = await params;

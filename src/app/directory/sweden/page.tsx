@@ -8,7 +8,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return getCountryMetadata(COUNTRY_NAME, countryToSlug(COUNTRY_NAME));
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 export default async function SwedenPage() {
   const data = await getCountryPageData(COUNTRY_NAME);

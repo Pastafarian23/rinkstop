@@ -7,7 +7,6 @@ import { getUserTier } from '@/lib/connections';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import FamilySearch from '@/components/family/FamilySearch';
-import FamilySetupResume from '@/components/family/FamilySetupResume';
 import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
 import PlayerTimelineSection from '@/components/player-achievements/PlayerTimelineSection';
 import PlayerMediaSection from '@/components/player-media/PlayerMediaSection';
@@ -38,23 +37,9 @@ export default async function FamilyPage() {
   }
 
   // Read family_setup_completed_at to decide whether to show the
-  // "Resume Hockey Passport setup" link (Phase 1a, prep doc §3.5).
-  // If the column does not exist yet (migration not applied), this
-  // returns null which means "show nothing" — the Resume link is
-  // conditional on the column being set, so a missing column yields
-  // no Resume link. Safe fallback.
-  let wizardCompletedAt: string | null = null;
-  try {
-    const { data } = await supabaseAdmin
-      .from('profiles')
-      .select('family_setup_completed_at')
-      .eq('user_id', userId)
-      .maybeSingle();
-    wizardCompletedAt = (data as { family_setup_completed_at?: string | null } | null)?.family_setup_completed_at ?? null;
-  } catch {
-    // Column may not exist yet (migration not applied). Default to null.
-    wizardCompletedAt = null;
-  }
+  // 2026-07-22 (Arnel): the wizard is mandatory now — no resume link needed.
+  // The `family_setup_completed_at` lookup was removed along with the
+  // FamilySetupResume component and the wizard's dismiss UI.
 
   // Fetch managed profiles (kids linked to this user)
   // Note: column is manager_user_id, profile_id links to players.id
@@ -259,9 +244,12 @@ export default async function FamilyPage() {
         <TierBadge tier={tier} size="xs" />
       </div>
 
-      {/* Resume setup link (Phase 1a, prep doc §3.5). Only visible when
-          the user has dismissed the wizard. Cleared via the API route. */}
-      {wizardCompletedAt ? <FamilySetupResume /> : null}
+      {/*
+        2026-07-22 (Arnel): the wizard is mandatory now, so there is no
+        "resume setup" banner. The FamilySetupResume component was removed
+        along with the wizard's dismiss UI. We also drop the
+        `wizardCompletedAt` lookup above for the same reason.
+      */}
 
       {/* Linked Players (existing surface, slightly richer) */}
       <section

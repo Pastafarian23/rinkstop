@@ -28,8 +28,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Always render fresh — fixtures data is time-sensitive and must not be cached.
-export const dynamic = 'force-dynamic';
+// ISR-cached for 1 hour (2026-07-22 perf pass).
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 async function fetchInitialFixtures(): Promise<any[]> {
   try {
