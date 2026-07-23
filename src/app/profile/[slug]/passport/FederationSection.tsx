@@ -1,6 +1,9 @@
 // src/app/profile/[slug]/passport/FederationSection.tsx
-// RSC. Reads players.usa_hockey_number + hockey_canada_number.
-// v1 is manual entry; federation API integration is post-v1.
+// RSC. Reads from public.federation_registrations for this player.
+//
+// Tier 2 (2026-07-23): only APPROVED registrations are surfaced on the public
+// passport. Pending + rejected stay private. Drafts are owner-only and never
+// public. federation API integration is post-v1.
 
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
@@ -9,10 +12,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-type FederationRow = {
-  id: string;
-  name: string;
-  country: string;
+type ApprovedRegistration = {
+  registration_number: string;
+  verified_at: string | null;
+  federation: { slug: string; name: string } | null;
 };
 
 export async function FederationSection({
@@ -22,18 +25,17 @@ export async function FederationSection({
   playerId: string;
   isOwner: boolean;
 }) {
-  const { data: player, error } = await supabaseAdmin
-    .from('players')
-    .select('usa_hockey_number, hockey_canada_number')
-    .eq('id', playerId)
-    .maybeSingle();
+  const { data: rows, error } = await supabaseAdmin
+    .from('federation_registrations')
+    .select('registration_number, verified_at, federation:federations(slug, name)')
+    .eq('player_id', playerId)
+    .eq('submission_status', 'approved');
 
-  // We need the federations table to render labels properly. v1: fetch just the two we know about.
-  // Future: query federations table by country once federation table is populated.
-  const federations: FederationRow[] = [
-    { id: 'usa_hockey',     name: 'USA Hockey',     country: 'United States' },
-    { id: 'hockey_canada',  name: 'Hockey Canada',  country: 'Canada' },
-  ];
+  const approved: ApprovedRegistration[] = (rows ?? []).map((r: any) => ({
+    registration_number: r.registration_number,
+    verified_at: r.verified_at,
+    federation: Array.isArray(r.federation) && r.federation.length > 0 ? r.federation[0] : null,
+  })).filter((r) => r.federation);
 
   const sectionStyle = {
     padding: '1.25rem 1.5rem 1.5rem',
@@ -58,11 +60,7 @@ export async function FederationSection({
     );
   }
 
-  const hasAny =
-    !!(player?.usa_hockey_number && player.usa_hockey_number.trim()) ||
-    !!(player?.hockey_canada_number && player.hockey_canada_number.trim());
-
-  if (!hasAny) {
+  if (approved.length === 0) {
     return (
       <section style={sectionStyle}>
         <h2 style={headingStyle}>Federation</h2>
@@ -86,62 +84,32 @@ export async function FederationSection({
     <section style={sectionStyle}>
       <h2 style={headingStyle}>Federation</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {federations.map((f) => {
-          const num =
-            f.id === 'usa_hockey'
-              ? player?.usa_hockey_number
-              : player?.hockey_canada_number;
-          if (!num || !num.trim()) return null;
-          return (
-            <div
-              key={f.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.625rem 0.75rem',
-                borderRadius: 8,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontWeight: 600, color: '#fff', margin: 0 }}>{f.name}</p>
-                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', margin: '0.125rem 0 0 0' }}>
-                  {f.country} · Reg # <span style={{ fontFamily: 'monospace', color: '#FFB81C' }}>{num}</span>
-                </p>
-              </div>
-              <span
-                style={{
-                  flexShrink: 0,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  padding: '4px 8px',
-                  borderRadius: 6,
-                  background: 'rgba(0,150,80,0.18)',
-                  color: '#009650',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Self-reported
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {isOwner && (
-        <p style={{ marginTop: '0.75rem' }}>
-          <Link
-            href="/dashboard/passport/federation"
-            className="text-xs text-[#FFB81C] hover:text-[#FFB81C]/80"
-            style={{ textDecoration: 'underline' }}
+        {approved.map((r, idx) => (
+          <div
+            key={`${r.federation!.slug}-${idx}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(0,150,80,0.08)',
+              border: '1px solid rgba(0,150,80,0.25)',
+              borderRadius: 6,
+              fontSize: '0.875rem',
+            }}
           >
-            Edit federation numbers
-          </Link>
-        </p>
-      )}
+            <div>
+              <div style={{ fontWeight: 600 }}>{r.federation!.name}</div>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.8125rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                {r.registration_number}
+              </div>
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#009650', fontWeight: 700, textTransform: 'uppercase' }}>
+              ✓ Verified
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

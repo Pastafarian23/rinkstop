@@ -11,46 +11,118 @@ const POSITIONS = [
   { value: 'goalie',   label: 'Goalie' },
 ];
 
+type Status = 'draft' | 'pending' | 'approved' | 'rejected';
+
+interface RegistrationRow {
+  id: string;
+  registration_number: string;
+  submission_status: Status;
+  rejection_reason: string | null;
+  verified_at: string | null;
+  federation: { slug: string; name: string } | null;
+}
+
+interface FederationField {
+  field: 'usa_hockey_number' | 'hockey_canada_number';
+  slug: 'us' | 'ca';
+  label: string;
+  hint: string;
+  placeholder: string;
+}
+
+const FEDERATION_FIELDS: FederationField[] = [
+  {
+    field: 'usa_hockey_number',
+    slug: 'us',
+    label: 'USA Hockey registration number',
+    hint: 'Find this at usahockey.com → MyHockey → Profile',
+    placeholder: 'e.g. 123456789',
+  },
+  {
+    field: 'hockey_canada_number',
+    slug: 'ca',
+    label: 'Hockey Canada registration number',
+    hint: 'Find this at hockeycanada.ca → Member Profile',
+    placeholder: 'e.g. HC-12345',
+  },
+];
+
+function StatusBadge({ status }: { status: Status }) {
+  const styles: Record<Status, { bg: string; color: string; label: string }> = {
+    draft:    { bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', label: 'Draft' },
+    pending:  { bg: 'rgba(255,184,28,0.18)',  color: '#FFB81C',                label: 'Pending review' },
+    approved: { bg: 'rgba(0,150,80,0.18)',    color: '#009650',                label: 'Verified' },
+    rejected: { bg: 'rgba(200,16,46,0.18)',    color: '#FF6B7A',                label: 'Rejected' },
+  };
+  const s = styles[status];
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        padding: '0.2rem 0.55rem',
+        borderRadius: 4,
+        background: s.bg,
+        color: s.color,
+        fontSize: '0.7rem',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+      }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
 export default function FederationFormClient({
   playerId,
   playerName,
-  initialUsaHockey,
-  initialHockeyCanada,
   initialPositionCategory,
+  registrations,
 }: {
   playerId: string;
   playerName: string;
-  initialUsaHockey: string;
-  initialHockeyCanada: string;
   initialPositionCategory: string;
+  registrations: Record<string, RegistrationRow>;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [actionPending, setActionPending] = useState<string | null>(null);
 
-  const [form, setForm] = useState({
-    usa_hockey_number: initialUsaHockey,
-    hockey_canada_number: initialHockeyCanada,
-    primary_position_category: initialPositionCategory,
+  const [position, setPosition] = useState(initialPositionCategory);
+
+  // Federation number form state per field, keyed by field name
+  const [numbers, setNumbers] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const f of FEDERATION_FIELDS) {
+      out[f.field] = registrations[f.slug]?.registration_number ?? '';
+    }
+    return out;
   });
 
-  const handleChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm((f) => ({ ...f, [field]: e.target.value }));
+  const handleNumberChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNumbers((prev) => ({ ...prev, [field]: e.target.value }));
     setSaved(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSaved(false);
 
     setSubmitting(true);
     try {
+      const payload: Record<string, any> = {
+        usa_hockey_number: numbers['usa_hockey_number'],
+        hockey_canada_number: numbers['hockey_canada_number'],
+        primary_position_category: position,
+      };
       const res = await fetch('/api/passport/federation', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -59,12 +131,57 @@ export default function FederationFormClient({
         return;
       }
       setSaved(true);
-      // Refresh server data on the passport page after navigation
       router.refresh();
       setSubmitting(false);
     } catch (e: any) {
       setError(e?.message ?? 'Network error.');
       setSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async (registrationId: string) => {
+    setError(null);
+    setActionPending(registrationId);
+    try {
+      const res = await fetch('/api/passport/federation/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registration_id: registrationId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to submit.');
+        setActionPending(null);
+        return;
+      }
+      router.refresh();
+      setActionPending(null);
+    } catch (e: any) {
+      setError(e?.message ?? 'Network error.');
+      setActionPending(null);
+    }
+  };
+
+  const handleWithdraw = async (registrationId: string) => {
+    setError(null);
+    setActionPending(registrationId);
+    try {
+      const res = await fetch('/api/passport/federation/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registration_id: registrationId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to withdraw.');
+        setActionPending(null);
+        return;
+      }
+      router.refresh();
+      setActionPending(null);
+    } catch (e: any) {
+      setError(e?.message ?? 'Network error.');
+      setActionPending(null);
     }
   };
 
@@ -109,42 +226,107 @@ export default function FederationFormClient({
           FEDERATION REGISTRATION
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>
-          Add {playerName}&apos;s federation registration numbers. These appear on your public passport.
-          Currently self-reported — federation API verification ships in a later phase.
+          Add {playerName}&apos;s federation registration numbers. Numbers can be edited freely until
+          you submit them for verification. Once submitted, the number is locked until admin reviews
+          or you withdraw the submission.
         </p>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
-            <label style={labelStyle}>USA Hockey registration number</label>
-            <input
-              type="text"
-              value={form.usa_hockey_number}
-              onChange={handleChange('usa_hockey_number')}
-              placeholder="e.g. 123456789"
-              style={inputStyle}
-            />
-            <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-              Find this at usahockey.com → MyHockey → Profile
-            </p>
-          </div>
-
-          <div>
-            <label style={labelStyle}>Hockey Canada registration number</label>
-            <input
-              type="text"
-              value={form.hockey_canada_number}
-              onChange={handleChange('hockey_canada_number')}
-              placeholder="e.g. HC-12345"
-              style={inputStyle}
-            />
-            <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-              Find this at hockeycanada.ca → Member Profile
-            </p>
-          </div>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {FEDERATION_FIELDS.map((f) => {
+            const reg = registrations[f.slug];
+            const status: Status | null = reg?.submission_status ?? null;
+            const locked = status === 'pending' || status === 'approved';
+            return (
+              <div key={f.field}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 4 }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>{f.label}</label>
+                  {status && <StatusBadge status={status} />}
+                </div>
+                <input
+                  type="text"
+                  value={numbers[f.field]}
+                  onChange={handleNumberChange(f.field)}
+                  placeholder={f.placeholder}
+                  disabled={locked}
+                  style={{
+                    ...inputStyle,
+                    opacity: locked ? 0.6 : 1,
+                    cursor: locked ? 'not-allowed' : 'text',
+                  }}
+                />
+                <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                  {f.hint}
+                </p>
+                {status === 'rejected' && reg?.rejection_reason && (
+                  <div
+                    style={{
+                      marginTop: 6,
+                      padding: '0.5rem 0.75rem',
+                      background: 'rgba(200,16,46,0.12)',
+                      borderLeft: '3px solid #FF6B7A',
+                      color: '#FF6B7A',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    <strong>Reason:</strong> {reg.rejection_reason}
+                  </div>
+                )}
+                {status === 'approved' && reg?.verified_at && (
+                  <p style={{ fontSize: '0.6875rem', color: '#009650', marginTop: 4 }}>
+                    Verified {new Date(reg.verified_at).toLocaleDateString()}.
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 6 }}>
+                  {status === 'draft' && reg && (
+                    <button
+                      type="button"
+                      onClick={() => handleSubmit(reg.id)}
+                      disabled={actionPending === reg.id}
+                      style={{
+                        background: '#FFB81C',
+                        color: '#041E42',
+                        padding: '0.4rem 0.85rem',
+                        border: 'none',
+                        borderRadius: 4,
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        cursor: actionPending === reg.id ? 'wait' : 'pointer',
+                      }}
+                    >
+                      {actionPending === reg.id ? 'Submitting…' : 'Submit for verification'}
+                    </button>
+                  )}
+                  {(status === 'pending' || status === 'rejected') && reg && (
+                    <button
+                      type="button"
+                      onClick={() => handleWithdraw(reg.id)}
+                      disabled={actionPending === reg.id}
+                      style={{
+                        background: 'transparent',
+                        color: 'rgba(255,255,255,0.7)',
+                        padding: '0.4rem 0.85rem',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: 4,
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        cursor: actionPending === reg.id ? 'wait' : 'pointer',
+                      }}
+                    >
+                      {actionPending === reg.id ? 'Withdrawing…' : 'Withdraw (edit & resubmit)'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
           <div>
             <label style={labelStyle}>Primary position</label>
-            <select value={form.primary_position_category} onChange={handleChange('primary_position_category')} style={inputStyle}>
+            <select
+              value={position}
+              onChange={(e) => { setPosition(e.target.value); setSaved(false); }}
+              style={inputStyle}
+            >
               {POSITIONS.map((p) => (
                 <option key={p.value} value={p.value}>{p.label}</option>
               ))}

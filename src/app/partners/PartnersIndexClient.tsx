@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CATEGORIES, type Category } from '@/app/dashboard/listings/ListingsManager';
 
-export interface BusinessListing {
+export interface PartnerListing {
   id: string;
   owner_user_id: string;
   business_name: string;
@@ -26,11 +26,11 @@ export interface BusinessListing {
 }
 
 interface Props {
-  initial: BusinessListing[];
+  initial: PartnerListing[];
 }
 
-export default function BusinessesIndexClient({ initial }: Props) {
-  const [listings] = useState<BusinessListing[]>(initial);
+export default function PartnersIndexClient({ initial }: Props) {
+  const [listings] = useState<PartnerListing[]>(initial);
   const [category, setCategory] = useState<Category | 'all'>('all');
   const [q, setQ] = useState('');
 
@@ -146,12 +146,12 @@ function CategoryPill({ value, current, onClick, children }: { value: Category |
   );
 }
 
-function ListingCard({ listing }: { listing: BusinessListing }) {
+function ListingCard({ listing }: { listing: PartnerListing }) {
   const cat = CATEGORIES.find((c) => c.value === listing.category);
   const cover = listing.photos[0] || null;
   return (
     <Link
-      href={`/businesses/${listing.id}`}
+      href={`/partners/${listing.id}`}
       style={{
         background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, overflow: 'hidden',
         textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column',

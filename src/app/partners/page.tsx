@@ -1,19 +1,19 @@
 import type { Metadata } from 'next';
 import { supabaseAdmin } from '@/lib/supabase';
-import BusinessesIndexClient, { type BusinessListing } from './BusinessesIndexClient';
+import PartnersIndexClient, { type PartnerListing } from './PartnersIndexClient';
 import type { Category } from '@/app/dashboard/listings/ListingsManager';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
 
 export const metadata: Metadata = {
-  title: 'Hockey Businesses · RinkStop',
+  title: 'Hockey Partners · RinkStop',
   description: 'Pro shops, skate sharpening, camps, and training facilities in the hockey world.',
 };
 
 const VALID_CATEGORIES = new Set<Category>(['pro_shop', 'sharpening', 'camp', 'training', 'equipment', 'other']);
 
-export default async function BusinessesIndexPage() {
+export default async function PartnersIndexPage() {
   // Only published listings show up here. RLS allows public SELECT on listings
   // (the policy is `listings_select_public ON listings FOR SELECT USING (is_published = true OR auth.uid()::text = owner_user_id)`),
   // but the service role bypasses RLS so we filter explicitly.
@@ -27,7 +27,7 @@ export default async function BusinessesIndexPage() {
     .order('is_featured', { ascending: false })
     .order('updated_at', { ascending: false });
 
-  const initial: BusinessListing[] = (data || [])
+  const initial: PartnerListing[] = (data || [])
     .filter((r): r is typeof r & { category: Category } => VALID_CATEGORIES.has(r.category as Category))
     .map((r) => ({ ...r, category: r.category as Category }));
 
@@ -48,7 +48,7 @@ export default async function BusinessesIndexPage() {
               fontSize: '1.75rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 0.25rem',
             }}
           >
-            HOCKEY BUSINESSES
+            HOCKEY PARTNERS
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', margin: 0, maxWidth: 560 }}>
             Pro shops, sharpening, camps, training, and equipment in the hockey world. Filter by category or search by name.
@@ -56,7 +56,7 @@ export default async function BusinessesIndexPage() {
         </div>
       </header>
 
-      <BusinessesIndexClient initial={initial} />
+      <PartnersIndexClient initial={initial} />
 
       {error && (
         <div style={{ color: '#FF6B7A', fontSize: '0.85rem' }}>
