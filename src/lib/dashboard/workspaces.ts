@@ -56,14 +56,16 @@ export const WORKSPACES: WorkspaceDef[] = [
   {
     id: 'personal',
     name: 'Personal',
-    description: 'Your profile, identity, payments, and connections.',
+    description: 'Your profile, identity, passport, documents, and connections.',
     icon: '👤',
     requiredAccountTypes: [], // every user has Personal
     minTier: null,
     primaryHref: '/dashboard/profile',
     subpages: [
       { href: '/dashboard/profile',       label: 'Profile',            emoji: '👤', minTier: null,                       description: 'Your public profile and account info' },
-      { href: '/dashboard/identity',      label: 'Identity',           emoji: '🪪', minTier: 'verified_identity',         description: 'Verification, document storage' },
+      { href: '/dashboard/identity',      label: 'Identity',           emoji: '🪪', minTier: 'verified_identity',         description: 'Government-ID verification' },
+      { href: '/dashboard/passport',     label: 'Hockey Passport',    emoji: '📋', minTier: 'verified_identity',         description: 'Your career record, team history, stats' },
+      { href: '/dashboard/documents',     label: 'Documents',          emoji: '📁', minTier: 'verified_identity',         description: 'Waivers, releases, and shared team documents' },
       { href: '/dashboard/family',        label: 'Family Hub',         emoji: '👨‍👩‍👧', minTier: 'identity_plus',              description: 'Manage linked family accounts' },
       { href: '/dashboard/favorites',     label: 'Favorites',          emoji: '⭐', minTier: null,                       description: 'Saved players, rinks, teams' },
       { href: '/dashboard/inbox',         label: 'Inbox',              emoji: '✉️', minTier: null,                       description: 'Your messages and connection requests' },

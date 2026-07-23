@@ -22,12 +22,24 @@
  * `family` directory is now misleading and a future rename can land
  * separately. The wizard is the same component, just with a `persona` prop.
  *
- * Why client-side: the dismiss/resume action needs a button click handler
- * and a fetch to the API. The actual gating logic (whether to render at
- * all) is server-side in the dashboard page (see src/app/dashboard/page.tsx).
+ * Per Arnel 2026-07-22: the wizard is now MANDATORY — no dismiss option.
+ * The wizard stays visible until the user has actually completed every
+ * available step. Steps marked `comingNext: true` (features not yet
+ * built) are auto-counted as acknowledged for completion purposes — the
+ * user has seen them and that's enough; we don't block the wizard on
+ * missing features.
+ *
+ * The completion marker (profiles.family_setup_completed_at) is written
+ * automatically via an effect once every step is `done || comingNext`.
+ * The user no longer needs to take any explicit action to close the
+ * wizard — it just hides itself when all reachable steps are done.
+ *
+ * Why client-side: the completion fetch needs a useEffect to fire.
+ * The actual gating logic (whether to render at all) is server-side in
+ * the dashboard page (see src/app/dashboard/page.tsx).
  */
 
-import { useState, useTransition } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export type WizardPersona =
@@ -76,14 +88,12 @@ interface Step {
 }
 
 /**
- * Persona-specific copy bundle. Header line + dismiss suffix + the
+ * Persona-specific copy bundle. Header line + the
  * 6-step template. Steps 1, 4, 5 are universal; steps 2, 3, 6 vary.
  */
 interface PersonaCopy {
   /** Substring shown in the header paragraph (e.g. "your family's Hockey Identity") */
   identityNoun: string;
-  /** Suffix shown in the dismiss row "You can come back anytime from the X" */
-  dismissSuffix: string;
   steps: (
     state: FamilySetupWizardState,
     identityVerified: boolean
@@ -93,7 +103,6 @@ interface PersonaCopy {
 const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
   parent: {
     identityNoun: 'your family’s Hockey Identity',
-    dismissSuffix: 'the Family Hub',
     steps: (s, identityVerified) => [
       {
         number: 1,
@@ -149,7 +158,6 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
 
   coach: {
     identityNoun: 'your Hockey Identity as a coach',
-    dismissSuffix: 'the Coach Hub',
     steps: (s, identityVerified) => [
       {
         number: 1,
@@ -203,7 +211,6 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
 
   player: {
     identityNoun: 'your Hockey Identity as a player',
-    dismissSuffix: 'your Player Hub',
     steps: (s, identityVerified) => [
       {
         number: 1,
@@ -257,7 +264,6 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
 
   official: {
     identityNoun: 'your Hockey Identity as an official',
-    dismissSuffix: 'the Officials Hub',
     steps: (s, identityVerified) => [
       {
         number: 1,
@@ -311,7 +317,6 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
 
   operator: {
     identityNoun: 'your organization’s Hockey Identity',
-    dismissSuffix: 'the Organization Hub',
     steps: (s, identityVerified) => [
       {
         number: 1,
@@ -365,7 +370,6 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
 
   generic: {
     identityNoun: 'your Hockey Identity',
-    dismissSuffix: 'your Hub',
     steps: (s, identityVerified) => [
       {
         number: 1,
@@ -442,8 +446,6 @@ export function accountTypeToPersona(accountType: string): WizardPersona {
 
 export default function FamilySetupWizard({ state, firstName, persona }: FamilySetupWizardProps) {
   const router = useRouter();
-  const [dismissed, setDismissed] = useState(false);
-  const [pending, startTransition] = useTransition();
 
   const copy = PERSONA_COPY[persona] ?? PERSONA_COPY.generic;
   const steps = copy.steps(state, state.identityVerified);
@@ -451,29 +453,41 @@ export default function FamilySetupWizard({ state, firstName, persona }: FamilyS
   const completedCount = steps.filter((s) => s.done).length;
   const progressPct = Math.round((completedCount / steps.length) * 100);
 
-  async function dismiss() {
-    startTransition(async () => {
+  // 2026-07-22 (Arnel): wizard is mandatory. Auto-mark complete when every
+  // reachable step is done OR acknowledged (comingNext). The fetch is
+  // idempotent — the server's `mark_complete` action only writes the
+  // completion timestamp once (or re-stamps if missing).
+  //
+  // Steps with `comingNext: true` are features not yet built. We don't
+  // block completion on them — the user has seen them, the wizard can
+  // close, and the actual feature will land later.
+  const allReachableDone = steps.every((s) => s.done || s.comingNext);
+  useEffect(() => {
+    if (!allReachableDone) return;
+    let cancelled = false;
+    (async () => {
       try {
         const res = await fetch('/api/family/setup-state', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'dismiss' }),
+          body: JSON.stringify({ action: 'mark_complete' }),
         });
         if (!res.ok) {
-          // Don't hide the wizard on a server error — user should retry.
-          console.error('[FamilySetupWizard] dismiss failed:', res.status, await res.text().catch(() => ''));
+          console.error('[FamilySetupWizard] mark_complete failed:', res.status, await res.text().catch(() => ''));
           return;
         }
-        setDismissed(true);
-        router.refresh();
+        if (!cancelled) router.refresh();
       } catch (e) {
-        console.error('[FamilySetupWizard] dismiss error:', e);
+        console.error('[FamilySetupWizard] mark_complete error:', e);
       }
-    });
-  }
+    })();
+    return () => { cancelled = true; };
+  }, [allReachableDone, router]);
 
-  if (dismissed) {
-    // Soft-hide after dismiss so the user gets immediate feedback.
+  if (allReachableDone) {
+    // Soft-hide after the server confirms completion (via the refresh above
+    // flipping the gate). Until then we still show the wizard so the user
+    // sees the progress bar fill to 100% before it disappears.
     return null;
   }
 
@@ -644,42 +658,12 @@ export default function FamilySetupWizard({ state, firstName, persona }: FamilyS
         ))}
       </div>
 
-      {/* Dismiss row */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 8,
-        flexWrap: 'wrap',
-        paddingTop: '0.5rem',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-      }}>
-        <span style={{
-          color: 'rgba(255,255,255,0.45)',
-          fontSize: '0.75rem',
-        }}>
-          You can come back anytime from {copy.dismissSuffix}.
-        </span>
-        <button
-          type="button"
-          onClick={dismiss}
-          disabled={pending}
-          data-testid="wizard-dismiss"
-          style={{
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.15)',
-            color: 'rgba(255,255,255,0.7)',
-            padding: '0.4rem 0.85rem',
-            borderRadius: 6,
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            cursor: pending ? 'wait' : 'pointer',
-            opacity: pending ? 0.6 : 1,
-          }}
-        >
-          {pending ? 'Saving\u2026' : 'Dismiss for now'}
-        </button>
-      </div>
+      {/*
+        2026-07-22 (Arnel): the dismiss row is gone. The wizard is mandatory
+        and stays visible until every reachable step is complete. When the
+        user finishes all steps, the useEffect above auto-calls the API to
+        mark it complete and the wizard disappears on next refresh.
+      */}
     </div>
   );
 }

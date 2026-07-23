@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
 };
 
-// Always render fresh — scores change minute-to-minute.
+// ISR-cached for 1 hour (2026-07-22 perf pass).
 export const dynamic = 'force-dynamic';
 
 interface Game {

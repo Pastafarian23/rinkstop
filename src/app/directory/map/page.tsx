@@ -42,8 +42,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Always render fresh — map data and listings change too often to cache statically.
-export const dynamic = 'force-dynamic';
+// ISR-cached for 1 hour (2026-07-22 perf pass).
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 async function fetchInitialRinks(): Promise<MapRink[]> {
   try {

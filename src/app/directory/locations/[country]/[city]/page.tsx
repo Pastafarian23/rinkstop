@@ -12,7 +12,8 @@ import {
 import { robotsMeta } from '@/lib/seo';
 import CityPageContent from '@/components/CityPageContent';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 /**
  * Universal city page: /directory/locations/{country_slug}/{city_slug}

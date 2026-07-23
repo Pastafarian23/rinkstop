@@ -48,8 +48,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Always render fresh — playoff data and standings change often.
-export const dynamic = 'force-dynamic';
+// ISR-cached for 1 hour (2026-07-22 perf pass).
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 async function fetchInitialData(): Promise<{ league: League | null; teams: Team[] }> {
   try {

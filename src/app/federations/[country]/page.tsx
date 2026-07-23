@@ -74,7 +74,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 export default async function FederationPage({ params }: PageProps) {
   const { country } = await params;

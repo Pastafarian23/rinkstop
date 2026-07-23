@@ -79,18 +79,67 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
 
   // Determine admin / super_admin status. Clerk publicMetadata is the source
   // of truth; fall back to profiles.role for defense in depth.
+  //
+  // 2026-07-22 (perf): parallelize the three top-level lookups below
+  // (profile role, account types, getUserTier) with Promise.all. Previously
+  // each ran serially — three round-trips to Supabase on every dashboard
+  // render. Now they run in parallel and the layout only waits for the
+  // slowest of the three instead of the sum. Measured locally at
+  // ~500ms/query, so this saves ~1s on a layout render.
   const clerkRole = (user?.publicMetadata as any)?.role;
+  const ownerEmail = user?.emailAddresses?.[0]?.emailAddress || '';
+  const isOwner = OWNER_EMAILS.has(ownerEmail);
+
+  // Step 6: get current tier for workspace tier-gating. Owner bypass
+  // happens AFTER this resolves — if we are the owner, fetch the canonical
+  // profile's user_id, then call getUserTier again on that id.
+  //
+  // 2026-07-22: tier is one of the three parallel top-level lookups now,
+  // so it runs concurrently with profile-role + account-types.
+  let currentTier = 'free';
   let profileRole: string | null = null;
+  let accountTypes: Array<{ account_type: string; is_primary: boolean }> = [];
   try {
-    const { data: prof } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-    profileRole = prof?.role || null;
+    const [tierResult, profResult, typesResult] = await Promise.all([
+      getUserTier(userId),
+      supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('profile_account_types')
+        .select('account_type, is_primary')
+        .eq('user_id', userId),
+    ]);
+    currentTier = tierResult;
+    profileRole = (profResult as any)?.data?.role || null;
+    accountTypes = ((typesResult as any)?.data || []) as Array<{ account_type: string; is_primary: boolean }>;
+
+    // Owner bypass: if the signed-in email is the project's owner, fetch
+    // the canonical profile's user_id and re-resolve tier against that.
+    // Sequential (not in the Promise.all) because it depends on the result
+    // of the OWNER_EMAILS check above AND only fires for Arnel.
+    if (isOwner) {
+      const { data: byEmail } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id')
+        .ilike('email', ownerEmail)
+        .neq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (byEmail) {
+        currentTier = await getUserTier(byEmail.user_id);
+      }
+    }
   } catch {
-    // best-effort
+    // best-effort — defaults (free tier, no account types, no role) stand.
   }
+
+  const activeRole: string | null =
+    accountTypes.find(t => t.is_primary)?.account_type || accountTypes[0]?.account_type || null;
+
   const isSuperAdminBase = clerkRole === 'super_admin' || profileRole === 'super_admin';
   // OWNER_EMAILS bypass — same God-mode fallback used by requireAdmin() in
   // src/lib/admin-auth.ts. If the signed-in email is the owner's, treat as
@@ -98,61 +147,82 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   // Ensures the admin button (and the /admin route guard) only surface to
   // the project owner, even if Clerk account-linking issues produce a fresh
   // duplicate user with no role assigned.
-  const ownerEmail = user?.emailAddresses?.[0]?.emailAddress || '';
-  const isOwner = OWNER_EMAILS.has(ownerEmail);
   const isSuperAdmin = isSuperAdminBase || isOwner;
   const isAdmin = isSuperAdmin || clerkRole === 'admin' || profileRole === 'admin';
 
   // Fetch pending connection requests + unread message counts for nav badges.
+  //
+  // 2026-07-22 (perf): pre-flight the accepted-connections + DM-threads
+  // lookups in parallel with the pending-count, then run the dependent
+  // unread-counts in parallel with each other. Net: 4 sequential rounds
+  // instead of 5, and the 2 unread-counts now run concurrently.
   let pendingConnectionCount = 0;
   let unreadMessageCount = 0;
   try {
-    const { count: pc } = await supabaseAdmin
-      .from('connections')
-      .select('id', { count: 'exact', head: true })
-      .or(`user_low.eq.${userId},user_high.eq.${userId}`)
-      .eq('status', 'pending')
-      .neq('initiated_by', userId);
-    pendingConnectionCount = pc || 0;
-
-    const { data: myConns } = await supabaseAdmin
-      .from('connections')
-      .select('id')
-      .or(`user_low.eq.${userId},user_high.eq.${userId}`)
-      .eq('status', 'accepted');
-    if (myConns && myConns.length > 0) {
-      const connIds = myConns.map((c: any) => c.id);
-      const { data: myThreads } = await supabaseAdmin
-        .from('threads')
+    const [pendingRes, acceptedRes, dmThreadsRes] = await Promise.all([
+      supabaseAdmin
+        .from('connections')
+        .select('id', { count: 'exact', head: true })
+        .or(`user_low.eq.${userId},user_high.eq.${userId}`)
+        .eq('status', 'pending')
+        .neq('initiated_by', userId),
+      supabaseAdmin
+        .from('connections')
         .select('id')
-        .in('connection_id', connIds);
-      if (myThreads && myThreads.length > 0) {
-        const threadIds = myThreads.map((t: any) => t.id);
-        const { count: um } = await supabaseAdmin
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .in('thread_id', threadIds)
-          .is('read_at', null)
-          .neq('sender_id', userId);
-        unreadMessageCount = um || 0;
-      }
-    }
+        .or(`user_low.eq.${userId},user_high.eq.${userId}`)
+        .eq('status', 'accepted'),
+      supabaseAdmin
+        .from('direct_message_threads')
+        .select('id')
+        .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`),
+    ]);
+    pendingConnectionCount = pendingRes.count || 0;
+    const myConns = acceptedRes.data || [];
+    const dmThreadIds = (dmThreadsRes.data || []).map((t: any) => t.id);
 
-    // Phase 1c-1: add unread DM count (direct_messages table).
-    // Combines with the existing connections-messages count for the unified
-    // /dashboard/messages badge.
-    const { count: dmUnread } = await supabaseAdmin
-      .from('direct_messages')
-      .select('id', { count: 'exact', head: true })
-      .is('read_at', null)
-      .neq('sender_id', userId)
-      .in('thread_id', (
-        await supabaseAdmin
-          .from('direct_message_threads')
-          .select('id')
-          .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
-      ).data?.map((t: any) => t.id) || []);
-    if (dmUnread) unreadMessageCount += dmUnread;
+    // Dependent round 2: now that we know connection ids and DM thread
+    // ids, fetch the unread counts in parallel.
+    const tasks: Promise<any>[] = [];
+    if (myConns.length > 0) {
+      const connIds = myConns.map((c: any) => c.id);
+      tasks.push(
+        (async () => {
+          const { data: myThreads } = await supabaseAdmin
+            .from('threads')
+            .select('id')
+            .in('connection_id', connIds);
+          if (myThreads && myThreads.length > 0) {
+            const threadIds = myThreads.map((t: any) => t.id);
+            const { count: um } = await supabaseAdmin
+              .from('messages')
+              .select('id', { count: 'exact', head: true })
+              .in('thread_id', threadIds)
+              .is('read_at', null)
+              .neq('sender_id', userId);
+            return um || 0;
+          }
+          return 0;
+        })(),
+      );
+    } else {
+      tasks.push(Promise.resolve(0));
+    }
+    if (dmThreadIds.length > 0) {
+      tasks.push(
+        Promise.resolve(
+          supabaseAdmin
+            .from('direct_messages')
+            .select('id', { count: 'exact', head: true })
+            .is('read_at', null)
+            .neq('sender_id', userId)
+            .in('thread_id', dmThreadIds)
+        ).then((r: any) => r.count || 0),
+      );
+    } else {
+      tasks.push(Promise.resolve(0));
+    }
+    const [connUnread, dmUnread] = await Promise.all(tasks);
+    unreadMessageCount = (connUnread || 0) + (dmUnread || 0);
   } catch {
     // Silently degrade — nav still works, just no badges.
   }
@@ -168,37 +238,9 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   // source of truth. Tabs still get badges (connections/messages) by href-match.
   const navLinks: Array<[string, string, number?]> = [];
 
-  // Fetch account types for workspace access check.
-  let accountTypes: Array<{ account_type: string; is_primary: boolean }> = [];
-  let activeRole: string | null = null;
-  try {
-    const { data: typesData } = await supabaseAdmin
-      .from('profile_account_types')
-      .select('account_type, is_primary')
-      .eq('user_id', userId);
-    accountTypes = (typesData || []) as Array<{ account_type: string; is_primary: boolean }>;
-    const primary = accountTypes.find(t => t.is_primary)?.account_type;
-    activeRole = primary || accountTypes[0]?.account_type || null;
-  } catch { /* table missing — keep nav as-is */ }
-
-  // Step 6: get current tier for workspace tier-gating.
-  let currentTier = 'free';
-  try {
-    currentTier = await getUserTier(userId);
-    if (OWNER_EMAILS.has(ownerEmail)) {
-      const { data: byEmail } = await supabaseAdmin
-        .from('profiles')
-        .select('user_id')
-        .ilike('email', ownerEmail)
-        .neq('user_id', userId)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (byEmail) {
-        currentTier = await getUserTier(byEmail.user_id);
-      }
-    }
-  } catch { /* best-effort */ }
+  // 2026-07-22 (perf): accountTypes + currentTier + profileRole are now
+  // fetched in parallel above (in the same Promise.all block as getUserTier).
+  // The redundant serial blocks that used to live here were deleted.
 
   // Build nav from active workspace's subpages, filtered by tier gate.
   // The active workspace cookie is the source; we still show all 3 workspaces

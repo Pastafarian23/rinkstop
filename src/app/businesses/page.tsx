@@ -3,7 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import BusinessesIndexClient, { type BusinessListing } from './BusinessesIndexClient';
 import type { Category } from '@/app/dashboard/listings/ListingsManager';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
+export const dynamicParams = true;
 
 export const metadata: Metadata = {
   title: 'Hockey Businesses · RinkStop',
