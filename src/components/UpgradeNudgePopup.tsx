@@ -60,7 +60,7 @@ const PROMOTED = TIERS[PROMOTED_TIER];
 const SUPPRESS_PREFIXES = [
   '/sign-up', '/login', '/forgot-password', '/reset-password',
   '/sso-callback', '/verify', '/onboarding',
-  '/pricing', '/partner',
+  '/pricing', '/partner-with-us',
   '/dashboard/welcome',
   '/api', '/_next',
 ];

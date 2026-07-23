@@ -150,6 +150,25 @@ const nextConfig = {
         destination: '/gear-brands',
         permanent: true,
       },
+      // Partner/businesses rename (WS7 PR1, 2026-07-23).
+      // /partner → /partner-with-us (marketing page got its own slug).
+      // /businesses → /partners (list + detail). Both /businesses/[id] and
+      // /businesses/[id]/... go to /partners/[id]/... so deep links resolve.
+      {
+        source: '/partner',
+        destination: '/partner-with-us',
+        permanent: true,
+      },
+      {
+        source: '/businesses',
+        destination: '/partners',
+        permanent: true,
+      },
+      {
+        source: '/businesses/:path*',
+        destination: '/partners/:path*',
+        permanent: true,
+      },
       // www.rinkstop.com → rinkstop.com (301)
       // Closes the brand-signal split: GSC's 90d report shows both
       // www.rinkstop.com (6 clicks, 9 impr, pos 1.11) and
