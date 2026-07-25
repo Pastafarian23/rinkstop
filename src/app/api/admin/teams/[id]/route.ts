@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
 
   const { data: team, error } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('*, leagues!teams_league_id_fkey(id, name, slug)')
     .eq('id', id)
     .maybeSingle();
@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const { data, error } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .update(updates)
     .eq('id', id)
     .select('*, leagues!teams_league_id_fkey(id, name, slug)')

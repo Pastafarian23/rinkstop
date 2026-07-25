@@ -44,7 +44,7 @@ async function getRecentGames(limit = 50): Promise<Game[]> {
   }
 
   const { data: teams } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name')
     .in('id', Array.from(teamIds));
 

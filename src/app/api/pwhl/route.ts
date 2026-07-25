@@ -15,7 +15,7 @@ export async function GET() {
 
   // Fetch all PWHL teams
   const { data: teams, error: teamsError } = await supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('*, leagues(name)')
     .eq('league_id', league.id)
     .order('name', { ascending: true });

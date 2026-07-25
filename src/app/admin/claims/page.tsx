@@ -71,9 +71,9 @@ export default async function AdminClaimsPage() {
   }
   if (teamIds.length > 0) {
     const { data: teams } = await supabaseAdmin
-      .from('teams').select('id, name, city').in('id', teamIds);
+      .from('team_workspaces').select('id, name, home_city').in('id', teamIds);
     for (const t of teams || []) {
-      entityLabels[`team:${t.id}`] = t.city ? `${t.name} (${t.city})` : t.name;
+      entityLabels[`team:${t.id}`] = t.home_city ? `${t.name} (${t.home_city})` : t.name;
     }
   }
   if (playerIds.length > 0) {

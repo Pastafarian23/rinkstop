@@ -261,7 +261,7 @@ export async function getCityPageData(opts: {
   // - CA uses exact match for both
   // - UK uses ilike for both
   let teamsQuery = supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, slug, logo_url, league_id')
     .eq('country', countryName)
     .eq('is_active', true);
@@ -329,7 +329,7 @@ export async function getCityPageData(opts: {
         .eq('is_active', true)
         .limit(500),
       supabase
-        .from('teams')
+        .from('team_workspaces')
         .select('city')
         .eq('country', countryName)
         .or(peerRegionOr)

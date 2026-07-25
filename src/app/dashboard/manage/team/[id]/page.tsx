@@ -20,7 +20,7 @@ export default async function ManageTeamPage({ params }: PageProps) {
   const { id } = await params;
 
   const { data: entity, error } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('*')
     .eq('id', id)
     .maybeSingle();

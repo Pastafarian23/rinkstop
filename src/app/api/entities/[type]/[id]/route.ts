@@ -37,7 +37,7 @@ export async function GET(
       payload = data;
     }
   } else if (type === 'team') {
-    const { data } = await supabaseAdmin.from('teams').select('id, name, slug').eq('id', id).maybeSingle();
+    const { data } = await supabaseAdmin.from('team_workspaces').select('id, name, slug').eq('id', id).maybeSingle();
     if (data) {
       name = data.name || 'Team';
       url = `/directory/teams/${data.slug || data.id}`;

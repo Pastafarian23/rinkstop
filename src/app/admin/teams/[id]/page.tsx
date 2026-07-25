@@ -13,7 +13,7 @@ interface League {
 
 async function getTeam(id: string) {
   const { data: team } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('*, leagues!teams_league_id_fkey(id, name, slug)')
     .eq('id', id)
     .maybeSingle();

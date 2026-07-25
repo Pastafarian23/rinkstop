@@ -14,7 +14,7 @@ export async function GET(
   // Get all distinct cities in this country from teams, rinks, and programs
   const [{ data: teams }, { data: rinks }, { data: programs }] = await Promise.all([
     supabase
-      .from('teams')
+      .from('team_workspaces')
       .select('city')
       .eq('country', decodedCountry)
       .eq('is_active', true)
@@ -55,7 +55,7 @@ export async function GET(
     const [{ data: teamsInCity }, { data: rinksInCity }, { data: programsInCity }] =
       await Promise.all([
         supabase
-          .from('teams')
+          .from('team_workspaces')
           .select('id')
           .eq('country', decodedCountry)
           .eq('city', city)
