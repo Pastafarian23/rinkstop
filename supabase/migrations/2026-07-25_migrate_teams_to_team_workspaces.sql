@@ -224,8 +224,9 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 -- 5. Insert deactivated/merged teams as archived workspaces
 -- ============================================================
--- Preserves all data so historical links don't 404, but visibility='archived'
--- hides them from public listings.
+-- Preserves all data so historical links don't 404. visibility='private'
+-- hides them from public listings (visibility CHECK only allows private|unlisted|public).
+-- is_active=false + archived_at set marks them as archived for filtering.
 
 INSERT INTO team_workspaces (
   id, slug, name, country_code, home_city, home_country,
@@ -237,7 +238,7 @@ SELECT
   ms.id, ms.slug, ms.name, ms.country_code, ms.home_city, ms.home_country,
   ms.league_id, ms.avatar_url, ms.website_url, ms.currency,
   'adult',
-  'archived',
+  'private',  -- archived legacy teams hidden from public listings (visibility CHECK: private|unlisted|public)
   false,
   ms.archived_at,
   ms.created_at, ms.updated_at,
@@ -282,7 +283,8 @@ COMMIT;
 -- SELECT COUNT(*) FROM team_workspaces;                                          -- expect 3243
 -- SELECT COUNT(*) FROM teams;                                                    -- expect 3243 (kept for rollback)
 -- SELECT COUNT(*) FROM team_workspaces WHERE country_code IS NULL;              -- expect 0
--- SELECT COUNT(*) FROM team_workspaces WHERE visibility = 'archived';           -- expect ~698
--- SELECT COUNT(*) FROM team_workspaces WHERE visibility = 'public';             -- expect ~2545
+-- SELECT COUNT(*) FROM team_workspaces WHERE is_active = true AND visibility = 'public';    -- expect ~2545
+-- SELECT COUNT(*) FROM team_workspaces WHERE is_active = false AND visibility = 'private';  -- expect ~698
 -- SELECT slug, COUNT(*) FROM team_workspaces GROUP BY slug HAVING COUNT(*) > 1;  -- expect empty
 -- SELECT COUNT(*) FROM team_workspaces WHERE home_country IS NOT NULL;           -- expect 3243
+-- SELECT COUNT(*) FROM team_workspaces WHERE archived_at IS NOT NULL;            -- expect ~698 (deactivated/merged)
