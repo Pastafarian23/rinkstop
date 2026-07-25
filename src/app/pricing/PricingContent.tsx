@@ -94,7 +94,7 @@ const FAQ = [
   },
   {
     q: 'Can I keep my Free account and just browse?',
-    a: 'Yes. Free is permanent and free. You can browse the full directory, read reviews, save up to 3 favorites, and follow up to 3 teams or players — no card required, no upsell.',
+    a: 'Yes. Free is permanent and free. You can browse the full directory, read reviews, save unlimited favorites, and follow unlimited teams or players — no card required, no upsell.',
   },
   {
     q: 'What does Verified Identity cost?',
