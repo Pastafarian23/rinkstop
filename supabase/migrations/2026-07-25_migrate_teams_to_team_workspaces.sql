@@ -228,6 +228,42 @@ ON CONFLICT (id) DO NOTHING;
 -- hides them from public listings (visibility CHECK only allows private|unlisted|public).
 -- is_active=false + archived_at set marks them as archived for filtering.
 
+WITH country_map AS (
+  SELECT * FROM (VALUES
+    ('Andorra','AD'),('Argentina','AR'),('Armenia','AM'),('Australia','AU'),
+    ('Austria','AT'),('Azerbaijan','AZ'),('Bahrain','BH'),('Belarus','BY'),
+    ('Belgium','BE'),('Bosnia and Herzegovina','BA'),('Brazil','BR'),('Bulgaria','BG'),
+    ('CA','CA'),('Canada','CA'),('Chile','CL'),('China','CN'),('Costa Rica','CR'),
+    ('Croatia','HR'),('Czech Republic','CZ'),('Denmark','DK'),('Estonia','EE'),
+    ('Finland','FI'),('France','FR'),('Georgia','GE'),('Germany','DE'),
+    ('Great Britain','GB'),('Greece','GR'),('Hong Kong','HK'),('Hungary','HU'),
+    ('Iceland','IS'),('India','IN'),('Indonesia','ID'),('Iran','IR'),
+    ('Ireland','IE'),('Israel','IL'),('Italy','IT'),('Japan','JP'),
+    ('Kazakhstan','KZ'),('Kuwait','KW'),('Kyrgyzstan','KG'),('Latvia','LV'),
+    ('Lebanon','LB'),('Lithuania','LT'),('Luxembourg','LU'),('Malaysia','MY'),
+    ('Mexico','MX'),('Moldova','MD'),('Mongolia','MN'),('Montenegro','ME'),
+    ('Netherlands','NL'),('New Zealand','NZ'),('North Korea','KP'),
+    ('North Macedonia','MK'),('Norway','NO'),('Oman','OM'),('Peru','PE'),
+    ('Philippines','PH'),('Poland','PL'),('Qatar','QA'),('Romania','RO'),
+    ('Russia','RU'),('Saudi Arabia','SA'),('Serbia','RS'),('Singapore','SG'),
+    ('Slovakia','SK'),('Slovenia','SI'),('South Africa','ZA'),('South Korea','KR'),
+    ('Spain','ES'),('Sweden','SE'),('Switzerland','CH'),('Taiwan','TW'),
+    ('Thailand','TH'),('Turkey','TR'),('Turkmenistan','TM'),('Ukraine','UA'),
+    ('United Arab Emirates','AE'),('United Kingdom','GB'),('United States','US'),
+    ('USA','US'),('Uzbekistan','UZ'),('Venezuela','VE')
+  ) AS m(country_name, country_code)
+),
+migration_source AS (
+  SELECT t.id, t.slug, t.name,
+    cm.country_code, t.city AS home_city, cm.country_code AS home_country,
+    t.league_id, t.logo_url AS avatar_url, t.website_url,
+    COALESCE(cc.currency, 'USD') AS currency,
+    t.is_active, t.created_at, t.updated_at,
+    COALESCE(t.deactivated_at, t.updated_at) AS archived_at
+  FROM teams t
+  LEFT JOIN country_map cm ON cm.country_name = t.country
+  LEFT JOIN country_currency cc ON cc.country_code = cm.country_code
+)
 INSERT INTO team_workspaces (
   id, slug, name, country_code, home_city, home_country,
   league_id, avatar_url, website_url, currency,
