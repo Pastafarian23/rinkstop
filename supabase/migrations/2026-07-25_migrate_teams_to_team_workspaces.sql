@@ -24,11 +24,18 @@
 BEGIN;
 
 -- ============================================================
--- 0. Add website_url column (legacy teams have it)
+-- 0. Schema prep (must run before inserts)
 -- ============================================================
 
+-- 0a. Add website_url column (legacy teams have it)
 ALTER TABLE team_workspaces
   ADD COLUMN IF NOT EXISTS website_url TEXT;
+
+-- 0b. Make created_by nullable — legacy imported teams have no human creator.
+--     New team_workspaces rows (from /dashboard/team/new) still set created_by
+--     to the creating user. Only legacy imports allow NULL.
+ALTER TABLE team_workspaces
+  ALTER COLUMN created_by DROP NOT NULL;
 
 COMMENT ON COLUMN team_workspaces.website_url IS
   'Public website URL. Backfilled from legacy teams.website_url during 2026-07-25 migration.';
