@@ -108,8 +108,8 @@ export const TIERS: Record<TierName, TierInfo> = {
     features: [
       'Browse the complete hockey directory',
       'Search rinks, teams, leagues and players',
-      'Save up to 3 favorites',
-      'Follow up to 3 teams or players',
+      'Save unlimited favorites',
+      'Follow unlimited teams or players',
       'Read reviews',
       'Public profile',
     ],

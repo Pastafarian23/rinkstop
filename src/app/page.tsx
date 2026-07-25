@@ -487,10 +487,10 @@ export default async function Home() {
           <div className="cta-flex">
             <div>
               <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: '#fff', marginBottom: '0.375rem' }}>
-                CLAIM YOUR FREE PROFILE
+                ADD YOUR TEAM, RINK, OR LEAGUE
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)', maxWidth: '540px' }}>
-                Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates. Free forever.
+                Submit a new listing to the directory — free to add. Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates (paid tier).
               </p>
             </div>
             <div className="cta-btns">

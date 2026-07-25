@@ -166,7 +166,7 @@ const sections: Array<{
       },
       {
         q: 'How do I save a team, player, or rink?',
-        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save up to 3; Verified Identity and above can save unlimited.',
+        a: 'Sign in, then click the bookmark icon on any team, player, or rink page. The item shows up in /dashboard/favorites. Free users can save unlimited favorites and follow unlimited teams or players.',
       },
       {
         q: 'How do rink reviews work?',
