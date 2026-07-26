@@ -41,7 +41,7 @@ let teamIdCache: Record<string, string | null> = {};
 async function getTeamIdBySlug(slug: string): Promise<string | null> {
   if (slug in teamIdCache) return teamIdCache[slug];
   const { data } = await supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('id')
     .eq('slug', slug)
     .maybeSingle();

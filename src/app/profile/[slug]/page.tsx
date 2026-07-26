@@ -109,7 +109,7 @@ async function fetchProfile(slug: string): Promise<{
       ? supabaseAdmin.from('players').select('id, first_name, last_name, slug, headshot_url').in('id', playerIds)
       : Promise.resolve({ data: [] as any[] }),
     teamIds.length > 0
-      ? supabaseAdmin.from('teams').select('id, name, slug, logo_url').in('id', teamIds)
+      ? supabaseAdmin.from('team_workspaces').select('id, name, slug, avatar_url').in('id', teamIds)
       : Promise.resolve({ data: [] as any[] }),
     leagueIds.length > 0
       ? supabaseAdmin.from('leagues').select('id, name, slug, logo_url').in('id', leagueIds)

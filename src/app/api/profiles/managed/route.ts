@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
   } else if (body.profileType === 'team') {
     const { data: team } = await supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id')
       .eq('id', body.profileId)
       .maybeSingle();
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
     for (const p of data || []) playerMap[p.id] = p;
   }
   if (teamIds.length > 0) {
-    const { data } = await supabaseAdmin.from('teams').select('id, name, slug, logo_url').in('id', teamIds);
+    const { data } = await supabaseAdmin.from('team_workspaces').select('id, name, slug, avatar_url').in('id', teamIds);
     for (const t of data || []) teamMap[t.id] = t;
   }
   if (leagueIds.length > 0) {

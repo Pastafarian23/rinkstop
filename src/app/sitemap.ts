@@ -209,9 +209,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const [teamsResult, rinksResult, leaguesResult, postsResult, playersResult, caRinksResult, ukRinksResult] = await Promise.all([
     Promise.all([
-      supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true).range(0, 999),
-      supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true).range(1000, 1999),
-      supabaseAdmin.from('teams').select('slug, updated_at, country, city, league_id, division, logo_url, website_url').eq('is_active', true).range(2000, 2999),
+      supabaseAdmin.from('team_workspaces').select('slug, updated_at, country_code, home_city, league_id, division, avatar_url, website_url').eq('is_active', true).range(0, 999),
+      supabaseAdmin.from('team_workspaces').select('slug, updated_at, country_code, home_city, league_id, division, avatar_url, website_url').eq('is_active', true).range(1000, 1999),
+      supabaseAdmin.from('team_workspaces').select('slug, updated_at, country_code, home_city, league_id, division, avatar_url, website_url').eq('is_active', true).range(2000, 2999),
     ]).then(results => ({ data: results.flatMap(r => r.data || []) })),
     Promise.all([
       supabaseAdmin.from('rinks').select('slug, updated_at, city, country, province_state').eq('is_active', true).range(0, 999),
@@ -239,7 +239,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // league + logo, and Google is indexing them. We do still require SOME
     // quality signal so we don't add 1,439 placeholder rows to the sitemap.
     if (!t.slug) return false;
-    return !!(t.country || t.city || t.league_id || t.division || t.logo_url || t.website_url);
+    return !!(t.country_code || t.home_city || t.league_id || t.division || t.avatar_url || t.website_url);
   }
   function isHighQualityRink(r: any): boolean {
     return !!(r.slug && r.city && r.country);

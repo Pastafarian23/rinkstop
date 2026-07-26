@@ -87,7 +87,7 @@ export const getBrandBySlug = cache(async (slug: string): Promise<{
   let teams: any[] = [];
   try {
     const { data: t, error: terr } = await supabase
-      .from('teams')
+      .from('team_workspaces')
       .select('id, name, city, country, slug')
       .eq('brand_id', data.id)
       .order('name', { ascending: true });

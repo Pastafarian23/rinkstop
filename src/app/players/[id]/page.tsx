@@ -71,7 +71,7 @@ async function fetchPlayer(id: string): Promise<PageData | null> {
 
   if ((player as PlayerRow).team_id) {
     const { data: t } = await supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id, name, slug, logo_url, league_id')
       .eq('id', (player as PlayerRow).team_id!)
       .maybeSingle();
