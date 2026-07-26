@@ -12,12 +12,17 @@
 // (usa_hockey_number, hockey_canada_number, primary_position_category).
 // Federation IDs are looked up by slug (us, ca) so the client doesn't need
 // to know UUIDs.
+//
+// WS13 PR3: also stamps certification_id on the draft row by joining
+// federations.slug + certifications.category='player'. Used at approve
+// time to issue the right user_credentials row.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { resolveCertificationId } from '@/lib/certifications';
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
@@ -202,10 +207,20 @@ export async function PATCH(request: NextRequest) {
         registration_number: u.number,
         submission_status: 'draft',
       };
+      // WS13 PR3: resolve certification_id for this (federation, category=player)
+      // pair so the approve route knows which cert to issue. Cached for 1h.
+      const certificationId = await resolveCertificationId(u.slug, 'player');
+      if (certificationId) {
+        payload.certification_id = certificationId;
+      }
       if (existing) {
         const { error: updErr } = await supabaseAdmin
           .from('federation_registrations')
-          .update({ registration_number: u.number, updated_at: new Date().toISOString() })
+          .update({
+            registration_number: u.number,
+            certification_id: certificationId,
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', existing.id);
         if (updErr) {
           console.error('[passport-fed] draft update failed', updErr);
@@ -220,7 +235,12 @@ export async function PATCH(request: NextRequest) {
           if (insErr.code === '23505') {
             const { error: updErr } = await supabaseAdmin
               .from('federation_registrations')
-              .update({ registration_number: u.number, submission_status: 'draft', updated_at: new Date().toISOString() })
+              .update({
+                registration_number: u.number,
+                certification_id: certificationId,
+                submission_status: 'draft',
+                updated_at: new Date().toISOString(),
+              })
               .eq('player_id', player.id)
               .eq('federation_id', federationId);
             if (updErr) {
