@@ -31,6 +31,44 @@ export const dynamic = 'force-dynamic';
 
 type ClaimType = 'rink' | 'team' | 'player';
 
+/**
+ * Per-tab header copy (eyebrow, subhead, search placeholder).
+ *
+ * The Player tab previously inherited the rink/team copy — "For Rink Operators &
+ * Team Administrators", "Type your rink or team name or city…". That read as
+ * confusing for parents landing on the Player tab. Now each tab gets copy that
+ * matches the audience and the cheapest paid tier required to claim.
+ *
+ * Pricing source-of-truth is src/lib/pricing.ts — these strings intentionally
+ * mirror the cheapest paid tier per entity type rather than reading from
+ * formatTierPrice() at module scope (the latter would require making the
+ * helper importable in a server component without breaking the existing
+ * client-side usage; the price is stable and rarely changes).
+ */
+const HEADER_COPY: Record<ClaimType, { eyebrow: string; sub: string; placeholder: string; bannerLabel: string; bannerPrice: string }> = {
+  rink: {
+    eyebrow: 'For Rink Operators',
+    sub: 'Search for your rink below. Claiming requires a Business plan ($99/yr) — browse the directory is always free.',
+    placeholder: 'Type your rink name or city…',
+    bannerLabel: 'Rink operators',
+    bannerPrice: 'a paid Business plan ($99/yr)',
+  },
+  team: {
+    eyebrow: 'For Team & Club Administrators',
+    sub: 'Search for your team below. Claiming requires a Club Starter plan ($149/yr) or higher — browse the directory is always free.',
+    placeholder: 'Type your team name or city…',
+    bannerLabel: 'Team & club admins',
+    bannerPrice: 'a Club Starter plan ($149/yr) or higher',
+  },
+  player: {
+    eyebrow: 'For Players & Parents',
+    sub: 'Search for your player profile below. Claiming requires a Verified Hockey Identity ($24.99/yr) — browse the directory is always free.',
+    placeholder: 'Type a player first or last name…',
+    bannerLabel: 'Players & parents',
+    bannerPrice: 'a Verified Hockey Identity ($24.99/yr)',
+  },
+};
+
 interface ClaimResult {
   id: string;
   slug: string;
@@ -324,10 +362,13 @@ export default async function ClaimYourListingPage({
           resultCount={results.length}
           entityType={type}
         />
-        {/* Header */}
+        {/* Header — per-tab eyebrow + subhead so the page reads correctly on
+            the Player tab (which serves players/families, not just rink/team ops).
+            Tab-aware copy only fires on the eyebrow + subhead. Title stays
+            "Claim Your Listing" so deep-links and OG previews stay stable. */}
         <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '0.85rem', letterSpacing: '0.18em', color: '#FFB81C', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.75rem' }}>
-            For Rink Operators & Team Administrators
+            {HEADER_COPY[type].eyebrow}
           </div>
           <h1
             style={{
@@ -343,7 +384,7 @@ export default async function ClaimYourListingPage({
             Claim Your Listing
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '1.05rem', marginTop: '0.75rem', lineHeight: 1.5 }}>
-            Search for your rink or team below. Claiming requires a Verified Hockey Identity or other paid plan — browse the directory is always free.
+            {HEADER_COPY[type].sub}
           </p>
         </div>
 
@@ -403,8 +444,10 @@ export default async function ClaimYourListingPage({
             }}
           >
             <div style={{ flex: 1, minWidth: 200, color: '#FFB81C', fontSize: '0.9rem' }}>
-              <strong style={{ color: '#fff' }}>Operators: </strong>
-              you&rsquo;ll need a RinkStop account and a paid Business plan to claim. See plans before you search.
+              <strong style={{ color: '#fff' }}>{HEADER_COPY[type].bannerLabel}: </strong>
+              you&rsquo;ll need a RinkStop account and{' '}
+              {HEADER_COPY[type].bannerPrice}
+              {' '}to claim. See plans before you search.
             </div>
             <Link
               href={`/pricing${query ? `?intent=claim&type=${type}` : '?intent=claim'}`}
@@ -462,7 +505,7 @@ export default async function ClaimYourListingPage({
               type="text"
               name="q"
               defaultValue={query}
-              placeholder="Type your rink or team name or city…"
+              placeholder={HEADER_COPY[type].placeholder}
               autoFocus
               style={{
                 flex: 1,
