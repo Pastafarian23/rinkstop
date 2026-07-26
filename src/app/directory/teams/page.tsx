@@ -102,7 +102,7 @@ async function fetchInitialTeams(opts: {
   // Fetch both NHL-imported teams AND user-created teams (team_workspaces)
   // in parallel so the SSR HTML includes user-created teams from the start.
   let nhlQuery = supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, slug, logo_url, city, country, league_id')
     .eq('is_active', true)
     .order('name')

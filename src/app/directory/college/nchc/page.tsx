@@ -42,7 +42,7 @@ const NCAA_LEAGUE_ID = '498c6b36-a83a-4e81-9829-a2f9ca3a03f8';
 
 export default async function NCHCPage() {
   const { data: teams } = await supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, slug, city, division')
     .eq('league_id', NCAA_LEAGUE_ID)
     .eq('division', 'NCHC')

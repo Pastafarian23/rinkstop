@@ -47,7 +47,7 @@ export async function GET(_request: NextRequest) {
       .eq('is_active', true).not('latitude', 'is', null).not('longitude', 'is', null),
     supabase.from('rinks').select('id', { count: 'exact', head: true })
       .eq('is_active', true).not('capacity', 'is', null),
-    supabase.from('teams').select('id', { count: 'exact', head: true }),
+    supabase.from('team_workspaces').select('id', { count: 'exact', head: true }),
     supabase.from('players').select('id', { count: 'exact', head: true }),
     supabase.from('leagues').select('id', { count: 'exact', head: true }),
     // Distinct cities across rinks (rough proxy for "cities with hockey")

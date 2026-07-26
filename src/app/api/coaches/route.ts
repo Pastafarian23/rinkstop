@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   if (current_team_id != null && current_team_id !== '') {
     const { data: team, error: teamErr } = await supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id')
       .eq('id', current_team_id)
       .maybeSingle();

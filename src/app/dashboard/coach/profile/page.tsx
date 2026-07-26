@@ -36,7 +36,7 @@ export default async function CoachProfilePage() {
       .eq('user_id', userId)
       .maybeSingle(),
     supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id, name, slug, league_id, leagues(name)')
       .eq('is_active', true)
       .order('name')

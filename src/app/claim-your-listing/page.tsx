@@ -76,7 +76,7 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
     rows = data as RowShape[];
   } else if (type === 'team') {
     const { data, error } = await supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id, slug, name, city, country')
       .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
       .limit(20);
@@ -175,7 +175,7 @@ async function loadFeaturedClaimable(): Promise<{
         .order('updated_at', { ascending: false })
         .limit(20),
       supabaseAdmin
-        .from('teams')
+        .from('team_workspaces')
         .select('id, slug, name, city, country, state_province')
         .eq('is_active', true)
         .is('deactivated_at', null)

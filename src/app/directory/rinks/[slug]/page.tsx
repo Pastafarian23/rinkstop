@@ -190,7 +190,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .limit(20),
     rink.city
       ? supabase
-          .from('teams')
+          .from('team_workspaces')
           .select('id, name, slug, city, league_id, logo_url')
           .ilike('city', rink.city)
           .limit(12)

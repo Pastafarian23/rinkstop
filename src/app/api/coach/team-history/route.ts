@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
   // Verify team exists
   const { data: team, error: teamErr } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('id')
     .eq('id', team_id)
     .maybeSingle();

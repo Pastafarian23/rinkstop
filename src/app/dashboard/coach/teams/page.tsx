@@ -63,7 +63,7 @@ export default async function CoachTeamsPage() {
       .select('id, label, start_date, end_date')
       .order('start_date', { ascending: false }),
     supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id, name, slug, league_id, leagues(name)')
       .eq('is_active', true)
       .order('name')
