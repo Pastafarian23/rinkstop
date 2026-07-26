@@ -9,6 +9,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { resolveCertificationId } from '@/lib/certifications';
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
@@ -105,6 +106,12 @@ export async function PATCH(request: NextRequest) {
   if (expires_at !== undefined) {
     updatePayload.expires_at = expires_at || null;
   }
+  // WS13 PR3: stamp certification_id so the approve route can issue
+  // the right user_credentials row. Coach category.
+  const certificationId = await resolveCertificationId(federation_slug, 'coach');
+  if (certificationId) {
+    updatePayload.certification_id = certificationId;
+  }
 
   if (existing) {
     const { error } = await supabaseAdmin
@@ -125,6 +132,7 @@ export async function PATCH(request: NextRequest) {
     submission_status: 'draft',
   };
   if (expires_at) insertPayload.expires_at = expires_at;
+  if (certificationId) insertPayload.certification_id = certificationId;
 
   const { data: inserted, error } = await supabaseAdmin
     .from('federation_registrations')
