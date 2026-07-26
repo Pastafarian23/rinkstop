@@ -2,10 +2,11 @@ import Link from 'next/link';
 // src/app/dashboard/passport/federation/page.tsx
 // Server page for editing federation registration numbers + position category.
 //
-// Tier 2 (2026-07-23): federation numbers now live in
-// public.federation_registrations (not on players.*). This page reads the
-// registration rows joined with federations, passes status + id to the
-// client form.
+// WS13 PR4a: dynamic cert list driven by v_user_visible_certifications.
+// Replaces the pre-PR3 hardcoded "USA Hockey / Hockey Canada" 2-input form
+// with a dynamic list built from the 9 seeded certifications, filtered
+// by the user's country context (profile_country_context.primary_country).
+// No country set → show all player-category certs.
 
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
@@ -21,11 +22,13 @@ export const dynamic = 'force-dynamic';
 
 interface RegistrationRow {
   id: string;
+  certification_id: string | null;
+  federation_id: string;
   registration_number: string;
   submission_status: 'draft' | 'pending' | 'approved' | 'rejected';
   rejection_reason: string | null;
   verified_at: string | null;
-  federation: { slug: string; name: string } | null;
+  expires_at: string | null;
 }
 
 export default async function FederationPage() {
@@ -65,19 +68,80 @@ export default async function FederationPage() {
     );
   }
 
-  // Fetch all federation_registrations for this player (any status)
+  // Fetch user's country context (may be null = no country set yet).
+  // WS13 PR4a: when null, v_user_visible_certifications returns all certs
+  // visible (the view's CASE expression handles null user_id = true).
+  const { data: countryRow } = await supabaseAdmin
+    .from('profile_country_context')
+    .select('primary_country, additional_countries')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const userCountry = countryRow?.primary_country ?? null;
+  const additionalCountries = countryRow?.additional_countries ?? [];
+
+  // Fetch all active player-category certifications with issuer info.
+  // The view is country-aware but for v1 we fetch all player certs and
+  // do the visibility filter in JS — the certs table is 9 rows, the
+  // view adds a join to profile_country_context per row. JS filter
+  // matches the view's CASE expression for null-or-matching countries.
+  const { data: allPlayerCerts } = await supabaseAdmin
+    .from('certifications')
+    .select('id, slug, name, description, is_international, issuer_id, federations!inner(slug, name, country_code, kind)')
+    .eq('category', 'player')
+    .eq('is_active', true)
+    .eq('federations.is_active', true);
+
+  const visibleCerts = (allPlayerCerts ?? [])
+    .map((c: any) => {
+      const fed = Array.isArray(c.federations) ? c.federations[0] : c.federations;
+      const isVisible =
+        c.is_international ||
+        !userCountry ||
+        fed?.country_code === userCountry ||
+        (additionalCountries.length > 0 && additionalCountries.includes(fed?.country_code));
+      return isVisible && fed
+        ? {
+            certification_id: c.id,
+            slug: c.slug,
+            name: c.name,
+            description: c.description,
+            is_international: c.is_international,
+            federation_id: fed.id as string,
+            federation_slug: fed.slug as string,
+            federation_name: fed.name as string,
+            country_code: fed.country_code as string | null,
+            kind: fed.kind as 'national' | 'international',
+          }
+        : null;
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+
+  // Fetch existing federation_registrations for this player, indexed by
+  // certification_id (new key) with fallback to legacy federation_id key
+  // for any pre-PR3 rows that lack certification_id.
   const { data: rows } = await supabaseAdmin
     .from('federation_registrations')
-    .select('id, registration_number, submission_status, rejection_reason, verified_at, federation:federations(slug, name)')
+    .select('id, certification_id, federation_id, registration_number, submission_status, rejection_reason, verified_at, expires_at')
     .eq('player_id', player.id);
 
-  // Index by federation slug for the client form. Supabase returns nested
-  // FK joins as arrays — flatten to single object.
-  const bySlug: Record<string, RegistrationRow> = {};
+  const byCertId: Record<string, RegistrationRow> = {};
+  const legacyByFedSlug: Record<string, RegistrationRow & { federation_slug: string }> = {};
   for (const raw of (rows ?? []) as any[]) {
-    const fed = Array.isArray(raw.federation) && raw.federation.length > 0 ? raw.federation[0] : raw.federation;
-    if (!fed) continue;
-    bySlug[fed.slug] = { ...raw, federation: fed } as RegistrationRow;
+    if (raw.certification_id) {
+      byCertId[raw.certification_id] = raw as RegistrationRow;
+    } else {
+      // Legacy row (pre-PR3) — surface it under the federation slug
+      // so the user can see + edit/delete it via the new flow.
+      // Resolve federation slug from the cert that matches this
+      // federation's player cert.
+      const matchingCert = visibleCerts.find((c) => c.federation_id === raw.federation_id);
+      if (matchingCert) {
+        legacyByFedSlug[matchingCert.federation_slug] = {
+          ...(raw as RegistrationRow),
+          federation_slug: matchingCert.federation_slug,
+        };
+      }
+    }
   }
 
   return (
@@ -85,7 +149,10 @@ export default async function FederationPage() {
       playerId={player.id}
       playerName={[player.first_name, player.last_name].filter(Boolean).join(' ') || 'this player'}
       initialPositionCategory={player.primary_position_category ?? ''}
-      registrations={bySlug}
+      userCountry={userCountry}
+      visibleCerts={visibleCerts}
+      registrationsByCertId={byCertId}
+      legacyRegistrationsByFedSlug={legacyByFedSlug}
     />
   );
 }

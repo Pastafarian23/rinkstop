@@ -13,39 +13,29 @@ const POSITIONS = [
 
 type Status = 'draft' | 'pending' | 'approved' | 'rejected';
 
+interface VisibleCert {
+  certification_id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  is_international: boolean;
+  federation_id: string;
+  federation_slug: string;
+  federation_name: string;
+  country_code: string | null;
+  kind: 'national' | 'international';
+}
+
 interface RegistrationRow {
   id: string;
+  certification_id: string | null;
+  federation_id: string;
   registration_number: string;
   submission_status: Status;
   rejection_reason: string | null;
   verified_at: string | null;
-  federation: { slug: string; name: string } | null;
+  expires_at: string | null;
 }
-
-interface FederationField {
-  field: 'usa_hockey_number' | 'hockey_canada_number';
-  slug: 'us' | 'ca';
-  label: string;
-  hint: string;
-  placeholder: string;
-}
-
-const FEDERATION_FIELDS: FederationField[] = [
-  {
-    field: 'usa_hockey_number',
-    slug: 'us',
-    label: 'USA Hockey registration number',
-    hint: 'Find this at usahockey.com → MyHockey → Profile',
-    placeholder: 'e.g. 123456789',
-  },
-  {
-    field: 'hockey_canada_number',
-    slug: 'ca',
-    label: 'Hockey Canada registration number',
-    hint: 'Find this at hockeycanada.ca → Member Profile',
-    placeholder: 'e.g. HC-12345',
-  },
-];
 
 function StatusBadge({ status }: { status: Status }) {
   const styles: Record<Status, { bg: string; color: string; label: string }> = {
@@ -75,15 +65,21 @@ function StatusBadge({ status }: { status: Status }) {
 }
 
 export default function FederationFormClient({
-  playerId,
+  playerId: _playerId,
   playerName,
   initialPositionCategory,
-  registrations,
+  userCountry,
+  visibleCerts,
+  registrationsByCertId,
+  legacyRegistrationsByFedSlug,
 }: {
   playerId: string;
   playerName: string;
   initialPositionCategory: string;
-  registrations: Record<string, RegistrationRow>;
+  userCountry: string | null;
+  visibleCerts: VisibleCert[];
+  registrationsByCertId: Record<string, RegistrationRow>;
+  legacyRegistrationsByFedSlug: Record<string, RegistrationRow & { federation_slug: string }>;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -93,17 +89,18 @@ export default function FederationFormClient({
 
   const [position, setPosition] = useState(initialPositionCategory);
 
-  // Federation number form state per field, keyed by field name
+  // Numbers keyed by certification_id. Pre-fill from existing registrations.
   const [numbers, setNumbers] = useState<Record<string, string>>(() => {
     const out: Record<string, string> = {};
-    for (const f of FEDERATION_FIELDS) {
-      out[f.field] = registrations[f.slug]?.registration_number ?? '';
+    for (const c of visibleCerts) {
+      const reg = registrationsByCertId[c.certification_id];
+      out[c.certification_id] = reg?.registration_number ?? '';
     }
     return out;
   });
 
-  const handleNumberChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNumbers((prev) => ({ ...prev, [field]: e.target.value }));
+  const handleNumberChange = (certId: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNumbers((prev) => ({ ...prev, [certId]: e.target.value }));
     setSaved(false);
   };
 
@@ -114,9 +111,17 @@ export default function FederationFormClient({
 
     setSubmitting(true);
     try {
+      // Build the new payload: list of {certification_id, registration_number}
+      // for each cert with a non-empty value. Server upserts each.
+      const certs: Array<{ certification_id: string; registration_number: string }> = [];
+      for (const c of visibleCerts) {
+        const v = (numbers[c.certification_id] ?? '').trim();
+        if (v) {
+          certs.push({ certification_id: c.certification_id, registration_number: v });
+        }
+      }
       const payload: Record<string, any> = {
-        usa_hockey_number: numbers['usa_hockey_number'],
-        hockey_canada_number: numbers['hockey_canada_number'],
+        certs,
         primary_position_category: position,
       };
       const res = await fetch('/api/passport/federation', {
@@ -204,6 +209,18 @@ export default function FederationFormClient({
     marginBottom: 4,
   };
 
+  // Build a flat list of all certs to render: dynamic visibleCerts first,
+  // then any legacy rows that aren't covered by a current visible cert.
+  // Legacy rows surface in their own section so users can see + edit them.
+  const renderedCertIds = new Set(visibleCerts.map((c) => c.certification_id));
+  const legacyRows = Object.values(legacyRegistrationsByFedSlug).filter((r) => {
+    // Only show legacy if there's no cert-driven registration for that
+    // federation already. Otherwise the new flow handles it.
+    return !visibleCerts.some(
+      (c) => c.federation_id === r.federation_id && renderedCertIds.has(c.certification_id)
+    );
+  });
+
   return (
     <main className="min-h-screen bg-[#041E42] text-white">
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '2rem 1.25rem 4rem' }}>
@@ -225,28 +242,84 @@ export default function FederationFormClient({
         >
           FEDERATION REGISTRATION
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9375rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9375rem', marginBottom: '0.5rem' }}>
           Add {playerName}&apos;s federation registration numbers. Numbers can be edited freely until
           you submit them for verification. Once submitted, the number is locked until admin reviews
           or you withdraw the submission.
         </p>
+        {!userCountry && (
+          <p
+            style={{
+              fontSize: '0.8125rem',
+              color: 'rgba(255,184,28,0.9)',
+              background: 'rgba(255,184,28,0.08)',
+              padding: '0.5rem 0.75rem',
+              borderLeft: '3px solid #FFB81C',
+              borderRadius: 4,
+              marginBottom: '1.5rem',
+            }}
+          >
+            Showing all available player certifications. Set your country in your profile to filter
+            to federations relevant to you.
+          </p>
+        )}
+        {userCountry && (
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+            Filtered to your country: <strong>{userCountry}</strong> + international (IIHF) certs.
+          </p>
+        )}
 
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {FEDERATION_FIELDS.map((f) => {
-            const reg = registrations[f.slug];
+          {visibleCerts.length === 0 && (
+            <div
+              style={{
+                padding: '1rem',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 6,
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: '0.875rem',
+              }}
+            >
+              No player certifications are available for your country yet. Contact support to add
+              your federation.
+            </div>
+          )}
+
+          {visibleCerts.map((cert) => {
+            const reg = registrationsByCertId[cert.certification_id];
             const status: Status | null = reg?.submission_status ?? null;
             const locked = status === 'pending' || status === 'approved';
             return (
-              <div key={f.field}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 4 }}>
-                  <label style={{ ...labelStyle, marginBottom: 0 }}>{f.label}</label>
+              <div key={cert.certification_id}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 4, flexWrap: 'wrap' }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>{cert.name}</label>
+                  {cert.is_international && (
+                    <span
+                      style={{
+                        fontSize: '0.625rem',
+                        fontWeight: 700,
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: 3,
+                        background: 'rgba(100,150,255,0.15)',
+                        color: 'rgba(150,180,255,0.9)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      IIHF
+                    </span>
+                  )}
                   {status && <StatusBadge status={status} />}
                 </div>
+                <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
+                  {cert.description ?? `Issued by ${cert.federation_name}`}
+                </p>
                 <input
                   type="text"
-                  value={numbers[f.field]}
-                  onChange={handleNumberChange(f.field)}
-                  placeholder={f.placeholder}
+                  value={numbers[cert.certification_id]}
+                  onChange={handleNumberChange(cert.certification_id)}
+                  placeholder="Registration number"
                   disabled={locked}
                   style={{
                     ...inputStyle,
@@ -254,9 +327,6 @@ export default function FederationFormClient({
                     cursor: locked ? 'not-allowed' : 'text',
                   }}
                 />
-                <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
-                  {f.hint}
-                </p>
                 {status === 'rejected' && reg?.rejection_reason && (
                   <div
                     style={{
@@ -319,6 +389,52 @@ export default function FederationFormClient({
               </div>
             );
           })}
+
+          {legacyRows.length > 0 && (
+            <div
+              style={{
+                marginTop: '0.5rem',
+                padding: '0.75rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px dashed rgba(255,255,255,0.15)',
+                borderRadius: 6,
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'rgba(255,255,255,0.5)',
+                  marginBottom: '0.75rem',
+                  fontWeight: 600,
+                }}
+              >
+                LEGACY REGISTRATIONS (pre-2026-07-26)
+              </p>
+              {legacyRows.map((reg) => {
+                const cert = visibleCerts.find((c) => c.federation_id === reg.federation_id);
+                if (!cert) return null;
+                const status: Status | null = reg.submission_status ?? null;
+                const locked = status === 'pending' || status === 'approved';
+                return (
+                  <div key={reg.id} style={{ marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 4 }}>
+                      <span style={{ ...labelStyle, marginBottom: 0 }}>{cert.name}</span>
+                      {status && <StatusBadge status={status} />}
+                    </div>
+                    <input
+                      type="text"
+                      defaultValue={reg.registration_number}
+                      disabled
+                      style={{ ...inputStyle, opacity: 0.6 }}
+                    />
+                    <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                      Edit by withdrawing above and re-saving with the new form.
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div>
             <label style={labelStyle}>Primary position</label>
