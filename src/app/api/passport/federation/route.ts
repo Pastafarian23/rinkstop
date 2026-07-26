@@ -1,40 +1,32 @@
 // src/app/api/passport/federation/route.ts
 // PATCH /api/passport/federation — owner edits their DRAFT federation registrations.
 //
-// Tier 2 workflow (2026-07-23). USA Hockey / Hockey Canada numbers now write
-// to federation_registrations as draft rows. The owner can edit freely until
+// Tier 2 workflow (2026-07-23). Federation numbers now write to
+// federation_registrations as draft rows. The owner can edit freely until
 // they call /submit, which locks the row and routes it to the admin queue.
 //
 // primary_position_category stays on public.players (it's a player metadata
 // field, not a federation registration).
 //
-// Backwards compat: field names in the request body are unchanged
-// (usa_hockey_number, hockey_canada_number, primary_position_category).
-// Federation IDs are looked up by slug (us, ca) so the client doesn't need
-// to know UUIDs.
-//
 // WS13 PR3: also stamps certification_id on the draft row by joining
 // federations.slug + certifications.category='player'. Used at approve
 // time to issue the right user_credentials row.
+//
+// WS13 PR4a: the body shape is now a `certs: [{certification_id, registration_number}]`
+// array instead of hardcoded usa_hockey_number + hockey_canada_number fields.
+// The new dynamic form (FederationFormClient) drives the list. The cert_id
+// is the source of truth; federation_id is derived from the cert's issuer
+// at write time. Old body shape is no longer accepted.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
-import { resolveCertificationId } from '@/lib/certifications';
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
 const VALID_POSITIONS = ['forward', 'defense', 'goalie'];
-
-// Field → federation slug mapping. Slugs match the seed in
-// 2026-07-23_federations_seed.sql. Adding a new federation here means
-// adding it to that seed migration AND keeping it in src/lib/federations.ts.
-const FIELD_TO_FEDERATION_SLUG: Record<string, string> = {
-  usa_hockey_number: 'us',
-  hockey_canada_number: 'ca',
-};
 
 function normalizeNumber(raw: any): string | null {
   if (raw == null) return null;
@@ -71,21 +63,26 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { usa_hockey_number, hockey_canada_number, primary_position_category } = body ?? {};
-
-  let usaNorm: string | null;
-  let hcNorm: string | null;
-  try {
-    usaNorm = normalizeNumber(usa_hockey_number);
-    hcNorm = normalizeNumber(hockey_canada_number);
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
-  }
+  const { certs, primary_position_category } = body ?? {};
 
   if (primary_position_category != null && primary_position_category !== '') {
     if (!VALID_POSITIONS.includes(primary_position_category)) {
       return NextResponse.json({ error: `primary_position_category must be one of: ${VALID_POSITIONS.join(', ')}` }, { status: 400 });
     }
+  }
+
+  // Validate certs array
+  if (!Array.isArray(certs)) {
+    return NextResponse.json({ error: 'certs must be an array of {certification_id, registration_number}.' }, { status: 400 });
+  }
+  const certUpdates: Array<{ certification_id: string; number: string }> = [];
+  for (const item of certs) {
+    if (!item || typeof item !== 'object') continue;
+    const { certification_id, registration_number } = item;
+    if (!certification_id || typeof certification_id !== 'string') continue;
+    const num = normalizeNumber(registration_number);
+    if (num === null) continue; // skip empty / invalid
+    certUpdates.push({ certification_id, number: num });
   }
 
   // Resolve player
@@ -105,30 +102,11 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  // Build the payload. Federation numbers go to federation_registrations;
-  // primary_position_category stays on players.
-  const playerUpdate: Record<string, any> = {};
+  // Apply player.primary_position_category if present
   if (primary_position_category !== undefined) {
-    playerUpdate.primary_position_category = primary_position_category === '' ? null : primary_position_category;
-  }
-
-  const fedUpdates: Array<{ slug: string; number: string | null }> = [];
-  if (usa_hockey_number !== undefined) fedUpdates.push({ slug: 'us', number: usaNorm });
-  if (hockey_canada_number !== undefined) fedUpdates.push({ slug: 'ca', number: hcNorm });
-
-  // Sanity check the body actually had something we recognize.
-  if (
-    Object.keys(playerUpdate).length === 0 &&
-    fedUpdates.length === 0
-  ) {
-    return NextResponse.json({ error: 'No fields to update.' }, { status: 400 });
-  }
-
-  // Apply player.metadata update if present.
-  if (Object.keys(playerUpdate).length > 0) {
     const { error } = await supabaseAdmin
       .from('players')
-      .update(playerUpdate)
+      .update({ primary_position_category: primary_position_category === '' ? null : primary_position_category })
       .eq('id', player.id);
     if (error) {
       console.error('[passport-fed] player update failed', error);
@@ -136,100 +114,72 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
-  // Apply federation registration drafts if present.
-  // For each (player, federation) pair: upsert as draft. We refuse to touch
-  // any row that is no longer in 'draft' status (locked because pending or
-  // approved). Owner must call /withdraw first.
-  if (fedUpdates.length > 0) {
-    const slugs = fedUpdates.map((u) => u.slug);
-    const { data: federations, error: fedErr } = await supabaseAdmin
-      .from('federations')
-      .select('id, slug')
-      .in('slug', slugs);
-    if (fedErr) {
-      console.error('[passport-fed] federation lookup failed', fedErr);
-      return NextResponse.json({ error: 'Failed to look up federation records.' }, { status: 500 });
+  // Apply cert → federation_registrations upserts. The certification is
+  // the source of truth: cert.issuer_id → federation_id. Refuse to write
+  // to non-draft rows (locked because pending or approved) — owner must
+  // withdraw first.
+  if (certUpdates.length > 0) {
+    const certIds = certUpdates.map((u) => u.certification_id);
+    const { data: certs, error: certErr } = await supabaseAdmin
+      .from('certifications')
+      .select('id, issuer_id, federations!inner(slug, name)')
+      .in('id', certIds)
+      .eq('is_active', true);
+    if (certErr) {
+      console.error('[passport-fed] cert lookup failed', certErr);
+      return NextResponse.json({ error: 'Failed to look up certifications.' }, { status: 500 });
     }
-    const bySlug = new Map((federations ?? []).map((f: any) => [f.slug, f.id]));
+    const byCertId = new Map((certs ?? []).map((c: any) => [c.id, c]));
 
-    for (const u of fedUpdates) {
-      const federationId = bySlug.get(u.slug);
-      if (!federationId) {
+    for (const u of certUpdates) {
+      const cert = byCertId.get(u.certification_id);
+      if (!cert) {
         return NextResponse.json(
-          { error: `Federation slug "${u.slug}" not found. Apply 2026-07-23_federations_seed.sql.` },
-          { status: 500 }
+          { error: `Certification "${u.certification_id}" not found or inactive.` },
+          { status: 400 }
         );
       }
+      const federationId = (cert as any).issuer_id as string;
 
-      if (u.number === null) {
-        // Clear: delete the draft row only if status='draft'. Pending/approved
-        // rows can't be cleared from this endpoint.
-        const { data: existing } = await supabaseAdmin
-          .from('federation_registrations')
-          .select('id, submission_status')
-          .eq('player_id', player.id)
-          .eq('federation_id', federationId)
-          .maybeSingle();
-        if (existing && existing.submission_status === 'draft') {
-          const { error: delErr } = await supabaseAdmin
-            .from('federation_registrations')
-            .delete()
-            .eq('id', existing.id);
-          if (delErr) {
-            console.error('[passport-fed] draft delete failed', delErr);
-            return NextResponse.json({ error: 'Failed to clear draft federation registration.' }, { status: 500 });
-          }
-        } else if (existing) {
-          return NextResponse.json(
-            { error: `Cannot clear ${u.slug} registration — status is "${existing.submission_status}". Withdraw first via /api/passport/federation/withdraw.` },
-            { status: 409 }
-          );
-        }
-        continue;
-      }
-
-      // Upsert draft. If row exists in non-draft status, refuse.
+      // Upsert draft keyed by (player_id, certification_id). The unique
+      // identity of a registration is the cert, not the federation.
       const { data: existing } = await supabaseAdmin
         .from('federation_registrations')
         .select('id, submission_status')
         .eq('player_id', player.id)
-        .eq('federation_id', federationId)
+        .eq('certification_id', u.certification_id)
         .maybeSingle();
+
       if (existing && existing.submission_status !== 'draft') {
         return NextResponse.json(
-          { error: `Cannot edit ${u.slug} registration — status is "${existing.submission_status}". Withdraw first.` },
+          { error: `Cannot edit registration — status is "${existing.submission_status}". Withdraw first.` },
           { status: 409 }
         );
       }
-      const payload: Record<string, any> = {
-        player_id: player.id,
-        federation_id: federationId,
-        registration_number: u.number,
-        submission_status: 'draft',
-      };
-      // WS13 PR3: resolve certification_id for this (federation, category=player)
-      // pair so the approve route knows which cert to issue. Cached for 1h.
-      const certificationId = await resolveCertificationId(u.slug, 'player');
-      if (certificationId) {
-        payload.certification_id = certificationId;
-      }
+
       if (existing) {
         const { error: updErr } = await supabaseAdmin
           .from('federation_registrations')
           .update({
             registration_number: u.number,
-            certification_id: certificationId,
+            federation_id: federationId, // keep in sync in case issuer changed
             updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id);
         if (updErr) {
           console.error('[passport-fed] draft update failed', updErr);
-          return NextResponse.json({ error: 'Failed to update draft federation registration.' }, { status: 500 });
+          return NextResponse.json({ error: 'Failed to update draft registration.' }, { status: 500 });
         }
       } else {
         const { error: insErr } = await supabaseAdmin
           .from('federation_registrations')
-          .insert(payload);
+          .insert({
+            player_id: player.id,
+            federation_id: federationId,
+            certification_id: u.certification_id,
+            registration_number: u.number,
+            submission_status: 'draft',
+          });
         if (insErr) {
           // Unique constraint hit means a race; refetch and retry once.
           if (insErr.code === '23505') {
@@ -237,19 +187,19 @@ export async function PATCH(request: NextRequest) {
               .from('federation_registrations')
               .update({
                 registration_number: u.number,
-                certification_id: certificationId,
+                federation_id: federationId,
                 submission_status: 'draft',
                 updated_at: new Date().toISOString(),
               })
               .eq('player_id', player.id)
-              .eq('federation_id', federationId);
+              .eq('certification_id', u.certification_id);
             if (updErr) {
               console.error('[passport-fed] draft upsert after race failed', updErr);
-              return NextResponse.json({ error: 'Failed to save draft federation registration.' }, { status: 500 });
+              return NextResponse.json({ error: 'Failed to save draft registration.' }, { status: 500 });
             }
           } else {
             console.error('[passport-fed] draft insert failed', insErr);
-            return NextResponse.json({ error: 'Failed to save draft federation registration.' }, { status: 500 });
+            return NextResponse.json({ error: 'Failed to save draft registration.' }, { status: 500 });
           }
         }
       }
