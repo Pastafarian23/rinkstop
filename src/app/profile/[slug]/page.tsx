@@ -240,6 +240,11 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
             text-decoration: none !important;
             cursor: pointer !important;
             min-height: 36px !important;
+            flex-shrink: 0 !important;
+            white-space: nowrap !important;
+          }
+          .rs-profile-actions > * > * {
+            flex-shrink: 0 !important;
           }
           .rs-profile-actions > *:hover {
             transform: translateY(-1px);
