@@ -45,6 +45,17 @@ export function inlineMarkdownToHtml(line: string): string {
   s = s.replace(/\*\*(.+?)\*\*/g, (_m, t) => `<strong>${t}</strong>`);
   // 3) italic — single * not in ** and not part of HTML tags we just emitted
   s = s.replace(/(^|[^*\w])\*([^\*\n]+?)\*(?!\*)/g, (_m, lead, t) => `${lead}<em>${t}</em>`);
+  // 4) bare URLs (http/https only — skip already-linked ones). Run AFTER the
+  //    markdown link pass so [label](url) is already an <a> tag and won't
+  //    match here. Match URL boundaries conservatively to avoid eating
+  //    trailing punctuation.
+  s = s.replace(
+    /(?<!["'>])\b(https?:\/\/[^\s<]+)/g,
+    (_m, url) => {
+      const safeUrl = url.replace(/"/g, '&quot;');
+      return `<a href="${safeUrl}" rel="noopener noreferrer" target="_blank">${safeUrl}</a>`;
+    }
+  );
   return s;
 }
 
@@ -61,8 +72,11 @@ export function inlineMarkdownToHtml(line: string): string {
  * author info separately).
  */
 export function contentToHtml(content: string): string {
+  // Strip frontmatter (--- ... ---) at the top of the source file
+  let text = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+
   // Remove sign-off lines
-  let text = content
+  text = text
     .replace(/Stay true to who you are\..*$/gim, '')
     .replace(/^\s* -- \s*Arnel\s*$/gim, '')
     .replace(/^\s*Arnel\s*$/gim, '');
@@ -73,6 +87,22 @@ export function contentToHtml(content: string): string {
   for (const raw of lines) {
     const line = raw.trim();
     if (!line) { html.push(''); continue; }
+
+    // H1 — skip entirely; the public page renders the title in its own <h1>
+    // hero block. Rendering it again in the body creates a duplicate.
+    if (line.startsWith('# ')) {
+      continue;
+    }
+
+    // Blockquote — collect consecutive `> ` lines into one <blockquote>.
+    // For simplicity we render single-line blockquotes here and let
+    // subsequent paragraphs break out of the block when the loop hits a
+    // non-`>` line. Multi-paragraph blockquotes aren't used in our articles.
+    if (line.startsWith('> ')) {
+      const quoteText = inlineMarkdownToHtml(escapeHtml(line.substring(2)));
+      html.push(`<blockquote>${quoteText}</blockquote>`);
+      continue;
+    }
 
     // H2
     if (line.startsWith('## ')) {
