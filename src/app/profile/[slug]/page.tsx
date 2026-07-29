@@ -11,6 +11,8 @@ import AccountTypeBadges from '@/components/AccountTypeBadges';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { getTierLabel } from '@/lib/pricing';
 import { PassportSections } from './passport/PassportSections';
+import CoverImageEditor from '@/components/CoverImageEditor';
+import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -22,11 +24,23 @@ interface Profile {
   username: string | null;
   bio: string | null;
   avatar_url: string | null;
+  cover_image_url: string | null;
+  cover_image_position: 'center' | 'top' | 'bottom' | null;
   location: string | null;
   tier: string;
   tier_expires_at: string | null;
   is_founding_member: boolean;
   created_at: string | null;
+}
+
+interface CoverHistoryEntry {
+  id: string;
+  url: string | null;
+  position: string;
+  set_at: string;
+  replaced_at: string | null;
+  removed_at: string | null;
+  source: string;
 }
 
 interface AccountTypeRow {
@@ -60,6 +74,7 @@ async function fetchProfile(slug: string): Promise<{
   managed: ManagedProfile[];
   accountTypes: AccountTypeRow[];
   photoHistory: Array<{ id: string; url: string | null; set_at: string; replaced_at: string | null; removed_at: string | null; source: string }>;
+  coverHistory: CoverHistoryEntry[];
 } | null> {
   // Look up by username (case-insensitive)
   const { data: profile } = await supabaseAdmin
@@ -70,7 +85,7 @@ async function fetchProfile(slug: string): Promise<{
 
   if (!profile) return null;
 
-  const [mRes, aRes, phRes] = await Promise.all([
+  const [mRes, aRes, phRes, chRes] = await Promise.all([
     // Fetch managed_profiles WITHOUT the broken `profile:profiles(*)` join.
     // That join returned the manager's own profiles row in place of the
     // linked player/team/league record, so every "Connected profile" card
@@ -91,6 +106,16 @@ async function fetchProfile(slug: string): Promise<{
     supabaseAdmin
       .from('profile_photo_history')
       .select('id, url, set_at, replaced_at, removed_at, source')
+      .eq('user_id', profile.user_id)
+      .not('url', 'is', null)
+      .order('set_at', { ascending: false })
+      .limit(20),
+    // Cover image history (public — Phase 1b, Arnel 2026-07-29 directive).
+    // Skip removed rows; they have url=null at the storage layer so we
+    // can't show them anyway. Sort newest first.
+    supabaseAdmin
+      .from('profile_cover_image_history')
+      .select('id, url, position, set_at, replaced_at, removed_at, source')
       .eq('user_id', profile.user_id)
       .not('url', 'is', null)
       .order('set_at', { ascending: false })
@@ -150,6 +175,7 @@ async function fetchProfile(slug: string): Promise<{
     managed,
     accountTypes: (aRes.data as any) ?? [],
     photoHistory: (phRes.data as any) ?? [],
+    coverHistory: ((chRes as any)?.data as CoverHistoryEntry[]) ?? [],
   };
 }
 
@@ -195,7 +221,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   const data = await fetchProfile(slug);
   if (!data) notFound();
 
-  const { profile, managed, accountTypes, photoHistory } = data;
+  const { profile, managed, accountTypes, photoHistory, coverHistory } = data;
   const displayName = profile.display_name ?? 'RinkStop user';
   const profileUrl = `https://rinkstop.com/profile/${profile.username}`;
   const tierLabel = getTierLabel(profile.tier);
@@ -300,18 +326,49 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               Brand-gradient banner with ghosted RINKSTOP wordmark.
               Mimics the X/LinkedIn "cover photo" strip but uses the
               navy → red brand gradient + ghosted wordmark so the page
-              reads as a social profile, not a card. */}
+              reads as a social profile, not a card.
+              Phase 1b: if profiles.cover_image_url is set, render the
+              user's uploaded image instead of the default gradient. */}
           <div
-            aria-hidden="true"
             style={{
               position: 'relative',
               height: 'clamp(140px, 22vw, 200px)',
-              background:
-                'linear-gradient(135deg, #041E42 0%, #0A2A5E 35%, #C8102E 100%)',
               borderBottom: '3px solid var(--red)',
               overflow: 'hidden',
+              background: profile.cover_image_url
+                ? '#000'
+                : 'linear-gradient(135deg, #041E42 0%, #0A2A5E 35%, #C8102E 100%)',
             }}
           >
+            {profile.cover_image_url && (
+              <img
+                src={profile.cover_image_url}
+                alt={`${displayName}'s cover image`}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: profile.cover_image_position || 'center',
+                }}
+              />
+            )}
+            {/* Subtle dark overlay when a custom cover is shown, so the
+                avatar + name below still pop against arbitrary images. */}
+            {profile.cover_image_url && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    'linear-gradient(180deg, rgba(0,0,0,0.0) 60%, rgba(0,0,0,0.35) 100%)',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
+            {/* Default gradient decorations — only when no cover image is set. */}
+            {!profile.cover_image_url && (
+            <>
             {/* Ghosted RINKSTOP wordmark — the brand's "stripe" at the top */}
             <div
               style={{
@@ -367,6 +424,17 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
             >
               🏒 HOCKEY PROFILE
             </div>
+            </>
+            )}
+          </div>
+
+          {/* Phase 1b — owner-only cover image editor (renders buttons + modal on the client). */}
+          <div className="px-5 md:px-8 -mt-2">
+            <CoverImageEditor
+              currentUrl={profile.cover_image_url ?? null}
+              currentPosition={profile.cover_image_position ?? 'center'}
+              isOwner={isOwner}
+            />
           </div>
 
           {/* ─── AVATAR + IDENTITY ROW ───────────────────────────
@@ -638,6 +706,20 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               </div>
             );
           })()}
+
+          {/* ─── COVER HISTORY ────────────────────────────────────
+              Phase 1b — public list of cover images. The strip shows
+              every cover this profile has used (newest first). The
+              owner can delete entries from here; the current cover is
+              marked and not deletable from the strip itself. */}
+          {coverHistory.length >= 1 && (
+            <div className="px-5 md:px-8 pb-5 md:pb-6">
+              <CoverImageHistoryStrip
+                entries={coverHistory}
+                isOwner={isOwner}
+              />
+            </div>
+          )}
 
           {/* ─── PHOTO HISTORY ──────────────────────────────────── */}
           {photoHistory.length >= 2 && (
