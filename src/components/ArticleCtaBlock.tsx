@@ -135,8 +135,8 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
       style={{
         margin: '2.5rem auto 2rem',
         maxWidth: '880px',
-        background: 'linear-gradient(135deg, rgba(200,16,46,0.05) 0%, rgba(255,184,28,0.04) 100%)',
-        border: '1px solid rgba(200,16,46,0.2)',
+        background: 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, rgba(255,184,28,0.06) 100%)',
+        border: '1px solid rgba(200,16,46,0.35)',
         borderRadius: '12px',
         padding: '2rem 1.5rem',
         textAlign: 'center',
@@ -149,20 +149,20 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
           fontFamily: '"Bebas Neue", "Arial Narrow", sans-serif',
           fontSize: 'clamp(1.5rem, 4vw, 2rem)',
           color: '#041E42',
-          margin: '0 0 0.5rem',
+          margin: '0 0 0.75rem',
           letterSpacing: '0.02em',
-          lineHeight: 1.1,
+          lineHeight: 1.15,
         }}
       >
         {cfg.headline}
       </h2>
       <p
         style={{
-          color: 'rgba(0,0,0,0.6)',
+          color: '#1a1a1a',
           fontSize: '0.95rem',
           maxWidth: '560px',
           margin: '0 auto 1.25rem',
-          lineHeight: 1.5,
+          lineHeight: 1.55,
         }}
       >
         {cfg.body}
