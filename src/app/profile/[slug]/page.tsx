@@ -260,11 +260,15 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
         >
           {/* ─── COVER BANNER ─────────────────────────────────────
               Brand gradient by default, custom image if uploaded.
-              Owner-only edit button (rendered by CoverImageEditor below
-              the banner, owner-only). */}
+              Owner-only CoverImageEditor overlay is rendered absolutely
+              inside this banner (see below). `isolation: isolate`
+              creates a stacking context so the overlay sits above the
+              avatar sibling which uses negative marginTop to overlap
+              the banner bottom. */}
           <div
             style={{
               position: 'relative',
+              isolation: 'isolate',
               height: 'clamp(160px, 24vw, 240px)',
               borderBottom: '3px solid var(--red)',
               overflow: 'hidden',
@@ -362,19 +366,30 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 </div>
               </>
             )}
-          </div>
 
-          {/* Phase 1b — owner-only cover image editor (renders Edit button + modal).
-              Note: marginTop is positive (0.5rem) instead of negative so the editor
-              sits cleanly below the banner. PR #67's avatar block (next below) uses
-              a negative marginTop to overlap the banner, and a negative editor
-              marginTop caused the button to land inside the avatar region. */}
-          <div style={{ paddingInline: '1.25rem', marginTop: '0.5rem' }} className="md:px-8">
-            <CoverImageEditor
-              currentUrl={profile.cover_image_url ?? null}
-              currentPosition={profile.cover_image_position ?? 'center'}
-              isOwner={isOwner}
-            />
+            {/* Phase 1b — owner-only cover image editor.
+                Rendered as an absolute overlay in the top-right of the
+                banner. The banner has `isolation: isolate` to create a
+                stacking context, so absolutely-positioned children
+                paint above the avatar sibling (which has negative
+                marginTop to overlap the banner bottom). The component
+                returns null for non-owners, so no extra gating needed. */}
+            {isOwner && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  zIndex: 5,
+                }}
+              >
+                <CoverImageEditor
+                  currentUrl={profile.cover_image_url ?? null}
+                  currentPosition={profile.cover_image_position ?? 'center'}
+                  isOwner={isOwner}
+                />
+              </div>
+            )}
           </div>
 
           {/* ─── AVATAR (overlaps cover bottom) ────────────────── */}
