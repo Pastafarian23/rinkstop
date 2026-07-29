@@ -393,11 +393,12 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
           </div>
 
           {/* ─── AVATAR (overlaps cover bottom) ──────────────────
-              Outer ring (white halo) + red border makes the avatar
-              boundary visible against both the cover banner and the
-              dark navy page background, regardless of the image's
-              edge colors. Two-layer approach: padding 3px white ring,
-              then 4px red border on the image. */}
+              Outer ring (white halo, 5px) + red border makes the
+              avatar boundary visible against both the cover banner
+              and the dark navy page background, regardless of the
+              image's edge colors. Two-layer approach: padding 5px
+              white ring (visible at any zoom), then 4px red border
+              on the image. */}
           <div
             style={{
               paddingInline: '1.25rem',
@@ -412,7 +413,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               <div
                 style={{
                   display: 'inline-block',
-                  padding: '3px',
+                  padding: '5px',
                   borderRadius: '50%',
                   background: '#fff',
                   lineHeight: 0,
@@ -436,7 +437,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               <div
                 style={{
                   display: 'inline-block',
-                  padding: '3px',
+                  padding: '5px',
                   borderRadius: '50%',
                   background: '#fff',
                   lineHeight: 0,
