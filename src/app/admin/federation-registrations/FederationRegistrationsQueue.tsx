@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { countryFlag } from '@/lib/team';
 
 interface AdminRegistrationRow {
   id: string;
@@ -16,6 +17,8 @@ interface AdminRegistrationRow {
   coach_id: string | null;
   referee_user_id: string | null;
   federation: { slug: string; name: string } | null;
+  /** ISO-3166-1 alpha-2 country code from the subject's profile_country_context. */
+  subject_country: string | null;
 }
 
 function persona(r: AdminRegistrationRow): 'player' | 'coach' | 'referee' | 'unknown' {
@@ -136,11 +139,23 @@ export default function FederationRegistrationsQueue({
                 borderRadius: 6,
                 padding: '0.85rem 1rem',
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr auto',
+                gridTemplateColumns: 'auto 1fr 1fr 1fr auto',
                 gap: '0.75rem',
                 alignItems: 'center',
               }}
             >
+              <div
+                title={r.subject_country ?? 'No country on profile'}
+                style={{
+                  fontSize: '1.5rem',
+                  lineHeight: 1,
+                  opacity: r.subject_country ? 1 : 0.25,
+                  minWidth: '1.75rem',
+                  textAlign: 'center',
+                }}
+              >
+                {countryFlag(r.subject_country)}
+              </div>
               <div>
                 <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
                   {persona(r)}
@@ -265,12 +280,24 @@ export default function FederationRegistrationsQueue({
                 borderRadius: 6,
                 padding: '0.6rem 0.85rem',
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr auto',
+                gridTemplateColumns: 'auto 1fr 1fr 1fr auto',
                 gap: '0.75rem',
                 alignItems: 'center',
                 fontSize: '0.8125rem',
               }}
             >
+              <div
+                title={r.subject_country ?? 'No country on profile'}
+                style={{
+                  fontSize: '1.25rem',
+                  lineHeight: 1,
+                  opacity: r.subject_country ? 1 : 0.25,
+                  minWidth: '1.5rem',
+                  textAlign: 'center',
+                }}
+              >
+                {countryFlag(r.subject_country)}
+              </div>
               <div>{rowSubjectLabel(r)}</div>
               <div>
                 {r.federation?.name ?? r.federation?.slug ?? '—'} · <span style={{ fontFamily: 'monospace' }}>{r.registration_number}</span>
