@@ -26,6 +26,8 @@ interface AdminRegistrationRow {
   coach_id: string | null;
   referee_user_id: string | null;
   federation: { slug: string; name: string } | null;
+  /** ISO-3166-1 alpha-2 country code from the subject's profile_country_context. */
+  subject_country: string | null;
 }
 
 // Supabase returns nested FK joins as arrays. Flatten to single object
@@ -44,6 +46,7 @@ function flattenFederation(rows: any[]): AdminRegistrationRow[] {
     coach_id: r.coach_id,
     referee_user_id: r.referee_user_id,
     federation: Array.isArray(r.federation) && r.federation.length > 0 ? r.federation[0] : null,
+    subject_country: null as string | null, // filled in after the country batch fetch below
   }));
 }
 
@@ -91,6 +94,74 @@ export default async function FederationRegistrationsPage() {
       (players ?? []).map((p: any) => [p.id, [p.first_name, p.last_name].filter(Boolean).join(' ') || p.id])
     );
   }
+
+  // Resolve subject user_ids (for the country lookup).
+  // Polymorphic subject: player → players.user_id, coach → coach_profiles.profile_id,
+  // referee → referee_user_id (already the Clerk user id per the federation_registrations
+  // schema; referee_user_id has no separate profile table).
+  const allPlayerIds = Array.from(new Set([
+    ...pendingFlat.filter((r) => r.player_id).map((r) => r.player_id!),
+    ...recentFlat.filter((r) => r.player_id).map((r) => r.player_id!),
+  ]));
+  const playerUserIds: Array<{ id: string; user_id: string | null }> =
+    allPlayerIds.length > 0
+      ? (await supabaseAdmin
+          .from('players')
+          .select('id, user_id')
+          .in('id', allPlayerIds)).data ?? []
+      : [];
+
+  const allCoachIds = Array.from(new Set([
+    ...pendingFlat.filter((r) => r.coach_id).map((r) => r.coach_id!),
+    ...recentFlat.filter((r) => r.coach_id).map((r) => r.coach_id!),
+  ]));
+  const coachUserIds: Array<{ id: string; profile_id: string | null }> =
+    allCoachIds.length > 0
+      ? (await supabaseAdmin
+          .from('coach_profiles')
+          .select('id, profile_id')
+          .in('id', allCoachIds)).data ?? []
+      : [];
+
+  // Map subject id → user_id (Clerk id).
+  const subjectToUserId = new Map<string, string>();
+  for (const p of playerUserIds) {
+    if (p.user_id) subjectToUserId.set(`player:${p.id}`, p.user_id);
+  }
+  for (const c of coachUserIds) {
+    if (c.profile_id) subjectToUserId.set(`coach:${c.id}`, c.profile_id);
+  }
+  for (const r of [...pendingFlat, ...recentFlat]) {
+    if (r.referee_user_id) {
+      subjectToUserId.set(`referee:${r.referee_user_id}`, r.referee_user_id);
+    }
+  }
+
+  const userIds = Array.from(new Set(subjectToUserId.values()));
+  let countryByUserId: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: countryRows } = await supabaseAdmin
+      .from('profile_country_context')
+      .select('user_id, primary_country')
+      .in('user_id', userIds);
+    countryByUserId = Object.fromEntries(
+      ((countryRows ?? []) as any[]).map((c) => [c.user_id, c.primary_country])
+    );
+  }
+
+  // Stamp the resolved country back onto each row.
+  function resolveCountry(r: AdminRegistrationRow): string | null {
+    let key: string | null = null;
+    if (r.player_id) key = `player:${r.player_id}`;
+    else if (r.coach_id) key = `coach:${r.coach_id}`;
+    else if (r.referee_user_id) key = `referee:${r.referee_user_id}`;
+    if (!key) return null;
+    const userId = subjectToUserId.get(key);
+    if (!userId) return null;
+    return countryByUserId[userId] ?? null;
+  }
+  for (const r of pendingFlat) r.subject_country = resolveCountry(r);
+  for (const r of recentFlat) r.subject_country = resolveCountry(r);
 
   return (
     <main style={{ minHeight: '100vh', background: '#041E42', color: '#fff', padding: '2rem 1.25rem 4rem' }}>
