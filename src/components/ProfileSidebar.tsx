@@ -109,10 +109,11 @@ export default function ProfileSidebar({
           }}
         >
           <div style={{ flex: 1, minWidth: 0 }}>
-            <ConnectButton otherUserId={profile.user_id} otherDisplayName={firstName} />
+            <ConnectButton otherUserId={profile.user_id} otherDisplayName={firstName} compact />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <SocialActions
+              size="sm"
               share={{
                 title: `${displayName} (@${profile.username}) on RinkStop`,
                 text: `${displayName} on RinkStop — the global hockey directory.`,
