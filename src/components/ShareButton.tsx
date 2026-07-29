@@ -272,11 +272,10 @@ function shareButtonClass(variant: 'light' | 'dark' | 'brand', compact: boolean)
   if (variant === 'brand') {
     // RinkStop branding: navy bg, gold border, white text, ice hover.
     // Used on the public profile page so the share button matches
-    // the rest of the brand. Smaller padding on mobile to avoid the
-    // button feeling oversized in the article toolbar.
+    // the rest of the brand.
     return compact
-      ? 'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-[#FFB81C]/40 bg-[#0A2A5E] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#113C8C] hover:border-[#FFB81C]/70 transition-colors'
-      : 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[#FFB81C]/40 bg-[#0A2A5E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#113C8C] hover:border-[#FFB81C]/70 transition-colors';
+      ? 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[#FFB81C]/40 bg-[#0A2A5E] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#113C8C] hover:border-[#FFB81C]/70 transition-colors [&_svg]:h-4 [&_svg]:w-4'
+      : 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[#FFB81C]/40 bg-[#0A2A5E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#113C8C] hover:border-[#FFB81C]/70 transition-colors [&_svg]:h-4 [&_svg]:w-4';
   }
   if (variant === 'dark') {
     return compact
