@@ -392,47 +392,74 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* ─── AVATAR (overlaps cover bottom) ────────────────── */}
+          {/* ─── AVATAR (overlaps cover bottom) ──────────────────
+              Outer ring (white halo) + red border makes the avatar
+              boundary visible against both the cover banner and the
+              dark navy page background, regardless of the image's
+              edge colors. Two-layer approach: padding 3px white ring,
+              then 4px red border on the image. */}
           <div
             style={{
               paddingInline: '1.25rem',
               marginTop: '-3.5rem',
+              position: 'relative',
+              zIndex: 2,
             }}
             className="md:px-8"
           >
             {profile.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profile.avatar_url}
-                alt={displayName}
+              <div
                 style={{
-                  width: 'clamp(96px, 14vw, 140px)',
-                  height: 'clamp(96px, 14vw, 140px)',
+                  display: 'inline-block',
+                  padding: '3px',
                   borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '4px solid var(--red)',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
-                  display: 'block',
+                  background: '#fff',
+                  lineHeight: 0,
                 }}
-              />
+              >
+                <img
+                  src={profile.avatar_url}
+                  alt={displayName}
+                  style={{
+                    display: 'block',
+                    width: 'clamp(96px, 14vw, 140px)',
+                    height: 'clamp(96px, 14vw, 140px)',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '4px solid var(--red)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                  }}
+                />
+              </div>
             ) : (
               <div
                 style={{
-                  width: 'clamp(96px, 14vw, 140px)',
-                  height: 'clamp(96px, 14vw, 140px)',
+                  display: 'inline-block',
+                  padding: '3px',
                   borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: "'Bebas Neue', Impact, sans-serif",
-                  background: 'linear-gradient(135deg, var(--red) 0%, #8b0a1e 100%)',
-                  color: '#fff',
-                  fontSize: '3rem',
-                  border: '4px solid var(--red)',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                  background: '#fff',
+                  lineHeight: 0,
                 }}
               >
-                {displayName.charAt(0).toUpperCase()}
+                <div
+                  style={{
+                    width: 'clamp(96px, 14vw, 140px)',
+                    height: 'clamp(96px, 14vw, 140px)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Bebas Neue', Impact, sans-serif",
+                    background: 'linear-gradient(135deg, var(--red) 0%, #8b0a1e 100%)',
+                    color: '#fff',
+                    fontSize: '3rem',
+                    border: '4px solid var(--red)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
               </div>
             )}
           </div>
