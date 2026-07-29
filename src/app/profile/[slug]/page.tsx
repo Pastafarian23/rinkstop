@@ -364,8 +364,12 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Phase 1b — owner-only cover image editor (renders Edit button + modal). */}
-          <div style={{ paddingInline: '1.25rem', marginTop: '-0.5rem' }} className="md:px-8">
+          {/* Phase 1b — owner-only cover image editor (renders Edit button + modal).
+              Note: marginTop is positive (0.5rem) instead of negative so the editor
+              sits cleanly below the banner. PR #67's avatar block (next below) uses
+              a negative marginTop to overlap the banner, and a negative editor
+              marginTop caused the button to land inside the avatar region. */}
+          <div style={{ paddingInline: '1.25rem', marginTop: '0.5rem' }} className="md:px-8">
             <CoverImageEditor
               currentUrl={profile.cover_image_url ?? null}
               currentPosition={profile.cover_image_position ?? 'center'}
