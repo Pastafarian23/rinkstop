@@ -99,6 +99,26 @@ export default function ProfileSidebar({
           <TierBadge tier={profile.tier} size="xs" />
         </div>
 
+        {/* Owner-only inline edit shortcut — sits above the action row so
+            the owner sees an obvious path to edit themselves instead of
+            having to scroll to the bottom of the sidebar. The bottom
+            bottom-of-aside duplicate was removed; this is the canonical
+            edit affordance. */}
+        {isOwner && (
+          <Link
+            href="/dashboard/profile"
+            className="mt-3 inline-flex items-center gap-1.5 text-[#FFB81C] hover:text-[#FFB81C]/80"
+            style={{
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            <span aria-hidden>✎</span>
+            <span>Edit your profile</span>
+          </Link>
+        )}
+
         {/* Action row */}
         <div
           className="mt-4"
@@ -254,26 +274,7 @@ export default function ProfileSidebar({
         )}
       </div>
 
-      {/* ─── Owner-only edit CTA ────────────────────────────────── */}
-      {isOwner && (
-        <Link
-          href="/dashboard/profile"
-          className="block text-center"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            padding: '0.75rem 1rem',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.85)',
-            textDecoration: 'none',
-            transition: 'background 0.15s, border-color 0.15s',
-          }}
-        >
-          Edit profile
-        </Link>
-      )}
+      {/* ─── Owner-only edit CTA moved up — see the link above the action row ── */}
     </aside>
   );
 }
