@@ -2,6 +2,13 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Bump on every deploy to invalidate Vercel's per-build CDN cache.
+  // Without this, Vercel can serve stale bundles for ~hours after a
+  // successful deploy (seen 2026-07-30 08:04 CDT — 3 successful deploys
+  // in a row, CDN stuck on the build hash from 90 min earlier).
+  // Bump this to the current epoch when shipping a fix you need on
+  // production immediately. Cheap, safe, deterministic.
+  generateBuildId: async () => `v-${Date.now()}`,
   reactStrictMode: true,
   // Fix 3 followup (2026-07-08): skip Next.js's default trailing-slash
   // redirect. Combined with our /index.php/* catch-all sources below, this
