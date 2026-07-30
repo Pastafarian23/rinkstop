@@ -261,12 +261,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               based on profile_account_types.primary. The legacy MobileBottomTabBar
               was removed because it was rendering for signed-out users too, which
               contradicted the design. */}
-          <RoleAwareTabBar
-            userId={userId}
-            signedIn={signedIn}
-            accountTypes={accountTypes}
-            tier={tier}
-          />
+          {/* Day 4 → Day 7 (Arnel, 2026-07-30): simplified to 4 fixed tabs
+              for every signed-in user (Dashboard, Profile, Passport,
+              Notifications). The component now derives everything from
+              the pathname; the userId/signedIn/accountTypes/tier props
+              it used to consume are still fetched above for other
+              downstream consumers (UserMenu, header) but no longer feed
+              the tab bar. */}
+          <RoleAwareTabBar />
 
           {/* ---- Footer ---------------------------------------------------------------------------------------------------------- */}
           <footer style={{ background: '#041E42', borderTop: '3px solid #C8102E', marginTop: '3rem', padding: '2.5rem 0 1.5rem' }}>
