@@ -84,7 +84,19 @@ export default function ProfileEditForm({
           </button>
         </div>
         <p style={{ color: '#fff', fontSize: '0.95rem', margin: '0 0 4px', fontFamily: 'monospace' }}>
-          {username ? `rinkstop.com/profile/${username}` : 'No username set'}
+          {username ? (
+            <a
+              href={`/profile/${username}`}
+              target="_blank"
+              rel="noopener"
+              data-testid="profile-edit-form-view-public"
+              style={{ color: '#FFB81C', textDecoration: 'none' }}
+            >
+              rinkstop.com/profile/{username} ↗
+            </a>
+          ) : (
+            'No username set'
+          )}
         </p>
         <p style={{ color: '#555', fontSize: '0.75rem', margin: 0 }}>
           Lowercase letters, numbers, periods, underscores. Max 30 chars. You can change it once every 14 days.

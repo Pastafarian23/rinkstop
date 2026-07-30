@@ -233,6 +233,62 @@ export default async function ProfilePage() {
         </div>
       </div>
 
+      {/* Public profile shortcut (Arnel, 2026-07-30): without this, owners
+          had to manually type /profile/{username} to see their public
+          card. Now there's a clear "View public profile →" affordance
+          right under the header card. Disabled with a hint if no
+          username is set yet. */}
+      {profile?.username ? (
+        <a
+          href={`/profile/${profile.username}`}
+          target="_blank"
+          rel="noopener"
+          data-testid="dashboard-profile-view-public"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '0.875rem 1rem',
+            marginBottom: '1rem',
+            background: 'rgba(255,184,28,0.06)',
+            border: '1px solid rgba(255,184,28,0.3)',
+            borderRadius: 8,
+            color: '#FFB81C',
+            textDecoration: 'none',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+          }}
+        >
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            <span>View your public profile</span>
+            <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              rinkstop.com/profile/{profile.username}
+            </span>
+          </span>
+          <span aria-hidden style={{ fontSize: '1.25rem', flexShrink: 0 }}>↗</span>
+        </a>
+      ) : (
+        <div
+          data-testid="dashboard-profile-view-public-missing"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '0.75rem 1rem',
+            marginBottom: '1rem',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px dashed rgba(255,255,255,0.12)',
+            borderRadius: 8,
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: '0.8rem',
+          }}
+        >
+          <span aria-hidden>ℹ️</span>
+          <span>Set a username below to unlock your public profile page.</span>
+        </div>
+      )}
+
       {/* Section 1: Verified Identity */}
       <PassportSection
         emoji="✅"
