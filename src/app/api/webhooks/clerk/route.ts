@@ -36,6 +36,7 @@ import { Webhook } from 'svix';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
 import { passportService, isPassportEnabled } from '@/lib/passport';
+import { isClerkDefaultAvatarUrl } from '@/lib/avatar';
 
 export const dynamic = 'force-dynamic';
 
@@ -158,7 +159,10 @@ async function handleUserCreated(data: ClerkUserPayload) {
   const email = pickPrimaryEmail(data);
   const displayName = pickDisplayName(data);
   const username = pickDefaultUsername(data);
-  const avatarUrl = data.image_url ?? null;
+  // Clerk's auto-generated initials placeholder (purple silhouette).
+  // Normalize to null so we never store it on profiles or write it to
+  // profile_photo_history — it's not a real photo choice.
+  const avatarUrl = isClerkDefaultAvatarUrl(data.image_url) ? null : (data.image_url ?? null);
 
   // Account-recreation safety: if Clerk creates a new user for an email that
   // already owns a profile row (e.g. account-linking off, so Google OAuth
@@ -402,7 +406,9 @@ async function handleUserCreated(data: ClerkUserPayload) {
 async function handleUserUpdated(data: ClerkUserPayload) {
   const email = pickPrimaryEmail(data);
   const displayName = pickDisplayName(data);
-  const avatarUrl = data.image_url ?? null;
+  // Normalize Clerk's default-avatar URL (purple silhouette) to null —
+  // not a real photo choice, must never reach profile_photo_history.
+  const avatarUrl = isClerkDefaultAvatarUrl(data.image_url) ? null : (data.image_url ?? null);
 
   // Don't touch username on update — user may have set a custom one.
   const { error } = await supabaseAdmin

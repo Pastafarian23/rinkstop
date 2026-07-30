@@ -249,7 +249,14 @@ export default function SocialActions(props: SocialActionsProps) {
 
       {share && (
         <div style={btnFlex}>
-          <ShareButton payload={share} variant={shareVariant ?? 'dark'} />
+          {/* Match the height of the sm Message/Follow/Save buttons. Without
+              compact, ShareButton renders the large brand variant (px-4 py-2)
+              which makes it look out of scale in the sidebar action row. */}
+          <ShareButton
+            payload={share}
+            variant={shareVariant ?? 'dark'}
+            compact={size === 'sm'}
+          />
         </div>
       )}
     </div>
