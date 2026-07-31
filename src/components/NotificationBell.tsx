@@ -43,8 +43,10 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
+  const [consumerUnread, setConsumerUnread] = useState(0);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  const totalUnread = unread + consumerUnread;
 
   async function load() {
     setLoading(true);
@@ -65,9 +67,23 @@ export default function NotificationBell() {
     }
   }
 
+  // WS14 PR2: also fetch consumer notification unread count.
+  // Consumer notifications show in /dashboard/notifications, not in the bell dropdown.
+  // The badge reflects BOTH streams combined.
+  async function loadConsumerUnread() {
+    try {
+      const r = await fetch('/api/consumer-notifications/unread-count');
+      if (r.ok) {
+        const d = await r.json();
+        setConsumerUnread(d.unread ?? 0);
+      }
+    } catch { /* silent */ }
+  }
+
   useEffect(() => {
     load();
-    const id = setInterval(load, 60_000); // poll every minute
+    loadConsumerUnread();
+    const id = setInterval(() => { load(); loadConsumerUnread(); }, 60_000); // poll every minute
     return () => clearInterval(id);
   }, []);
 
@@ -118,8 +134,8 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
-        title={unread > 0 ? `${unread} unread notifications` : 'Notifications'}
+        aria-label={totalUnread > 0 ? `Notifications (${totalUnread} unread)` : 'Notifications'}
+        title={totalUnread > 0 ? `${totalUnread} unread notifications` : 'Notifications'}
         style={{
           position: 'relative',
           width: 40,
@@ -136,7 +152,7 @@ export default function NotificationBell() {
         }}
       >
         <span aria-hidden="true">🔔</span>
-        {unread > 0 && (
+        {totalUnread > 0 && (
           <span
             aria-hidden="true"
             style={{
@@ -158,7 +174,7 @@ export default function NotificationBell() {
               lineHeight: 1,
             }}
           >
-            {unread > 99 ? '99+' : unread}
+            {totalUnread > 99 ? '99+' : totalUnread}
           </span>
         )}
       </button>
