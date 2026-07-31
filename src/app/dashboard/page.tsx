@@ -11,9 +11,11 @@ import UsernameBanner from '@/components/UsernameBanner';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
 import InboxCard from '@/components/dashboard/InboxCard';
+import AttentionCard from '@/components/dashboard/AttentionCard';
 import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import { loadDashboardTypeData, personalStatus, organizationStatus, businessStatus, type WorkspaceStatus } from '@/components/dashboard/dashboardTypeData';
 import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
+import { loadAttentionSummary } from '@/lib/dashboard/attentionData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
 import { tierAtLeast } from '@/lib/connections';
@@ -291,6 +293,12 @@ async function renderDashboard(userId: string) {
   // shares the same result. We pre-resolve to a Set so the prop pass is cheap.
   const dismissedIds = await getDismissedWorkspaceIds();
 
+  // Attention summary for the "What needs your attention?" widget. Aggregates
+  // pending items across notifications, claims, documents, and subscription.
+  // Wrapped in Promise.allSettled-style fail-closed inside the loader, so any
+  // table read error degrades to "all clear" rather than crashing the render.
+  const attention = await loadAttentionSummary(userId);
+
   // Inbox data for the overview's InboxCard. Same shape as /api/threads
   // returns, but trimmed to top-3 + counts. Server-rendered so it's
   // visible on first paint (no client-side fetch on dashboard load).
@@ -543,6 +551,12 @@ async function renderDashboard(userId: string) {
           </Link>
         </div>
       </div>
+
+      {/* Attention widget — top-of-dashboard action summary. Always renders
+          (shows "All caught up" when nothing is pending). Surfaces unread
+          notifications, inbox messages, pending claims, expiring documents,
+          and subscription issues in one place. (WS14 PR4, 2026-07-31.) */}
+      <AttentionCard data={attention} />
 
       {/* Family Setup Wizard (Phase 1a, prep doc §3.2). Parent-only,
           identity_plus+ or business_listing+, hidden once dismissed.
