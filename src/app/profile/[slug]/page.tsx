@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { getTierLabel } from '@/lib/pricing';
+import { emitProfileFirstVisitor } from '@/lib/notifications/emit';
 import { PassportSections } from './passport/PassportSections';
 import CoverImageEditor from '@/components/CoverImageEditor';
 import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
@@ -229,6 +230,32 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   // Used by passport sections to show edit CTAs.
   const { userId: viewerUserId } = await auth();
   const isOwner = !!viewerUserId && viewerUserId === profile.user_id;
+
+  // WS14 PR1 — fire-and-forget profile_first_visitor: when a non-owner
+  // authenticated viewer lands on the profile, emit a one-shot notification
+  // to the profile owner. source_key is per-(viewer, owner), so the same
+  // viewer re-visiting doesn't re-fire. Self-views (anonymous or owner)
+  // are skipped. Web crawlers are skipped by Clerk (no session).
+  if (!isOwner && viewerUserId) {
+    void (async () => {
+      try {
+        const viewer = await currentUser();
+        const viewerFirst = viewer?.firstName ?? '';
+        const viewerLast = viewer?.lastName ?? '';
+        const viewerDisplayName =
+          `${viewerFirst}${viewerLast ? ' ' + viewerLast : ''}`.trim() ||
+          viewer?.username ||
+          null;
+        await emitProfileFirstVisitor(
+          profile.user_id,
+          viewerUserId,
+          viewerDisplayName,
+        );
+      } catch (err) {
+        console.error('[profile page] emit profile_first_visitor failed:', err);
+      }
+    })();
+  }
 
   // Piece C (2026-06-24): identity-verified gate uses the hardened helper,
   // which also requires profiles.didit_session_id and a matching approved

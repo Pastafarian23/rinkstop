@@ -106,7 +106,7 @@ export default async function NotificationsPage() {
 
   const { data, error } = await supabaseAdmin
     .from('consumer_notifications')
-    .select('id, kind, title, body, metadata, read_at, created_at')
+    .select('id, kind, title, body, metadata, read_at, snooze_until, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -266,7 +266,7 @@ export default async function NotificationsPage() {
                   </div>
                 )}
                 {link && (
-                  <div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <Link
                       href={link.href}
                       style={{
@@ -282,6 +282,24 @@ export default async function NotificationsPage() {
                     >
                       {link.cta} →
                     </Link>
+                    {!row.read_at && (
+                      <Link
+                        href={`/api/consumer-notifications/${row.id}/dismiss`}
+                        style={{
+                          display: 'inline-block',
+                          padding: '0.4rem 0.85rem',
+                          background: 'transparent',
+                          color: '#475569',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 6,
+                          textDecoration: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Dismiss
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

@@ -126,6 +126,11 @@ export async function POST(request: NextRequest) {
   // (so a doc going from 30d unread to 7d unread shows up again). DELETE the
   // read row first, then INSERT.
   //
+  // WS14 PR1 (2026-07-31): ALSO skip rows where snooze_until > now(). These are
+  // one-shot onboarding notifications the user dismissed; the deriver must not
+  // resurrect them. They are managed exclusively via the emit() helpers in
+  // src/lib/notifications/emit.ts.
+  //
   // We do this in a single round trip: collect all source_keys, find the
   // ones that are READ in the current DB, DELETE those, then INSERT the
   // derived set with ON CONFLICT DO NOTHING.
@@ -133,14 +138,21 @@ export async function POST(request: NextRequest) {
     const sourceKeys = Array.from(new Set(derived.map((d) => d.source_key)));
     const { data: existing } = await supabaseAdmin
       .from('consumer_notifications')
-      .select('id, source_key, kind, read_at')
+      .select('id, source_key, kind, read_at, snooze_until')
       .eq('user_id', userId)
       .in('source_key', sourceKeys);
-    const readIds = ((existing || []) as Array<{ id: string; source_key: string; kind: string; read_at: string | null }>)
+    const nowIso = new Date().toISOString();
+    const deletableIds = ((existing || []) as Array<{ id: string; source_key: string; kind: string; read_at: string | null; snooze_until: string | null }>)
+      .filter((r) => {
+        // Skip snoozed rows entirely (do not refresh them)
+        if (r.snooze_until && r.snooze_until > nowIso) return false;
+        // Otherwise: if read, we want to refresh (delete + re-insert); if unread, the UNIQUE will block re-insert.
+        return true;
+      })
       .filter((r) => r.read_at !== null)
       .map((r) => r.id);
-    if (readIds.length > 0) {
-      await supabaseAdmin.from('consumer_notifications').delete().in('id', readIds);
+    if (deletableIds.length > 0) {
+      await supabaseAdmin.from('consumer_notifications').delete().in('id', deletableIds);
     }
   }
 
