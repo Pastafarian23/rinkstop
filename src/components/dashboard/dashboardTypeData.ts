@@ -53,211 +53,154 @@ const EMPTY: TypeSectionData = {
 export async function loadDashboardTypeData(userId: string): Promise<TypeSectionData> {
   const data: TypeSectionData = { ...EMPTY };
 
-  // PLAYER: profile views (last 7 days). Count from analytics_events where
-  // pathname starts with /profile/{userSlug} AND name='profile_viewed'.
-  // TODO(track): the /profile/[slug] page does NOT currently emit a
-  // 'profile_viewed' analytics event. Verified 2026-07-02: zero rows in
-  // analytics_events match pathname LIKE '/profile/%'. Until we wire that
-  // event in the page (1-line change to src/app/profile/[slug]/page.tsx),
-  // the count is always 0. The card copy reflects that honestly.
-  // When the event is wired, this loader just works — no schema change.
-  let profileSlug: string | null = null;
-  try {
-    const { data: profileRow } = await supabaseAdmin
-      .from('profiles')
-      .select('username')
-      .eq('user_id', userId)
-      .maybeSingle();
-    profileSlug = profileRow?.username || null;
-  } catch { /* keep null */ }
+  // 2026-07-31 (Arnel-flagged dashboard perf pass): the previous serial chain
+  // here stacked ~12 Supabase queries one-after-the-other. From Cebu (or any
+  // far-from-Chicago region) each query is ~280ms RTT, so this loader alone
+  // took 3+ seconds before the page could render. The dashboard layout was
+  // already parallelized in commit 697f93f; this is the page-side pass.
+  //
+  // Almost all queries here are independent reads by `userId`. The only
+  // true dependency is the player profile view count: it needs the user's
+  // `username` first. We split into two parallel groups:
+  //   1. username lookup + all other queries (independent).
+  //   2. profile view count (only runs if username exists).
+  // `Promise.allSettled` lets us fail-closed per query — a missing table
+  // (e.g. referee_assignments, league_owners, rink_owners) degrades to
+  // loaded=false without crashing the loader.
+
+  // GROUP 1: username + every independent count query.
+  // Each query is wrapped in an async IIFE so .catch() (Promise<T>) is valid
+  // and one bad query doesn't poison the rest. The Supabase client's
+  // .then() returns PromiseLike<T>, not Promise<T>, so we can't chain
+  // .catch() directly off it.
+  const safeCount = async (q: PromiseLike<{ count: number | null }>): Promise<number> => {
+    try {
+      const { count } = await q;
+      return count || 0;
+    } catch { return 0; }
+  };
+  const safeMaybeSingle = async (q: PromiseLike<{ data: any }>): Promise<any> => {
+    try {
+      const { data } = await q;
+      return data;
+    } catch { return null; }
+  };
+  const settled = await Promise.allSettled([
+    // username (for player profile_views below)
+    safeMaybeSingle(supabaseAdmin.from('profiles').select('username').eq('user_id', userId).maybeSingle()).then((row) => row?.username || null),
+    // PARENT: managed_profiles where relationship IN ('parent', 'guardian', 'spouse', 'self').
+    safeCount(supabaseAdmin.from('managed_profiles').select('id', { count: 'exact', head: true }).eq('manager_user_id', userId).eq('profile_type', 'player').in('relationship', ['parent', 'guardian', 'spouse', 'self'])),
+    // COACH: teams where this user is a member with a coaching role.
+    safeCount(supabaseAdmin.from('team_members').select('id', { count: 'exact', head: true }).eq('user_id', userId).in('role', ['coach', 'head_coach', 'assistant_coach'])),
+    // SCOUT: watchlist = follows of players
+    safeCount(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_user_id', userId).eq('followee_type', 'player')),
+    // TEAM_ADMIN: teams where this user is the creator OR active head_coach.
+    // Run both counts in parallel inside this slot.
+    Promise.all([
+      safeCount(supabaseAdmin.from('team_workspaces').select('id', { count: 'exact', head: true }).eq('created_by', userId)),
+      safeCount(supabaseAdmin.from('team_members').select('team_id', { count: 'exact', head: true }).eq('user_id', userId).eq('role', 'head_coach').is('left_at', null)),
+    ]).then(([created, headCoach]) => Math.max(created, headCoach)),
+    // RINK_OPERATOR.leads
+    safeCount(supabaseAdmin.from('leads').select('id', { count: 'exact', head: true }).eq('claimant_user_id', userId)),
+    // BUSINESS: listings + leads (Phase 0.4)
+    Promise.all([
+      safeCount(supabaseAdmin.from('listings').select('id', { count: 'exact', head: true }).eq('owner_user_id', userId).eq('listing_type', 'business')),
+      safeCount(supabaseAdmin.from('leads').select('id', { count: 'exact', head: true }).eq('claimant_user_id', userId)),
+    ]),
+    // FAN: followed teams + players
+    Promise.all([
+      safeCount(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_user_id', userId).eq('followee_type', 'team')),
+      safeCount(supabaseAdmin.from('follows').select('id', { count: 'exact', head: true }).eq('follower_user_id', userId).eq('followee_type', 'player')),
+    ]),
+  ]);
+
+  const [usernameRes, parentCnt, coachCnt, scoutCnt, teamAdminCnt, rinkLeadsCnt, businessRes, fanRes] = settled.map((r) => (r.status === 'fulfilled' ? r.value : null));
+
+  // GROUP 2: probe-only patterns below. These tables don't exist on prod
+  // (verified 2026-07-02), so the probe throws and we keep loaded=false.
+  // Runs in parallel with each other; not gated on Group 1.
+  const [refereeRes, leagueRes, rinkRes] = await Promise.allSettled([
+    // REFEREE: probe-only pattern — referee_assignments table probe.
+    (async () => {
+      try {
+        await supabaseAdmin.from('referee_assignments').select('id', { count: 'exact', head: true }).limit(1);
+        const { count } = await supabaseAdmin.from('referee_assignments').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'completed');
+        return count || 0;
+      } catch { return null; }
+    })(),
+    // LEAGUE_ADMIN: probe-only pattern — league_owners table probe.
+    (async () => {
+      try {
+        await supabaseAdmin.from('league_owners').select('id', { count: 'exact', head: true }).limit(1);
+        const { count } = await supabaseAdmin.from('league_owners').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+        return count || 0;
+      } catch { return null; }
+    })(),
+    // RINK_OPERATOR: probe-only pattern — rink_operators table probe.
+    (async () => {
+      try {
+        await supabaseAdmin.from('rink_operators').select('id', { count: 'exact', head: true }).limit(1);
+        const { count } = await supabaseAdmin.from('rink_operators').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+        return count || 0;
+      } catch { return null; }
+    })(),
+  ]);
+
+  // GROUP 3: profile_viewed count (depends on username). Only runs if username resolved.
+  const profileSlug = usernameRes as string | null;
+  let playerProfileViews = 0;
   if (profileSlug) {
     try {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { count } = await supabaseAdmin
-        .from('analytics_events')
-        .select('id', { count: 'exact', head: true })
-        .eq('name', 'profile_viewed')
-        .eq('pathname', `/profile/${profileSlug}`)
-        .gte('ts', sevenDaysAgo);
-      data.player.profileViews = count || 0;
+      const { count } = await supabaseAdmin.from('analytics_events').select('id', { count: 'exact', head: true }).eq('name', 'profile_viewed').eq('pathname', `/profile/${profileSlug}`).gte('ts', sevenDaysAgo);
+      playerProfileViews = count || 0;
     } catch { /* keep 0 */ }
   }
+
+  // Assemble the result.
+  data.player.profileViews = playerProfileViews;
   data.player.loaded = true;
 
-  // PARENT: managed_profiles where relationship IN ('parent', 'guardian', 'spouse', 'self').
-  // Counts player profiles this user manages.
-  try {
-    const { count } = await supabaseAdmin
-      .from('managed_profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('manager_user_id', userId)
-      .eq('profile_type', 'player')
-      .in('relationship', ['parent', 'guardian', 'spouse', 'self']);
-    data.parent.linkedPlayers = count || 0;
-    data.parent.loaded = true;
-  } catch { /* table missing — keep loaded=false */ }
+  data.parent.linkedPlayers = (parentCnt as number) || 0;
+  data.parent.loaded = true;
 
-  // COACH: teams where this user is a member with a coaching role.
-  // Uses team_members (user_id + role) instead of nonexistent team_owners.
-  // Note: role is plain TEXT (not enum). Common values: 'coach', 'head_coach',
-  // 'assistant_coach'. Add new variants here as they appear in the data.
-  try {
-    const { count } = await supabaseAdmin
-      .from('team_members')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .in('role', ['coach', 'head_coach', 'assistant_coach']);
-    data.coach.teamsManaged = count || 0;
-    data.coach.loaded = true;
-  } catch { /* team_members may not exist — keep loaded=false */ }
+  data.coach.teamsManaged = (coachCnt as number) || 0;
+  data.coach.loaded = true;
 
-  // SCOUT: watchlist = follows of players
-  try {
-    const { count: wl } = await supabaseAdmin
-      .from('follows')
-      .select('id', { count: 'exact', head: true })
-      .eq('follower_user_id', userId)
-      .eq('followee_type', 'player');
-    data.scout.followedPlayers = wl || 0;
-    data.scout.watchlist = wl || 0;
-    data.scout.loaded = true;
-  } catch { /* keep */ }
+  const scout = (scoutCnt as number) || 0;
+  data.scout.followedPlayers = scout;
+  data.scout.watchlist = scout;
+  data.scout.loaded = true;
 
-  // REFEREE: games officiated. Probe-only pattern (same as league_admin / rink_operator
-  // shipped in Fix #1). `referee_assignments` table doesn't exist on prod (verified
-  // 2026-07-02). When the table appears (Q4 2026 ETA per /dashboard/referee/games stub),
-  // this loader starts working automatically — counts assignments for this user where
-  // status indicates an officiated game (not declined). Until then, loaded=false and
-  // the card shows honest empty state ("Officiating tools coming soon") pointing at
-  // the stub. Expected schema: referee_assignments(user_id, game_id, status, assigned_at).
-  try {
-    await supabaseAdmin
-      .from('referee_assignments')
-      .select('id', { count: 'exact', head: true })
-      .limit(1);
-    // referee_assignments exists — count this user's completed assignments.
-    const { count } = await supabaseAdmin
-      .from('referee_assignments')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('status', 'completed');
-    data.referee.officiatedGames = count || 0;
+  data.team_admin.teamCount = (teamAdminCnt as number) || 0;
+  data.team_admin.loaded = true;
+
+  if (refereeRes.status === 'fulfilled' && refereeRes.value !== null) {
+    data.referee.officiatedGames = refereeRes.value;
     data.referee.loaded = true;
-  } catch { /* referee_assignments still missing — keep loaded=false */ }
-
-  // TEAM_ADMIN: teams where this user is the creator OR active head_coach.
-  // `team_owners` (the Phase 1 placeholder) doesn't exist on prod (verified
-  // 2026-07-02 via information_schema.tables). The official ownership system
-  // is `claims` with status='approved' per
-  // /api/manage/[type]/[id]/route.ts:isOwner, but `claims` is empty on prod.
-  // Closest existing signals: team_workspaces.created_by (user who created
-  // the workspace) OR team_members.role='head_coach' (active membership).
-  // Either signal indicates ownership. Take the max (the two may overlap for
-  // the same team — overcount by ≤1 is acceptable for a summary card).
-  // When `claims` is wired or `team_owners` is added, swap to that source.
-  try {
-    const { count: created } = await supabaseAdmin
-      .from('team_workspaces')
-      .select('id', { count: 'exact', head: true })
-      .eq('created_by', userId);
-    const { count: headCoach } = await supabaseAdmin
-      .from('team_members')
-      .select('team_id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('role', 'head_coach')
-      .is('left_at', null);
-    data.team_admin.teamCount = Math.max(created || 0, headCoach || 0);
-    data.team_admin.loaded = true;
-  } catch { /* keep loaded=false on unexpected error */ }
-
-  // LEAGUE_ADMIN: `league_owners` doesn't exist on prod (verified 2026-07-02).
-  // `leagues` table has NO ownership column (no owner_user_id, no created_by).
-  // `claims` is empty on prod, so we can't count approved league claims.
-  // No reliable ownership signal exists yet. Probe-only pattern: if the table
-  // appears in the future, this loader starts working automatically with no
-  // code change. Until then, loaded=false and the card shows the honest
-  // empty state ("You don't run a league yet").
-  // Separate piece: add leagues.owner_user_id or wire claims. Out of scope here.
-  try {
-    await supabaseAdmin
-      .from('league_owners')
-      .select('id', { count: 'exact', head: true })
-      .limit(1);
-    // league_owners exists — count against it.
-    const { count } = await supabaseAdmin
-      .from('league_owners')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId);
-    data.league_admin.leagueCount = count || 0;
+  }
+  if (leagueRes.status === 'fulfilled' && leagueRes.value !== null) {
+    data.league_admin.leagueCount = leagueRes.value;
     data.league_admin.loaded = true;
-  } catch { /* league_owners still missing — keep loaded=false */ }
-
-  // RINK_OPERATOR: `rink_operators` doesn't exist on prod (verified 2026-07-02).
-  // `rinks` table has NO ownership column (only created_at). Same problem as
-  // league_admin. Probe-only pattern — same as above.
-  try {
-    await supabaseAdmin
-      .from('rink_operators')
-      .select('id', { count: 'exact', head: true })
-      .limit(1);
-    // rink_operators exists — count against it.
-    const { count } = await supabaseAdmin
-      .from('rink_operators')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId);
-    data.rink_operator.rinkCount = count || 0;
+  }
+  if (rinkRes.status === 'fulfilled' && rinkRes.value !== null) {
+    data.rink_operator.rinkCount = rinkRes.value;
     data.rink_operator.loaded = true;
-  } catch { /* rink_operators still missing — keep loaded=false */ }
+  }
 
-  // RINK_OPERATOR.leads: count leads associated with this user's rinks.
-  // The leads table has NO `clerk_user_id` column (verified 2026-07-02 via
-  // information_schema.columns). The real column is `claimant_user_id`.
-  // Filtering on a non-existent column would silently return 0 for everyone;
-  // switching to claimant_user_id returns the real count (table is small
-  // on prod but the filter is at least correct now).
-  try {
-    const { count: lc } = await supabaseAdmin
-      .from('leads')
-      .select('id', { count: 'exact', head: true })
-      .eq('claimant_user_id', userId);
-    data.rink_operator.leads = lc || 0;
-  } catch { /* no leads table — keep 0 */ }
+  data.rink_operator.leads = (rinkLeadsCnt as number) || 0;
 
-  // BUSINESS: listings table (Phase 0.4).
-  try {
-    const { count } = await supabaseAdmin
-      .from('listings')
-      .select('id', { count: 'exact', head: true })
-      .eq('owner_user_id', userId)
-      .eq('listing_type', 'business');
-    data.business.listings = count || 0;
-    // Same leads.clerk_user_id -> claimant_user_id fix as rink_operator above.
-    try {
-      const { count: lc } = await supabaseAdmin
-        .from('leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('claimant_user_id', userId);
-      data.business.leads = lc || 0;
-    } catch { /* no leads table */ }
+  if (businessRes && Array.isArray(businessRes)) {
+    data.business.listings = businessRes[0] || 0;
+    data.business.leads = businessRes[1] || 0;
     data.business.loaded = true;
-  } catch { /* keep */ }
+  }
 
-  // FAN: followed teams + players.
-  try {
-    const { count: teams } = await supabaseAdmin
-      .from('follows')
-      .select('id', { count: 'exact', head: true })
-      .eq('follower_user_id', userId)
-      .eq('followee_type', 'team');
-    const { count: players } = await supabaseAdmin
-      .from('follows')
-      .select('id', { count: 'exact', head: true })
-      .eq('follower_user_id', userId)
-      .eq('followee_type', 'player');
-    data.fan.followedTeams = teams || 0;
-    data.fan.followedPlayers = players || 0;
+  if (fanRes && Array.isArray(fanRes)) {
+    data.fan.followedTeams = fanRes[0] || 0;
+    data.fan.followedPlayers = fanRes[1] || 0;
     data.fan.loaded = true;
-  } catch { /* keep */ }
+  }
 
   return data;
 }
