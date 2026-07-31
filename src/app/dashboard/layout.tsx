@@ -16,6 +16,7 @@ import {
   type WorkspaceAccess,
 } from '@/lib/dashboard/workspaces';
 import { getActiveWorkspaceFromCookies, type WorkspaceId } from '@/lib/dashboard/switchWorkspace';
+import { emitSignupWelcome } from '@/lib/notifications/emit';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -69,6 +70,20 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   const lastName = user?.lastName || '';
   const email = user?.emailAddresses?.[0]?.emailAddress || '';
   const avatarUrl = user?.imageUrl || '';
+
+  // WS14 PR1 — signup_welcome one-shot. Fire-and-forget; failures are caught
+  // inside the emitter and never thrown. The emit is one-shot (snooze_until =
+  // now + 365d) so it only ever fires once, even if the user reloads the
+  // dashboard a hundred times.
+  try {
+    const clerkCreatedAt = user?.createdAt;
+    const clerkCreatedMs = clerkCreatedAt ? new Date(clerkCreatedAt).getTime() : null;
+    if (clerkCreatedMs && Date.now() - clerkCreatedMs < 10 * 60 * 1000) {
+      void emitSignupWelcome(userId);
+    }
+  } catch (err) {
+    console.error('[dashboard layout] signup_welcome check failed:', err);
+  }
 
   // Step 6: read the active workspace from the cookie mirror written by
   // switchWorkspace() on the client. Falls back to 'personal' so the nav
