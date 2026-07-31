@@ -6,6 +6,8 @@ import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackEvent } from '@/lib/analytics';
 import { TierName, TIER_TO_TRACK, MAX_CLAIMS_PER_TIER } from '@/lib/pricing';
+import { isIdentityVerified } from '@/lib/identity-verified';
+import { emitIdentityVerifyRecommended } from '@/lib/notifications/emit';
 
 // Tier-upgrade is a high-intent checkout endpoint, but legitimate users often
 // browse 3-5+ tiers before picking one. Old limit (5 per 10 min) blocked users
@@ -100,6 +102,35 @@ export async function POST(req: NextRequest) {
 
   const requestedTier = typeof body.tier === 'string' ? body.tier : '';
   const requestedTrack = typeof body.track === 'string' ? body.track : null;
+
+  // WS14 PR1 — fire-and-forget identity-verify recommendation when a signed-in
+  // unverified user attempts to upgrade. Best-effort, never blocks the request.
+  // Gated on (a) signed in, (b) target tier is identity-tracked (identity_plus
+  // + club_* + league), (c) user is not already verified. No-op for guest checkouts
+  // (Stripe handles identity docs separately for those) and for verified users.
+  if (userId && !isGuest) {
+    const TRACKS_REQUIRING_IDENTITY = new Set([
+      'identity_plus',
+      'club_starter', 'club_pro', 'club_elite',
+      'league',
+    ]);
+    if (TRACKS_REQUIRING_IDENTITY.has(requestedTier)) {
+      void (async () => {
+        try {
+          const verified = await isIdentityVerified(userId);
+          if (!verified) {
+            await emitIdentityVerifyRecommended(
+              userId,
+              `tier_upgrade:${requestedTier}`,
+              requestedTier.replace(/_/g, ' '),
+            );
+          }
+        } catch (err) {
+          console.error('[tier/upgrade] emit identity-verify recommended failed:', err);
+        }
+      })();
+    }
+  }
 
   // `original_pathname` lets us round-trip the user back to where they started
   // (e.g. /dashboard/claims?entity=rink&id=...) AFTER the magic-link sign-in
