@@ -23,6 +23,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
+import { getUserTier } from '@/lib/connections';
+import { emitClaimPaidTierUnlocked } from '@/lib/notifications/emit';
+import { getTierLabel } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -158,6 +161,26 @@ export async function POST(
     const res = NextResponse.json({ error: 'Approve failed.' }, { status: 500 });
     return applyRateLimitHeaders(res, rl);
   }
+
+  // WS14 PR1 — fire-and-forget in-app notification: if the claimer is on a
+  // paid tier, emit claim_paid_tier_unlocked so they see the new owner badge
+  // in their inbox. Idempotent on (user_id, claim_id) via the emit's
+  // source_key — re-approving a claim won't double-fire.
+  void (async () => {
+    try {
+      const tier = await getUserTier(claim.user_id);
+      if (tier && tier !== 'free') {
+        await emitClaimPaidTierUnlocked(
+          claim.user_id,
+          id,
+          (claim.entity_name ?? 'Your listing') as string,
+          getTierLabel(tier),
+        );
+      }
+    } catch (err) {
+      console.error('[claims-review] emit claim_paid_tier_unlocked failed:', err);
+    }
+  })();
 
   const res = NextResponse.json({
     ok: true,

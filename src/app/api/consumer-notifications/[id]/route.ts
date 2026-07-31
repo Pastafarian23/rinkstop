@@ -3,10 +3,13 @@
  *
  * Phase 1b-4. PATCH only in v1 (mark-as-read).
  *
- * PATCH: { read_at: ISO timestamp or null }
+ * PATCH: { read_at: ISO timestamp or null, clear_snooze?: boolean }
  *   - read_at: now → mark as read
  *   - read_at: null → mark as unread (v1 supports this; useful for "re-derive
  *     on read transition" semantics)
+ *   - clear_snooze: true → also null out snooze_until. Requires read_at to be
+ *     set (dismiss-and-clear-snooze is a single user action, not two). WS14
+ *     PR1.
  *
  * Auth: must be signed in. RLS verifies the row's user_id matches the caller.
  */
@@ -69,12 +72,27 @@ export async function PATCH(
       ? body.read_at
       : new Date().toISOString();
 
+  // WS14 PR1: optional clear_snooze action — caller passes true to
+  // remove snooze_until from this row, allowing the next re-derivation to refresh it.
+  // Only allowed alongside a read=now (the dismissal action is the natural moment).
+  const clearSnooze = body?.clear_snooze === true;
+  if (clearSnooze && readAt === null) {
+    const res = NextResponse.json(
+      { error: 'clear_snooze requires read_at to be set (dismiss the row to clear snooze).', code: 'invalid_combination' },
+      { status: 400 },
+    );
+    return applyRateLimitHeaders(res, rl);
+  }
+
+  const updateFields: Record<string, unknown> = { read_at: readAt };
+  if (clearSnooze) updateFields.snooze_until = null;
+
   const { data: updated, error } = await supabaseAdmin
     .from('consumer_notifications')
-    .update({ read_at: readAt })
+    .update(updateFields as any)
     .eq('id', notifId)
     .eq('user_id', userId)  // server-side double-check; RLS also enforces
-    .select('id, read_at')
+    .select('id, read_at, snooze_until')
     .single();
 
   if (error || !updated) {
@@ -83,6 +101,11 @@ export async function PATCH(
     return applyRateLimitHeaders(res, rl);
   }
 
-  const res = NextResponse.json({ ok: true, id: updated.id, read_at: updated.read_at });
+  const res = NextResponse.json({
+    ok: true,
+    id: updated.id,
+    read_at: updated.read_at,
+    snooze_until: updated.snooze_until,
+  });
   return applyRateLimitHeaders(res, rl);
 }
