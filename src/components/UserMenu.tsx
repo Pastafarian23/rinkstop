@@ -258,6 +258,32 @@ export default function UserMenu({
           </Link>
 
           <Link
+            href="/dashboard/roles"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '0.55rem 0.75rem',
+              color: '#fff',
+              textDecoration: 'none',
+              borderRadius: 6,
+              fontSize: '0.875rem',
+              fontWeight: 500,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <span aria-hidden="true" style={{ fontSize: 16 }}>🎭</span>
+            <span>Roles &amp; records</span>
+          </Link>
+
+          <Link
             href="/dashboard/subscription"
             role="menuitem"
             onClick={() => setOpen(false)}
