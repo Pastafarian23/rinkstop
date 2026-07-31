@@ -95,10 +95,10 @@ export const getDismissedWorkspaces = cache(async (): Promise<DismissedWorkspace
  *     !dismissed.has(ws.workspace.id) || !ws.fullyAvailable
  *   );
  */
-export async function getDismissedWorkspaceIds(): Promise<Set<string>> {
+export const getDismissedWorkspaceIds = cache(async (): Promise<Set<string>> => {
   const list = await getDismissedWorkspaces();
   return new Set(list.map((d) => d.workspaceId));
-}
+});
 
 /**
  * Dismiss a workspace for the current user.
