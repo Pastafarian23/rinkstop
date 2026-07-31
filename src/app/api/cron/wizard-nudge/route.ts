@@ -31,10 +31,18 @@ export async function GET(request: NextRequest) {
 
   // Same logic as the .mjs file. Kept inline to avoid a runtime module
   // boundary between the script + the API.
+  //
+  // Account-type filter (2026-07-31): only nudge users who have
+  // 'parent' as one of their account_types. The wizard copy is parent-flavored
+  // ("kid profile linking", "home-rink claim for your child") and makes no
+  // sense for coaches/users without a child player. Per Arnel's request after
+  // seeing the parent role on his own coach-only account — the `parent` role
+  // was a test artifact, but the cron was picking him up anyway.
   const { data: profiles, error } = await supabaseAdmin
     .from('profiles')
-    .select('user_id, created_at, family_setup_completed_at')
+    .select('user_id, created_at, family_setup_completed_at, profile_account_types!inner(account_type)')
     .is('family_setup_completed_at', null)
+    .eq('profile_account_types.account_type', 'parent')
     .limit(1000);
 
   if (error) {
