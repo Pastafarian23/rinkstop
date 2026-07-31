@@ -22,7 +22,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Tab {
   href: string;
@@ -41,6 +41,7 @@ const TABS: Tab[] = [
 export default function RoleAwareTabBar() {
   const pathname = usePathname() || '/';
   const [pressedHref, setPressedHref] = useState<string | null>(null);
+  const [consumerUnread, setConsumerUnread] = useState(0);
 
   // Hide on auth/onboarding pages — same rule as the legacy version.
   const hide =
@@ -80,6 +81,23 @@ export default function RoleAwareTabBar() {
     window.setTimeout(() => setPressedHref(null), 160);
   }
 
+  // WS14 PR2: fetch consumer_notifications unread count for the badge.
+  // Poll every 60s so the badge stays fresh without constant re-fetches.
+  useEffect(() => {
+    async function loadConsumerUnread() {
+      try {
+        const r = await fetch('/api/consumer-notifications/unread-count');
+        if (r.ok) {
+          const d = await r.json();
+          setConsumerUnread(d.unread ?? 0);
+        }
+      } catch { /* silent — badge is non-critical */ }
+    }
+    loadConsumerUnread();
+    const id = setInterval(loadConsumerUnread, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   function tapHaptic() {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try { navigator.vibrate(10); } catch { /* noop */ }
@@ -90,15 +108,41 @@ export default function RoleAwareTabBar() {
     <nav className="mob-bottom-tabbar" aria-label="Bottom navigation">
       {TABS.map(tab => {
         const active = tab.match(pathname);
+        const showBadge = tab.href === '/dashboard/notifications' && consumerUnread > 0;
         return (
           <Link
             key={tab.href}
             href={tab.href}
             className={`mob-tab ${active ? 'mob-tab-active' : ''} ${pressedHref === tab.href ? 'mob-tab-pressed' : ''}`}
             aria-current={active ? 'page' : undefined}
+            aria-label={showBadge ? `${tab.label} (${consumerUnread} unread)` : tab.label}
             onPointerDown={() => { tapPressed(tab.href); tapHaptic(); }}
           >
-            <span className="mob-tab-icon"><tab.icon /></span>
+            <span className="mob-tab-icon">
+              <tab.icon />
+              {showBadge && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    background: '#C8102E',
+                    color: '#fff',
+                    borderRadius: 999,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '0.1rem 0.4rem',
+                    minWidth: 18,
+                    textAlign: 'center',
+                    lineHeight: 1.4,
+                    border: '2px solid #041E42',
+                  }}
+                >
+                  {consumerUnread > 99 ? '99+' : consumerUnread}
+                </span>
+              )}
+            </span>
             <span className="mob-tab-label">{tab.label}</span>
           </Link>
         );
