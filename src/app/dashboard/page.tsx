@@ -489,6 +489,19 @@ async function renderDashboard(userId: string) {
             View profile
           </Link>
           <Link
+            href="/dashboard/roles"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '0.55rem 1rem', borderRadius: 6,
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              color: '#fff', fontSize: '0.85rem', fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <span aria-hidden="true">🎭</span>
+            Manage roles
+          </Link>
+          <Link
             href="/dashboard/subscription"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
