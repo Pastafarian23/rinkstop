@@ -1,95 +1,86 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { getCityPageData, resolveCityName, slugToTitle } from '@/lib/city-page';
+import { robotsMeta } from '@/lib/seo';
+import CityPageContent from '@/components/CityPageContent';
 
-interface PageProps {
-  params: Promise<{ country: string; city: string }>;
-}
+export const revalidate = 3600;
+export const dynamicParams = true;
 
+/**
+ * Country-only city page: /ice-rinks/{country}/{city}
+ *
+ * Mirrors /directory/united-states/[state]/[city]/page.tsx but without
+ * region/state context. The same getCityPageData builder is used; the
+ * `regionName` / `regionSlug` / `regionAbbr` opts are left undefined, which
+ * means:
+ *   - No province_state filter applied to rinks/teams queries (matches
+ *     "any rink in this country whose city matches")
+ *   - The peer-cities cross-link section is skipped (no region to scope to)
+ *   - Breadcrumb stops at country (no region segment)
+ *
+ * Tier 1f (2026-07-07): empty pages render with noindex instead of 404 so
+ * the URL stays alive and backlinks pass equity.
+ */
 export async function generateMetadata({
   params,
-}: PageProps): Promise<Metadata> {
-  const { country, city } = await params;
-  const cityName = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ');
-  const countryName = country.charAt(0).toUpperCase() + country.slice(1).replace(/-/g, ' ');
+}: {
+  params: Promise<{ country: string; city: string }>;
+}): Promise<Metadata> {
+  const { country: countrySlug, city: citySlug } = await params;
+  const countryName = slugToTitle(countrySlug);
+  const cityName = resolveCityName(citySlug);
+  const location = `${cityName}, ${countryName}`;
+
+  const data = await getCityPageData({
+    countryName,
+    countrySlug,
+    cityName,
+    citySlug,
+  });
+  // Tier 1f: same binary gate as the state-scoped variant — pages with no
+  // rinks and no teams are noindex. The full uniqueness decision lives in
+  // the page component because it has the full data; metadata only uses
+  // the count.
+  const hasListings = data.teamCount + data.rinkCount > 0;
+  const decision = {
+    indexable: hasListings,
+    reason: hasListings ? 'has listings' : 'no listings',
+    uniquenessScore: hasListings ? 50 : 0,
+  };
+
   return {
-    title: `Ice Rinks in ${cityName}`,
-    description: `Hockey venues, ice rinks, and skating facilities in ${cityName}, ${countryName}.`,
+    title: `${location} Hockey - Rinks & Teams`,
+    description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs and adult leagues near you.`,
     alternates: {
-      canonical: `https://rinkstop.com/ice-rinks/${country}/${city}`,
+      canonical: `https://rinkstop.com/ice-rinks/${countrySlug}/${citySlug}`,
     },
-    robots: {
-      index: true,
-      follow: true,
-    },
+    robots: robotsMeta(decision),
     openGraph: {
-      title: `Ice Rinks in ${cityName}`,
-      description: `Hockey venues, ice rinks, and skating facilities in ${cityName}, ${countryName}.`,
-      url: `https://rinkstop.com/ice-rinks/${country}/${city}`,
-      siteName: 'RinkStop',
+      title: `${location} Hockey`,
+      description: `Hockey in ${location}: ice rinks, teams, and leagues.`,
       type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `Ice Rinks in ${cityName}`,
-      description: `Hockey venues, ice rinks, and skating facilities in ${cityName}, ${countryName}.`,
     },
   };
 }
 
-export default async function CityRinksPage({ params }: PageProps) {
-  const { country, city } = await params;
-  const cityName = city.charAt(0).toUpperCase() + city.slice(1).replace(/-/g, ' ');
-  const countryName = country.charAt(0).toUpperCase() + country.slice(1).replace(/-/g, ' ');
+export default async function CountryCityRinksPage({
+  params,
+}: {
+  params: Promise<{ country: string; city: string }>;
+}) {
+  const { country: countrySlug, city: citySlug } = await params;
+  const countryName = slugToTitle(countrySlug);
+  const cityName = resolveCityName(citySlug);
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
-        <Link href="/">Home</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory">Directory</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href={`/directory/${country}`}>{countryName}</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{cityName}</span>
-      </nav>
+  const data = await getCityPageData({
+    countryName,
+    countrySlug,
+    cityName,
+    citySlug,
+  });
 
-      <header style={{ marginBottom: '2rem', borderBottom: '1px solid #222', paddingBottom: '1.5rem' }}>
-        <div className="label">Local Guide</div>
-        <h1 className="font-sport" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          ICE RINKS IN {cityName.toUpperCase()}
-        </h1>
-        <p style={{ marginTop: '0.75rem', fontSize: '1rem', color: '#888', maxWidth: '600px' }}>
-          Hockey venues, ice rinks, and skating facilities in {cityName}, {countryName}.
-        </p>
-      </header>
-
-      <section style={{ marginBottom: '3rem', textAlign: 'center', padding: '3rem', background: '#111', borderRadius: '10px', border: '1px solid #222' }}>
-        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>❄️</div>
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', marginBottom: '0.75rem' }}>
-          NO VENUES LISTED YET
-        </h2>
-        <p style={{ color: '#888', marginBottom: '1.5rem' }}>
-          Know a rink in {cityName}? Help us grow the directory.
-        </p>
-        <Link href="/add-listing" style={{ background: '#C8102E', color: '#fff', padding: '0.75rem 1.5rem', borderRadius: '6px', textDecoration: 'none', display: 'inline-block' }}>
-          Add a Venue
-        </Link>
-      </section>
-
-      <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #222' }}>
-        <Link href={`/directory/${country}`} style={{ color: '#C8102E', textDecoration: 'none', fontSize: '0.9rem' }}>
-          ← Back to Hockey in {countryName}
-        </Link>
-      </div>
-
-      <section style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%)', border: '1px solid #333', borderRadius: '12px', padding: '2rem', textAlign: 'center', marginTop: '2rem' }}>
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
-          KNOW A VENUE WE'RE MISSING?
-        </h2>
-        <Link href="/add-listing" style={{ background: '#C8102E', color: '#fff', padding: '0.875rem 2rem', borderRadius: '6px', textDecoration: 'none', display: 'inline-block', fontWeight: 600 }}>
-          Submit a Venue
-        </Link>
-      </section>
-    </div>
-  );
+  // Tier 1f (2026-07-07): render the page even when empty so the URL
+  // exists; metadata carries the noindex signal so Google drops it from
+  // its index without us returning 404.
+  return <CityPageContent data={data} />;
 }
