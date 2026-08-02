@@ -33,7 +33,14 @@ type NearbyRink = { id: string; slug: string | null; name: string; city: string 
  * + capacity + ice_size so every rink has at least 80-120 unique words.
  */
 function buildRinkBlurb(rink: { name: string; city: string | null; country: string | null; notes: string | null; capacity: number | null; ice_size: string | null; surface_type: string | null; league?: string | null; }): string {
-  if (rink.notes && rink.notes.trim().length > 30) {
+  // WS15 A1 (2026-08-02): only use notes verbatim when they're substantive
+  // enough to serve as a full meta description on their own. Short notes
+  // (e.g., "Home: Widnes Wild (NIHL). Planet Ice chain." at 43 chars) used
+  // to produce 41-43 char meta descriptions, which kill CTR. Threshold was
+  // 30 chars — bumped to 100 chars so sparse notes fall through to the
+  // synthetic generator below (which builds a richer description from
+  // capacity/ice_size/league fields).
+  if (rink.notes && rink.notes.trim().length > 100) {
     return rink.notes.trim();
   }
   const parts: string[] = [];
