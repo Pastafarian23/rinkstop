@@ -52,16 +52,27 @@ const nextConfig = {
           // 'unsafe-inline' / 'unsafe-eval' for their bundled scripts.
           // Supabase, Stripe, and Zoho need their own origins in connect-src.
           // Tighten iteratively after Clerk publishes a nonce-based mode.
+          //
+          // WS16 PR1 (2026-08-03): AdSense origins added so AdSense can
+          // load + render on the site. Per Google's CSP guide
+          // (support.google.com/adsense/answer/16283098), publishers using
+          // CSP must allow AdSense origins. Without these, even PR2's
+          // <AdSlot> code can't reach googlesyndication.com or the
+          // doubleclick iframe. Scope is intentionally minimal — only the
+          // AdSense + Google-CMP origins. GA4 and GTM are listed because
+          // AdSense's auto-analytics piggybacks on them. Once we know
+          // which ad units we actually run (PR2), we can prune any unused
+          // origins.
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.stripe.com",
-              "style-src 'self' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.stripe.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://www.googletagservices.com https://*.googletagmanager.com https://*.google-analytics.com https://*.doubleclick.net https://www.google.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https://*.clerk.accounts.dev https://*.clerk.com",
-              "connect-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.supabase.co https://api.stripe.com https://*.highlightly.net wss://*.supabase.co",
-              "frame-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com",
+              "font-src 'self' data: https://*.clerk.accounts.dev https://*.clerk.com https://fonts.gstatic.com",
+              "connect-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.supabase.co https://api.stripe.com https://*.highlightly.net wss://*.supabase.co https://*.google-analytics.com https://*.doubleclick.net https://pagead2.googlesyndication.com https://*.googlesyndication.com https://www.google.com",
+              "frame-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://*.doubleclick.net https://www.google.com",
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",
