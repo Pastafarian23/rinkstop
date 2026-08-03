@@ -71,14 +71,69 @@ export default function AboutPage() {
         </p>
       </div>
 
+      {/* Editorial Standards */}
+      <div style={{ marginBottom: '3rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EDITORIAL STANDARDS</h2>
+        <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
+          RinkStop editorial content is written and reviewed by hockey fans, coaches, and analysts. We follow these standards:
+        </p>
+        <ul style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginLeft: '1.5rem', marginBottom: '1rem' }}>
+          <li><strong>Original reporting:</strong> Every article is written by a team member or contracted writer. We do not rewrite or republish content from other outlets without permission and attribution.</li>
+          <li><strong>Source-linked claims:</strong> Statistical claims, quotes, and predictions cite the source (league box scores, official press releases, on-record interviews). Where a source is not directly attributable, we say so.</li>
+          <li><strong>Corrections are visible:</strong> If we publish an error, we correct it promptly and note the correction at the bottom of the article. We do not silently edit published stories.</li>
+          <li><strong>No paid placement in editorial:</strong> Editorial articles are never written in exchange for payment, products, or any other consideration. Advertising is labeled and kept separate from editorial content.</li>
+          <li><strong>Opinions are labeled:</strong> Analysis, opinion, and prediction pieces are clearly tagged in the article header so readers can distinguish fact from interpretation.</li>
+        </ul>
+      </div>
+
+      {/* How to verify a listing */}
+      <div style={{ marginBottom: '3rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW TO VERIFY A LISTING</h2>
+        <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
+          RinkStop contains over 9,500 listings (rinks, teams, players, leagues). Most are aggregated from publicly available sources; some are submitted by users. Here&apos;s how to tell the difference:
+        </p>
+        <ul style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginLeft: '1.5rem', marginBottom: '1rem' }}>
+          <li><strong>Verified badge:</strong> A checkmark icon next to a team, player, or rink indicates we have confirmed the listing directly with the organization or a trusted source.</li>
+          <li><strong>Claimed by:</strong> When a listing shows a &ldquo;Claimed by&rdquo; section with a name and link, the person or organization has verified ownership through our claim-your-listing process.</li>
+          <li><strong>Source attribution:</strong> At the bottom of every rink, team, and player page, we list the source(s) we used to create the listing — usually a league website, box score archive, or official directory.</li>
+          <li><strong>Update cadence:</strong> Each listing page shows when it was last updated. Listings that have not been updated in 12+ months are flagged as &ldquo;may be outdated&rdquo; on the page.</li>
+          <li><strong>Report a correction:</strong> Every listing page has a &ldquo;Suggest a correction&rdquo; link that emails our team. Submitted corrections are reviewed by an admin before any change is applied to the listing.</li>
+        </ul>
+      </div>
+
+      {/* Company */}
+      <div style={{ marginBottom: '3rem', background: 'var(--s2)', padding: '1.75rem 2rem', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1.25rem' }}>COMPANY INFORMATION</h2>
+        <div style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem' }}>
+          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>RinkStop</strong> is a global hockey directory operated by Arnel Larracas.</p>
+          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Founded:</strong> 2018</p>
+          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Headquarters:</strong> 250 S Central Ave, Wood Dale, IL 60191, United States</p>
+          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Coverage:</strong> 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues across 50+ countries</p>
+          <p style={{ marginBottom: 0 }}><strong style={{ color: '#fff' }}>Languages:</strong> English (primary). Translated content is generated from verified public sources.</p>
+        </div>
+      </div>
+
       {/* Contact */}
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GET IN TOUCH</h2>
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
-          Have a directory listing to submit, a correction to suggest, or want to partner with us? We'd love to hear from you.
+          Have a directory listing to submit, a correction to suggest, or want to partner with us? We&apos;d love to hear from you.
         </p>
-        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>Email: <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>support@rinkstop.com</a></p>
-        <p style={{ color: 'rgba(255,255,255,0.55)' }}>Website: <a href="https://rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>https://rinkstop.com</a></p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
+          <strong style={{ color: '#fff' }}>General &amp; listing inquiries:</strong>{' '}
+          <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>support@rinkstop.com</a>
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
+          <strong style={{ color: '#fff' }}>Privacy &amp; data requests:</strong>{' '}
+          <a href="mailto:privacy@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>privacy@rinkstop.com</a>
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
+          <strong style={{ color: '#fff' }}>Partnerships:</strong>{' '}
+          <a href="/partner-with-us" style={{ color: '#C8102E', fontWeight: 600 }}>Partner with us</a>
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <strong style={{ color: '#fff' }}>Mailing address:</strong> 250 S Central Ave, Wood Dale, IL 60191, United States
+        </p>
       </div>
     </main>
   );
