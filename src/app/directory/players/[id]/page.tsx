@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import AdSlot from '@/components/AdSlot';
+import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { supabaseAdmin } from '@/lib/supabase';
 import { buildPlayerFAQs, buildPlayerIntro } from '@/lib/player-context';
@@ -255,6 +257,11 @@ export default async function PlayerPage({ params }: Props) {
       {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
       <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
         <ClaimThisListingMount entityType="player" entityId={id} />
+      </div>
+
+      {/* WS16 PR2 — AdSense display ad below player profile, above footer. */}
+      <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
+        <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
       </div>
     </>
   );

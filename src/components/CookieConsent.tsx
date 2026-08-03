@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+// WS16 PR2 (2026-08-03): broadcast consent changes so AdSlot can
+// react. Same key the existing banner uses; we just dispatch an event
+// in addition to writing localStorage. PR3 (Funding Choices CMP) will
+// also dispatch this when Google-certified consent state changes.
+function setConsent(value: 'accepted' | 'declined') {
+  window.localStorage.setItem('cookie_consent', value);
+  window.dispatchEvent(new CustomEvent('rinkstop:consent-changed'));
+}
+
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
@@ -15,12 +24,12 @@ export default function CookieConsent() {
   }, []);
 
   const accept = () => {
-    localStorage.setItem('cookie_consent', 'accepted');
+    setConsent('accepted');
     setVisible(false);
   };
 
   const decline = () => {
-    localStorage.setItem('cookie_consent', 'declined');
+    setConsent('declined');
     setVisible(false);
   };
 

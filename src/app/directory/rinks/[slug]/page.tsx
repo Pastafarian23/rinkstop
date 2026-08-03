@@ -15,6 +15,8 @@ import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
+import AdSlot from '@/components/AdSlot';
+import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
 import { CANONICAL_URL } from '@/lib/constants';
 import { provinceDisplayName } from '@/lib/ca-provinces';
@@ -961,6 +963,9 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             intent="email_capture"
           />
         </div>
+
+        {/* WS16 PR2 — AdSense display ad below the email capture block. */}
+        <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
 
       </div>
     </>
