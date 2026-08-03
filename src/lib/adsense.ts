@@ -18,6 +18,25 @@
  * code safe to ship before approval.
  */
 
+/** window.adsbygoogle: an array you can push to, plus Google's pauseAdRequests flag.
+ *  Push accepts any object (AdSense just reads known keys). */
+export interface AdsbygoogleQueue extends Array<Record<string, unknown>> {
+  pauseAdRequests?: number;
+}
+
+declare global {
+  interface Window {
+    adsbygoogle?: AdsbygoogleQueue;
+    /** Google Funding Choices / TCF v2 API. Available after the CMP loads. */
+    __tcfapi?: (
+      command: 'addEventListener' | 'removeEventListener' | 'getTCData' | 'getVendorList' | 'ping',
+      version: number,
+      callback: (tcData: unknown, success: boolean) => void,
+      parameter?: number | string
+    ) => void;
+  }
+}
+
 export const ADSENSE_SLOTS = {
   /** Below-the-fold display ad on the homepage. */
   HOME_DISPLAY: process.env.NEXT_PUBLIC_ADSENSE_SLOT_HOME_DISPLAY ?? '',
@@ -31,3 +50,16 @@ export const ADSENSE_SLOTS = {
 
 /** True if the AdSense publisher ID env var is set. */
 export const ADSENSE_ENABLED = Boolean(process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID);
+
+/** Per-purpose TCF v2 consent record. */
+export interface TcfPurposeConsents {
+  consents?: Record<string, boolean>;
+  legitimateInterests?: Record<string, boolean>;
+}
+
+export interface TcfTcData {
+  eventStatus?: 'tcloaded' | 'cmpuishown' | 'useractioncomplete' | 'error';
+  tcString?: string;
+  purpose?: TcfPurposeConsents;
+  isEUBound?: boolean;
+}

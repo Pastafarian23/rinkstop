@@ -11,6 +11,7 @@ import RoleAwareTabBar from '@/components/RoleAwareTabBar';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
+import FundingChoicesCmp from '@/components/FundingChoicesCmp';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
 import OffSeasonTicker from '@/components/OffSeasonTicker';
@@ -366,6 +367,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             Higher z-index than FoundersClubPopup so they don't double up. */}
         <UpgradeNudgePopup showOnPaths={['/dashboard', '/']} />
         <IntentBanner />
+        {/* WS16 PR3 (2026-08-03): Funding Choices CMP. Loads BEFORE
+            adsbygoogle.js so Google's certified consent flow can gate
+            ad requests. TCF v2.3 compliant. Falls back gracefully if
+            NEXT_PUBLIC_GOOGLE_ADSENSE_ID isn't set. */}
+        <FundingChoicesCmp />
         {/* WS16 PR2 (2026-08-03): AdSense script loader. Uses
             strategy="afterInteractive" so it doesn't block first paint.
             Individual <AdSlot> components gate the actual ad requests
@@ -373,7 +379,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             and lazy-load via IntersectionObserver. The publisher ID is
             a NEXT_PUBLIC_* env var so it ships in the bundle; if it's
             unset (pre-launch), AdSlot returns null and the loader
-            itself no-ops the env var. */}
+            itself no-ops the env var. FundingChoicesCmp above pauses
+            ad requests until consent is known, so this loader sees a
+            paused state until the user acts. */}
         {process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID && (
           <Script
             id="adsbygoogle-loader"
