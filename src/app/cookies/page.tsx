@@ -21,7 +21,7 @@ export default function CookiesPage() {
       </h1>
 
       <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <p style={{ marginBottom: '1.5rem', color: '#444' }}>Last updated: May 15, 2026</p>
+        <p style={{ marginBottom: '1.5rem', color: '#444' }}>Last updated: August 3, 2026</p>
 
         <p style={{ marginBottom: '1.5rem' }}>
           This Cookie Policy explains what cookies and similar tracking technologies RinkStop uses when you visit our website rinkstop.com (the &quot;Site&quot;). It also explains how you can control or disable these cookies.
@@ -47,12 +47,36 @@ export default function CookiesPage() {
           <li><strong>Google Analytics:</strong> Uses cookies to measure site traffic and understand how users navigate our site. You can install the <a href="https://tools.google.com/dlpage/gaoptout" style={{ color: '#C8102E' }}>Google Analytics Opt-out Browser Add-on</a> to disable analytics.</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Cookie Consent</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Cookie Consent &amp; Google-Certified CMP</h2>
         <p style={{ marginBottom: '1rem' }}>
           When you first visit our website, you will see a cookie consent banner informing you about our use of cookies. You can choose to Accept or Decline non-essential cookies. Your preference is stored in local storage on your device.
         </p>
+        <p style={{ marginBottom: '1rem' }}>
+          For visitors in the <strong>European Economic Area (EEA), the United Kingdom, or Switzerland</strong>, consent is managed through Google&apos;s <strong>Privacy &amp; Messaging API</strong> (formerly Google Funding Choices). This is a Google-certified, IAB Europe TCF v2.3-compliant consent management platform. The CMP stores your consent choices in the <code>__tcfapi</code> shared cookie and signals them to our advertising partners (Google AdSense) under the IAB Transparency and Consent Framework technical specification.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          You can change your cookie preferences at any time by:
+        </p>
+        <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
+          <li>Clicking the consent icon that appears in the bottom corner of our site (visible after the consent UI has been closed once)</li>
+          <li>Clearing your browser&apos;s cookies and revisiting our site to show the consent banner again</li>
+          <li>Visiting <a href="https://www.google.com/settings/ads" style={{ color: '#C8102E' }}>Google Ads Settings</a> to manage your ad personalization preferences</li>
+        </ul>
+
+        <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.25rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '1.5rem', marginBottom: '0.75rem' }}>Cookies We Use — Specific List</h3>
+        <p style={{ marginBottom: '1rem' }}>Below is a list of the cookies set by our site and our partners:</p>
+        <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
+          <li><strong>cookie_consent</strong> (localStorage, first-party): Stores your Accept/Decline choice. No expiration until you clear it.</li>
+          <li><strong>__cfuvid, __cf_bm</strong> (Cloudflare, ~30 min - 1 day): Powers our CDN and bot protection. Essential.</li>
+          <li><strong>__session, __client, __session_*</strong> (Clerk, ~7 days): Authentication and session management. Essential.</li>
+          <li><strong>_ga, _ga_*</strong> (Google Analytics, ~2 years): Distinguishes unique users for analytics. We use only aggregate, non-identifiable analytics.</li>
+          <li><strong>_gcl_au</strong> (Google Ads, ~90 days): Conversion linker to measure ad clicks.</li>
+          <li><strong>__gads, __gpi</strong> (Google AdSense, ~13 months): Used to deliver personalized ads, measure ad performance, and remember your ad preferences.</li>
+          <li><strong>IDE, _drt, _fcap, _gl_kwd</strong> (DoubleClick, ~13 months): Frequency capping, ad measurement, and keyword targeting for Google AdSense.</li>
+          <li><strong>FCNEC, _GREC, _GRECaptcha</strong> (Google Funding Choices / reCAPTCHA, ~6 months - 1 year): Consent management and bot protection.</li>
+        </ul>
         <p style={{ marginBottom: '1.5rem' }}>
-          You can change your cookie preferences at any time by clearing your browser cookies and visiting our site again to show the consent banner.
+          This list may change as we add or remove features. We will update this page when the cookie set changes materially.
         </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Managing Cookies in Your Browser</h2>
