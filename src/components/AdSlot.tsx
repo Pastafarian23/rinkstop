@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { AdsbygoogleQueue } from '@/lib/adsense';
 
 /**
  * AdSlot — wraps a single Google AdSense ad unit.
@@ -23,12 +24,6 @@ import { useEffect, useRef, useState } from 'react';
  * Slot types: 'display' (default), 'in-article', 'in-feed'.
  * Each has its own responsive shape and a unique ad slot ID slot-* prop.
  */
-
-declare global {
-  interface Window {
-    adsbygoogle?: unknown[];
-  }
-}
 
 const CONSENT_KEY = 'cookie_consent';
 const CONSENT_EVENT = 'rinkstop:consent-changed';
@@ -98,7 +93,8 @@ export default function AdSlot({
   useEffect(() => {
     if (!visible || pushed || consent !== 'accepted' || !publisherId) return;
     try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      const queue = (window.adsbygoogle = window.adsbygoogle || []) as AdsbygoogleQueue;
+      queue.push({});
       setPushed(true);
     } catch (err) {
       // Don't crash the page if AdSense throws (e.g. blocked script).
