@@ -2,6 +2,7 @@ import './globals.css';
 import Link from 'next/link';
 import { ClerkProvider } from '@clerk/nextjs';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import Script from 'next/script';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
@@ -365,6 +366,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             Higher z-index than FoundersClubPopup so they don't double up. */}
         <UpgradeNudgePopup showOnPaths={['/dashboard', '/']} />
         <IntentBanner />
+        {/* WS16 PR2 (2026-08-03): AdSense script loader. Uses
+            strategy="afterInteractive" so it doesn't block first paint.
+            Individual <AdSlot> components gate the actual ad requests
+            on user consent (localStorage.cookie_consent === 'accepted')
+            and lazy-load via IntersectionObserver. The publisher ID is
+            a NEXT_PUBLIC_* env var so it ships in the bundle; if it's
+            unset (pre-launch), AdSlot returns null and the loader
+            itself no-ops the env var. */}
+        {process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID && (
+          <Script
+            id="adsbygoogle-loader"
+            strategy="afterInteractive"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID}`}
+            crossOrigin="anonymous"
+          />
+        )}
         </body>
       </html>
     </ClerkProvider>
