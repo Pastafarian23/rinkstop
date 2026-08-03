@@ -6,6 +6,8 @@ import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
+import AdSlot from '@/components/AdSlot';
+import { ADSENSE_SLOTS } from '@/lib/adsense';
 
 // Home page is rendered statically with ISR (revalidate every 5 min).
 // The page runs 9 Supabase queries for the stats grid + recent sections;
@@ -331,6 +333,14 @@ export default async function Home() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0.875rem 0 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <TicketmasterAd size="468x60" />
           </div>
+        </div>
+      </section>
+
+      {/* ---- AdSense display ad (WS16 PR2) ---------------------------------------------- */}
+      {/* Between EEAT intro and Top Cities — low-intrusion, above the directory listing cards. */}
+      <section style={{ background: '#0D1117', padding: '1rem 0' }}>
+        <div className="container" style={{ maxWidth: '1200px' }}>
+          <AdSlot slot={ADSENSE_SLOTS.HOME_DISPLAY} type="display" />
         </div>
       </section>
 
