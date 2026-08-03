@@ -21,7 +21,7 @@ export default function PrivacyPage() {
       </h1>
 
       <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <p style={{ marginBottom: '1.5rem', color: '#444' }}>Last updated: May 15, 2026</p>
+        <p style={{ marginBottom: '1.5rem', color: '#444' }}>Last updated: August 3, 2026</p>
 
         <p style={{ marginBottom: '1.5rem' }}>
           RinkStop (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates the website rinkstop.com and related services. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website.
@@ -113,9 +113,23 @@ export default function PrivacyPage() {
           Our website is not intended for children under 16 years of age. We do not knowingly collect personal information from children under 16. If you believe we have inadvertently collected such information, please contact us immediately.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>International Data Transfers</h2>
-        <p style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>International Data Transfers &amp; GDPR / UK GDPR</h2>
+        <p style={{ marginBottom: '1rem' }}>
           If you are accessing our website from outside the United States, please note that your information may be transferred to and processed in the United States, where our servers are located. By using our services, you consent to such transfer.
+        </p>
+        <p style={{ marginBottom: '1rem' }}>
+          For visitors in the <strong>European Economic Area (EEA), the United Kingdom, or Switzerland</strong>, we rely on the following legal bases under the General Data Protection Regulation (GDPR) and the UK GDPR:
+        </p>
+        <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
+          <li><strong>Consent (Art. 6(1)(a) GDPR):</strong> For advertising and analytics cookies, set through our Google-certified consent management platform.</li>
+          <li><strong>Legitimate interests (Art. 6(1)(f) GDPR):</strong> For essential cookies, site security, fraud prevention, and aggregated analytics that do not identify you.</li>
+          <li><strong>Contract (Art. 6(1)(b) GDPR):</strong> When you create an account, submit a listing, or use paid features.</li>
+        </ul>
+        <p style={{ marginBottom: '1rem' }}>
+          Where personal data is transferred from the EEA, UK, or Switzerland to the United States, Google has certified adherence to the EU-U.S. Data Privacy Framework, the UK Extension to the EU-U.S. Data Privacy Framework, and the Swiss-U.S. Data Privacy Framework. RinkStop acts as a data controller for the information you submit directly to our services, and as a data processor for data submitted through our directory forms on behalf of the team, rink, or league that owns the listing.
+        </p>
+        <p style={{ marginBottom: '1.5rem' }}>
+          To exercise your rights under GDPR or UK GDPR (access, rectification, erasure, restriction, portability, objection), contact <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a>. You also have the right to lodge a complaint with your local data protection authority.
         </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Changes to This Policy</h2>
