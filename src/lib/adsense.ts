@@ -48,8 +48,12 @@ export const ADSENSE_SLOTS = {
   DETAIL_DISPLAY: process.env.NEXT_PUBLIC_ADSENSE_SLOT_DETAIL_DISPLAY ?? '',
 } as const;
 
-/** True if the AdSense publisher ID env var is set. */
-export const ADSENSE_ENABLED = Boolean(process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID);
+/** Hardcoded publisher ID — the env var is dead since Arnel deleted the AdSense
+ *  connection in 2026-08. The publisher ID is no longer a secret (Google
+ *  distributes it in every pageview for verification). Hardcoded so the
+ *  site renders ads regardless of env-var presence. */
+export const ADSENSE_PUBLISHER_ID = 'ca-pub-3703811522107586';
+export const ADSENSE_ENABLED = true;
 
 /** Per-purpose TCF v2 consent record. */
 export interface TcfPurposeConsents {
