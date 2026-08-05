@@ -124,39 +124,18 @@ export default async function UnitedStatesPage() {
             ))}
           </div>
 
-          {/* Major US leagues quick-links */}
-          <h2
-            style={{
-              fontFamily: "'Bebas Neue', Impact, sans-serif",
-              fontSize: 26,
-              letterSpacing: '0.04em',
-              color: '#fff',
-              margin: '40px 0 16px',
-              borderLeft: `4px solid ${RED}`,
-              paddingLeft: 14,
-            }}
-          >
-            Major US Hockey Leagues
-          </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {['NHL', 'AHL', 'USHL', 'NAHL', 'NCAA Division I', 'NCAA Division III', 'USAC'].map(league => (
-              <Link
-                key={league}
-                href={`/directory/leagues/${league.toLowerCase().replace(/\s+/g, '-')}`}
-                style={{
-                  padding: '8px 16px',
-                  background: CARD,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 20,
-                  textDecoration: 'none',
-                  color: '#fff',
-                  fontSize: 14,
-                }}
-              >
-                {league}
-              </Link>
-            ))}
-          </div>
+          {/* Major US leagues quick-links — REMOVED for Batch C audit fix #6.
+              Previously this block hardcoded 7 league names (NHL, AHL, USHL,
+              NAHL, NCAA DI, NCAA DIII, USAC) while CountryPageContent's stats
+              block showed only "3 Leagues" (from the live `leagueCount`). The
+              two numbers couldn't agree because one was editorial and the
+              other was DB-driven. The actual league list now renders inside
+              CountryPageContent from the `leagues` prop (DB-driven), so
+              adding a curated reference list here would re-introduce the
+              same drift. If we want a curated editorial "Top leagues" block
+              later, it should be a separate component that pulls from
+              the leagues table (or a curated list of league IDs), not a
+              hardcoded string array. */}
         </div>
       </div>
     </>
