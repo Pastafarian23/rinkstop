@@ -228,7 +228,7 @@ async function loadFeaturedClaimable(): Promise<{
     const [rinkRes, teamRes, playerRes] = await Promise.all([
       supabaseAdmin
         .from('rinks')
-        .select('id, slug, name, city, country, state_province')
+        .select('id, slug, name, city, country, province_state')
         .eq('is_active', true)
         .is('deactivated_at', null)
         .in('city', FEATURED_CITIES)
@@ -236,7 +236,7 @@ async function loadFeaturedClaimable(): Promise<{
         .limit(20),
       supabaseAdmin
         .from('team_workspaces')
-        .select('id, slug, name, city, country, state_province')
+        .select('id, slug, name, city, country, province_state')
         .eq('is_active', true)
         .is('deactivated_at', null)
         .in('city', FEATURED_CITIES)
