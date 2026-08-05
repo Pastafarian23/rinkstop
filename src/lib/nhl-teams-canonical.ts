@@ -15,6 +15,7 @@ export interface NhlTeamCanonical {
   secondaryColor: string;  // hex
   founded: number;
   arena: string;
+  capacity?: number;
   // highlightly_id is looked up at runtime from nhl_teams table by name
 }
 
