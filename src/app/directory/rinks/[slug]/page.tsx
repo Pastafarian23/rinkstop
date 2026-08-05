@@ -115,7 +115,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email, status')
+    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league')
     .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
@@ -146,7 +146,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const provinceLabel = provinceDisplayName(rink.province_state);
 
   return {
-    title: `${rink.name} — Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}${rink.country ? ', ' + rink.country : ''} | Hours, Skating & Hockey`,
+    title: `${rink.name} — Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}${rink.country ? ', ' + rink.country : ''}${(() => { const parts: string[] = []; if (rink.opening_hours_json) parts.push('Hours'); if (rink.league) parts.push('Hockey'); else parts.push('Skating'); return parts.length ? ' | ' + parts.join(' & ') : ''; })()}`,
     description,
     robots: robotsMeta(decision),
     alternates: {
@@ -808,7 +808,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
             {[
-              { icon: '⛸️', label: 'Public skate sessions', note: 'Open skating hours for recreational skating' },
+              { icon: '⛸️', label: 'Public skate sessions', note: rink.opening_hours_json ? 'Open skating hours for recreational skating' : 'Schedule not published — contact venue for current hours' },
               { icon: '🏒', label: 'Youth hockey leagues', note: 'Initiation programs through minor hockey' },
               { icon: '🎯', label: 'Adult recreational hockey', note: 'Drop-in sessions and beer league games' },
               { icon: '👨‍🏫', label: 'Learn-to-skate lessons', note: 'Beginner skating instruction for all ages' },
