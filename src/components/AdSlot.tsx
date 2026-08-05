@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { AdsbygoogleQueue } from '@/lib/adsense';
+import { ADSENSE_PUBLISHER_ID } from '@/lib/adsense';
 
 /**
  * AdSlot — wraps a single Google AdSense ad unit.
  *
  * Behavior:
- * - Renders nothing if NEXT_PUBLIC_GOOGLE_ADSENSE_ID is not configured
- *   (allows the site to build + deploy without AdSense code being live).
+ * - Renders nothing if the publisher ID is empty (legacy env-var path —
+ *   no longer used since commit 1ba8093b hardcoded the snippet in <head>).
  * - Renders nothing if the slot ID prop is empty (placeholder mode —
  *   pre-approval we ship the code so Google can verify placement,
  *   but no ad fills until real slot IDs are set in src/lib/adsense.ts).
@@ -56,7 +57,7 @@ export default function AdSlot({
   style,
   minHeight = 90,
 }: AdSlotProps) {
-  const publisherId = process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID;
+  const publisherId = ADSENSE_PUBLISHER_ID;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [consent, setConsent] = useState<'accepted' | 'declined' | 'unset'>('unset');
   const [visible, setVisible] = useState(false);

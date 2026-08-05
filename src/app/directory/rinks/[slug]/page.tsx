@@ -115,7 +115,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, notes, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league')
+    .select('name, slug, city, country, province_state, notes, notes_generated, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league')
     .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
@@ -127,7 +127,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!rinkIndexable(rink.status)) {
     return {
       title: `${rink.name}`,
-      description: rink.notes || `${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
+      description: ((rink as any).notes_generated ?? rink.notes) || `${rink.name} in ${rink.city || ''}, ${rink.country || ''}.`,
       robots: { index: false, follow: true },
       alternates: {
         canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
@@ -977,7 +977,8 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         <>
           <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
             <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px' }}>{rink.name}</h1>
-            <p style={{ color: '#cbd5e1' }}>{rink.notes || `${rink.name} is an ice rink in ${rink.city || 'the area'}, ${rink.country || ''}.`}</p>
+            <p style={{ color: '#cbd5e1' }}>{((rink as any)['notes_generated'] ?? rink.notes) || `${rink.name} is an ice rink in ${rink.city || 'the area'}, ${rink.country || ''}.`}</p>
+
           </div>
         </>
       );
