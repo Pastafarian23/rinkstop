@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -28,6 +29,27 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = 'force-dynamic';
+
+// TEMPORARY HOT-PATCH — Claude audit 2026-08-05 #1 (CRITICAL 500).
+// /claim-your-listing has been returning 500, blocking the top-of-funnel
+// paid conversion path (linked from homepage banner rotator, footer, pricing).
+// Instead of waiting on Batch B's structural fix, this redirects the whole
+// route to the working /login → /dashboard/claims flow used by individual
+// listing pages. Same destination, working path, revenue-restoring.
+//
+// Sign-up and sign-in both honor ?redirect_url=... (audit-verified 2026-08-05),
+// so first-time claimers hit /sign-up?redirect_url=/dashboard/claims and land
+// on /dashboard/claims after email verification — no dead-end.
+//
+// TIME-BOX: remove this redirect when Batch B lands and the page renders 200.
+// Owner: KiloClaw. Tracked in LEDGER under audit-fixes Batch B.
+const CLAIM_REDIRECT_TEMPORARY = process.env.NODE_ENV !== 'development' || process.env.CLAIM_REDIRECT_TIMEBOMB !== 'disabled';
+
+// Run before any data fetch; we never need to render this page while the
+// hot-patch is active, so a server-side 307 redirect is the cleanest fix.
+if (CLAIM_REDIRECT_TEMPORARY) {
+  redirect('/login?redirect_url=' + encodeURIComponent('/dashboard/claims'));
+}
 
 type ClaimType = 'rink' | 'team' | 'player';
 
