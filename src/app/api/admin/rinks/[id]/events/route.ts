@@ -52,17 +52,6 @@ function parseIsoOrNull(v: unknown): IsoResult {
   return { ok: true, value: d.toISOString() };
 }
 
-function badRequest(message: string) {
-  return NextResponse.json({ error: message }, { status: 400 });
-}
-
-function asPositiveIntOrNull(v: unknown): number | null | undefined {
-  if (v === undefined) return undefined;
-  if (v === null) return null;
-  if (typeof v !== 'number' || !Number.isFinite(v)) return NaN;
-  return Math.trunc(v);
-}
-
 function validateCreateBody(body: Record<string, any>): string | null {
   if (!body || typeof body !== 'object') return 'Body must be JSON.';
   if (typeof body.title !== 'string' || body.title.trim().length === 0) return 'title is required.';
@@ -182,10 +171,10 @@ export async function POST(
   const endsAt = new Date(body.ends_at).toISOString();
   const regOpens  = parseIsoOrNull(body.registration_opens_at);
   const regCloses = parseIsoOrNull(body.registration_closes_at);
-  if (!regOpens.ok)  return badRequest(`registration_opens_at: ${regOpens.error}`);
-  if (!regCloses.ok) return badRequest(`registration_closes_at: ${regCloses.error}`);
+  if (regOpens.ok === false)  return badRequest(`registration_opens_at: ${regOpens.error}`);
+  if (regCloses.ok === false) return badRequest(`registration_closes_at: ${regCloses.error}`);
   const earlyBird = parseIsoOrNull(body.early_bird_until);
-  if (!earlyBird.ok) return badRequest(`early_bird_until: ${earlyBird.error}`);
+  if (earlyBird.ok === false) return badRequest(`early_bird_until: ${earlyBird.error}`);
 
   const insert = {
     rink_id: id,
