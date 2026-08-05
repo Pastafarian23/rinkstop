@@ -43,13 +43,13 @@ export const dynamic = 'force-dynamic';
 //
 // TIME-BOX: remove this redirect when Batch B lands and the page renders 200.
 // Owner: KiloClaw. Tracked in LEDGER under audit-fixes Batch B.
+//
+// IMPORTANT: the redirect MUST live INSIDE the default-exported component
+// body, not at module top-level. Next.js evaluates every module during
+// `next build` to collect page metadata; a top-level `redirect()` throws
+// `NEXT_REDIRECT` and breaks the build. Inside the component body it
+// only fires per-request.
 const CLAIM_REDIRECT_TEMPORARY = process.env.NODE_ENV !== 'development' || process.env.CLAIM_REDIRECT_TIMEBOMB !== 'disabled';
-
-// Run before any data fetch; we never need to render this page while the
-// hot-patch is active, so a server-side 307 redirect is the cleanest fix.
-if (CLAIM_REDIRECT_TEMPORARY) {
-  redirect('/login?redirect_url=' + encodeURIComponent('/dashboard/claims'));
-}
 
 type ClaimType = 'rink' | 'team' | 'player';
 
@@ -302,6 +302,13 @@ export default async function ClaimYourListingPage({
 }: {
   searchParams: Promise<{ q?: string; type?: string }>;
 }) {
+  // Run as the first per-request step when the hot-patch is active. Lives
+  // inside the component body so Next.js's static page-collection phase
+  // doesn't evaluate it during `next build`.
+  if (CLAIM_REDIRECT_TEMPORARY) {
+    redirect('/login?redirect_url=' + encodeURIComponent('/dashboard/claims'));
+  }
+
   const { q, type: typeParam } = await searchParams;
   const query = (q || '').trim();
   // Validate the type param. Default to rink if missing or invalid.
