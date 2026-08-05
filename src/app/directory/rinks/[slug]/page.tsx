@@ -894,7 +894,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                   <dd style={{ color: '#cbd5e1', fontSize: '14px' }}>{rink.email}</dd>
                 </div>
               )}
-              {rink.website_url && (
+              {rink.website_url && rink.website_url !== 'N/A' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <dt style={{ color: 'var(--muted)', fontSize: '13px' }}>Website</dt>
                   <dd>
