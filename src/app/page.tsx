@@ -19,54 +19,72 @@ import { ADSENSE_SLOTS } from '@/lib/adsense';
 // action that changes rinks/teams/players/leagues counts.
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: 'RinkStop — The World’s Hockey Directory',
-  description:
-    'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country. Free directory of ice rinks, pro teams, junior clubs, college programs, and player profiles.',
-  keywords: [
-    'hockey directory',
-    'ice rink directory',
-    'hockey teams',
-    'hockey rinks',
-    'hockey players',
-    'NHL directory',
-    'youth hockey',
-    'hockey leagues',
-    'find a hockey rink',
-    'hockey near me',
-  ],
-  alternates: { canonical: 'https://rinkstop.com/' },
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: 'RinkStop — The World’s Hockey Directory',
-    description:
-      'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues.',
-    url: 'https://rinkstop.com/',
-    siteName: 'RinkStop',
-    type: 'website',
-    locale: 'en_US',
-    images: [
-      {
-        url: 'https://rinkstop.com/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'RinkStop — The World’s Hockey Directory',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'RinkStop — The World’s Hockey Directory',
-    description:
-      'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues.',
-    images: ['https://rinkstop.com/og-image.png'],
-  },
-};
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+// generateMetadata pulls live counts from the same `get_directory_stats` RPC
+// the page uses, so the meta description never drifts from the rendered
+// stats. (Audit fix Batch C #2: previously the description had a hardcoded
+// "800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players,
+// 190+ leagues" string that Google saw as outdated once counts grew.)
+export async function generateMetadata(): Promise<Metadata> {
+  let rinks = 0, teams = 0, players = 0, leagues = 0, cities = 0, countries = 0;
+  try {
+    const { data } = await supabase.rpc('get_directory_stats');
+    const s = (data || {}) as { rinks?: number; teams?: number; players?: number; leagues?: number; cities?: number; countries?: number };
+    rinks = s.rinks || 0;
+    teams = s.teams || 0;
+    players = s.players || 0;
+    leagues = s.leagues || 0;
+    cities = s.cities || 0;
+    countries = s.countries || 0;
+  } catch {
+    // fall through with zeros
+  }
+  const desc = `Find hockey anywhere in the world. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues — searchable by city, state, or country.`;
+  return {
+    title: 'RinkStop — The World’s Hockey Directory',
+    description: desc,
+    keywords: [
+      'hockey directory',
+      'ice rink directory',
+      'hockey teams',
+      'hockey rinks',
+      'hockey players',
+      'NHL directory',
+      'youth hockey',
+      'hockey leagues',
+      'find a hockey rink',
+      'hockey near me',
+    ],
+    alternates: { canonical: 'https://rinkstop.com/' },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: 'RinkStop — The World’s Hockey Directory',
+      description: desc,
+      url: 'https://rinkstop.com/',
+      siteName: 'RinkStop',
+      type: 'website',
+      locale: 'en_US',
+      images: [
+        {
+          url: 'https://rinkstop.com/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'RinkStop — The World’s Hockey Directory',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'RinkStop — The World’s Hockey Directory',
+      description: desc,
+      images: ['https://rinkstop.com/og-image.png'],
+    },
+  };
+}
 
 const TOP_CITIES = [
   { name: 'Toronto',   country: 'CA', href: '/directory/canada/ontario/toronto' },
