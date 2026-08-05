@@ -20,6 +20,12 @@ import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
 import { CANONICAL_URL } from '@/lib/constants';
 import { provinceDisplayName } from '@/lib/ca-provinces';
+// WS17 PR2: extracted schema.org generator + tab components. See
+// memory/ws17-pr2-spec-2026-08-05.md and lib/schema/rink.ts.
+import { buildRinkSchema, buildRinkSchemaFallback, type RinkProgrammingForSchema, type RinkEventForSchema } from '@/lib/schema/rink';
+import RinkPageTabs from '@/components/rink/RinkPageTabs';
+import RinkProgrammingTab from '@/components/events/RinkProgrammingTab';
+import RinkEventsTab from '@/components/events/RinkEventsTab';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -160,9 +166,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function RinkDetailPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ from?: string }> }) {
+export default async function RinkDetailPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ from?: string; tab?: string }> }) {
   const { slug: param } = await params;
-  const { from: fromSlug } = await searchParams;
+  const { from: fromSlug, tab } = await searchParams;
+  // WS17 PR2: tab state. Default is 'overview' (implicit, no ?tab= param).
+  // Only ?tab=programming is in the URL when non-default.
+  const activeTab: 'overview' | 'programming' = tab === 'programming' ? 'programming' : 'overview';
 
   // Fetch rink by id (if UUID) or by slug. The [slug] folder is just a route
   // segment name — we accept either, then redirect to the canonical slug URL
@@ -189,7 +198,11 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
   // Fetch in parallel: upcoming games, teams in same city, leagues in same country,
   // other rinks in same city (PR1), other rinks in same state (PR1), reviews
-  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes] = await Promise.all([
+  // WS17 PR2 (2026-08-05): also fetch programming (schema.org availableActivity
+  // + Programming tab) and upcoming events (schema.org event[] + Events tab).
+  // We only need schema-relevant columns for the schema builder; the tab
+  // components fetch their own full payload below.
+  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -241,6 +254,21 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(10),
+    // WS17 PR2 schema feeds: programming (activity types) + upcoming events.
+    supabase
+      .from('rink_programming')
+      .select('activity_type, skill_level, description')
+      .eq('rink_id', rink.id)
+      .eq('status', 'published'),
+    supabase
+      .from('rink_events')
+      .select('id, slug, title, description, starts_at, ends_at, status, banner_image_url, registration_url, price_cents, currency')
+      .eq('rink_id', rink.id)
+      .eq('status', 'published')
+      .eq('visibility', 'public')
+      .gte('starts_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .order('starts_at', { ascending: true })
+      .limit(50),
   ]);
 
   const games = gamesRes.data || [];
@@ -257,6 +285,27 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   const averageRating = reviews.length
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
     : 0;
+
+  // WS17 PR2 (2026-08-05): feed the schema builder with programming + upcoming
+  // events for availableActivity[] + event[] arrays.
+  const programmingForSchema = (schemaProgrammingRes.data || []).map((p: any) => ({
+    activity_type: p.activity_type,
+    skill_level: p.skill_level,
+    description: p.description,
+  }));
+  const upcomingEventsForSchema = (schemaUpcomingEventsRes.data || []).map((e: any) => ({
+    id: e.id,
+    slug: e.slug,
+    title: e.title,
+    description: e.description,
+    starts_at: e.starts_at,
+    ends_at: e.ends_at,
+    status: e.status,
+    banner_image_url: e.banner_image_url,
+    registration_url: e.registration_url,
+    price_cents: e.price_cents,
+    currency: e.currency,
+  }));
 
   const blurb = buildRinkBlurb(rink);
   const provinceLabel = provinceDisplayName(rink.province_state);
@@ -279,135 +328,49 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
 
   const BASE_URL = 'https://rinkstop.com';
 
-  // Schema for SEO — includes IceCreamStore + SportsActivityLocation + FAQ if we have notes
-  // Tier 1h (2026-07-07): wrap schema build in try/catch so a malformed-data
-  // throw doesn't 500 the whole page. On failure, fall back to a minimal
-  // schema (just the breadcrumb) so the page still renders. Logs go to
-  // Vercel function logs.
+  // Schema for SEO — extended WS17 PR2 (2026-08-05): now includes
+  // availableActivity[] (from rink_programming) and event[] (from upcoming
+  // rink_events). The generator was extracted to lib/schema/rink.ts so it
+  // can be tested in isolation and reused on /events/[slug]. Tier 1h
+  // (2026-07-07): try/catch fallback to a minimal breadcrumb-only schema if
+  // the build throws on malformed data.
   let schema: any;
   try {
-    schema = {
-    '@context': 'https://schema.org',
-    '@graph': [
+    schema = buildRinkSchema(
       {
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-          { '@type': 'ListItem', position: 2, name: 'Rinks', item: `${BASE_URL}/directory/rinks` },
-          { '@type': 'ListItem', position: 3, name: rink.name, item: `${BASE_URL}/directory/rinks/${rink.slug}` },
-        ],
-      },
-      {
-        '@type': 'SportsActivityLocation',
-        '@id': `${BASE_URL}/directory/rinks/${rink.slug}`,
         name: rink.name,
-        description: blurb,
-        url: `${BASE_URL}/directory/rinks/${rink.slug}`,
-        ...(rink.cover_photo_url || rink.logo_url ? { image: rink.cover_photo_url || rink.logo_url } : {}),
-        ...(rink.address ? {
-          address: {
-            '@type': 'PostalAddress',
-            addressLocality: rink.city,
-            addressRegion: provinceDisplayName(rink.province_state) || rink.province_state,
-            addressCountry: rink.country,
-            streetAddress: rink.address,
-          },
-        } : {}),
-        ...(rink.latitude && rink.longitude ? { geo: { '@type': 'GeoCoordinates', latitude: rink.latitude, longitude: rink.longitude } } : {}),
-        ...(rink.capacity ? { maximumAttendeeCapacity: rink.capacity } : {}),
-        ...(rink.phone ? { telephone: rink.phone } : {}),
-        ...(rink.website_url ? { url: rink.website_url } : {}),
-        ...(rink.google_maps_url ? { hasMap: rink.google_maps_url } : {}),
-        ...(Array.isArray((rink.opening_hours_json as OpeningHoursJson | null)?.periods)
-          ? { openingHoursSpecification: ((): any[] => {
-              const periods = (rink.opening_hours_json as OpeningHoursJson).periods || [];
-              // Defensive filter (Tier 1h, 2026-07-07): skip malformed periods
-              // rather than letting p.open.time.slice() throw and 500 the page.
-              // Some rinks imported from international data sources have
-              // partial opening_hours_json (missing close.time, etc.).
-              return periods
-                .filter((p: any) =>
-                  p && p.open && typeof p.open.time === 'string' && p.open.time.length >= 4 &&
-                  typeof p.open.day === 'number' && p.open.day >= 0 && p.open.day <= 6 &&
-                  p.close && typeof p.close.time === 'string' && p.close.time.length >= 4
-                )
-                .map((p: any) => ({
-                  '@type': 'OpeningHoursSpecification',
-                  dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][p.open.day],
-                  opens: `${p.open.time.slice(0, 2)}:${p.open.time.slice(2, 4)}`,
-                  closes: `${p.close.time.slice(0, 2)}:${p.close.time.slice(2, 4)}`,
-                }));
-            })() }
-          : {}),
-        sport: 'Ice Hockey',
-        amenityFeature: rink.ice_size ? [{ '@type': 'LocationFeatureSpecification', name: `${rink.ice_size} ice surface` }] : undefined,
+        slug: rink.slug,
+        city: rink.city,
+        province_state: rink.province_state,
+        country: rink.country,
+        address: rink.address,
+        latitude: rink.latitude,
+        longitude: rink.longitude,
+        capacity: rink.capacity,
+        phone: rink.phone,
+        website_url: rink.website_url,
+        google_maps_url: rink.google_maps_url,
+        cover_photo_url: rink.cover_photo_url,
+        logo_url: rink.logo_url,
+        opening_hours_json: rink.opening_hours_json as OpeningHoursJson | null,
+        ice_size: rink.ice_size,
+        notes: rink.notes,
       },
+      blurb,
       {
-        '@type': 'FAQPage',
-        mainEntity: [
-          {
-            '@type': 'Question',
-            name: `Is ${rink.name} open to public skating?`,
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: rink.opening_hours_json
-                ? `Yes — ${rink.name} offers public skating sessions. Check the rink's live hours above for today's schedule and book ahead where required.`
-                : `Most rinks offer public skating sessions, but ${rink.name}'s hours vary by season. Contact the rink directly for the current schedule.`,
-            },
-          },
-          {
-            '@type': 'Question',
-            name: `Does ${rink.name} have youth hockey programs?`,
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: `${rink.name} is a ${rink.ice_size || 'community'}-sized ice rink${rink.country ? ' in ' + rink.country : ''} and supports youth hockey programming including learn-to-skate, learn-to-play, and minor hockey. Specific program availability depends on the current operator — check the rink's website or call the listed phone number for the most up-to-date schedule.`,
-            },
-          },
-          {
-            '@type': 'Question',
-            name: `How do I get to ${rink.name}?`,
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: rink.address
-                ? `${rink.name} is located at ${rink.address}. Use Google Maps for turn-by-turn directions${rink.latitude && rink.longitude ? ` to coordinates ${rink.latitude}, ${rink.longitude}` : ''}.`
-                : `Use the contact details on this page to confirm ${rink.name}'s address before traveling.`,
-            },
-          },
-          {
-            '@type': 'Question',
-            name: `Is there an ice rink near ${rink.city || 'me'} similar to ${rink.name}?`,
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: `Yes — see the "Other rinks in ${rink.city || 'this area'}" and "More rinks in ${provinceLabel || rink.country || 'the region'}" sections on this page for nearby venues. RinkStop's directory covers ${rink.country ? rink.country + ' and ' : ''}thousands of rinks globally, so you can compare ice sizes, capacity, and amenities before you visit.`,
-            },
-          },
-          {
-            '@type': 'Question',
-            name: `What is the capacity of ${rink.name}?`,
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: rink.capacity
-                ? `${rink.name} has a capacity of ${rink.capacity.toLocaleString()} ${rink.capacity > 1000 ? 'spectators, making it one of the larger hockey venues in the area' : 'spectators — a community-scale rink with the intimacy of a smaller venue'}.`
-                : `Capacity for ${rink.name} is not published. RinkStop's database is community-edited; if you have current capacity data, claim this listing to update it.`,
-            },
-          },
-        ],
+        programming: (programmingForSchema as RinkProgrammingForSchema[]),
+        upcomingEvents: (upcomingEventsForSchema as RinkEventForSchema[]),
       },
-    ],
-  };
+    );
   } catch (schemaErr) {
     console.error('[rink-debug] schema build failed for rink', rink.id, rink.slug, 'opening_hours_json=', JSON.stringify(rink.opening_hours_json), 'err=', (schemaErr as Error).message, (schemaErr as Error).stack);
-    schema = {
-      '@context': 'https://schema.org',
-      '@graph': [{
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-          { '@type': 'ListItem', position: 2, name: 'Rinks', item: `${BASE_URL}/directory/rinks` },
-          { '@type': 'ListItem', position: 3, name: rink.name, item: `${BASE_URL}/directory/rinks/${rink.slug}` },
-        ],
-      }],
-    };
+    schema = buildRinkSchemaFallback({
+      name: rink.name,
+      slug: rink.slug,
+      city: rink.city,
+      province_state: rink.province_state,
+      country: rink.country,
+    });
   }
 
   // Tier 1h v3 (2026-07-07): catch ALL throws from the page body so we can
@@ -848,37 +811,26 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           </section>
         )}
 
-        {/* PROGRAMS & AMENITIES — unique content derived from rink type.
-            Every rink gets this section even with no notes. */}
-        <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
-          <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
-            Programs & amenities at {rink.name}
-          </h2>
-          <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '16px' }}>
-            As a {rink.ice_size ? rink.ice_size + '-sized' : 'community'} ice rink{rink.country ? ' in ' + rink.country : ''}, {rink.name} typically supports the following hockey programs and amenities. Hours and availability vary by season — contact the rink directly for the current schedule.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
-            {[
-              { icon: '⛸️', label: 'Public skate sessions', note: rink.opening_hours_json ? 'Open skating hours for recreational skating' : 'Schedule not published — contact venue for current hours' },
-              { icon: '🏒', label: 'Youth hockey leagues', note: 'Initiation programs through minor hockey' },
-              { icon: '🎯', label: 'Adult recreational hockey', note: 'Drop-in sessions and beer league games' },
-              { icon: '👨‍🏫', label: 'Learn-to-skate lessons', note: 'Beginner skating instruction for all ages' },
-              { icon: '🏆', label: 'Tournaments & showcases', note: rink.capacity && rink.capacity > 3000 ? 'Hosting regional and national events' : 'Hosting local tournaments and exhibition games' },
-              { icon: '🎭', label: 'Figure skating & clinics', note: 'Private lessons, group clinics, ice shows' },
-            ].map((p) => (
-              <div key={p.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '18px' }}>{p.icon}</span>
-                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: 700 }}>{p.label}</span>
-                </div>
-                <p style={{ color: 'var(--muted)', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>{p.note}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* WS17 PR2 (2026-08-05): Tab switcher + Programming & Events tab.
+            Replaces the old generic "Programs & amenities" 6-item grid with
+            real, rink-specific programming + upcoming events data. Default
+            tab is Overview (no URL param). Programming tab = ?tab=programming. */}
+        <RinkPageTabs />
+        <div
+          id="panel-programming"
+          role="tabpanel"
+          aria-labelledby="tab-programming"
+          hidden={activeTab !== 'programming'}
+          style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+        >
+          <RinkProgrammingTab rinkId={rink.id} />
+          <RinkEventsTab rinkId={rink.id} rinkSlug={rink.slug} />
+        </div>
 
         {/* GETTING HERE — derived from address. Unique per rink. */}
+
         {rink.address && (
+
           <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
               Getting to {rink.name}
