@@ -382,15 +382,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             unset (pre-launch), AdSlot returns null and the loader
             itself no-ops the env var. FundingChoicesCmp above pauses
             ad requests until consent is known, so this loader sees a
-            paused state until the user acts. */}
-        {process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID && (
-          <Script
-            id="adsbygoogle-loader"
-            strategy="afterInteractive"
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID}`}
-            crossOrigin="anonymous"
-          />
-        )}
+            paused state until the user acts. The publisher snippet is now
+            hardcoded in <head> (commit 1ba8093b), so this loader is dead code. */}
         </body>
       </html>
     </ClerkProvider>
