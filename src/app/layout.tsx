@@ -193,6 +193,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="RinkStop" />
           <link rel="apple-touch-icon" href="/rinkstoplogo.png" />
+          <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3703811522107586" crossOrigin="anonymous"></script>
         </head>
         <body>
 
