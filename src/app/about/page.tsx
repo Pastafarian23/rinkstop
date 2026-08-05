@@ -107,7 +107,7 @@ export default function AboutPage() {
         <div style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem' }}>
           <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>RinkStop</strong> is a global hockey directory operated by Arnel Larracas.</p>
           <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Founded:</strong> 2018</p>
-          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Headquarters:</strong> 250 S Central Ave, Wood Dale, IL 60191, United States</p>
+          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Headquarters:</strong> 709 S Riverside Dr, Villa Park, IL 60181, United States</p>
           <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Coverage:</strong> 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues across 50+ countries</p>
           <p style={{ marginBottom: 0 }}><strong style={{ color: '#fff' }}>Languages:</strong> English (primary). Translated content is generated from verified public sources.</p>
         </div>
@@ -125,14 +125,14 @@ export default function AboutPage() {
         </p>
         <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
           <strong style={{ color: '#fff' }}>Privacy &amp; data requests:</strong>{' '}
-          <a href="mailto:privacy@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>privacy@rinkstop.com</a>
+          <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>support@rinkstop.com</a>
         </p>
         <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
           <strong style={{ color: '#fff' }}>Partnerships:</strong>{' '}
           <a href="/partner-with-us" style={{ color: '#C8102E', fontWeight: 600 }}>Partner with us</a>
         </p>
         <p style={{ color: 'rgba(255,255,255,0.55)' }}>
-          <strong style={{ color: '#fff' }}>Mailing address:</strong> 250 S Central Ave, Wood Dale, IL 60191, United States
+          <strong style={{ color: '#fff' }}>Mailing address:</strong> 709 S Riverside Dr, Villa Park, IL 60181, United States
         </p>
       </div>
     </main>

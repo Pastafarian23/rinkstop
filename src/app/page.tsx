@@ -169,10 +169,10 @@ export default async function Home() {
         },
         address: {
           '@type': 'PostalAddress',
-          streetAddress: '250 S Central Ave',
-          addressLocality: 'Wood Dale',
+          streetAddress: '709 S Riverside Dr',
+          addressLocality: 'Villa Park',
           addressRegion: 'IL',
-          postalCode: '60191',
+          postalCode: '60181',
           addressCountry: 'US',
         },
         areaServed: [
