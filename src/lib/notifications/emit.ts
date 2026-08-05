@@ -27,6 +27,49 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase';
+import { sendEmail } from '@/lib/email';
+import { unstable_cache } from 'next/cache';
+
+const KIND_LABEL: Record<OnboardingKind, string> = {
+  signup_welcome: 'signup welcome',
+  identity_verify_recommended: 'identity verify recommended',
+  wizard_incomplete: 'wizard incomplete',
+  claim_paid_tier_unlocked: 'claim paid tier unlocked',
+  profile_first_visitor: 'profile first visitor',
+};
+
+/**
+ * Per-kind email mute preference (WS14 PR2).
+ * Reads notification_email_prefs; default muted=false (email ON).
+ * Cached 60s per (user, kind) — same hot-path as v_user_visible_certifications.
+ *
+ * profile_first_visitor never emails regardless of mute (the in-app
+ * notification is the only signal — a lurker viewing your profile
+ * should never generate an inbox ping for you).
+ */
+export async function isEmailMuted(userId: string, kind: OnboardingKind): Promise<boolean> {
+  if (kind === 'profile_first_visitor') return true;
+  const cached = unstable_cache(
+    async () => {
+      const { data, error } = await supabaseAdmin
+        .from('notification_email_prefs')
+        .select('muted')
+        .eq('user_id', userId)
+        .eq('kind', kind)
+        .maybeSingle();
+      if (error) {
+        console.error('[emit] isEmailMuted lookup failed:', error);
+        // Default-on if the lookup fails: don't silence a notification
+        // that the user already opted in to.
+        return false;
+      }
+      return data?.muted === true;
+    },
+    [`email-mute:${userId}:${kind}`],
+    { revalidate: 60, tags: [`email-mute:${userId}`] }
+  );
+  return cached();
+}
 
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -155,6 +198,45 @@ export async function emitOnboardingNotification(input: EmitInput): Promise<Emit
       console.error('[emit] insert failed:', insErr);
       return { ok: false, inserted: false, skipped: false, reason: 'insert_failed' };
     }
+
+    // WS14 PR2: also send an email (best-effort, never blocks the primary flow).
+    // Skip profile_first_visitor (in-app only) and check mute preference.
+    // We look up the user's email from profiles; if missing, log + skip.
+    void (async () => {
+      try {
+        const muted = await isEmailMuted(userId, kind);
+        if (muted) return;
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('email')
+          .eq('user_id', userId)
+          .maybeSingle();
+        const to = profile?.email;
+        if (!to) {
+          console.warn(`[emit] no email for user ${userId}; in-app notification inserted but email skipped`);
+          return;
+        }
+        const actionUrlAbs = actionUrl
+          ? (actionUrl.startsWith('http') ? actionUrl : `https://rinkstop.com${actionUrl}`)
+          : null;
+        await sendEmail({
+          to,
+          subject: title,
+          template: 'notification',
+          data: {
+            kind: KIND_LABEL[kind] ?? kind,
+            title,
+            body,
+            actionUrl: actionUrlAbs,
+            actionLabel: actionLabel ?? null,
+          },
+          tag: `notification:${kind}`,
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[emit] email send failed (non-blocking, in-app already inserted): ${msg}`);
+      }
+    })();
 
     return { ok: true, inserted: true, skipped: false };
   } catch (err) {
