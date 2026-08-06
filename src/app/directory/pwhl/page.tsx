@@ -67,9 +67,28 @@ async function fetchInitialData(): Promise<{ league: League | null; teams: Team[
   }
 }
 
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/pwhl',
+            name: 'PROFESSIONAL WOMEN\'S HOCKEY LEAGUE',
+            url: 'https://rinkstop.com/directory/pwhl',
+            sport: 'Ice Hockey',
+            description: "Professional Women's Hockey League — premier women's pro league in North America, 8 teams across USA and Canada.",
+            foundingDate: '2023',
+            sameAs: ['https://en.wikipedia.org/wiki/Professional_Women%27s_Hockey_League'],
+          }],
+        }) }}
+      />
+
 export default async function PWHLPage() {
   const { league, teams } = await fetchInitialData();
-  return <section style={{ background: 'rgba(13,17,23,0.6)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px', maxWidth: '1280px', margin: '1.5rem auto 3rem' }}>
+  return (
+    <>
+      <section style={{ background: 'rgba(13,17,23,0.6)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px', maxWidth: '1280px', margin: '1.5rem auto 3rem' }}>
         <div style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>About the PWHL</h2>
           <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.5rem', maxWidth: '1280px' }}>
@@ -77,5 +96,8 @@ export default async function PWHLPage() {
           </p>
         </div>
       </section>
-      <PWHLClient league={league} teams={teams} />;
+      <PWHLClient league={league} teams={teams} />
+    </>
+  );
+
 }

@@ -9,6 +9,22 @@ export const metadata: Metadata = {
 export default function QMJHLPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/junior/qmjhl',
+            name: 'QUEBEC MARITIMES JR.',
+            url: 'https://rinkstop.com/directory/junior/qmjhl',
+            sport: 'Ice Hockey',
+            description: "Quebec Maritimes Junior Hockey League — Major Junior league covering Quebec and Atlantic Canada.",
+            foundingDate: '1969',
+            sameAs: ['https://en.wikipedia.org/wiki/Quebec_Maritimes_Junior_Hockey_League'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
