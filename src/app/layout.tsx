@@ -373,6 +373,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             ad requests. TCF v2.3 compliant. Falls back gracefully if
             NEXT_PUBLIC_GOOGLE_ADSENSE_ID isn't set. */}
         <FundingChoicesCmp />
+        {/* CookieConsent: pre-Funding-Choices consent banner. FundingChoicesCmp
+            is no-ops until NEXT_PUBLIC_GOOGLE_ADSENSE_ID is set; this banner
+            covers the gap so users get an Accept/Decline choice today.
+            AdSense policy requires either Funding Choices OR a first-party
+            consent UI on every page. Mounted globally so all routes have it. */}
+        <CookieConsent />
         {/* WS16 PR2 (2026-08-03): AdSense script loader. Uses
             strategy="afterInteractive" so it doesn't block first paint.
             Individual <AdSlot> components gate the actual ad requests
