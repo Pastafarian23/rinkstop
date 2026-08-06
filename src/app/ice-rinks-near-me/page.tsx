@@ -15,7 +15,7 @@ export default function IceRinksNearMe() {
     // (it needs navigator.geolocation), so Next.js can't emit a static
     // <title> or canonical from a metadata export. The page is the same
     // regardless of the user's location, so a static title is fine.
-    document.title = 'Ice Rinks Near Me | RinkStop';
+    document.title = 'Ice Rinks Near Me';
     const href = 'https://rinkstop.com/ice-rinks-near-me';
     let link = document.head.querySelector('link[rel="canonical"][data-seo-canonical="ice-rinks-near-me"]') as HTMLLinkElement | null;
     if (!link) {
@@ -227,7 +227,7 @@ export default function IceRinksNearMe() {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebPage",
-          "name": "Ice Rinks Near Me | RinkStop",
+          "name": "Ice Rinks Near Me",
           "description": "Find ice rinks, hockey arenas, and public skating facilities near your location.",
           "url": "https://rinkstop.com/ice-rinks-near-me",
           "breadcrumb": {

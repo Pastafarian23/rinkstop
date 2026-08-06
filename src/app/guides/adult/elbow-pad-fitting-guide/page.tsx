@@ -40,7 +40,7 @@ export default function ElbowPadFittingGuideAdult() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Fit Hockey Elbow Pads: A Guide for Adult Players | RinkStop',
+        headline: 'How to Fit Hockey Elbow Pads: A Guide for Adult Players',
         description: "Elbow cup position, strap order, length measurement, junior sizing for women and smaller-framed men.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },
