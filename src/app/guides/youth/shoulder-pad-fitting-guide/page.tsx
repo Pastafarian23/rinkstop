@@ -40,7 +40,7 @@ export default function ShoulderPadFittingGuideYouth() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: "How to Fit Hockey Shoulder Pads: A Parent's Guide | RinkStop",
+        headline: "How to Fit Hockey Shoulder Pads: A Parent's Guide",
         description: "Coverage test, mobility test, chest measurement, sizing, and when to size up.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

@@ -40,7 +40,7 @@ export default function HockeyPantsFittingGuideYouth() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: "How to Fit Hockey Pants (Breezers): A Parent's Guide | RinkStop",
+        headline: "How to Fit Hockey Pants (Breezers): A Parent's Guide",
         description: "Waistband position, kidney pad coverage, thigh guard length, sizing, and when to size up.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

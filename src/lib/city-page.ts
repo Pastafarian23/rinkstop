@@ -426,7 +426,7 @@ export async function getCityPageData(opts: {
     proTeams,
     peerCities,
     breadcrumb,
-    title: `${locationDesc} Hockey - Teams, Rinks & Leagues | RinkStop`,
+    title: `${locationDesc} Hockey - Teams, Rinks & Leagues`,
     description: `Find hockey teams, ice rinks, and leagues in ${locationDesc}. Discover youth programs, adult leagues, and professional hockey near you.`,
     canonicalPath: regionSlug
       ? `/directory/${countrySlug}/${regionSlug}/${citySlug}`
