@@ -28,6 +28,10 @@ export default function USHLPage() {
         </p>
       </div>
 
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The United States Hockey League is the top junior hockey league in the United States — Tier 1 under USA Hockey's American Development Model. Founded in 1961 (rebuilt twice, most recently via a merger with the former IHL Tier 2 junior circuit in 2010), the USHL fields 17 teams across the Midwest, Mid-Atlantic, and East Coast, with players aged 16 to 20. Unlike the CHL's Major Junior leagues, the USHL preserves NCAA eligibility for its players — making it the primary pipeline to NCAA Division I college hockey and, ultimately, the NHL. The USHL averages more than 200 NHL alumni across active rosters, including Patrick Kane (born 1988, played 2004-05 in the USHL prior to Wisconsin), Anders Bjork, John Gaudreau, and Brock Boeser. The USHL championship trophy is the Clark Cup, awarded to the playoff champion each spring.
+      </p>
+
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
           { label: 'Junior Hockey', href: '/directory/junior' },
