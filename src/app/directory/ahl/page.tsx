@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'AHL  --  American Hockey League',
@@ -140,6 +141,8 @@ export default function AHLPage() {
           ))}
         </div>
       </div>
+    
+      <LeagueTeams leagueId="b05d6d26-d5d6-4cfd-a48b-f5646fa7d611" leagueSlug="ahl" leagueName="AHL" />
     </main>
   );
 }

@@ -179,6 +179,41 @@ export default function CityPageContent({ data, faqs }: Props) {
             {cityName} Hockey
           </h1>
 
+          {/* Substantive intro paragraph — unique per city, drives long-tail SEO */}
+          <p
+            style={{
+              color: textMuted,
+              fontSize: '1.0625rem',
+              lineHeight: 1.7,
+              maxWidth: '820px',
+              marginBottom: '1.5rem',
+            }}
+          >
+            Hockey in {cityName}{regionName ? `, ${regionName}` : ''}{countryName ? `, ${countryName}` : ''}:{' '}
+            {teamCount > 0 && rinkCount > 0 && (
+              <>
+                RinkStop currently tracks <strong style={{ color: textMain }}>{teamCount} hockey {teamCount === 1 ? 'team' : 'teams'}</strong> and{' '}
+                <strong style={{ color: textMain }}>{rinkCount} ice {rinkCount === 1 ? 'rink' : 'rinks'}</strong> in the {cityName} area.
+              </>
+            )}
+            {teamCount > 0 && rinkCount === 0 && (
+              <>
+                RinkStop currently tracks <strong style={{ color: textMain }}>{teamCount} hockey {teamCount === 1 ? 'team' : 'teams'}</strong> in the {cityName} area.
+              </>
+            )}
+            {teamCount === 0 && rinkCount > 0 && (
+              <>
+                RinkStop currently tracks <strong style={{ color: textMain }}>{rinkCount} ice {rinkCount === 1 ? 'rink' : 'rinks'}</strong> in the {cityName} area.
+              </>
+            )}
+            {teamCount === 0 && rinkCount === 0 && (
+              <>
+                RinkStop is building out coverage for {cityName}. Public skating, learn-to-skate programs, and youth or adult hockey programs are typically available at regional rinks within driving distance.
+              </>
+            )}
+            {' '}Browse the directory below for {countryName === 'United States' ? 'leagues, teams, and rink details, plus links to upcoming games and standings.' : 'leagues, teams, and rink details across Canada.'}
+          </p>
+
           {/* Hockey Canada affiliate ad — test placement, top of city page */}
           {countryName === 'Canada' && (
             <HockeyCanadaAd size="300x250" />

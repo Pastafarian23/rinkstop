@@ -68,5 +68,15 @@ async function fetchInitialRoundsAndUpdates(): Promise<{
 
 export default async function AHLPlayoffsPage() {
   const { rounds, updates } = await fetchInitialRoundsAndUpdates();
-  return <AHLPlayoffsClient initialRounds={rounds} initialUpdates={updates} />;
+  return (
+    <>
+      <section style={{ background: 'rgba(13,17,23,0.6)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px', maxWidth: '1280px', margin: '1.5rem auto 0' }}>
+        <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '20px', marginBottom: '12px' }}>About the AHL Playoffs</h2>
+        <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.5rem' }}>
+          The American Hockey League (AHL) postseason is a single-elimination tournament crowning the league&apos;s annual champion. Founded in 1936, the AHL playoffs bring together the top 16 teams from the regular season to compete for the Calder Cup. RinkStop provides live coverage of every playoff round — series scores, schedules, and postgame updates — alongside the year-round directory of teams, rinks, and leagues that feed into this tournament.
+        </p>
+      </section>
+      <AHLPlayoffsClient initialRounds={rounds} initialUpdates={updates} />
+    </>
+  );
 }

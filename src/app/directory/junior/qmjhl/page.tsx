@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'QMJHL  --  Quebec Maritimes Junior Hockey League',
@@ -100,6 +101,8 @@ export default function QMJHLPage() {
           <Link href="/directory/college" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600 }}>College Path →</Link>
         </div>
       </div>
+    
+      <LeagueTeams leagueId="deb6816a-ccaf-48bf-9f5e-5a7c3387f922" leagueSlug="qmjhl" leagueName="QMJHL" />
     </main>
   );
 }
