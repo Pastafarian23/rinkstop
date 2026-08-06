@@ -9,6 +9,22 @@ export const metadata: Metadata = {
 export default function IIHFPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/international/iihf',
+            name: 'INTERNATIONAL ICE HOCKEY FEDERATION',
+            url: 'https://rinkstop.com/directory/international/iihf',
+            sport: 'Ice Hockey',
+            description: "International Ice Hockey Federation — governing body for ice hockey worldwide, 60+ member nations.",
+            foundingDate: '1908',
+            sameAs: ['https://en.wikipedia.org/wiki/International_Ice_Hockey_Federation'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>

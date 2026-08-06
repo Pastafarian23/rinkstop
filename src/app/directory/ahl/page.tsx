@@ -9,6 +9,22 @@ export const metadata: Metadata = {
 export default function AHLPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/ahl',
+            name: 'AMERICAN HOCKEY LEAGUE',
+            url: 'https://rinkstop.com/directory/ahl',
+            sport: 'Ice Hockey',
+            description: "American Hockey League — NHL's primary developmental league with 32 teams across the U.S. and Canada.",
+            foundingDate: '1936',
+            sameAs: ['https://en.wikipedia.org/wiki/American_Hockey_League'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
