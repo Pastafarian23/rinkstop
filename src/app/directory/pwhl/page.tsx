@@ -69,5 +69,13 @@ async function fetchInitialData(): Promise<{ league: League | null; teams: Team[
 
 export default async function PWHLPage() {
   const { league, teams } = await fetchInitialData();
-  return <PWHLClient league={league} teams={teams} />;
+  return <section style={{ background: 'rgba(13,17,23,0.6)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px', maxWidth: '1280px', margin: '1.5rem auto 3rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>About the PWHL</h2>
+          <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.5rem', maxWidth: '1280px' }}>
+            The Professional Women's Hockey League (PWHL) is the premier women's professional ice hockey league in North America. Founded in 2023 and entering its third season in 2025–26, the PWHL fields eight teams across the United States and Canada: Boston, Minnesota, Montréal, New York, Ottawa, Toronto, and two additional expansion markets in 2025-26. The league was capitalized with historic backing from the Walter family (the same ownership group behind the Boston Bruins' ownership lineage) and chartered by former Team USA captain Hilary Knight as a flagship franchise. The PWHL Stanley Cup-equivalent trophy is the Walter Cup, awarded annually to the playoff champion. The league's average salary — $80,000–$150,000 — is the highest in women's professional hockey history and supports athletes competing at international caliber through the IIHF Women's World Championship and Winter Olympics.
+          </p>
+        </div>
+      </section>
+      <PWHLClient league={league} teams={teams} />;
 }

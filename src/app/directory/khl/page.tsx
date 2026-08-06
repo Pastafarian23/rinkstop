@@ -26,6 +26,10 @@ export default function KHLPage() {
         </p>
       </div>
 
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The Kontinental Hockey League (KHL) was founded in 2008 and is the premier professional ice hockey league of Russia and much of Eurasia. It is widely regarded as one of the top professional leagues in the world outside of the NHL. The KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China, including international entries from Finland (Helsinki Jokerit participated 2014-2022) and one of the most successful franchises of all time in SKA Saint Petersburg. The league's annual championship is the Gagarin Cup, awarded to the playoff champion since the 2008-09 season. The KHL places a heavy emphasis on player development: roughly 50% of NHL draft picks in a given year come from Russian development paths, including the MHL junior system that feeds KHL rosters.
+      </p>
+
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
           { label: 'Pro Leagues', href: '/directory/pro-leagues' },

@@ -28,6 +28,10 @@ export default function OHLPage() {
         </p>
       </div>
 
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The Ontario Hockey League is one of three Major Junior leagues that make up the Canadian Hockey League (CHL) alongside the Western Hockey League (WHL) and Quebec Maritimes Junior Hockey League (QMJHL). The OHL fields 20 teams across Ontario, Michigan, and Pennsylvania, making it the largest Major Junior league in the world by both team count and annual attendance — drawing more than 8 million spectators each season. Founded in 1980 (replacing the predecessor Ontario Major Junior Hockey League of 1974), the OHL operates at the highest level of junior hockey in the world and serves as the single largest NHL draft pipeline: roughly half of all NHL first-round picks in a typical draft year come from the OHL. Notable alumni include Connor McDavid, Steven Stamkos, John Tavares, Auston Matthews, and Connor Brown. The OHL championship trophy is the J. Ross Robertson Cup; the playoff winner advances to compete in the Memorial Cup against the WHL and QMJHL champions.
+      </p>
+
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
           { label: 'Junior Hockey', href: '/directory/junior' },
