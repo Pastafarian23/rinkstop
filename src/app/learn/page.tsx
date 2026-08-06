@@ -192,7 +192,7 @@ export default function LearnHubPage() {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "Learn Hockey | RinkStop",
+          "name": "Learn Hockey",
           "description": "Complete beginner guide to hockey: learn hockey rules, positions, skating techniques, and equipment.",
           "url": "https://rinkstop.com/learn",
           "mainEntity": {

@@ -380,8 +380,8 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
   const decision = { indexable: hasData, reason: hasData ? 'has data' : 'no data', uniquenessScore: hasData ? 50 : 0 };
 
   const title = hasData
-    ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues | RinkStop`
-    : `Hockey in ${countryName} — Directory, Leagues & How to Get Started | RinkStop`;
+    ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues`
+    : `Hockey in ${countryName} — Directory, Leagues & How to Get Started`;
 
   const description = hasData
     ? `Find ice hockey rinks, teams, and leagues in ${countryName}. Browse ${rinks} rinks, ${teams} active teams, and the top leagues. ${data.info?.note || 'Complete hockey directory for players, parents, and fans.'}`

@@ -40,7 +40,7 @@ export default function HowToFitHockeyEquipmentAdult() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Fit Hockey Equipment: A Guide for Adult Players | RinkStop',
+        headline: 'How to Fit Hockey Equipment: A Guide for Adult Players',
         description: 'How to fit every piece of hockey equipment for adult players, including women-specific gear considerations.',
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

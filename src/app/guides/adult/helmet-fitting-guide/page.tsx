@@ -40,7 +40,7 @@ export default function HelmetFittingGuideAdult() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Fit a Hockey Helmet: A Guide for Adult Players | RinkStop',
+        headline: 'How to Fit a Hockey Helmet: A Guide for Adult Players',
         description: "HECC and CSA certification by league, the shake test, chin strap fit, and when to replace.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },
