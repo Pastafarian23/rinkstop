@@ -9,6 +9,22 @@ export const metadata: Metadata = {
 export default function WHLPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/junior/whl',
+            name: 'WESTERN HOCKEY LEAGUE',
+            url: 'https://rinkstop.com/directory/junior/whl',
+            sport: 'Ice Hockey',
+            description: "Western Hockey League — Major Junior league in Western Canada and the U.S. Pacific Northwest, NHL draft pipeline.",
+            foundingDate: '1966',
+            sameAs: ['https://en.wikipedia.org/wiki/Western_Hockey_League'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
