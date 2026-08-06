@@ -17,6 +17,16 @@ export default function WHLPage() {
         <Link href="/directory/junior" style={{ color: '#555' }}>Junior</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <span style={{ color: '#A0A0A0' }}>WHL</span>
+
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The Western Hockey League was founded in 1966 and is one of three Major Junior leagues that make up the Canadian Hockey League — 
+        the others being the Ontario Hockey League and the Quebec Major Junior Hockey League. 
+        The WHL fields 22 teams across British Columbia, Alberta, Saskatchewan, Manitoba, and the U.S. Pacific Northwest (Washington and Oregon), 
+        with one additional team in the U.S. Midwest. 
+        Players in the WHL are aged 16–20 and compete at a level considered the top developmental rung before professional and international hockey. 
+        The league is a primary NHL draft pipeline: over 40% of all NHL players selected in a typical draft year come from the WHL. 
+        The WHL awards the Ed Chynoweth Trophy to its playoff champion, with the winner going on to compete in the Memorial Cup against the OHL and QMJHL champions.
+      </p>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>

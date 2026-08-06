@@ -22,6 +22,16 @@ export default function AHLPage() {
           AHL  --  AMERICAN HOCKEY LEAGUE
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The American Hockey League was founded in 1936 and serves as the primary developmental league for the National Hockey League. 
+        All 31 NHL teams except the Vegas Golden Knights maintain at least one AHL affiliate, making the league the dominant talent pipeline for professional hockey in North America. 
+        The AHL operates 32 teams across two conferences and four divisions, spanning from Bakersfield, California to Springfield, Massachusetts, 
+        with a geographic footprint that covers every major NHL market. 
+        Players typically advance to the AHL after four seasons of major junior, college, or European professional experience. 
+        The league's championship, the Calder Cup — named after Frank Calder, the NHL's first president — has been contested annually since 1937. 
+        Former AHL players who reached the NHL include Connor Hellebuyck, Victor Hedman, Jonathan Quick, and more than 95% of all players who have ever played a game in the NHL.
+      </p>
           The primary developmental league for the NHL. 32 teams across the United States and Canada.
         </p>
       </div>
