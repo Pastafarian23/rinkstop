@@ -98,5 +98,14 @@ Disallow: /
 User-agent: *
 Allow: /
 
-# Sitemap
+# Sitemap index
 Sitemap: https://rinkstop.com/sitemap.xml
+
+# Per-entity sub-sitemaps (added 2026-08-06, PR #99)
+Sitemap: https://rinkstop.com/sitemap-static.xml
+Sitemap: https://rinkstop.com/sitemap-rinks.xml
+Sitemap: https://rinkstop.com/sitemap-teams.xml
+Sitemap: https://rinkstop.com/sitemap-players.xml
+Sitemap: https://rinkstop.com/sitemap-leagues.xml
+Sitemap: https://rinkstop.com/sitemap-locations.xml
+Sitemap: https://rinkstop.com/sitemap-news.xml
