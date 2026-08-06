@@ -68,6 +68,10 @@ async function fetchInitialData(): Promise<{ league: League | null; teams: Team[
   }
 }
 
+export default async function PWHLPage() {
+  const { league, teams } = await fetchInitialData();
+  return (
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -84,11 +88,6 @@ async function fetchInitialData(): Promise<{ league: League | null; teams: Team[
           }],
         }) }}
       />
-
-export default async function PWHLPage() {
-  const { league, teams } = await fetchInitialData();
-  return (
-    <>
       <section style={{ background: 'rgba(13,17,23,0.6)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px', maxWidth: '1280px', margin: '1.5rem auto 3rem' }}>
         <div style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>About the PWHL</h2>
