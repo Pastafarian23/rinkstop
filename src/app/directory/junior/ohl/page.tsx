@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'OHL  --  Ontario Hockey League',
@@ -100,6 +101,8 @@ export default function OHLPage() {
           <Link href="/directory/college" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600 }}>College Path →</Link>
         </div>
       </div>
+    
+      <LeagueTeams leagueId="d767362d-c13b-4c7a-8c8c-27ec33990882" leagueSlug="ohl" leagueName="OHL" />
     </main>
   );
 }
