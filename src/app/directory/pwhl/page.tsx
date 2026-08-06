@@ -22,7 +22,7 @@ interface League {
 }
 
 export const metadata: Metadata = {
-  title: 'PWHL — Professional Women\'s Hockey League | RinkStop',
+  title: 'PWHL — Professional Women\'s Hockey League',
   description:
     "Professional Women's Hockey League teams, players, schedules, and standings.",
   alternates: {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "PWHL — Professional Women's Hockey League | RinkStop",
+    title: "PWHL — Professional Women's Hockey League",
     description:
       "Professional Women's Hockey League teams, players, schedules, and standings.",
     url: 'https://rinkstop.com/directory/pwhl',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "PWHL — Professional Women's Hockey League | RinkStop",
+    title: "PWHL — Professional Women's Hockey League",
     description:
       "Professional Women's Hockey League teams, players, schedules, and standings.",
   },

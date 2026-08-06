@@ -40,7 +40,7 @@ export default function JockJillFittingGuideYouth() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: "How to Fit a Hockey Jock or Jill: A Parent's Guide | RinkStop",
+        headline: "How to Fit a Hockey Jock or Jill: A Parent's Guide",
         description: "Waist measurement, jock vs jill, sock tabs, sizing by age, when to size up.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

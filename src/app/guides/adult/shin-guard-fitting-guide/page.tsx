@@ -40,7 +40,7 @@ export default function ShinGuardFittingGuideAdult() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Fit Hockey Shin Guards: A Guide for Adult Players | RinkStop',
+        headline: 'How to Fit Hockey Shin Guards: A Guide for Adult Players',
         description: "Knee cup position, shin length, length measurement, sizing by height, when to upgrade.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

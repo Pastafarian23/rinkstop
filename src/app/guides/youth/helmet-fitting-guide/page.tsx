@@ -40,7 +40,7 @@ export default function HelmetFittingGuideYouth() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: "How to Fit a Hockey Helmet: A Parent's Guide | RinkStop",
+        headline: "How to Fit a Hockey Helmet: A Parent's Guide",
         description: "HECC certification, ASTM F1045 standards, the shake test, chin strap fit, and when to replace a youth hockey helmet.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

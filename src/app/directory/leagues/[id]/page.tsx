@@ -49,7 +49,7 @@ export async function generateMetadata({
       typeof league.team_count === 'number'
         ? league.team_count
         : undefined;
-    const title = `${league.name} — ${level}ice hockey league${country} | RinkStop`;
+    const title = `${league.name} — ${level}ice hockey league${country}`;
     const description = teamCount
       ? `${league.name} is a ${level}ice hockey league${country}. Browse the ${teamCount} tracked team${teamCount === 1 ? '' : 's'}, latest news, and how the league connects to the wider hockey structure in ${league.country || 'its region'}.`
       : `${league.name} is a ${level}ice hockey league${country}. Discover the league's teams, latest news, and how to follow games on RinkStop.`;

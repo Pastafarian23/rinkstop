@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: "Hockey Parent's Handbook | RinkStop",
+  title: "Hockey Parent's Handbook",
   description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette. A parent's guide to navigating youth hockey from Mites to Midgets.",
   openGraph: {
-    title: "Hockey Parent's Handbook | RinkStop",
+    title: "Hockey Parent's Handbook",
     description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette.",
     type: 'article',
   },
@@ -36,7 +36,7 @@ export default function HockeyParentsHandbook() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: "Hockey Parent's Handbook | RinkStop",
+        headline: "Hockey Parent's Handbook",
         description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

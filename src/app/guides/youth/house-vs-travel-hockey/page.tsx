@@ -38,7 +38,7 @@ export default function HouseVsTravelHockey() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'House vs Travel Hockey: How to Choose the Right Level | RinkStop',
+        headline: 'House vs Travel Hockey: How to Choose the Right Level',
         description: "A parent's guide to house vs travel hockey — what each level means in USA Hockey's tier system, what it costs, time commitment, and how to pick the right fit.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

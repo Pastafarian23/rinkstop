@@ -40,7 +40,7 @@ export default function ShoulderPadFittingGuideAdult() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Fit Hockey Shoulder Pads: A Guide for Adult Players | RinkStop',
+        headline: 'How to Fit Hockey Shoulder Pads: A Guide for Adult Players',
         description: "Coverage, mobility, chest measurement, tapered vs classic fit, junior sizing for women.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },
