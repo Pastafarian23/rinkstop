@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'USHL  --  United States Hockey League',
@@ -100,6 +101,8 @@ export default function USHLPage() {
           <Link href="/directory/college" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600 }}>College Hockey →</Link>
         </div>
       </div>
+    
+      <LeagueTeams leagueId="28698613-961c-4699-8a68-ce9eb720425c" leagueSlug="ushl" leagueName="USHL" />
     </main>
   );
 }

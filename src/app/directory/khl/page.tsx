@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'KHL  --  Kontinental Hockey League',
@@ -127,6 +128,8 @@ export default function KHLPage() {
           ))}
         </div>
       </div>
+    
+      <LeagueTeams leagueId="a08f6dac-eb1f-48b6-a11b-56fbb5642752" leagueSlug="khl" leagueName="KHL" />
     </main>
   );
 }

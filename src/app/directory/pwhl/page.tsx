@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import PWHLClient from './PWHLClient';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 interface Team {
   id: string;
