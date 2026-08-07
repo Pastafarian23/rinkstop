@@ -27,6 +27,7 @@ export default function CountryPageContent({ data }: Props) {
     nearestHockeyCountries,
     iihfMember,
     nationalTeams,
+    newest,
   } = data;
 
   const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = '#888', textDim = '#555';
@@ -447,6 +448,84 @@ export default function CountryPageContent({ data }: Props) {
               textMuted={textMuted}
               textDim={textDim}
             />
+          )}
+
+          {/* What's New in {countryName} — country page activity feed (item #2 from
+              the ChatGPT retention/monetization audit). Shows newest rinks, teams,
+              players, and articles for this country. Renders only when at least one
+              list has data. Each item is a compact card linking to the full profile.
+              Updated automatically as new listings get added. */}
+          {hasData && (newest.rinks.length > 0 || newest.teams.length > 0 || newest.players.length > 0 || newest.articles.length > 0) && (
+            <section style={{ marginBottom: 48 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, borderLeft: `4px solid ${red}`, paddingLeft: 14 }}>
+                <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 26, letterSpacing: '0.04em', color: textMain, margin: 0 }}>
+                  What&apos;s New in {countryName}
+                </h2>
+                <span style={{ fontSize: 12, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Latest rinks, teams, players &amp; articles
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+                {/* Newest Rinks */}
+                {newest.rinks.length > 0 && (
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 20px' }}>
+                    <div style={{ fontSize: 11, color: red, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>🏒 Newest Rinks</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {newest.rinks.map(r => (
+                        <Link key={r.id} href={`/directory/rinks/${r.slug || r.id}`} style={{ color: textMain, textDecoration: 'none', display: 'block', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, marginBottom: 2 }}>{r.name}</div>
+                          {r.city && <div style={{ fontSize: 11, color: textMuted }}>{r.city}</div>}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Newest Teams */}
+                {newest.teams.length > 0 && (
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 20px' }}>
+                    <div style={{ fontSize: 11, color: red, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>🏆 Newest Teams</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {newest.teams.map(t => (
+                        <Link key={t.id} href={`/directory/teams/${t.slug || t.id}`} style={{ color: textMain, textDecoration: 'none', display: 'block', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, marginBottom: 2 }}>{t.name}</div>
+                          {t.home_city && <div style={{ fontSize: 11, color: textMuted }}>{t.home_city}</div>}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Newest Players */}
+                {newest.players.length > 0 && (
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 20px' }}>
+                    <div style={{ fontSize: 11, color: red, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>🧑 Newest Players</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {newest.players.map(p => (
+                        <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ color: textMain, textDecoration: 'none', display: 'block', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, marginBottom: 2 }}>
+                            {p.first_name} {p.last_name}
+                          </div>
+                          {p.position && <div style={{ fontSize: 11, color: textMuted }}>{p.position}</div>}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Newest Articles */}
+                {newest.articles.length > 0 && (
+                  <div style={{ background: card, border: `1px solid ${border}`, borderRadius: 10, padding: '18px 20px' }}>
+                    <div style={{ fontSize: 11, color: red, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>📰 Newest Articles</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {newest.articles.map(a => (
+                        <Link key={a.id} href={`/blog/${a.slug}`} style={{ color: textMain, textDecoration: 'none', display: 'block', padding: '8px 0', borderBottom: `1px solid ${border}` }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, marginBottom: 2 }}>{a.title}</div>
+                          {a.category && <div style={{ fontSize: 11, color: textMuted }}>{a.category}</div>}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
           )}
 
           {/* Featured Players Section */}
