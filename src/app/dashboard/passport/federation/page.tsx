@@ -77,44 +77,30 @@ export default async function FederationPage() {
     .eq('user_id', userId)
     .maybeSingle();
   const userCountry = countryRow?.primary_country ?? null;
-  const additionalCountries = countryRow?.additional_countries ?? [];
 
-  // Fetch all active player-category certifications with issuer info.
-  // The view is country-aware but for v1 we fetch all player certs and
-  // do the visibility filter in JS — the certs table is 9 rows, the
-  // view adds a join to profile_country_context per row. JS filter
-  // matches the view's CASE expression for null-or-matching countries.
-  const { data: allPlayerCerts } = await supabaseAdmin
-    .from('certifications')
-    .select('id, slug, name, description, is_international, issuer_id, federations!inner(slug, name, country_code, kind)')
+  // Fetch all active player-category certifications via the country-aware
+  // view. WS13 PR3: replaced the JS-side visibility filter (which duplicated
+  // the view's CASE expression) with a direct view query. Same shape output.
+  const { data: visibleCertsRaw } = await supabaseAdmin
+    .from('v_user_visible_certifications')
+    .select('id, slug, name, description, is_international, issuer_id, issuer_slug, issuer_name, issuer_country_code, issuer_kind, visible_to_user')
+    .eq('visible_to_user', true)
     .eq('category', 'player')
-    .eq('is_active', true)
-    .eq('federations.is_active', true);
+    .order('name');
 
-  const visibleCerts = (allPlayerCerts ?? [])
-    .map((c: any) => {
-      const fed = Array.isArray(c.federations) ? c.federations[0] : c.federations;
-      const isVisible =
-        c.is_international ||
-        !userCountry ||
-        fed?.country_code === userCountry ||
-        (additionalCountries.length > 0 && additionalCountries.includes(fed?.country_code));
-      return isVisible && fed
-        ? {
-            certification_id: c.id,
-            slug: c.slug,
-            name: c.name,
-            description: c.description,
-            is_international: c.is_international,
-            federation_id: fed.id as string,
-            federation_slug: fed.slug as string,
-            federation_name: fed.name as string,
-            country_code: fed.country_code as string | null,
-            kind: fed.kind as 'national' | 'international',
-          }
-        : null;
-    })
-    .filter((c): c is NonNullable<typeof c> => c !== null);
+  const visibleCerts = (visibleCertsRaw ?? [])
+    .map((c: any) => ({
+      certification_id: c.id,
+      slug: c.slug,
+      name: c.name,
+      description: c.description,
+      is_international: c.is_international,
+      federation_id: c.issuer_id as string,
+      federation_slug: c.issuer_slug as string,
+      federation_name: c.issuer_name as string,
+      country_code: c.issuer_country_code as string | null,
+      kind: c.issuer_kind as 'national' | 'international',
+    }));
 
   // Fetch existing federation_registrations for this player, indexed by
   // certification_id (new key) with fallback to legacy federation_id key
