@@ -260,11 +260,17 @@ export async function getCityPageData(opts: {
   // - US uses ilike for city on rinks, and city match for teams
   // - CA uses exact match for both
   // - UK uses ilike for both
-  let teamsQuery = supabase
-    .from('team_workspaces')
-    .select('id, name, slug, logo_url, league_id')
-    .eq('country', countryName)
+  // Bugfix 2026-08-07: switched from team_workspaces → teams because the
+  // team_workspaces table has no country/city columns (verified via
+  // Supabase REST). The teams table has city, country, state_province,
+  // league_id, is_active. Country filter is matched via the country IOC
+  // map (COUNTRY_TO_IOC) when the URL slug matches a country with an IOC
+  // code (US, CA, RU, etc.) so we don't miss rows tagged by IOC code.
+  let teamsQuery = (supabase as any)
+    .from('teams')
+    .select('id, name, slug, logo_url, league_id, country, city')
     .eq('is_active', true);
+  if (countryName) teamsQuery = teamsQuery.eq('country', countryName);
 
   let rinksQuery = supabase
     .from('rinks')
