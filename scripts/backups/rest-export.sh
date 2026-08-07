@@ -27,7 +27,7 @@ BACKUP_DIR="${BACKUP_ROOT}/${DATE}"
 mkdir -p "${BACKUP_DIR}"
 
 # Load credentials.
-CRED_FILE="/root/.openclaw/credentials/supabase.json"
+CRED_FILE=".env"
 SUPABASE_URL="$(jq -r '.url' "${CRED_FILE}")"
 SERVICE_KEY="$(jq -r '.serviceRoleKey' "${CRED_FILE}")"
 PAT="$(jq -r '.pat' "${CRED_FILE}")"
