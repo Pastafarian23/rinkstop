@@ -286,14 +286,20 @@ export async function getCityPageData(opts: {
     const orClause = `province_state.eq.${regionAbbr || regionName},province_state.eq.${regionName || regionAbbr}`;
     return q.or(orClause);
   };
+  // Match bare city names AND "City, ST" variants. Verified 2026-08-07: the
+  // teams table has inconsistent city formats ("Chicago" vs "Chicago, IL",
+  // "Toronto" vs "Toronto (Coca-Cola Coliseum)"). A literal ilike against the
+  // bare name misses the suffixed rows and silently empties the league list.
+  // A wrapped `ilike` `%${cityName}%` catches both shapes.
+  const cityMatchAnywhere = `city.ilike.%${cityName}%`;
   if (countrySlug === 'united-states' || countrySlug === 'usa') {
-    teamsQuery = teamsQuery.or(`city.ilike.${cityName}`);
+    teamsQuery = teamsQuery.or(cityMatchAnywhere);
     rinksQuery = applyRegionTag(rinksQuery)
-      .or(`city.ilike.${cityName},address.ilike.%${cityName}%`);
+      .or(`city.ilike.%${cityName}%,address.ilike.%${cityName}%`);
   } else if (countrySlug === 'canada') {
-    // Teams table has no province_state column; use exact city match (filtered by country)
-    teamsQuery = teamsQuery.eq('city', cityName);
-    rinksQuery = applyRegionTag(rinksQuery).eq('city', cityName);
+    // Teams table has no province_state column; use wrapped-ilike (filtered by country)
+    teamsQuery = teamsQuery.or(cityMatchAnywhere);
+    rinksQuery = applyRegionTag(rinksQuery).or(cityMatchAnywhere);
   } else if (countrySlug === 'united-kingdom' || countrySlug === 'uk') {
     teamsQuery = teamsQuery.ilike('city', `%${cityName}%`);
     rinksQuery = rinksQuery.ilike('city', `%${cityName}%`);
