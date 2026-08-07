@@ -9,6 +9,22 @@ export const metadata: Metadata = {
 export default function IIHFPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/international/iihf',
+            name: 'INTERNATIONAL ICE HOCKEY FEDERATION',
+            url: 'https://rinkstop.com/directory/international/iihf',
+            sport: 'Ice Hockey',
+            description: "International Ice Hockey Federation — governing body for ice hockey worldwide, 60+ member nations.",
+            foundingDate: '1908',
+            sameAs: ['https://en.wikipedia.org/wiki/International_Ice_Hockey_Federation'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -23,6 +39,15 @@ export default function IIHFPage() {
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
           IIHF  --  INTERNATIONAL ICE HOCKEY FEDERATION
         </h1>
+
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The International Ice Hockey Federation was founded in 1908 in Paris and today governs ice hockey in over 60 countries across six continents. 
+        The IIHF organizes the Men's World Championship — held every May since 1930 — as its flagship event, alongside the Winter Olympics, 
+        the U20 World Junior Championship (held annually since 1977), the U18 World Championship, and the Women's World Championship. 
+        The federation maintains the official IIHF World Ranking system, certifies international referees and officials, and regulates player nationality rules. 
+        Unlike club-based leagues, the IIHF represents national teams, meaning players compete for their countries rather than franchises. 
+        The IIHF is headquartered in Zurich, Switzerland, and is one of the oldest sports governing bodies in the world.
+      </p>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
           Governing body for ice hockey worldwide. 60+ member nations competing across multiple age groups and divisions.
         </p>

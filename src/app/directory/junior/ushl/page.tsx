@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'USHL  --  United States Hockey League',
@@ -9,6 +10,22 @@ export const metadata: Metadata = {
 export default function USHLPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/junior/ushl',
+            name: 'UNITED STATES HOCKEY LEAGUE',
+            url: 'https://rinkstop.com/directory/junior/ushl',
+            sport: 'Ice Hockey',
+            description: "United States Hockey League — Tier 1 junior league in the U.S., primary NCAA D-I pipeline.",
+            foundingDate: '1961',
+            sameAs: ['https://en.wikipedia.org/wiki/United_States_Hockey_League'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -27,6 +44,10 @@ export default function USHLPage() {
           Top junior league in the United States. 17 teams. Premier development path for NCAA Division I players.
         </p>
       </div>
+
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The United States Hockey League is the top junior hockey league in the United States — Tier 1 under USA Hockey's American Development Model. Founded in 1961 (rebuilt twice, most recently via a merger with the former IHL Tier 2 junior circuit in 2010), the USHL fields 17 teams across the Midwest, Mid-Atlantic, and East Coast, with players aged 16 to 20. Unlike the CHL's Major Junior leagues, the USHL preserves NCAA eligibility for its players — making it the primary pipeline to NCAA Division I college hockey and, ultimately, the NHL. The USHL averages more than 200 NHL alumni across active rosters, including Patrick Kane (born 1988, played 2004-05 in the USHL prior to Wisconsin), Anders Bjork, John Gaudreau, and Brock Boeser. The USHL championship trophy is the Clark Cup, awarded to the playoff champion each spring.
+      </p>
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
@@ -80,6 +101,8 @@ export default function USHLPage() {
           <Link href="/directory/college" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600 }}>College Hockey →</Link>
         </div>
       </div>
+    
+      <LeagueTeams leagueId="28698613-961c-4699-8a68-ce9eb720425c" leagueSlug="ushl" leagueName="USHL" />
     </main>
   );
 }

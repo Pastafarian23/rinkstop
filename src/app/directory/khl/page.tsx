@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'KHL  --  Kontinental Hockey League',
@@ -9,6 +10,22 @@ export const metadata: Metadata = {
 export default function KHLPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/khl',
+            name: 'KONTINENTAL HOCKEY LEAGUE',
+            url: 'https://rinkstop.com/directory/khl',
+            sport: 'Ice Hockey',
+            description: "Kontinental Hockey League — premier professional league of Russia and Eurasia, 23 teams.",
+            foundingDate: '2008',
+            sameAs: ['https://en.wikipedia.org/wiki/Kontinental_Hockey_League'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -25,6 +42,10 @@ export default function KHLPage() {
           Europe&apos;s top professional hockey league. 23 teams across Russia, Belarus, Kazakhstan, and China.
         </p>
       </div>
+
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The Kontinental Hockey League (KHL) was founded in 2008 and is the premier professional ice hockey league of Russia and much of Eurasia. It is widely regarded as one of the top professional leagues in the world outside of the NHL. The KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China, including international entries from Finland (Helsinki Jokerit participated 2014-2022) and one of the most successful franchises of all time in SKA Saint Petersburg. The league's annual championship is the Gagarin Cup, awarded to the playoff champion since the 2008-09 season. The KHL places a heavy emphasis on player development: roughly 50% of NHL draft picks in a given year come from Russian development paths, including the MHL junior system that feeds KHL rosters.
+      </p>
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
@@ -107,6 +128,8 @@ export default function KHLPage() {
           ))}
         </div>
       </div>
+    
+      <LeagueTeams leagueId="a08f6dac-eb1f-48b6-a11b-56fbb5642752" leagueSlug="khl" leagueName="KHL" />
     </main>
   );
 }

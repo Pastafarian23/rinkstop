@@ -72,9 +72,38 @@ export const COUNTRY_TO_IOC: Record<string, string> = {
   'Nigeria': 'NGA', 'Kenya': 'KEN', 'Jamaica': 'JAM', 'Israel': 'ISR',
 };
 
+export const COUNTRY_TO_ISO: Record<string, string> = {
+  'United States': 'US', 'USA': 'US',
+  'Canada': 'CA', 'CA': 'CA',
+  'United Kingdom': 'GB', 'Great Britain': 'GB',
+  'Russia': 'RU', 'Sweden': 'SE', 'Finland': 'FI', 'Germany': 'DE',
+  'Switzerland': 'CH', 'Czech Republic': 'CZ', 'Norway': 'NO', 'France': 'FR',
+  'Austria': 'AT', 'Italy': 'IT', 'Australia': 'AU', 'Netherlands': 'NL',
+  'Japan': 'JP', 'South Korea': 'KR', 'China': 'CN', 'Mexico': 'MX',
+  'Denmark': 'DK', 'New Zealand': 'NZ', 'Poland': 'PL', 'Spain': 'ES',
+  'Belgium': 'BE', 'Ireland': 'IE', 'Portugal': 'PT', 'Greece': 'GR',
+  'Hungary': 'HU', 'Croatia': 'HR', 'Slovakia': 'SK', 'Slovenia': 'SI',
+  'Romania': 'RO', 'Bulgaria': 'BG', 'Ukraine': 'UA', 'Belarus': 'BY',
+  'Estonia': 'EE', 'Latvia': 'LV', 'Lithuania': 'LT', 'Serbia': 'RS',
+  'Iceland': 'IS', 'Brazil': 'BR', 'Argentina': 'AR', 'Chile': 'CL',
+  'Colombia': 'CO', 'Peru': 'PE', 'India': 'IN', 'Philippines': 'PH',
+  'South Africa': 'ZA', 'Israel': 'IL', 'Andorra': 'AD', 'Armenia': 'AM',
+  'Azerbaijan': 'AZ', 'Bahrain': 'BH', 'Bosnia and Herzegovina': 'BA',
+  'Costa Rica': 'CR', 'Georgia': 'GE', 'Hong Kong': 'HK', 'Indonesia': 'ID',
+  'Iran': 'IR', 'Kazakhstan': 'KZ', 'Kuwait': 'KW', 'Kyrgyzstan': 'KG',
+  'Lebanon': 'LB', 'Luxembourg': 'LU', 'Malaysia': 'MY', 'Moldova': 'MD',
+  'Mongolia': 'MN', 'Montenegro': 'ME', 'North Korea': 'KP',
+  'North Macedonia': 'MK', 'Oman': 'OM', 'Pakistan': 'PK', 'Qatar': 'QA',
+  'Saudi Arabia': 'SA', 'Singapore': 'SG', 'Taiwan': 'TW', 'Thailand': 'TH',
+  'Turkey': 'TR', 'Turkmenistan': 'TM', 'United Arab Emirates': 'AE',
+  'Uzbekistan': 'UZ', 'Venezuela': 'VE', 'Puerto Rico': 'PR',
+  'Jamaica': 'JM', 'Cyprus': 'CY', 'Nigeria': 'NG', 'Kenya': 'KE',
+};
+
+
 // League info for top countries
 export const LEAGUE_INFO: Record<string, { league: string; note: string; iihfRank?: string; firstNhl?: string }> = {
-  'United States': { league: 'NHL, NCAA, USHL', note: 'Fastest-growing hockey market globally', iihfRank: '—', firstNhl: '1924' },
+  'United States': { league: 'NHL, NCAA, USHL', note: 'Fastest-growing hockey market globally', iihfRank: '#4', firstNhl: '1924' },
   'Canada': { league: 'NHL, OHL, WHL, QMJHL', note: "Hockey's birthplace and powerhouse", iihfRank: '#1', firstNhl: '1917' },
   'Russia': { league: 'KHL, MHL, VHL', note: "World's second-best league after NHL", iihfRank: '#3', firstNhl: '1952' },
   'Sweden': { league: 'SHL, Hockeyallsvenskan', note: 'Top player development system', iihfRank: '#4', firstNhl: '1932' },
@@ -231,6 +260,7 @@ export interface CountryPageData {
 export async function getCountryPageData(countryName: string): Promise<CountryPageData> {
   const countrySlug = countryToSlug(countryName);
   const iocCode = COUNTRY_TO_IOC[countryName];
+  const isoCode = COUNTRY_TO_ISO[countryName];  // for team_workspaces.country_code filter
   const info = LEAGUE_INFO[countryName];
   const howToNote = HOW_TO_NOTES[countryName];
   const relevantTags = COUNTRY_TAGS[countryName] || ['hockey', 'global-directory'];
@@ -249,9 +279,9 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     { count: playerCount },
   ] = await Promise.all([
     supabase.from('rinks').select('id, slug, name, city, address, phone, website_url').eq('country', countryName).eq('is_active', true).order('name').limit(50),
-    supabase.from('teams').select('id, name, slug, logo_url, city, league_id').eq('country', countryName).eq('is_active', true).order('name').limit(20),
+    supabase.from('team_workspaces').select('id, name, slug, avatar_url, home_city, league_id').eq('country_code', isoCode).eq('is_active', true).order('name').limit(20),
     supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('country', countryName).eq('is_active', true),
-    supabase.from('teams').select('*', { count: 'exact', head: true }).eq('country', countryName).eq('is_active', true),
+    supabase.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('country_code', isoCode).eq('is_active', true),
     supabase.from('leagues').select('id, name, slug, level, logo_url, country').or(`country.eq.${countryName},country.ilike.%${countryName}%`).eq('is_active', true).order('level').limit(8),
     iocCode
       ? supabase.from('players').select('id, first_name, last_name, slug, position, nationality, headshot_url, team_id').eq('nationality', iocCode).eq('is_active', true).order('last_name').limit(8)
@@ -294,19 +324,19 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
       .eq('is_active', true)
       .eq('status', 'open');
     const { data: nearestTeams } = await supabase
-      .from('teams')
-      .select('country')
-      .in('country', nearestNames)
+      .from('team_workspaces')
+      .select('country_code')
+      .in('country_code', nearestNames.map(n => COUNTRY_TO_ISO[n]).filter(Boolean))
       .eq('is_active', true);
     const rinkByCountry: Record<string, number> = {};
     (nearestRinks || []).forEach(r => { rinkByCountry[r.country] = (rinkByCountry[r.country] || 0) + 1; });
     const teamByCountry: Record<string, number> = {};
-    (nearestTeams || []).forEach(t => { teamByCountry[t.country] = (teamByCountry[t.country] || 0) + 1; });
+    (nearestTeams || []).forEach(t => { teamByCountry[t.country_code] = (teamByCountry[t.country_code] || 0) + 1; });
     nearestHockeyCountries = nearestNames.map(name => ({
       name,
       slug: countryToSlug(name),
       rinkCount: rinkByCountry[name] || 0,
-      teamCount: teamByCountry[name] || 0,
+      teamCount: teamByCountry[COUNTRY_TO_ISO[name] || ''] || 0,
     }));
   }
 
@@ -350,8 +380,8 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
   const decision = { indexable: hasData, reason: hasData ? 'has data' : 'no data', uniquenessScore: hasData ? 50 : 0 };
 
   const title = hasData
-    ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues | RinkStop`
-    : `Hockey in ${countryName} — Directory, Leagues & How to Get Started | RinkStop`;
+    ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues`
+    : `Hockey in ${countryName} — Directory, Leagues & How to Get Started`;
 
   const description = hasData
     ? `Find ice hockey rinks, teams, and leagues in ${countryName}. Browse ${rinks} rinks, ${teams} active teams, and the top leagues. ${data.info?.note || 'Complete hockey directory for players, parents, and fans.'}`

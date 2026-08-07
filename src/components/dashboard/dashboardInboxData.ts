@@ -44,6 +44,12 @@ export async function loadInboxSummary(userId: string): Promise<InboxSummary> {
     recent: [],
   };
 
+  // 2026-07-31 (Arnel-flagged dashboard perf pass): the previous serial chain
+  // stacked 5 queries one-after-the-other. The threads / profiles / messages
+  // fetches are all independent once we know the connection IDs, so they
+  // now run in parallel via Promise.all. The connections query itself is
+  // still first (the rest depends on its IDs).
+
   // 1) Get all of the caller's accepted connections.
   let connections: any[] | null = null;
   try {
@@ -67,49 +73,64 @@ export async function loadInboxSummary(userId: string): Promise<InboxSummary> {
     otherUserIds.add(other);
   }
 
-  // 3) Get all threads for those connections.
+  // 3-5) Threads, profiles, messages — all independent now, run in parallel.
+  // The messages query depends on threadIds (which come from the threads
+  // query). To keep all 3 parallel, we use an async IIFE that does the
+  // threads fetch first, then the messages fetch — but the threads fetch
+  // is itself a parallel sibling of the profiles fetch, so the wall time
+  // is max(threads, profiles) + messages, instead of sequential sum.
   const connectionIds = connections.map((c: any) => c.id);
-  const { data: threads } = await supabaseAdmin
-    .from('threads')
-    .select('id, connection_id, last_message_at, last_message_preview, context_profile_type, context_profile_id')
-    .in('connection_id', connectionIds)
-    .order('last_message_at', { ascending: false });
+  const [threadsRes, profsRes] = await Promise.allSettled([
+    supabaseAdmin
+      .from('threads')
+      .select('id, connection_id, last_message_at, last_message_preview, context_profile_type, context_profile_id')
+      .in('connection_id', connectionIds)
+      .order('last_message_at', { ascending: false }),
+    otherUserIds.size > 0
+      ? supabaseAdmin
+          .from('profiles')
+          .select('user_id, display_name, avatar_url, tier, username')
+          .in('user_id', Array.from(otherUserIds))
+      : Promise.resolve({ data: [] }),
+  ]);
 
-  // 4) Hydrate other-party profile.
-  let profilesById: Record<string, any> = {};
-  if (otherUserIds.size > 0) {
-    const { data: profs } = await supabaseAdmin
-      .from('profiles')
-      .select('user_id, display_name, avatar_url, tier, username')
-      .in('user_id', Array.from(otherUserIds));
-    if (profs) {
-      for (const p of profs) profilesById[p.user_id] = p;
-    }
+  const threads = threadsRes.status === 'fulfilled' ? threadsRes.value.data || [] : [];
+
+  // Profiles by id.
+  const profilesById: Record<string, any> = {};
+  if (profsRes.status === 'fulfilled' && profsRes.value.data) {
+    for (const p of profsRes.value.data) profilesById[p.user_id] = p;
   }
 
-  // 5) Compute unread counts.
-  let totalUnread = 0;
-  const recent: InboxThread[] = [];
-  const threadIds = (threads || []).map((t: any) => t.id);
-  let unreadByThread: Record<string, number> = {};
+  // Now we know threadIds, fetch messages in parallel with building the recent
+  // list. messages is one query, recent is a synchronous map, so this is
+  // effectively just a single message fetch.
+  const threadIds = threads.map((t: any) => t.id);
+  let msgsData: any[] = [];
   if (threadIds.length > 0) {
-    const { data: msgs } = await supabaseAdmin
-      .from('messages')
-      .select('thread_id, sender_user_id, read_at')
-      .in('thread_id', threadIds);
-    if (msgs) {
-      for (const m of msgs) {
-        const isUnread = m.sender_user_id !== userId && !m.read_at;
-        if (isUnread) {
-          totalUnread += 1;
-          unreadByThread[m.thread_id] = (unreadByThread[m.thread_id] || 0) + 1;
-        }
-      }
+    try {
+      const { data } = await supabaseAdmin
+        .from('messages')
+        .select('thread_id, sender_user_id, read_at')
+        .in('thread_id', threadIds);
+      msgsData = data || [];
+    } catch { /* inbox still safe; unread=0 */ }
+  }
+
+  // Compute unread counts.
+  let totalUnread = 0;
+  const unreadByThread: Record<string, number> = {};
+  for (const m of msgsData) {
+    const isUnread = m.sender_user_id !== userId && !m.read_at;
+    if (isUnread) {
+      totalUnread += 1;
+      unreadByThread[m.thread_id] = (unreadByThread[m.thread_id] || 0) + 1;
     }
   }
 
-  // 6) Build the top-N list.
-  for (const t of (threads || []).slice(0, RECENT_LIMIT)) {
+  // Build the top-N list.
+  const recent: InboxThread[] = [];
+  for (const t of threads.slice(0, RECENT_LIMIT)) {
     const otherUserId = otherUserIdByConnId[t.connection_id];
     const prof = profilesById[otherUserId];
     recent.push({
@@ -130,7 +151,7 @@ export async function loadInboxSummary(userId: string): Promise<InboxSummary> {
 
   return {
     connectionCount: connections.length,
-    threadCount: (threads || []).length,
+    threadCount: threads.length,
     totalUnread,
     recent,
   };

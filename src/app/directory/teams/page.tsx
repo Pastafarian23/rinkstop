@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import TeamsIndexClient, { type Team } from './TeamsIndexClient';
 import HockeyTeamsContent from './HockeyTeamsContent';
+import AdSlot from '@/components/AdSlot';
+import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 
 const LEVEL_DESCRIPTIONS: Record<Level, string> = {
@@ -102,7 +104,7 @@ async function fetchInitialTeams(opts: {
   // Fetch both NHL-imported teams AND user-created teams (team_workspaces)
   // in parallel so the SSR HTML includes user-created teams from the start.
   let nhlQuery = supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, slug, logo_url, city, country, league_id')
     .eq('is_active', true)
     .order('name')
@@ -296,6 +298,10 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
         </section>
       )}
       <TeamsIndexClient initialTeams={initialTeams} country={country ?? null} level={level ?? null} league={league ?? null} />
+      {/* WS16 PR2 — AdSense in-feed ad below the team list. */}
+      <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
+        <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
+      </div>
       <HockeyTeamsContent totalTeams={initialTeams.length} />
     </>
   );

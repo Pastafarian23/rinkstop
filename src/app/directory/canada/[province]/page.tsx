@@ -55,7 +55,7 @@ export async function generateMetadata({
     .eq('is_active', true)
     .not('city', 'is', null);
   const { count: teamTotal } = await supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('id', { count: 'exact', head: true })
     .eq('country', 'Canada')
     .eq('province_state', resolved.abbr)
@@ -126,7 +126,7 @@ export default async function CanadaProvincePage({
 
   if (cityNames.length > 0) {
     const { data: teams } = await supabase
-      .from('teams')
+      .from('team_workspaces')
       .select('city, province_state')
       .eq('country', 'Canada')
       .eq('province_state', provinceAbbr)

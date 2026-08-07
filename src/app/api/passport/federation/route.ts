@@ -1,8 +1,22 @@
 // src/app/api/passport/federation/route.ts
-// PATCH /api/passport/federation — owner updates their own federation numbers.
+// PATCH /api/passport/federation — owner edits their DRAFT federation registrations.
 //
-// Phase 3 (2026-07-10). Self-reported by default; v1 doesn't have USA Hockey
-// or Hockey Canada API integration for verification.
+// Tier 2 workflow (2026-07-23). Federation numbers now write to
+// federation_registrations as draft rows. The owner can edit freely until
+// they call /submit, which locks the row and routes it to the admin queue.
+//
+// primary_position_category stays on public.players (it's a player metadata
+// field, not a federation registration).
+//
+// WS13 PR3: also stamps certification_id on the draft row by joining
+// federations.slug + certifications.category='player'. Used at approve
+// time to issue the right user_credentials row.
+//
+// WS13 PR4a: the body shape is now a `certs: [{certification_id, registration_number}]`
+// array instead of hardcoded usa_hockey_number + hockey_canada_number fields.
+// The new dynamic form (FederationFormClient) drives the list. The cert_id
+// is the source of truth; federation_id is derived from the cert's issuer
+// at write time. Old body shape is no longer accepted.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
@@ -14,15 +28,11 @@ const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
 const VALID_POSITIONS = ['forward', 'defense', 'goalie'];
 
-// Format sanity: USA Hockey # is typically 9-12 digits. Hockey Canada #
-// is alphanumeric, 6-10 chars. We don't hard-fail on format (some federations
-// vary), but we trim, normalize, and reject obviously-wrong values.
 function normalizeNumber(raw: any): string | null {
   if (raw == null) return null;
   const trimmed = String(raw).trim();
   if (!trimmed) return null;
   if (trimmed.length > 32) return null;
-  // Reject obviously wrong values: empty after trim, contains whitespace, control chars
   if (/[\s\r\n\t]/.test(trimmed)) return null;
   return trimmed;
 }
@@ -53,24 +63,26 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { usa_hockey_number, hockey_canada_number, primary_position_category } = body ?? {};
-
-  let usaNorm: string | null;
-  let hcNorm: string | null;
-  try {
-    usaNorm = normalizeNumber(usa_hockey_number);
-    hcNorm = normalizeNumber(hockey_canada_number);
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 400 });
-  }
-
-  // Allow "" or null to clear the field, but reject obviously-bad strings.
-  // The frontend sends "" to mean "clear this field"; we coerce to null.
+  const { certs, primary_position_category } = body ?? {};
 
   if (primary_position_category != null && primary_position_category !== '') {
     if (!VALID_POSITIONS.includes(primary_position_category)) {
       return NextResponse.json({ error: `primary_position_category must be one of: ${VALID_POSITIONS.join(', ')}` }, { status: 400 });
     }
+  }
+
+  // Validate certs array
+  if (!Array.isArray(certs)) {
+    return NextResponse.json({ error: 'certs must be an array of {certification_id, registration_number}.' }, { status: 400 });
+  }
+  const certUpdates: Array<{ certification_id: string; number: string }> = [];
+  for (const item of certs) {
+    if (!item || typeof item !== 'object') continue;
+    const { certification_id, registration_number } = item;
+    if (!certification_id || typeof certification_id !== 'string') continue;
+    const num = normalizeNumber(registration_number);
+    if (num === null) continue; // skip empty / invalid
+    certUpdates.push({ certification_id, number: num });
   }
 
   // Resolve player
@@ -90,25 +102,108 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const updatePayload: Record<string, any> = {};
-  if (usa_hockey_number !== undefined) updatePayload.usa_hockey_number = usaNorm;
-  if (hockey_canada_number !== undefined) updatePayload.hockey_canada_number = hcNorm;
+  // Apply player.primary_position_category if present
   if (primary_position_category !== undefined) {
-    updatePayload.primary_position_category = primary_position_category === '' ? null : primary_position_category;
+    const { error } = await supabaseAdmin
+      .from('players')
+      .update({ primary_position_category: primary_position_category === '' ? null : primary_position_category })
+      .eq('id', player.id);
+    if (error) {
+      console.error('[passport-fed] player update failed', error);
+      return NextResponse.json({ error: 'Failed to save player metadata.' }, { status: 500 });
+    }
   }
 
-  if (Object.keys(updatePayload).length === 0) {
-    return NextResponse.json({ error: 'No fields to update.' }, { status: 400 });
-  }
+  // Apply cert → federation_registrations upserts. The certification is
+  // the source of truth: cert.issuer_id → federation_id. Refuse to write
+  // to non-draft rows (locked because pending or approved) — owner must
+  // withdraw first.
+  if (certUpdates.length > 0) {
+    const certIds = certUpdates.map((u) => u.certification_id);
+    const { data: certs, error: certErr } = await supabaseAdmin
+      .from('certifications')
+      .select('id, issuer_id, federations!inner(slug, name)')
+      .in('id', certIds)
+      .eq('is_active', true);
+    if (certErr) {
+      console.error('[passport-fed] cert lookup failed', certErr);
+      return NextResponse.json({ error: 'Failed to look up certifications.' }, { status: 500 });
+    }
+    const byCertId = new Map((certs ?? []).map((c: any) => [c.id, c]));
 
-  const { error } = await supabaseAdmin
-    .from('players')
-    .update(updatePayload)
-    .eq('id', player.id);
+    for (const u of certUpdates) {
+      const cert = byCertId.get(u.certification_id);
+      if (!cert) {
+        return NextResponse.json(
+          { error: `Certification "${u.certification_id}" not found or inactive.` },
+          { status: 400 }
+        );
+      }
+      const federationId = (cert as any).issuer_id as string;
 
-  if (error) {
-    console.error('[passport-fed] update failed', error);
-    return NextResponse.json({ error: 'Failed to save federation numbers.' }, { status: 500 });
+      // Upsert draft keyed by (player_id, certification_id). The unique
+      // identity of a registration is the cert, not the federation.
+      const { data: existing } = await supabaseAdmin
+        .from('federation_registrations')
+        .select('id, submission_status')
+        .eq('player_id', player.id)
+        .eq('certification_id', u.certification_id)
+        .maybeSingle();
+
+      if (existing && existing.submission_status !== 'draft') {
+        return NextResponse.json(
+          { error: `Cannot edit registration — status is "${existing.submission_status}". Withdraw first.` },
+          { status: 409 }
+        );
+      }
+
+      if (existing) {
+        const { error: updErr } = await supabaseAdmin
+          .from('federation_registrations')
+          .update({
+            registration_number: u.number,
+            federation_id: federationId, // keep in sync in case issuer changed
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+        if (updErr) {
+          console.error('[passport-fed] draft update failed', updErr);
+          return NextResponse.json({ error: 'Failed to update draft registration.' }, { status: 500 });
+        }
+      } else {
+        const { error: insErr } = await supabaseAdmin
+          .from('federation_registrations')
+          .insert({
+            player_id: player.id,
+            federation_id: federationId,
+            certification_id: u.certification_id,
+            registration_number: u.number,
+            submission_status: 'draft',
+          });
+        if (insErr) {
+          // Unique constraint hit means a race; refetch and retry once.
+          if (insErr.code === '23505') {
+            const { error: updErr } = await supabaseAdmin
+              .from('federation_registrations')
+              .update({
+                registration_number: u.number,
+                federation_id: federationId,
+                submission_status: 'draft',
+                updated_at: new Date().toISOString(),
+              })
+              .eq('player_id', player.id)
+              .eq('certification_id', u.certification_id);
+            if (updErr) {
+              console.error('[passport-fed] draft upsert after race failed', updErr);
+              return NextResponse.json({ error: 'Failed to save draft registration.' }, { status: 500 });
+            }
+          } else {
+            console.error('[passport-fed] draft insert failed', insErr);
+            return NextResponse.json({ error: 'Failed to save draft registration.' }, { status: 500 });
+          }
+        }
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

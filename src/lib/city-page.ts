@@ -260,11 +260,17 @@ export async function getCityPageData(opts: {
   // - US uses ilike for city on rinks, and city match for teams
   // - CA uses exact match for both
   // - UK uses ilike for both
-  let teamsQuery = supabase
+  // Bugfix 2026-08-07: switched from team_workspaces → teams because the
+  // team_workspaces table has no country/city columns (verified via
+  // Supabase REST). The teams table has city, country, state_province,
+  // league_id, is_active. Country filter is matched via the country IOC
+  // map (COUNTRY_TO_IOC) when the URL slug matches a country with an IOC
+  // code (US, CA, RU, etc.) so we don't miss rows tagged by IOC code.
+  let teamsQuery = (supabase as any)
     .from('teams')
-    .select('id, name, slug, logo_url, league_id')
-    .eq('country', countryName)
+    .select('id, name, slug, logo_url, league_id, country, city')
     .eq('is_active', true);
+  if (countryName) teamsQuery = teamsQuery.eq('country', countryName);
 
   let rinksQuery = supabase
     .from('rinks')
@@ -329,7 +335,7 @@ export async function getCityPageData(opts: {
         .eq('is_active', true)
         .limit(500),
       supabase
-        .from('teams')
+        .from('team_workspaces')
         .select('city')
         .eq('country', countryName)
         .or(peerRegionOr)
@@ -426,7 +432,7 @@ export async function getCityPageData(opts: {
     proTeams,
     peerCities,
     breadcrumb,
-    title: `${locationDesc} Hockey - Teams, Rinks & Leagues | RinkStop`,
+    title: `${locationDesc} Hockey - Teams, Rinks & Leagues`,
     description: `Find hockey teams, ice rinks, and leagues in ${locationDesc}. Discover youth programs, adult leagues, and professional hockey near you.`,
     canonicalPath: regionSlug
       ? `/directory/${countrySlug}/${regionSlug}/${citySlug}`

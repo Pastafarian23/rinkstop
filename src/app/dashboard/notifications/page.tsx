@@ -47,7 +47,120 @@ const KIND_LABEL: Record<string, string> = {
   document_expired: 'Document expired',
   identity_renewal_due: 'Identity renewal due',
   achievement_added: 'Achievement unlocked',
+  signup_welcome: 'Welcome to RinkStop',
+  identity_verify_recommended: 'Verify your identity',
+  wizard_incomplete: 'Finish setup',
+  claim_paid_tier_unlocked: 'Claim approved',
+  profile_first_visitor: 'Profile visitor',
 };
+
+/**
+ * Group notification kinds into topic buckets for the inbox view.
+ *
+ * Why group: flat lists make it hard to scan ("which of these are about
+ * disputes vs documents vs onboarding?"). Grouping by topic gives users
+ * a single visual handle per category — "3 from Documents" — so they
+ * can scan-and-skip without reading every line.
+ *
+ * Order matters: groups render top-to-bottom in this array's order.
+ * Most-urgent (subscription/id) at top, lowest-friction (achievements)
+ * at bottom. Within a group, rows sort by created_at desc.
+ */
+type NotificationGroupId =
+  | 'subscription'
+  | 'identity'
+  | 'documents'
+  | 'stamps_disputes'
+  | 'achievements'
+  | 'profile'
+  | 'onboarding';
+
+const GROUP_ORDER: NotificationGroupId[] = [
+  'subscription',
+  'identity',
+  'documents',
+  'stamps_disputes',
+  'achievements',
+  'profile',
+  'onboarding',
+];
+
+const GROUP_META: Record<NotificationGroupId, { label: string; icon: string }> = {
+  subscription: { label: 'Subscription', icon: '💳' },
+  identity: { label: 'Identity', icon: '🪪' },
+  documents: { label: 'Documents', icon: '📄' },
+  stamps_disputes: { label: 'Stamps & Disputes', icon: '🏅' },
+  achievements: { label: 'Achievements', icon: '🏆' },
+  profile: { label: 'Profile', icon: '👤' },
+  onboarding: { label: 'Getting Started', icon: '✨' },
+};
+
+function groupForKind(kind: string): NotificationGroupId {
+  switch (kind) {
+    case 'claim_paid_tier_unlocked':
+      return 'subscription';
+    case 'identity_renewal_due':
+    case 'identity_verify_recommended':
+      return 'identity';
+    case 'document_expiring_30d':
+    case 'document_expiring_7d':
+    case 'document_expiring_1d':
+    case 'document_expired':
+      return 'documents';
+    case 'stamp_disputed':
+    case 'dispute_upheld':
+    case 'dispute_overturned':
+    case 'stamp_received':
+      return 'stamps_disputes';
+    case 'achievement_added':
+      return 'achievements';
+    case 'profile_first_visitor':
+      return 'profile';
+    case 'signup_welcome':
+    case 'wizard_incomplete':
+      return 'onboarding';
+    default:
+      // Unknown kind — fall back to onboarding so it still shows up.
+      return 'onboarding';
+  }
+}
+
+interface NotificationGroup {
+  id: NotificationGroupId;
+  label: string;
+  icon: string;
+  rows: InboxRow[];
+  unreadCount: number;
+}
+
+function buildGroups(rows: InboxRow[]): NotificationGroup[] {
+  const buckets: Record<NotificationGroupId, InboxRow[]> = {
+    subscription: [],
+    identity: [],
+    documents: [],
+    stamps_disputes: [],
+    achievements: [],
+    profile: [],
+    onboarding: [],
+  };
+  for (const row of rows) buckets[groupForKind(row.kind)].push(row);
+
+  const out: NotificationGroup[] = [];
+  for (const id of GROUP_ORDER) {
+    const bucket = buckets[id];
+    if (bucket.length === 0) continue;
+    // Newest first within a group.
+    bucket.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+    out.push({
+      id,
+      label: GROUP_META[id].label,
+      icon: GROUP_META[id].icon,
+      rows: bucket,
+      unreadCount: bucket.filter((r) => !r.read_at).length,
+    });
+  }
+  return out;
+}
 
 function relativeTime(iso: string): string {
   const now = Date.now();
@@ -106,7 +219,7 @@ export default async function NotificationsPage() {
 
   const { data, error } = await supabaseAdmin
     .from('consumer_notifications')
-    .select('id, kind, title, body, metadata, read_at, created_at')
+    .select('id, kind, title, body, metadata, read_at, snooze_until, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -183,8 +296,54 @@ export default async function NotificationsPage() {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {rows.map((row) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {buildGroups(rows).map((group) => (
+            <section key={group.id} aria-label={`${group.label} notifications`}>
+              <h2
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: '#475569',
+                  margin: '0 0 0.5rem',
+                  padding: '0 0.25rem',
+                }}
+              >
+                <span aria-hidden="true">{group.icon}</span>
+                <span>{group.label}</span>
+                <span
+                  style={{
+                    color: '#94a3b8',
+                    fontWeight: 500,
+                    letterSpacing: 0,
+                    textTransform: 'none',
+                  }}
+                >
+                  {group.rows.length} {group.rows.length === 1 ? 'notification' : 'notifications'}
+                </span>
+                {group.unreadCount > 0 ? (
+                  <span
+                    style={{
+                      background: '#0f172a',
+                      color: '#fff',
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: 999,
+                      marginLeft: 4,
+                    }}
+                    aria-label={`${group.unreadCount} unread in ${group.label}`}
+                  >
+                    {group.unreadCount} unread
+                  </span>
+                ) : null}
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {group.rows.map((row) => {
             const link = resolveLink(row);
             const kindLabel = KIND_LABEL[row.kind] ?? row.kind;
             const isUnread = !row.read_at;
@@ -266,7 +425,7 @@ export default async function NotificationsPage() {
                   </div>
                 )}
                 {link && (
-                  <div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <Link
                       href={link.href}
                       style={{
@@ -282,11 +441,32 @@ export default async function NotificationsPage() {
                     >
                       {link.cta} →
                     </Link>
+                    {!row.read_at && (
+                      <Link
+                        href={`/api/consumer-notifications/${row.id}/dismiss`}
+                        style={{
+                          display: 'inline-block',
+                          padding: '0.4rem 0.85rem',
+                          background: 'transparent',
+                          color: '#475569',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 6,
+                          textDecoration: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Dismiss
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>
             );
           })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
 

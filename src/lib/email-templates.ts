@@ -42,7 +42,8 @@ export type TemplateName =
   | 'dm-notification'
   | 'team-post'
   | 'listing-submission-confirmation'
-  | 'payment-pending';
+  | 'payment-pending'
+  | 'notification';
 
 export interface TemplateData {
   welcome: {
@@ -89,6 +90,22 @@ export interface TemplateData {
     currency: string;
     referenceNumber: string | null;
     approveLink: string;
+  };
+  /**
+   * Generic onboarding-notification template (WS14 PR2).
+   * One template handles all 5 onboarding notification kinds:
+   * signup_welcome, identity_verify_recommended, wizard_incomplete,
+   * claim_paid_tier_unlocked, profile_first_visitor.
+   *
+   * The body and action fields come straight from the notification row,
+   * so the same brand styling applies to every kind without per-kind HTML.
+   */
+  'notification': {
+    kind: string;
+    title: string;
+    body: string;
+    actionUrl: string | null;
+    actionLabel: string | null;
   };
 }
 
@@ -220,7 +237,42 @@ export function renderTemplate<T extends TemplateName>(name: T, data: TemplateDa
       return listingSubmissionConfirmation(data as TemplateData['listing-submission-confirmation']);
     case 'payment-pending':
       return paymentPending(data as TemplateData['payment-pending']);
+    case 'notification':
+      return notification(data as TemplateData['notification']);
   }
+}
+
+function notification(d: TemplateData['notification']): Rendered {
+  // Generic onboarding-notification template (WS14 PR2).
+  // Used for all 5 OnboardingKind values: signup_welcome,
+  // identity_verify_recommended, wizard_incomplete,
+  // claim_paid_tier_unlocked, profile_first_visitor.
+  //
+  // Subject is just the title — keeps the inbox scannable and matches
+  // the in-app experience. action button is conditional on actionUrl.
+  const subject = d.title;
+  const actionHtml = d.actionUrl
+    ? `<p style="margin:0 0 4px 0;"><a href="${escape(d.actionUrl)}" style="display:inline-block;padding:12px 20px;background:${COLORS.red};color:#fff;border-radius:6px;text-decoration:none;font-weight:700;font-size:14px;">${escape(d.actionLabel ?? 'Open RinkStop →')}</a></p>`
+    : '';
+  const bodyHtml = `
+    <p style="margin:0 0 4px 0;font-size:11px;color:${COLORS.gold};font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">${escape(d.kind.replace(/_/g, ' '))}</p>
+    <h1 style="margin:0 0 12px 0;font-size:22px;color:${COLORS.navy};font-weight:800;line-height:1.3;">${escape(d.title)}</h1>
+    <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;">${escape(d.body)}</p>
+    ${actionHtml}
+    <p style="margin:24px 0 0 0;font-size:13px;line-height:1.6;color:${COLORS.textMuted};">You can manage per-kind email preferences in <a href="${SITE_URL}/dashboard/notifications" style="color:${COLORS.textMuted};text-decoration:underline;">Notification settings</a>.</p>
+  `;
+  const actionLine = d.actionUrl ? `\n${d.actionLabel ?? 'Open RinkStop'}: ${d.actionUrl}\n` : '';
+  const bodyText = [
+    `[${d.kind.replace(/_/g, ' ')}] ${d.title}`,
+    ``,
+    d.body,
+    actionLine,
+    `Manage email preferences: ${SITE_URL}/dashboard/notifications`,
+  ].filter(Boolean).join('\n');
+  return {
+    html: shell(subject, bodyHtml),
+    text: bodyText + footerText(),
+  };
 }
 
 function welcome(d: TemplateData['welcome']): Rendered {

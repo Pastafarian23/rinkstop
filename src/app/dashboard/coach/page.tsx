@@ -21,9 +21,12 @@ export default async function CoachHubPage() {
   if (!session.userId) redirect('/login?redirect_url=/dashboard/coach');
 
   // Resolve coach profile + counts
+  // WS8 PR4: license_issuing_authority was dropped from coach_profiles.
+  // Federation registration is a separate flow now (federation_registrations
+  // joined on coach_id). Verification status stays here.
   const { data: coach } = await supabaseAdmin
     .from('coach_profiles')
-    .select('id, verification_status, license_issuing_authority, current_team_id, current_team:teams(name, slug)')
+    .select('id, verification_status, current_team_id, current_team:teams(name, slug)')
     .eq('profile_id', userId)
     .maybeSingle();
 
@@ -127,6 +130,20 @@ export default async function CoachHubPage() {
               License #, issuing authority, expires, years coaching, current team, bio.
             </p>
           </Link>
+
+          {coach && (
+            <Link href="/dashboard/coach/credentials" style={cardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <p style={{ fontWeight: 700, fontSize: '1rem' }}>Federation credentials</p>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                  Verified federation-issued IDs
+                </span>
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+                Submit your coaching license numbers (USA Hockey, Hockey Canada, IIHF) for admin verification.
+              </p>
+            </Link>
+          )}
 
           <Link href="/dashboard/coach/teams" style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>

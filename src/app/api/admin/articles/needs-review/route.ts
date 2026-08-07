@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
   // Fetch all team UUIDs (small table, ~3000 rows). We do this in memory
   // so the classification is fast and doesn't need N round-trips.
   const { data: teams, error: teamsErr } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, slug');
   if (teamsErr) {
     return NextResponse.json({ error: teamsErr.message }, { status: 500 });

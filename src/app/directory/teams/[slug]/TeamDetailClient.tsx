@@ -206,7 +206,7 @@ export default function TeamDetailClient({
           {/* Quick stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.625rem', marginBottom: '2rem' }}>
             {[
-              { label: 'Founded', value: staticData.founded || ' -- ', highlight: false },
+              ...(staticData.founded ? [{ label: 'Founded', value: staticData.founded, highlight: false }] : []),
               { label: 'Arena', value: staticData.arena || ' -- ', highlight: false },
               { label: 'Stanley Cups', value: staticData.championships || 0, highlight: true },
               { label: 'Division', value: staticData.division || ' -- ', highlight: false },

@@ -95,7 +95,7 @@ async function fetchEntityNames(
     // players has no full_name column; concat first_name + last_name in JS
     query = supabaseAdmin.from('players').select('id, first_name, last_name').in('id', ids);
   } else if (type === 'team') {
-    query = supabaseAdmin.from('teams').select('id, name').in('id', ids);
+    query = supabaseAdmin.from('team_workspaces').select('id, name').in('id', ids);
   } else if (type === 'rink') {
     query = supabaseAdmin.from('rinks').select('id, name').in('id', ids);
   } else if (type === 'league') {

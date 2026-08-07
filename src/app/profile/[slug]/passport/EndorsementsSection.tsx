@@ -42,7 +42,7 @@ export async function EndorsementsSection({
     .select(`
       id, endorsement_type, text, visibility, created_at, status,
       coach:coach_profiles(
-        id, profile_id, license_issuing_authority, license_number, years_coaching,
+        id, profile_id, years_coaching,
         verification_status,
         profile:profiles!coach_profiles_profile_id_fkey(display_name, username, avatar_url)
       )

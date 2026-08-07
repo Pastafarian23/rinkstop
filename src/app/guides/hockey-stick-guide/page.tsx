@@ -45,7 +45,7 @@ export default function HockeyStickGuide() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Choose a Hockey Stick | RinkStop',
+        headline: 'How to Choose a Hockey Stick',
         description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick.',
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

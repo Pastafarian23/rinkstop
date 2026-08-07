@@ -47,57 +47,79 @@ export async function loadPracticePulseData(userId: string): Promise<PracticePul
     loaded: false,
   };
 
-  try {
-    // 1. Active session (status='started', most recent)
-    const { data: activeRows } = await supabaseAdmin
-      .from('player_practice_sessions')
-      .select('id, practice_plan_id, status, started_at')
-      .eq('user_id', userId)
-      .eq('status', 'started')
-      .order('started_at', { ascending: false })
-      .limit(1);
-    out.activeSession = (activeRows && activeRows[0]) ? activeRows[0] : null;
+  // 2026-07-31 (Arnel-flagged dashboard perf pass): the previous serial chain
+  // stacked 5 queries one-after-the-other. The 4 read-mostly queries
+  // (active session, week count, month count, started plan IDs) are all
+  // independent — they run in parallel via Promise.all. The published
+  // plans fetch is gated on the started plan IDs (we need excludeIds), so
+  // it runs after the parallel batch with the dedup applied.
 
-    // 2. Counts in last 7 / 30 days (status='completed')
+  try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const { count: weekCnt } = await supabaseAdmin
-      .from('player_practice_sessions')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('status', 'completed')
-      .gte('completed_at', sevenDaysAgo);
-    out.weeklyCount = weekCnt ?? 0;
-    const { count: monthCnt } = await supabaseAdmin
-      .from('player_practice_sessions')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('status', 'completed')
-      .gte('completed_at', thirtyDaysAgo);
-    out.monthlyCount = monthCnt ?? 0;
 
-    // 3. Plans the user hasn't started yet. Published + template.
-    // Exclude any plan the user already has a 'started' session for (active).
-    // Pull more than we need so dedup-by-plan is robust if user has many sessions.
-    const { data: startedPlanIds } = await supabaseAdmin
-      .from('player_practice_sessions')
-      .select('practice_plan_id')
-      .eq('user_id', userId)
-      .in('status', ['started', 'completed']);
-    const excludeIds = new Set(
-      (startedPlanIds || []).map((r: any) => r.practice_plan_id).filter(Boolean)
-    );
+    const [activeRes, weekRes, monthRes, startedRes] = await Promise.allSettled([
+      // 1. Active session (status='started', most recent)
+      supabaseAdmin
+        .from('player_practice_sessions')
+        .select('id, practice_plan_id, status, started_at')
+        .eq('user_id', userId)
+        .eq('status', 'started')
+        .order('started_at', { ascending: false })
+        .limit(1),
+      // 2a. Weekly completed count
+      supabaseAdmin
+        .from('player_practice_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .gte('completed_at', sevenDaysAgo),
+      // 2b. Monthly completed count
+      supabaseAdmin
+        .from('player_practice_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .gte('completed_at', thirtyDaysAgo),
+      // 3. Plans the user has touched (started or completed) — for excludeIds.
+      supabaseAdmin
+        .from('player_practice_sessions')
+        .select('practice_plan_id')
+        .eq('user_id', userId)
+        .in('status', ['started', 'completed']),
+    ]);
 
-    const { data: plans } = await supabaseAdmin
-      .from('practice_plans')
-      .select('id, slug, title, summary, focus, duration_min, skill_level, age_min, age_max')
-      .eq('is_published', true)
-      .order('created_at', { ascending: false })
-      .limit(20);
+    if (activeRes.status === 'fulfilled') {
+      const activeRows = activeRes.value.data || [];
+      out.activeSession = activeRows[0] || null;
+    }
+    if (weekRes.status === 'fulfilled') {
+      out.weeklyCount = weekRes.value.count ?? 0;
+    }
+    if (monthRes.status === 'fulfilled') {
+      out.monthlyCount = monthRes.value.count ?? 0;
+    }
 
-    out.suggestions = (plans || [])
-      .filter((p: any) => !excludeIds.has(p.id))
-      .slice(0, 3);
+    const excludeIds = new Set<string>();
+    if (startedRes.status === 'fulfilled') {
+      for (const r of (startedRes.value.data || []) as any[]) {
+        if (r.practice_plan_id) excludeIds.add(r.practice_plan_id);
+      }
+    }
+
+    // 4. Published plans, then filter by excludeIds.
+    try {
+      const { data: plans } = await supabaseAdmin
+        .from('practice_plans')
+        .select('id, slug, title, summary, focus, duration_min, skill_level, age_min, age_max')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      out.suggestions = (plans || [])
+        .filter((p: any) => !excludeIds.has(p.id))
+        .slice(0, 3);
+    } catch { /* keep empty suggestions */ }
 
     out.loaded = true;
   } catch (e) {

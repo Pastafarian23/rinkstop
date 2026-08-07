@@ -121,7 +121,7 @@ export default async function BestIceRinksPage({ params }: Props) {
         __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": `Best Ice Rinks in ${cityName} | RinkStop`,
+          "name": `Best Ice Rinks in ${cityName}`,
           "description": `Discover the best ice rinks in ${cityName}. Find hockey arenas, public skating facilities, and learn-to-play programs.`,
           "url": `https://rinkstop.com/best-ice-rinks/${city.toLowerCase()}`,
           "mainEntity": {

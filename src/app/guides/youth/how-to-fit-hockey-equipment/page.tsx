@@ -40,7 +40,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Fit Hockey Equipment: A Complete Guide for Parents | RinkStop',
+        headline: 'How to Fit Hockey Equipment: A Complete Guide for Parents',
         description: "How to fit every piece of hockey equipment for kids — helmet, shoulder pads, elbow pads, shin guards, pants, gloves, jock/jill, mouthguard.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

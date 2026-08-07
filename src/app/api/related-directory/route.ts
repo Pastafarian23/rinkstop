@@ -18,8 +18,10 @@ interface EntityRow {
   id: string;
   slug: string;
   name: string;
-  city: string | null;
-  country: string | null;
+  city?: string | null;
+  country?: string | null;
+  home_city?: string | null;
+  country_code?: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
 
   const [rinkRes, teamRes, leagueRes] = await Promise.all([
     supabaseAdmin.from('rinks').select('id, slug, name, city, country').or(orClause).eq('is_active', true).limit(limit),
-    supabaseAdmin.from('teams').select('id, slug, name, city, country').or(orClause).limit(limit),
+    supabaseAdmin.from('team_workspaces').select('id, slug, name, home_city, country_code').or(orClause).limit(limit),
     supabaseAdmin.from('leagues').select('id, slug, name, city, country').or(orClause).limit(limit),
   ]);
 

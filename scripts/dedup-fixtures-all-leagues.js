@@ -19,7 +19,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 
-const cfg = JSON.parse(fs.readFileSync('/root/.openclaw/credentials/supabase.json', 'utf8'));
+const cfg = JSON.parse(fs.readFileSync('.env', 'utf8'));
 const sb = createClient(cfg.url, cfg.serviceRoleKey);
 
 const execute = process.argv.includes('--execute');

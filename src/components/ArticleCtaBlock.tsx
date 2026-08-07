@@ -135,11 +135,12 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
       style={{
         margin: '2.5rem auto 2rem',
         maxWidth: '880px',
-        background: 'linear-gradient(135deg, rgba(200,16,46,0.05) 0%, rgba(255,184,28,0.04) 100%)',
-        border: '1px solid rgba(200,16,46,0.2)',
+        background: '#ffffff',
+        border: '2px solid #041E42',
         borderRadius: '12px',
         padding: '2rem 1.5rem',
         textAlign: 'center',
+        boxShadow: '0 4px 16px rgba(4,30,66,0.12)',
       }}
       data-cta-variant={variant}
       data-article-slug={props.slug}
@@ -147,22 +148,22 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
       <h2
         style={{
           fontFamily: '"Bebas Neue", "Arial Narrow", sans-serif',
-          fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+          fontSize: 'clamp(1.75rem, 4vw, 2.25rem)',
           color: '#041E42',
-          margin: '0 0 0.5rem',
+          margin: '0 0 0.75rem',
           letterSpacing: '0.02em',
-          lineHeight: 1.1,
+          lineHeight: 1.15,
         }}
       >
         {cfg.headline}
       </h2>
       <p
         style={{
-          color: 'rgba(0,0,0,0.6)',
-          fontSize: '0.95rem',
+          color: '#1a1a1a',
+          fontSize: '1rem',
           maxWidth: '560px',
-          margin: '0 auto 1.25rem',
-          lineHeight: 1.5,
+          margin: '0 auto 1.5rem',
+          lineHeight: 1.55,
         }}
       >
         {cfg.body}

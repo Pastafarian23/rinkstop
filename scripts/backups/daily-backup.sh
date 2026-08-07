@@ -32,15 +32,15 @@ BACKUP_DIR="${BACKUP_ROOT}/${DATE}"
 mkdir -p "${BACKUP_DIR}"
 
 # Pull credentials. These are loaded from /root/.openclaw/credentials/ at script start.
-SUPABASE_URL="$(jq -r '.url' /root/.openclaw/credentials/supabase.json)"
-SUPABASE_PAT="$(jq -r '.pat' /root/.openclaw/credentials/supabase.json)"
+SUPABASE_URL="$(jq -r '.url' .env)"
+SUPABASE_PAT="$(jq -r '.pat' .env)"
 
 if [ -z "${SUPABASE_URL}" ] || [ "${SUPABASE_URL}" = "null" ]; then
-  echo "[fatal] SUPABASE_URL not found in /root/.openclaw/credentials/supabase.json"
+  echo "[fatal] SUPABASE_URL not found in .env"
   exit 1
 fi
 if [ -z "${SUPABASE_PAT}" ] || [ "${SUPABASE_PAT}" = "null" ]; then
-  echo "[fatal] SUPABASE_PAT not found in /root/.openclaw/credentials/supabase.json"
+  echo "[fatal] SUPABASE_PAT not found in .env"
   exit 1
 fi
 

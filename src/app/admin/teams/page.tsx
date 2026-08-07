@@ -23,7 +23,7 @@ interface League {
 
 async function getTeamsData(search?: string, leagueId?: string, wrongLeague?: boolean) {
   let query = supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, city, country, league_id, slug, created_at, updated_at, leagues!teams_league_id_fkey(name, slug)', { count: 'exact' });
 
   if (search) {

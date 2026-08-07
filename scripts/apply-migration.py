@@ -2,7 +2,7 @@
 """Apply a SQL migration to Supabase via the management API."""
 import json, sys, http.client
 
-with open('/root/.openclaw/credentials/supabase.json') as f:
+with open('.env') as f:
     creds = json.load(f)
 
 PAT = creds['pat']

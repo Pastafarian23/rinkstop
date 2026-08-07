@@ -93,7 +93,11 @@ export default async function PartnerPassportActivityPage({ params }: PageProps)
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <KPI label="Venues" value={activity.venueCount} />
           <KPI label="Stamps" value={activity.totalStamps} />
+
           <KPI label="Scans" value={activity.totalScans} subtle="v1.1" />
+
+          <KPI label="Scans" value={activity.totalScans} />
+
         </div>
       </header>
 
@@ -179,7 +183,11 @@ export default async function PartnerPassportActivityPage({ params }: PageProps)
           textAlign: 'center',
         }}
       >
+
         Passport activity is read-only here. Scan-event counts require a schema change (v1.1) before they can be surfaced.
+
+        Passport activity is read-only here.
+
       </div>
     </div>
   );

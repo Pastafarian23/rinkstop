@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 export default function GlobalError({
   error,
   reset,
@@ -7,6 +9,12 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Log to console so Chrome devtools (and Vercel browser console
+    // captures if enabled) show the real error.
+    console.error('[rinkstop] global error boundary:', error);
+  }, [error]);
+
   return (
     <html lang="en">
       <body style={{ margin: 0, background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui, sans-serif' }}>

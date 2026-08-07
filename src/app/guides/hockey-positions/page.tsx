@@ -55,7 +55,7 @@ export default function HockeyPositions() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'Understanding Hockey Positions | RinkStop',
+        headline: 'Understanding Hockey Positions',
         description: 'Centers, wings, defense, and goalies  --  what each hockey position does and how they work together.',
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

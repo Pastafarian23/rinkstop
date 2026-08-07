@@ -13,15 +13,10 @@ import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
 
-const VALID_AUTHORITIES = [
-  'USA Hockey',
-  'Hockey Canada',
-  'IIHF',
-  'USHL',
-  'NAHL',
-  'NCAA',
-  'Other',
-];
+// WS8 PR4: VALID_AUTHORITIES removed — coach license/federation registration
+// is now driven by the federation_registrations.federation_id FK (typed via
+// the federations table), not by free-text authority names. See
+// PATCH /api/coach/credentials.
 
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
@@ -49,33 +44,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
+  // WS8 PR4: license_number / license_issuing_authority / license_expires_at
+  // were removed from coach_profiles. Federation registration goes through
+  // PATCH /api/coach/credentials → federation_registrations.
   const {
-    license_number,
-    license_issuing_authority,
-    license_expires_at,
     years_coaching,
     current_team_id,
     bio,
   } = body ?? {};
 
   // Validation
-  if (license_issuing_authority != null && license_issuing_authority !== '' && !VALID_AUTHORITIES.includes(license_issuing_authority)) {
-    return NextResponse.json(
-      { error: `license_issuing_authority must be one of: ${VALID_AUTHORITIES.join(', ')}` },
-      { status: 400 }
-    );
-  }
-
-  if (license_number != null && typeof license_number === 'string' && license_number.length > 64) {
-    return NextResponse.json({ error: 'license_number too long (max 64 chars).' }, { status: 400 });
-  }
-
-  if (license_expires_at != null && license_expires_at !== '') {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(license_expires_at)) {
-      return NextResponse.json({ error: 'license_expires_at must be YYYY-MM-DD.' }, { status: 400 });
-    }
-  }
-
   if (years_coaching != null && years_coaching !== '') {
     const y = Number(years_coaching);
     if (!Number.isInteger(y) || y < 0 || y > 80) {
@@ -85,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   if (current_team_id != null && current_team_id !== '') {
     const { data: team, error: teamErr } = await supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id')
       .eq('id', current_team_id)
       .maybeSingle();
@@ -106,9 +84,6 @@ export async function POST(request: NextRequest) {
   const payload: Record<string, any> = {
     profile_id: userId,
   };
-  if (license_number !== undefined) payload.license_number = license_number?.trim() || null;
-  if (license_issuing_authority !== undefined) payload.license_issuing_authority = license_issuing_authority?.trim() || null;
-  if (license_expires_at !== undefined) payload.license_expires_at = license_expires_at || null;
   if (years_coaching !== undefined) payload.years_coaching = years_coaching === '' ? null : Number(years_coaching);
   if (current_team_id !== undefined) payload.current_team_id = current_team_id || null;
   if (bio !== undefined) payload.bio = bio?.trim() || null;
@@ -117,7 +92,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from('coach_profiles')
     .upsert(payload, { onConflict: 'profile_id' })
-    .select('id, profile_id, license_number, license_issuing_authority, license_expires_at, years_coaching, current_team_id, bio, verification_status, created_at, updated_at')
+    .select('id, profile_id, years_coaching, current_team_id, bio, verification_status, created_at, updated_at')
     .single();
 
   if (error) {

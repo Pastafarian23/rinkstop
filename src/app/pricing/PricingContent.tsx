@@ -94,7 +94,7 @@ const FAQ = [
   },
   {
     q: 'Can I keep my Free account and just browse?',
-    a: 'Yes. Free is permanent and free. You can browse the full directory, read reviews, save up to 3 favorites, and follow up to 3 teams or players — no card required, no upsell.',
+    a: 'Yes. Free is permanent and free. You can browse the full directory, read reviews, save unlimited favorites, and follow unlimited teams or players — no card required, no upsell.',
   },
   {
     q: 'What does Verified Identity cost?',
@@ -141,6 +141,12 @@ export default function PricingContent({
   const [error, setError] = useState<string | null>(null);
   const [showAccountType, setShowAccountType] = useState(false);
   const [highlightTier, setHighlightTier] = useState<string | null>(null);
+  // WS9: when ?intent=claim is passed (from /claim-your-listing banner), show
+  // a "Why upgrade?" prompt that explains the claim flow + which tiers are
+  // claim-enabled. This is a soft conversion nudge; users on free tier can
+  // still browse.
+  const claimIntent = searchParams?.get('intent') === 'claim';
+  const claimEntityType = searchParams?.get('type') ?? null;
 
   // Deep-link support: ?tier=club_starter scrolls to that card and highlights it.
   // Fires once on mount. Cleans up the highlight after 2.5s.
@@ -424,6 +430,43 @@ export default function PricingContent({
         <p style={{ fontSize: '1.125rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
           RinkStop is the global directory for hockey rinks, teams, players, and leagues. One Verified Hockey Identity per person — for life. Pick what fits below.
         </p>
+        {claimIntent && (
+          <div
+            data-testid="claim-intent-banner"
+            style={{
+              marginTop: '1.5rem',
+              background: 'rgba(20,184,166,0.08)',
+              border: '1px solid rgba(20,184,166,0.4)',
+              borderRadius: 10,
+              padding: '1rem 1.25rem',
+              textAlign: 'left',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: '0.95rem',
+              lineHeight: 1.5,
+            }}
+          >
+            <div style={{ color: '#14B8A6', fontWeight: 700, marginBottom: 6 }}>
+              Why do I need a paid plan to claim a listing?
+            </div>
+            <p style={{ margin: '0 0 0.5rem' }}>
+              Claiming unlocks editable listings, lead capture, and a verified checkmark. To prevent
+              squatting, RinkStop requires{' '}
+              {claimEntityType === 'player'
+                ? 'a Verified Hockey Identity (or higher) to claim a player page'
+                : claimEntityType === 'team'
+                  ? 'a Club Starter (or higher) to claim a team page'
+                  : 'a RinkStop Pro business plan to claim a rink page'}
+              . Operators claim once per listing, then own it for as long as the plan stays active.
+            </p>
+            <p style={{ margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
+              Not ready yet?{' '}
+              <a href="/claim-your-listing" style={{ color: '#14B8A6', textDecoration: 'underline' }}>
+                Keep searching free
+              </a>
+              .
+            </p>
+          </div>
+        )}
       </section>
 
       <section id="tiers" style={{ padding: '2rem 1.5rem 4rem', maxWidth: 1200, margin: '0 auto' }}>

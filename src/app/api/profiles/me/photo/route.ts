@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isClerkDefaultAvatarUrl } from '@/lib/avatar';
 
 /**
  * POST /api/profiles/me/photo
@@ -46,6 +47,18 @@ export async function POST(request: NextRequest) {
   const source = (body.source || 'manual') as 'manual' | 'clerk_webhook' | 'reset';
   if (!['manual', 'clerk_webhook', 'reset'].includes(source)) {
     return NextResponse.json({ error: 'Invalid source' }, { status: 400 });
+  }
+
+  // If the incoming URL is Clerk's auto-generated initials placeholder
+  // (purple silhouette), drop it — it's not a real photo choice. We still
+  // sync profiles.avatar_url to null so the user sees the placeholder
+  // rendered by Clerk, but we never write it to history.
+  if (isClerkDefaultAvatarUrl(avatarUrl)) {
+    await supabaseAdmin
+      .from('profiles')
+      .update({ avatar_url: null, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+    return NextResponse.json({ ok: true, noop: 'clerk_default' });
   }
 
   // Idempotency check: skip work if the new URL already matches the

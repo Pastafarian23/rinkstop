@@ -41,17 +41,17 @@ export async function PassportSections({
   const playerId = player.id;
   const positionCategory = (player.primary_position_category as 'forward' | 'defense' | 'goalie' | null) ?? null;
 
-  const [historyCount, statsCount, federationSet] = await Promise.all([
+  const [historyCount, statsCount, federationCount] = await Promise.all([
     supabaseAdmin.from('hockey_player_team_history').select('id', { count: 'exact', head: true }).eq('player_id', playerId),
     supabaseAdmin.from('hockey_player_stats_season').select('id', { count: 'exact', head: true }).eq('player_id', playerId),
     supabaseAdmin
-      .from('players')
-      .select('usa_hockey_number,hockey_canada_number')
-      .eq('id', playerId)
-      .maybeSingle(),
+      .from('federation_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('player_id', playerId)
+      .eq('submission_status', 'approved'),
   ]);
 
-  const sections = [Boolean(historyCount.count ?? 0), Boolean(statsCount.count ?? 0), Boolean(federationSet.data?.usa_hockey_number || federationSet.data?.hockey_canada_number)];
+  const sections = [Boolean(historyCount.count ?? 0), Boolean(statsCount.count ?? 0), Boolean(federationCount.count ?? 0)];
   const completed = sections.filter(Boolean).length;
 
   return (
