@@ -385,6 +385,7 @@ async function renderDashboard(userId: string) {
     wizardHasCoachProfile,
     wizardHasOrgMembership,
     wizardHasOfficialRegistration,
+    wizardHasCountry,
   } = wizardState;
 
   // Wizard persona selection (2026-07-21). Order of preference:
@@ -533,6 +534,7 @@ async function renderDashboard(userId: string) {
           persona={accountTypeToPersona(wizardPersonaRaw ?? 'generic')}
           state={{
             identityVerified: isIdentityVerifiedForUser,
+            hasCountry: wizardHasCountry,
             hasChildren: wizardHasChildren,
             hasAvatar: !!profile?.avatar_url,
             hasTeamMembership: wizardHasTeamMembership,
@@ -736,6 +738,9 @@ interface WizardState {
   wizardHasCoachProfile: boolean;
   wizardHasOrgMembership: boolean;
   wizardHasOfficialRegistration: boolean;
+  /** WS13 PR4: user has a primary_country set on profile_country_context.
+   *  Drives the new "Set your country" wizard step (step 2 across all personas). */
+  wizardHasCountry: boolean;
 }
 
 async function loadWizardState(userId: string): Promise<WizardState> {
@@ -746,9 +751,10 @@ async function loadWizardState(userId: string): Promise<WizardState> {
     wizardHasCoachProfile: false,
     wizardHasOrgMembership: false,
     wizardHasOfficialRegistration: false,
+    wizardHasCountry: false,
   };
   try {
-    const [childrenRes, teamRes, childIdsRes, coachRes, orgRes, refereeRes] = await Promise.all([
+    const [childrenRes, teamRes, childIdsRes, coachRes, orgRes, refereeRes, countryRes] = await Promise.all([
       supabaseAdmin
         .from('managed_profiles')
         .select('id', { count: 'exact', head: true })
@@ -775,6 +781,14 @@ async function loadWizardState(userId: string): Promise<WizardState> {
         .from('referees')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', userId),
+      // WS13 PR4: profile_country_context row existence check.
+      // Existence is enough — the dashboard picker (PR #64) requires primary_country,
+      // and the table's CHECK constraint (length=2 AND upper) prevents empty values
+      // from being written.
+      supabaseAdmin
+        .from('profile_country_context')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('user_id', userId),
     ]);
 
     // Phase 1b-1: count any active player_documents for any linked child.
@@ -800,6 +814,7 @@ async function loadWizardState(userId: string): Promise<WizardState> {
       wizardHasCoachProfile: (coachRes.count ?? 0) > 0,
       wizardHasOrgMembership: (orgRes.count ?? 0) > 0,
       wizardHasOfficialRegistration: (refereeRes.count ?? 0) > 0,
+      wizardHasCountry: (countryRes.count ?? 0) > 0,
     };
   } catch (e) {
     console.error('[dashboard] wizard state read failed:', e);

@@ -53,6 +53,9 @@ export type WizardPersona =
 export interface FamilySetupWizardState {
   /** Identity verified via Didit (per isIdentityVerified helper) */
   identityVerified: boolean;
+  /** User has a primary country set on profile_country_context (WS13 PR4).
+   *  Drives federation dropdown scoping via v_user_visible_certifications. */
+  hasCountry: boolean;
   /** User has at least one linked child via managed_profiles (parent-only) */
   hasChildren: boolean;
   /** User has an avatar set */
@@ -89,7 +92,9 @@ interface Step {
 
 /**
  * Persona-specific copy bundle. Header line + the
- * 6-step template. Steps 1, 4, 5 are universal; steps 2, 3, 6 vary.
+ * 7-step template. Step 1 (identity) + step 4 (passport) + step 5
+ * (schedule, comingNext) are universal; the country step (WS13 PR4) is
+ * universal too; steps 3, 6, 7 vary by persona.
  */
 interface PersonaCopy {
   /** Substring shown in the header paragraph (e.g. "your family's Hockey Identity") */
@@ -99,6 +104,26 @@ interface PersonaCopy {
     identityVerified: boolean
   ) => Step[];
 }
+
+/**
+ * Universal country step (WS13 PR4). Same shape + copy across personas —
+ * country is foundational metadata, not persona-specific. Placed at step 2
+ * (right after identity verification) because it gates federation dropdown
+ * scoping (v_user_visible_certifications) which is referenced in the
+ * persona-specific credential steps below.
+ */
+const COUNTRY_STEP = (s: FamilySetupWizardState): Step => ({
+  number: 2,
+  title: 'Set your country',
+  description: s.hasCountry
+    ? 'Your country is on file — federation dropdowns are scoped to your region.'
+    : 'Pick your country so we can show the right hockey federations (e.g. USA Hockey, Hockey Canada, IIHF) on your Hockey Passport.',
+  cta: {
+    label: s.hasCountry ? 'Edit country' : 'Pick country',
+    href: '/dashboard/profile#country',
+  },
+  done: s.hasCountry,
+});
 
 const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
   parent: {
@@ -113,8 +138,9 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
         done: identityVerified,
       },
+      COUNTRY_STEP(s),
       {
-        number: 2,
+        number: 3,
         title: 'Add your children',
         description: s.hasChildren
           ? 'Your kids are linked — your Family Hub is alive.'
@@ -123,7 +149,7 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         done: s.hasChildren,
       },
       {
-        number: 3,
+        number: 4,
         title: 'Upload important hockey documents',
         description: s.hasDocuments
           ? 'Your child’s documents are uploaded and ready.'
@@ -132,14 +158,14 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         done: s.hasDocuments,
       },
       {
-        number: 4,
+        number: 5,
         title: 'Create your first Hockey Passport',
         description: 'Your Hockey Passport is the permanent record of your child’s hockey career — verified identity, photo, achievements, and team history.',
         cta: { label: 'View your passport', href: '/dashboard/profile' },
         done: s.hasAvatar && identityVerified,
       },
       {
-        number: 5,
+        number: 6,
         title: 'Import your existing schedule (optional)',
         description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
         cta: { label: 'Coming next', href: '#' },
@@ -147,7 +173,7 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         comingNext: true,
       },
       {
-        number: 6,
+        number: 7,
         title: 'Invite your team or organization',
         description: 'Find your club, coach, or league. (Family-initiated invitations ship in Phase 2 — for now, you can browse the directory.)',
         cta: { label: 'Browse the directory', href: '/directory/teams' },
@@ -168,8 +194,9 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
         done: identityVerified,
       },
+      COUNTRY_STEP(s),
       {
-        number: 2,
+        number: 3,
         title: 'Link your team',
         description: s.hasCoachProfile
           ? 'Your team is linked to your coach profile.'
@@ -178,21 +205,21 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         done: s.hasCoachProfile,
       },
       {
-        number: 3,
+        number: 4,
         title: 'Set your coaching credentials',
         description: 'Add your certification, league affiliation, and coaching history to earn the coach check.',
         cta: { label: 'Add credentials', href: '/dashboard/coach' },
         done: false,
       },
       {
-        number: 4,
+        number: 5,
         title: 'Create your Hockey Passport',
         description: 'Your Hockey Passport is the permanent record of your hockey career — verified identity, photo, teams you’ve coached, and credentials.',
         cta: { label: 'View your passport', href: '/dashboard/profile' },
         done: s.hasAvatar && identityVerified,
       },
       {
-        number: 5,
+        number: 6,
         title: 'Import your existing schedule (optional)',
         description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
         cta: { label: 'Coming next', href: '#' },
@@ -200,7 +227,7 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         comingNext: true,
       },
       {
-        number: 6,
+        number: 7,
         title: 'Connect with players and organizations',
         description: 'Discover players and organizations to coach, mentor, or recruit.',
         cta: { label: 'Browse the directory', href: '/directory/teams' },
@@ -221,8 +248,9 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
         done: identityVerified,
       },
+      COUNTRY_STEP(s),
       {
-        number: 2,
+        number: 3,
         title: 'Join your first team',
         description: s.hasTeamMembership
           ? 'You’re on a team — your roster is live.'
@@ -231,21 +259,21 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         done: s.hasTeamMembership,
       },
       {
-        number: 3,
+        number: 4,
         title: 'Set up your player profile',
         description: 'Add your number, position, handedness, and equipment preferences.',
         cta: { label: 'Edit player profile', href: '/dashboard/profile' },
         done: s.hasAvatar,
       },
       {
-        number: 4,
+        number: 5,
         title: 'Create your Hockey Passport',
         description: 'Your Hockey Passport is the permanent record of your hockey career — verified identity, photo, team history, and achievements.',
         cta: { label: 'View your passport', href: '/dashboard/profile' },
         done: s.hasAvatar && identityVerified,
       },
       {
-        number: 5,
+        number: 6,
         title: 'Import your existing schedule (optional)',
         description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
         cta: { label: 'Coming next', href: '#' },
@@ -253,7 +281,7 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         comingNext: true,
       },
       {
-        number: 6,
+        number: 7,
         title: 'Connect with coaches and teams',
         description: 'Find coaches in your area and teams that match your level.',
         cta: { label: 'Browse the directory', href: '/directory/teams' },
@@ -274,8 +302,9 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
         done: identityVerified,
       },
+      COUNTRY_STEP(s),
       {
-        number: 2,
+        number: 3,
         title: 'Register as an official',
         description: s.hasOfficialRegistration
           ? 'Your official registration is on file.'
@@ -284,21 +313,21 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         done: s.hasOfficialRegistration,
       },
       {
-        number: 3,
+        number: 4,
         title: 'Add your certification',
         description: 'Upload your certification documents to earn the official check on RinkStop.',
         cta: { label: 'Add certification', href: '/dashboard/referee' },
         done: false,
       },
       {
-        number: 4,
+        number: 5,
         title: 'Create your Hockey Passport',
         description: 'Your Hockey Passport is the permanent record of your officiating career — verified identity, certification, and games worked.',
         cta: { label: 'View your passport', href: '/dashboard/profile' },
         done: s.hasAvatar && identityVerified,
       },
       {
-        number: 5,
+        number: 6,
         title: 'Import your existing schedule (optional)',
         description: 'Calendar import ships in Phase 1b. We will let you bring games and assignments from any calendar app.',
         cta: { label: 'Coming next', href: '#' },
@@ -306,7 +335,7 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         comingNext: true,
       },
       {
-        number: 6,
+        number: 7,
         title: 'Connect with leagues and assignors',
         description: 'Find leagues and assignors who need officials at your level.',
         cta: { label: 'Browse the directory', href: '/directory/teams' },
@@ -327,8 +356,9 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
         done: identityVerified,
       },
+      COUNTRY_STEP(s),
       {
-        number: 2,
+        number: 3,
         title: 'Link your organization',
         description: s.hasOrgMembership
           ? 'Your organization is linked — your admin dashboard is live.'
@@ -337,21 +367,21 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         done: s.hasOrgMembership,
       },
       {
-        number: 3,
+        number: 4,
         title: 'Invite coaches and players',
         description: 'Send invites to your coaches and players so they can claim profiles and join your org.',
         cta: { label: 'Send invites', href: '/dashboard/coach-feed' },
         done: false,
       },
       {
-        number: 4,
+        number: 5,
         title: 'Create your organization’s passport',
         description: 'Your organization’s Hockey Passport is the public profile for your club, rink, or league — verified identity, teams, and history.',
         cta: { label: 'View your passport', href: '/dashboard/profile' },
         done: s.hasAvatar && identityVerified,
       },
       {
-        number: 5,
+        number: 6,
         title: 'Import your existing schedule (optional)',
         description: 'Calendar import ships in Phase 1b. We will let you bring games and events from any calendar app.',
         cta: { label: 'Coming next', href: '#' },
@@ -359,7 +389,7 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         comingNext: true,
       },
       {
-        number: 6,
+        number: 7,
         title: 'Set your team rosters',
         description: 'Add teams, assign coaches, and manage rosters from one place.',
         cta: { label: 'Manage rosters', href: '/directory/teams' },
@@ -380,29 +410,30 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         cta: { label: identityVerified ? 'View verification' : 'Verify now', href: '/dashboard/identity' },
         done: identityVerified,
       },
+      COUNTRY_STEP(s),
       {
-        number: 2,
+        number: 3,
         title: 'Build out your profile',
         description: 'Add the details that make your Hockey Passport yours — display name, avatar, bio, location.',
         cta: { label: 'Edit profile', href: '/dashboard/profile' },
         done: s.hasAvatar,
       },
       {
-        number: 3,
+        number: 4,
         title: 'Connect with the hockey community',
         description: 'Find teams, coaches, and organizations that match what you do.',
         cta: { label: 'Browse the directory', href: '/directory/teams' },
         done: s.hasTeamMembership,
       },
       {
-        number: 4,
+        number: 5,
         title: 'Create your Hockey Passport',
         description: 'Your Hockey Passport is the permanent record of your hockey identity — verified, public, and yours forever.',
         cta: { label: 'View your passport', href: '/dashboard/profile' },
         done: s.hasAvatar && identityVerified,
       },
       {
-        number: 5,
+        number: 6,
         title: 'Import your existing schedule (optional)',
         description: 'Calendar import ships in Phase 1b. We will let you bring games, practices, and tournaments from any calendar app.',
         cta: { label: 'Coming next', href: '#' },
@@ -410,7 +441,7 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
         comingNext: true,
       },
       {
-        number: 6,
+        number: 7,
         title: 'Connect with teams and organizations',
         description: 'Discover what’s around you — rinks, leagues, clubs, and tournaments.',
         cta: { label: 'Browse the directory', href: '/directory/teams' },
@@ -525,7 +556,7 @@ export default function FamilySetupWizard({ state, firstName, persona }: FamilyS
             lineHeight: 1.5,
           }}>
             {firstName ? `${firstName}, ` : ''}
-            {copy.identityNoun} lives here. Six steps, ten minutes, yours forever.
+            {copy.identityNoun} lives here. Seven steps, ten minutes, yours forever.
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
