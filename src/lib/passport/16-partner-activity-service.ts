@@ -280,22 +280,9 @@ export class PartnerActivityService {
       venueName: v.name as string,
       stampCount: stampsByVenue.get(v.id as string) ?? 0,
 
-      scanCount: 0, // see note below; populated when scan_events.venue_id lands
-      lastStampedAt: lastStampedByVenue.get(v.id as string) ?? null,
-    }));
-
-    // ─── 6. Recent scan_events ──────────────────────────────
-    // NOTE: scan_events doesn't carry venue_id — only qr_identifier.
-    // Until stamps.qr_identifier (or scan_events.venue_id) lands, we
-    // ship without scan visibility. The page shows a "v1.1" footnote
-    // so operators know it's a known gap, not a broken page.
-    const recentScans: PartnerActivityScan[] = [];
-
-
       scanCount: scansByVenue.get(v.id as string) ?? 0,
       lastStampedAt: lastStampedByVenue.get(v.id as string) ?? null,
     }));
-
 
     return {
       listingId: listing.id as string,
