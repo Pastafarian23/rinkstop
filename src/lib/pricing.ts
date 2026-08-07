@@ -122,7 +122,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'personal',
     priceUsd: 24.99,
     stripePriceEnv: 'STRIPE_PRICE_VERIFIED_IDENTITY',
-    tagline: 'Get a verified checkmark so coaches, scouts, and program directors know you're real.',
+    tagline: "Get a verified checkmark so coaches, scouts, and program directors know you're real.",
     cta: 'Verify My Identity',
     popular: true,
     features: [
