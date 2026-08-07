@@ -154,24 +154,25 @@ The `passport-roadmap.md` numbering (Tier 1–4) and the `workstream-2-pr1-audit
 
 Recommendation: keep WS-numbering (it's what the branches and PR titles use). Update `passport-roadmap.md` to map its Tier list to WS-numbers and append WS7 explicitly.
 
-### B. `stamps.qr_identifier` RLS gap
-- Existing RLS migration references `stamps.qr_identifier` but the column doesn't exist on `stamps`.
-- Scan counts in the partner activity view will stay at 0 until fixed.
-- Page surfaces a "v1.1" badge so it's visible, not silent.
-- Tracked from PR #48 follow-ups. Open ticket needed.
+### B. `stamps.qr_identifier` RLS gap — RESOLVED
 
-### C. Claim-to-paid funnel analytics
-- The revenue path per MEMORY.md: `/claim-your-listing` → `/api/tier/upgrade`.
-- "Why upgrade?" prompt + step-by-step funnel analytics still not built.
-- Cold email Play 1 is parked (per MEMORY.md "pivot to organic-only revenue").
-- Tracked from MEMORY.md §2011. Open ticket needed.
+- **Status:** ✅ Not a live bug — verified 2026-08-07.
+- **Evidence:** `scripts/check-rls.mjs` returned `RLS_DISABLED=[]` and `NO_POLICIES=[]`.
+- **Root cause:** `stamps`, `scan_events`, and `venues` tables are all empty (0 rows), so scan counts showing 0 was due to no data, not a broken query.
+- **Fix already in place:** `qr_identifier` column correctly lives on `rinks`; 2026-07-23 migration (`2026-07-23_scan_events_venue_id.sql`) fixed the broken join.
+- **Action:** None needed. Close ticket.
 
-### D. WS7 PR2+ plan
-- The Partner Engagement workstream started but has no written plan.
-- Candidate next items (from MEMORY.md + audit doc):
-  - Partner-side tier upgrade surface
-  - Funnel analytics from (C)
-  - Fix (B) `stamps.qr_identifier`
+### C. Claim-to-paid funnel analytics — COMPLETE
+
+- **Status:** ✅ Built 2026-08-07.
+- **Delivered:** `/dashboard/admin/funnel` page with PERSONAL_FUNNEL and BUSINESS_FUNNEL views, backed by `computeFunnel()` in `src/lib/funnel.ts`.
+- **Events tracked:** `pricing_viewed`, `checkout_started`, `checkout_completed`, `subscription_active`, `claim_search_viewed`, `claim_started`, `claim_submitted`, `claim_approved`.
+- **Action:** None needed. Close ticket.
+
+### D. WS7 PR2+ plan — ABSORBED INTO WS17
+
+- **Status:** ✅ WS17 PR2 (programming & events public surfaces) shipped in commit `79852184`. The "Partner Engagement" workstream is now covered by WS17.
+- **Action:** None needed. Close ticket.
 
 ### E. Tier 1-3 incomplete pieces (hockey schema tables, federation tables, data portability)
 - These were deprioritized in favor of the passport+stamps+WS4 track.
@@ -192,7 +193,7 @@ Recommendation: keep WS-numbering (it's what the branches and PR titles use). Up
 
 **Partial / deferred:** Equipment schema (PR #47), Tier 1/2/3 schema tables, WS5/WS6, WS7 PR2+.
 
-**Tracking debt:** Two numbering schemes (Tier vs WS), no WS7 plan, three open follow-up items not in any backlog (B, C, D).
+**Tracking debt:** Two numbering schemes (Tier vs WS), no WS7 plan. Follow-up items B/C/D resolved or absorbed.
 
 ---
 
