@@ -217,6 +217,22 @@ export function countryToSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+export interface NewestItem {
+  id: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  slug: string | null;
+  city?: string | null;
+  home_city?: string | null;
+  position?: string | null;
+  title?: string;
+  subtitle?: string | null;
+  category?: string | null;
+  published_at?: string | null;
+  created_at: string;
+}
+
 export interface CountryPageData {
   countryName: string;
   countrySlug: string;
@@ -255,6 +271,12 @@ export interface CountryPageData {
     slug: string;
   }>;
   leagueCount: number;
+  newest: {
+    rinks: NewestItem[];
+    teams: NewestItem[];
+    players: NewestItem[];
+    articles: NewestItem[];
+  };
 }
 
 export async function getCountryPageData(countryName: string): Promise<CountryPageData> {
@@ -277,6 +299,10 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     { data: nationalTeams },
     { count: leagueCount },
     { count: playerCount },
+    { data: newestRinks },
+    { data: newestTeams },
+    { data: newestPlayers },
+    { data: newestArticles },
   ] = await Promise.all([
     supabase.from('rinks').select('id, slug, name, city, address, phone, website_url').eq('country', countryName).eq('is_active', true).order('name').limit(50),
     supabase.from('team_workspaces').select('id, name, slug, avatar_url, home_city, league_id').eq('country_code', isoCode).eq('is_active', true).order('name').limit(20),
@@ -293,6 +319,18 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     iocCode
       ? supabase.from('players').select('*', { count: 'exact', head: true }).eq('nationality', iocCode).eq('is_active', true)
       : Promise.resolve({ count: 0 } as any),
+    // Newest rinks in this country (country page activity feed)
+    supabase.from('rinks').select('id, name, slug, city, created_at').eq('country', countryName).eq('is_active', true).order('created_at', { ascending: false }).limit(5),
+    // Newest teams in this country
+    isoCode
+      ? supabase.from('team_workspaces').select('id, name, slug, home_city, created_at').eq('country_code', isoCode).eq('is_active', true).order('created_at', { ascending: false }).limit(5)
+      : Promise.resolve({ data: [] as any }),
+    // Newest players with this nationality
+    iocCode
+      ? supabase.from('players').select('id, first_name, last_name, slug, position, created_at').eq('nationality', iocCode).eq('is_active', true).order('created_at', { ascending: false }).limit(5)
+      : Promise.resolve({ data: [] as any }),
+    // Newest articles tagged with this country
+    supabase.from('posts').select('id, slug, title, subtitle, category, published_at, created_at').eq('status', 'published').eq('country_slug', countrySlug).order('published_at', { ascending: false }).limit(5),
   ]);
 
   // Score related articles by tag overlap
@@ -359,6 +397,12 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
     nearestHockeyCountries,
     iihfMember: iihfMember || null,
     nationalTeams: nationalTeams || [],
+    newest: {
+      rinks: (newestRinks as any) || [],
+      teams: (newestTeams as any) || [],
+      players: (newestPlayers as any) || [],
+      articles: (newestArticles as any) || [],
+    },
   };
 }
 
