@@ -60,6 +60,7 @@ export default function HockeyTeamsContent({
 
   return (
     <section
+      id="teams-overview"
       aria-label="Hockey teams directory overview"
       style={{
         maxWidth: '80rem',
@@ -71,8 +72,10 @@ export default function HockeyTeamsContent({
       }}
     >
       {/* Head-term answer block: explicit "How many hockey teams are there"
-          paragraph that Google can extract directly for the bare query. */}
-      <div style={{ marginBottom: '2rem' }}>
+          paragraph that Google can extract directly for the bare query.
+          Anchor id added 2026-08-07 so the SEO intro block above can
+          jump-link directly to the head-term answer. */}
+      <div id="how-many-hockey-teams" style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
           How many hockey teams are there in the world?
         </h2>
@@ -85,8 +88,10 @@ export default function HockeyTeamsContent({
         </p>
       </div>
 
-      {/* By level: 6 cards targeting "{level} hockey teams" queries */}
-      <div style={{ marginBottom: '2rem' }}>
+      {/* By level: 6 cards targeting "{level} hockey teams" queries.
+          Anchor id added 2026-08-07 so the SEO intro block above can
+          jump-link to "teams by level" directly. */}
+      <div id="teams-by-level" style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
           Hockey teams by level
         </h2>
@@ -131,8 +136,10 @@ export default function HockeyTeamsContent({
       </div>
 
       {/* By country: top 10 with team counts. Targets "hockey teams in
-          <country>" cluster which has 35+ queries all at pos 30-80. */}
-      <div style={{ marginBottom: '2rem' }}>
+          <country>" cluster which has 35+ queries all at pos 30-80.
+          Anchor id added 2026-08-07 so the SEO intro block above can
+          jump-link to "teams by country" directly. */}
+      <div id="teams-by-country" style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
           Hockey teams by country
         </h2>
