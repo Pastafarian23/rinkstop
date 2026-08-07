@@ -228,6 +228,9 @@ export class PartnerActivityService {
       stampedAt: s.stamped_at as string,
     }));
 
+
+    // ─── 5. Per-venue summary counts ────────────────────────
+
     // ─── 5. Recent scan_events ──────────────────────────────
     // scan_events.venue_id is populated by the stamp service at insert time.
     const { data: scanEventsData, error: scanEventsErr } = await supabaseAdmin
@@ -260,6 +263,7 @@ export class PartnerActivityService {
     }));
 
     // ─── 6. Per-venue summary counts ────────────────────────
+
     const stampsByVenue = new Map<string, number>();
     const lastStampedByVenue = new Map<string, string>();
     for (const s of allStamps) {
@@ -275,9 +279,23 @@ export class PartnerActivityService {
       venueId: v.id as string,
       venueName: v.name as string,
       stampCount: stampsByVenue.get(v.id as string) ?? 0,
+
+      scanCount: 0, // see note below; populated when scan_events.venue_id lands
+      lastStampedAt: lastStampedByVenue.get(v.id as string) ?? null,
+    }));
+
+    // ─── 6. Recent scan_events ──────────────────────────────
+    // NOTE: scan_events doesn't carry venue_id — only qr_identifier.
+    // Until stamps.qr_identifier (or scan_events.venue_id) lands, we
+    // ship without scan visibility. The page shows a "v1.1" footnote
+    // so operators know it's a known gap, not a broken page.
+    const recentScans: PartnerActivityScan[] = [];
+
+
       scanCount: scansByVenue.get(v.id as string) ?? 0,
       lastStampedAt: lastStampedByVenue.get(v.id as string) ?? null,
     }));
+
 
     return {
       listingId: listing.id as string,
