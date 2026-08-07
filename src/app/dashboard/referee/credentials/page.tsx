@@ -46,11 +46,15 @@ export default async function RefereeCredentialsPage() {
     bySlug[fed.slug] = { ...raw, federation: fed } as RegistrationRow;
   }
 
+  // WS13 PR2: query v_user_visible_certifications so country context
+  // (profile_country_context) is honored in the dropdown. Falls back to
+  // showing all federations when the user has no country set.
   const { data: federations } = await supabaseAdmin
-    .from('federations')
-    .select('slug, name, country_code')
-    .eq('is_active', true)
-    .order('name');
+    .from('v_user_visible_certifications')
+    .select('issuer_slug, issuer_name, issuer_country_code, category')
+    .eq('visible_to_user', true)
+    .eq('category', 'referee')
+    .order('issuer_name');
 
   return (
     <main style={{ minHeight: '100vh', background: '#041E42', color: '#fff' }}>
@@ -59,7 +63,11 @@ export default async function RefereeCredentialsPage() {
           persona="referee"
           subjectName={cu?.firstName ?? 'Referee'}
           registrations={bySlug}
-          federations={(federations ?? []) as { slug: string; name: string; country_code: string | null }[]}
+          federations={(federations ?? []).map((r: any) => ({
+        slug: r.issuer_slug,
+        name: r.issuer_name,
+        country_code: r.issuer_country_code,
+      })) as { slug: string; name: string; country_code: string | null }[]}
           apiBase="/api/referee/credentials"
         />
       </div>
