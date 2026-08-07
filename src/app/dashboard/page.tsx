@@ -24,7 +24,7 @@ import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces'
 import { getDismissedWorkspaceIds } from '@/lib/dashboard/dismissedWorkspaces';
 import DismissWorkspaceButton from '@/components/dashboard/DismissWorkspaceButton';
 import HiddenWorkspacesFooter from '@/components/dashboard/HiddenWorkspacesFooter';
-import FamilySetupWizard, { type WizardPersona } from '@/components/family/FamilySetupWizard';
+import FamilySetupWizard, { accountTypeToPersona, type WizardPersona } from '@/components/family/FamilySetupWizard';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
 import PlayerPracticePulse, { loadPracticePulseData, type PracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
 import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/FreeAgentToggle';
@@ -38,29 +38,7 @@ import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/Fr
  * the rendered dashboard still reflects ownership.
  */
 
-// Server-side mirror of accountTypeToPersona() in FamilySetupWizard.tsx.
-// FamilySetupWizard is a 'use client' component, so its helper can't be
-// called from a server component (Next.js will throw "client function from
-// the server"). Keep these two in sync.
-function accountTypeToPersona(accountType: string): WizardPersona {
-  switch (accountType) {
-    case 'parent':
-      return 'parent';
-    case 'coach':
-    case 'scout':
-      return 'coach';
-    case 'player':
-      return 'player';
-    case 'referee':
-      return 'official';
-    case 'team_admin':
-    case 'league_admin':
-    case 'rink_operator':
-      return 'operator';
-    default:
-      return 'generic';
-  }
-}
+
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -725,102 +703,10 @@ async function renderDashboard(userId: string) {
 // any markup. The layout was already parallelized in commit 697f93f; this
 // is the page-side equivalent.
 //
-// This helper extracts the Family Setup Wizard state computation (formerly
-// inline) so it can be fired in parallel with the rest of the dashboard
-// data loads. Each of the 6 count queries is independent; the 7th query
-// (player_documents) depends on the childIds result from the 3rd query -
-// that one is run second once we know whether any children are linked.
-// ---------------------------------------------------------------------------
-interface WizardState {
-  wizardHasChildren: boolean;
-  wizardHasTeamMembership: boolean;
-  wizardHasDocuments: boolean;
-  wizardHasCoachProfile: boolean;
-  wizardHasOrgMembership: boolean;
-  wizardHasOfficialRegistration: boolean;
-  /** WS13 PR4: user has a primary_country set on profile_country_context.
-   *  Drives the new "Set your country" wizard step (step 2 across all personas). */
-  wizardHasCountry: boolean;
-}
+// WS14 PR2: loadWizardState moved to src/lib/wizardState.ts (shared across
+// dashboard page + wizard-nudge cron + CLI script).
+import { loadWizardState } from '@/lib/wizardState';
 
-async function loadWizardState(userId: string): Promise<WizardState> {
-  const empty: WizardState = {
-    wizardHasChildren: false,
-    wizardHasTeamMembership: false,
-    wizardHasDocuments: false,
-    wizardHasCoachProfile: false,
-    wizardHasOrgMembership: false,
-    wizardHasOfficialRegistration: false,
-    wizardHasCountry: false,
-  };
-  try {
-    const [childrenRes, teamRes, childIdsRes, coachRes, orgRes, refereeRes, countryRes] = await Promise.all([
-      supabaseAdmin
-        .from('managed_profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('manager_user_id', userId),
-      supabaseAdmin
-        .from('team_members')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .is('left_at', null),
-      supabaseAdmin
-        .from('managed_profiles')
-        .select('profile_id')
-        .eq('manager_user_id', userId)
-        .eq('profile_type', 'player'),
-      supabaseAdmin
-        .from('coaches')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      supabaseAdmin
-        .from('organization_members')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      supabaseAdmin
-        .from('referees')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      // WS13 PR4: profile_country_context row existence check.
-      // Existence is enough — the dashboard picker (PR #64) requires primary_country,
-      // and the table's CHECK constraint (length=2 AND upper) prevents empty values
-      // from being written.
-      supabaseAdmin
-        .from('profile_country_context')
-        .select('user_id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-    ]);
-
-    // Phase 1b-1: count any active player_documents for any linked child.
-    // If the user has linked children, run a second scoped count. If they
-    // have zero linked children, the count stays false (no docs possible).
-    const childIds = ((childIdsRes.data || []) as any[])
-      .map((r: any) => r.profile_id)
-      .filter(Boolean);
-    let docsCount = 0;
-    if (childIds.length > 0) {
-      const { count } = await supabaseAdmin
-        .from('player_documents')
-        .select('id', { count: 'exact', head: true })
-        .in('player_id', childIds)
-        .eq('status', 'active');
-      docsCount = count ?? 0;
-    }
-
-    return {
-      wizardHasChildren: (childrenRes.count ?? 0) > 0,
-      wizardHasTeamMembership: (teamRes.count ?? 0) > 0,
-      wizardHasDocuments: docsCount > 0,
-      wizardHasCoachProfile: (coachRes.count ?? 0) > 0,
-      wizardHasOrgMembership: (orgRes.count ?? 0) > 0,
-      wizardHasOfficialRegistration: (refereeRes.count ?? 0) > 0,
-      wizardHasCountry: (countryRes.count ?? 0) > 0,
-    };
-  } catch (e) {
-    console.error('[dashboard] wizard state read failed:', e);
-    return empty;
-  }
-}
 
 function WorkspaceHub({
   userTier,
