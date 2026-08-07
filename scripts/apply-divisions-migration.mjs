@@ -12,9 +12,9 @@ import { readFile } from 'fs/promises';
 const sql = await readFile(sqlFile, 'utf-8');
 
 // Supabase Management API: POST /v1/projects/{ref}/database/query
-// The PAT (Personal Access Token) is stored in credentials/supabase.json
+// The PAT (Personal Access Token) is stored in .env
 import { readFile as rf } from 'fs/promises';
-const creds = JSON.parse(await rf('/root/.openclaw/credentials/supabase.json', 'utf-8'));
+const creds = JSON.parse(await rf('.env', 'utf-8'));
 const pat = creds.pat;
 const ref = 'yszheonqyyskkjoxoexk'; // from SUPABASE URL
 

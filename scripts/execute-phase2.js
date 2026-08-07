@@ -26,7 +26,7 @@ const SQL = fs.readFileSync('sql/phase2-migration.sql', 'utf8');
   // First check if we have a stored PAT
   let pat = null;
   try {
-    const creds = JSON.parse(fs.readFileSync('/root/.openclaw/credentials/supabase.json', 'utf8'));
+    const creds = JSON.parse(fs.readFileSync('.env', 'utf8'));
     pat = creds.pat;
   } catch (e) {
     console.log('No supabase.json credentials file');

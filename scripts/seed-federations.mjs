@@ -62,7 +62,7 @@ const sql = sqlHeader + `INSERT INTO public.federations (slug, name, country_cod
 console.log(sql);
 
 // Optionally apply via Supabase Management API if credentials present.
-const credPath = '/root/.openclaw/credentials/supabase.json';
+const credPath = '.env';
 try {
   const cred = JSON.parse(readFileSync(credPath, 'utf8'));
   const projectRef = cred.projectRef || 'yszheonqyyskkjoxoexk';

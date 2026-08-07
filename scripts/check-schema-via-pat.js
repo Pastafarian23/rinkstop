@@ -1,5 +1,5 @@
 const fs = require('fs');
-const creds = JSON.parse(fs.readFileSync('/root/.openclaw/credentials/supabase.json', 'utf8'));
+const creds = JSON.parse(fs.readFileSync('.env', 'utf8'));
 const projectRef = 'yszheonqyyskkjoxoexk';
 (async () => {
   const res = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/database/query`, {

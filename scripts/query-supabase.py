@@ -2,7 +2,7 @@
 """Run a SQL query against Supabase and print results."""
 import json, sys, http.client
 
-with open('/root/.openclaw/credentials/supabase.json') as f:
+with open('.env') as f:
     creds = json.load(f)
 
 PAT = creds['pat']

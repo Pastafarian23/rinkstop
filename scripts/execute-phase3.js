@@ -9,7 +9,7 @@ for (const line of fs.readFileSync('.env','utf8').split('\n')) {
 }
 
 const { createClient } = require('@supabase/supabase-js');
-const pat = JSON.parse(fs.readFileSync('/root/.openclaw/credentials/supabase.json','utf8')).pat;
+const pat = JSON.parse(fs.readFileSync('.env','utf8')).pat;
 const ref = 'yszheonqyyskkjoxoexk';
 const s = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
