@@ -71,19 +71,28 @@ export default async function CoachCredentialsPage() {
     bySlug[fed.slug] = { ...raw, federation: fed } as RegistrationRow;
   }
 
-  // Active federations list (for the dropdown to add a new one)
+  // Active federations list (for the dropdown to add a new one).
+  // WS13 PR2: query v_user_visible_certifications instead of the bare
+  // federations table so country context (profile_country_context) is
+  // honored. Falls back to showing all federations when the user has
+  // no country set (matches the view's CASE expression).
   const { data: federations } = await supabaseAdmin
-    .from('federations')
-    .select('slug, name, country_code')
-    .eq('is_active', true)
-    .order('name');
+    .from('v_user_visible_certifications')
+    .select('issuer_slug, issuer_name, issuer_country_code, category')
+    .eq('visible_to_user', true)
+    .eq('category', 'coach')
+    .order('issuer_name');
 
   return (
     <CredentialsFormClient
       persona="coach"
       subjectName={cu?.firstName ?? 'Coach'}
       registrations={bySlug}
-      federations={(federations ?? []) as { slug: string; name: string; country_code: string | null }[]}
+      federations={(federations ?? []).map((r: any) => ({
+        slug: r.issuer_slug,
+        name: r.issuer_name,
+        country_code: r.issuer_country_code,
+      })) as { slug: string; name: string; country_code: string | null }[]}
       apiBase="/api/coach/credentials"
     />
   );
