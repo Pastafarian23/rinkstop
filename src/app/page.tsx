@@ -176,34 +176,6 @@ export default async function Home() {
     homeNewest.players.length > 0 ||
     homeNewest.articles.length > 0;
 
-  // Item #3 from the ChatGPT retention audit (2026-08-07): "Create a
-  // homepage activity feed ('What's new on RinkStop')." 4 parallel queries
-  // for newest listings globally, ordered by created_at DESC. Bumps the
-  // homepage from a static directory landing into a living product.
-  const [
-    { data: homeNewestRinks },
-    { data: homeNewestTeams },
-    { data: homeNewestPlayers },
-    { data: homeNewestArticles },
-  ] = await Promise.all([
-    supabase.from('rinks').select('id, name, slug, city, country, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(6),
-    supabase.from('team_workspaces').select('id, name, slug, home_city, country_code, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(6),
-    supabase.from('players').select('id, first_name, last_name, slug, position, nationality, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(6),
-    supabase.from('posts').select('id, slug, title, category, published_at, created_at').eq('status', 'published').order('published_at', { ascending: false }).limit(6),
-  ]);
-
-  const homeNewest = {
-    rinks: homeNewestRinks || [],
-    teams: homeNewestTeams || [],
-    players: homeNewestPlayers || [],
-    articles: homeNewestArticles || [],
-  };
-  const hasHomeActivity =
-    homeNewest.rinks.length > 0 ||
-    homeNewest.teams.length > 0 ||
-    homeNewest.players.length > 0 ||
-    homeNewest.articles.length > 0;
-
   const ldJson = {
     '@context': 'https://schema.org',
     '@graph': [
