@@ -259,8 +259,18 @@ export default function FederationFormClient({
               marginBottom: '1.5rem',
             }}
           >
-            Showing all available player certifications. Set your country in your profile to filter
-            to federations relevant to you.
+            Showing all available player certifications.{' '}
+            <Link
+              href="/dashboard/profile#country"
+              style={{
+                color: '#FFB81C',
+                textDecoration: 'underline',
+                fontWeight: 600,
+              }}
+            >
+              Set your country in your profile
+            </Link>{' '}
+            to filter to federations relevant to you.
           </p>
         )}
         {userCountry && (

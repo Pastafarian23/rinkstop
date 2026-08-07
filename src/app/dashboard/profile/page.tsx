@@ -8,6 +8,7 @@ import { isIdentityVerified } from '@/lib/identity-verified';
 import ProfileEditForm from './ProfileEditForm';
 import FollowingList from './FollowingList';
 import ChangePhotoButton from './ChangePhotoButton';
+import CountryPickerForm from './CountryPickerForm';
 import PlayerDocumentSection from '@/components/player-documents/PlayerDocumentSection';
 import PlayerTimelineSection from '@/components/player-achievements/PlayerTimelineSection';
 import PlayerMediaSection from '@/components/player-media/PlayerMediaSection';
@@ -35,6 +36,26 @@ export default async function ProfilePage() {
     .select('bio, location, tier, is_founding_member, display_name, username')
     .eq('user_id', userId)
     .maybeSingle();
+
+  // WS13 PR4b — country context. Drives the federation dropdown scoping on
+  // /dashboard/passport/federation via the v_user_visible_certifications
+  // view. Safe to fail silently if the table doesn't exist on a stale env.
+  let countryPrimary: string | null = null;
+  let countryAdditional: string[] = [];
+  try {
+    const { data: cc } = await supabaseAdmin
+      .from('profile_country_context')
+      .select('primary_country, additional_countries')
+      .eq('user_id', userId)
+      .maybeSingle();
+    countryPrimary = cc?.primary_country ?? null;
+    countryAdditional = Array.isArray(cc?.additional_countries)
+      ? cc!.additional_countries
+      : [];
+  } catch {
+    countryPrimary = null;
+    countryAdditional = [];
+  }
 
   // Phase 1a: reframe /dashboard/profile as a Hockey Passport. Read
   // identity-verified status (1 condition: profile_identity_status row) and
@@ -590,6 +611,23 @@ export default async function ProfilePage() {
           </PassportSection>
         ))
       )}
+
+      {/* Section 8: Country Context (WS13 PR4b). Drives federation dropdown
+          scoping on /dashboard/passport/federation. Sectioned under the
+          passport header — same visual language as the rest of the page. */}
+      <PassportSection
+        emoji="🌍"
+        title="COUNTRY CONTEXT"
+        description="Where you play. Filters your federation certifications on the Hockey Passport."
+        testId="passport-section-country-context"
+      >
+        <div id="country" style={{ scrollMarginTop: 80 }}>
+          <CountryPickerForm
+            initialPrimary={countryPrimary}
+            initialAdditional={countryAdditional}
+          />
+        </div>
+      </PassportSection>
 
       {/* Editable profile fields (bio, location) — kept from previous surface */}
       <ProfileEditForm
