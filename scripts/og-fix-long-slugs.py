@@ -8,7 +8,7 @@ import load_secrets
 import json, os
 import urllib.request
 
-sb = json.load(open('/root/.openclaw/credentials/supabase.json'))
+sb = json.load(open('.env'))
 key = sb['serviceRoleKey']
 base = os.environ['NEXT_PUBLIC_SUPABASE_URL'] + '/rest/v1'
 

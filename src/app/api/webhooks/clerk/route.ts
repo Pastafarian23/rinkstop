@@ -36,6 +36,8 @@ import { Webhook } from 'svix';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
 import { passportService, isPassportEnabled } from '@/lib/passport';
+import { isClerkDefaultAvatarUrl } from '@/lib/avatar';
+import { emitSignupWelcome } from '@/lib/notifications/emit';
 
 export const dynamic = 'force-dynamic';
 
@@ -158,7 +160,10 @@ async function handleUserCreated(data: ClerkUserPayload) {
   const email = pickPrimaryEmail(data);
   const displayName = pickDisplayName(data);
   const username = pickDefaultUsername(data);
-  const avatarUrl = data.image_url ?? null;
+  // Clerk's auto-generated initials placeholder (purple silhouette).
+  // Normalize to null so we never store it on profiles or write it to
+  // profile_photo_history — it's not a real photo choice.
+  const avatarUrl = isClerkDefaultAvatarUrl(data.image_url) ? null : (data.image_url ?? null);
 
   // Account-recreation safety: if Clerk creates a new user for an email that
   // already owns a profile row (e.g. account-linking off, so Google OAuth
@@ -396,13 +401,53 @@ async function handleUserCreated(data: ClerkUserPayload) {
     }
   }
 
+  // === WS13 PR4a — country context row at signup ===
+  // Intentionally a no-op: Clerk's user.created payload carries no country
+  // signal, and the profile_country_context schema CHECK constraint
+  // (length(primary_country)=2 AND upper=primary_country) forbids an empty
+  // sentinel. We cannot insert a placeholder row at signup.
+  //
+  // The dashboard country picker (PR4b, merged as PR #64) is the canonical
+  // capture path. v_user_visible_certifications LEFT JOINs profile_country_context;
+  // a null row there means "show all certs" (pre-pick behavior) — exactly
+  // what we want for a brand-new user.
+  //
+  // This log line documents the deferral so future readers don't think
+  // signup-time country capture is missing. If we later add a Clerk
+  // unsafe_metadata field for country, replace this with the upsert.
+  console.log(`[clerk-webhook] WS13 PR4a: country context deferred for ${data.id} (no source); PR4b dashboard picker is the capture path`);
+
+  // === WS14 PR2 — fire signup_welcome onboarding notification ===
+  // Per LEDGER WS14 PR2 spec, this is the deferred piece: the Clerk
+  // webhook's user.created handler was creating the profile row + Passport
+  // but not emitting the WS14 onboarding notification. Now wired so the
+  // dashboard inbox + welcome card surface the welcome CTA on first load.
+  //
+  // Best-effort: never block the webhook on notification failure. Same
+  // posture as the Passport issuance block above — log and continue.
+  // emitSignupWelcome is idempotent (UNIQUE(user_id,source_key,kind)) so
+  // a retry or duplicate webhook delivery will not double-fire.
+  try {
+    const result = await emitSignupWelcome(data.id);
+    if (!result.ok && result.reason !== 'duplicate') {
+      console.warn(`[clerk-webhook] signup_welcome emit failed for ${data.id}: ${result.reason ?? 'unknown'}`);
+    } else if (result.ok) {
+      console.log(`[clerk-webhook] signup_welcome emitted for ${data.id}`);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[clerk-webhook] signup_welcome emit threw for ${data.id}: ${msg}`);
+  }
+
   return NextResponse.json({ ok: true, event: 'user.created', userId: data.id });
 }
 
 async function handleUserUpdated(data: ClerkUserPayload) {
   const email = pickPrimaryEmail(data);
   const displayName = pickDisplayName(data);
-  const avatarUrl = data.image_url ?? null;
+  // Normalize Clerk's default-avatar URL (purple silhouette) to null —
+  // not a real photo choice, must never reach profile_photo_history.
+  const avatarUrl = isClerkDefaultAvatarUrl(data.image_url) ? null : (data.image_url ?? null);
 
   // Don't touch username on update — user may have set a custom one.
   const { error } = await supabaseAdmin

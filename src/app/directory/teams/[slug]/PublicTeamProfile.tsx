@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
+import AdSlot from '@/components/AdSlot';
+import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { buildTeamShare } from '@/lib/share';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
@@ -650,7 +652,7 @@ export default function PublicTeamProfile({
                 padding: '1rem 1.25rem',
               }}
             >
-              <InfoRow label="Founded" value={team.created_at ? formatDate(team.created_at) : '—'} />
+              {team.created_at && <InfoRow label="Founded" value={formatDate(team.created_at)} />}
               {team.level && <InfoRow label="Level" value={levelLabel ?? team.level} />}
               {ageGroup && <InfoRow label="Age group" value={ageGroup} />}
               {team.season_label && <InfoRow label="Season" value={team.season_label} />}
@@ -807,6 +809,9 @@ export default function PublicTeamProfile({
           </p>
         </section>
       )}
+
+      {/* WS16 PR2 — AdSense display ad below team profile content. */}
+      <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
     </div>
   );
 }

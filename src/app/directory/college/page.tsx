@@ -54,7 +54,7 @@ export default async function CollegeHubPage({
   const activeConf = (await searchParams).conf || 'All';
 
   const query = supabase
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, slug, city, division')
     .eq('league_id', NCAA_LEAGUE_ID)
     .order('name');

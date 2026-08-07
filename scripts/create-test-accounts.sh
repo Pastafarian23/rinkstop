@@ -5,9 +5,9 @@
 
 set -e
 CLERK_SECRET=$(cat /root/.openclaw/credentials/clerk.json | python3 -c "import sys,json;print(json.load(sys.stdin)['secret_key'])")
-SUPABASE_PAT=$(cat /root/.openclaw/credentials/supabase.json | python3 -c "import sys,json;print(json.load(sys.stdin)['pat'])")
-SUPABASE_URL=$(cat /root/.openclaw/credentials/supabase.json | python3 -c "import sys,json;print(json.load(sys.stdin)['url'])")
-SUPABASE_SERVICE=$(cat /root/.openclaw/credentials/supabase.json | python3 -c "import sys,json;print(json.load(sys.stdin)['serviceRoleKey'])")
+SUPABASE_PAT=$(cat .env | python3 -c "import sys,json;print(json.load(sys.stdin)['pat'])")
+SUPABASE_URL=$(cat .env | python3 -c "import sys,json;print(json.load(sys.stdin)['url'])")
+SUPABASE_SERVICE=$(cat .env | python3 -c "import sys,json;print(json.load(sys.stdin)['serviceRoleKey'])")
 PROJ=yszheonqyyskkjoxoexk
 
 TYPES=(player parent coach scout referee rink_operator league_admin team_admin business fan)

@@ -114,7 +114,14 @@ export default function SocialActions(props: SocialActionsProps) {
 
   const containerStyle: React.CSSProperties = layout === 'column'
     ? { display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch' }
-    : { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' };
+    // Default to flex-wrap: nowrap on the row layout. The action row is
+    // designed to fit one line — buttons are short labels (Follow, Save,
+    // Message, Share). Wrapping makes the toolbar look broken (a tall
+    // button stack on a narrow sidebar), and the prior `flexWrap: 'wrap'`
+    // default was the root cause of the “Message + Share stacked
+    // vertically” bug on /profile/[slug]. Callers that want a wrap row
+    // can pass an explicit style override (none today).
+    : { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'nowrap' };
   const btnFlex: React.CSSProperties = layout === 'column' ? { justifyContent: 'center' } : {};
 
   // Unauthenticated: render buttons that open the SaveFollowNudge modal
@@ -249,7 +256,14 @@ export default function SocialActions(props: SocialActionsProps) {
 
       {share && (
         <div style={btnFlex}>
-          <ShareButton payload={share} variant={shareVariant ?? 'dark'} />
+          {/* Match the height of the sm Message/Follow/Save buttons. Without
+              compact, ShareButton renders the large brand variant (px-4 py-2)
+              which makes it look out of scale in the sidebar action row. */}
+          <ShareButton
+            payload={share}
+            variant={shareVariant ?? 'dark'}
+            compact={size === 'sm'}
+          />
         </div>
       )}
     </div>

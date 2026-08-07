@@ -40,7 +40,7 @@ export default function HockeyGloveFittingGuideYouth() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: "How to Fit Hockey Gloves: A Parent's Guide | RinkStop",
+        headline: "How to Fit Hockey Gloves: A Parent's Guide",
         description: "Palm gap test, finger length, cuff-to-elbow overlap, length measurement, sizing, when to size up.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

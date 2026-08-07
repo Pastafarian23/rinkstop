@@ -125,12 +125,15 @@ export async function POST(req: NextRequest) {
           // Best-effort Supabase insert via getSupabase().
           try {
             const _supa = getSupabase() as any;
-            await _supa.from('analytics_events').insert({
-              name: 'checkout_completed',
-              user_id: metadata.clerk_user_id,
-              pathname: '/pricing',
-              props: { tier: metadata.tier, sessionId: session.id },
-            });
+            await _supa.from('analytics_events').upsert(
+              {
+                name: 'checkout_completed',
+                user_id: metadata.clerk_user_id,
+                pathname: '/pricing',
+                props: { tier: metadata.tier, sessionId: session.id },
+              },
+              { onConflict: 'name,(props->>\'sessionId\')', ignoreDuplicates: true }
+            );
           } catch {
             // ignore — console log is the durable record
           }
@@ -206,12 +209,15 @@ export async function POST(req: NextRequest) {
           }));
           try {
             const _supa = getSupabase() as any;
-            await _supa.from('analytics_events').insert({
-              name: 'checkout_completed',
-              user_id: null,
-              pathname: '/pricing',
-              props: { tier: metadata.tier, sessionId: session.id, is_guest: true },
-            });
+            await _supa.from('analytics_events').upsert(
+              {
+                name: 'checkout_completed',
+                user_id: null,
+                pathname: '/pricing',
+                props: { tier: metadata.tier, sessionId: session.id, is_guest: true },
+              },
+              { onConflict: 'name,(props->>\'sessionId\')', ignoreDuplicates: true }
+            );
           } catch {
             // ignore
           }
@@ -278,12 +284,15 @@ export async function POST(req: NextRequest) {
             }));
             try {
               const _supa = getSupabase() as any;
-              await _supa.from('analytics_events').insert({
-                name: 'subscription_active',
-                user_id: metadata.clerk_user_id,
-                pathname: '/pricing',
-                props: { tier, subscriptionId: subscription.id, status: subscription.status },
-              });
+              await _supa.from('analytics_events').upsert(
+                {
+                  name: 'subscription_active',
+                  user_id: metadata.clerk_user_id,
+                  pathname: '/pricing',
+                  props: { tier, subscriptionId: subscription.id, status: subscription.status },
+                },
+                { onConflict: 'name,(props->>\'subscriptionId\')', ignoreDuplicates: true }
+              );
             } catch {
               // ignore
             }

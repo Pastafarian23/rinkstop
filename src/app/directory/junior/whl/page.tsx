@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'WHL  --  Western Hockey League',
@@ -9,6 +10,22 @@ export const metadata: Metadata = {
 export default function WHLPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/junior/whl',
+            name: 'WESTERN HOCKEY LEAGUE',
+            url: 'https://rinkstop.com/directory/junior/whl',
+            sport: 'Ice Hockey',
+            description: "Western Hockey League — Major Junior league in Western Canada and the U.S. Pacific Northwest, NHL draft pipeline.",
+            foundingDate: '1966',
+            sameAs: ['https://en.wikipedia.org/wiki/Western_Hockey_League'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -17,6 +34,16 @@ export default function WHLPage() {
         <Link href="/directory/junior" style={{ color: '#555' }}>Junior</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <span style={{ color: '#A0A0A0' }}>WHL</span>
+
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The Western Hockey League was founded in 1966 and is one of three Major Junior leagues that make up the Canadian Hockey League — 
+        the others being the Ontario Hockey League and the Quebec Major Junior Hockey League. 
+        The WHL fields 22 teams across British Columbia, Alberta, Saskatchewan, Manitoba, and the U.S. Pacific Northwest (Washington and Oregon), 
+        with one additional team in the U.S. Midwest. 
+        Players in the WHL are aged 16–20 and compete at a level considered the top developmental rung before professional and international hockey. 
+        The league is a primary NHL draft pipeline: over 40% of all NHL players selected in a typical draft year come from the WHL. 
+        The WHL awards the Ed Chynoweth Trophy to its playoff champion, with the winner going on to compete in the Memorial Cup against the OHL and QMJHL champions.
+      </p>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -80,6 +107,8 @@ export default function WHLPage() {
           <Link href="/directory/college" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600 }}>College Path →</Link>
         </div>
       </div>
+    
+      <LeagueTeams leagueId="46f49db9-e63d-407d-a99c-802f87576ab2" leagueSlug="whl" leagueName="WHL" />
     </main>
   );
 }

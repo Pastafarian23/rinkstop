@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
   title: 'AHL  --  American Hockey League',
@@ -9,6 +10,22 @@ export const metadata: Metadata = {
 export default function AHLPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [{
+            '@type': 'SportsOrganization',
+            '@id': 'https://rinkstop.com/directory/ahl',
+            name: 'AMERICAN HOCKEY LEAGUE',
+            url: 'https://rinkstop.com/directory/ahl',
+            sport: 'Ice Hockey',
+            description: "American Hockey League — NHL's primary developmental league with 32 teams across the U.S. and Canada.",
+            foundingDate: '1936',
+            sameAs: ['https://en.wikipedia.org/wiki/American_Hockey_League'],
+          }],
+        }) }}
+      />
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -22,6 +39,16 @@ export default function AHLPage() {
           AHL  --  AMERICAN HOCKEY LEAGUE
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
+        The American Hockey League was founded in 1936 and serves as the primary developmental league for the National Hockey League. 
+        All 31 NHL teams except the Vegas Golden Knights maintain at least one AHL affiliate, making the league the dominant talent pipeline for professional hockey in North America. 
+        The AHL operates 32 teams across two conferences and four divisions, spanning from Bakersfield, California to Springfield, Massachusetts, 
+        with a geographic footprint that covers every major NHL market. 
+        Players typically advance to the AHL after four seasons of major junior, college, or European professional experience. 
+        The league's championship, the Calder Cup — named after Frank Calder, the NHL's first president — has been contested annually since 1937. 
+        Former AHL players who reached the NHL include Connor Hellebuyck, Victor Hedman, Jonathan Quick, and more than 95% of all players who have ever played a game in the NHL.
+      </p>
           The primary developmental league for the NHL. 32 teams across the United States and Canada.
         </p>
       </div>
@@ -114,6 +141,8 @@ export default function AHLPage() {
           ))}
         </div>
       </div>
+    
+      <LeagueTeams leagueId="b05d6d26-d5d6-4cfd-a48b-f5646fa7d611" leagueSlug="ahl" leagueName="AHL" />
     </main>
   );
 }

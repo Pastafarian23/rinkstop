@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackPageView } from '@/lib/analytics';
 import { ClaimButton } from './ClaimButton';
+import { ClaimAbandonTracker } from './ClaimAbandonTracker';
 
 export const metadata: Metadata = {
   title: 'Claim Your Listing on RinkStop',
@@ -26,7 +30,66 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+// TEMPORARY HOT-PATCH — Claude audit 2026-08-05 #1 (CRITICAL 500).
+// /claim-your-listing has been returning 500, blocking the top-of-funnel
+// paid conversion path (linked from homepage banner rotator, footer, pricing).
+// Instead of waiting on Batch B's structural fix, this redirects the whole
+// route to the working /login → /dashboard/claims flow used by individual
+// listing pages. Same destination, working path, revenue-restoring.
+//
+// Sign-up and sign-in both honor ?redirect_url=... (audit-verified 2026-08-05),
+// so first-time claimers hit /sign-up?redirect_url=/dashboard/claims and land
+// on /dashboard/claims after email verification — no dead-end.
+//
+// TIME-BOX: remove this redirect when Batch B lands and the page renders 200.
+// Owner: KiloClaw. Tracked in LEDGER under audit-fixes Batch B.
+//
+// IMPORTANT: the redirect MUST live INSIDE the default-exported component
+// body, not at module top-level. Next.js evaluates every module during
+// `next build` to collect page metadata; a top-level `redirect()` throws
+// `NEXT_REDIRECT` and breaks the build. Inside the component body it
+// only fires per-request.
+const CLAIM_REDIRECT_TEMPORARY = process.env.NODE_ENV !== 'development' || process.env.CLAIM_REDIRECT_TIMEBOMB !== 'disabled';
+
 type ClaimType = 'rink' | 'team' | 'player';
+
+/**
+ * Per-tab header copy (eyebrow, subhead, search placeholder).
+ *
+ * The Player tab previously inherited the rink/team copy — "For Rink Operators &
+ * Team Administrators", "Type your rink or team name or city…". That read as
+ * confusing for parents landing on the Player tab. Now each tab gets copy that
+ * matches the audience and the cheapest paid tier required to claim.
+ *
+ * Pricing source-of-truth is src/lib/pricing.ts — these strings intentionally
+ * mirror the cheapest paid tier per entity type rather than reading from
+ * formatTierPrice() at module scope (the latter would require making the
+ * helper importable in a server component without breaking the existing
+ * client-side usage; the price is stable and rarely changes).
+ */
+const HEADER_COPY: Record<ClaimType, { eyebrow: string; sub: string; placeholder: string; bannerLabel: string; bannerPrice: string }> = {
+  rink: {
+    eyebrow: 'For Rink Operators',
+    sub: 'Search for your rink below. Claiming requires a Business plan ($99/yr) — browse the directory is always free.',
+    placeholder: 'Type your rink name or city…',
+    bannerLabel: 'Rink operators',
+    bannerPrice: 'a paid Business plan ($99/yr)',
+  },
+  team: {
+    eyebrow: 'For Team & Club Administrators',
+    sub: 'Search for your team below. Claiming requires a Club Starter plan ($149/yr) or higher — browse the directory is always free.',
+    placeholder: 'Type your team name or city…',
+    bannerLabel: 'Team & club admins',
+    bannerPrice: 'a Club Starter plan ($149/yr) or higher',
+  },
+  player: {
+    eyebrow: 'For Players & Parents',
+    sub: 'Search for your player profile below. Claiming requires a Verified Hockey Identity ($24.99/yr) — browse the directory is always free.',
+    placeholder: 'Type a player first or last name…',
+    bannerLabel: 'Players & parents',
+    bannerPrice: 'a Verified Hockey Identity ($24.99/yr)',
+  },
+};
 
 interface ClaimResult {
   id: string;
@@ -73,7 +136,7 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
     rows = data as RowShape[];
   } else if (type === 'team') {
     const { data, error } = await supabaseAdmin
-      .from('teams')
+      .from('team_workspaces')
       .select('id, slug, name, city, country')
       .or(`name.ilike.%${q}%,city.ilike.%${q}%`)
       .limit(20);
@@ -165,15 +228,15 @@ async function loadFeaturedClaimable(): Promise<{
     const [rinkRes, teamRes, playerRes] = await Promise.all([
       supabaseAdmin
         .from('rinks')
-        .select('id, slug, name, city, country, state_province')
+        .select('id, slug, name, city, country, province_state')
         .eq('is_active', true)
         .is('deactivated_at', null)
         .in('city', FEATURED_CITIES)
         .order('updated_at', { ascending: false })
         .limit(20),
       supabaseAdmin
-        .from('teams')
-        .select('id, slug, name, city, country, state_province')
+        .from('team_workspaces')
+        .select('id, slug, name, city, country, province_state')
         .eq('is_active', true)
         .is('deactivated_at', null)
         .in('city', FEATURED_CITIES)
@@ -239,11 +302,45 @@ export default async function ClaimYourListingPage({
 }: {
   searchParams: Promise<{ q?: string; type?: string }>;
 }) {
+  // Run as the first per-request step when the hot-patch is active. Lives
+  // inside the component body so Next.js's static page-collection phase
+  // doesn't evaluate it during `next build`.
+  if (CLAIM_REDIRECT_TEMPORARY) {
+    redirect('/login?redirect_url=' + encodeURIComponent('/dashboard/claims'));
+  }
+
   const { q, type: typeParam } = await searchParams;
   const query = (q || '').trim();
   // Validate the type param. Default to rink if missing or invalid.
   const type: ClaimType =
     typeParam === 'team' || typeParam === 'player' ? typeParam : 'rink';
+
+  // Auth context — used to (a) decide if we show a "sign in to claim"
+  // CTA above the search and (b) bucket funnel metrics by signed-in state.
+  // Failures here shouldn't break the page.
+  let signedInUserId: string | null = null;
+  let pendingDraftCount = 0;
+  try {
+    const session = await auth();
+    const cu = await currentUser();
+    const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
+    const userId = await resolveCanonicalUserId(session.userId, userEmail);
+    if (userId) {
+      signedInUserId = userId;
+      // Count in-progress claim drafts for this user. If they have any,
+      // we surface a "Resume your draft" prompt above the search.
+      const { count } = await supabaseAdmin
+        .from('claim_drafts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+      pendingDraftCount = count || 0;
+    }
+  } catch {
+    // ignore — page renders fine without auth context
+  }
+
+  const isSignedIn = signedInUserId !== null;
+
   const results = query.length >= 2 ? await searchEntities(query, type) : [];
 
   // Featured claimable listings — shown when the user lands with an empty
@@ -253,13 +350,23 @@ export default async function ClaimYourListingPage({
   const featuredClaimable = query.length < 2 ? await loadFeaturedClaimable() : null;
 
   // Server-side analytics: track this page view with the search query
+  // Plus: capture whether the user searched or landed empty (helps split
+  // "browse" traffic from "intent" traffic). query is hashed lightly if
+  // non-empty so we can group by similar terms without storing PII.
   try {
     await trackPageView({
       name: 'claim_search_viewed',
       pathname: '/claim-your-listing',
       props: {
         query_length: query.length,
+        query_hash: query ? simpleHash(query) : null,
         result_count: results.length,
+        had_query: query.length >= 2,
+        entity_type: type,
+        had_featured: !!featuredClaimable,
+        zero_results: query.length >= 2 && results.length === 0,
+        is_signed_in: isSignedIn,
+        pending_drafts: pendingDraftCount,
       },
     });
   } catch {
@@ -275,10 +382,22 @@ export default async function ClaimYourListingPage({
       }}
     >
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        {/* Header */}
+        {/* WS9: abandon tracker — fires claim_search_abandoned on pagehide
+            if the user typed a query but didn't click any claim button.
+            Pure client component, no UI impact. */}
+        <ClaimAbandonTracker
+          queryHash={query ? simpleHash(query) : null}
+          queryLength={query.length}
+          resultCount={results.length}
+          entityType={type}
+        />
+        {/* Header — per-tab eyebrow + subhead so the page reads correctly on
+            the Player tab (which serves players/families, not just rink/team ops).
+            Tab-aware copy only fires on the eyebrow + subhead. Title stays
+            "Claim Your Listing" so deep-links and OG previews stay stable. */}
         <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: '0.85rem', letterSpacing: '0.18em', color: '#FFB81C', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.75rem' }}>
-            For Rink Operators & Team Administrators
+            {HEADER_COPY[type].eyebrow}
           </div>
           <h1
             style={{
@@ -294,9 +413,89 @@ export default async function ClaimYourListingPage({
             Claim Your Listing
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '1.05rem', marginTop: '0.75rem', lineHeight: 1.5 }}>
-            Search for your rink or team below. Claiming requires a Verified Hockey Identity or other paid plan — browse the directory is always free.
+            {HEADER_COPY[type].sub}
           </p>
         </div>
+
+        {/* Funnel CTA banners — aim to convert the 99.5% drop from search view
+            → button click. Two variants:
+              (a) anonymous + has draft in progress: tell them to sign in to claim
+              (b) anonymous + no draft: nudge them toward /pricing so they know
+                  the cost BEFORE they search and bounce.
+            Signed-in + has pending draft: encourage them to finish what they started. */}
+        {isSignedIn && pendingDraftCount > 0 && (
+          <div
+            style={{
+              background: 'rgba(20,184,166,0.08)',
+              border: '1px solid rgba(20,184,166,0.4)',
+              borderRadius: 10,
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 200, color: '#14B8A6', fontSize: '0.9rem' }}>
+              <strong style={{ color: '#fff' }}>You have {pendingDraftCount} claim draft{pendingDraftCount === 1 ? '' : 's'} in progress.</strong>{' '}
+              Finish your draft to submit it for review.
+            </div>
+            <Link
+              href="/dashboard/claims"
+              style={{
+                background: '#14B8A6',
+                color: '#0a0a0a',
+                padding: '0.55rem 1.1rem',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Resume draft →
+            </Link>
+          </div>
+        )}
+        {!isSignedIn && (
+          <div
+            style={{
+              background: 'rgba(255,184,28,0.06)',
+              border: '1px solid rgba(255,184,28,0.3)',
+              borderRadius: 10,
+              padding: '0.85rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 200, color: '#FFB81C', fontSize: '0.9rem' }}>
+              <strong style={{ color: '#fff' }}>{HEADER_COPY[type].bannerLabel}: </strong>
+              you&rsquo;ll need a RinkStop account and{' '}
+              {HEADER_COPY[type].bannerPrice}
+              {' '}to claim. See plans before you search.
+            </div>
+            <Link
+              href={`/pricing${query ? `?intent=claim&type=${type}` : '?intent=claim'}`}
+              style={{
+                background: 'transparent',
+                color: '#FFB81C',
+                border: '1px solid #FFB81C',
+                padding: '0.55rem 1.1rem',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              See plans →
+            </Link>
+          </div>
+        )}
 
         {/* Type tabs — pick which entity type to search */}
         <nav
@@ -335,7 +534,7 @@ export default async function ClaimYourListingPage({
               type="text"
               name="q"
               defaultValue={query}
-              placeholder="Type your rink or team name or city…"
+              placeholder={HEADER_COPY[type].placeholder}
               autoFocus
               style={{
                 flex: 1,
@@ -368,7 +567,7 @@ export default async function ClaimYourListingPage({
 
         {/* Results */}
         {query.length === 0 ? (
-          <EmptyState />
+          <EmptyState type={type} />
         ) : query.length < 2 ? (
           <div
             style={{
@@ -389,7 +588,7 @@ export default async function ClaimYourListingPage({
               fallback={query}
             />
           ) : (
-            <NoResults query={query} />
+            <NoResults query={query} type={type} />
           )
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -452,7 +651,58 @@ export default async function ClaimYourListingPage({
   );
 }
 
-function EmptyState() {
+function EmptyState({ type }: { type: ClaimType }) {
+  // WS7 PR2: previously hardcoded 'rink' language regardless of tab.
+  // Now matches the type the user clicked and adds an /add-listing CTA so
+  // users whose entity doesn't exist can submit it instead of bouncing.
+  const copy: Record<ClaimType, { find: string; explain: string; addLabel: string; dirCount: string }> = {
+    rink: {
+      find: 'Find your rink',
+      explain: 'Type your rink name or city in the box above. We have 1,900+ rinks in the directory.',
+      addLabel: 'Add a new rink →',
+      dirCount: '1,900+ rinks',
+    },
+    team: {
+      find: 'Find your team',
+      explain: 'Type your team name or city in the box above. Thousands of teams across every league level.',
+      addLabel: 'Add a new team →',
+      dirCount: 'thousands of teams',
+    },
+    player: {
+      find: 'Find a player',
+      explain: 'Type a first or last name in the box above. Hundreds of thousands of players indexed.',
+      addLabel: 'Add a new player →',
+      dirCount: 'thousands of players',
+    },
+  };
+  const c = copy[type];
+
+  const handleClickAdd = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    try {
+      const payload = JSON.stringify({
+        name: 'add_listing_intent',
+        pathname: '/claim-your-listing',
+        props: {
+          entity_type: type,
+          source: 'empty_state',
+        },
+      });
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track', blob);
+      } else {
+        fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // never block on analytics
+    }
+  };
+
   return (
     <div
       style={{
@@ -466,11 +716,31 @@ function EmptyState() {
     >
       <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
       <div style={{ color: '#fff', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.5rem' }}>
-        Find your rink
+        {c.find}
       </div>
-      <div style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
-        Type your rink name or city in the box above. We have 1,900+ rinks in the directory.
+      <div style={{ fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+        {c.explain}
       </div>
+      <Link
+        href={`/add-listing?type=${type}`}
+        onClick={handleClickAdd}
+        data-testid={`add-listing-${type}-empty`}
+        style={{
+          display: 'inline-block',
+          background: 'transparent',
+          color: '#FFB81C',
+          border: '1px solid #FFB81C',
+          padding: '0.5rem 1.1rem',
+          borderRadius: 8,
+          textDecoration: 'none',
+          fontWeight: 600,
+          fontSize: '0.85rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+        }}
+      >
+        {c.addLabel}
+      </Link>
     </div>
   );
 }
@@ -500,8 +770,28 @@ function FeaturedClaimableSection({
       <div style={{
         background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12,
         padding: '1.5rem', textAlign: 'center', color: '#9ca3af',
+        display: 'flex', flexDirection: 'column', gap: '0.85rem', alignItems: 'center',
       }}>
-        Type a rink, team, or player name above. Even 2 characters will start a search.
+        <div>Type a rink, team, or player name above. Even 2 characters will start a search.</div>
+        <Link
+          href="/add-listing"
+          data-testid="add-listing-featured-fallback"
+          style={{
+            display: 'inline-block',
+            background: 'transparent',
+            color: '#FFB81C',
+            border: '1px solid #FFB81C',
+            padding: '0.5rem 1.1rem',
+            borderRadius: 8,
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Can\u2019t find yours? Add a listing →
+        </Link>
       </div>
     );
   }
@@ -601,7 +891,62 @@ function FeaturedGroup({
   );
 }
 
-function NoResults({ query }: { query: string }) {
+function NoResults({ query, type }: { query: string; type: ClaimType }) {
+  // Per-entity-type copy. The previous version hardcoded rink language
+  // regardless of which tab the user was searching on, which read as a
+  // confusing bug — "team XYZ not found, Add Your Rink" made no sense.
+  const copy: Record<ClaimType, { notFound: string; addLabel: string; explanation: string; differentSearch: string }> = {
+    rink: {
+      notFound: 'No rinks found for',
+      addLabel: 'Add Your Rink →',
+      explanation: 'Try a different name, or just your city.',
+      differentSearch: 'If your rink isn\u2019t in our directory yet, you can add it.',
+    },
+    team: {
+      notFound: 'No teams found for',
+      addLabel: 'Add Your Team →',
+      explanation: 'Try a different team name or city.',
+      differentSearch: 'If your team isn\u2019t in our directory yet, you can add it.',
+    },
+    player: {
+      notFound: 'No players found for',
+      addLabel: 'Add This Player →',
+      explanation: 'Try a different name, or use last name only.',
+      differentSearch: 'If this player isn\u2019t in our directory yet, you can add them.',
+    },
+  };
+  const c = copy[type];
+
+  // WS7 PR2: sendBeacon on the Add Listing click so we can measure whether
+  // the add-listing funnel is actually being used and from which entity type.
+  const handleClickAdd = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    try {
+      const payload = JSON.stringify({
+        name: 'add_listing_intent',
+        pathname: '/claim-your-listing',
+        props: {
+          entity_type: type,
+          source: 'no_results',
+          query_hash: query ? simpleHash(query) : null,
+          query_length: query.length,
+        },
+      });
+      const blob = new Blob([payload], { type: 'application/json' });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/track', blob);
+      } else {
+        fetch('/api/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // never block on analytics
+    }
+  };
+
   return (
     <div
       style={{
@@ -614,13 +959,15 @@ function NoResults({ query }: { query: string }) {
     >
       <div style={{ fontSize: '2.25rem', marginBottom: '0.5rem' }}>🤷</div>
       <div style={{ color: '#fff', fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.4rem' }}>
-        No rinks found for &ldquo;{query}&rdquo;
+        {c.notFound} &ldquo;{query}&rdquo;
       </div>
       <div style={{ color: '#9ca3af', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-        Try a different name, or just your city. If your rink isn&apos;t in our directory yet, you can add it.
+        {c.explanation} {c.differentSearch}
       </div>
       <Link
-        href="/add-listing"
+        href={`/add-listing${type ? `?type=${type}` : ''}`}
+        onClick={handleClickAdd}
+        data-testid={`add-listing-${type}-noresults`}
         style={{
           display: 'inline-block',
           background: '#041E42',
@@ -632,7 +979,7 @@ function NoResults({ query }: { query: string }) {
           fontSize: '0.95rem',
         }}
       >
-        Add Your Rink →
+        {c.addLabel}
       </Link>
     </div>
   );
@@ -783,4 +1130,18 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Simple non-cryptographic 32-bit FNV-1a hash. Used to bucket search terms
+ * for funnel analysis without storing raw query strings (privacy + size).
+ * Collisions are fine for funnel bucketing (~4B buckets, queries are <100 chars).
+ */
+function simpleHash(s: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
 }

@@ -6,6 +6,8 @@ import HighlightsGrid from '@/components/HighlightsGrid';
 import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
+import AdSlot from '@/components/AdSlot';
+import { ADSENSE_SLOTS } from '@/lib/adsense';
 
 // Home page is rendered statically with ISR (revalidate every 5 min).
 // The page runs 9 Supabase queries for the stats grid + recent sections;
@@ -17,54 +19,72 @@ import HomeCtaButtons from '@/components/HomeCtaButtons';
 // action that changes rinks/teams/players/leagues counts.
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: 'RinkStop — The World’s Hockey Directory',
-  description:
-    'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues — searchable by city, state, or country. Free directory of ice rinks, pro teams, junior clubs, college programs, and player profiles.',
-  keywords: [
-    'hockey directory',
-    'ice rink directory',
-    'hockey teams',
-    'hockey rinks',
-    'hockey players',
-    'NHL directory',
-    'youth hockey',
-    'hockey leagues',
-    'find a hockey rink',
-    'hockey near me',
-  ],
-  alternates: { canonical: 'https://rinkstop.com/' },
-  robots: { index: true, follow: true },
-  openGraph: {
-    title: 'RinkStop — The World’s Hockey Directory',
-    description:
-      'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues.',
-    url: 'https://rinkstop.com/',
-    siteName: 'RinkStop',
-    type: 'website',
-    locale: 'en_US',
-    images: [
-      {
-        url: 'https://rinkstop.com/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'RinkStop — The World’s Hockey Directory',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'RinkStop — The World’s Hockey Directory',
-    description:
-      'Find hockey anywhere in the world. 800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues.',
-    images: ['https://rinkstop.com/og-image.png'],
-  },
-};
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+// generateMetadata pulls live counts from the same `get_directory_stats` RPC
+// the page uses, so the meta description never drifts from the rendered
+// stats. (Audit fix Batch C #2: previously the description had a hardcoded
+// "800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players,
+// 190+ leagues" string that Google saw as outdated once counts grew.)
+export async function generateMetadata(): Promise<Metadata> {
+  let rinks = 0, teams = 0, players = 0, leagues = 0, cities = 0, countries = 0;
+  try {
+    const { data } = await supabase.rpc('get_directory_stats');
+    const s = (data || {}) as { rinks?: number; teams?: number; players?: number; leagues?: number; cities?: number; countries?: number };
+    rinks = s.rinks || 0;
+    teams = s.teams || 0;
+    players = s.players || 0;
+    leagues = s.leagues || 0;
+    cities = s.cities || 0;
+    countries = s.countries || 0;
+  } catch {
+    // fall through with zeros
+  }
+  const desc = `Find hockey anywhere in the world. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues — searchable by city, state, or country.`;
+  return {
+    title: 'RinkStop — The World’s Hockey Directory',
+    description: desc,
+    keywords: [
+      'hockey directory',
+      'ice rink directory',
+      'hockey teams',
+      'hockey rinks',
+      'hockey players',
+      'NHL directory',
+      'youth hockey',
+      'hockey leagues',
+      'find a hockey rink',
+      'hockey near me',
+    ],
+    alternates: { canonical: 'https://rinkstop.com/' },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: 'RinkStop — The World’s Hockey Directory',
+      description: desc,
+      url: 'https://rinkstop.com/',
+      siteName: 'RinkStop',
+      type: 'website',
+      locale: 'en_US',
+      images: [
+        {
+          url: 'https://rinkstop.com/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'RinkStop — The World’s Hockey Directory',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'RinkStop — The World’s Hockey Directory',
+      description: desc,
+      images: ['https://rinkstop.com/og-image.png'],
+    },
+  };
+}
 
 const TOP_CITIES = [
   { name: 'Toronto',   country: 'CA', href: '/directory/canada/ontario/toronto' },
@@ -167,10 +187,10 @@ export default async function Home() {
         },
         address: {
           '@type': 'PostalAddress',
-          streetAddress: '250 S Central Ave',
-          addressLocality: 'Wood Dale',
+          streetAddress: '709 S Riverside Dr',
+          addressLocality: 'Villa Park',
           addressRegion: 'IL',
-          postalCode: '60191',
+          postalCode: '60181',
           addressCountry: 'US',
         },
         areaServed: [
@@ -334,6 +354,14 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ---- AdSense display ad (WS16 PR2) ---------------------------------------------- */}
+      {/* Between EEAT intro and Top Cities — low-intrusion, above the directory listing cards. */}
+      <section style={{ background: '#0D1117', padding: '1rem 0' }}>
+        <div className="container" style={{ maxWidth: '1200px' }}>
+          <AdSlot slot={ADSENSE_SLOTS.HOME_DISPLAY} type="display" />
+        </div>
+      </section>
+
       {/* ---- E-E-A-T INTRO (server-rendered, full HTML, crawlable text) ------------- */}
       <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
         <div className="container" style={{ maxWidth: '900px' }}>
@@ -487,10 +515,10 @@ export default async function Home() {
           <div className="cta-flex">
             <div>
               <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: '#fff', marginBottom: '0.375rem' }}>
-                CLAIM YOUR FREE PROFILE
+                ADD YOUR TEAM, RINK, OR LEAGUE
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)', maxWidth: '540px' }}>
-                Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates. Free forever.
+                Submit a new listing to the directory — free to add. Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates (paid tier).
               </p>
             </div>
             <div className="cta-btns">

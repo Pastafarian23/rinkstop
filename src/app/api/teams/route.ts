@@ -11,6 +11,47 @@ function requireAuth(request: NextRequest) {
   return key === API_SECRET || key === ADMIN_SECRET;
 }
 
+// Original `teams` column name → `team_workspaces` column name.
+// Used by POST/PUT to translate the API contract (stable) into the new schema.
+const COLUMN_TRANSLATE: Record<string, string> = {
+  country: 'country_code',
+  city: 'home_city',
+  logo_url: 'avatar_url',
+  state_province: 'home_state',
+  deactivated_at: 'archived_at',
+  // Note: division, colors, home_state are also new columns backfilled in PR2.
+  // For these, the legacy name passes through unchanged (no rename needed).
+  // merged_into_id, brand_id, logo_source, logo_verified_at, deactivated_reason are dropped.
+  // league_id, name, slug, is_active, age_category, etc. are unchanged.
+};
+
+const DROPPED_COLUMNS = new Set([
+  'merged_into_id',
+  'brand_id',
+  'logo_source',
+  'logo_verified_at',
+  'deactivated_reason',
+  'colors',          // legacy text[]; new column is also text[] but only set by backfill
+  'division',        // only set by backfill
+  'state_province',  // renamed
+]);
+
+function translateToWorkspace(body: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(body)) {
+    if (DROPPED_COLUMNS.has(k)) continue;        // silently drop
+    const target = COLUMN_TRANSLATE[k] || k;
+    // Empty string → NULL. Otherwise CHAR(2) columns get padded with spaces
+    // ('  ') which violates "is valid ISO" checks at the application layer.
+    out[target] = v === '' ? null : v;
+  }
+  // For POST: country_code also drives home_country (same ISO code).
+  if (out.country_code && !out.home_country) {
+    out.home_country = out.country_code;
+  }
+  return out;
+}
+
 /**
  * Resolve ?level= to a list of league_ids for an efficient DB filter.
  * Returns null if no level filter is set (caller skips the in-clause).
@@ -30,18 +71,18 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const slug = searchParams.get('slug');
-  const country = searchParams.get('country');
+  const country = searchParams.get('country');   // ISO 3166-1 alpha-2 (changed from full name)
   const search = searchParams.get('search');
   const leagueId = searchParams.get('leagueId');
-  const league = searchParams.get('league');     // league NAME filter (case-insensitive)
-  const level = searchParams.get('level');        // pro | junior | college | international | adult
+  const league = searchParams.get('league');
+  const level = searchParams.get('level');
   const rinkId = searchParams.get('rinkId');
   const city = searchParams.get('city');
   const sort = searchParams.get('sort') || 'name';
   const limit = parseInt(searchParams.get('limit') || '100', 10);
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
-  let query = supabase.from('teams').select('*, leagues(name)');
+  let query = supabase.from('team_workspaces').select('*, leagues(name)');
 
   if (id) {
     query = query.eq('id', id).limit(1);
@@ -49,14 +90,11 @@ export async function GET(request: NextRequest) {
     query = query.eq('slug', slug).limit(1);
   } else {
     if (rinkId) query = query.eq('home_rink_id', rinkId);
-    if (city) query = query.ilike('city', `%${city}%`);
-    if (country) query = query.eq('country', country);
+    if (city) query = query.ilike('home_city', `%${city}%`);
+    if (country) query = query.eq('country_code', country);
     if (leagueId) {
       query = query.eq('league_id', leagueId);
     } else if (league) {
-      // Filter by league name via the joined table.
-      // Two-step because PostgREST doesn't support ilike-on-relation directly here.
-      // Fetch the matching league id(s) first.
       const { data: matchedLeagues } = await supabase
         .from('leagues')
         .select('id')
@@ -64,13 +102,12 @@ export async function GET(request: NextRequest) {
       if (matchedLeagues && matchedLeagues.length > 0) {
         query = query.in('league_id', matchedLeagues.map((m: any) => m.id));
       } else {
-        // No league matches the search → return empty set.
         return NextResponse.json({ data: [], count: 0 });
       }
     } else if (level) {
       const ids = await leagueIdsForLevel(level);
       if (ids === null) {
-        // Bad level value → ignore (don't filter)
+        // Bad level value → ignore
       } else if (ids.length === 0) {
         return NextResponse.json({ data: [], count: 0 });
       } else {
@@ -78,7 +115,7 @@ export async function GET(request: NextRequest) {
       }
     }
     if (activeOnly && !search) query = query.eq('is_active', true);
-    if (search) query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%`);
+    if (search) query = query.or(`name.ilike.%${search}%,home_city.ilike.%${search}%`);
     query = query.limit(limit);
   }
 
@@ -86,8 +123,6 @@ export async function GET(request: NextRequest) {
   const { data, error, count } = await query.order(orderCol, { ascending: sort === 'recent' ? false : true });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Enrich list responses with the active claimer's tier so the directory can sort
-  // claimed listings (Pro/Verified) to the top.
   let enrichedData = data;
   if (!id && !slug && data && data.length) {
     const tierMap = await enrichEntitiesWithClaimTier(supabaseAdmin, 'team', data.map((d: any) => d.id));
@@ -110,7 +145,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await request.json();
-  const { data, error } = await supabaseAdmin.from('teams').insert(body).select('*, leagues(name)').single();
+  const translated = translateToWorkspace(body);
+  // team_workspaces column requires this; admin POSTs have no user identity.
+  // Migration (PR1 fix) made this nullable for legacy imports. For new admin-created
+  // rows we leave NULL — caller can update via PUT once the row exists.
+  translated.created_by = null;
+  const { data, error } = await supabaseAdmin
+    .from('team_workspaces')
+    .insert(translated)
+    .select('*, leagues(name)')
+    .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data, { status: 201 });
 }
@@ -119,7 +163,13 @@ export async function PUT(request: NextRequest) {
   if (!requireAuth(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id, ...rest } = await request.json();
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { data, error } = await supabaseAdmin.from('teams').update(rest).eq('id', id).select('*, leagues(name)').single();
+  const translated = translateToWorkspace(rest);
+  const { data, error } = await supabaseAdmin
+    .from('team_workspaces')
+    .update(translated)
+    .eq('id', id)
+    .select('*, leagues(name)')
+    .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json(data);
 }
@@ -129,7 +179,7 @@ export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
-  const { error } = await supabaseAdmin.from('teams').delete().eq('id', id);
+  const { error } = await supabaseAdmin.from('team_workspaces').delete().eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ success: true });
 }

@@ -66,7 +66,7 @@ export default function VideoPageClient({ highlight }: { highlight: Highlight })
   return (
     <>
       <Head>
-        <title>{highlight.title} | RinkStop</title>
+        <title>{highlight.title}</title>
         <meta name="description" content={`${highlight.title}${score ? ` — ${score}` : ''}. Watch hockey highlights on RinkStop.`} />
         <meta property="og:title" content={highlight.title} />
         <meta property="og:description" content={`${highlight.title}${score ? ` — ${score}` : ''}`} />

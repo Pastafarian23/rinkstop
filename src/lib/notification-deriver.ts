@@ -12,6 +12,14 @@
  *   3. (achievement_added — feature-flagged; 1b-2 source is fully wired in route)
  *
  * Cost: ~10ms per `/dashboard` page load. Reads are O(player-scoped) and small.
+ *
+ * WS14 PR1 (2026-07-31): onboarding kinds (signup_welcome, identity_verify_recommended,
+ * wizard_incomplete, claim_paid_tier_unlocked, profile_first_visitor) are NOT derived by
+ * this function — they are emitted by their respective call sites (signup hook, tier
+ * gate, cron, claim-approval, profile page). This deriver remains idempotent + safe
+ * for re-derivation (DELETE-then-INSERT pattern in the route). Onboarding kinds are
+ * not picked up here because they're meant to be one-shot with explicit snooze_until,
+ * not state-derived.
  */
 
 import { supabaseAdmin } from '@/lib/supabase';

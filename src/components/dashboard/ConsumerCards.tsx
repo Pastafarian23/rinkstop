@@ -237,65 +237,75 @@ export async function loadConsumerCardData(userId: string, tier: string, identit
     const recentAchievements: RecentAchievement[] = [];
     const consumerNotifications: ConsumerNotificationSummary[] = [];
     if (childIds.length > 0) {
-      const { data: docs } = await supabaseAdmin
-        .from('player_documents')
-        .select('player_id, status, expires_at')
-        .in('player_id', childIds);
-      const today = new Date().toISOString().slice(0, 10);
-      const bucket: Record<string, { active: number; expired: number }> = {};
-      for (const d of (docs || []) as any[]) {
-        const b = bucket[d.player_id] ?? (bucket[d.player_id] = { active: 0, expired: 0 });
-        let status = d.status;
-        if (status === 'active' && d.expires_at && d.expires_at < today) {
-          status = 'expired';
+      // 2026-07-31 (Arnel-flagged dashboard perf pass): the previous serial
+      // chain stacked 3 queries (docs, achievements, notifications). All
+      // three are independent; run in parallel.
+      const [docsRes, achsRes, notifsRes] = await Promise.allSettled([
+        supabaseAdmin
+          .from('player_documents')
+          .select('player_id, status, expires_at')
+          .in('player_id', childIds),
+        supabaseAdmin
+          .from('player_achievements')
+          .select('id, player_id, title, category, achieved_at')
+          .in('player_id', childIds)
+          .order('achieved_at', { ascending: false })
+          .limit(4),
+        supabaseAdmin
+          .from('consumer_notifications')
+          .select('id, title, kind, read_at, created_at')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(4),
+      ]);
+
+      if (docsRes.status === 'fulfilled') {
+        const docs = docsRes.value.data || [];
+        const today = new Date().toISOString().slice(0, 10);
+        const bucket: Record<string, { active: number; expired: number }> = {};
+        for (const d of docs as any[]) {
+          const b = bucket[d.player_id] ?? (bucket[d.player_id] = { active: 0, expired: 0 });
+          let status = d.status;
+          if (status === 'active' && d.expires_at && d.expires_at < today) {
+            status = 'expired';
+          }
+          if (status === 'active') b.active++;
+          else if (status === 'expired') b.expired++;
         }
-        if (status === 'active') b.active++;
-        else if (status === 'expired') b.expired++;
-      }
-      for (const childId of childIds) {
-        const b = bucket[childId] ?? { active: 0, expired: 0 };
-        pendingDocuments.push({
-          childId,
-          childName: childNameById[childId] || 'Child',
-          activeCount: b.active,
-          expiredCount: b.expired,
-        });
+        for (const childId of childIds) {
+          const b = bucket[childId] ?? { active: 0, expired: 0 };
+          pendingDocuments.push({
+            childId,
+            childName: childNameById[childId] || 'Child',
+            activeCount: b.active,
+            expiredCount: b.expired,
+          });
+        }
       }
 
-      // Phase 1b-2: most recent achievements across all linked children.
-      // Top 4 by achieved_at desc, joined to the child names we already loaded.
-      const { data: achs } = await supabaseAdmin
-        .from('player_achievements')
-        .select('id, player_id, title, category, achieved_at')
-        .in('player_id', childIds)
-        .order('achieved_at', { ascending: false })
-        .limit(4);
-      for (const a of (achs || []) as any[]) {
-        recentAchievements.push({
-          id: a.id,
-          childId: a.player_id,
-          childName: childNameById[a.player_id] || 'Child',
-          title: a.title,
-          category: a.category,
-          achieved_at: a.achieved_at,
-        });
+      if (achsRes.status === 'fulfilled') {
+        for (const a of (achsRes.value.data || []) as any[]) {
+          recentAchievements.push({
+            id: a.id,
+            childId: a.player_id,
+            childName: childNameById[a.player_id] || 'Child',
+            title: a.title,
+            category: a.category,
+            achieved_at: a.achieved_at,
+          });
+        }
       }
 
-      // Phase 1b-4: top 4 consumer notifications for this user.
-      const { data: notifs } = await supabaseAdmin
-        .from('consumer_notifications')
-        .select('id, title, kind, read_at, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(4);
-      for (const n of (notifs || []) as any[]) {
-        consumerNotifications.push({
-          id: n.id,
-          title: n.title,
-          kind: n.kind,
-          read_at: n.read_at,
-          created_at: n.created_at,
-        });
+      if (notifsRes.status === 'fulfilled') {
+        for (const n of (notifsRes.value.data || []) as any[]) {
+          consumerNotifications.push({
+            id: n.id,
+            title: n.title,
+            kind: n.kind,
+            read_at: n.read_at,
+            created_at: n.created_at,
+          });
+        }
       }
     }
 

@@ -33,6 +33,14 @@ export function ClaimButton({ href, rinkId, rinkSlug, query, priceTier = 'busine
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
 
+    // Mark this session so the pagehide tracker knows not to count this as
+    // abandonment. sessionStorage is shared across same-tab navigations.
+    try {
+      window.sessionStorage.setItem('claim_btn_clicked_session', '1');
+    } catch {
+      // sessionStorage can throw under strict privacy modes — non-fatal
+    }
+
     // Best-effort analytics. sendBeacon is fire-and-forget; a dropped
     // network call cannot block the navigation.
     try {

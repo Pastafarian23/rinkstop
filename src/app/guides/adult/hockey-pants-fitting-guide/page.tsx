@@ -40,7 +40,7 @@ export default function HockeyPantsFittingGuideAdult() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: 'How to Fit Hockey Pants or a Girdle: A Guide for Adult Players | RinkStop',
+        headline: 'How to Fit Hockey Pants or a Girdle: A Guide for Adult Players',
         description: "Pants vs girdle, fit, women-specific considerations, and when to upgrade.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

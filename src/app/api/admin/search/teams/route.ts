@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10) || 20, 50);
 
   let query = supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('id, name, slug, city, country')
     .order('name', { ascending: true })
     .limit(limit);

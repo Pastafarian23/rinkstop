@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
   let totalTeamCount = 0;
   if (cityNames.length > 0) {
     const { count: tc } = await supabase
-      .from('teams')
+      .from('team_workspaces')
       .select('id', { count: 'exact', head: true })
       .eq('country', 'United States')
       .eq('is_active', true)
@@ -141,7 +141,7 @@ export default async function USStatePage({ params }: { params: Promise<{ state:
 
   if (cityNames.length > 0) {
     const { data: teams } = await supabase
-      .from('teams')
+      .from('team_workspaces')
       .select('city')
       .eq('country', 'United States')
       .eq('is_active', true)

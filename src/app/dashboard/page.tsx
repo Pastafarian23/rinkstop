@@ -11,9 +11,11 @@ import UsernameBanner from '@/components/UsernameBanner';
 import AccountTypeBadges from '@/components/AccountTypeBadges';
 import TypeSectionCard from '@/components/dashboard/TypeSectionCard';
 import InboxCard from '@/components/dashboard/InboxCard';
+import AttentionCard from '@/components/dashboard/AttentionCard';
 import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import { loadDashboardTypeData, personalStatus, organizationStatus, businessStatus, type WorkspaceStatus } from '@/components/dashboard/dashboardTypeData';
 import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
+import { loadAttentionSummary } from '@/lib/dashboard/attentionData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
 import { tierAtLeast } from '@/lib/connections';
@@ -24,15 +26,15 @@ import DismissWorkspaceButton from '@/components/dashboard/DismissWorkspaceButto
 import HiddenWorkspacesFooter from '@/components/dashboard/HiddenWorkspacesFooter';
 import FamilySetupWizard, { type WizardPersona } from '@/components/family/FamilySetupWizard';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
-import PlayerPracticePulse, { loadPracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
+import PlayerPracticePulse, { loadPracticePulseData, type PracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
 import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/FreeAgentToggle';
 
 /**
- * OWNER_EMAILS is defined in src/lib/admin-auth.ts — single source of truth.
+ * OWNER_EMAILS is defined in src/lib/admin-auth.ts - single source of truth.
  * The Founder badge + super_admin-level views fire for any Clerk session whose
  * primary email is in that set, regardless of which `profiles.user_id` row
  * maps to that Clerk account. This protects against Clerk OAuth flows
- * creating a separate duplicate user (e.g. when account-linking is off) —
+ * creating a separate duplicate user (e.g. when account-linking is off) -
  * the rendered dashboard still reflects ownership.
  */
 
@@ -71,7 +73,7 @@ export default async function DashboardPage() {
   // debug details. Cheap query, isolated from renderDashboard's broader scope.
   // Fail-closed: if the role lookup itself throws, treat as non-admin.
   // We also OR-in owner-email match because Clerk OAuth may have created a
-  // separate "free" user for the same person — we still want Founder context.
+  // separate "free" user for the same person - we still want Founder context.
   let isSuperAdmin = false;
   let ownerEmail = '';
   try {
@@ -105,7 +107,7 @@ export default async function DashboardPage() {
   } catch (err: any) {
     // Always log structured JSON for grep-ability in Vercel Logs UI (search
     // "dashboard-error"). userId + name + message + first 3 stack frames +
-    // timestamp. This fires for every user, every time — diagnostics only.
+    // timestamp. This fires for every user, every time - diagnostics only.
     console.error('[dashboard-error]', JSON.stringify({
       userId,
       name: err?.name,
@@ -114,13 +116,13 @@ export default async function DashboardPage() {
       timestamp: new Date().toISOString(),
     }));
 
-    // NEVER show raw error info to non-admin users — exposes table/column names,
+    // NEVER show raw error info to non-admin users - exposes table/column names,
     // provider APIs, and internal stack info. Only super_admin accounts get the
     // collapsible debug details. Everyone else gets the generic message + retry.
     const showDebug = forceDebugAll || isSuperAdmin;
 
     // Show a sanitized hint in the UI (collapsed by default). We expose only the
-    // error name + message — no stack, no userId, no internals. If the user
+    // error name + message - no stack, no userId, no internals. If the user
     // reports "Dashboard hit a snag", we ask them to expand this block and paste.
     const errorName = typeof err?.name === 'string' ? err.name : 'Error';
     const errorMessage = typeof err?.message === 'string' ? err.message : 'Unknown error';
@@ -148,7 +150,7 @@ export default async function DashboardPage() {
           </h2>
           <p style={{ color: '#aaa', fontSize: '0.9rem', margin: '0 0 1rem' }}>
             We couldn&rsquo;t load your dashboard just now. Your account and data
-            are safe — try refreshing in a minute, or head back to the home page
+            are safe - try refreshing in a minute, or head back to the home page
             in the meantime.
           </p>
           {showDebug ? (
@@ -252,7 +254,7 @@ async function renderDashboard(userId: string) {
 
   const isSuperAdmin = profile?.role === 'super_admin';
   // Founder = role-based OR email-canonical. The email fallback is the
-  // fix for Clerk OAuth creating a duplicate user_id — even if the new
+  // fix for Clerk OAuth creating a duplicate user_id - even if the new
   // Clerk account's profile row has no role, the dashboard still knows
   // the signed-in email is the owner's.
   const isFounder = isSuperAdmin || OWNER_EMAILS.has(email);
@@ -265,7 +267,7 @@ async function renderDashboard(userId: string) {
     ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null;
 
-  // Account types (Phase 0.1 — multi-type).
+  // Account types (Phase 0.1 - multi-type).
   let accountTypeRows: Array<{ account_type: string; is_primary: boolean }> = [];
   try {
     const { data } = await supabaseAdmin
@@ -283,140 +285,107 @@ async function renderDashboard(userId: string) {
   const primaryRow = (accountTypeRows || []).find((r: { is_primary: boolean }) => r.is_primary);
   const primary = (primaryRow?.account_type && isAccountType(primaryRow.account_type) ? primaryRow.account_type : null) as AccountType | null;
 
-  // Per-type dashboard data. The query is wrapped so a missing table doesn't 500.
-  const typeData = await loadDashboardTypeData(userId);
-
-  // Workspace dismiss state (2026-07-22). React-cached in the service layer,
-  // so calling getDismissedWorkspaceIds() again from WorkspaceHub's render
-  // shares the same result. We pre-resolve to a Set so the prop pass is cheap.
-  const dismissedIds = await getDismissedWorkspaceIds();
-
-  // Inbox data for the overview's InboxCard. Same shape as /api/threads
-  // returns, but trimmed to top-3 + counts. Server-rendered so it's
-  // visible on first paint (no client-side fetch on dashboard load).
-  const inbox = await loadInboxSummary(userId);
-
-  // Player improvement-loop data (Phase 3 dashboard wedge, 2026-07-13).
-  // Only loaded when the user holds the 'player' account type — others
-  // (parents viewing kids, coaches, league admins) don't see this card.
-  // Same fail-closed pattern as the rest of the dashboard render.
-  const practicePulse = types.includes('player')
-    ? await loadPracticePulseData(userId)
-    : { suggestions: [], activeSession: null, weeklyCount: 0, monthlyCount: 0, loaded: false };
-
-  // Free-agent profile (Phase 3 dashboard wedge #2, 2026-07-13).
-  // Lets adult players opt in to be findable in /directory/free-agents.
-  // Same fail-closed / player-only-gated pattern as practicePulse.
-  const freeAgentProfile = types.includes('player')
-    ? await loadFreeAgentProfile(userId)
-    : null;
-
-  // Private team workspaces the user is a member of (Day 3 team hub).
-  // v2: also fetches age_label, age_min, age_max for grouping.
-  // Wrapped in try/catch so a missing table doesn't 500 the whole dashboard.
-  let myTeams: Array<{
-    id: string; slug: string; name: string; short_name: string | null;
-    country_code: string | null; age_label: string | null;
-    age_min: number | null; age_max: number | null;
-    organization_id: string | null;
-    organization: { id: string; name: string; slug: string | null } | null;
-    role: string;
-  }> = [];
-  try {
-    const { data } = await supabaseAdmin
-      .from('team_members')
-      .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, organization_id, is_active, organization:organizations(id, name, slug) )')
-      .eq('user_id', userId)
-      .is('left_at', null)
-      .order('joined_at', { ascending: false })
-      .limit(10);
-    // BUG #15 FIX: Filter out teams with is_active=false (deactivated teams
-    // should not show in the user's dashboard). Matches the filter applied
-    // in /dashboard/team/[slug]/page.tsx.
-    myTeams = (data || [])
-      .map((row: any) => ({
-        ...(row.team_workspaces || {}),
-        role: row.role,
-      }))
-      .filter((t: any) => t.id && t.slug && t.is_active);
-  } catch (e) {
-    console.error('[dashboard] team_members query failed:', e);
-  }
-
-  // Piece E (2026-06-24): check if user is identity-verified, using the
-  // hardened helper from Piece C (requires real approved didit_sessions
-  // row, not just the bare profiles.identity_verified_at flag). Drives
-  // the verify-identity banner at the top of the dashboard. Fails
-  // closed — if any of the 3 conditions fail, banner shows.
-  const isIdentityVerifiedForUser = await isIdentityVerified(userId);
-
-  // Family Setup Wizard state (Phase 1a, prep doc §3.2).
-  // 2026-07-21: widened from parent-only to persona-aware (Arnel-flagged
-  // "setup is too parent-centric"). Now computes three additional state
-  // booleans for non-parent personas: hasCoachProfile, hasOrgMembership,
-  // hasOfficialRegistration. The persona itself is derived above from
-  // profile_account_types.primary (falls back to types[0], then 'generic').
+  // 2026-07-31 (Arnel-flagged dashboard perf pass): the previous serial chain
+  // here stacked ~30+ Supabase queries one-after-the-other. From Cebu (or any
+  // far-from-Chicago region) each query is ~280ms RTT, so the page server
+  // component took 8-12 seconds before any rendering. Dashboard layout was
+  // already parallelized in commit 697f93f; this is the page-side pass.
   //
-  // Fail-closed: any query error yields 'false' for that piece of state,
-  // which means the step is shown as "not done" — never as silently done.
-  let wizardHasChildren = false;
-  let wizardHasTeamMembership = false;
-  let wizardHasDocuments = false;
-  let wizardHasCoachProfile = false;
-  let wizardHasOrgMembership = false;
-  let wizardHasOfficialRegistration = false;
-  try {
-    const [childrenRes, teamRes, childIdsRes, coachRes, orgRes, refereeRes] = await Promise.all([
-      supabaseAdmin
-        .from('managed_profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('manager_user_id', userId),
-      supabaseAdmin
-        .from('team_members')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .is('left_at', null),
-      supabaseAdmin
-        .from('managed_profiles')
-        .select('profile_id')
-        .eq('manager_user_id', userId)
-        .eq('profile_type', 'player'),
-      supabaseAdmin
-        .from('coaches')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      supabaseAdmin
-        .from('organization_members')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-      supabaseAdmin
-        .from('referees')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId),
-    ]);
-    wizardHasChildren = (childrenRes.count ?? 0) > 0;
-    wizardHasTeamMembership = (teamRes.count ?? 0) > 0;
-    wizardHasCoachProfile = (coachRes.count ?? 0) > 0;
-    wizardHasOrgMembership = (orgRes.count ?? 0) > 0;
-    wizardHasOfficialRegistration = (refereeRes.count ?? 0) > 0;
+  // Everything below is fired in a single Promise.all so the slowest single
+  // query bounds the wall time. Each sub-load (loadDashboardTypeData,
+  // loadInboxSummary, loadAttentionSummary, loadPracticePulseData) has been
+  // internally parallelized in this same commit - see their updated impls.
+  //
+  // Why loadConsumerCardData takes a placeholder `identityVerified=false`:
+  // `isIdentityVerifiedForUser` is one of the parallel queries, but
+  // `consumerCardData.identityVerified` is rendered into the verification card
+  // ("Verified" vs "Not verified"). We override the field after the parallel
+  // block with the resolved value so the consumer card stays correct.
+  const EMPTY_PRACTICE: PracticePulseData = { suggestions: [], activeSession: null, weeklyCount: 0, monthlyCount: 0, loaded: false };
+  const isPlayer = types.includes('player');
 
-    // Phase 1b-1: count any active player_documents for any linked child.
-    // If the user has linked children, run a second scoped count. If they
-    // have zero linked children, the count stays false (no docs possible).
-    const childIds = ((childIdsRes.data || []) as any[])
-      .map((r: any) => r.profile_id)
-      .filter(Boolean);
-    if (childIds.length > 0) {
-      const { count: docsCount } = await supabaseAdmin
-        .from('player_documents')
-        .select('id', { count: 'exact', head: true })
-        .in('player_id', childIds)
-        .eq('status', 'active');
-      wizardHasDocuments = (docsCount ?? 0) > 0;
-    }
-  } catch (e) {
-    console.error('[dashboard] wizard state read failed:', e);
-  }
+  const [
+    typeData,
+    dismissedIds,
+    attention,
+    inbox,
+    practicePulse,
+    freeAgentProfile,
+    myTeamsRaw,
+    isIdentityVerifiedForUser,
+    wizardState,
+    consumerCardDataRaw,
+  ] = await Promise.all([
+    loadDashboardTypeData(userId),
+    getDismissedWorkspaceIds(),
+    loadAttentionSummary(userId),
+    loadInboxSummary(userId),
+    isPlayer ? loadPracticePulseData(userId) : Promise.resolve(EMPTY_PRACTICE),
+    isPlayer ? loadFreeAgentProfile(userId) : Promise.resolve(null),
+    // Private team workspaces the user is a member of (Day 3 team hub).
+    // v2: also fetches age_label, age_min, age_max for grouping.
+    // Wrapped in Promise try/catch so a missing table doesn't 500 the whole dashboard.
+    (async (): Promise<Array<{ id: string; slug: string; name: string; short_name: string | null; country_code: string | null; age_label: string | null; age_min: number | null; age_max: number | null; organization_id: string | null; organization: { id: string; name: string; slug: string | null } | null; is_active: boolean; role: string }>> => {
+      try {
+        const { data } = await supabaseAdmin
+          .from('team_members')
+          .select('role, team_workspaces:team_id ( id, slug, name, short_name, country_code, age_label, age_min, age_max, organization_id, is_active, organization:organizations(id, name, slug) )')
+          .eq('user_id', userId)
+          .is('left_at', null)
+          .order('joined_at', { ascending: false })
+          .limit(10);
+        return (data || []).map((row: any) => ({
+          ...(row.team_workspaces || {}),
+          role: row.role,
+        })) as any;
+      } catch (e) {
+        console.error('[dashboard] team_members query failed:', e);
+        return [];
+      }
+    })(),
+    // Piece E (2026-06-24): check if user is identity-verified, using the
+    // hardened helper from Piece C (requires real approved didit_sessions
+    // row, not just the bare profiles.identity_verified_at flag). Drives
+    // the verify-identity banner at the top of the dashboard. Fails
+    // closed - if any of the 3 conditions fail, banner shows.
+    isIdentityVerified(userId),
+    // Family Setup Wizard state (Phase 1a, prep doc §3.2).
+    // 2026-07-21: widened from parent-only to persona-aware (Arnel-flagged
+    // "setup is too parent-centric"). Now computes three additional state
+    // booleans for non-parent personas: hasCoachProfile, hasOrgMembership,
+    // hasOfficialRegistration. The persona itself is derived above from
+    // profile_account_types.primary (falls back to types[0], then 'generic').
+    //
+    // Fail-closed: any query error yields 'false' for that piece of state,
+    // which means the step is shown as "not done" - never as silently done.
+    loadWizardState(userId),
+    // Consumer dashboard cards data (Phase 1a, prep doc §3.3). Visible to
+    // ALL personal-workspace users. LoadConsumerCardData returns safe defaults
+    // on any error - never throws. We pass identityVerified=false here and
+    // override the field after the parallel block once the real value is
+    // resolved (otherwise the verification card would briefly show "Not
+    // verified" before this batch completes).
+    loadConsumerCardData(userId, profile?.tier ?? 'free', false),
+  ]);
+
+  // BUG #15 FIX: Filter out teams with is_active=false (deactivated teams
+  // should not show in the user's dashboard). Matches the filter applied
+  // in /dashboard/team/[slug]/page.tsx.
+  const myTeams = (myTeamsRaw || [])
+    .filter((t: any) => t.id && t.slug && t.is_active);
+
+  // Override the placeholder identityVerified on the consumer card data
+  // with the real resolved value (see Promise.all comment above).
+  const consumerCardData = { ...consumerCardDataRaw, identityVerified: isIdentityVerifiedForUser };
+
+  const {
+    wizardHasChildren,
+    wizardHasTeamMembership,
+    wizardHasDocuments,
+    wizardHasCoachProfile,
+    wizardHasOrgMembership,
+    wizardHasOfficialRegistration,
+  } = wizardState;
 
   // Wizard persona selection (2026-07-21). Order of preference:
   //   1. profile_account_types.primary (explicit user choice in onboarding)
@@ -444,7 +413,7 @@ async function renderDashboard(userId: string) {
   //   2. tier is identity_plus+ OR business_listing+ (no free tier)
   //   3. family_setup_completed_at IS NULL (wizard not yet completed)
   // The column is nullable; if the migration has not been applied yet,
-  // .family_setup_completed_at will be undefined which IS NULL — the
+  // .family_setup_completed_at will be undefined which IS NULL - the
   // wizard will render even before the migration runs. This is intentional:
   // it lets the wizard be visible the moment the code ships, with the API
   // route handling the migration-not-applied 503 error on mark_complete.
@@ -455,15 +424,6 @@ async function renderDashboard(userId: string) {
     types.length > 0 &&
     wizardTierOk &&
     profile?.family_setup_completed_at == null;
-
-  // Consumer dashboard cards data (Phase 1a, prep doc §3.3). Visible to
-  // ALL personal-workspace users (per Q2 confirmation). LoadConsumerCardData
-  // returns safe defaults on any error — never throws.
-  const consumerCardData = await loadConsumerCardData(
-    userId,
-    profile?.tier ?? 'free',
-    isIdentityVerifiedForUser
-  );
 
   const completeness: { field: string; done: boolean; href: string; hint: string }[] = [
     { field: 'Display name', done: !!(profile?.display_name || firstName), href: '/dashboard/profile', hint: 'Add your first and last name' },
@@ -529,6 +489,19 @@ async function renderDashboard(userId: string) {
             View profile
           </Link>
           <Link
+            href="/dashboard/roles"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '0.55rem 1rem', borderRadius: 6,
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              color: '#fff', fontSize: '0.85rem', fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <span aria-hidden="true">🎭</span>
+            Manage roles
+          </Link>
+          <Link
             href="/dashboard/subscription"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -543,6 +516,12 @@ async function renderDashboard(userId: string) {
           </Link>
         </div>
       </div>
+
+      {/* Attention widget - top-of-dashboard action summary. Always renders
+          (shows "All caught up" when nothing is pending). Surfaces unread
+          notifications, inbox messages, pending claims, expiring documents,
+          and subscription issues in one place. (WS14 PR4, 2026-07-31.) */}
+      <AttentionCard data={attention} />
 
       {/* Family Setup Wizard (Phase 1a, prep doc §3.2). Parent-only,
           identity_plus+ or business_listing+, hidden once dismissed.
@@ -565,7 +544,7 @@ async function renderDashboard(userId: string) {
         />
       ) : null}
 
-      {/* Inbox widget — quick access to messages, available to all users */}
+      {/* Inbox widget - quick access to messages, available to all users */}
       <InboxCard data={inbox} />
 
       {/* Consumer dashboard cards (Phase 1a, prep doc §3.3).
@@ -576,7 +555,7 @@ async function renderDashboard(userId: string) {
         data={consumerCardData}
       />
 
-      {/* Workspace hub — three cards: Personal / Organization / Business.
+      {/* Workspace hub - three cards: Personal / Organization / Business.
           Per Arnel's 2026-07-02 directive, this replaces the previous
           10-section landing. Locked workspaces show with 🔒 + opacity
           + upgrade CTA per the standing "never hide locked features" rule. */}
@@ -602,7 +581,7 @@ async function renderDashboard(userId: string) {
       {/* Phase 3 dashboard wedge (2026-07-13): Player Improvement Loop.
           Only shown when the user holds the 'player' account type.
           Surfaces practice plans + tracks weekly/monthly cadence to nudge
-          'more involved' + 'better hockey player' — both halves of the
+          'more involved' + 'better hockey player' - both halves of the
           product goal. Sits above the workspaces so the pulse is the first
           thing a player sees on /dashboard. */}
       {types.includes('player') ? (
@@ -633,7 +612,7 @@ async function renderDashboard(userId: string) {
           trigger router.refresh() so the main grid re-filters. */}
       <HiddenWorkspacesFooter />
 
-      {/* Choose your roles — only when user has zero account types.
+      {/* Choose your roles - only when user has zero account types.
           Shown AFTER the workspace hub so empty-state users can still see
           what they're missing. */}
       {types.length === 0 && (
@@ -691,12 +670,39 @@ async function renderDashboard(userId: string) {
         types={types}
       />
 
+      {/* Cross-persona credentials shortcut - players/coaches/referees see
+          all their federation registrations in one place. */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <Link
+          href="/dashboard/credentials"
+          style={{
+            display: 'block',
+            padding: '0.85rem 1rem',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 6,
+            color: '#fff',
+            textDecoration: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>My credentials</p>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+              All roles →
+            </span>
+          </div>
+          <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+            View all your federation-issued credentials across player, coach, and referee roles.
+          </p>
+        </Link>
+      </div>
+
     </div>
   );
 }
 
 /**
- * WorkspaceHub — renders the 3 workspace cards (Personal / Organization / Business)
+ * WorkspaceHub - renders the 3 workspace cards (Personal / Organization / Business)
  * with lock-aware UX per Arnel's "never hide locked features" rule.
  *
  * Card visual states:
@@ -707,6 +713,100 @@ async function renderDashboard(userId: string) {
  *     subpages listed but each link shows 🔒, primary CTA "Choose [type] roles →"
  *     → /dashboard/roles
  */
+
+// ---------------------------------------------------------------------------
+// 2026-07-31 - Page-side dashboard perf pass
+// ---------------------------------------------------------------------------
+// The dashboard page server component previously stacked ~30+ Supabase
+// queries one-after-the-other. From Cebu (or any far-from-Chicago region)
+// each query is ~280ms RTT, so the page took 8-12 seconds before rendering
+// any markup. The layout was already parallelized in commit 697f93f; this
+// is the page-side equivalent.
+//
+// This helper extracts the Family Setup Wizard state computation (formerly
+// inline) so it can be fired in parallel with the rest of the dashboard
+// data loads. Each of the 6 count queries is independent; the 7th query
+// (player_documents) depends on the childIds result from the 3rd query -
+// that one is run second once we know whether any children are linked.
+// ---------------------------------------------------------------------------
+interface WizardState {
+  wizardHasChildren: boolean;
+  wizardHasTeamMembership: boolean;
+  wizardHasDocuments: boolean;
+  wizardHasCoachProfile: boolean;
+  wizardHasOrgMembership: boolean;
+  wizardHasOfficialRegistration: boolean;
+}
+
+async function loadWizardState(userId: string): Promise<WizardState> {
+  const empty: WizardState = {
+    wizardHasChildren: false,
+    wizardHasTeamMembership: false,
+    wizardHasDocuments: false,
+    wizardHasCoachProfile: false,
+    wizardHasOrgMembership: false,
+    wizardHasOfficialRegistration: false,
+  };
+  try {
+    const [childrenRes, teamRes, childIdsRes, coachRes, orgRes, refereeRes] = await Promise.all([
+      supabaseAdmin
+        .from('managed_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('manager_user_id', userId),
+      supabaseAdmin
+        .from('team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('left_at', null),
+      supabaseAdmin
+        .from('managed_profiles')
+        .select('profile_id')
+        .eq('manager_user_id', userId)
+        .eq('profile_type', 'player'),
+      supabaseAdmin
+        .from('coaches')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      supabaseAdmin
+        .from('organization_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      supabaseAdmin
+        .from('referees')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId),
+    ]);
+
+    // Phase 1b-1: count any active player_documents for any linked child.
+    // If the user has linked children, run a second scoped count. If they
+    // have zero linked children, the count stays false (no docs possible).
+    const childIds = ((childIdsRes.data || []) as any[])
+      .map((r: any) => r.profile_id)
+      .filter(Boolean);
+    let docsCount = 0;
+    if (childIds.length > 0) {
+      const { count } = await supabaseAdmin
+        .from('player_documents')
+        .select('id', { count: 'exact', head: true })
+        .in('player_id', childIds)
+        .eq('status', 'active');
+      docsCount = count ?? 0;
+    }
+
+    return {
+      wizardHasChildren: (childrenRes.count ?? 0) > 0,
+      wizardHasTeamMembership: (teamRes.count ?? 0) > 0,
+      wizardHasDocuments: docsCount > 0,
+      wizardHasCoachProfile: (coachRes.count ?? 0) > 0,
+      wizardHasOrgMembership: (orgRes.count ?? 0) > 0,
+      wizardHasOfficialRegistration: (refereeRes.count ?? 0) > 0,
+    };
+  } catch (e) {
+    console.error('[dashboard] wizard state read failed:', e);
+    return empty;
+  }
+}
+
 function WorkspaceHub({
   userTier,
   accountTypes,
@@ -722,14 +822,14 @@ function WorkspaceHub({
 
   // 2026-07-22 (Arnel): hide dismissed fully-available workspaces.
   // Locked workspaces (unlocked=false OR fullyAvailable=false) ignore the
-  // dismiss flag — the 'never hide locked features' rule preserves the
+  // dismiss flag - the 'never hide locked features' rule preserves the
   // product signal of what's available to unlock.
   const visibleAccess = access.filter(
     (a) => !(a.fullyAvailable && dismissedIds.has(a.workspace.id)),
   );
 
   // Step 7: per-workspace status one-liner. null = no data (hide line).
-  // Locked workspaces (unlocked=false) skip the status — their existing
+  // Locked workspaces (unlocked=false) skip the status - their existing
   // card already shows the lock UI.
   const STATUS_BY_WS: Record<string, () => WorkspaceStatus | null> = {
     personal: () => personalStatus(typeData),
@@ -818,7 +918,7 @@ function WorkspaceHub({
                   {ws.name.toUpperCase()} WORKSPACE
                 </h3>
                 {/* 2026-07-22 (Arnel): dismiss button on fully-available cards.
-                    Locked cards do NOT show this — the 'never hide locked
+                    Locked cards do NOT show this - the 'never hide locked
                     features' rule means dismissing them would silently flip
                     their visibility and defeat the product signal. */}
                 {fullyAvailable ? (
@@ -986,7 +1086,7 @@ function TeamList({ myTeams }: { myTeams: any[] }) {
                 const trimmedLabel = t.age_label?.trim() ?? '';
                 const ageSub = trimmedLabel
                   ? t.age_min != null && t.age_max != null
-                    ? `${trimmedLabel} (${t.age_min}–${t.age_max})`
+                    ? `${trimmedLabel} (${t.age_min}-${t.age_max})`
                     : trimmedLabel
                   : null;
                 return (

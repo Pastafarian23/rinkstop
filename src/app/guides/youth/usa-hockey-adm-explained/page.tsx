@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: "USA Hockey's ADM Explained: What the American Development Model Means for Your Kid | RinkStop",
+  title: "USA Hockey's ADM Explained: What the American Development Model Means for Your Kid",
   description: "A parent's guide to USA Hockey's American Development Model (ADM) — what the 8 stages look like, the 10 guiding principles, and why early specialization hurts long-term development.",
   openGraph: {
-    title: "USA Hockey's ADM Explained | RinkStop",
+    title: "USA Hockey's ADM Explained",
     description: "The American Development Model — what it is, what the stages mean, and what it means for your kid's hockey journey.",
     type: 'article',
   },
@@ -38,7 +38,7 @@ export default function USAHockeyADMExplained() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: "USA Hockey's ADM Explained | RinkStop",
+        headline: "USA Hockey's ADM Explained",
         description: "A parent's guide to USA Hockey's American Development Model — what the 8 stages look like, the 10 guiding principles, and why early specialization hurts.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },

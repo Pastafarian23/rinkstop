@@ -28,11 +28,11 @@ interface QualityReport {
 async function getDataQualityReport(): Promise<QualityReport> {
   // Count teams with null league
   const { count: totalTeams } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('*', { count: 'exact', head: true });
 
   const { count: teamsWithNullLeague } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('*', { count: 'exact', head: true })
     .is('league_id', null);
 
@@ -40,7 +40,7 @@ async function getDataQualityReport(): Promise<QualityReport> {
 
   // Count teams per league
   const { data: leagueCounts } = await supabaseAdmin
-    .from('teams')
+    .from('team_workspaces')
     .select('league_id, leagues!inner(name)')
     .not('league_id', 'is', null);
 

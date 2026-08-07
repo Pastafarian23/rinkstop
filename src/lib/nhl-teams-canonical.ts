@@ -15,6 +15,7 @@ export interface NhlTeamCanonical {
   secondaryColor: string;  // hex
   founded: number;
   arena: string;
+  capacity?: number;
   // highlightly_id is looked up at runtime from nhl_teams table by name
 }
 
@@ -58,7 +59,7 @@ export const NHL_TEAMS_CANONICAL: NhlTeamCanonical[] = [
   { slug: 'los-angeles-kings',     name: 'Los Angeles Kings',     shortName: 'LAK', city: 'Los Angeles',    state: 'California',     country: 'US', division: 'Pacific',        conference: 'Western', primaryColor: '#111111', secondaryColor: '#A2AAAD', founded: 1967, arena: 'Crypto.com Arena' },
   { slug: 'san-jose-sharks',       name: 'San Jose Sharks',       shortName: 'SJS', city: 'San Jose',       state: 'California',     country: 'US', division: 'Pacific',        conference: 'Western', primaryColor: '#006D75', secondaryColor: '#EA7200', founded: 1991, arena: 'SAP Center' },
   { slug: 'seattle-kraken',        name: 'Seattle Kraken',        shortName: 'SEA', city: 'Seattle',        state: 'Washington',     country: 'US', division: 'Pacific',        conference: 'Western', primaryColor: '#001628', secondaryColor: '#99D9D9', founded: 2021, arena: 'Climate Pledge Arena' },
-  { slug: 'vancouver-canucks',     name: 'Vancouver Canucks',     shortName: 'VAN', city: 'Vancouver',      state: 'British Columbia', country: 'CA', division: 'Pacific',      conference: 'Western', primaryColor: '#001F5B', secondaryColor: '#00843D', founded: 1970, arena: 'Rogers Arena' },
+  { slug: 'vancouver-canucks',     name: 'Vancouver Canucks',     shortName: 'VAN', city: 'Vancouver',      state: 'British Columbia', country: 'CA', division: 'Pacific',      conference: 'Western', primaryColor: '#001F5B', secondaryColor: '#00843D', founded: 1970, arena: 'Rogers Arena', capacity: 18910 },
   { slug: 'vegas-golden-knights',  name: 'Vegas Golden Knights',  shortName: 'VGK', city: 'Las Vegas',      state: 'Nevada',         country: 'US', division: 'Pacific',        conference: 'Western', primaryColor: '#B4975A', secondaryColor: '#333F42', founded: 2017, arena: 'T-Mobile Arena' },
 ];
 
