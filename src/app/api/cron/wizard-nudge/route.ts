@@ -1,5 +1,11 @@
 /**
- * /api/cron/wizard-nudge — Vercel cron entry point for WS14 PR1 wizard nudges.
+ * /api/cron/wizard-nudge — WS14 PR2 wizard step granularity.
+ *
+ * Emits a `wizard_incomplete` consumer notification for any user whose
+ * family_setup_completed_at IS NULL and who hasn't had a nudge in the
+ * last 7 days. Uses real wizard progress (persona-aware step count +
+ * persona-aware body copy) instead of the previous hardcoded "2 of 5"
+ * placeholder.
  *
  * Runs at 13:00 UTC daily (= 08:00 CT). Delegates to the same logic as
  * scripts/cron-wizard-nudge.mjs. Cron secret-gated via Vercel env var
@@ -7,13 +13,11 @@
  *
  * Auth: requires header `Authorization: Bearer $CRON_SECRET`. Returns 401 if
  * missing or wrong.
- *
- * The runtime path is identical to the .mjs version; this file exists so the
- * Vercel cron can call it.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { loadWizardProgress, wizardIncompleteBody } from '@/lib/wizardState';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -29,20 +33,14 @@ export async function GET(request: NextRequest) {
 
   console.log('[api/cron/wizard-nudge] starting at', new Date().toISOString());
 
-  // Same logic as the .mjs file. Kept inline to avoid a runtime module
-  // boundary between the script + the API.
-  //
-  // Account-type filter (2026-07-31): only nudge users who have
-  // 'parent' as one of their account_types. The wizard copy is parent-flavored
-  // ("kid profile linking", "home-rink claim for your child") and makes no
-  // sense for coaches/users without a child player. Per Arnel's request after
-  // seeing the parent role on his own coach-only account — the `parent` role
-  // was a test artifact, but the cron was picking him up anyway.
+  // Find candidates: any user with family_setup_completed_at IS NULL.
+  // Previously filtered on account_type='parent' (PR #76 workaround for
+  // parent-flavored copy). Persona-aware copy now handles all personas,
+  // so the filter is dropped.
   const { data: profiles, error } = await supabaseAdmin
     .from('profiles')
-    .select('user_id, created_at, family_setup_completed_at, profile_account_types!inner(account_type)')
+    .select('user_id, created_at, family_setup_completed_at')
     .is('family_setup_completed_at', null)
-    .eq('profile_account_types.account_type', 'parent')
     .limit(1000);
 
   if (error) {
@@ -54,7 +52,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, candidates: 0, inserted: 0, skipped: 0 });
   }
 
-  const userIds = profiles.map(p => p.user_id);
+  const userIds = profiles.map((p) => p.user_id);
   const snoozeCutoff = new Date(
     Date.now() - SNOOZE_WINDOW_DAYS * 24 * 60 * 60 * 1000,
   ).toISOString();
@@ -67,15 +65,12 @@ export async function GET(request: NextRequest) {
     .gt('created_at', snoozeCutoff)
     .is('snooze_until', null);
 
-  const recentlyNudged = new Set((recent || []).map(r => r.user_id));
-  const candidates = profiles.filter(p => !recentlyNudged.has(p.user_id));
+  const recentlyNudged = new Set((recent || []).map((r) => r.user_id));
+  const candidates = profiles.filter((p) => !recentlyNudged.has(p.user_id));
 
   let inserted = 0;
   let skipped = 0;
   let failed = 0;
-
-  const stepCount = 2;
-  const totalSteps = 5;
 
   for (const p of candidates) {
     try {
@@ -95,18 +90,24 @@ export async function GET(request: NextRequest) {
         await supabaseAdmin.from('consumer_notifications').delete().eq('id', existing.id);
       }
 
+      // Load real wizard progress (persona + stepCount + totalSteps).
+      // identityVerified=false is conservative — the wizard counts it as done
+      // only when the session flag is set server-side, which we can't check
+      // here cheaply. Users who verified see 1 fewer step; that's fine.
+      const progress = await loadWizardProgress(p.user_id);
+
       const { error: insErr } = await supabaseAdmin.from('consumer_notifications').insert({
         user_id: p.user_id,
         kind: 'wizard_incomplete',
         source_key: 'wizard_incomplete:nightly',
         player_id: null,
         title: 'Finish your Hockey Passport setup',
-        body: `You're ${stepCount} of ${totalSteps} steps in. Completing the wizard unlocks your home-rink claim, kid profile linking, and team roster.`,
+        body: wizardIncompleteBody(progress.persona, progress.stepCount, progress.totalSteps),
         metadata: {
           action_url: '/dashboard',
           action_label: 'Resume wizard',
-          step_count: stepCount,
-          total_steps: totalSteps,
+          step_count: progress.stepCount,
+          total_steps: progress.totalSteps,
         },
         snooze_until: null,
       } as any);
