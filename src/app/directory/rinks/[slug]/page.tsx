@@ -24,6 +24,10 @@ import { provinceDisplayName } from '@/lib/ca-provinces';
 // memory/ws17-pr2-spec-2026-08-05.md and lib/schema/rink.ts.
 import { buildRinkSchema, buildRinkSchemaFallback, type RinkProgrammingForSchema, type RinkEventForSchema } from '@/lib/schema/rink';
 import RinkPageTabs from '@/components/rink/RinkPageTabs';
+// WS19 (2026-08-07): geo-targeted intro section that names the local
+// hockey scene for international rink pages. Pattern from PR #109 city
+// intros + PR #110 league intros. See memory/ws19-intl-rink-expansion-2026-08-07.md.
+import RinkGeoIntro from '@/components/rink/RinkGeoIntro';
 import RinkProgrammingTab from '@/components/events/RinkProgrammingTab';
 import RinkEventsTab from '@/components/events/RinkEventsTab';
 
@@ -495,6 +499,20 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
           {rink.name}
         </h1>
+
+        {/* WS19: geo-targeted intro section for international rink pages.
+            Hidden on country='United States' and country='Canada' pages
+            because they already have rich content via the leagues + city
+            hub pages. International rink pages need this for SEO since
+            they have minimal hockey-content context otherwise. */}
+        {rink.country && !['United States', 'Canada'].includes(rink.country) && (
+          <RinkGeoIntro
+            city={rink.city}
+            country={rink.country}
+            rinkName={rink.name}
+            rinkSlug={rink.slug || ''}
+          />
+        )}
 
         {/* Actions: Save to favorites */}
         <div style={{ marginBottom: '24px' }}>
