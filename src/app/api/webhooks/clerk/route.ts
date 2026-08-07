@@ -37,6 +37,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
 import { passportService, isPassportEnabled } from '@/lib/passport';
 import { isClerkDefaultAvatarUrl } from '@/lib/avatar';
+import { emitSignupWelcome } from '@/lib/notifications/emit';
 
 export const dynamic = 'force-dynamic';
 
@@ -415,6 +416,28 @@ async function handleUserCreated(data: ClerkUserPayload) {
   // signup-time country capture is missing. If we later add a Clerk
   // unsafe_metadata field for country, replace this with the upsert.
   console.log(`[clerk-webhook] WS13 PR4a: country context deferred for ${data.id} (no source); PR4b dashboard picker is the capture path`);
+
+  // === WS14 PR2 — fire signup_welcome onboarding notification ===
+  // Per LEDGER WS14 PR2 spec, this is the deferred piece: the Clerk
+  // webhook's user.created handler was creating the profile row + Passport
+  // but not emitting the WS14 onboarding notification. Now wired so the
+  // dashboard inbox + welcome card surface the welcome CTA on first load.
+  //
+  // Best-effort: never block the webhook on notification failure. Same
+  // posture as the Passport issuance block above — log and continue.
+  // emitSignupWelcome is idempotent (UNIQUE(user_id,source_key,kind)) so
+  // a retry or duplicate webhook delivery will not double-fire.
+  try {
+    const result = await emitSignupWelcome(data.id);
+    if (!result.ok && result.reason !== 'duplicate') {
+      console.warn(`[clerk-webhook] signup_welcome emit failed for ${data.id}: ${result.reason ?? 'unknown'}`);
+    } else if (result.ok) {
+      console.log(`[clerk-webhook] signup_welcome emitted for ${data.id}`);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[clerk-webhook] signup_welcome emit threw for ${data.id}: ${msg}`);
+  }
 
   return NextResponse.json({ ok: true, event: 'user.created', userId: data.id });
 }
