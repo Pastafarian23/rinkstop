@@ -103,7 +103,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'personal',
     priceUsd: 0,
     stripePriceEnv: '',
-    tagline: 'Browse the hockey ecosystem without participating.',
+    tagline: 'Browse the full hockey directory, save what you find, follow what you love.',
     cta: 'Get Started',
     features: [
       'Browse the complete hockey directory',
@@ -122,7 +122,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'personal',
     priceUsd: 24.99,
     stripePriceEnv: 'STRIPE_PRICE_VERIFIED_IDENTITY',
-    tagline: 'Required for active participation in the Rinkstop ecosystem.',
+    tagline: 'Get a verified checkmark so coaches, scouts, and program directors know you're real.',
     cta: 'Verify My Identity',
     popular: true,
     features: [
@@ -149,7 +149,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'personal',
     priceUsd: 59.99,
     stripePriceEnv: 'STRIPE_PRICE_IDENTITY_PLUS',
-    tagline: 'Everything in Verified Identity plus Family Hub, multimedia, and analytics.',
+    tagline: 'Build your hockey story — every team, every milestone, every season, in one place anyone can find.',
     cta: 'Upgrade to Identity Plus',
     features: [
       'Everything in Verified Identity',
@@ -174,7 +174,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'business',
     priceUsd: 149,
     stripePriceEnv: 'STRIPE_PRICE_CLUB_STARTER',
-    tagline: 'Designed for small clubs.',
+    tagline: 'Get your club in front of every coach, scout, and family searching for hockey in your area.',
     cta: 'Start Your Club',
     features: [
       'One organization',
@@ -195,7 +195,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'business',
     priceUsd: 399,
     stripePriceEnv: 'STRIPE_PRICE_CLUB_PRO',
-    tagline: 'Mid-sized clubs — up to 150 players, multiple teams, real reporting.',
+    tagline: 'Showcase every team, track every player, and give coaches, scouts, and families one place to find schedules and standings.',
     cta: 'Upgrade to Club Pro',
     popular: true,
     features: [
@@ -218,7 +218,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'business',
     priceUsd: 999,
     stripePriceEnv: 'STRIPE_PRICE_CLUB_ELITE',
-    tagline: 'Large clubs — unlimited teams, advanced analytics, custom branding.',
+    tagline: 'Run a hockey organization at scale — your brand, your data, your members in one place, visible to the whole hockey world.',
     cta: 'Go Club Elite',
     features: [
       'Everything in Club Pro',
@@ -237,7 +237,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'business',
     priceUsd: 1999,
     stripePriceEnv: 'STRIPE_PRICE_LEAGUE',
-    tagline: 'League-wide management features.',
+    tagline: 'Publish standings, schedules, and stats for every team — automatically, visible to every coach and scout.',
     cta: 'Get Started',
     features: [
       'League-wide management features',
@@ -254,7 +254,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'business',
     priceUsd: null,
     stripePriceEnv: '',
-    tagline: 'Federation governance, compliance and enterprise capabilities.',
+    tagline: 'Govern your sport at the national level — member verification, compliance, and analytics across every member organization.',
     cta: 'Contact Sales',
     features: [
       'Federation governance',
@@ -274,7 +274,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'business',
     priceUsd: 99,
     stripePriceEnv: 'STRIPE_PRICE_BUSINESS_LISTING',
-    tagline: 'Verified business listing with contact, lead form, photos, analytics.',
+    tagline: 'Get found by coaches, scouts, and parents searching for hockey services in your city.',
     cta: 'Claim Listing',
     features: [
       'Verified business listing',
@@ -292,7 +292,7 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'business',
     priceUsd: 299,
     stripePriceEnv: 'STRIPE_PRICE_BUSINESS_PLUS',
-    tagline: 'Multi-listing, featured placement, promotions, messaging, bookings.',
+    tagline: 'Multi-location visibility, featured placement, booking, and messaging — turn your hockey business into a lead engine.',
     cta: 'Upgrade to Business Plus',
     features: [
       'Everything in Business Listing',
