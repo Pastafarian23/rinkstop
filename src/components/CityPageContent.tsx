@@ -327,6 +327,63 @@ export default function CityPageContent({ data, faqs }: Props) {
           leaguesInCity={leaguesInCity}
         />
 
+        {/* LEAGUES — outbound links to /directory/leagues/<slug> (task #3 gap fix) */}
+        {leaguesInCity.length > 0 && (
+          <section style={{ marginBottom: '3rem' }}>
+            <h2
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                marginBottom: '1.25rem',
+                color: textMain,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              <span style={{ fontSize: '1.4rem' }}>🏆</span> Hockey Leagues in {cityName}
+            </h2>
+            <p style={{ color: textMuted, fontSize: '0.9375rem', marginBottom: '1rem', lineHeight: 1.6 }}>
+              {leaguesInCity.length === 1
+                ? `One league is represented by teams in ${cityName}. Click through for full rosters, schedules, and standings.`
+                : `${leaguesInCity.length} leagues are represented by teams in ${cityName}. Click through for full rosters, schedules, and standings.`}
+            </p>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                gap: '0.75rem',
+              }}
+            >
+              {leaguesInCity.map(league => (
+                <Link
+                  key={league.slug}
+                  href={`/directory/leagues/${league.slug}`}
+                  className="city-league-card"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    background: card,
+                    border: `1px solid ${border}`,
+                    borderRadius: '10px',
+                    padding: '0.875rem 1.125rem',
+                    textDecoration: 'none',
+                    color: textMain,
+                    transition: 'border-color 0.15s, transform 0.15s',
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{league.name}</span>
+                  <span style={{ fontSize: '0.75rem', color: textMuted }}>
+                    {league.count} {league.count === 1 ? 'team' : 'teams'}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* TEAMS */}
         {teams.length > 0 && (
           <section style={{ marginBottom: '3rem' }}>
