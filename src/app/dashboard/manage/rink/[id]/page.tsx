@@ -90,6 +90,27 @@ export default async function ManageRinkPage({ params }: PageProps) {
         />
       )}
 
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+        <Link
+          href={`/dashboard/manage/rink/${id}/programming`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          📅 Programming →
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${id}/events`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          🏆 Events →
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${id}/disputes`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#cbd5e1', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          ⚖️ Disputes →
+        </Link>
+      </div>
+
       <EntityEditForm
         type="rink"
         id={id}
