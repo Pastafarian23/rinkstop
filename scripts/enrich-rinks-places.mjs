@@ -1,206 +1,263 @@
-// scripts/enrich-rinks-places.mjs
-// One-time Google Places enrichment for RinkStop rinks.
-//
-// For every active rink that has latitude/longitude and no place_id yet:
-//   1. Text Search: "{name} {city} {country}" → get top result's place_id
-//   2. Place Details: fetch opening_hours, phone, website, maps URL
-//   3. Update the rink row with all 5 enrichment fields
-//
-// Resumable: the query filter is `place_id IS NULL`, so re-running picks up
-// where it left off. The script exits cleanly when no more work is left.
-//
-// Usage:
-//   node scripts/enrich-rinks-places.mjs           # default limit: 50
-//   node scripts/enrich-rinks-places.mjs 5         # test on 5 rinks
-//   node scripts/enrich-rinks-places.mjs 5000      # process all remaining
-//
-// Cost: ~$49/1000 rinks (Text Search $32 + Details $17). For 738 rinks the
-// first pass is roughly $36 total.
+#!/usr/bin/env node
+/**
+ * WS20 — Rink Places enrichment script (2026-08-07)
+ *
+ * Calls Google Places API (New) v1 for targeted rink pages and writes
+ * structured metadata (place_id, cover_photo_url, opening_hours_json,
+ * rating, user_ratings_total, formatted_address, website, phone) to a
+ * new `rinks_places_cache` Supabase table.
+ *
+ * Scope: 72 GSC rink pages with impressions in 28d + 3 PH rinks = 75 total.
+ *
+ * Cost: ~$2.40 at Places API (New) Basic Data pricing ($0.032/call).
+ *   - 1 Find Place call per rink
+ *   - 1 Place Details call per rink (if Find Place succeeds)
+ *
+ * Duplicate-content safety: SKIPS `editorialSummary` field. Only writes
+ * structured metadata + photo URLs + hours. Editorial copy stays unique
+ * via the existing buildRinkBlurb() generator on the rink page.
+ *
+ * Idempotent: re-running just refreshes the cache. Uses place_id as the
+ * join key for Places calls; writes back to rinks.place_id on first hit
+ * so subsequent runs can skip Find Place and go straight to Details.
+ *
+ * Usage:
+ *   node scripts/enrich-rinks-places.mjs                # full 75
+ *   node scripts/enrich-rinks-places.mjs --dry-run     # show plan, no calls
+ *   node scripts/enrich-rinks-places.mjs --limit=25    # first 25
+ *   node scripts/enrich-rinks-places.mjs --limit=5     # test run
+ */
 
-import './load-secrets.mjs';
-import { readFile } from 'fs/promises';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Missing Supabase env vars (load-secrets.mjs should have loaded them).');
-  process.exit(1);
-}
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SA_PATH = '/root/.openclaw/credentials/gsc.json';
+const GMAPS_PATH = '/root/.openclaw/credentials/google-maps.json';
 
-// Google Maps API key
-const creds = JSON.parse(await readFile('/root/.openclaw/credentials/google-maps.json', 'utf-8'));
-const GOOGLE_KEY = creds.key;
-if (!GOOGLE_KEY || GOOGLE_KEY.length < 30) {
-  console.error('Google Maps key missing or malformed in /root/.openclaw/credentials/google-maps.json');
-  process.exit(1);
-}
+const gmapsKey = JSON.parse(fs.readFileSync(GMAPS_PATH, 'utf8')).key;
+if (!gmapsKey) { console.error('Missing Google Maps key in google-maps.json'); process.exit(1); }
 
-// Limit (CLI arg) — default 50 for safety
-const LIMIT = Number.parseInt(process.argv[2] || '50', 10);
-if (Number.isNaN(LIMIT) || LIMIT <= 0) {
-  console.error('Limit must be a positive integer.');
-  process.exit(1);
+const sb = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+);
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('Missing Supabase env vars'); process.exit(1);
 }
 
-// Sleep helper (0.5s between rinks to be polite to the API)
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const PER_RINK_DELAY_MS = 500;
+// ---- CLI flags ----
+const args = process.argv.slice(2);
+const dryRun = args.includes('--dry-run');
+const limitIdx = args.indexOf('--limit');
+const limit = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : null;
 
-let processed = 0;
-let withHours = 0;
-let withPhone = 0;
-let withWebsite = 0;
-let withMapsUrl = 0;
-let noPlaceFound = 0;
-let errors = 0;
-const startTime = Date.now();
+// ---- Build target list: 72 GSC rink pages + 3 PH rinks ----
+const gsc = JSON.parse(fs.readFileSync(
+  '/root/.openclaw/workspace/memory/gsc-pages-impressions-28d-2026-08-07.json',
+  'utf8'
+));
+const gscSlugs = gsc.rows
+  .map(r => r.keys[0].replace('https://www.rinkstop.com', '').replace('https://rinkstop.com', ''))
+  .filter(u => u.includes('/directory/rinks/') && /^\/directory\/rinks\/[a-z0-9-]+\/?$/.test(u) && !u.includes('?'))
+  .map(u => u.replace('/directory/rinks/', '').split('/')[0]);
+const phRinks = [
+  'sm-skating-sm-mall-of-asia-ph',
+  'sm-skating-sm-megamall-ph',
+  'sm-skating-sm-seaside-city-cebu-ph',
+];
+const targetSlugs = [...new Set([...gscSlugs, ...phRinks])];
+if (limit) targetSlugs.length = Math.min(limit, targetSlugs.length);
 
-/**
- * Place Text Search — returns the top candidate's place_id (or null).
- * Endpoint: https://maps.googleapis.com/maps/api/place/textsearch/json
- */
-async function textSearch(query) {
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${GOOGLE_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Text Search HTTP ${res.status}`);
-  const json = await res.json();
-  if (json.status && json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
-    throw new Error(`Text Search API status=${json.status} error=${json.error_message || ''}`);
+console.log(`Target list: ${targetSlugs.length} rinks`);
+console.log(`Mode: ${dryRun ? 'DRY RUN (no Places calls)' : 'LIVE'}`);
+
+// ---- DB lookup: get current enrichment state ----
+const { data: dbRinks, error: dbErr } = await sb
+  .from('rinks')
+  .select('id, slug, name, city, country, place_id, cover_photo_url, opening_hours_json')
+  .in('slug', targetSlugs);
+
+if (dbErr) { console.error('DB error:', dbErr.message); process.exit(1); }
+console.log(`DB matches: ${dbRinks?.length ?? 0} / ${targetSlugs.length}`);
+
+if (dryRun) {
+  console.log('\nDry run — would enrich these slugs:');
+  for (const r of dbRinks || []) {
+    const needsPlace = !r.place_id;
+    const needsPhoto = !r.cover_photo_url;
+    console.log(`  ${r.slug.padEnd(60)} | place_id=${r.place_id ? 'YES' : 'NO '} | photo=${r.cover_photo_url ? 'YES' : 'NO '} | ${r.city}`);
   }
-  const top = (json.results || [])[0];
-  return top ? top.place_id : null;
+  process.exit(0);
 }
 
-/**
- * Place Details — fetches opening_hours, phone, website, and maps URL.
- * Endpoint: https://maps.googleapis.com/maps/api/place/details/json
- */
-async function placeDetails(placeId) {
-  const fields = 'opening_hours,formatted_phone_number,website,url';
-  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=${fields}&key=${GOOGLE_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Place Details HTTP ${res.status}`);
-  const json = await res.json();
-  if (json.status && json.status !== 'OK') {
-    throw new Error(`Place Details API status=${json.status} error=${json.error_message || ''}`);
+// ---- Step 1: ensure rinks_places_cache table exists ----
+// Migration applied via Supabase Management API (see _run-migration.mjs).
+// Script no longer falls back to inline exec_sql — the project doesn't expose
+// that RPC, so we treat the table as created out-of-band.
+console.log('Assuming rinks_places_cache exists (migration applied via Management API).');
+
+// ---- Step 2: for each rink, Find Place then Place Details ----
+let callsMade = 0;
+let photosFound = 0;
+let ratingsFound = 0;
+let hoursFound = 0;
+let errors = [];
+
+async function findPlace(rinkName, city, country) {
+  const q = [rinkName, city, country].filter(Boolean).join(' ');
+  const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': gmapsKey,
+      'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress',
+    },
+    body: JSON.stringify({
+      textQuery: q,
+    }),
+  });
+  callsMade++;
+  const j = await r.json();
+  if (!r.ok) {
+    errors.push({ rink: q, status: r.status, body: j });
+    return null;
   }
-  return json.result || {};
+  return j.places?.[0] || null;
 }
 
-/**
- * Process one rink. Returns true if the row was updated, false if skipped.
- */
-async function enrichRink(rink) {
-  const query = [rink.name, rink.city, rink.country].filter(Boolean).join(' ');
-  if (!query.trim()) {
-    console.log(`  [${rink.slug}] SKIP: empty name+city+country`);
-    return false;
+async function getPlaceDetails(placeId) {
+  const r = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+    method: 'GET',
+    headers: {
+      'X-Goog-Api-Key': gmapsKey,
+      'X-Goog-FieldMask': [
+        'id',
+        'displayName',
+        'formattedAddress',
+        'nationalPhoneNumber',
+        'internationalPhoneNumber',
+        'websiteUri',
+        'googleMapsUri',
+        'rating',
+        'userRatingCount',
+        'regularOpeningHours',
+        'photos',
+        'location',
+      ].join(','),
+    },
+  });
+  callsMade++;
+  const j = await r.json();
+  if (!r.ok) {
+    errors.push({ rink: placeId, status: r.status, body: j });
+    return null;
   }
+  return j;
+}
 
-  let placeId;
+for (const rink of dbRinks || []) {
+  console.log(`\n[${rink.slug}] ${rink.name} — ${rink.city}, ${rink.country}`);
   try {
-    placeId = await textSearch(query);
-  } catch (err) {
-    console.log(`  [${rink.slug}] TEXT-SEARCH-ERR: ${err.message}`);
-    return false;
+    // If rink already has a place_id, skip Find Place, go straight to Details
+    let placeId = rink.place_id;
+    let details = null;
+
+    if (!placeId) {
+      const place = await findPlace(rink.name, rink.city, rink.country);
+      if (!place) {
+        console.log('  ⚠ No match found');
+        continue;
+      }
+      placeId = place.id;
+      console.log(`  Found place_id: ${placeId}`);
+    } else {
+      console.log(`  Reusing place_id: ${placeId}`);
+    }
+
+    // Get full details
+    details = await getPlaceDetails(placeId);
+    if (!details) {
+      console.log('  ⚠ Place Details failed');
+      // If we're reusing a cached place_id and it 404'd, clear it so the next run re-finds it
+      const wasCached = !!rink.place_id;
+      if (wasCached) {
+        const lastErr = errors[errors.length - 1];
+        if (lastErr && lastErr.status === 404) {
+          console.log(`  Clearing stale place_id ${placeId} from rinks table`);
+          await sb.from('rinks').update({ place_id: null }).eq('id', rink.id);
+        }
+      }
+      continue;
+    }
+
+    // Build the cache row (SKIP editorialSummary for duplicate-content safety)
+    const cacheRow = {
+      rink_id: rink.id,
+      place_id: placeId,
+      cover_photo_url: details.photos?.[0]?.name
+        ? `https://places.googleapis.com/v1/${details.photos[0].name}/media?maxHeightPx=800&maxWidthPx=1200&key=${gmapsKey}`
+        : null,
+      opening_hours_json: details.regularOpeningHours || null,
+      rating: details.rating || null,
+      user_ratings_total: details.userRatingCount || null,
+      formatted_address: details.formattedAddress || null,
+      google_phone: details.internationalPhoneNumber || details.nationalPhoneNumber || null,
+      google_website: details.websiteUri || null,
+      google_maps_url: details.googleMapsUri || null,
+      photos_urls: (details.photos || []).slice(0, 5).map(p =>
+        `https://places.googleapis.com/v1/${p.name}/media?maxHeightPx=400&maxWidthPx=600&key=${gmapsKey}`
+      ),
+    };
+
+    // Upsert cache row
+    const { error: cacheErr } = await sb
+      .from('rinks_places_cache')
+      .upsert(cacheRow, { onConflict: 'rink_id' });
+
+    if (cacheErr) {
+      console.log(`  ⚠ Cache write failed: ${cacheErr.message}`);
+      errors.push({ rink: rink.slug, error: cacheErr.message });
+      continue;
+    }
+
+    // Backfill place_id on rinks table if missing
+    if (!rink.place_id && placeId) {
+      await sb.from('rinks').update({ place_id: placeId }).eq('id', rink.id);
+    }
+
+    // Backfill cover_photo_url on rinks table if missing
+    if (!rink.cover_photo_url && cacheRow.cover_photo_url) {
+      await sb.from('rinks').update({ cover_photo_url: cacheRow.cover_photo_url }).eq('id', rink.id);
+      photosFound++;
+    }
+
+    // Backfill latitude/longitude on rinks table if missing
+    if ((!rink.latitude || !rink.longitude) && details.location?.latitude != null && details.location?.longitude != null) {
+      await sb.from('rinks').update({ latitude: details.location.latitude, longitude: details.location.longitude }).eq('id', rink.id);
+      console.log(`  ✓ wrote lat/lon: ${details.location.latitude},${details.location.longitude}`);
+    }
+
+    if (cacheRow.rating) ratingsFound++;
+    if (cacheRow.opening_hours_json) hoursFound++;
+    console.log(`  ✓ photo=${cacheRow.cover_photo_url ? 'YES' : 'NO'} rating=${cacheRow.rating || 'N/A'} hours=${cacheRow.opening_hours_json ? 'YES' : 'NO'}`);
+
+    // Small delay to stay well below rate limits
+    await new Promise(r => setTimeout(r, 250));
+  } catch (e) {
+    console.log(`  ✗ Error: ${e.message}`);
+    errors.push({ rink: rink.slug, error: e.message });
   }
-
-  if (!placeId) {
-    console.log(`  [${rink.slug}] no-place-found`);
-    noPlaceFound++;
-    return false;
-  }
-
-  let details;
-  try {
-    details = await placeDetails(placeId);
-  } catch (err) {
-    console.log(`  [${rink.slug}] DETAILS-ERR: ${err.message}`);
-    return false;
-  }
-
-  const update = {
-    place_id: placeId,
-    opening_hours_json: details.opening_hours || null,
-    google_phone: details.formatted_phone_number || null,
-    google_website: details.website || null,
-    google_maps_url: details.url || null,
-  };
-
-  const { error: updateErr } = await supabase
-    .from('rinks')
-    .update(update)
-    .eq('id', rink.id);
-
-  if (updateErr) {
-    console.log(`  [${rink.slug}] UPDATE-ERR: ${updateErr.message}`);
-    return false;
-  }
-
-  if (update.opening_hours_json) withHours++;
-  if (update.google_phone) withPhone++;
-  if (update.google_website) withWebsite++;
-  if (update.google_maps_url) withMapsUrl++;
-
-  const hoursNote = update.opening_hours_json ? 'hours' : 'no-hours';
-  const phoneNote = update.google_phone ? 'phone' : 'no-phone';
-  console.log(`  [${rink.slug}] OK (${hoursNote}, ${phoneNote})`);
-  return true;
 }
 
-async function main() {
-  console.log(`[enrich-rinks-places] starting (limit=${LIMIT})`);
-
-  // Fetch candidate rinks: active, have lat, no place_id yet
-  const { data: rinks, error } = await supabase
-    .from('rinks')
-    .select('id, slug, name, city, country, latitude, longitude')
-    .eq('is_active', true)
-    .not('latitude', 'is', null)
-    .is('place_id', null)
-    .order('id', { ascending: true })
-    .limit(LIMIT);
-
-  if (error) {
-    console.error('Failed to fetch rinks:', error.message);
-    process.exit(1);
-  }
-
-  if (!rinks || rinks.length === 0) {
-    console.log('[enrich-rinks-places] no rinks to enrich (all done or none eligible). exiting.');
-    return;
-  }
-
-  console.log(`[enrich-rinks-places] ${rinks.length} rinks to process`);
-
-  for (const rink of rinks) {
-    processed++;
-    try {
-      await enrichRink(rink);
-    } catch (err) {
-      errors++;
-      console.log(`  [${rink.slug}] UNEXPECTED-ERR: ${err.message}`);
-    }
-    // Politeness delay between rinks
-    if (processed < rinks.length) {
-      await sleep(PER_RINK_DELAY_MS);
-    }
-  }
-
-  const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\n[enrich-rinks-places] DONE in ${elapsedSec}s`);
-  console.log(`  processed:          ${processed}`);
-  console.log(`  with hours:         ${withHours}`);
-  console.log(`  with phone:         ${withPhone}`);
-  console.log(`  with website:       ${withWebsite}`);
-  console.log(`  with maps url:      ${withMapsUrl}`);
-  console.log(`  no place found:     ${noPlaceFound}`);
-  console.log(`  errors:             ${errors}`);
+console.log('\n=== SUMMARY ===');
+console.log(`Places API calls: ${callsMade}`);
+console.log(`Photos backfilled: ${photosFound}`);
+console.log(`Ratings found: ${ratingsFound}`);
+console.log(`Hours found: ${hoursFound}`);
+console.log(`Errors: ${errors.length}`);
+if (errors.length) {
+  console.log('First 5 errors:');
+  errors.slice(0, 5).forEach(e => console.log('  ', JSON.stringify(e)));
 }
-
-main().catch((err) => {
-  console.error('[enrich-rinks-places] FATAL:', err);
-  process.exit(1);
-});
+console.log(`Estimated cost: ~$${(callsMade * 0.032).toFixed(2)}`);
