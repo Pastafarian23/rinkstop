@@ -992,7 +992,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                 height="240"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                src={`https://maps.google.com/maps?q=${rink.latitude},${rink.longitude}&hl=en&z=15&output=embed`}
+                src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${rink.latitude},${rink.longitude}&zoom=15`}
                 style={{ border: 0, borderRadius: '8px' }}
                 allowFullScreen
               />
