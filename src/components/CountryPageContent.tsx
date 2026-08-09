@@ -283,7 +283,6 @@ export default function CountryPageContent({ data }: Props) {
               </Link>
             </div>
           )}
-+
 +          {hasData && hockeyCities.length > 0 && (
 +            <section style={{ marginBottom: 48 }}>
 +              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, borderLeft: `4px solid ${red}`, paddingLeft: 14 }}>

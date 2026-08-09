@@ -18,10 +18,6 @@ export async function generateMetadata({
     description: `Find hockey teams and ice rinks in ${cityName}, United Kingdom. Discover local EIHL teams, NIHL clubs, and skating facilities.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-kingdom/${citySlug}`,
-+      languages: {
-+        'en': `https://rinkstop.com/directory/united-kingdom/${citySlug}`,
-+        'x-default': `https://rinkstop.com/directory/united-kingdom/${citySlug}`,
-+      },
     },
   };
 }

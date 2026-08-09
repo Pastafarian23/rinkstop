@@ -31,10 +31,6 @@ export const metadata: Metadata = {
   // which split our ranking signal).
   alternates: {
     canonical: '/',
-    languages: {
-      'en': '/',
-      'x-default': '/',
-    },
   },
   robots: {
     index: true,

@@ -189,10 +189,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: desc,
     alternates: {
       canonical: `https://rinkstop.com/directory/teams/${normalizedSlug}`,
-+      languages: {
-+        'en': `https://rinkstop.com/directory/teams/${normalizedSlug}`,
-+        'x-default': `https://rinkstop.com/directory/teams/${normalizedSlug}`,
-+      },
     },
     openGraph: {
       title: t.name,
