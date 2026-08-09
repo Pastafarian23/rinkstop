@@ -31,6 +31,10 @@ export const metadata: Metadata = {
   // which split our ranking signal).
   alternates: {
     canonical: '/',
+    languages: {
+      'en': '/',
+      'x-default': '/',
+    },
   },
   robots: {
     index: true,
@@ -48,6 +52,27 @@ export const metadata: Metadata = {
     template: '%s | RinkStop',
   },
   description: 'Find hockey teams, players, leagues, and rinks from every corner of the globe.',
+  // WebSite schema — homepage only. Helps Google understand
++  // site structure + Knowledge Graph relationships.
++  otherMeta: [
++    {
++      type: 'application/ld+json',
++      content: JSON.stringify({
++        '@context': 'https://schema.org',
++        '@type': 'WebSite',
++        name: 'RinkStop',
++        url: 'https://rinkstop.com',
++        description: 'The world\'s hockey directory — find teams, rinks, leagues, and players globally.',
++        inLanguage: 'en',
++        copyrightYear: new Date().getFullYear(),
++        about: {
++          '@type': 'Thing',
++          name: 'Ice Hockey',
++          description: 'Global ice hockey directory and community platform',
++        },
++      }),
++    },
++  ],
   openGraph: {
     siteName: 'RinkStop',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
