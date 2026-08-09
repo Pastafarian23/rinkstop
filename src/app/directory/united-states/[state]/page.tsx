@@ -95,6 +95,10 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
     description: `Find every hockey rink, team, and league in ${stateName}. Discover youth programs, adult leagues, and NCAA teams near you.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}`,
++      languages: {
++        'en': `https://rinkstop.com/directory/united-states/${stateSlug}`,
++        'x-default': `https://rinkstop.com/directory/united-states/${stateSlug}`,
++      },
     },
     robots: robotsMeta(decision),
     openGraph: {
