@@ -454,6 +454,23 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
     title,
     description,
     alternates: { canonical: `https://rinkstop.com/directory/${countrySlug}` },
++    // Country page structured data — entity + FAQPage
++    otherMeta: [
++      {
++        type: 'application/ld+json',
++        content: JSON.stringify({
++          '@context': 'https://schema.org',
++          '@type': 'FAQPage',
++          mainEntity: [
++            { '@type': 'Question', name: `How many ice rinks are in ${countryName}?`, acceptedAnswer: { '@type': 'Answer', text: `RinkStop lists ${rinks} ice rinks in ${countryName}.` } },
++            { '@type': 'Question', name: `What is the main hockey league in ${countryName}?`, acceptedAnswer: { '@type': 'Answer', text: topLeagueName ? `The top league is ${topLeagueName}.` : `${countryName} has multiple hockey leagues.` } },
++            { '@type': 'Question', name: `How do I start playing hockey in ${countryName}?`, acceptedAnswer: { '@type': 'Answer', text: `Most players start with learn-to-skate, then learn-to-play clinics at local rinks.` } },
++            { '@type': 'Question', name: `Is there women's hockey in ${countryName}?`, acceptedAnswer: { '@type': 'Answer', text: `Yes, ${countryName} has women's hockey programs and leagues.` } },
++            { '@type': 'Question', name: `Is hockey popular in ${countryName}?`, acceptedAnswer: { '@type': 'Answer', text: info?.note ? `${info.note}` : `Hockey has a dedicated community in ${countryName}.` } },
++          ],
++        }),
++      },
++    ],
     robots: robotsMeta(decision),
     openGraph: { title, description, type: 'website' },
   };
