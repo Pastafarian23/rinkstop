@@ -53,6 +53,10 @@ export async function generateMetadata({
     description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs and adult leagues near you.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}/${citySlug}`,
++      languages: {
++        'en': `https://rinkstop.com/directory/united-states/${stateSlug}/${citySlug}`,
++        'x-default': `https://rinkstop.com/directory/united-states/${stateSlug}/${citySlug}`,
++      },
     },
     robots: robotsMeta(decision),
     openGraph: {
