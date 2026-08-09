@@ -74,6 +74,10 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
++      languages: {
++        'en': `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
++        'x-default': `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
++      },
     },
     robots: robotsMeta(decision),
     openGraph: {
