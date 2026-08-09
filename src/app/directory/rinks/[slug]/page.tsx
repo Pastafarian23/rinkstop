@@ -141,6 +141,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       robots: { index: false, follow: true },
       alternates: {
         canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
++        languages: {
++          'en': rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : '/',
++          'x-default': rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : '/',
++        },
       },
       openGraph: { title: rink.name, type: 'website' },
     };
@@ -161,6 +165,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     robots: robotsMeta(decision),
     alternates: {
       canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
++      languages: {
++        'en': rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : '/',
++        'x-default': rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : '/',
++      },
     },
     openGraph: {
       title: `${rink.name}`,
