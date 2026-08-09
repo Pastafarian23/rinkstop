@@ -278,6 +278,7 @@ export interface CountryPageData {
     players: NewestItem[];
     articles: NewestItem[];
   };
+  hockeyCities: { name: string; slug: string; rinkCount: number }[];
 }
 
 export async function getCountryPageData(countryName: string): Promise<CountryPageData> {
