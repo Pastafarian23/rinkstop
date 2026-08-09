@@ -205,7 +205,7 @@ export default async function Home() {
         url: 'https://rinkstop.com/',
         logo: 'https://rinkstop.com/rinkstoplogo.png',
         image: 'https://rinkstop.com/rinkstoplogo.png',
-        description: "The world's hockey directory — a global database of ice rinks, hockey teams, players, and leagues. Founded in 2018 by Arnel Larracas, headquartered in Wood Dale, Illinois.",
+        description: "The world's hockey directory — a global database of ice rinks, hockey teams, players, and leagues. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
         slogan: "The World's Hockey Directory",
         foundingDate: '2018',
         founder: {
@@ -231,6 +231,8 @@ export default async function Home() {
           'Hockey Players', 'NHL', 'NCAA Hockey', 'Junior Hockey', 'PWHL',
         ],
         sameAs: [
+          'https://www.wikidata.org/wiki/Q140955752',
+          'https://www.wikidata.org/wiki/Q140956126',
           'https://twitter.com/rinkstopnews',
           'https://www.facebook.com/rinkstop',
           'https://www.instagram.com/rinkstop',
