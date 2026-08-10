@@ -187,7 +187,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description: desc,
-    alternates: { canonical: `https://rinkstop.com/directory/teams/${normalizedSlug}` },
+    alternates: {
+      canonical: `https://rinkstop.com/directory/teams/${normalizedSlug}`,
+    },
     openGraph: {
       title: t.name,
       description: desc,

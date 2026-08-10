@@ -751,7 +751,6 @@ export default function CityPageContent({ data, faqs }: Props) {
                   >
                     <span>{q.question}</span>
                     <span aria-hidden style={{ color: red, fontSize: '1.125rem', flexShrink: 0, lineHeight: 1 }}>
-                      +
                     </span>
                   </summary>
                   <p

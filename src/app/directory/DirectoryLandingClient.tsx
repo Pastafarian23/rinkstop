@@ -218,7 +218,6 @@ export default function DirectoryLandingClient() {
               textDecoration: 'none',
             }}
           >
-            + Add a New Listing
           </Link>
         </div>
       </div>

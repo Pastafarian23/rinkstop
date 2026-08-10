@@ -278,7 +278,6 @@ export default function CountryPageContent({ data }: Props) {
                 Know a hockey team, rink, or league in {countryName}? Help us grow the world&apos;s hockey directory!
               </p>
               <Link href="/add-listing" style={{ display: 'inline-block', background: red, color: '#fff', padding: '12px 24px', borderRadius: 6, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                + Add Hockey in {countryName}
               </Link>
             </div>
           )}

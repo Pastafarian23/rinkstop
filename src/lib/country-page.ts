@@ -249,6 +249,7 @@ export interface CountryPageData {
   info: { league: string; note: string; iihfRank?: string; firstNhl?: string } | undefined;
   howToNote: string | undefined;
   nearestHockeyCountries: { name: string; slug: string; rinkCount: number; teamCount: number }[];
+  hockeyCities: { name: string; slug: string; rinkCount: number }[];
   iihfMember: {
     country: string;
     iihf_status: 'full' | 'associate' | 'suspended';
@@ -403,6 +404,24 @@ export async function getCountryPageData(countryName: string): Promise<CountryPa
       players: (newestPlayers as any) || [],
       articles: (newestArticles as any) || [],
     },
+    // Aggregate cities with 2+ rinks for the Hockey Cities section
+    hockeyCities: (() => {
+      const cityMap = new Map<string, number>();
+      (rinks || []).forEach(r => {
+        if (r.city) {
+          const k = r.city.trim();
+          cityMap.set(k, (cityMap.get(k) || 0) + 1);
+        }
+      });
+      return Array.from(cityMap.entries())
+        .filter(([, n]) => n >= 2)
+        .map(([name]) => ({
+          name,
+          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+          rinkCount: cityMap.get(name) || 0,
+        }))
+        .sort((a, b) => b.rinkCount - a.rinkCount);
+    })(),
   };
 }
 

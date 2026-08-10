@@ -146,7 +146,6 @@ export default function CountryPageClient({ country, initialData }: Props) {
             textDecoration: 'none',
             letterSpacing: '0.05em',
           }}>
-            + Add Hockey in {pageTitle}
           </Link>
         </div>
       )}
