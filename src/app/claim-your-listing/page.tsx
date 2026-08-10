@@ -110,6 +110,16 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
   const q = query.trim();
   if (q.length < 2) return [];
 
+  // Fail-safe wrapper: any Supabase error in the search path must NOT 500
+  // the page. Return an empty array on any thrown error so the EmptyState
+  // renders a polite "search above" message instead of crashing the
+  // conversion funnel. Matches the pattern used in loadFeaturedClaimable.
+  // The try/catch wraps ONLY the Supabase query + claim-status read below,
+  // not the entire function body — wrapping the return would be unreachable
+  // code. The catch returns `[]` so the EmptyState renders cleanly.
+  let claimByEntityId = new Map<string, string>();
+  try {
+
   // Pick the right table + columns based on type. We use ilike with %q% for
   // the name column. For rinks we also match city (operators often search by
   // city name). For teams we match city. For players we match first/last name.
@@ -197,6 +207,13 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
     }
     return out;
   });
+  } catch (e) {
+    // Fail-safe: never let a Supabase error in the search path 500 the
+    // page. Return an empty array so the EmptyState renders a polite
+    // "search above" message instead of crashing the conversion funnel.
+    console.error('[claim-your-listing] search failed:', e);
+    return [];
+  }
 }
 
 /**
@@ -311,6 +328,20 @@ export default async function ClaimYourListingPage({
   // Validate the type param. Default to rink if missing or invalid.
   const type: ClaimType =
     typeParam === 'team' || typeParam === 'player' ? typeParam : 'rink';
+
+  // TEMPORARY HOT-PATCH — Claude audit 2026-08-05 #1 (CRITICAL 500).
+  // /claim-your-listing has been returning 500, blocking the top-of-funnel
+  // paid conversion path (linked from homepage banner rotator, footer, pricing).
+  // Redirect the whole route to the working /sign-up → /dashboard/claims flow.
+  // Sign-up honors ?redirect_url=..., so first-time claimers land on
+  // /dashboard/claims after email verification — no dead-end.
+  // The underlying 500 root-cause is owned by Batch B (filed separately).
+  // This redirect keeps the conversion path working in the meantime.
+  //
+  // IMPORTANT: redirect() lives INSIDE the component body, not at module
+  // top-level. Top-level redirect() throws NEXT_REDIRECT during `next build`
+  // and breaks the build. Inside the component body it only fires per-request.
+  redirect(`/sign-up?redirect_url=${encodeURIComponent('/dashboard/claims')}`);
 
   // Auth context — used to (a) decide if we show a "sign in to claim"
   // CTA above the search and (b) bucket funnel metrics by signed-in state.
