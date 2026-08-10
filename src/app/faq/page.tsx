@@ -84,7 +84,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'Ten tiers across three groups. Individuals: Free ($0) lets you browse. Verified Identity ($24.99/year) unlocks profile claims and unlimited roles under one identity. Identity Plus ($59.99/year) adds Family Hub, photos, videos, career timeline, advanced analytics, and achievement tracking. Organizations: Club Starter ($149/year) for small clubs (up to 30 players). Club Pro ($399/year) for mid-sized clubs (up to 150 players, multiple teams). Club Elite ($999/year) for large clubs (unlimited teams, advanced analytics, custom branding). League ($1,999+/year) for league-wide management. Federation (custom) for federation governance. Businesses: Business Listing ($99/year) for a single business claim. Business Plus ($299/year) for multiple listings, featured placement, messaging, and bookings. Founding Member badge is included on all paid tiers for the first 500 members.',
+        a: 'RinkStop has ten tiers across three groups: Individuals (Free, Verified Identity, Identity Plus), Organizations (Club Starter, Club Pro, Club Elite, League, Federation), and Businesses (Business Listing, Business Plus). The first 500 paid members get a permanent Founding Member badge. See the full tier table with caps, features, and pricing at /pricing.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -127,11 +127,11 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Verified Identity members can claim 1 listing (player profile). Identity Plus adds Family Hub and up to 5 roles under one identity. Business Listing claims 1 business listing. Business Plus claims up to 25 with featured placement. Federation is custom for 25+ listings. Free accounts can browse and submit listings but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page.',
+        a: 'Verified Identity members can claim 1 listing (a player profile). Higher tiers unlock more claims and business/club features. Free accounts can browse and submit listings but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page, even on lower tiers. See exact caps per tier at /pricing.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Club Starter ($149/year) covers one small club with up to 30 players. Club Pro ($399/year) covers up to 150 players with multiple teams. Club Elite ($999/year) covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations that need more. Lead capture is included on every claimed listing regardless of tier, so a single-club Club Starter gets the same lead pipeline as Club Elite.',
+        a: 'Club Starter covers one small club with up to 30 players. Club Pro covers up to 150 players with multiple teams. Club Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
@@ -139,7 +139,7 @@ const sections: Array<{
       },
       {
         q: 'Can I update hours, contacts, and socials for a listing I claimed?',
-        a: 'Verified Identity tier includes 1 claimed listing (your player profile) with editable details. Identity Plus tier includes up to 5 claimed roles under one identity. Business Plus includes up to 25 business listings. Federation covers larger organizations. Rink hours, contact email/phone, website, and social handles are all updatable.',
+        a: 'Yes. Rink hours, contact email/phone, website, and social handles are all updatable from your dashboard once a listing is claimed. The number of listings you can claim depends on your tier — see /pricing for the full breakdown.',
       },
       {
         q: 'How long does listing review take?',
@@ -391,7 +391,7 @@ const sections: Array<{
       },
       {
         q: 'How do I report incorrect information on a listing?',
-        a: 'Open a support ticket at /dashboard/support with subject "Report incorrect information", include the listing URL, and tell us what is wrong. We will fix verified errors within 1-2 business days.',
+        a: 'Open a support ticket at /dashboard/support with subject "Report incorrect information", include the listing URL, and tell us what is wrong. We will fix verified errors within 1-2 business days. (See also: "How do I get help?" under Technical Support.)',
       },
     ],
   },
@@ -406,7 +406,7 @@ const sections: Array<{
       },
       {
         q: 'I found a bug. How do I report it?',
-        a: 'Open a support ticket at /dashboard/support with subject "Report a bug". Include the page URL, what you were doing, what you expected to happen, and what actually happened. Screenshots are very helpful.',
+        a: 'Open a support ticket at /dashboard/support with subject "Report a bug". Include the page URL, what you were doing, what you expected to happen, and what actually happened. Screenshots are very helpful. (See also: "How do I get help?" below.)',
       },
       {
         q: 'Is there a mobile app?',
@@ -425,8 +425,8 @@ const sections: Array<{
         a: 'Email support@rinkstop.com with the review text and the rink it was on. We will remove it within 1-2 business days.',
       },
       {
-        q: 'How do I contact support?',
-        a: 'Email support@rinkstop.com for all questions. You can also open a ticket in-app at /dashboard/support. We respond within 1-2 business days for general questions and within 24 hours for paid-tier members.',
+        q: 'How do I get help?',
+        a: 'Open a /dashboard/support ticket for any account, listing, or technical issue. Tickets are routed to the right team (general, listings, billing, or technical) and we respond within 1-2 business days, or 24 hours for paid-tier members. For partnership or advertising inquiries, see /advertise. For general inquiries (media, mailing address, privacy requests), see /about#contact.',
       },
     ],
   },
@@ -450,7 +450,7 @@ export default function FAQPage() {
 
       <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.0625rem', lineHeight: 1.7, marginBottom: '1.5rem', maxWidth: '700px' }}>
         Everything you need to know about RinkStop. Can&apos;t find what you&apos;re looking for?{' '}
-        <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>Contact us</a>.
+        <Link href="/about#contact" style={{ color: '#C8102E' }}>Contact us</Link>.
       </p>
 
       {/* Quick jump links to each section */}
@@ -496,9 +496,9 @@ export default function FAQPage() {
         <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '1.25rem', fontSize: '1rem' }}>
           We&apos;re here to help. Send us an email and we&apos;ll get back to you within 1-2 business days.
         </p>
-        <a href="mailto:support@rinkstop.com" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#C8102E', color: '#fff', fontWeight: 700, borderRadius: '6px', textDecoration: 'none', fontSize: '0.9375rem' }}>
-          ✉️ Email Support
-        </a>
+        <Link href="/about#contact" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: '#C8102E', color: '#fff', fontWeight: 700, borderRadius: '6px', textDecoration: 'none', fontSize: '0.9375rem' }}>
+          ✉️ Contact Support
+        </Link>
       </section>
 
       {/* JSON-LD FAQPage schema for Google rich results */}

@@ -85,7 +85,7 @@ export default async function AboutPage() {
           <li><strong>Original reporting:</strong> Every article is written by a team member or contracted writer. We do not rewrite or republish content from other outlets without permission and attribution.</li>
           <li><strong>Source-linked claims:</strong> Statistical claims, quotes, and predictions cite the source (league box scores, official press releases, on-record interviews). Where a source is not directly attributable, we say so.</li>
           <li><strong>Corrections are visible:</strong> If we publish an error, we correct it promptly and note the correction at the bottom of the article. We do not silently edit published stories.</li>
-          <li><strong>No paid placement in editorial:</strong> Editorial articles are never written in exchange for payment, products, or any other consideration. Advertising is labeled and kept separate from editorial content.</li>
+          <li><strong>No paid placement in editorial:</strong> Editorial articles are never written in exchange for payment, products, or any other consideration. Advertising is labeled and kept separate from editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> for the full standard.</li>
           <li><strong>Opinions are labeled:</strong> Analysis, opinion, and prediction pieces are clearly tagged in the article header so readers can distinguish fact from interpretation.</li>
         </ul>
       </div>
@@ -118,7 +118,7 @@ export default async function AboutPage() {
       </div>
 
       {/* Contact */}
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
+      <div id="contact" style={{ borderTop: '1px solid var(--border)', paddingTop: '2rem', scrollMarginTop: '1rem' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GET IN TOUCH</h2>
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
           Have a directory listing to submit, a correction to suggest, or want to partner with us? We&apos;d love to hear from you.
