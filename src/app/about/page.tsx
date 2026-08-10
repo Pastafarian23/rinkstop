@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getDirectoryCounts } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
   title: 'About RinkStop | The World\'s Hockey Directory',
   description: 'RinkStop is a global hockey directory connecting players, coaches, fans, and teams worldwide. Learn about our mission to organize and grow hockey at every level.',
 };
 
-export default function AboutPage() {
+export const revalidate = 300;
+
+export default async function AboutPage() {
+  const counts = await getDirectoryCounts();
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
@@ -108,7 +112,7 @@ export default function AboutPage() {
           <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>RinkStop</strong> is a global hockey directory operated by Arnel Larracas.</p>
           <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Founded:</strong> 2018</p>
           <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Headquarters:</strong> 709 S Riverside Dr, Villa Park, IL 60181, United States</p>
-          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Coverage:</strong> 900+ rinks, 2,100+ teams, 6,300+ players, 190+ leagues across 50+ countries</p>
+          <p style={{ marginBottom: '0.75rem' }}><strong style={{ color: '#fff' }}>Coverage:</strong> {counts.rinks.toLocaleString()}+ rinks, {counts.teams.toLocaleString()}+ teams, {counts.players.toLocaleString()}+ players, {counts.leagues.toLocaleString()}+ leagues across {counts.countries.toLocaleString()}+ countries</p>
           <p style={{ marginBottom: 0 }}><strong style={{ color: '#fff' }}>Languages:</strong> English (primary). Translated content is generated from verified public sources.</p>
         </div>
       </div>

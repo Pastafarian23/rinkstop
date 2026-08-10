@@ -5,6 +5,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { trackPageView } from '@/lib/analytics';
+import { getDirectoryCounts } from '@/lib/directory-counts';
 import { ClaimButton } from './ClaimButton';
 import { ClaimAbandonTracker } from './ClaimAbandonTracker';
 
@@ -344,6 +345,10 @@ export default async function ClaimYourListingPage({
   // Empty result gets rendered as a no-claimable section with a generic hint
   // (this is rare; the rink/team/player tables always have unclaimed entries).
   const featuredClaimable = query.length < 2 ? await loadFeaturedClaimable() : null;
+  // Directory counts — single source of truth shared with the homepage and
+  // About page. Passed to EmptyState so the "1,900+ rinks" claim stays in
+  // sync with the actual directory size.
+  const counts = await getDirectoryCounts();
 
   // Server-side analytics: track this page view with the search query
   // Plus: capture whether the user searched or landed empty (helps split
@@ -563,7 +568,7 @@ export default async function ClaimYourListingPage({
 
         {/* Results */}
         {query.length === 0 ? (
-          <EmptyState type={type} />
+          <EmptyState type={type} counts={counts} />
         ) : query.length < 2 ? (
           <div
             style={{
@@ -647,28 +652,34 @@ export default async function ClaimYourListingPage({
   );
 }
 
-function EmptyState({ type }: { type: ClaimType }) {
+function EmptyState({ type, counts }: { type: ClaimType; counts: { rinks: number; teams: number; players: number } }) {
   // WS7 PR2: previously hardcoded 'rink' language regardless of tab.
   // Now matches the type the user clicked and adds an /add-listing CTA so
   // users whose entity doesn't exist can submit it instead of bouncing.
+  // Counts are passed in from the server component so the directory-size
+  // claim stays consistent with the homepage and About page (no more
+  // drifting "1,900+ rinks" literal).
+  const rinksLabel = `${counts.rinks.toLocaleString()}+ rinks`;
+  const teamsLabel = `${counts.teams.toLocaleString()}+ teams`;
+  const playersLabel = `${counts.players.toLocaleString()}+ players`;
   const copy: Record<ClaimType, { find: string; explain: string; addLabel: string; dirCount: string }> = {
     rink: {
       find: 'Find your rink',
-      explain: 'Type your rink name or city in the box above. We have 1,900+ rinks in the directory.',
+      explain: `Type your rink name or city in the box above. We have ${rinksLabel} in the directory.`,
       addLabel: 'Add a new rink →',
-      dirCount: '1,900+ rinks',
+      dirCount: rinksLabel,
     },
     team: {
       find: 'Find your team',
-      explain: 'Type your team name or city in the box above. Thousands of teams across every league level.',
+      explain: `Type your team name or city in the box above. ${teamsLabel} across every league level.`,
       addLabel: 'Add a new team →',
-      dirCount: 'thousands of teams',
+      dirCount: teamsLabel,
     },
     player: {
       find: 'Find a player',
-      explain: 'Type a first or last name in the box above. Hundreds of thousands of players indexed.',
+      explain: `Type a first or last name in the box above. ${playersLabel} indexed.`,
       addLabel: 'Add a new player →',
-      dirCount: 'thousands of players',
+      dirCount: playersLabel,
     },
   };
   const c = copy[type];

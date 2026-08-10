@@ -160,6 +160,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     '/admin',
     '/onboarding',
     '/api',
+    // Youth hockey sections: per Privacy Policy, no personalized or
+    // retargeted advertising on pages that may be of interest to minors.
+    // AdSense policy + COPPA + Google's TFAT age-treatment framework (2026-05)
+    // require this exclusion before AdSense is enabled.
+    '/directory/youth-hockey',
   ];
   const ADSENSE_EXCLUDED_EXACT = new Set(['/about', '/contact', '/advertise', '/cookies']);
   const adsenseEligible = !ADSENSE_EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) &&
