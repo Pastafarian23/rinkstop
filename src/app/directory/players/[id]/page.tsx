@@ -250,8 +250,7 @@ export default async function PlayerPage({ params }: Props) {
       {seoPlayer && (
         <PlayerSEOCopy
           player={seoPlayer}
-          faqs={seoFaqs}
-          intro={seoIntro}
+          career={{}}
         />
       )}
       {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}

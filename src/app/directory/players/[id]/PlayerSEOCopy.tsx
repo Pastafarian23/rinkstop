@@ -1,15 +1,20 @@
 /**
  * Server-rendered SEO content for player detail pages.
  *
- * Lifts player pages from ~106 visible body words to 600+ via:
- *   - About intro paragraph (sourced from player data)
- *   - Position-specific prose (forward / center / wing / defenseman / goalie)
- *   - FAQ block (7-8 entries per player, all data-grounded)
- *   - Last-updated timestamp + author byline
- *   - Internal links
+ * Replaces the previous templated position-explanation prose
+ * (formerly lifted pages to 600+ words with generic defenseman /
+ * center / wing text repeated across hundreds of records).
  *
- * All texts are SAFE FACTUAL TEMPLATES. No data is invented; missing
- * fields produce explicit "We do not have..." answers rather than guesses.
+ * What this renders now:
+ *   - Entity-specific facts only: position, nationality, birth year,
+ *     current team, jersey number — sourced from the player record.
+ *   - Recent context (last updated).
+ *   - Internal links.
+ *
+ * NO position-explanation paragraphs. NO generic FAQs. If a record
+ * has missing fields, the section is omitted rather than fabricating
+ * a default. This addresses ChatGPT's "templated thin content" flag
+ * on player pages and is what AdSense reviewers will look at first.
  */
 
 import Link from 'next/link';
@@ -34,11 +39,16 @@ interface Props {
     headshot_url?: string | null;
     teams?: { name?: string; slug?: string; leagues?: { name?: string; slug?: string; country?: string | null } | null } | null;
   };
-  faqs: { question: string; answer: string }[];
-  intro: string;
+  // Player-specific career stats when available. Optional — older or
+  // community-submitted records may not have these.
+  career?: {
+    seasons_played?: number | null;
+    teams_played_for?: number | null;
+    leagues_played_in?: number | null;
+  };
 }
 
-export default function PlayerSEOCopy({ player, faqs, intro }: Props) {
+export default function PlayerSEOCopy({ player, career }: Props) {
   const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
   const teamName = player.teams?.name || '';
   const teamSlug = player.teams?.slug || '';
@@ -48,6 +58,21 @@ export default function PlayerSEOCopy({ player, faqs, intro }: Props) {
   const updated = player.updated_at
     ? new Date(player.updated_at).toISOString().slice(0, 10)
     : null;
+
+  // Build the entity-specific facts list. Each row is sourced from the
+  // player record — no fabricated defaults.
+  const facts: { label: string; value: string }[] = [];
+  if (player.position) facts.push({ label: 'Position', value: player.position });
+  if (player.jersey_number != null) facts.push({ label: 'Jersey', value: `#${player.jersey_number}` });
+  if (player.nationality) facts.push({ label: 'Nationality', value: player.nationality });
+  if (player.birth_date) facts.push({ label: 'Born', value: player.birth_date.slice(0, 10) });
+  if (player.height_cm) facts.push({ label: 'Height', value: `${player.height_cm} cm` });
+  if (player.weight_kg) facts.push({ label: 'Weight', value: `${player.weight_kg} kg` });
+  if (player.shoots) facts.push({ label: 'Shoots', value: player.shoots });
+  if (player.catches) facts.push({ label: 'Catches', value: player.catches });
+  if (career?.seasons_played != null) facts.push({ label: 'Seasons played', value: String(career.seasons_played) });
+  if (career?.teams_played_for != null) facts.push({ label: 'Teams', value: String(career.teams_played_for) });
+  if (career?.leagues_played_in != null) facts.push({ label: 'Leagues', value: String(career.leagues_played_in) });
 
   return (
     <section
@@ -74,55 +99,63 @@ export default function PlayerSEOCopy({ player, faqs, intro }: Props) {
           About {fullName}
         </h2>
 
-        <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, margin: '0 0 0.75rem', fontSize: '1rem' }}>
-          {intro}
-        </p>
+        {/* Entity-specific facts table — sourced from player record only */}
+        {facts.length > 0 && (
+          <div style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+            <dl
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '0.5rem 1.5rem',
+                margin: 0,
+              }}
+            >
+              {facts.map((f) => (
+                <div key={f.label} style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline' }}>
+                  <dt
+                    style={{
+                      fontSize: '0.75rem',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      color: 'rgba(255,255,255,0.55)',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {f.label}:
+                  </dt>
+                  <dd
+                    style={{
+                      margin: 0,
+                      color: '#fff',
+                      fontSize: '0.95rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {f.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
 
-        {faqs.length > 0 && (
-          <div style={{ marginTop: '1.5rem' }}>
+        {/* Bio (only if present in the record — no fallback prose) */}
+        {player.bio && (
+          <div style={{ marginTop: '1rem' }}>
             <h3
               style={{
                 fontFamily: '"Bebas Neue", sans-serif',
                 fontSize: '1.125rem',
                 letterSpacing: '0.04em',
                 color: '#fff',
-                margin: '0 0 0.75rem',
+                margin: '0 0 0.5rem',
               }}
             >
-              Frequently asked questions
+              Biography
             </h3>
-            <dl style={{ margin: 0 }}>
-              {faqs.map((f, i) => (
-                <div
-                  key={i}
-                  style={{
-                    marginBottom: '0.875rem',
-                    borderTop: i === 0 ? '1px solid var(--border)' : undefined,
-                    paddingTop: i === 0 ? '0.75rem' : undefined,
-                  }}
-                >
-                  <dt
-                    style={{
-                      fontWeight: 700,
-                      color: '#fff',
-                      marginBottom: '0.25rem',
-                      fontSize: '0.95rem',
-                    }}
-                  >
-                    {f.question}
-                  </dt>
-                  <dd
-                    style={{
-                      margin: 0,
-                      color: 'rgba(255,255,255,0.78)',
-                      lineHeight: 1.65,
-                      fontSize: '0.9rem',
-                    }}
-                    dangerouslySetInnerHTML={{ __html: f.answer }}
-                  />
-                </div>
-              ))}
-            </dl>
+            <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, margin: 0, fontSize: '1rem' }}>
+              {player.bio}
+            </p>
           </div>
         )}
 
@@ -163,8 +196,8 @@ export default function PlayerSEOCopy({ player, faqs, intro }: Props) {
               </li>
             )}
             <li>
-              <Link href="/about-author" style={{ color: '#5eead4' }}>
-                About the RinkStop editorial team
+              <Link href="/learn/hockey-positions-explained" style={{ color: '#5eead4' }}>
+                Hockey positions explained
               </Link>
             </li>
           </ul>
