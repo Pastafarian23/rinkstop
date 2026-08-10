@@ -219,7 +219,9 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
             {
               '@type': 'ItemList',
               name: 'Hockey Teams',
-              numberOfItems: top.length,
+              // Directory page (not a paginated list) — ItemList advertises
+              // the full directory size. The rendered 'top' is a sample.
+              numberOfItems: counts.teams,
               itemListElement: top.map((t, i) => ({
                 '@type': 'ListItem',
                 position: i + 1,

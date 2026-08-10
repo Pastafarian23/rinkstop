@@ -174,7 +174,6 @@ export default function HockeyTeamsContent({
                 }}
               >
                 <span>Hockey teams in {c.name}</span>
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{(c.teamCount ?? 0).toLocaleString()}+</span>
               </Link>
             </li>
           ))}
