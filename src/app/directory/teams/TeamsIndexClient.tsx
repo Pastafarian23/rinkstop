@@ -50,6 +50,7 @@ interface Props {
   country?: string | null;
   level?: string | null;
   league?: string | null;
+  teamCount: number;
 }
 
 // A listing is "verified" if the claimant has a paid tier in either track.
@@ -60,7 +61,7 @@ const VERIFIED_TIERS = new Set([
   'business_listing', 'business_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation',
 ]);
 
-export default function TeamsIndexClient({ initialTeams, country: initialCountry, level: initialLevel, league: initialLeague }: Props) {
+export default function TeamsIndexClient({ initialTeams, country: initialCountry, level: initialLevel, league: initialLeague, teamCount }: Props) {
   const searchParams = useSearchParams();
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [loading, setLoading] = useState(false);
@@ -181,7 +182,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
         style={{ marginBottom: '1.5rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '80rem' }}
       >
         <p style={{ marginBottom: '0.75rem' }}>
-          RinkStop tracks <strong>2,275+ active hockey teams</strong> across 240 leagues and 57 countries — every NHL franchise, all 32 AHL clubs, the KHL, SHL, Liiga, DEL, and NLA in Europe, the CHL (OHL, WHL, QMJHL), NCAA Division I and III men&apos;s and women&apos;s programs, IIHF national programs, and tens of thousands of amateur and youth teams. Use the search and filters below to find a specific team, or browse by level, country, or league.
+          RinkStop tracks <strong>{teamCount.toLocaleString()}+ active hockey teams</strong> across 240 leagues and 57 countries — every NHL franchise, all 32 AHL clubs, the KHL, SHL, Liiga, DEL, and NLA in Europe, the CHL (OHL, WHL, QMJHL), NCAA Division I and III men&apos;s and women&apos;s programs, IIHF national programs, and tens of thousands of amateur and youth teams. Use the search and filters below to find a specific team, or browse by level, country, or league.
         </p>
         <p style={{ marginBottom: '0.5rem' }}>
           Looking for teams near you? Jump to{' '}
