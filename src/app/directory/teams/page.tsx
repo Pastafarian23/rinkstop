@@ -5,6 +5,7 @@ import HockeyTeamsContent from './HockeyTeamsContent';
 import AdSlot from '@/components/AdSlot';
 import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
+import { getDirectoryCounts } from '@/lib/directory-counts';
 
 const LEVEL_DESCRIPTIONS: Record<Level, string> = {
   pro: 'Top-tier professional hockey: NHL, AHL, KHL, top European leagues, and professional women\u2019s hockey.',
@@ -17,12 +18,14 @@ const LEVEL_DESCRIPTIONS: Record<Level, string> = {
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string }> }): Promise<Metadata> {
   const { country, level, league } = await searchParams;
   const levelIsValid = level && LEVEL_ORDER.includes(level as Level);
+  const counts = await getDirectoryCounts();
+  const teamCount = counts.teams;
   // Title strategy: lead with the most specific filter, add context, end with brand.
   // country + level: "[Level] Hockey Teams in [Country]"
   // country only:    "Hockey Teams in [Country]"
   // level only:      "[Level] Hockey Teams Worldwide"
   // league only:     "[League] Hockey Teams"
-  // nothing:         "2,275 Hockey Teams Across 240 Leagues"
+  // nothing:         "[count] Hockey Teams Across 240 Leagues"
   let title: string;
   if (country && levelIsValid) {
     title = `${LEVEL_LABELS[level as Level]} Hockey Teams in ${country}`;
@@ -33,7 +36,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   } else if (levelIsValid) {
     title = `${LEVEL_LABELS[level as Level]} Hockey Teams Worldwide`;
   } else {
-    title = 'Hockey Teams — Directory of 2,275+ Teams in 240 Leagues';
+    title = `${teamCount.toLocaleString()}+ Hockey Teams Across 240 Leagues`;
   }
   const description = (() => {
     if (levelIsValid && country) {
@@ -45,7 +48,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     if (country) {
       return `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info — searchable by league tier and city.`;
     }
-    return `Find any hockey team in the world. 2,275+ active teams across 240 leagues and 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
+    return `Find any hockey team in the world. ${teamCount.toLocaleString()}+ active teams across 240 leagues and 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
   })();
   const canonicalParams = new URLSearchParams();
   if (country) canonicalParams.set('country', country);
@@ -195,6 +198,7 @@ async function fetchInitialTeams(opts: {
 export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string }> }) {
   const { country, level, league } = await searchParams;
   const initialTeams = await fetchInitialTeams({ country, level, league });
+  const counts = await getDirectoryCounts();
   return (
     <>
       {(() => {
@@ -215,7 +219,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
             {
               '@type': 'ItemList',
               name: 'Hockey Teams',
-              numberOfItems: 2275,
+              numberOfItems: top.length,
               itemListElement: top.map((t, i) => ({
                 '@type': 'ListItem',
                 position: i + 1,
@@ -297,12 +301,12 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
           </p>
         </section>
       )}
-      <TeamsIndexClient initialTeams={initialTeams} country={country ?? null} level={level ?? null} league={league ?? null} />
+      <TeamsIndexClient initialTeams={initialTeams} country={country ?? null} level={level ?? null} league={league ?? null} teamCount={counts.teams} />
       {/* WS16 PR2 — AdSense in-feed ad below the team list. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
         <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
       </div>
-      <HockeyTeamsContent totalTeams={initialTeams.length} />
+      <HockeyTeamsContent totalTeams={counts.teams} />
     </>
   );
 }
