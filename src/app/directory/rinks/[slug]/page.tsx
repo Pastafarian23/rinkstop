@@ -141,6 +141,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       robots: { index: false, follow: true },
       alternates: {
         canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
+      },
       openGraph: { title: rink.name, type: 'website' },
     };
   }

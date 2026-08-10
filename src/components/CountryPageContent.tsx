@@ -25,7 +25,6 @@ export default function CountryPageContent({ data }: Props) {
     info,
     howToNote,
     nearestHockeyCountries,
-+    hockeyCities,
     iihfMember,
     nationalTeams,
     newest,
@@ -279,35 +278,9 @@ export default function CountryPageContent({ data }: Props) {
                 Know a hockey team, rink, or league in {countryName}? Help us grow the world&apos;s hockey directory!
               </p>
               <Link href="/add-listing" style={{ display: 'inline-block', background: red, color: '#fff', padding: '12px 24px', borderRadius: 6, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-                + Add Hockey in {countryName}
               </Link>
             </div>
           )}
-+          {hasData && hockeyCities.length > 0 && (
-+            <section style={{ marginBottom: 48 }}>
-+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, borderLeft: `4px solid ${red}`, paddingLeft: 14 }}>
-+                <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 26, letterSpacing: '0.04em', color: textMain, margin: 0 }}>
-+                  Hockey Cities in {countryName}
-+                </h2>
-+                <span style={{ fontSize: 12, color: textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-+                  {hockeyCities.length} cities with 2+ rinks
-+                </span>
-+              </div>
-+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-+                {hockeyCities.map(city => (
-+                  <Link key={city.slug} href={`/directory/locations/${countrySlug}/${city.slug}`} style={{ background: card, border: `1px solid ${border}`, borderRadius: 8, padding: '16px 18px', textDecoration: 'none', display: 'block', position: 'relative' }}>
-+                    <div style={{ fontSize: 16, fontWeight: 700, color: textMain, marginBottom: 8 }}>
-+                      <span style={{ position: 'absolute', inset: 0, zIndex: 0 }} aria-hidden="true" />
-+                      <span style={{ position: 'relative', zIndex: 1 }}>{city.name}</span>
-+                    </div>
-+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 14, fontSize: 12, color: textMuted }}>
-+                      <span style={{ color: red, fontWeight: 700 }}>{city.rinkCount}</span><span>rink{city.rinkCount === 1 ? '' : 's'}</span>
-+                    </div>
-+                  </Link>
-+                ))}
-+              </div>
-+            </section>
-+          )}
 
           {/* Closest active hockey markets (no-data countries only) */}
           {!hasData && nearestHockeyCountries.length > 0 && (

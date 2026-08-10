@@ -300,7 +300,6 @@ export default function CountriesPage() {
             Help us grow hockey worldwide. Know a team, rink, or league not listed?
           </p>
           <Link href="/add-listing" style={{ display: 'inline-block', background: '#C8102E', color: '#fff', padding: '12px 28px', borderRadius: 6, fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none' }}>
-            + Add Hockey to Any Country →
           </Link>
         </div>
       </div>

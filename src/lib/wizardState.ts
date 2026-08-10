@@ -259,7 +259,7 @@ export async function loadWizardProgress(userId: string): Promise<WizardProgress
     stepCount: completedSteps.length,
     totalSteps: reachableSteps.length,
     nextStep: nextIncomplete
-      ? { number: nextIncomplete.number, title: nextIncomplete.title, href: nextIncomplete.cta.href }
+      ? { number: nextIncomplete.number, title: nextIncomplete.title, href: nextIncomplete.href }
       : null,
     isComplete: completedSteps.length === reachableSteps.length,
   };

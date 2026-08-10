@@ -103,7 +103,6 @@ export default function LocationsIndexClient({ initialCountries }: Props) {
             textDecoration: 'none',
             letterSpacing: '0.05em',
           }}>
-            + Add the First Location
           </Link>
         </div>
       )}
