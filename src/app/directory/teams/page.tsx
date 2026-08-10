@@ -5,7 +5,7 @@ import HockeyTeamsContent from './HockeyTeamsContent';
 import AdSlot from '@/components/AdSlot';
 import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
-import { getDirectoryCounts } from '@/lib/directory-counts';
+import { getDirectoryCounts, getCountryTeamCounts } from '@/lib/directory-counts';
 
 const LEVEL_DESCRIPTIONS: Record<Level, string> = {
   pro: 'Top-tier professional hockey: NHL, AHL, KHL, top European leagues, and professional women\u2019s hockey.',
@@ -199,6 +199,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   const { country, level, league } = await searchParams;
   const initialTeams = await fetchInitialTeams({ country, level, league });
   const counts = await getDirectoryCounts();
+  const topCountries = await getCountryTeamCounts();
   return (
     <>
       {(() => {
@@ -308,7 +309,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
         <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
       </div>
-      <HockeyTeamsContent totalTeams={counts.teams} />
+      <HockeyTeamsContent totalTeams={counts.teams} topCountriesRaw={topCountries} />
     </>
   );
 }

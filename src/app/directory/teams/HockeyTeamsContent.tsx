@@ -8,6 +8,7 @@ interface Props {
   totalCountries?: number;
   topCountries?: Array<{ name: string; slug: string; teamCount: number }>;
   topLeagues?: Array<{ name: string; slug: string; teamCount: number }>;
+  topCountriesRaw?: Array<{ country: string; team_count: number }>;
 }
 
 // Content hub for /directory/teams — targets GSC zero-click query
@@ -19,19 +20,36 @@ export default function HockeyTeamsContent({
   totalTeams,
   totalLeagues = 240,
   totalCountries = 57,
-  topCountries = [
-    { name: 'United States', slug: 'united-states', teamCount: 1240 },
-    { name: 'Canada', slug: 'canada', teamCount: 580 },
-    { name: 'Russia', slug: 'russia', teamCount: 210 },
-    { name: 'Sweden', slug: 'sweden', teamCount: 145 },
-    { name: 'Finland', slug: 'finland', teamCount: 130 },
-    { name: 'Czech Republic', slug: 'czech-republic', teamCount: 95 },
-    { name: 'Germany', slug: 'germany', teamCount: 80 },
-    { name: 'Switzerland', slug: 'switzerland', teamCount: 65 },
-    { name: 'Slovakia', slug: 'slovakia', teamCount: 50 },
-    { name: 'France', slug: 'france', teamCount: 45 },
-  ],
+  topCountriesRaw,
 }: Props) {
+  // Map the raw RPC shape [{country, team_count}] to the display shape
+  // [{name, slug, teamCount}]. Fall back to a static curated list if the
+  // RPC returned nothing (e.g. Supabase outage during render).
+  const slugify = (s: string) =>
+    s.toLowerCase().trim().replace(/['']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const topCountries = (topCountriesRaw && topCountriesRaw.length > 0)
+    ? topCountriesRaw.slice(0, 10).map((r) => ({
+        name: r.country,
+        slug: slugify(r.country),
+        teamCount: Number(r.team_count) || 0,
+      }))
+    : [
+        { name: 'United States', slug: 'united-states', teamCount: 0 },
+        { name: 'Canada', slug: 'canada', teamCount: 0 },
+        { name: 'Russia', slug: 'russia', teamCount: 0 },
+        { name: 'Sweden', slug: 'sweden', teamCount: 0 },
+        { name: 'Finland', slug: 'finland', teamCount: 0 },
+        { name: 'Czech Republic', slug: 'czech-republic', teamCount: 0 },
+        { name: 'Germany', slug: 'germany', teamCount: 0 },
+        { name: 'Switzerland', slug: 'switzerland', teamCount: 0 },
+        { name: 'Slovakia', slug: 'slovakia', teamCount: 0 },
+        { name: 'France', slug: 'france', teamCount: 0 },
+      ];
+  // Render the count next to the link when it's > 0. When the fallback
+  // list is in use (teamCount === 0), suppress the number so we don't
+  // show explicit "0" counts.
+  const renderCount = (n: number) => (n > 0 ? n.toLocaleString() : '');
+
   // Six level cards. Each links to ?level=X and gives a short description
   // matching what Google wants to extract for "{level} hockey teams" queries.
   const levels: Level[] = ['pro', 'junior', 'college', 'international', 'adult'];
@@ -174,6 +192,11 @@ export default function HockeyTeamsContent({
                 }}
               >
                 <span>Hockey teams in {c.name}</span>
+                {renderCount(c.teamCount) && (
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>
+                    {renderCount(c.teamCount)}
+                  </span>
+                )}
               </Link>
             </li>
           ))}
