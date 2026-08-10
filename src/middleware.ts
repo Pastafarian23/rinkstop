@@ -193,7 +193,17 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+    headers: {
+      // Surface the request pathname to server components via headers().
+      // Used by the root layout to gate AdSense script loading on
+      // legal/auth/form pages (AdSense policy: no ads on those routes).
+      'x-pathname': path,
+    },
+  });
 });
 
 export const config = {

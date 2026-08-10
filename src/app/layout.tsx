@@ -1,5 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { ClerkProvider } from '@clerk/nextjs';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import Script from 'next/script';
@@ -136,6 +137,34 @@ const NAV: never[] = []; // unused, kept to avoid breaking any external referenc
 
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // AdSense policy: ads cannot be served on legal/auth/form pages.
+  // We check the request pathname via the middleware-injected header
+  // and only inject the AdSense script on eligible content routes.
+  // (see src/middleware.ts which sets x-pathname)
+  const h = await headers();
+  const pathname = h.get('x-pathname') || '';
+
+  // Routes where AdSense script must NOT load.
+  // Kept narrow on purpose — every exclusion is a policy-explicit category.
+  const ADSENSE_EXCLUDED_PREFIXES = [
+    '/privacy',
+    '/terms',
+    '/cookies',
+    '/login',
+    '/sign-up',
+    '/forgot-password',
+    '/reset-password',
+    '/sso-callback',
+    '/claim-your-listing',
+    '/dashboard',
+    '/admin',
+    '/onboarding',
+    '/api',
+  ];
+  const ADSENSE_EXCLUDED_EXACT = new Set(['/about', '/contact', '/advertise', '/cookies']);
+  const adsenseEligible = !ADSENSE_EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) &&
+                          !ADSENSE_EXCLUDED_EXACT.has(pathname);
+
   // Fetch user role + tier for the bottom tab bar. This runs once per page
   // render in the root layout. On pages with `revalidate` (home, /blog etc.),
   // the result is cached so we don't query Supabase on every anonymous hit.
@@ -194,7 +223,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="RinkStop" />
           <link rel="apple-touch-icon" href="/rinkstoplogo.png" />
-          <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3703811522107586" crossOrigin="anonymous"></script>
+          {adsenseEligible && (
+            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3703811522107586" crossOrigin="anonymous"></script>
+          )}
         </head>
         <body>
 
