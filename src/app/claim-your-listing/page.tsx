@@ -348,7 +348,15 @@ export default async function ClaimYourListingPage({
   // Directory counts — single source of truth shared with the homepage and
   // About page. Passed to EmptyState so the "1,900+ rinks" claim stays in
   // sync with the actual directory size.
-  const counts = await getDirectoryCounts();
+  // Wrapped in try/catch so a Supabase outage (or a transient RPC error)
+  // doesn't 500 the page. Zero counts render fine — the EmptyState just
+  // shows "0+ rinks" instead of "1,858+ rinks".
+  let counts = { rinks: 0, teams: 0, players: 0, leagues: 0, cities: 0, countries: 0 };
+  try {
+    counts = await getDirectoryCounts();
+  } catch {
+    // never let counts break the page
+  }
 
   // Server-side analytics: track this page view with the search query
   // Plus: capture whether the user searched or landed empty (helps split
