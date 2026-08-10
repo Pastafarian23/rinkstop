@@ -113,7 +113,7 @@ export default function AdvertisePage() {
           Ready to reach the global hockey community? Send us a message with details about your brand, budget, and goals, and we'll put together a custom advertising proposal.
         </p>
         <a
-          href="mailto:support@rinkstop.com?subject=Advertising Inquiry"
+          href="/about#contact"
           style={{
             display: 'inline-block',
             background: '#C8102E',
