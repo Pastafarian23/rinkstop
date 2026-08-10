@@ -185,21 +185,81 @@ export async function loadWizardProgress(userId: string): Promise<WizardProgress
 
   const identityVerified = false; // identity state lives in the session, not the DB; conservatively count as incomplete
 
-  // Import PERSONA_COPY at call time to avoid a circular dep on the component.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { PERSONA_COPY } = require('@/components/family/FamilySetupWizard');
-  const steps = PERSONA_COPY[persona]?.steps(state, identityVerified) ?? [];
+  // Step definitions mirror PERSONA_COPY in FamilySetupWizard.tsx.
+  // Keep in sync when the component changes.
+  // comingNext steps are excluded from totalSteps (users aren't
+  // penalised for unbuilt features).
+  const steps: { number: number; title: string; href: string; done: boolean; comingNext?: boolean }[] = [
+    { number: 1, title: 'Complete your Hockey Identity', done: identityVerified, href: '/dashboard/identity' },
+    { number: 2, title: 'Set your country', done: state.wizardHasCountry, href: '/dashboard/profile#country' },
+  ];
 
-  const reachableSteps = steps.filter((s: { comingNext?: boolean }) => !s.comingNext);
-  const completedSteps = reachableSteps.filter((s: { done: boolean }) => s.done);
-  const nextIncomplete = reachableSteps.find((s: { done: boolean }) => !s.done) ?? null;
+  switch (persona) {
+    case 'parent':
+      steps.push(
+        { number: 3, title: 'Add your children', done: state.wizardHasChildren, href: '/dashboard/family' },
+        { number: 4, title: 'Upload important hockey documents', done: state.wizardHasDocuments, href: '/dashboard/family' },
+        { number: 5, title: 'Create your first Hockey Passport', done: false, href: '/dashboard/profile', comingNext: true },
+        { number: 6, title: 'Import your existing schedule (optional)', done: false, href: '#', comingNext: true },
+        { number: 7, title: 'Invite your team or organization', done: state.wizardHasTeamMembership, href: '/directory/teams' },
+      );
+      break;
+    case 'coach':
+      steps.push(
+        { number: 3, title: 'Link your team', done: state.wizardHasCoachProfile, href: '/dashboard/coach' },
+        { number: 4, title: 'Set your coaching credentials', done: state.wizardHasCoachProfile, href: '/dashboard/coach/credentials' },
+        { number: 5, title: 'Create your Hockey Passport', done: identityVerified, href: '/dashboard/profile' },
+        { number: 6, title: 'Import your existing schedule (optional)', done: false, href: '#', comingNext: true },
+        { number: 7, title: 'Invite your team or organization', done: state.wizardHasTeamMembership, href: '/directory/teams' },
+      );
+      break;
+    case 'player':
+      steps.push(
+        { number: 3, title: 'Add your player profile', done: false, href: '/dashboard/profile', comingNext: true },
+        { number: 4, title: 'Upload your hockey documents', done: false, href: '/dashboard/profile', comingNext: true },
+        { number: 5, title: 'Create your Hockey Passport', done: identityVerified, href: '/dashboard/profile' },
+        { number: 6, title: 'Import your existing schedule (optional)', done: false, href: '#', comingNext: true },
+        { number: 7, title: 'Find your team or league', done: state.wizardHasTeamMembership, href: '/directory/teams' },
+      );
+      break;
+    case 'official':
+      steps.push(
+        { number: 3, title: 'Add your official profile', done: state.wizardHasOfficialRegistration, href: '/dashboard/referee' },
+        { number: 4, title: 'Upload your certification documents', done: state.wizardHasOfficialRegistration, href: '/dashboard/referee/credentials' },
+        { number: 5, title: 'Create your Hockey Passport', done: identityVerified, href: '/dashboard/profile' },
+        { number: 6, title: 'Import your existing schedule (optional)', done: false, href: '#', comingNext: true },
+        { number: 7, title: 'Connect with leagues and rinks', done: state.wizardHasTeamMembership, href: '/directory/teams' },
+      );
+      break;
+    case 'operator':
+      steps.push(
+        { number: 3, title: 'Add your organization', done: state.wizardHasOrgMembership, href: '/dashboard/organization' },
+        { number: 4, title: 'Set up your facility profile', done: false, href: '/dashboard/profile', comingNext: true },
+        { number: 5, title: 'Create your Hockey Passport', done: identityVerified, href: '/dashboard/profile' },
+        { number: 6, title: 'Import your existing schedule (optional)', done: false, href: '#', comingNext: true },
+        { number: 7, title: 'Invite your coaches and players', done: state.wizardHasTeamMembership, href: '/directory/teams' },
+      );
+      break;
+    default: // generic
+      steps.push(
+        { number: 3, title: 'Set up your profile', done: false, href: '/dashboard/profile', comingNext: true },
+        { number: 4, title: 'Add your hockey roles', done: false, href: '/dashboard/profile', comingNext: true },
+        { number: 5, title: 'Create your Hockey Passport', done: identityVerified, href: '/dashboard/profile' },
+        { number: 6, title: 'Import your existing schedule (optional)', done: false, href: '#', comingNext: true },
+        { number: 7, title: 'Connect with teams and leagues', done: state.wizardHasTeamMembership, href: '/directory/teams' },
+      );
+  }
+
+  const reachableSteps = steps.filter((s) => !s.comingNext);
+  const completedSteps = reachableSteps.filter((s) => s.done);
+  const nextIncomplete = reachableSteps.find((s) => !s.done) ?? null;
 
   return {
     persona,
     stepCount: completedSteps.length,
     totalSteps: reachableSteps.length,
     nextStep: nextIncomplete
-      ? { number: nextIncomplete.number, title: nextIncomplete.title, href: nextIncomplete.cta.href }
+      ? { number: nextIncomplete.number, title: nextIncomplete.title, href: nextIncomplete.href }
       : null,
     isComplete: completedSteps.length === reachableSteps.length,
   };

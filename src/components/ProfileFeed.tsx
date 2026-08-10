@@ -149,7 +149,6 @@ export default function ProfileFeed({ isOwner, username }: ProfileFeedProps) {
                 }}
                 aria-hidden
               >
-                +
               </div>
             ))}
           </div>

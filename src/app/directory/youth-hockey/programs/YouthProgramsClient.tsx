@@ -288,7 +288,6 @@ export default function YouthProgramsClient({ initialPrograms, initialCountry }:
             flexShrink: 0,
           }}
         >
-          + Add Program
         </a>
       </div>
     </div>

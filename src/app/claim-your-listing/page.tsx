@@ -49,7 +49,6 @@ export const dynamic = 'force-dynamic';
 // `next build` to collect page metadata; a top-level `redirect()` throws
 // `NEXT_REDIRECT` and breaks the build. Inside the component body it
 // only fires per-request.
-const CLAIM_REDIRECT_TEMPORARY = process.env.NODE_ENV !== 'development' || process.env.CLAIM_REDIRECT_TIMEBOMB !== 'disabled';
 
 type ClaimType = 'rink' | 'team' | 'player';
 
@@ -305,9 +304,6 @@ export default async function ClaimYourListingPage({
   // Run as the first per-request step when the hot-patch is active. Lives
   // inside the component body so Next.js's static page-collection phase
   // doesn't evaluate it during `next build`.
-  if (CLAIM_REDIRECT_TEMPORARY) {
-    redirect('/login?redirect_url=' + encodeURIComponent('/dashboard/claims'));
-  }
 
   const { q, type: typeParam } = await searchParams;
   const query = (q || '').trim();

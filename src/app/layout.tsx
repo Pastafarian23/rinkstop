@@ -48,6 +48,7 @@ export const metadata: Metadata = {
     template: '%s | RinkStop',
   },
   description: 'Find hockey teams, players, leagues, and rinks from every corner of the globe.',
+  // WebSite schema — homepage only. Helps Google understand
   openGraph: {
     siteName: 'RinkStop',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],

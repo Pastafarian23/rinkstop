@@ -303,6 +303,10 @@ export async function getCityPageData(opts: {
   } else if (countrySlug === 'united-kingdom' || countrySlug === 'uk') {
     teamsQuery = teamsQuery.ilike('city', `%${cityName}%`);
     rinksQuery = rinksQuery.ilike('city', `%${cityName}%`);
+  } else {
+    // International countries: filter by city using ilike on both tables
+    teamsQuery = teamsQuery.or(cityMatchAnywhere);
+    rinksQuery = rinksQuery.or(cityMatchAnywhere);
   }
 
   teamsQuery = teamsQuery.order('name');
