@@ -1,20 +1,21 @@
 /**
  * Server-rendered SEO content for player detail pages.
  *
- * Replaces the previous templated position-explanation prose
- * (formerly lifted pages to 600+ words with generic defenseman /
- * center / wing text repeated across hundreds of records).
+ * Path B player page depth (Path B executed 2026-08-10):
+ *   - Entity-specific facts table (position, jersey, nationality, etc.)
+ *   - Career context: current team, league, country
+ *   - Player connections: same-team peers, league context, nationality links
+ *   - Source attribution + verification metadata + last-updated
  *
- * What this renders now:
- *   - Entity-specific facts only: position, nationality, birth year,
- *     current team, jersey number — sourced from the player record.
- *   - Recent context (last updated).
- *   - Internal links.
+ * NO templated position-explanation prose. NO generic FAQs.
+ * Renders only fields that exist in the players table schema:
+ *   position, jersey_number, shoots, catches, height_cm, weight_kg,
+ *   birth_date, nationality, bio, headshot_url, is_active, updated_at.
  *
- * NO position-explanation paragraphs. NO generic FAQs. If a record
- * has missing fields, the section is omitted rather than fabricating
- * a default. This addresses ChatGPT's "templated thin content" flag
- * on player pages and is what AdSense reviewers will look at first.
+ * Optional props (passed empty for now): `career` aggregates
+ * (seasons_played, teams_played_for, leagues_played_in), `teammates`
+ * (same-team peers pre-fetched from page.tsx), `leagueContext`
+ * (league-level stats).
  */
 
 import Link from 'next/link';
@@ -39,16 +40,16 @@ interface Props {
     headshot_url?: string | null;
     teams?: { name?: string; slug?: string; leagues?: { name?: string; slug?: string; country?: string | null } | null } | null;
   };
-  // Player-specific career stats when available. Optional — older or
-  // community-submitted records may not have these.
   career?: {
     seasons_played?: number | null;
     teams_played_for?: number | null;
     leagues_played_in?: number | null;
   };
+  teammates?: { id: string; first_name?: string | null; last_name?: string | null; slug?: string | null; position?: string | null; jersey_number?: number | null }[];
+  leagueContext?: { total_teams?: number | null; total_players?: number | null; country?: string | null; founded_year?: number | null };
 }
 
-export default function PlayerSEOCopy({ player, career }: Props) {
+export default function PlayerSEOCopy({ player, career, teammates, leagueContext }: Props) {
   const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
   const teamName = player.teams?.name || '';
   const teamSlug = player.teams?.slug || '';
@@ -58,6 +59,9 @@ export default function PlayerSEOCopy({ player, career }: Props) {
   const updated = player.updated_at
     ? new Date(player.updated_at).toISOString().slice(0, 10)
     : null;
+
+  // Compute birth year from birth_date for the career timeline block.
+  const birthYear = player.birth_date ? Number(player.birth_date.slice(0, 4)) : null;
 
   // Build the entity-specific facts list. Each row is sourced from the
   // player record — no fabricated defaults.
@@ -139,7 +143,7 @@ export default function PlayerSEOCopy({ player, career }: Props) {
           </div>
         )}
 
-        {/* Bio (only if present in the record — no fallback prose) */}
+        {/* Bio — only if present in the record (no fallback prose) */}
         {player.bio && (
           <div style={{ marginTop: '1rem' }}>
             <h3
@@ -156,6 +160,104 @@ export default function PlayerSEOCopy({ player, career }: Props) {
             <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, margin: 0, fontSize: '1rem' }}>
               {player.bio}
             </p>
+          </div>
+        )}
+
+        {/* Current context — sourced from player record, never fabricated */}
+        {(teamName || leagueName || leagueCountry || birthYear) && (
+          <div style={{ marginTop: '1.25rem' }}>
+            <h3
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '1.125rem',
+                letterSpacing: '0.04em',
+                color: '#fff',
+                margin: '0 0 0.5rem',
+              }}
+            >
+              Current context
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, margin: 0, fontSize: '0.95rem' }}>
+              {fullName} is recorded as{' '}
+              {player.position ? <><strong>{player.position}</strong>{' '}</> : null}
+              {teamName && teamSlug ? (
+                <>
+                  currently on{' '}
+                  <Link href={`/directory/teams/${teamSlug}`} style={{ color: '#5eead4' }}>
+                    {teamName}
+                  </Link>
+                  {' '}
+                </>
+              ) : teamName ? (
+                <>currently on {teamName} </> 
+              ) : null}
+              {leagueName && leagueSlug ? (
+                <>
+                  of the{' '}
+                  <Link href={`/directory/leagues/${leagueSlug}`} style={{ color: '#5eead4' }}>
+                    {leagueName}
+                  </Link>
+                </>
+              ) : null}
+              {leagueCountry && (
+                <>{teamName || leagueName ? ',' : ''} {leagueCountry}</>
+              )}
+              {birthYear && (
+                <>. {fullName.split(' ')[0]} was born in {birthYear}</>
+              )}
+              . {player.nationality && (
+                <> {player.nationality} nationality</>
+              )}{' '}
+              — see the team and league pages for full roster context, schedule, and standings.
+            </p>
+          </div>
+        )}
+
+        {/* League context — sourced from pre-fetched `leagueContext` prop */}
+        {leagueContext && (leagueContext.total_teams != null || leagueContext.total_players != null || leagueContext.founded_year != null) && (
+          <div style={{ marginTop: '1rem', padding: '0.875rem 1rem', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
+            <h4 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '0.875rem', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.65)', margin: '0 0 0.5rem', textTransform: 'uppercase' }}>
+              {leagueName || 'League'} at a glance
+            </h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem 1.5rem', fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)' }}>
+              {leagueContext.total_teams != null && <span><strong style={{ color: '#fff' }}>{leagueContext.total_teams}</strong> teams</span>}
+              {leagueContext.total_players != null && <span><strong style={{ color: '#fff' }}>{leagueContext.total_players}</strong> players tracked</span>}
+              {leagueContext.founded_year != null && <span>Founded <strong style={{ color: '#fff' }}>{leagueContext.founded_year}</strong></span>}
+              {leagueContext.country && <span>Country <strong style={{ color: '#fff' }}>{leagueContext.country}</strong></span>}
+            </div>
+          </div>
+        )}
+
+        {/* Teammates — sourced from pre-fetched `teammates` prop, when present */}
+        {teammates && teammates.length > 0 && (
+          <div style={{ marginTop: '1.25rem' }}>
+            <h3
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '1.125rem',
+                letterSpacing: '0.04em',
+                color: '#fff',
+                margin: '0 0 0.5rem',
+              }}
+            >
+              {teamName ? `${teamName} teammates` : 'Related players'}
+            </h3>
+            <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', margin: 0, padding: 0, listStyle: 'none' }}>
+              {teammates.slice(0, 12).map((t) => {
+                const name = `${t.first_name ?? ''} ${t.last_name ?? ''}`.trim();
+                if (!name) return null;
+                return (
+                  <li key={t.id}>
+                    <Link
+                      href={`/directory/players/${t.slug ?? t.id}`}
+                      style={{ color: '#5eead4', fontSize: '0.875rem' }}
+                    >
+                      {name}{t.jersey_number != null ? <span style={{ color: 'rgba(255,255,255,0.55)' }}> #{t.jersey_number}</span> : null}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 
@@ -203,7 +305,7 @@ export default function PlayerSEOCopy({ player, career }: Props) {
           </ul>
         </nav>
 
-        {/* Author bio + last-updated */}
+        {/* Author bio + last-updated + sources + verification */}
         <div
           style={{
             marginTop: '1.25rem',
