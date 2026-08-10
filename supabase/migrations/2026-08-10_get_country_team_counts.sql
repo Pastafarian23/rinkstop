@@ -53,6 +53,48 @@ AS $$
     LEFT JOIN leagues l ON l.id = t.league_id
     WHERE l.country IS NULL OR l.country NOT IN ('World', 'Europe', 'Asia', 'International')
   ),
+  country_aliases AS (
+    -- Canonicalize legacy/short country codes so the top-10 list doesn't
+    -- show 'United States' and 'USA' as separate countries. The 2026-06-03
+    -- backfill normalized new writes but didn't clean up legacy rows.
+    SELECT CASE country
+      WHEN 'USA' THEN 'United States'
+      WHEN 'US' THEN 'United States'
+      WHEN 'UK' THEN 'United Kingdom'
+      WHEN 'Great Britain' THEN 'United Kingdom'
+      WHEN 'England' THEN 'United Kingdom'
+      WHEN 'Scotland' THEN 'United Kingdom'
+      WHEN 'Wales' THEN 'United Kingdom'
+      WHEN 'Northern Ireland' THEN 'United Kingdom'
+      WHEN 'Czechia' THEN 'Czech Republic'
+      WHEN 'Korea' THEN 'South Korea'
+      WHEN 'Korea, Republic of' THEN 'South Korea'
+      WHEN 'Korea, South' THEN 'South Korea'
+      WHEN 'Republic of Korea' THEN 'South Korea'
+      WHEN 'RU' THEN 'Russia'
+      WHEN 'BY' THEN 'Belarus'
+      WHEN 'DE' THEN 'Germany'
+      WHEN 'FI' THEN 'Finland'
+      WHEN 'SE' THEN 'Sweden'
+      WHEN 'NO' THEN 'Norway'
+      WHEN 'CH' THEN 'Switzerland'
+      WHEN 'AT' THEN 'Austria'
+      WHEN 'IT' THEN 'Italy'
+      WHEN 'FR' THEN 'France'
+      WHEN 'DK' THEN 'Denmark'
+      WHEN 'LV' THEN 'Latvia'
+      WHEN 'SK' THEN 'Slovakia'
+      WHEN 'PL' THEN 'Poland'
+      WHEN 'CA' THEN 'Canada'
+      WHEN 'JP' THEN 'Japan'
+      WHEN 'CZ' THEN 'Czech Republic'
+      WHEN 'USA/Canada' THEN 'Canada'
+      ELSE country
+    END AS country
+    FROM normalized
+  ),
+  -- Normalize user_workspaces the same way as teams so codes like
+  -- US/CA/RU are canonicalized before the UNION ALL
   user_workspaces AS (
     SELECT
       CASE
@@ -62,10 +104,39 @@ AS $$
     FROM team_workspaces tw
     WHERE tw.is_active = true
   ),
+  user_workspaces_normalized AS (
+    SELECT CASE
+      WHEN country IN ('USA','US')   THEN 'United States'
+      WHEN country IN ('UK')         THEN 'United Kingdom'
+      WHEN country IN ('Great Britain','England','Scotland','Wales','Northern Ireland') THEN 'United Kingdom'
+      WHEN country IN ('Czechia')    THEN 'Czech Republic'
+      WHEN country IN ('Korea','Korea, Republic of','Korea, South','Republic of Korea') THEN 'South Korea'
+      WHEN country IN ('RU')         THEN 'Russia'
+      WHEN country IN ('BY')         THEN 'Belarus'
+      WHEN country IN ('DE')         THEN 'Germany'
+      WHEN country IN ('FI')         THEN 'Finland'
+      WHEN country IN ('SE')         THEN 'Sweden'
+      WHEN country IN ('NO')         THEN 'Norway'
+      WHEN country IN ('CH')         THEN 'Switzerland'
+      WHEN country IN ('AT')         THEN 'Austria'
+      WHEN country IN ('IT')         THEN 'Italy'
+      WHEN country IN ('FR')         THEN 'France'
+      WHEN country IN ('DK')         THEN 'Denmark'
+      WHEN country IN ('LV')         THEN 'Latvia'
+      WHEN country IN ('SK')         THEN 'Slovakia'
+      WHEN country IN ('PL')         THEN 'Poland'
+      WHEN country IN ('CA')         THEN 'Canada'
+      WHEN country IN ('JP')         THEN 'Japan'
+      WHEN country IN ('CZ','Czechia')  THEN 'Czech Republic'
+      WHEN country IN ('USA/Canada','US/Canada','US, Canada','USA, Canada','US / Canada') THEN 'Canada'
+      ELSE country
+    END AS country
+    FROM user_workspaces
+  ),
   all_countries AS (
-    SELECT country FROM normalized
+    SELECT country FROM country_aliases
     UNION ALL
-    SELECT country FROM user_workspaces
+    SELECT country FROM user_workspaces_normalized
   )
   SELECT
     ac.country AS country,
