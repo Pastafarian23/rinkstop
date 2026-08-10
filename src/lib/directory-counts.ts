@@ -9,6 +9,11 @@ export type DirectoryCounts = {
   countries: number;
 };
 
+export type CountryCount = {
+  country: string;
+  team_count: number;
+};
+
 const ZERO_COUNTS: DirectoryCounts = {
   rinks: 0,
   teams: 0,
@@ -17,6 +22,8 @@ const ZERO_COUNTS: DirectoryCounts = {
   cities: 0,
   countries: 0,
 };
+
+const ZERO_COUNTRY_COUNTS: CountryCount[] = [];
 
 /**
  * Single source of truth for "how big is the directory" numbers that
@@ -54,5 +61,27 @@ export async function getDirectoryCounts(): Promise<DirectoryCounts> {
     };
   } catch {
     return ZERO_COUNTS;
+  }
+}
+
+/**
+ * Live per-country team counts. Wraps the `get_country_team_counts`
+ * Supabase RPC. Returns top 50 countries by team count, ordered DESC.
+ *
+ * Used by /directory/teams (HockeyTeamsContent) to render the top-10
+ * countries block with live numbers instead of hardcoded approximations.
+ * Falls back to empty array on error so a Supabase outage doesn't break
+ * the surrounding page.
+ */
+export async function getCountryTeamCounts(): Promise<CountryCount[]> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data } = await supabase.rpc('get_country_team_counts');
+    return (data || []) as CountryCount[];
+  } catch {
+    return ZERO_COUNTRY_COUNTS;
   }
 }
