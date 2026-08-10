@@ -86,6 +86,26 @@ export default function AdvertisePage() {
         </ul>
       </div>
 
+      {/* Advertiser disclosure — required by AdSense policy when running ads */}
+      <div style={{ marginBottom: '3rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>ADVERTISER DISCLOSURE &amp; EDITORIAL INDEPENDENCE</h2>
+        <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '0.95rem', marginBottom: '1rem' }}>
+          RinkStop displays advertisements served by third-party advertising networks. As of the date at the top of this page, RinkStop does <strong>not</strong> run Google AdSense or any other personalized ad network on the live site. When ads are enabled, they will be clearly distinguishable from editorial content and labelled as &ldquo;Advertisement&rdquo; or &ldquo;Sponsored.&rdquo;
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '0.95rem', marginBottom: '1rem' }}>
+          <strong>Editorial independence:</strong> Advertising never influences what we write, who we cover, or how we cover it. Editorial team members are not informed of advertiser relationships in the articles they write or edit. Writers do not see which advertisers appear on their pages. See our <Link href="/editorial-policy" style={{ color: '#C8102E' }}>Editorial Policy</Link> for the full standard.
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '0.95rem', marginBottom: '1rem' }}>
+          <strong>Affiliate disclosure:</strong> Some links on RinkStop may be affiliate links. If you click an affiliate link and complete a qualifying action (sign up, purchase, etc.), RinkStop may earn a small commission at no additional cost to you. Affiliate relationships are disclosed in the article footer where they appear. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> for details.
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '0.95rem', marginBottom: '1rem' }}>
+          <strong>Personalized advertising &amp; EEA / UK / Switzerland:</strong> For visitors in the European Economic Area, United Kingdom, or Switzerland, RinkStop uses a Google-certified consent management platform (Google Privacy &amp; Messaging API, IAB TCF v2.x). Personalized advertising is only loaded after you provide explicit consent. You can change your consent at any time by clearing your browser&rsquo;s storage for rinkstop.com or revisiting this page.
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+          <strong>Children&rsquo;s privacy:</strong> RinkStop does not enable personalized or retargeted advertising on youth-hockey sections of the site, in line with our <Link href="/privacy" style={{ color: '#C8102E' }}>Privacy Policy</Link> and COPPA compliance.
+        </p>
+      </div>
+
       {/* Contact */}
       <div style={{ background: 'var(--s2)', padding: '2rem 2.5rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GET STARTED</h2>
