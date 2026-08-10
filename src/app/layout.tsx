@@ -165,6 +165,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // AdSense policy + COPPA + Google's TFAT age-treatment framework (2026-05)
     // require this exclusion before AdSense is enabled.
     '/directory/youth-hockey',
+    // Youth guide content (learn-to-play, parent guides, transition paths)
+    // is also 'directed to children' under COPPA / TFAT — same exclusion.
+    '/guides/youth',
   ];
   const ADSENSE_EXCLUDED_EXACT = new Set(['/about', '/contact', '/advertise', '/cookies']);
   const adsenseEligible = !ADSENSE_EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) &&
