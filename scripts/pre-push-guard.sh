@@ -25,12 +25,16 @@ fi
 
 # Gate 2: branch is ahead of main (we're pushing new work)
 echo "[2/5] checking branch is ahead of main..."
-AHEAD=$(git rev-list --count main..HEAD 2>/dev/null || echo 0)
-if [ "$AHEAD" -eq 0 ]; then
-  echo "FAIL: branch is not ahead of main; nothing to push"
-  exit 1
+if [ "$BRANCH" = "main" ]; then
+  echo "    main branch - skipping ahead-of-main check"
+else
+  AHEAD=$(git rev-list --count main..HEAD 2>/dev/null || echo 0)
+  if [ "$AHEAD" -eq 0 ]; then
+    echo "FAIL: branch is not ahead of main; nothing to push"
+    exit 1
+  fi
+  echo "    branch is $AHEAD commit(s) ahead of main"
 fi
-echo "    branch is $AHEAD commit(s) ahead of main"
 
 # Gate 3: TypeScript compile
 echo "[3/5] running npx tsc --noEmit..."
