@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import ClaimsForm from './ClaimsForm';
+import { ClaimIntentPanel, parseClaimIntentForClaims } from './ClaimIntentPanel';
 import { getUserTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
 import { trackEvent } from '@/lib/analytics';
 
@@ -20,7 +21,7 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; border: string;
 export default async function ClaimsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ entity?: string; id?: string; name?: string; source?: string; tier?: string }>;
+  searchParams?: Promise<{ entity?: string; id?: string; name?: string; source?: string; tier?: string; intent?: string; upgrade?: string }>;
 }) {
   const session = await auth();
   const cu = await currentUser();
@@ -68,6 +69,14 @@ export default async function ClaimsPage({
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
+  // Phase 3: detect claim intent (?intent=claim&entity=...&name=...&tier=...)
+  // and render a prominent tier card + status timeline + one-click upgrade.
+  // The user arrives here from /sign-up after the Phase 2 ClaimIntentCard
+  // flow, or directly from a directory page Claim button.
+  const claimIntent = parseClaimIntentForClaims(sp ?? undefined);
+  const isFree = tier === 'free';
+  const atCap = actualMax !== Infinity && currentCount >= actualMax;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 760 }}>
       <div style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem 1.75rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -91,6 +100,22 @@ export default async function ClaimsPage({
           )}
         </div>
       </div>
+
+      {/* Phase 3: prominent tier card + status timeline + one-click upgrade.
+          Renders when the user arrives with ?intent=claim&... (from /sign-up
+          tier card flow or direct Claim CTA). */}
+      {claimIntent ? (
+        <ClaimIntentPanel
+          entity={claimIntent.entity}
+          entityName={claimIntent.entityName}
+          recommendedTier={claimIntent.recommendedTier}
+          upgradeTier={claimIntent.upgradeTier}
+          currentTier={tier}
+          atCap={atCap}
+          isFree={isFree}
+          entityId={claimIntent.entityId}
+        />
+      ) : null}
 
       {/* My existing claims */}
       <section style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem' }}>
