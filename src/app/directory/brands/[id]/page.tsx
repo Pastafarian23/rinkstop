@@ -5,12 +5,57 @@
 // same level, so we keep [id] and discriminate the input format.
 
 import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
 import { getBrandBySlug, getBrandSlugMap } from '@/lib/brand-page';
 import Link from 'next/link';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Params = Promise<{ id: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { id } = await params;
+
+  // UUID path: we don't render the UUID directly (it 301s to the slug), so
+  // we don't have a brand to describe here. Return a generic title.
+  if (UUID_RE.test(id)) {
+    return { title: 'Brand' };
+  }
+
+  // Slug path: render the brand-specific metadata.
+  const data = await getBrandBySlug(id);
+  if (!data) return { title: 'Brand Not Found' };
+  const { brand } = data;
+
+  const category = brand.category ? brand.category.replace(/_/g, ' ') : 'hockey equipment';
+  const origin = brand.country_of_origin ? ` from ${brand.country_of_origin}` : '';
+  const title = `${brand.name} — ${category} brand${origin} | RinkStop`;
+  // Description: entity-specific, no fabricated stats. Use the brand's own
+  // description if it has one, otherwise a minimal fallback.
+  const description = brand.description
+    ? `${brand.name} ${category} brand${origin}. ${brand.description.replace(/\.$/, '')}. Find teams using ${brand.name} on RinkStop.`
+    : `${brand.name} — ${category} brand${origin}. Browse teams and gear using ${brand.name} on RinkStop.`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `https://rinkstop.com/directory/brands/${id}` },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      ...(brand.logo_url
+        ? { images: [{ url: brand.logo_url, width: 400, height: 400, alt: `${brand.name} logo` }] }
+        : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(brand.logo_url ? { images: [brand.logo_url] } : {}),
+    },
+  };
+}
 
 export default async function BrandHandler({ params }: { params: Params }) {
   const { id } = await params;
