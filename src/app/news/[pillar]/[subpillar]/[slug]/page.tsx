@@ -143,7 +143,7 @@ export default async function SlugPage({ params }: { params: Promise<{ pillar: s
   const subpillarLabel = SUBPILLAR_LABELS[subpillar] || subpillar;
 
   // Try post slug first -- this is the common case for deep links.
-  const post = await getFullPostBySlug(slug).catch(() => null);
+  const post: FullPost | null = await getFullPostBySlug(slug).catch(() => null as FullPost | null);
   if (post) return <FullArticle post={post} />;
 
   // Fallback: treat as a subpillar listing under the same pillar.
