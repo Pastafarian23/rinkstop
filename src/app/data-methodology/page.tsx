@@ -75,6 +75,43 @@ export default function DataMethodologyPage() {
           New listings are submitted through <Link href="/add-listing" style={{ color: '#C8102E' }}>/add-listing</Link>. Every submission is reviewed by a RinkStop editor before it appears on the site. Submitting a listing does not transfer ownership of the listing to RinkStop; the listing remains attributable to the original organization, and ownership can be claimed by the organization through <Link href="/claim-your-listing" style={{ color: '#C8102E' }}>/claim-your-listing</Link>.
         </p>
 
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Youth and minor content (under 18)</h2>
+        <p style={{ marginBottom: '1rem' }}>
+          RinkStop covers youth hockey extensively — from learn-to-skate programs and youth-house leagues to AAA, junior, and college recruitment. Some of that content is directed at children (under 13) and some at adolescents and teens (13–17). We treat this content with two policy frameworks:
+        </p>
+
+        <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '1.75rem', marginBottom: '0.75rem' }}>COPPA &mdash; Children&rsquo;s Online Privacy Protection Act</h3>
+        <p style={{ marginBottom: '1rem' }}>
+          Under COPPA, U.S. operators of websites and online services directed at children under 13 must obtain verifiable parental consent before collecting personal information from those children. RinkStop does not collect personal information from anyone under 13. Player profiles, team rosters, and league directories do not display home addresses, personal phone numbers, or unverified birth dates for minors. Where a minor&rsquo;s birth date is shown, it is sourced from a recognized federation or league registry and confirmed by the team&rsquo;s verified operator. Where the birth date is unknown, the listing says so. We do not allow direct messaging between adult users and minor profiles without parent-managed claim verification.
+        </p>
+
+        <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '1.75rem', marginBottom: '0.75rem' }}>TFAT framework (Tagged for Adolescents &amp; Teens)</h3>
+        <p style={{ marginBottom: '1rem' }}>
+          RinkStop applies a &ldquo;Tagged for Adolescents &amp; Teens&rdquo; (TFAT) classification to directory sections and editorial content that is directed at audiences under 18. Pages tagged TFAT are excluded from personalized advertising under Google AdSense policy &mdash; the AdSense script is not loaded on TFAT pages, even where they would otherwise be eligible. The TFAT class applies to:
+        </p>
+        <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
+          <li><strong>Directory landing pages:</strong> <code>/directory/youth-hockey</code> and <code>/guides/youth</code></li>
+          <li><strong>Editorial articles tagged for youth audiences:</strong> articles whose primary topic is youth participation, learn-to-play, parent guidance, or junior development</li>
+          <li><strong>Player pages for minors:</strong> any player profile whose birth date falls into the under-18 range, when age is verifiable</li>
+        </ul>
+        <p style={{ marginBottom: '1rem' }}>
+          The TFAT tag is enforced at the script-load layer in <code>src/app/layout.tsx</code> via the <code>ADSENSE_EXCLUDED_PREFIXES</code> route guard. The exclude list is evaluated on every page render, and the AdSense <code>pagead2.adsbygoogle</code> script only loads when the requested path is not in the exclude list. The exclude list is the source of truth for the policy; new TFAT pages must be added to that list before they ship.
+        </p>
+
+        <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '1.75rem', marginBottom: '0.75rem' }}>Parent-managed claims</h3>
+        <p style={{ marginBottom: '1rem' }}>
+          Parents and guardians can claim a minor&rsquo;s player profile on their behalf. The claim is initiated from the player page using the &ldquo;I am this player&rsquo;s parent&rdquo; button; the parent account is then linked to the minor profile via a <code>parent_managed</code> relationship row. The parent can:
+        </p>
+        <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
+          <li>Manage the kid&rsquo;s team history, season stats, and federation numbers</li>
+          <li>Receive all messages sent to the kid on the parent&rsquo;s account</li>
+          <li>Track coach verifications and endorsements for the kid</li>
+          <li>Update the kid&rsquo;s profile photo, social handles, and external links</li>
+        </ul>
+        <p style={{ marginBottom: '1.5rem' }}>
+          A parent can manage multiple kids from one parent account. The parent-managed claim bypasses the standard claim cap that applies to other tiers &mdash; a parent on the Free tier can claim their kid&rsquo;s profile even though the Free tier otherwise does not allow publishing listings. Coach verification is the only thing a parent cannot do directly: only coaches on record with the kid&rsquo;s current team can verify a self-reported row. Coach endorsements are written by coaches, not parents.
+        </p>
+
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Editorial content vs directory data</h2>
         <p style={{ marginBottom: '1.5rem' }}>
           Directory listings are factual records and are subject to the verification process above. Editorial articles (news, guides, analysis) are written and reviewed under our <Link href="/editorial-policy" style={{ color: '#C8102E' }}>Editorial Policy</Link>. The two are kept separate: editorial articles never modify directory data, and directory updates never retroactively change published articles.
