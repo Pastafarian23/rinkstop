@@ -86,6 +86,9 @@ async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
   return (alt as FullPost | null);
 }
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export async function generateMetadata({ params }: { params: Promise<{ pillar: string; subpillar: string; slug: string }> }) {
   const { pillar, subpillar, slug } = await params;
   const pillarLabel = PILLAR_LABELS[pillar] || pillar;
