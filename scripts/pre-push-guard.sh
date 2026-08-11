@@ -47,17 +47,33 @@ if ! pnpm build 2>&1 | tail -30; then
   exit 1
 fi
 
-# Gate 5: route collision check (catches the [slug]/[pillar] bug before push)
+# Gate 5: route collision check (catches the [slug]/[pillar] bug before push).
+# Real collision = SAME parent path + SAME bracket segment name.
+# Different parents with the same bracket name are NOT a collision in Next.js
+# (e.g. /directory/[country] and /federations/[country] are distinct routes).
+# The original version of this gate checked across all parents at the same
+# depth, which flagged every legitimate shared bracket name as a collision
+# and made every push fail. Fixed 2026-08-11.
 echo "[5/5] checking for dynamic-segment collisions in next-app routes..."
-COLLISIONS=$(find src/app -mindepth 2 -maxdepth 2 -type d -name '\[*\]' 2>/dev/null | awk -F/ '{print $4}' | sort | uniq -c | awk '$1 > 1 {print $2}')
-if [ -n "$COLLISIONS" ]; then
-  echo "FAIL: dynamic-segment collisions detected at the same depth:"
-  for c in $COLLISIONS; do
-    echo "  - $c"
-  done
-  find src/app -mindepth 2 -maxdepth 2 -type d -name "$c" 2>/dev/null
+TOTAL_BRACKETS=$(find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | wc -l)
+find src/app -mindepth 2 -maxdepth 3 -type d -name '\[*\]' 2>/dev/null | \
+  awk -F/ '{
+    n = split($0, parts, "/")
+    parent = parts[3]
+    for (i = 4; i < n; i++) parent = parent "/" parts[i]
+    print parent "|" parts[n]
+  }' | sort | uniq -c | awk '$1 > 1 { sub(/^[ ]*[0-9]+[ ]*/, ""); print }' > /tmp/pre-push-guard-gate5.txt
+if [ -s /tmp/pre-push-guard-gate5.txt ]; then
+  echo "FAIL: dynamic-segment collisions (same parent, same bracket name):"
+  while IFS='|' read -r parent bracket; do
+    [ -z "$parent" ] && continue
+    echo "  - $parent/[$bracket]"
+  done < /tmp/pre-push-guard-gate5.txt
+  rm -f /tmp/pre-push-guard-gate5.txt
   exit 1
 fi
+rm -f /tmp/pre-push-guard-gate5.txt
+echo "    no real collisions ($TOTAL_BRACKETS bracket routes checked)"
 
 echo ""
 echo "=== ALL GATES PASSED ==="
