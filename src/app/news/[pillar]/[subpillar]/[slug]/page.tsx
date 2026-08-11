@@ -3,6 +3,10 @@
 // slug rather than a real subpillar slug (e.g.
 // /news/nhl/draft/post-lottery-nhl-draft-...).
 //
+// V2: 2026-08-11 — added getFullPostBySlug fallback to fix 404 on deep
+// links that were hitting notFound because no route existed for 4-segment
+// article URLs.
+//
 // Routing logic:
 // 1. If [slug] is a known subpillar under [pillar], render the subpillar
 //    listing (rare -- only happens if someone bookmarked a hypothetical
