@@ -1,17 +1,6 @@
 import type { TierName } from '@/lib/pricing';
 import { TIERS, formatTierPricePerYear } from '@/lib/pricing';
 
-/**
- * Entity → recommended tier mapping.
- *
- * Mirrors src/components/ClaimThisListing.tsx DEFAULT_TIER_BY_ENTITY so
- * the price shown on the sign-up page matches the price shown on the
- * directory page CTAs. Keep in sync.
- *
- * Each entry is the CHEAPEST paid tier that unlocks a claim for that
- * entity type. Users can still pick a different tier after sign-up
- * (e.g., Club Pro instead of Club Starter) — this is just the default.
- */
 const ENTITY_TO_TIER: Record<string, TierName> = {
   rink: 'business_listing',
   team: 'club_starter',
@@ -30,24 +19,9 @@ export interface ClaimIntentCardProps {
   entity: string;
   entityName: string;
   tier: TierName;
-  /** Optional: tier the user might want to consider upgrading to (highlighted in card). */
   upgradeTier?: TierName | null;
 }
 
-/**
- * Tier card shown above the Clerk SignUp form when the user landed via
- * a claim intent deep link (?intent=claim&entity=...&name=...&tier=...).
- *
- * Renders:
- *  - The entity they want to claim (so the user can verify it's the right one)
- *  - The recommended tier with price, tagline, and top features
- *  - An optional upgrade suggestion (tier above the recommended one)
- *  - A "Create account to claim" line that reassures the user the price is
- *    shown BEFORE they sign up
- *
- * Static server component (no client state). Designed to live above the
- * Clerk SignUp form without disrupting Clerk's own UI.
- */
 export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }: ClaimIntentCardProps) {
   const t = TIERS[tier];
   const label = ENTITY_LABEL[entity] ?? ENTITY_LABEL.team;
@@ -65,7 +39,6 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
         color: '#fff',
       }}
     >
-      {/* Header: what they're claiming */}
       <div style={{ marginBottom: '0.85rem' }}>
         <div
           style={{
@@ -96,7 +69,6 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
         </div>
       </div>
 
-      {/* Recommended tier card */}
       <div
         style={{
           background: '#0f0f0f',
@@ -116,13 +88,7 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                color: '#fff',
-              }}
-            >
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>
               {t.label}
             </span>
             <span
@@ -195,7 +161,6 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
         ) : null}
       </div>
 
-      {/* Optional upgrade suggestion */}
       {upgradeT ? (
         <div
           style={{
@@ -211,7 +176,6 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
         </div>
       ) : null}
 
-      {/* Footnote — what the price actually includes */}
       <div
         style={{
           marginTop: '0.75rem',
@@ -228,41 +192,46 @@ export function ClaimIntentCard({ entity, entityName, tier, upgradeTier = null }
   );
 }
 
-/**
- * Validate the claim-intent query params and return a parsed intent, or
- * null if the request is not a claim flow.
- *
- * Returns null when:
- *  - intent != 'claim'
- *  - entity is not one of {rink, team, league, player}
- *  - tier is provided but not a valid TierName
- *  - entityName is missing or unreasonably long (DoS protection)
- */
 export function parseClaimIntent(
   sp: Record<string, string | string[] | undefined> | undefined,
 ): { entity: string; entityName: string; tier: TierName; upgradeTier: TierName | null } | null {
   if (!sp) return null;
-  if (String(sp.intent) !== 'claim') return null;
 
-  const entity = String(sp.entity ?? '').toLowerCase();
+  const merged: Record<string, string> = {};
+
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === 'string') merged[k] = v;
+    else if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'string') merged[k] = v[0];
+  }
+
+  const redirectRaw = merged.redirect_url;
+  if (redirectRaw) {
+    try {
+      const qIndex = redirectRaw.indexOf('?');
+      if (qIndex >= 0) {
+        const queryString = redirectRaw.slice(qIndex + 1);
+        for (const [k, v] of new URLSearchParams(queryString)) {
+          merged[k] = v;
+        }
+      }
+    } catch {
+      // ignore malformed redirect_url
+    }
+  }
+
+  if (merged.intent !== 'claim') return null;
+
+  const entity = (merged.entity ?? '').toLowerCase();
   if (!ENTITY_TO_TIER[entity]) return null;
 
-  const rawName = sp.name;
-  const entityName = (Array.isArray(rawName) ? rawName[0] : rawName ?? '').trim();
+  const entityName = (merged.name ?? '').trim();
   if (!entityName || entityName.length > 200) return null;
 
-  // Tier: use the query param if it's valid, otherwise fall back to the
-  // entity's default. This lets deep links override (e.g. ?tier=club_pro
-  // when a user has already decided to go Pro).
-  const rawTier = sp.tier;
-  const requestedTier = Array.isArray(rawTier) ? rawTier[0] : rawTier;
-  const tier: TierName = requestedTier && requestedTier in TIERS ? (requestedTier as TierName) : ENTITY_TO_TIER[entity];
+  const requestedTier = merged.tier;
+  const tier: TierName =
+    requestedTier && requestedTier in TIERS ? (requestedTier as TierName) : ENTITY_TO_TIER[entity];
 
-  // Optional upgrade tier. Suggests the next tier up from the recommended
-  // one, but only if the caller explicitly provided one (we don't want to
-  // auto-recommend Club Pro to someone who clicked Club Starter).
-  const rawUpgrade = sp.upgrade;
-  const requestedUpgrade = Array.isArray(rawUpgrade) ? rawUpgrade[0] : rawUpgrade;
+  const requestedUpgrade = merged.upgrade;
   const upgradeTier: TierName | null =
     requestedUpgrade && requestedUpgrade in TIERS && requestedUpgrade !== tier
       ? (requestedUpgrade as TierName)

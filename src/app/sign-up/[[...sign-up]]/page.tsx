@@ -49,14 +49,21 @@ export default async function SignUpPage({
   // build a default redirect that points at /dashboard/claims with the
   // entity context. Otherwise the user would land on /dashboard after
   // sign-up and lose the claim intent.
+  //
+  // Audit fix 2026-08-11: source params from the parsed claimIntent
+  // (which merges top-level + redirect_url-embedded params) rather than
+  // from raw sp, because the common flow is /login?redirect_url=/dashboard/claims?intent=claim&...
+  // where entity/name/id/tier live INSIDE redirect_url, not at the top level.
   let finalRedirect = safeRedirect;
   if (claimIntent && (!requested || requested === '/dashboard')) {
     const params = new URLSearchParams();
-    if (sp?.entity) params.set('entity', String(sp.entity));
-    if (sp?.id) params.set('id', String(sp.id));
-    if (sp?.name) params.set('name', String(sp.name));
-    if (sp?.tier) params.set('tier', String(sp.tier));
-    if (sp?.source) params.set('source', String(sp.source));
+    params.set('intent', 'claim');
+    params.set('entity', claimIntent.entity);
+    const sp_id = sp?.id;
+    const sp_id_str = Array.isArray(sp_id) ? sp_id[0] : sp_id;
+    if (sp_id_str) params.set('id', sp_id_str);
+    params.set('name', claimIntent.entityName);
+    params.set('tier', claimIntent.tier);
     finalRedirect = `/dashboard/claims?${params.toString()}`;
   }
 

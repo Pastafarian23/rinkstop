@@ -37,6 +37,23 @@ export default async function LoginPage({
   const requested = sp?.redirect_url;
   const safeRedirect = isValidRedirectPath(requested) ? requested : '/dashboard';
 
+  // Preserve redirect_url across the sign-in → sign-up round trip.
+  // Clerk's <SignIn> renders a 'Sign up instead' link whose href is
+  // controlled by `signUpUrl`. By default, Clerk strips the redirect_url
+  // query param when navigating to signUpUrl — so a user who lands on
+  // /login?redirect_url=/dashboard/claims?intent=claim&... and clicks
+  // 'Sign up instead' would lose the claim context and land on /dashboard
+  // after sign-up.
+  //
+  // Fix (audit fix 2026-08-11): build the signUpUrl with the same
+  // redirect_url appended (URL-encoded) so Clerk preserves it. The
+  // /sign-up page then parses it (see parseClaimIntent) to render the
+  // tier card. isValidRedirectPath guards against open-redirect injection
+  // through this hop.
+  const signUpUrl = isValidRedirectPath(safeRedirect) && safeRedirect !== '/dashboard'
+    ? `/sign-up?redirect_url=${encodeURIComponent(safeRedirect)}`
+    : '/sign-up';
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -44,7 +61,7 @@ export default async function LoginPage({
           <SignIn
             path="/login"
             routing="path"
-            signUpUrl="/sign-up"
+            signUpUrl={signUpUrl}
             forceRedirectUrl={safeRedirect}
             fallbackRedirectUrl={safeRedirect}
             appearance={signInAppearance}
