@@ -625,14 +625,7 @@ export default async function ClaimYourListingPage({
             Type at least 2 characters to search.
           </div>
         ) : results.length === 0 ? (
-          query.length < 2 ? (
-            <FeaturedClaimableSection
-              featured={featuredClaimable}
-              fallback={query}
-            />
-          ) : (
-            <NoResults query={query} type={type} />
-          )
+          <NoResults query={query} type={type} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
