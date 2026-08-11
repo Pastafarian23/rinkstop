@@ -125,6 +125,61 @@ export default function GuidesPage() {
             <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>IIHF World Championship Guide</h3>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>Format, group stages, knockout rounds, and how national teams qualify for the world&apos;s largest annual hockey tournament.</p>
           </Link>
+          <Link href="/guides/ahl" style={{
+            display: 'block',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            textDecoration: 'none',
+          }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>AHL Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The American Hockey League — 32 teams, the Calder Cup, and the primary development league for the NHL.</p>
+          </Link>
+          <Link href="/guides/khl" style={{
+            display: 'block',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            textDecoration: 'none',
+          }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>KHL Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The Kontinental Hockey League — 22 teams across Russia and former Soviet states, the Gagarin Cup, and the largest professional league outside the NHL.</p>
+          </Link>
+          <Link href="/guides/chl" style={{
+            display: 'block',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            textDecoration: 'none',
+          }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>CHL Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The Canadian Hockey League — the OHL, WHL, and QMJHL combine for 60+ teams and the Memorial Cup, the primary NHL feeder.</p>
+          </Link>
+          <Link href="/guides/ushl" style={{
+            display: 'block',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            textDecoration: 'none',
+          }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>USHL Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The only Tier 1 USA Hockey junior league, 16 teams across the Midwest, the Clark Cup, and the primary NCAA pipeline.</p>
+          </Link>
+          <Link href="/guides/pwhl" style={{
+            display: 'block',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            textDecoration: 'none',
+          }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>PWHL Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The Professional Women&apos;s Hockey League — 8 teams across the US and Canada, the Walter Cup, and the unified top-tier women&apos;s pro league launched in 2023.</p>
+          </Link>
         </div>
       </section>
 
