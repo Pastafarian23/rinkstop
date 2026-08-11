@@ -84,7 +84,7 @@ async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
   const { data, error } = await supabaseAdmin
     .from('posts')
     .select(
-      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, country_label, state_label, city_label',
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug',
     )
     .eq('status', 'published')
     .eq('slug', slug)
@@ -97,7 +97,7 @@ async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
   const { data: alt, error: altError } = await supabase
     .from('posts')
     .select(
-      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, country_label, state_label, city_label',
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug',
     )
     .eq('status', 'published')
     .eq('slug', slug)
