@@ -7,6 +7,7 @@ import { trackPageView } from '@/lib/analytics';
 import { getDirectoryCounts } from '@/lib/directory-counts';
 import { ClaimButton } from './ClaimButton';
 import { ClaimAbandonTracker } from './ClaimAbandonTracker';
+import AddListingLink from './AddListingLink';
 
 export const metadata: Metadata = {
   title: 'Claim Your Listing on RinkStop',
@@ -725,32 +726,6 @@ function EmptyState({ type, counts }: { type: ClaimType; counts: { rinks: number
   };
   const c = copy[type];
 
-  const handleClickAdd = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    try {
-      const payload = JSON.stringify({
-        name: 'add_listing_intent',
-        pathname: '/claim-your-listing',
-        props: {
-          entity_type: type,
-          source: 'empty_state',
-        },
-      });
-      const blob = new Blob([payload], { type: 'application/json' });
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        navigator.sendBeacon('/api/track', blob);
-      } else {
-        fetch('/api/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch {
-      // never block on analytics
-    }
-  };
-
   return (
     <div
       style={{
@@ -769,10 +744,11 @@ function EmptyState({ type, counts }: { type: ClaimType; counts: { rinks: number
       <div style={{ fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
         {c.explain}
       </div>
-      <Link
+      <AddListingLink
         href={`/add-listing?type=${type}`}
-        onClick={handleClickAdd}
-        data-testid={`add-listing-${type}-empty`}
+        testId={`add-listing-${type}-empty`}
+        source="empty_state"
+        entityType={type}
         style={{
           display: 'inline-block',
           background: 'transparent',
@@ -788,7 +764,7 @@ function EmptyState({ type, counts }: { type: ClaimType; counts: { rinks: number
         }}
       >
         {c.addLabel}
-      </Link>
+      </AddListingLink>
     </div>
   );
 }
@@ -965,36 +941,6 @@ function NoResults({ query, type }: { query: string; type: ClaimType }) {
   };
   const c = copy[type];
 
-  // WS7 PR2: sendBeacon on the Add Listing click so we can measure whether
-  // the add-listing funnel is actually being used and from which entity type.
-  const handleClickAdd = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    try {
-      const payload = JSON.stringify({
-        name: 'add_listing_intent',
-        pathname: '/claim-your-listing',
-        props: {
-          entity_type: type,
-          source: 'no_results',
-          query_hash: query ? simpleHash(query) : null,
-          query_length: query.length,
-        },
-      });
-      const blob = new Blob([payload], { type: 'application/json' });
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        navigator.sendBeacon('/api/track', blob);
-      } else {
-        fetch('/api/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload,
-          keepalive: true,
-        }).catch(() => {});
-      }
-    } catch {
-      // never block on analytics
-    }
-  };
-
   return (
     <div
       style={{
@@ -1012,10 +958,14 @@ function NoResults({ query, type }: { query: string; type: ClaimType }) {
       <div style={{ color: '#9ca3af', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
         {c.explanation} {c.differentSearch}
       </div>
-      <Link
+      <AddListingLink
         href={`/add-listing${type ? `?type=${type}` : ''}`}
-        onClick={handleClickAdd}
-        data-testid={`add-listing-${type}-noresults`}
+        testId={`add-listing-${type}-noresults`}
+        source="no_results"
+        entityType={type}
+        query={query}
+        queryHash={query ? simpleHash(query) : null}
+        queryLength={query.length}
         style={{
           display: 'inline-block',
           background: '#041E42',
@@ -1028,7 +978,7 @@ function NoResults({ query, type }: { query: string; type: ClaimType }) {
         }}
       >
         {c.addLabel}
-      </Link>
+      </AddListingLink>
     </div>
   );
 }
