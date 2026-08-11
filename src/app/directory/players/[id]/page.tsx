@@ -6,7 +6,7 @@ import AdSlot from '@/components/AdSlot';
 import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { supabaseAdmin } from '@/lib/supabase';
-import { buildPlayerFAQs, buildPlayerIntro } from '@/lib/player-context';
+import { buildPlayerFAQs } from '@/lib/player-context';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -135,7 +135,6 @@ export default async function PlayerPage({ params }: Props) {
   let playerJsonLd: object | null = null;
   let seoPlayer: any = null;
   let seoFaqs: { question: string; answer: string }[] = [];
-  let seoIntro: string = '';
   try {
     const { data: player } = await supabaseAdmin
       .from('players')
@@ -173,25 +172,6 @@ export default async function PlayerPage({ params }: Props) {
 
       seoFaqs = faqs;
       seoPlayer = player;
-      seoIntro = buildPlayerIntro({
-        fullName,
-        firstName: player.first_name,
-        position: player.position,
-        jerseyNumber: player.jersey_number,
-        shoots: player.shoots,
-        catches: player.catches,
-        heightCm: player.height_cm,
-        weightKg: player.weight_kg,
-        birthDate: player.birth_date,
-        nationality: player.nationality,
-        bio: player.bio,
-        teamName,
-        teamSlug,
-        leagueName,
-        leagueSlug,
-        leagueCountry,
-        updatedAt: player.updated_at,
-      });
 
       const jsonLdGraph: any[] = [
         {
