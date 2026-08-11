@@ -183,6 +183,33 @@ export default function GuidesPage() {
         </div>
       </section>
 
+      {/* Fundamentals - core hockey skills reference */}
+      <section style={{ marginBottom: '3rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888' }}>FUNDAMENTALS</span>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>CORE HOCKEY SKILLS</h2>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', marginTop: '0.4rem' }}>The fundamental skills every hockey player needs.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+          <Link href="/guides/skating" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Hockey Skating Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The forward stride, edge work, crossovers, stopping, transitions, and the drills that build them.</p>
+          </Link>
+          <Link href="/guides/shooting" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Hockey Shooting Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The four main shots: wrist, snap, slap, and backhand, plus accuracy tips and the drills that build them.</p>
+          </Link>
+          <Link href="/guides/goaltending" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Goaltending Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>The last line of defense: the position, the equipment, the core techniques, and how goalies are developed.</p>
+          </Link>
+          <Link href="/guides/strength-conditioning" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Strength and Conditioning Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>Off-ice training for hockey: strength, conditioning, plyometrics, mobility, and age-appropriate programs.</p>
+          </Link>
+        </div>
+      </section>
+
       {/* Equipment & Training Reference (no audience split) */}
       <section style={{ marginBottom: '3rem' }}>
         <div style={{ marginBottom: '1rem' }}>
