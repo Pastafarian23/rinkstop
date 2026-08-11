@@ -368,11 +368,16 @@ export default async function ClaimYourListingPage({
 
   const results = query.length >= 2 ? await searchEntities(query, type) : [];
 
-  // Featured claimable listings — shown when the user lands with an empty
-  // query so they see what claimable looks like. SEO entry point.
-  // Empty result gets rendered as a no-claimable section with a generic hint
-  // (this is rare; the rink/team/player tables always have unclaimed entries).
-  const featuredClaimable = query.length < 2 ? await loadFeaturedClaimable() : null;
+  // Featured claimable listings — DISABLED 2026-08-11.
+  // The FeaturedClaimableSection component is unreachable in the JSX tree
+  // (the inner ternary checks query.length < 2 inside a branch that already
+  // passed query.length >= 2). Computing loadFeaturedClaimable() on every
+  // no-query page view was triggering a Supabase timeout that Vercel
+  // surfaced as a 500 status, even though the page itself rendered fine.
+  // Removed the call; the EmptyState component already provides a sensible
+  // 'add a new listing' CTA. Re-enable when the JSX bug is fixed and the
+  // section actually renders.
+  const featuredClaimable: Awaited<ReturnType<typeof loadFeaturedClaimable>> = null;
   // Directory counts — single source of truth shared with the homepage and
   // About page. Passed to EmptyState so the "1,900+ rinks" claim stays in
   // sync with the actual directory size.
