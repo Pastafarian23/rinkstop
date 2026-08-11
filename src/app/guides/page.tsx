@@ -95,6 +95,39 @@ export default function GuidesPage() {
         </div>
       </section>
 
+      {/* Events & Competitions — tournament and championship reference */}
+      <section style={{ marginBottom: '3rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888' }}>REFERENCE</span>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>EVENTS & COMPETITIONS</h2>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', marginTop: '0.4rem' }}>Tournament formats, histories, and how the major championships work.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+          <Link href="/guides/stanley-cup" style={{
+            display: 'block',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            textDecoration: 'none',
+          }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Stanley Cup Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>130 years of history, the playoff format, the trophy itself, Conn Smythe, and how a new champion is crowned each June.</p>
+          </Link>
+          <Link href="/guides/iihf-world-championship" style={{
+            display: 'block',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '1.25rem',
+            textDecoration: 'none',
+          }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>IIHF World Championship Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>Format, group stages, knockout rounds, and how national teams qualify for the world&apos;s largest annual hockey tournament.</p>
+          </Link>
+        </div>
+      </section>
+
       {/* Equipment & Training Reference (no audience split) */}
       <section style={{ marginBottom: '3rem' }}>
         <div style={{ marginBottom: '1rem' }}>
