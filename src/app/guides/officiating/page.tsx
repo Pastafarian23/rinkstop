@@ -119,6 +119,14 @@ export default function OfficiatingGuide() {
         <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Officiating is a great way to stay involved in hockey after playing days end. It pays (modestly at the youth level, very well at the NHL level) and the demand is high.</p>
       </section>
 
+      <section style={{ marginBottom: "2.5rem" }}>
+        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
+        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <div style={{ display: 'grid', gap: '0.5rem' }}>
+          <Link href="/directory/leagues" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Browse hockey leagues worldwide →</Link><Link href="/directory/players?position=referee" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find referees and officials →</Link>
+        </div>
+      </section>
+
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
         <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
