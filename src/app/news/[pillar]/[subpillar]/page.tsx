@@ -1,10 +1,17 @@
 // src/app/news/[pillar]/[subpillar]/page.tsx
 // Subpillar listing page. Renders posts scoped to a (pillar, subpillar) pair.
 // Example: /news/nhl/draft, /news/nhl/playoffs, /news/womens/pwhl.
+//
+// Also serves as a safety net for 3-segment article URLs where the third
+// segment is a post slug rather than a real subpillar slug (e.g.
+// /news/nhl/draft/post-lottery-nhl-draft-...). If the subpillar query returns
+// no posts AND the segment does not match a known subpillar, treat it as a
+// post slug and render the full article template.
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import FullArticle, { type FullPost } from '@/components/FullArticle';
 
 const supabase = supabaseAdmin;
 
@@ -31,6 +38,8 @@ const SUBPILLAR_LABELS: Record<string, string> = {
   business: 'Business',
   recruiting: 'Recruiting',
 };
+
+const KNOWN_SUBPILLARS = new Set(Object.keys(SUBPILLAR_LABELS));
 
 interface Post {
   id: string;
@@ -69,12 +78,85 @@ async function getPostsBySubpillar(pillarSlug: string, subpillarSlug: string, li
   return (data as Post[]) || [];
 }
 
+// Wide-row fetch for legacy-slug safety net. Used when the third path segment
+// looks like a post slug rather than a known subpillar slug.
+async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
+  const { data, error } = await supabaseAdmin
+    .from('posts')
+    .select(
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, country_label, state_label, city_label',
+    )
+    .eq('status', 'published')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) {
+    console.error('[getFullPostBySlug] supabaseAdmin error for slug=', slug, 'error=', error.message);
+  }
+  const row = (data as FullPost | null);
+  if (row) return row;
+  const { data: alt, error: altError } = await supabase
+    .from('posts')
+    .select(
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, country_label, state_label, city_label',
+    )
+    .eq('status', 'published')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (altError) {
+    console.error('[getFullPostBySlug] supabase fallback error for slug=', slug, 'error=', altError.message);
+  }
+  return (alt as FullPost | null);
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ pillar: string; subpillar: string }> }) {
   const { pillar, subpillar } = await params;
   const pillarLabel = PILLAR_LABELS[pillar] || pillar;
+
+  // If subpillar is not a known subpillar, treat it as a post slug for metadata.
+  if (!KNOWN_SUBPILLARS.has(subpillar)) {
+    const post = await getFullPostBySlug(subpillar);
+    if (!post) return { title: 'Not Found' };
+    const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
+    const blogTitle = stripSuffix(post.seo_title || post.title);
+    const seoDesc = post.seo_description || post.subtitle || (post.content || '').replace(/<[^>]*>/g, '').substring(0, 160);
+    const ogImage = post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`;
+    return {
+      title: blogTitle,
+      description: seoDesc,
+      authors: [{ name: post.author_name || 'Arnel Larracas' }],
+      openGraph: {
+        type: 'article',
+        title: blogTitle,
+        description: seoDesc,
+        url: `https://rinkstop.com/news/${post.slug}`,
+        publishedTime: post.published_at,
+        modifiedTime: post.updated_at || post.published_at,
+        authors: [post.author_name || 'Arnel Larracas'],
+        images: [ogImage],
+        tags: post.tags || [],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: blogTitle,
+        description: seoDesc,
+        images: [ogImage],
+      },
+      alternates: { canonical: `https://rinkstop.com/news/${post.slug}` },
+      other: {
+        'article:published_time': post.published_at || '',
+        'article:modified_time': post.updated_at || post.published_at || '',
+        'article:author': post.author_name || 'Arnel Larracas',
+        'article:section': post.category || 'Hockey',
+        ...(post.tags && post.tags.length > 0
+          ? { 'article:tag': post.tags.join(',') }
+          : {}),
+      },
+    };
+  }
+
   const subpillarLabel = SUBPILLAR_LABELS[subpillar] || subpillar;
   return {
-    title: `${subpillarLabel} \u2014 ${pillarLabel} News`,
+    title: `${subpillarLabel} — ${pillarLabel} News`,
     description: `${subpillarLabel} stories from the ${pillarLabel.toLowerCase()} pillar.`,
     alternates: { canonical: `https://rinkstop.com/news/${pillar}/${subpillar}` },
   };
@@ -86,6 +168,15 @@ export default async function SubpillarPage({ params }: { params: Promise<{ pill
 
   const pillarLabel = PILLAR_LABELS[pillar] || pillar;
   const subpillarLabel = SUBPILLAR_LABELS[subpillar] || subpillar;
+
+  // Case 2: third segment is a post slug, not a real subpillar.
+  // Render the full article template so deep links like
+  // /news/nhl/draft/post-lottery-nhl-draft-... resolve correctly.
+  if (posts.length === 0 && !KNOWN_SUBPILLARS.has(subpillar)) {
+    const post = await getFullPostBySlug(subpillar);
+    if (!post) return notFound();
+    return <FullArticle post={post} />;
+  }
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
