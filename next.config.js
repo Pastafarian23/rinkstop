@@ -10,6 +10,13 @@ const nextConfig = {
   // production immediately. Cheap, safe, deterministic.
   generateBuildId: async () => `v-${Date.now()}`,
   reactStrictMode: true,
+  // WS-Recovery 2026-08-11: skip ESLint during builds.
+  // eslint is not in devDependencies, and Next.js's build fails with
+  // "ESLint must be installed in order to run during builds" otherwise.
+  // Our safety net is the pre-push guard: gate 3 (tsc --noEmit) catches
+  // type errors, gate 5 catches dynamic-segment collisions. ESLint policy
+  // can be added later as a deliberate choice with a real rule set.
+  eslint: { ignoreDuringBuilds: true },
   // Fix 3 followup (2026-07-08): skip Next.js's default trailing-slash
   // redirect. Combined with our /index.php/* catch-all sources below, this
   // means /index.php/news/ -> /news in a single 308 hop instead of going
