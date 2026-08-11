@@ -58,7 +58,9 @@ export default function ClaimThisListing({
 }) {
   // The single canonical claim destination. All 5 states link here, either
   // directly (already signed in) or via /login?redirect_url= (signed out).
-  const claimDestination = `/dashboard/claims?entity=${entityType}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}&source=${entityType}`;
+  // `intent=claim` is detected by /sign-up to render the price tier card
+  // before the user creates an account. See src/app/sign-up/ClaimIntentCard.tsx.
+  const claimDestination = `/dashboard/claims?intent=claim&entity=${entityType}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}&source=${entityType}&tier=${DEFAULT_TIER_BY_ENTITY[entityType]}`;
 
   const noun = entityType; // "rink", "team", "league", "player"
   const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
