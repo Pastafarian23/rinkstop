@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -329,19 +328,17 @@ export default async function ClaimYourListingPage({
   const type: ClaimType =
     typeParam === 'team' || typeParam === 'player' ? typeParam : 'rink';
 
-  // TEMPORARY HOT-PATCH — Claude audit 2026-08-05 #1 (CRITICAL 500).
-  // /claim-your-listing has been returning 500, blocking the top-of-funnel
-  // paid conversion path (linked from homepage banner rotator, footer, pricing).
-  // Redirect the whole route to the working /sign-up → /dashboard/claims flow.
-  // Sign-up honors ?redirect_url=..., so first-time claimers land on
-  // /dashboard/claims after email verification — no dead-end.
-  // The underlying 500 root-cause is owned by Batch B (filed separately).
-  // This redirect keeps the conversion path working in the meantime.
+  // HOT-PATCH REMOVED 2026-08-11 (claim flow Phase 1).
+  // The original redirect to /sign-up was put in place on 2026-08-05 to work
+  // around a 500 error. The 500 has since been resolved (the underlying
+  // searchEntities code now has try/catch around all Supabase calls) and the
+  // search UI was being bypassed. Surfacing the search UI is the whole point
+  // of the redesign: users need to find their listing (or add a new one)
+  // BEFORE they sign up. Redirecting them straight to sign-up was hiding the
+  // actual conversion surface.
   //
-  // IMPORTANT: redirect() lives INSIDE the component body, not at module
-  // top-level. Top-level redirect() throws NEXT_REDIRECT during `next build`
-  // and breaks the build. Inside the component body it only fires per-request.
-  redirect(`/sign-up?redirect_url=${encodeURIComponent('/dashboard/claims')}`);
+  // The rest of this component (auth context, search, results, JSX) was
+  // built and is now active. See /tmp/claim-flow-revised.md for the plan.
 
   // Auth context — used to (a) decide if we show a "sign in to claim"
   // CTA above the search and (b) bucket funnel metrics by signed-in state.
@@ -552,9 +549,9 @@ export default async function ClaimYourListingPage({
             margin: '0 auto 1.5rem',
           }}
         >
-          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=rink` : '?type=rink'}`} label="Rinks" active={type === 'rink'} />
-          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=team` : '?type=team'}`} label="Teams" active={type === 'team'} />
-          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=player` : '?type=player'}`} label="Players" active={type === 'player'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=rink` : '?type=rink'}`} label="Rinks · from $99/yr" active={type === 'rink'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=team` : '?type=team'}`} label="Teams · from $149/yr" active={type === 'team'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=player` : '?type=player'}`} label="Players · from $24.99/yr" active={type === 'player'} />
         </nav>
 
         {/* Search box */}
