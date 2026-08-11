@@ -83,6 +83,34 @@ export default async function BlogPage() {
         </p>
       </div>
 
+      {/* Pillar sidebar */}
+      <nav aria-label="News pillars" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <span style={{ padding: '0.4rem 0.85rem', background: 'rgba(200,16,46,0.12)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: '999px', color: '#C8102E', fontSize: '0.8125rem', fontWeight: 700 }}>
+          All
+        </span>
+        <Link href="/news/highlights" style={{ padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textDecoration: 'none' }}>
+          Highlights
+        </Link>
+        <Link href="/news/guides" style={{ padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textDecoration: 'none' }}>
+          Guides
+        </Link>
+        <Link href="/news/blog" style={{ padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textDecoration: 'none' }}>
+          Blog
+        </Link>
+        <Link href="/news/nhl" style={{ padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textDecoration: 'none' }}>
+          NHL
+        </Link>
+        <Link href="/news/international" style={{ padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textDecoration: 'none' }}>
+          International
+        </Link>
+        <Link href="/news/womens" style={{ padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textDecoration: 'none' }}>
+          Women’s Hockey
+        </Link>
+        <Link href="/news/business" style={{ padding: '0.4rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', textDecoration: 'none' }}>
+          Business of Hockey
+        </Link>
+      </nav>
+
       {/* Posts */}
       {!posts || posts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
