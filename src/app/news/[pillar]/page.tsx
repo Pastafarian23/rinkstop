@@ -65,7 +65,7 @@ interface Post {
 // image + updated_at + author fields to render the full article template
 // (and emit NewsArticle JSON-LD + article:* meta tags for Google Publisher Center).
 async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('posts')
     .select(
       'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, country_label, state_label, city_label',
@@ -73,7 +73,11 @@ async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
     .eq('status', 'published')
     .eq('slug', slug)
     .maybeSingle();
-  return data as FullPost | null;
+  if (error) {
+    console.error('[getFullPostBySlug] supabase error for slug=', slug, 'error=', error.message);
+    return null;
+  }
+  return (data as FullPost | null);
 }
 
 function formatDate(date?: string) {
