@@ -847,7 +847,7 @@ function RinkResultCard({ rink, query }: { rink: ClaimResult; query: string }) {
         </Link>
         {!alreadyClaimed && !pending && !isSelfManaged && (
           <ClaimButton
-            href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}&tier=${rink.type === 'team' ? 'club_starter' : rink.type === 'player' ? 'verified_identity' : 'business_listing'}`)}`}
+            href={`/login?redirect_url=${encodeURIComponent(`/dashboard/claims?intent=claim&entity=${rink.type}&id=${rink.id}&name=${encodeURIComponent(rink.name)}&source=${rink.type}&tier=${rink.type === 'team' ? 'club_starter' : rink.type === 'player' ? 'verified_identity' : 'business_listing'}`)}`}
             rinkId={rink.id}
             rinkSlug={rink.slug}
             query={query}
