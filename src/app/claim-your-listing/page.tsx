@@ -113,7 +113,7 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
   // Fail-safe wrapper: any Supabase error in the search path must NOT 500
   // the page. Return an empty array on any thrown error so the EmptyState
   // renders a polite "search above" message instead of crashing the
-  // conversion funnel. Matches the pattern used in loadFeaturedClaimable.
+  // conversion funnel.
   // The try/catch wraps ONLY the Supabase query + claim-status read below,
   // not the entire function body — wrapping the return would be unreachable
   // code. The catch returns `[]` so the EmptyState renders cleanly.
@@ -216,103 +216,6 @@ async function searchEntities(query: string, type: ClaimType): Promise<ClaimResu
   }
 }
 
-/**
- * Featured claimable listings — shown when the user lands on /claim-your-listing
- * without typing a query. Aims to convert 162 monthly anonymous visitors (per
- * analytics_events) into actual claim_started clicks.
- *
- * Picks 3 unclaimed rinks, 3 unclaimed teams, and 3 unclaimed players — in
- * markets where SEO traffic actually lands (Chicago, Toronto, Boston, NY, LA,
- * plus one European flavor).
- *
- * Filtering: rinks/teams/players whose slug is NOT in any approved claim row
- * for that claim_type. We use a server-side NOT IN subquery via supabaseAdmin.
- *
- * Failure modes are handled here too: queries that fail return null and the
- * caller renders a polite "search above" message instead.
- */
-async function loadFeaturedClaimable(): Promise<{
-  rinks: ClaimResult[]; teams: ClaimResult[]; players: ClaimResult[];
-} | null> {
-  // Curated seed cities that get SEO traffic for "ice rink [city]" / "hockey
-  // teams [city]" / "hockey players [city]" searches.
-  const FEATURED_CITIES = [
-    'Chicago', 'Toronto', 'Boston', 'New York', 'Los Angeles',
-    'Detroit', 'Montreal', 'Pittsburgh', 'Edmonton', 'Vancouver',
-  ];
-
-  try {
-    const [rinkRes, teamRes, playerRes] = await Promise.all([
-      supabaseAdmin
-        .from('rinks')
-        .select('id, slug, name, city, country, province_state')
-        .eq('is_active', true)
-        .is('deactivated_at', null)
-        .in('city', FEATURED_CITIES)
-        .order('updated_at', { ascending: false })
-        .limit(20),
-      supabaseAdmin
-        .from('team_workspaces')
-        .select('id, slug, name, city, country, province_state')
-        .eq('is_active', true)
-        .is('deactivated_at', null)
-        .in('city', FEATURED_CITIES)
-        .order('updated_at', { ascending: false })
-        .limit(20),
-      supabaseAdmin
-        .from('players')
-        .select('id, slug, first_name, last_name, nationality')
-        .order('updated_at', { ascending: false })
-        .limit(20),
-    ]);
-
-    // Filter out already-claimed ones via existing claims table.
-    async function filterUnclaimed<T extends { id: string }>(rows: T[], kind: 'rink' | 'team' | 'player'): Promise<T[]> {
-      if (!rows || rows.length === 0) return [];
-      const ids = rows.map((r) => r.id);
-      const { data: claimedRows } = await supabaseAdmin
-        .from('claims')
-        .select('entity_id')
-        .eq('claim_type', kind)
-        .eq('status', 'approved')
-        .in('entity_id', ids);
-      const claimed = new Set((claimedRows ?? []).map((r: any) => r.entity_id));
-      return rows.filter((r) => !claimed.has(r.id));
-    }
-
-    const rinks = await filterUnclaimed(rinkRes.data ?? [], 'rink');
-    const teams = await filterUnclaimed(teamRes.data ?? [], 'team');
-    const players = await filterUnclaimed(playerRes.data ?? [], 'player');
-
-    const toClaimResult = (r: any, kind: 'rink' | 'team' | 'player'): ClaimResult => ({
-      id: r.id,
-      type: kind,
-      name: kind === 'player'
-        ? `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Player'
-        : r.name,
-      slug: r.slug,
-      city: r.city ?? null,
-      country: kind === 'player' ? (r.nationality ?? null) : (r.country ?? null),
-      // We don't re-fetch claim-status for each result card here; this is a teaser
-      // view, the per-card CTA falls through to /dashboard/claims which does
-      // the full state resolution server-side. has_claim=false is conservative
-      // (the worst case: user clicks "Claim" on something already claimed and
-      // gets a graceful "already taken" message on the claim form).
-      has_claim: false,
-      claim_status: null,
-      is_self_managed: false,
-    });
-
-    return {
-      rinks: rinks.slice(0, 3).map((r: any) => toClaimResult(r, 'rink')),
-      teams: teams.slice(0, 3).map((r: any) => toClaimResult(r, 'team')),
-      players: players.slice(0, 3).map((r: any) => toClaimResult(r, 'player')),
-    };
-  } catch (e) {
-    console.error('[claim-your-listing] featured claimable load failed:', e);
-    return null;
-  }
-}
 
 export default async function ClaimYourListingPage({
   searchParams,
@@ -369,16 +272,12 @@ export default async function ClaimYourListingPage({
 
   const results = query.length >= 2 ? await searchEntities(query, type) : [];
 
-  // Featured claimable listings — DISABLED 2026-08-11.
-  // The FeaturedClaimableSection component is unreachable in the JSX tree
-  // (the inner ternary checks query.length < 2 inside a branch that already
-  // passed query.length >= 2). Computing loadFeaturedClaimable() on every
-  // no-query page view was triggering a Supabase timeout that Vercel
-  // surfaced as a 500 status, even though the page itself rendered fine.
-  // Removed the call; the EmptyState component already provides a sensible
-  // 'add a new listing' CTA. Re-enable when the JSX bug is fixed and the
-  // section actually renders.
-  const featuredClaimable: Awaited<ReturnType<typeof loadFeaturedClaimable>> = null;
+  // Featured claimable listings — removed 2026-08-11 during Phase 1 cleanup.
+  // The previous FeaturedClaimableSection component is unreachable in the JSX
+  // tree and loadFeaturedClaimable() timed out on no-query page views, causing
+  // a Vercel 500. EmptyState already provides the 'add a new listing' CTA.
+  // Kept as a const so the analytics payload below still has a stable shape.
+  const featuredClaimable: null = null;
   // Directory counts — single source of truth shared with the homepage and
   // About page. Passed to EmptyState so the "1,900+ rinks" claim stays in
   // sync with the actual directory size.
@@ -758,152 +657,6 @@ function EmptyState({ type, counts }: { type: ClaimType; counts: { rinks: number
       >
         {c.addLabel}
       </AddListingLink>
-    </div>
-  );
-}
-
-/**
- * FeaturedClaimableSection — shown when a visitor lands on /claim-your-listing
- * with an empty query. Renders 3 unclaimed rinks + 3 unclaimed teams + 3
- * unclaimed players from markets known to drive organic SEO traffic.
- *
- * Each row is a slim "Claim this [name]" link that the user can click to
- * land on the existing /dashboard/claims flow. The whole point: give visitors
- * a concrete first action without forcing them to type.
- */
-function FeaturedClaimableSection({
-  featured,
-  fallback,
-}: {
-  featured: { rinks: ClaimResult[]; teams: ClaimResult[]; players: ClaimResult[] } | null;
-  fallback: string;
-}) {
-  const nothing = !featured || (
-    featured.rinks.length === 0 && featured.teams.length === 0 && featured.players.length === 0
-  );
-
-  if (nothing) {
-    return (
-      <div style={{
-        background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12,
-        padding: '1.5rem', textAlign: 'center', color: '#9ca3af',
-        display: 'flex', flexDirection: 'column', gap: '0.85rem', alignItems: 'center',
-      }}>
-        <div>Type a rink, team, or player name above. Even 2 characters will start a search.</div>
-        <Link
-          href="/add-listing"
-          data-testid="add-listing-featured-fallback"
-          style={{
-            display: 'inline-block',
-            background: 'transparent',
-            color: '#FFB81C',
-            border: '1px solid #FFB81C',
-            padding: '0.5rem 1.1rem',
-            borderRadius: 8,
-            textDecoration: 'none',
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}
-        >
-          Can\u2019t find yours? Add a listing →
-        </Link>
-      </div>
-    );
-  }
-
-  const claimHref = (kind: string, id: string, name: string) =>
-    `/login?redirect_url=${encodeURIComponent(`/dashboard/claims?entity=${kind}&id=${id}&name=${encodeURIComponent(name)}`)}`;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '0.5rem' }}>
-      <p style={{
-        color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', margin: '0 0 0.25rem',
-      }}>
-        Or pick from recently unclaimed listings — claim yours in 60 seconds.
-      </p>
-
-      {featured!.rinks.length > 0 && (
-        <FeaturedGroup
-          heading="Rinks"
-          items={featured!.rinks.map((r) => ({
-            id: r.id,
-            name: r.name,
-            sub: [r.city, r.country].filter(Boolean).join(', '),
-            href: claimHref('rink', r.id, r.name),
-          }))}
-        />
-      )}
-      {featured!.teams.length > 0 && (
-        <FeaturedGroup
-          heading="Teams"
-          items={featured!.teams.map((r) => ({
-            id: r.id,
-            name: r.name,
-            sub: [r.city, r.country].filter(Boolean).join(', '),
-            href: claimHref('team', r.id, r.name),
-          }))}
-        />
-      )}
-      {featured!.players.length > 0 && (
-        <FeaturedGroup
-          heading="Players"
-          items={featured!.players.map((r) => ({
-            id: r.id,
-            name: r.name,
-            sub: r.country || '',
-            href: claimHref('player', r.id, r.name),
-          }))}
-        />
-      )}
-    </div>
-  );
-}
-
-function FeaturedGroup({
-  heading,
-  items,
-}: {
-  heading: string;
-  items: Array<{ id: string; name: string; sub: string; href: string }>;
-}) {
-  return (
-    <div>
-      <h3 style={{
-        fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em',
-        color: 'rgba(255,184,28,0.85)', margin: '0 0 0.5rem', fontWeight: 700,
-      }}>
-        {heading}
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        {items.map((it) => (
-          <Link
-            key={it.id}
-            href={it.href}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 10,
-              padding: '0.7rem 1rem', textDecoration: 'none', color: '#fff',
-              fontSize: '0.92rem', fontWeight: 600,
-              transition: 'border-color 0.15s',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-              <span style={{ fontWeight: 600 }}>{it.name}</span>
-              {it.sub && (
-                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{it.sub}</span>
-              )}
-            </div>
-            <span style={{
-              padding: '0.4rem 0.8rem', background: '#FFB81C', color: '#0a0a0a',
-              borderRadius: 6, fontWeight: 700, fontSize: '0.78rem',
-            }}>
-              Claim this →
-            </span>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }
