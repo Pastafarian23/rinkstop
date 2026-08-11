@@ -12,6 +12,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import FullArticle, { type FullPost } from '@/components/FullArticle';
 
 const supabase = supabaseAdmin;
 
@@ -60,6 +61,21 @@ interface Post {
   author_name?: string;
 }
 
+// Wide-row fetch for legacy-slug Case 2 — we need content + content_html +
+// image + updated_at + author fields to render the full article template
+// (and emit NewsArticle JSON-LD + article:* meta tags for Google Publisher Center).
+async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
+  const { data } = await supabaseAdmin
+    .from('posts')
+    .select(
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, country_label, state_label, city_label',
+    )
+    .eq('status', 'published')
+    .eq('slug', slug)
+    .maybeSingle();
+  return data as FullPost | null;
+}
+
 function formatDate(date?: string) {
   if (!date) return '';
   try {
@@ -69,16 +85,6 @@ function formatDate(date?: string) {
 
 export const revalidate = 3600;
 export const dynamicParams = true;
-
-async function getPostBySlug(slug: string): Promise<Post | null> {
-  const { data } = await supabase
-    .from('posts')
-    .select('id, slug, title, subtitle, published_at, category, pillar, subpillar, pillar_slug, subpillar_slug, reading_time_minutes, author_name')
-    .eq('status', 'published')
-    .eq('slug', slug)
-    .maybeSingle();
-  return data as Post | null;
-}
 
 async function getPostsByPillar(pillarSlug: string, limit = 30): Promise<Post[]> {
   const { data } = await supabase
@@ -101,13 +107,49 @@ export async function generateMetadata({ params }: { params: Promise<{ pillar: s
       alternates: { canonical: `https://rinkstop.com/news/${pillar}` },
     };
   }
-  // Treat as a post slug
-  const post = await getPostBySlug(pillar);
+  // Treat as a post slug — fetch full row so we can emit article:* meta +
+  // NewsArticle JSON-LD copy via generateMetadata/FullArticle.
+  const post = await getFullPostBySlug(pillar);
   if (!post) return { title: 'Not Found' };
+  const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
+  const blogTitle = stripSuffix(post.seo_title || post.title);
+  const seoDesc = post.seo_description || post.subtitle || (post.content || '').replace(/<[^>]*>/g, '').substring(0, 160);
+  const ogImage = post.og_image_url || `https://rinkstop.com/og?title=${encodeURIComponent(post.title)}`;
   return {
-    title: post.title,
-    description: post.subtitle || '',
-    alternates: { canonical: `https://rinkstop.com/news/${post.slug}` },
+    title: blogTitle,
+    description: seoDesc,
+    authors: [{ name: post.author_name || 'Arnel Larracas' }],
+    openGraph: {
+      type: 'article',
+      title: blogTitle,
+      description: seoDesc,
+      url: `https://rinkstop.com/news/${post.slug}`,
+      publishedTime: post.published_at,
+      modifiedTime: post.updated_at || post.published_at,
+      authors: [post.author_name || 'Arnel Larracas'],
+      images: [ogImage],
+      tags: post.tags || [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: blogTitle,
+      description: seoDesc,
+      images: [ogImage],
+    },
+    alternates: {
+      canonical: `https://rinkstop.com/news/${post.slug}`,
+    },
+    other: {
+      // article:* meta tags — Google's structured-data crawler + Publisher
+      // Center parse these even when JSON-LD parsing is sluggish.
+      'article:published_time': post.published_at || '',
+      'article:modified_time': post.updated_at || post.published_at || '',
+      'article:author': post.author_name || 'Arnel Larracas',
+      'article:section': post.category || 'Hockey',
+      ...(post.tags && post.tags.length > 0
+        ? { 'article:tag': post.tags.join(',') }
+        : {}),
+    },
   };
 }
 
@@ -220,34 +262,12 @@ export default async function PillarPage({ params }: { params: Promise<{ pillar:
     );
   }
 
-  // Case 2: legacy slug — render the post. This is the deep-link safety net.
-  const post = await getPostBySlug(pillar);
+  // Case 2: legacy slug — render the FULL article template (with NewsArticle
+  // JSON-LD, article:* meta, visible byline + <time>). Wired 2026-08-11 when
+  // setting up Google Publisher Center ingestion. Deep links like
+  // /news/usa-hockey-development-league-...-launch now render the canonical
+  // article page (was previously a stub with a "View full article →" link).
+  const post = await getFullPostBySlug(pillar);
   if (!post) return notFound();
-
-  // Render the post body (simplified single-page view — the canonical post
-  // template at /news/[slug]/page.tsx handles the full article page; this is
-  // a fallback for legacy URLs that match a single-segment path).
-  return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/news" style={{ color: '#555' }}>News</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{post.title.substring(0, 40)}...</span>
-      </nav>
-      <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1, marginBottom: '0.5rem' }}>
-        {post.title}
-      </h1>
-      <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem', fontSize: '0.9375rem' }}>
-        {post.subtitle}
-      </p>
-      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem', marginTop: '1rem' }}>
-        Author: {post.author_name || 'Arnel'} · {formatDate(post.published_at)} · {post.reading_time_minutes || 5} min read
-      </p>
-      <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '2rem', fontSize: '0.875rem' }}>
-        <Link href={`/news/${post.slug}`} style={{ color: '#C8102E' }}>View full article →</Link>
-      </p>
-    </div>
-  );
+  return <FullArticle post={post} />;
 }
