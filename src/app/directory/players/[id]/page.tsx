@@ -39,24 +39,38 @@ const BASE_URL = _RAW.includes('localhost') || _RAW.includes('127.0.0.1')
   : (_RAW || 'https://rinkstop.com');
 
 function buildPlayerDescription(player: any): string {
-  const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim();
-  const teamName = player.teams?.name || player.current_team_name || 'their current team';
+  const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
+  const teamName = player.teams?.name || player.current_team_name || null;
   const leagueName = player.teams?.leagues?.name || '';
-  const position = POSITION_FULL[player.position] || player.position || 'Hockey Player';
+  const position = POSITION_FULL[player.position] || player.position || null;
+
+  // Build facts list. Skip the empty fallbacks — if a field is missing, we
+  // don't want fabricated text like 'plays for their current team'.
   const facts: string[] = [];
-  if (player.jersey_number != null) facts.push(`#${player.jersey_number}`);
-  if (player.height_cm) facts.push(`${player.height_cm} cm tall`);
-  if (player.weight_kg) facts.push(`${player.weight_kg} kg`);
-  if (player.shoots) facts.push(`shoots ${player.shoots === 'L' ? 'left' : 'right'}`);
-  if (player.birth_place) facts.push(`from ${player.birth_place}`);
   if (player.nationality && player.nationality.length <= 3) {
     facts.push(COUNTRY_NAMES[player.nationality] || player.nationality);
   } else if (player.nationality) {
     facts.push(player.nationality);
   }
+  if (player.jersey_number != null) facts.push(`#${player.jersey_number}`);
+  if (player.shoots) facts.push(`shoots ${player.shoots === 'L' ? 'left' : 'right'}`);
+  if (player.height_cm) facts.push(`${player.height_cm} cm tall`);
+  if (player.weight_kg) facts.push(`${player.weight_kg} kg`);
+  if (player.birth_place) facts.push(`from ${player.birth_place}`);
+
+  // Sparse-data path: when position + team + nationality are all missing,
+  // the player is barely in the DB yet — don't fabricate context. Return a
+  // minimal description that just identifies the player without claiming
+  // they play for a specific team or position.
+  if (!position && !teamName && facts.length === 0) {
+    return `${fullName} — hockey player profile with stats, team history, and career highlights on RinkStop.`;
+  }
+
   const factsStr = facts.length > 0 ? ` (${facts.join(', ')})` : '';
-  const leagueStr = leagueName ? ` in the ${leagueName}` : '';
-  return `${fullName}${factsStr} is a ${position} who plays for ${teamName}${leagueStr}. View full profile, career stats, and highlights on RinkStop.`;
+  const positionClause = position ? `a ${position}` : 'a hockey player';
+  const teamClause = teamName ? ` who plays for ${teamName}` : '';
+  const leagueClause = leagueName ? ` in the ${leagueName}` : '';
+  return `${fullName}${factsStr} is ${positionClause}${teamClause}${leagueClause} — full profile, stats, and career highlights on RinkStop.`;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -75,17 +89,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-    const teamName = player.teams?.name || player.current_team_name || 'Hockey Player';
+    const teamName = player.teams?.name || player.current_team_name || null;
     const leagueName = player.teams?.leagues?.name || '';
+    const position = POSITION_FULL[player.position] || player.position || null;
     const description = buildPlayerDescription(player);
     // Root layout template appends ' | RinkStop'. Strip any trailing suffix
     // from the DB seo_title so we don't get 'X | RinkStop | RinkStop'.
     const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
     const rawSeoTitle = (player as any).seo_title as string | undefined;
-    const title = stripSuffix(rawSeoTitle || '') || `${fullName} - ${POSITION_FULL[player.position] || 'Hockey'} | ${teamName}${leagueName ? ` (${leagueName})` : ''}`;
+    // Build a clean title that doesn't fabricate the team position when
+    // they're missing. Avoid the previous bug where a missing team fell
+    // back to the literal string 'Hockey Player', producing
+    // 'X - Hockey | Hockey Player | RinkStop'.
+    let titlePart: string;
+    if (rawSeoTitle && stripSuffix(rawSeoTitle)) {
+      titlePart = stripSuffix(rawSeoTitle);
+    } else if (position && teamName) {
+      titlePart = `${fullName} – ${position} | ${teamName}${leagueName ? ` (${leagueName})` : ''}`;
+    } else if (position) {
+      titlePart = `${fullName} – ${position} | Hockey Player Profile`;
+    } else if (teamName) {
+      titlePart = `${fullName} – ${teamName}${leagueName ? ` (${leagueName})` : ''} | Hockey Player Profile`;
+    } else {
+      titlePart = `${fullName} – Hockey Player Profile`;
+    }
 
     return {
-      title,
+      title: titlePart,
       description,
       openGraph: {
         title: `${fullName}`,
