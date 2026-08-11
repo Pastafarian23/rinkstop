@@ -244,22 +244,41 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
             CLAIM SUBMITTED
           </h2>
           <p style={{ color: '#888', fontSize: '0.9rem', lineHeight: 1.65, margin: '0 auto 1.5rem', maxWidth: 400 }}>
-            We've received your claim request and will review it shortly. You'll receive an email once our team has made a decision.
+            We&rsquo;ve received your claim request and will review it shortly. You&rsquo;ll receive an email once our team has made a decision.
           </p>
-          <button
-            onClick={() => { setSubmitted(false); setForm({ claimType: 'rink', entityName: '', entityId: '', reason: '', proof: '' }); }}
-            style={{
-              background: 'transparent',
-              color: '#38bdf8',
-              border: '1px solid #38bdf8',
-              borderRadius: 6,
-              padding: '0.625rem 1.25rem',
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-            }}
-          >
-            Submit Another Claim
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link
+              href="/dashboard/identity"
+              style={{
+                background: '#FFB81C',
+                color: '#0a0a0a',
+                padding: '0.625rem 1.25rem',
+                borderRadius: 6,
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              Verify identity →
+            </Link>
+            <button
+              onClick={() => { setSubmitted(false); setForm({ claimType: 'rink', entityName: '', entityId: '', reason: '', proof: '' }); }}
+              style={{
+                background: 'transparent',
+                color: '#38bdf8',
+                border: '1px solid #38bdf8',
+                borderRadius: 6,
+                padding: '0.625rem 1.25rem',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+              }}
+            >
+              Submit Another Claim
+            </button>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: '1.25rem 0 0', lineHeight: 1.5 }}>
+            Tip: verify your identity now and we&rsquo;ll prioritize your claim (within 24 hours vs 1–2 business days).
+          </p>
         </div>
 
         {/* Why upgrade? prompt — shown only to free users after their first claim. */}
@@ -526,7 +545,15 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
                 <textarea
                   value={form.reason}
                   onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
-                  placeholder="I am the general manager / owner / head coach of this rink..."
+                  placeholder={
+                    form.claimType === 'rink'
+                      ? "I am the general manager / owner of this rink. We've been operating at this location since..."
+                      : form.claimType === 'team'
+                      ? "I am the head coach / director of this team. I run tryouts and manage the roster..."
+                      : form.claimType === 'player'
+                      ? "I am the parent / legal guardian of this player (or the player themselves). I confirm I have authority..."
+                      : "I am the general manager / owner / head coach of this listing..."
+                  }
                   rows={3}
                   required
                   style={{
@@ -644,6 +671,25 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
           >
             {submitting ? 'Submitting...' : 'Submit Claim →'}
           </button>
+
+          {/* Phase 4C: trust signal + review timeline. Shown under the submit
+              button so users know what to expect after clicking. */}
+          <div
+            style={{
+              background: '#0a0a0a',
+              border: '1px solid #141414',
+              borderRadius: 8,
+              padding: '0.85rem 1rem',
+              fontSize: '0.78rem',
+              color: 'rgba(255,255,255,0.55)',
+              lineHeight: 1.55,
+            }}
+          >
+            <strong style={{ color: 'rgba(255,255,255,0.8)' }}>What happens next:</strong>{' '}
+            We&rsquo;ll review your claim within <strong style={{ color: '#FFB81C' }}>1–2 business days</strong>.
+            Verified-identity claims are processed within 24 hours. Proof documents are only
+            visible to the RinkStop review team and deleted after a decision is made.
+          </div>
         </form>
       )}
     </div>

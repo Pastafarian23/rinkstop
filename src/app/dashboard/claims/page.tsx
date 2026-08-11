@@ -7,8 +7,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import ClaimsForm from './ClaimsForm';
 import { ClaimIntentPanel, parseClaimIntentForClaims } from './ClaimIntentPanel';
+import { ClaimVerifyHint } from './ClaimVerifyHint';
 import { getUserTier, getMaxClaimsForTier, getUserApprovedClaimCount } from '@/lib/connections';
 import { trackEvent } from '@/lib/analytics';
+import { isIdentityVerified } from '@/lib/identity-verified';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +78,13 @@ export default async function ClaimsPage({
   const claimIntent = parseClaimIntentForClaims(sp ?? undefined);
   const isFree = tier === 'free';
   const atCap = actualMax !== Infinity && currentCount >= actualMax;
+
+  // Phase 4A: identity verification status. The Didit gate is real — claims
+  // submitted without verified identity tend to bounce review. We surface the
+  // status on /dashboard/claims so the user can verify BEFORE submitting,
+  // cutting 1 round-trip. Fail-open: if the helper throws, treat as
+  // not-verified (the form is still usable).
+  const identityVerified = await isIdentityVerified(userId).catch(() => false);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 760 }}>
@@ -183,6 +192,10 @@ export default async function ClaimsPage({
         <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.15rem', color: '#fff', letterSpacing: '0.05em', margin: '0 0 1rem' }}>
           SUBMIT A NEW CLAIM
         </h2>
+        {/* Phase 4A: identity verification hint. Rendered ABOVE the form so
+            users see it before they spend 5 min filling in reason/proof.
+            Verified claims get approved faster and skip the back-and-forth. */}
+        <ClaimVerifyHint verified={identityVerified} />
         <Suspense fallback={null}>
           <ClaimsForm
             tier={tier}
