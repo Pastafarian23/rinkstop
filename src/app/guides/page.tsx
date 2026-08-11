@@ -210,6 +210,33 @@ export default function GuidesPage() {
         </div>
       </section>
 
+      {/* Skills - core puck and play guides */}
+      <section style={{ marginBottom: '3rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888' }}>SKILLS</span>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem' }}>PUCK AND PLAY SKILLS</h2>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', marginTop: '0.4rem' }}>The skill guides that cover puck control, passing, defense, and the rules that govern them.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+          <Link href="/guides/stickhandling" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Hockey Stickhandling Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>Puck control, deking, soft hands, and the drills that build puck control.</p>
+          </Link>
+          <Link href="/guides/passing" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Hockey Passing Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>Forehand, backhand, saucer, one-touch, give-and-go, and breakouts.</p>
+          </Link>
+          <Link href="/guides/defensive-play" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Hockey Defensive Play Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>Positioning, gap control, stick checking, and breaking out.</p>
+          </Link>
+          <Link href="/guides/officiating" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem', textDecoration: 'none' }}>
+            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.0625rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>Hockey Officiating Guide</h3>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.65 }}>Referees, linesmen, signals, penalties, and how to become an official.</p>
+          </Link>
+        </div>
+      </section>
+
       {/* Equipment & Training Reference (no audience split) */}
       <section style={{ marginBottom: '3rem' }}>
         <div style={{ marginBottom: '1rem' }}>
