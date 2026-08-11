@@ -74,10 +74,24 @@ async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
     .eq('slug', slug)
     .maybeSingle();
   if (error) {
-    console.error('[getFullPostBySlug] supabase error for slug=', slug, 'error=', error.message);
-    return null;
+    console.error('[getFullPostBySlug] supabaseAdmin error for slug=', slug, 'error=', error.message);
   }
-  return (data as FullPost | null);
+  const row = (data as FullPost | null);
+  if (row) return row;
+  // Fallback: production service-role client sometimes fails silently for
+  // public reads; anon client has the same RLS policy for published rows.
+  const { data: alt, error: altError } = await supabase
+    .from('posts')
+    .select(
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, country_label, state_label, city_label',
+    )
+    .eq('status', 'published')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (altError) {
+    console.error('[getFullPostBySlug] supabase fallback error for slug=', slug, 'error=', altError.message);
+  }
+  return (alt as FullPost | null);
 }
 
 function formatDate(date?: string) {
