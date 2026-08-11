@@ -60,6 +60,8 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
   { url: `${baseUrl}/faq`, changeFreq: 'monthly', priority: 0.6 },
   { url: `${baseUrl}/contact`, changeFreq: 'monthly', priority: 0.5 },
   { url: `${baseUrl}/guides`, changeFreq: 'weekly', priority: 0.6 },
+  { url: `${baseUrl}/guides/stanley-cup`, changeFreq: 'monthly', priority: 0.7 },
+  { url: `${baseUrl}/guides/iihf-world-championship`, changeFreq: 'monthly', priority: 0.7 },
   { url: `${baseUrl}/rankings`, changeFreq: 'weekly', priority: 0.6 },
   { url: `${baseUrl}/hockey-travel`, changeFreq: 'monthly', priority: 0.5 },
   { url: `${baseUrl}/gear-brands`, changeFreq: 'monthly', priority: 0.5 },
