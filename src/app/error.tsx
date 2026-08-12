@@ -28,6 +28,24 @@ export default function RootError({
     // Log to console so Chrome devtools (and Vercel browser console
     // captures, if enabled) show the real error.
     console.error('[rinkstop] root error boundary:', error);
+
+    // 2026-08-12: mirror global-error.tsx behavior so client-side
+    // errors on /faq, /pricing, etc. are captured in the server error
+    // log. Without this, these failures are invisible outside the
+    // user's console.
+    try {
+      const stack = (error?.stack ?? '').substring(0, 4000);
+      const message = (error?.message ?? '').substring(0, 1000);
+      const digest = (error?.digest ?? '').substring(0, 200);
+      const url = typeof window !== 'undefined' ? window.location.href : '';
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const body = JSON.stringify({ message, stack, digest, url, ua, ts: Date.now() });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/log/error', body);
+      } else {
+        fetch('/api/log/error', { method: 'POST', body, keepalive: true }).catch(() => {});
+      }
+    } catch { /* logging must never throw */ }
   }, [error]);
 
   return (
