@@ -387,21 +387,38 @@ export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> 
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    const { data: teams, error } = await supabase
-      .from('team_workspaces')
-      .select('country_code, home_country, leagues(name)')
-      .eq('is_active', true);
-
-    if (error) {
-      console.error('[getCountryLeaguesMap] query failed:', error);
-      return result;
-    }
-
-    for (const t of (teams ?? []) as Array<{
+    // 2026-08-12 fix: PostgREST defaults to 1000-row page size. Without
+    // an explicit range/limit, the team_workspaces query was capped at 1000
+    // rows, missing the 7 Canadian NHL teams (which are beyond row 1000).
+    // Paginate to fetch ALL active teams.
+    const PAGE_SIZE = 1000;
+    let allTeams: Array<{
       country_code: string | null;
       home_country: string | null;
       leagues: { name: string } | { name: string }[] | null;
-    }>) {
+    }> = [];
+    let offset = 0;
+    while (true) {
+      const { data: teams, error } = await supabase
+        .from('team_workspaces')
+        .select('country_code, home_country, leagues(name)')
+        .eq('is_active', true)
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (error) {
+        console.error('[getCountryLeaguesMap] query failed:', error);
+        return result;
+      }
+      if (!teams || teams.length === 0) break;
+      allTeams = allTeams.concat(teams as Array<{
+        country_code: string | null;
+        home_country: string | null;
+        leagues: { name: string } | { name: string }[] | null;
+      }>);
+      if (teams.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+
+    for (const t of allTeams) {
       const leagueName = (() => {
         if (!t.leagues) return null;
         if (Array.isArray(t.leagues)) return t.leagues[0]?.name ?? null;
