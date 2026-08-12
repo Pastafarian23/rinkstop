@@ -191,3 +191,138 @@ export async function getTopLeagues(): Promise<LeagueCount[]> {
     return ZERO_LEAGUE_COUNTS;
   }
 }
+
+/**
+ * Countries that have ACTIVE teams matching a given level and/or league.
+ * Used by /directory/teams to cascade the country dropdown so the user
+ * can only pick countries that have teams in the current filter combo.
+ *
+ * Pure JS aggregation over team_workspaces — no GROUP BY. The query is
+ * bounded by the table size (~500 active teams) so it fits in memory.
+ *
+ * Returns a Set of country names (e.g. "United States", "Canada") so the
+ * caller can do an O(1) lookup against their topCountries list.
+ *
+ * Why both filters: with NHL=US+Canada, the user wants to see only those
+ * two countries. With Level=Pro (no league), they want all countries
+ * that have pro teams. With both, intersection.
+ */
+export async function getCountriesForFilter(opts: {
+  level?: string | null;
+  league?: string | null;
+}): Promise<Set<string>> {
+  const result = new Set<string>();
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // Resolve level to a list of league IDs (same logic as fetchInitialTeams
+    // in page.tsx). Then fetch team_workspaces with those leagues.
+    const { LEAGUE_LEVELS } = await import('@/lib/league-levels');
+    let leagueIds: string[] | null = null;
+    if (opts.level) {
+      const { data: leagues } = await supabase
+        .from('leagues')
+        .select('id, name')
+        .eq('is_active', true);
+      const ids = (leagues ?? [])
+        .filter((l: { name: string }) => LEAGUE_LEVELS[l.name] === opts.level)
+        .map((l: { id: string }) => l.id);
+      if (ids.length === 0) return result;
+      leagueIds = ids;
+    }
+    if (opts.league) {
+      const { data: matchedLeagues } = await supabase
+        .from('leagues')
+        .select('id')
+        .eq('is_active', true)
+        .ilike('name', opts.league);
+      const ids = (matchedLeagues ?? []).map((l: { id: string }) => l.id);
+      if (ids.length === 0) return result;
+      // Intersect with level-derived IDs when both are set
+      if (leagueIds) {
+        const set = new Set(ids);
+        leagueIds = leagueIds.filter((id) => set.has(id));
+        if (leagueIds.length === 0) return result;
+      } else {
+        leagueIds = ids;
+      }
+    }
+    if (!leagueIds) return result;
+
+    // Fetch team_workspaces with these leagues and pull distinct countries.
+    // Limit 500 since we already filtered to active teams earlier.
+    const { data: teams } = await supabase
+      .from('team_workspaces')
+      .select('country, country_code, home_country')
+      .eq('is_active', true)
+      .in('league_id', leagueIds)
+      .limit(500);
+
+    for (const t of (teams ?? []) as Array<{ country: string | null; country_code: string | null; home_country: string | null }>) {
+      // Prefer country_code from team_workspaces (ISO 3166-1 alpha-2), fall back to other fields
+      if (t.country) result.add(t.country);
+      if (t.country_code) result.add(t.country_code);
+      if (t.home_country) result.add(t.home_country);
+    }
+    return result;
+  } catch (e) {
+    console.error('[getCountriesForFilter] unexpected error:', e);
+    return result;
+  }
+}
+
+/**
+ * Builds a country → league-names[] mapping by walking all active teams.
+ * Used by /directory/teams to cascade the country dropdown in real-time:
+ * when the user picks League=NHL, the client intersects the current
+ * level/league with this set to show only countries that have NHL teams.
+ *
+ * Returns a Map<country, Set<leagueName>>. ~500 active teams, so this
+ * fits in memory.
+ */
+export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> {
+  const result = new Map<string, Set<string>>();
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data: teams, error } = await supabase
+      .from('team_workspaces')
+      .select('country, country_code, home_country, leagues(name)')
+      .eq('is_active', true)
+      .limit(500);
+
+    if (error) {
+      console.error('[getCountryLeaguesMap] query failed:', error);
+      return result;
+    }
+
+    for (const t of (teams ?? []) as Array<{
+      country: string | null;
+      country_code: string | null;
+      home_country: string | null;
+      leagues: { name: string } | { name: string }[] | null;
+    }>) {
+      const leagueName = (() => {
+        if (!t.leagues) return null;
+        if (Array.isArray(t.leagues)) return t.leagues[0]?.name ?? null;
+        return t.leagues.name;
+      })();
+      if (!leagueName) continue;
+      const countries = [t.country, t.country_code, t.home_country].filter(Boolean) as string[];
+      for (const c of countries) {
+        if (!result.has(c)) result.set(c, new Set());
+        result.get(c)!.add(leagueName);
+      }
+    }
+    return result;
+  } catch (e) {
+    console.error('[getCountryLeaguesMap] unexpected error:', e);
+    return result;
+  }
+}
+
