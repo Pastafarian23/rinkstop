@@ -61,6 +61,11 @@ interface Props {
   topCountries: Array<{ name: string; slug: string; teamCount: number }>;
   /** Top leagues by team count (server-rendered for the league select). */
   topLeagues: Array<{ name: string; slug: string; teamCount: number }>;
+  /** country → league names that have active teams in that country. Used by
+   *  the client to cascade the country dropdown in real-time as the user
+   *  changes filters. Server-side data so the client doesn't need to query
+   *  the DB. */
+  countryLeaguesMap: Array<[string, string[]]>;
   /** Total team count (for display when no filter is active). */
   totalCount: number;
   /** Active filter values from the URL (server-side). */
@@ -105,6 +110,7 @@ export default function TeamsIndexClient({
   initialTeams,
   topCountries,
   topLeagues,
+  countryLeaguesMap,
   totalCount,
   country: initialCountry,
   level: initialLevel,
@@ -287,6 +293,43 @@ export default function TeamsIndexClient({
     [leaguesForLevel, urlLevel]
   );
 
+  // Countries available in the <select> given the current level/league.
+  // Cascading: when level or league is set, only countries with active
+  // teams matching that filter are shown. E.g. League=NHL → US, Canada.
+  // When both filter AND level are set, only countries with teams in
+  // leagues matching BOTH are shown.
+  const availableCountries = useMemo(() => {
+    // Convert the array-shaped map back to a real Map for lookups.
+    const map = new Map<string, Set<string>>(countryLeaguesMap.map(([k, v]) => [k, new Set(v)]));
+    if (!urlLevel && !urlLeague) return topCountries;
+
+    return topCountries.filter((c) => {
+      const countryLeagues = map.get(c.name);
+      if (!countryLeagues) return false;
+      // The country has at least one league that matches the current filter.
+      if (urlLeague) {
+        // Specific league selected — country must have that exact league
+        return countryLeagues.has(urlLeague);
+      }
+      // Only level selected — country must have at least one league in that level
+      return Array.from(countryLeagues).some((lg) => LEAGUE_LEVELS[lg] === urlLevel);
+    });
+  }, [countryLeaguesMap, topCountries, urlLevel, urlLeague]);
+
+  // Auto-cleanup: if the URL has a country that's no longer valid for the
+  // current level/league (e.g. legacy URL with Level=Pro + Country=Thailand),
+  // clear the country on the next render.
+  useEffect(() => {
+    if (urlCountry && urlLevel && urlLeague) {
+      const map = new Map<string, Set<string>>(countryLeaguesMap.map(([k, v]) => [k, new Set(v)]));
+      const countryLeagues = map.get(urlCountry);
+      const hasMatch = countryLeagues
+        ? countryLeagues.has(urlLeague)
+        : false;
+      if (!hasMatch) setFilter('country', '');
+    }
+  }, [urlCountry, urlLevel, urlLeague, countryLeaguesMap, setFilter]);
+
   const hasFilters = activeChips.length > 0 || verifiedOnly;
 
   return (
@@ -394,12 +437,15 @@ export default function TeamsIndexClient({
           ))}
         </select>
 
-        {/* Country select — top countries from server-rendered list */}
+        {/* Country select — cascading. When level or league is set, only
+            countries with active teams in that filter are shown. E.g.
+            League=NHL → US, Canada. When no filter, all topCountries. */}
         <select
           value={urlCountry}
           onChange={(e) => setFilter('country', e.target.value)}
           className="input-field"
           aria-label="Filter by country"
+          disabled={availableCountries.length === 0}
           style={{
             paddingRight: '1.75rem',
             flex: '1 1 150px',
@@ -409,10 +455,17 @@ export default function TeamsIndexClient({
             fontWeight: urlCountry ? 700 : 400,
             color: urlCountry ? '#FFB81C' : 'rgba(255,255,255,0.75)',
             border: `1.5px solid ${urlCountry ? '#FFB81C' : 'rgba(255,255,255,0.15)'}`,
+            opacity: availableCountries.length === 0 ? 0.5 : 1,
           }}
         >
-          <option value="">All countries</option>
-          {topCountries.map((c) => (
+          <option value="">
+            {urlLeague
+              ? `All countries with ${urlLeague}`
+              : urlLevel
+              ? `All ${LEVEL_OPTIONS.find((o) => o.value === urlLevel)?.label.toLowerCase() ?? urlLevel} countries`
+              : 'All countries'}
+          </option>
+          {availableCountries.map((c) => (
             <option key={c.slug} value={c.name}>{c.name}</option>
           ))}
         </select>
