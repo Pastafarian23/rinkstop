@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
     'add_listing_intent_viewed',
     'add_listing_submitted',
     'add_listing_no_match_cta_click',
+    'search_query',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });

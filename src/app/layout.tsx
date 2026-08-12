@@ -13,6 +13,7 @@ import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
 import CookieConsent from '@/components/CookieConsent';
 import FundingChoicesCmp from '@/components/FundingChoicesCmp';
+import CommandPalette from '@/components/CommandPalette';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
 import OffSeasonTicker from '@/components/OffSeasonTicker';
@@ -397,8 +398,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>© 2019-2026 RinkStop. All rights reserved.</span>
-                <span style={{ display: 'flex', gap: '0.75rem' }}>
+                <span style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>© 2019-2026 RinkStop. All rights reserved.</span>
+                  <span
+                    title="Press Cmd+K (Mac) or Ctrl+K (Win/Linux) to search"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 5,
+                      padding: '0.15rem 0.45rem',
+                      fontSize: '0.7rem',
+                      color: 'rgba(255,255,255,0.3)',
+                      cursor: 'default',
+                      fontFamily: 'ui-monospace, monospace',
+                    }}
+                  >
+                    ⌘K
+                  </span>
                   <Link href="/privacy" style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', textDecoration: 'none' }}>Privacy</Link>
                   <Link href="/terms" style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', textDecoration: 'none' }}>Terms</Link>
                 </span>
@@ -411,6 +430,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             Higher z-index than FoundersClubPopup so they don't double up. */}
         <UpgradeNudgePopup showOnPaths={['/dashboard', '/']} />
         <IntentBanner />
+        {/* WS20 PR1 (2026-08-12): Global search command palette — Cmd+K / Ctrl+K.
+            Mounted here so it's available on every public and dashboard page. */}
+        <CommandPalette />
         {/* WS16 PR3 (2026-08-03): Funding Choices CMP. Loads BEFORE
             adsbygoogle.js so Google's certified consent flow can gate
             ad requests. TCF v2.3 compliant. Falls back gracefully if
