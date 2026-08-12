@@ -6,6 +6,14 @@ import { FilterIcon } from '@/components/icons';
 import ShareButton from '@/components/ShareButton';
 import CategorySearchBar from '@/components/CategorySearchBar';
 import type { Level } from '@/lib/league-levels';
+import { LEAGUE_LEVELS } from '@/lib/league-levels';
+
+// Type for the topLeagues prop (subset of getTopLeagues return).
+interface LeagueCountLite {
+  name: string;
+  slug: string;
+  teamCount: number;
+}
 
 // ------ Types ------------------------------------------------------------------------------------------------------------------------
 interface NHLTeam {
@@ -128,8 +136,24 @@ export default function TeamsIndexClient({
     urlLevel !== (initialLevel ?? '') ||
     urlLeague !== (initialLeague ?? '');
 
+  // Compute the leagues available in our topLeagues for a given level.
+  // Used to filter the league <select> when a level is set, so the user
+  // can never pick a combination that doesn't exist (e.g. Level=College
+  // + League=NHL). Leagues not in our topLeagues list are also excluded
+  // — the dropdown only shows leagues we actually have teams for.
+  const leaguesForLevel = useCallback(
+    (level: Level | ''): LeagueCountLite[] => {
+      if (!level) return topLeagues;
+      return topLeagues.filter((l) => LEAGUE_LEVELS[l.name] === level);
+    },
+    [topLeagues]
+  );
+
   // Update a single URL filter param, preserving the others.
   // Used by the filter selects. Keeps the URL shareable / back-button safe.
+  // CRITICAL: when level changes, validate that urlLeague still belongs to
+  // that level (else clear it). When league changes, auto-set level to the
+  // league's level so the two never contradict.
   const setFilter = useCallback(
     (key: 'country' | 'level' | 'league', value: string) => {
       const next = new URLSearchParams(searchParams.toString());
@@ -137,6 +161,27 @@ export default function TeamsIndexClient({
       else next.delete(key);
       // Drop ?q= when filters change so the search bar's prefill doesn't double-filter
       next.delete('q');
+
+      // Enforce level ↔ league consistency. Without this, the user can
+      // land on impossible combinations (Level=College + League=NHL)
+      // and the page returns an empty result with no clear explanation.
+      if (key === 'level' && value) {
+        // When the new level is set, the league must be valid for that level
+        // (or be empty). If urlLeague no longer matches, drop it.
+        const currentLeague = next.get('league');
+        if (currentLeague && LEAGUE_LEVELS[currentLeague] !== value) {
+          next.delete('league');
+        }
+      } else if (key === 'league' && value) {
+        // When the league is set, auto-update the level to match. This
+        // keeps the two filters in lockstep — picking NHL sets level=pro,
+        // picking NCAA sets level=college, etc.
+        const newLevel = LEAGUE_LEVELS[value];
+        if (newLevel) {
+          next.set('level', newLevel);
+        }
+      }
+
       const qs = next.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
@@ -187,6 +232,16 @@ export default function TeamsIndexClient({
     }).catch(() => setLoading(false));
   }, [filtersChanged, urlCountry, urlLevel, urlLeague]);
 
+  // Auto-cleanup: if the URL has an impossible level+league combination
+  // (e.g. ?level=college&league=NHL), clear the league so the dropdown
+  // doesn't display a value that isn't in its option list. This handles
+  // old URLs from before the cascading logic was added.
+  useEffect(() => {
+    if (urlLevel && urlLeague && LEAGUE_LEVELS[urlLeague] !== urlLevel) {
+      setFilter('league', '');
+    }
+  }, [urlLevel, urlLeague, setFilter]);
+
   // Filter teams client-side based on the URL's ?q= (from a search bar submit)
   // and verified-only. Country/level/league are already applied server-side
   // (or via the refetch above), so we don't re-filter on them.
@@ -222,6 +277,15 @@ export default function TeamsIndexClient({
     if (urlLeague) chips.push({ key: 'league', label: urlLeague });
     return chips;
   }, [urlCountry, urlLevel, urlLeague]);
+
+  // Leagues available in the <select> given the current level. If a level
+  // is set, only leagues in that level are shown — preventing the user
+  // from picking combinations that don't exist (e.g. Level=College +
+  // League=NHL). When no level is set, all topLeagues are shown.
+  const availableLeagues = useMemo(
+    () => leaguesForLevel((urlLevel as Level | '') || ''),
+    [leaguesForLevel, urlLevel]
+  );
 
   const hasFilters = activeChips.length > 0 || verifiedOnly;
 
@@ -298,12 +362,16 @@ export default function TeamsIndexClient({
           ))}
         </select>
 
-        {/* League select — top leagues from server-rendered list, with "All" option */}
+        {/* League select — top leagues filtered by current level.
+            Cascading: when level is set, only leagues in that level are
+            available. Pairs with setFilter's auto-level-updater so the two
+            filters always stay consistent. */}
         <select
           value={urlLeague}
           onChange={(e) => setFilter('league', e.target.value)}
           className="input-field"
           aria-label="Filter by league"
+          disabled={availableLeagues.length === 0}
           style={{
             paddingRight: '1.75rem',
             flex: '1 1 160px',
@@ -313,10 +381,15 @@ export default function TeamsIndexClient({
             fontWeight: urlLeague ? 700 : 400,
             color: urlLeague ? '#FFB81C' : 'rgba(255,255,255,0.75)',
             border: `1.5px solid ${urlLeague ? '#FFB81C' : 'rgba(255,255,255,0.15)'}`,
+            opacity: availableLeagues.length === 0 ? 0.5 : 1,
           }}
         >
-          <option value="">All leagues</option>
-          {topLeagues.map((l) => (
+          <option value="">
+            {urlLevel
+              ? `All ${LEVEL_OPTIONS.find((o) => o.value === urlLevel)?.label.toLowerCase() ?? urlLevel} leagues`
+              : 'All leagues'}
+          </option>
+          {availableLeagues.map((l) => (
             <option key={l.slug} value={l.name}>{l.name}</option>
           ))}
         </select>
