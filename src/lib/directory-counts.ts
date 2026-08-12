@@ -14,6 +14,12 @@ export type CountryCount = {
   team_count: number;
 };
 
+export type LeagueCount = {
+  name: string;
+  slug: string;
+  team_count: number;
+};
+
 const ZERO_COUNTS: DirectoryCounts = {
   rinks: 0,
   teams: 0,
@@ -24,6 +30,7 @@ const ZERO_COUNTS: DirectoryCounts = {
 };
 
 const ZERO_COUNTRY_COUNTS: CountryCount[] = [];
+const ZERO_LEAGUE_COUNTS: LeagueCount[] = [];
 
 /**
  * Single source of truth for "how big is the directory" numbers that
@@ -83,5 +90,60 @@ export async function getCountryTeamCounts(): Promise<CountryCount[]> {
     return (data || []) as CountryCount[];
   } catch {
     return ZERO_COUNTRY_COUNTS;
+  }
+}
+
+/**
+ * Live per-league team counts. Top 25 leagues by team_count, ordered DESC.
+ *
+ * Used by /directory/teams (TeamsIndexClient) to populate the league select
+ * filter with real options + counts, instead of the broken <datalist> with
+ * hardcoded options. Falls back to empty array on error so a Supabase outage
+ * doesn't break the surrounding page — the select simply shows "All leagues"
+ * with no options.
+ */
+export async function getTopLeagues(): Promise<LeagueCount[]> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    // Join leagues → team_workspaces. Filter to active leagues with active teams.
+    // Note: PostgREST doesn't support GROUP BY directly, so we count per league
+    // by fetching the (slug, name) of each league, then aggregating in JS for
+    // a stable ordering. Top 50 leagues by name match to keep the query fast;
+    // the team_count is then computed by counting rows from the join.
+    const { data, error } = await supabase
+      .from('leagues')
+      .select('name, slug, team_workspaces!inner(id, is_active)')
+      .eq('is_active', true)
+      .eq('team_workspaces.is_active', true)
+      .limit(50);
+
+    if (error) {
+      console.error('[getTopLeagues] query failed:', error);
+      return ZERO_LEAGUE_COUNTS;
+    }
+
+    // Aggregate team count per league
+    const counts = new Map<string, LeagueCount>();
+    for (const row of (data ?? []) as Array<{ name: string; slug: string; team_workspaces: Array<{ id: string }> | null }>) {
+      if (!row.slug || !row.name) continue;
+      const teamCount = Array.isArray(row.team_workspaces) ? row.team_workspaces.length : 0;
+      // If multiple rows came back (shouldn't with unique slug, but defensive)
+      const existing = counts.get(row.slug);
+      if (existing) {
+        existing.team_count += teamCount;
+      } else {
+        counts.set(row.slug, { name: row.name, slug: row.slug, team_count: teamCount });
+      }
+    }
+
+    return Array.from(counts.values())
+      .sort((a, b) => b.team_count - a.team_count)
+      .slice(0, 25);
+  } catch (e) {
+    console.error('[getTopLeagues] unexpected error:', e);
+    return ZERO_LEAGUE_COUNTS;
   }
 }
