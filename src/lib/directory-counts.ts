@@ -111,14 +111,18 @@ export async function getTopLeagues(): Promise<LeagueCount[]> {
     // Join leagues → team_workspaces. Filter to active leagues with active teams.
     // Note: PostgREST doesn't support GROUP BY directly, so we count per league
     // by fetching the (slug, name) of each league, then aggregating in JS for
-    // a stable ordering. Top 50 leagues by name match to keep the query fast;
-    // the team_count is then computed by counting rows from the join.
+    // a stable ordering.
+    //
+    // 2026-08-12 fix: was using `.limit(50)` but PostgREST defaults to ordering
+    // by primary key (creation order), which cut off leagues created early
+    // (like NCAA D1/D3 with the highest team counts). Now we fetch ALL active
+    // leagues and let the JS aggregation handle ordering. The DB has ~200
+    // active leagues — still fast for an in-memory aggregation.
     const { data, error } = await supabase
       .from('leagues')
       .select('name, slug, team_workspaces!inner(id, is_active)')
       .eq('is_active', true)
-      .eq('team_workspaces.is_active', true)
-      .limit(50);
+      .eq('team_workspaces.is_active', true);
 
     if (error) {
       console.error('[getTopLeagues] query failed:', error);
