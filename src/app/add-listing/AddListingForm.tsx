@@ -29,6 +29,10 @@ export default function AddListingForm() {
   // URL has ?type=rink|team|player — auto-select that listing type so the
   // user doesn't have to re-pick. Also fire `add_listing_intent_viewed` so
   // we can join intent → submission in /admin/funnel.
+  //
+  // Phase C: when navigated from the autocomplete no-match CTA
+  // (/add-listing?name=...), prefill the name field so the user doesn't
+  // have to retype their query. Truncate to 200 chars (matches DB column).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -37,6 +41,10 @@ export default function AddListingForm() {
       if (t && ALLOWED_TYPE_PRESELECTS.has(t) && !form.listingType) {
         setForm((prev) => ({ ...prev, listingType: t }));
       }
+      const n = params.get('name');
+      if (n && !form.name) {
+        setForm((prev) => ({ ...prev, name: n.slice(0, 200) }));
+      }
       // Best-effort analytics: load event so we can see intent -> form-view
       // conversion rate.
       const payload = JSON.stringify({
@@ -44,6 +52,7 @@ export default function AddListingForm() {
         pathname: '/add-listing',
         props: {
           preselect_type: ALLOWED_TYPE_PRESELECTS.has(t || '') ? t : null,
+          preselect_name: n ? n.slice(0, 200) : null,
           referrer: document.referrer || null,
         },
       });
