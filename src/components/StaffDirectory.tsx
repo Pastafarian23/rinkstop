@@ -88,15 +88,17 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
         </p>
       </div>
 
-      {/* Search */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      {/* Search — full-width on mobile, capped at 420px on desktop. Search icon
+          gives the search bar clear visual prominence above the fold. */}
+      <div style={{ marginBottom: '1.5rem', position: 'relative', maxWidth: '420px' }}>
+        <span aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', fontSize: '0.95rem' }}>🔍</span>
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={`Search ${roleLabel.plural.toLowerCase()} by name, team, or nationality…`}
           className="input-field"
-          style={{ maxWidth: '420px' }}
+          style={{ paddingLeft: '2.25rem', width: '100%' }}
         />
       </div>
 
