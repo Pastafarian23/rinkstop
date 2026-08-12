@@ -68,7 +68,10 @@ export default function HomeSearch() {
         }
         const data = await res.json();
         setResults(data.results ?? []);
-        setOpen((data.results ?? []).length > 0);
+        // Show the dropdown when we have results OR when the user typed
+        // enough to surface a "no matches" CTA. Closing on 0 results would
+        // hide the add-listing affordance.
+        setOpen((data.results ?? []).length > 0 || term.length >= 2);
         setActiveIdx(-1);
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
@@ -157,7 +160,7 @@ export default function HomeSearch() {
       </form>
 
       {/* Autocomplete dropdown */}
-      {open && results.length > 0 ? (
+      {open && (results.length > 0 || q.trim().length >= 2) ? (
         <ul
           id="home-search-listbox"
           role="listbox"
@@ -264,6 +267,66 @@ export default function HomeSearch() {
             );
           })}
 
+          {/* No-match CTA: when the suggest API returned 0 results, surface
+              the add-listing path inside the dropdown. The form prefill
+              (handled in AddListingForm via ?name=) means the user doesn’t
+              have to retype their query. */}
+          {results.length === 0 ? (
+            <li
+              role="presentation"
+              style={{
+                padding: '0.85rem 0.95rem 0.5rem',
+                borderTop: '1px solid #1e1e1e',
+                marginTop: '0.4rem',
+              }}
+            >
+              <div
+                style={{
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: '0.8125rem',
+                  marginBottom: '0.65rem',
+                  lineHeight: 1.45,
+                }}
+              >
+                No matches for <strong style={{ color: '#fff' }}>&ldquo;{q.trim()}&rdquo;</strong>
+                {' '}— want to add it?
+              </div>
+              <a
+                href={`/add-listing?name=${encodeURIComponent(q.trim())}`}
+                onClick={() => {
+                  try {
+                    const payload = JSON.stringify({
+                      name: 'add_listing_no_match_cta_click',
+                      pathname: '/',
+                      props: { q: q.trim() },
+                    });
+                    const blob = new Blob([payload], { type: 'application/json' });
+                    navigator.sendBeacon?.('/api/analytics', blob) ||
+                      fetch('/api/analytics', { method: 'POST', body: blob, keepalive: true });
+                  } catch {
+                    // best-effort analytics only
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  background: '#FFB81C',
+                  color: '#0a0a0a',
+                  padding: '0.55rem 0.85rem',
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  textDecoration: 'none',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                + Add as a new listing
+              </a>
+            </li>
+          ) : null}
+
           {/* Footer: see all results */}
           <li
             role="presentation"
@@ -286,7 +349,7 @@ export default function HomeSearch() {
                 textAlign: 'center',
               }}
             >
-              See all results for &ldquo;{q.trim()}&rdquo; →
+              {`See all results for \u201c${q.trim()}\u201d \u2192`}
             </a>
           </li>
         </ul>
