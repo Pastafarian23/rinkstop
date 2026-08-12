@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { SearchResultsView } from './SearchResultsView';
 
 const CATS = [
   {
@@ -94,6 +96,22 @@ export default function DirectoryLandingClient() {
   useEffect(() => {
     fetch('/api/counts').then(r => r.json()).then(setCounts).catch(() => {});
   }, []);
+
+  // Phase B: detect ?q=... and show search results instead of the
+  // category tiles. useSearchParams requires a Suspense boundary in
+  // Next.js 14+, hence the Suspense wrapper below.
+  return (
+    <Suspense fallback={null}>
+      <DirectoryLandingInner counts={counts} />
+    </Suspense>
+  );
+}
+
+function DirectoryLandingInner({ counts }: { counts: { rinks: number; teams: number; players: number; leagues: number } | null }) {
+  const searchParams = useSearchParams();
+  const q = (searchParams?.get('q') ?? '').trim();
+  const showResults = q.length >= 2;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
@@ -101,19 +119,45 @@ export default function DirectoryLandingClient() {
       <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1.5rem' }}>
         <Link href="/" style={{ color: '#555555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Directory</span>
+        <Link href="/directory" style={{ color: '#A0A0A0' }}>Directory</Link>
+        {showResults ? (
+          <>
+            <span style={{ margin: '0 0.4rem' }}>›</span>
+            <span style={{ color: '#A0A0A0' }}>Search</span>
+          </>
+        ) : null}
       </nav>
 
-      {/* Header */}
+      {/* Header — text changes based on whether we're showing results */}
       <div style={{ marginBottom: '2.5rem' }}>
-        <div className="label">Browse Everything</div>
-        <h1 className="font-sport" style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', color: '#fff', lineHeight: 1 }}>
-          HOCKEY DIRECTORY
-        </h1>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem', marginTop: '0.75rem', maxWidth: '480px' }}>
-          From NHL arenas to backyard rinks  --  find teams, players, leagues, rinks, and brands worldwide.
-        </p>
+        {showResults ? (
+          <>
+            <div className="label">Search Results</div>
+            <h1 className="font-sport" style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', color: '#fff', lineHeight: 1 }}>
+              SEARCH
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem', marginTop: '0.75rem', maxWidth: '480px' }}>
+              Results for &ldquo;<strong style={{ color: '#FFB81C' }}>{q}</strong>&rdquo; across rinks,
+              teams, players, leagues, and brands.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="label">Browse Everything</div>
+            <h1 className="font-sport" style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', color: '#fff', lineHeight: 1 }}>
+              HOCKEY DIRECTORY
+            </h1>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem', marginTop: '0.75rem', maxWidth: '480px' }}>
+              From NHL arenas to backyard rinks  --  find teams, players, leagues, rinks, and brands worldwide.
+            </p>
+          </>
+        )}
       </div>
+
+      {/* Phase B: when ?q is present, show search results instead of category tiles */}
+      {showResults ? (
+        <SearchResultsView q={q} />
+      ) : null}
 
       {/* Category grid */}
       <div style={{
