@@ -17,6 +17,16 @@ import { supabaseAdmin } from '@/lib/supabase';
  *   rinks: 3, teams: 3, players: 3, leagues: 2, brands: 2
  *   (max 13 candidate rows, ranked down to top 8 for the UI)
  *
+ * Multi-word handling (audit fix 2026-08-11):
+ *   When q = "patrick kane", split into words [patrick, kane] and require
+ *   each word to match SOMEWHERE in the searchable fields. Chained .or()
+ *   filters in PostgREST are AND'd together with OR within each. So:
+ *     players.or('first_name.ilike.*patrick*,last_name.ilike.*patrick*')
+ *           .or('first_name.ilike.*kane*,last_name.ilike.*kane*')
+ *   translates to:
+ *     (first_name LIKE %patrick% OR last_name LIKE %patrick%)
+ *     AND (first_name LIKE %kane% OR last_name LIKE %kane%)
+ *
  * Performance: ~50ms on a 2,700-row dataset. When we hit 10K+ rows,
  * swap to Postgres full-text search (to_tsvector / to_tsquery + GIN).
  * The API contract stays the same — only the underlying query changes.
@@ -33,6 +43,98 @@ const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
 async function getRateLimit() {
   const { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } = await import('@/lib/rateLimit');
   return { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup };
+}
+
+/**
+ * Split the user query into individual words. Each word must match
+ * somewhere across the listed fields.
+ *
+ * Examples:
+ *   "Patrick Kane" → ["patrick", "kane"]
+ *   "  O'Brien   " → ["o'brien"]
+ *   "new-york" → ["new-york"]   (hyphens are part of the word)
+ *
+ * Empty words (whitespace-only splits) are dropped.
+ */
+function tokenize(q: string): string[] {
+  return q
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 0);
+}
+
+/**
+ * Escape SQL LIKE wildcards (% and _) in user input. Prevents users
+ * from accidentally (or intentionally) using LIKE metacharacters.
+ */
+function escapeLike(s: string): string {
+  return s.replace(/[%_\\]/g, '\\$&');
+}
+
+/**
+ * Apply a multi-word ILIKE filter to a Supabase query builder.
+ * Each word in the query must match at least one of the listed fields.
+ * Words are AND'd together; fields within a word are OR'd together.
+ *
+ * Implementation: chain multiple .or() calls on the builder. PostgREST
+ * treats chained .or() filters as AND, while OR-ing the comma-separated
+ * alternatives within each .or().
+ *
+ * Example: applyMultiWordSearch(q, 'Patrick Kane', ['first_name', 'last_name'])
+ *   → builder.or('first_name.ilike.*patrick*,last_name.ilike.*patrick*')
+ *           .or('first_name.ilike.*kane*,last_name.ilike.*kane*')
+ */
+function applyMultiWordSearch<T extends { or: (s: string) => T }>(
+  builder: T,
+  q: string,
+  fields: string[]
+): T {
+  const words = tokenize(q);
+  let cur = builder;
+  for (const word of words) {
+    const escaped = escapeLike(word);
+    const alternatives = fields.map((f) => `${f}.ilike.%${escaped}%`).join(',');
+    cur = cur.or(alternatives) as T;
+  }
+  return cur;
+}
+
+/**
+ * Compute match quality (rank) for a row against the query.
+ *   4 = full query matches the name (exact, or all words in order)
+ *   3 = name starts with query
+ *   2 = name contains query
+ *   1 = only secondary fields matched
+ *
+ * For multi-word queries, "exact" means the joined first_name+' '+last_name
+ * equals the joined words (in any order — both "Patrick Kane" and
+ * "Kane Patrick" match a row with first_name=Patrick, last_name=Kane).
+ */
+function computeMatchQuality(
+  q: string,
+  primaryName: string,
+  secondaryText = ''
+): number {
+  const lname = primaryName.toLowerCase();
+  const lq = q.toLowerCase().trim();
+
+  if (lname === lq) return 4;
+  if (lname.startsWith(lq)) return 3;
+  if (lname.includes(lq)) return 2;
+
+  // Multi-word: every word must appear in name OR secondary
+  const words = tokenize(lq);
+  if (words.length > 1) {
+    const haystack = (lname + ' ' + secondaryText.toLowerCase()).trim();
+    const allFound = words.every((w) => haystack.includes(w));
+    if (allFound) {
+      // Prefer matches where the words appear in the name itself
+      const allInName = words.every((w) => lname.includes(w));
+      return allInName ? 3 : 2;
+    }
+  }
+
+  return 1;
 }
 
 export type SuggestItem = {
@@ -62,62 +164,44 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ q, results: [] });
   }
 
-  // Escape SQL LIKE wildcards in user input
-  const escaped = q.replace(/[%_\\]/g, '\\$&');
-  const pattern = `%${escaped}%`;
-  const startsPattern = `${escaped}%`;
-
-  // Quality rank (in SQL, computed in JS for ranking at the end):
-  //   4 = exact match (case-insensitive)
-  //   3 = name starts with query
-  //   2 = name contains query
-  //   1 = city/region contains query
-
   const promises = await Promise.allSettled([
     // Rinks
-    supabaseAdmin
-      .from('rinks')
-      .select('id, name, slug, city, province_state, country')
-      .eq('is_active', true)
-      .or(`name.ilike.${pattern},city.ilike.${pattern},province_state.ilike.${pattern},country.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('rinks')
+        .select('id, name, slug, city, province_state, country')
+        .eq('is_active', true),
+      q,
+      ['name', 'city', 'province_state', 'country']
+    )
       .limit(3)
       .then(({ data }) =>
-        (data ?? []).map((r) => {
-          const lname = r.name.toLowerCase();
-          const lq = q.toLowerCase();
-          const quality =
-            lname === lq ? 4 :
-            lname.startsWith(lq) ? 3 :
-            2;
-          return {
-            type: 'rink' as const,
-            id: r.id,
-            name: r.name,
-            slug: r.slug,
-            href: `/directory/rinks/${r.slug}`,
-            meta: [r.city, r.province_state, r.country].filter(Boolean).join(', '),
-            matchQuality: quality,
-          };
-        })
+        (data ?? []).map((r) => ({
+          type: 'rink' as const,
+          id: r.id,
+          name: r.name,
+          slug: r.slug,
+          href: `/directory/rinks/${r.slug}`,
+          meta: [r.city, r.province_state, r.country].filter(Boolean).join(', '),
+          matchQuality: computeMatchQuality(q, r.name, [r.city, r.province_state, r.country].filter(Boolean).join(' ')),
+        }))
       ),
 
     // Teams
-    supabaseAdmin
-      .from('teams')
-      .select('id, name, slug, city, country, leagues(name)')
-      .eq('is_active', true)
-      .or(`name.ilike.${pattern},city.ilike.${pattern},country.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('teams')
+        .select('id, name, slug, city, country, leagues(name)')
+        .eq('is_active', true),
+      q,
+      ['name', 'city', 'country']
+    )
       .limit(3)
       .then(({ data }) =>
         (data ?? []).map((r) => {
-          const lname = r.name.toLowerCase();
-          const lq = q.toLowerCase();
-          const quality =
-            lname === lq ? 4 :
-            lname.startsWith(lq) ? 3 :
-            2;
           const leagues = r.leagues as { name: string } | { name: string }[] | null;
           const leagueName = Array.isArray(leagues) ? leagues[0]?.name : leagues?.name;
+          const secondary = [leagueName, r.city, r.country].filter(Boolean).join(' ');
           return {
             type: 'team' as const,
             id: r.id,
@@ -125,27 +209,24 @@ export async function GET(req: NextRequest) {
             slug: r.slug,
             href: `/directory/teams/${r.slug}`,
             meta: [leagueName, r.city, r.country].filter(Boolean).join(' · '),
-            matchQuality: quality,
+            matchQuality: computeMatchQuality(q, r.name, secondary),
           };
         })
       ),
 
     // Players
-    supabaseAdmin
-      .from('players')
-      .select('id, first_name, last_name, slug, position, teams(name)')
-      .eq('is_active', true)
-      .or(`first_name.ilike.${pattern},last_name.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('players')
+        .select('id, first_name, last_name, slug, position, teams(name)')
+        .eq('is_active', true),
+      q,
+      ['first_name', 'last_name']
+    )
       .limit(3)
       .then(({ data }) =>
         (data ?? []).map((r) => {
           const fullName = `${r.first_name} ${r.last_name}`;
-          const lname = fullName.toLowerCase();
-          const lq = q.toLowerCase();
-          const quality =
-            lname === lq ? 4 :
-            lname.startsWith(lq) ? 3 :
-            2;
           const teams = r.teams as { name: string } | { name: string }[] | null;
           const teamName = Array.isArray(teams) ? teams[0]?.name : teams?.name;
           return {
@@ -155,62 +236,52 @@ export async function GET(req: NextRequest) {
             slug: r.slug,
             href: `/directory/players/${r.slug}`,
             meta: [r.position, teamName].filter(Boolean).join(' · '),
-            matchQuality: quality,
+            matchQuality: computeMatchQuality(q, fullName, teamName ?? ''),
           };
         })
       ),
 
     // Leagues
-    supabaseAdmin
-      .from('leagues')
-      .select('id, name, slug, country, level')
-      .eq('is_active', true)
-      .or(`name.ilike.${pattern},country.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('leagues')
+        .select('id, name, slug, country, level')
+        .eq('is_active', true),
+      q,
+      ['name', 'country']
+    )
       .limit(2)
       .then(({ data }) =>
-        (data ?? []).map((r) => {
-          const lname = r.name.toLowerCase();
-          const lq = q.toLowerCase();
-          const quality =
-            lname === lq ? 4 :
-            lname.startsWith(lq) ? 3 :
-            2;
-          return {
-            type: 'league' as const,
-            id: r.id,
-            name: r.name,
-            slug: r.slug,
-            href: `/directory/leagues/${r.slug}`,
-            meta: [r.level, r.country].filter(Boolean).join(' · '),
-            matchQuality: quality,
-          };
-        })
+        (data ?? []).map((r) => ({
+          type: 'league' as const,
+          id: r.id,
+          name: r.name,
+          slug: r.slug,
+          href: `/directory/leagues/${r.slug}`,
+          meta: [r.level, r.country].filter(Boolean).join(' · '),
+          matchQuality: computeMatchQuality(q, r.name, [r.level, r.country].filter(Boolean).join(' ')),
+        }))
       ),
 
     // Brands
-    supabaseAdmin
-      .from('brands')
-      .select('id, name, slug, category, country_of_origin')
-      .or(`name.ilike.${pattern},country_of_origin.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('brands')
+        .select('id, name, slug, category, country_of_origin'),
+      q,
+      ['name', 'country_of_origin']
+    )
       .limit(2)
       .then(({ data }) =>
-        (data ?? []).map((r) => {
-          const lname = r.name.toLowerCase();
-          const lq = q.toLowerCase();
-          const quality =
-            lname === lq ? 4 :
-            lname.startsWith(lq) ? 3 :
-            2;
-          return {
-            type: 'brand' as const,
-            id: r.id,
-            name: r.name,
-            slug: r.slug,
-            href: `/directory/brands/${r.slug}`,
-            meta: [r.category, r.country_of_origin].filter(Boolean).join(' · '),
-            matchQuality: quality,
-          };
-        })
+        (data ?? []).map((r) => ({
+          type: 'brand' as const,
+          id: r.id,
+          name: r.name,
+          slug: r.slug,
+          href: `/directory/brands/${r.slug}`,
+          meta: [r.category, r.country_of_origin].filter(Boolean).join(' · '),
+          matchQuality: computeMatchQuality(q, r.name, [r.category, r.country_of_origin].filter(Boolean).join(' ')),
+        }))
       ),
   ]);
 
