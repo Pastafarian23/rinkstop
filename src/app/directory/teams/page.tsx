@@ -5,7 +5,7 @@ import HockeyTeamsContent from './HockeyTeamsContent';
 import AdSlot from '@/components/AdSlot';
 import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
-import { getDirectoryCounts, getCountryTeamCounts } from '@/lib/directory-counts';
+import { getDirectoryCounts, getCountryTeamCounts, getTopLeagues } from '@/lib/directory-counts';
 
 const LEVEL_DESCRIPTIONS: Record<Level, string> = {
   pro: 'Top-tier professional hockey: NHL, AHL, KHL, top European leagues, and professional women\u2019s hockey.',
@@ -195,11 +195,12 @@ async function fetchInitialTeams(opts: {
   return merged;
 }
 
-export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string }> }) {
-  const { country, level, league } = await searchParams;
+export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string; q?: string }> }) {
+  const { country, level, league, q } = await searchParams;
   const initialTeams = await fetchInitialTeams({ country, level, league });
   const counts = await getDirectoryCounts();
   const topCountries = await getCountryTeamCounts();
+  const topLeagues = await getTopLeagues();
   return (
     <>
       {(() => {
@@ -244,7 +245,16 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
           and wrapped it in a <details> collapsed by default, so the search bar is
           visible above the fold on mobile. Google still indexes the inner text
           even when <details> is collapsed. Same content; just relocated. */}
-      <TeamsIndexClient initialTeams={initialTeams} country={country ?? null} level={level ?? null} league={league ?? null} teamCount={counts.teams} />
+      <TeamsIndexClient
+        initialTeams={initialTeams}
+        topCountries={topCountries.map((c) => ({ name: c.country, slug: c.country.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), teamCount: c.team_count }))}
+        topLeagues={topLeagues.map((l) => ({ name: l.name, slug: l.slug, teamCount: l.team_count }))}
+        totalCount={counts.teams}
+        country={country ?? null}
+        level={level ?? null}
+        league={league ?? null}
+        initialQuery={q ?? null}
+      />
       {/* WS16 PR2 — AdSense in-feed ad below the team list. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
         <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />

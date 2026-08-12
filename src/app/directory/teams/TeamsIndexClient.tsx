@@ -1,11 +1,13 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { SearchIcon, FilterIcon } from '@/components/icons';
+import { FilterIcon } from '@/components/icons';
 import ShareButton from '@/components/ShareButton';
+import CategorySearchBar from '@/components/CategorySearchBar';
+import type { Level } from '@/lib/league-levels';
 
-// ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
+// ------ Types ------------------------------------------------------------------------------------------------------------------------
 interface NHLTeam {
   id: string;
   name: string;
@@ -28,7 +30,7 @@ interface UserTeam {
   city?: string | null;
   country?: string | null;
   country_code?: string | null;
-organization_id?: string | null;
+  organization_id?: string | null;
   league_id?: string | null;
   federation_id?: string | null;
   organization?: HierarchyRef | null;
@@ -47,93 +49,181 @@ export type Team = NHLTeam | UserTeam;
 
 interface Props {
   initialTeams: Team[];
+  /** Top countries by team count (server-rendered for the country select). */
+  topCountries: Array<{ name: string; slug: string; teamCount: number }>;
+  /** Top leagues by team count (server-rendered for the league select). */
+  topLeagues: Array<{ name: string; slug: string; teamCount: number }>;
+  /** Total team count (for display when no filter is active). */
+  totalCount: number;
+  /** Active filter values from the URL (server-side). */
   country?: string | null;
   level?: string | null;
   league?: string | null;
-  teamCount: number;
+  /** ?q=... from the URL (set when user lands via search). */
+  initialQuery?: string | null;
 }
 
-// A listing is "verified" if the claimant has a paid tier in either track.
-// Personal: identity_plus. Business: business_listing+ and organization tiers.
-// Federation is always verified (it's a paid org tier).
+// Verified tiers — same set as before. Personal: identity_plus. Business: business_listing+.
+// Federation is always verified (paid org tier).
 const VERIFIED_TIERS = new Set([
   'identity_plus',
   'business_listing', 'business_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation',
 ]);
 
-export default function TeamsIndexClient({ initialTeams, country: initialCountry, level: initialLevel, league: initialLeague, teamCount }: Props) {
+// Level options for the select (single source of truth, sorted).
+const LEVEL_OPTIONS: Array<{ value: Exclude<Level, ''> | ''; label: string }> = [
+  { value: '', label: 'All levels' },
+  { value: 'pro', label: 'Pro' },
+  { value: 'junior', label: 'Junior' },
+  { value: 'college', label: 'College' },
+  { value: 'international', label: 'International' },
+  { value: 'adult', label: 'Adult' },
+];
+
+// Normalize a string for case-insensitive comparison.
+function norm(s: string | null | undefined): string {
+  return (s ?? '').toLowerCase().trim();
+}
+
+// Convert a league name from the topLeagues list to a slug for filtering.
+// Top leagues are already slugs; for the select, we filter by name match.
+function leagueMatches(leagueName: string | null | undefined, filter: string): boolean {
+  if (!filter) return true;
+  if (!leagueName) return false;
+  return leagueName.toLowerCase() === filter.toLowerCase();
+}
+
+export default function TeamsIndexClient({
+  initialTeams,
+  topCountries,
+  topLeagues,
+  totalCount,
+  country: initialCountry,
+  level: initialLevel,
+  league: initialLeague,
+  initialQuery,
+}: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  // Read the active filters from the URL (single source of truth)
+  const urlCountry = searchParams.get('country') ?? '';
+  const urlLevel = searchParams.get('level') ?? '';
+  const urlLeague = searchParams.get('league') ?? '';
+  const urlQ = searchParams.get('q') ?? '';
+
+  // Local state for verified-only (transient, not URL-synced — same as before)
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+
+  // The current teams list (may be a refetched slice on filter change).
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [country, setCountry] = useState<string>(initialCountry || '');
-  const [level, setLevel] = useState<string>(initialLevel || '');
-  const [league, setLeague] = useState<string>(initialLeague || '');
 
-  // Prefill from URL on mount (deep-links / back-forward)
-  useEffect(() => {
-    const c = searchParams.get('country');
-    const l = searchParams.get('level');
-    const lg = searchParams.get('league');
-    if (c && c !== country) setCountry(c);
-    if (l && l !== level) setLevel(l);
-    if (lg && lg !== league) setLeague(lg);
-  }, [searchParams]);
+  // True if the user is currently on the "filtered" state (URL has ?country= etc.)
+  // The server already pre-filtered initialTeams; we only refetch when the user
+  // changes filters client-side.
+  const filtersChanged =
+    urlCountry !== (initialCountry ?? '') ||
+    urlLevel !== (initialLevel ?? '') ||
+    urlLeague !== (initialLeague ?? '');
 
+  // Update a single URL filter param, preserving the others.
+  // Used by the filter selects. Keeps the URL shareable / back-button safe.
+  const setFilter = useCallback(
+    (key: 'country' | 'level' | 'league', value: string) => {
+      const next = new URLSearchParams(searchParams.toString());
+      if (value) next.set(key, value);
+      else next.delete(key);
+      // Drop ?q= when filters change so the search bar's prefill doesn't double-filter
+      next.delete('q');
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
+
+  const clearAllFilters = useCallback(() => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('country');
+    next.delete('level');
+    next.delete('league');
+    next.delete('q');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [router, pathname, searchParams]);
+
+  const clearOneFilter = useCallback(
+    (key: 'country' | 'level' | 'league') => {
+      setFilter(key, '');
+    },
+    [setFilter]
+  );
+
+  // Refetch teams when the user changes filters in the client (not on mount).
+  // This fires ONLY when the URL has a filter that the server didn't pre-apply
+  // (i.e. user changed a filter in the UI). The server-rendered HTML is
+  // already correct for the initial URL.
   useEffect(() => {
-    // Refetch only when the user changes filters away from server values.
-    const serverCountry = initialCountry || '';
-    const serverLevel = initialLevel || '';
-    const serverLeague = initialLeague || '';
-    if (country === serverCountry && level === serverLevel && league === serverLeague) return;
+    if (!filtersChanged) return;
     setLoading(true);
     const params = new URLSearchParams();
-    if (search) params.set('search', search);
-    if (country) params.set('country', country);
-    if (level) params.set('level', level);
-    if (league) params.set('league', league);
+    if (urlCountry) params.set('country', urlCountry);
+    if (urlLevel) params.set('level', urlLevel);
+    if (urlLeague) params.set('league', urlLeague);
 
-    // Fetch both NHL (or directory) teams + user-created teams in parallel.
     Promise.all([
-      fetch(`/api/teams?${params}`).then(r => r.json()).catch((): { data: never[] } => ({ data: [] })),
-      fetch(`/api/user-teams?${params}`).then(r => r.json()).catch((): { data: never[] } => ({ data: [] })),
+      fetch(`/api/teams?${params}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
+      fetch(`/api/user-teams?${params}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
     ]).then(([nhl, user]) => {
       const nhlTeams: NHLTeam[] = nhl?.data || [];
       const userTeams: UserTeam[] = user?.data || [];
-      // Deduplicate by id — user-created teams may share names with NHL teams
+      // Dedupe by id (user-created teams may share names with NHL teams)
       const merged = [...nhlTeams, ...userTeams].filter(
-        (t, i, arr) => arr.findIndex(x => x.id === t.id) === i
+        (t, i, arr) => arr.findIndex((x) => x.id === t.id) === i
       );
       setTeams(merged);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [search, country, level, league, initialCountry, initialLevel, initialLeague]);
+  }, [filtersChanged, urlCountry, urlLevel, urlLeague]);
 
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  // The 'claimed_by_tier' field is computed by /api/teams via the claims join;
-  // it isn't on the teams table directly, so direct Supabase queries (used when
-  // the page is filtered by ?country=) won't have it. We default to 0 here
-  // and disable the filter when the field is missing.
-  const verifiedCount = 0;
-  const visibleTeams = verifiedOnly ? [] : teams;
+  // Filter teams client-side based on the URL's ?q= (from a search bar submit)
+  // and verified-only. Country/level/league are already applied server-side
+  // (or via the refetch above), so we don't re-filter on them.
+  const visibleTeams = useMemo(() => {
+    const q = norm(urlQ);
+    return teams.filter((t) => {
+      // Search: match name, city, country, league name
+      if (q) {
+        const haystack = [
+          t.name,
+          t.city ?? '',
+          t.country ?? '',
+          'leagues' in t ? t.leagues?.name ?? '' : '',
+        ].join(' ').toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      if (verifiedOnly) {
+        if (!t.claimed_by_tier || !VERIFIED_TIERS.has(t.claimed_by_tier)) return false;
+      }
+      return true;
+    });
+  }, [teams, urlQ, verifiedOnly]);
 
-  const clearFilters = () => { setSearch(''); setCountry(''); setLevel(''); setLeague(''); };
-  const hasFilters = search || country || level || league;
+  // Build the active-filter chips list (for the "Active filters" row).
+  // Each chip has its own × button to clear just that one filter.
+  const activeChips = useMemo(() => {
+    const chips: Array<{ key: 'country' | 'level' | 'league'; label: string }> = [];
+    if (urlCountry) chips.push({ key: 'country', label: urlCountry });
+    if (urlLevel) {
+      const opt = LEVEL_OPTIONS.find((l) => l.value === urlLevel);
+      chips.push({ key: 'level', label: opt ? opt.label : urlLevel });
+    }
+    if (urlLeague) chips.push({ key: 'league', label: urlLeague });
+    return chips;
+  }, [urlCountry, urlLevel, urlLeague]);
 
-  // Sync filter changes to URL so the view is shareable and back/forward works.
-  const updateUrl = (next: { country?: string; level?: string; league?: string; search?: string }) => {
-    const params = new URLSearchParams();
-    const c = next.country !== undefined ? next.country : country;
-    const l = next.level !== undefined ? next.level : level;
-    const lg = next.league !== undefined ? next.league : league;
-    const s = next.search !== undefined ? next.search : search;
-    if (c) params.set('country', c);
-    if (l) params.set('level', l);
-    if (lg) params.set('league', lg);
-    const qs = params.toString();
-    const url = qs ? `/directory/teams?${qs}` : '/directory/teams';
-    window.history.replaceState({}, '', url);
-  };
+  const hasFilters = activeChips.length > 0 || verifiedOnly;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -148,18 +238,14 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
       </nav>
 
       {/* Header */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div className="label">Directory</div>
-        <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          All Hockey Teams
-        </h1>
-        <Link
-          href="/directory/nhl/history"
-          style={{ display: 'inline-block', marginTop: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}
-        >
-          Looking for a team that relocated or renamed? View NHL franchise history →
-        </Link>
-        <div style={{ display: 'inline-block', marginTop: '0.5rem', marginLeft: '1rem' }}>
+      <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="label">Directory</div>
+          <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
+            All Hockey Teams
+          </h1>
+        </div>
+        <div style={{ paddingTop: '0.25rem' }}>
           <ShareButton
             payload={{
               title: 'All Teams — RinkStop',
@@ -171,202 +257,166 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px' }}>
+      {/* Search bar — homepage aesthetic, scoped to teams.
+          Search is for navigation (click result → entity page). It does NOT
+          narrow the visible grid. To narrow the grid, use the ?q= URL param
+          (e.g. landing here via the search bar's "See all" link). */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <CategorySearchBar category="team" page="/directory/teams" maxWidth={600} />
+      </div>
+
+      {/* Filter bar — real <select> for each, allow-deselect with empty option.
+          Synced to URL. Each filter change triggers a single refetch. */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: '0.625rem', alignItems: 'center',
+        marginBottom: '1rem', padding: '0.75rem 1rem',
+        background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 4,
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
 
-        {/* Level chip */}
-        <div style={{ position: 'relative', flex: '1 1 130px', minWidth: 0 }}>
-          <select
-            value={level}
-            onChange={e => { setLevel(e.target.value); updateUrl({ level: e.target.value }); }}
-            className="input-field"
-            aria-label="Filter by level"
-            style={{
-              paddingRight: '1.75rem',
-              cursor: 'pointer',
-              fontSize: '0.8125rem',
-              fontWeight: level ? 700 : 400,
-              color: level ? '#FFB81C' : 'rgba(255,255,255,0.75)',
-              border: `1.5px solid ${level ? '#FFB81C' : 'rgba(255,255,255,0.15)'}`,
-            }}
-          >
-            <option value="">All levels</option>
-            <option value="pro">Pro</option>
-            <option value="junior">Junior</option>
-            <option value="college">College</option>
-            <option value="international">International</option>
-            <option value="adult">Adult</option>
-          </select>
-        </div>
+        {/* Level select */}
+        <select
+          value={urlLevel}
+          onChange={(e) => setFilter('level', e.target.value)}
+          className="input-field"
+          aria-label="Filter by level"
+          style={{
+            paddingRight: '1.75rem',
+            flex: '1 1 130px',
+            minWidth: 0,
+            cursor: 'pointer',
+            fontSize: '0.8125rem',
+            fontWeight: urlLevel ? 700 : 400,
+            color: urlLevel ? '#FFB81C' : 'rgba(255,255,255,0.75)',
+            border: `1.5px solid ${urlLevel ? '#FFB81C' : 'rgba(255,255,255,0.15)'}`,
+          }}
+        >
+          {LEVEL_OPTIONS.map((opt) => (
+            <option key={opt.value || 'all'} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
 
-        {/* League chip */}
-        <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
-          <input
-            type="text"
-            list="league-options"
-            placeholder="League"
-            value={league}
-            onChange={e => { setLeague(e.target.value); updateUrl({ league: e.target.value }); }}
-            className="input-field"
-            style={{ fontSize: '0.8125rem' }}
-          />
-          <datalist id="league-options">
-            <option value="National Hockey League" />
-            <option value="American Hockey League" />
-            <option value="ECHL" />
-            <option value="Kontinental Hockey League" />
-            <option value="Finnish Liiga" />
-            <option value="Swedish Hockey League" />
-            <option value="DEL" />
-            <option value="Professional Women's Hockey League" />
-            <option value="Ontario Hockey League" />
-            <option value="Western Hockey League" />
-            <option value="Quebec Major Junior Hockey League" />
-            <option value="United States Hockey League" />
-            <option value="NCAA Division 1 Men's Hockey" />
-            <option value="IIHF World Championships" />
-            <option value="Elite League" />
-          </datalist>
-        </div>
+        {/* League select — top leagues from server-rendered list, with "All" option */}
+        <select
+          value={urlLeague}
+          onChange={(e) => setFilter('league', e.target.value)}
+          className="input-field"
+          aria-label="Filter by league"
+          style={{
+            paddingRight: '1.75rem',
+            flex: '1 1 160px',
+            minWidth: 0,
+            cursor: 'pointer',
+            fontSize: '0.8125rem',
+            fontWeight: urlLeague ? 700 : 400,
+            color: urlLeague ? '#FFB81C' : 'rgba(255,255,255,0.75)',
+            border: `1.5px solid ${urlLeague ? '#FFB81C' : 'rgba(255,255,255,0.15)'}`,
+          }}
+        >
+          <option value="">All leagues</option>
+          {topLeagues.map((l) => (
+            <option key={l.slug} value={l.name}>{l.name}</option>
+          ))}
+        </select>
 
-        {/* Country chip */}
-        <div style={{ position: 'relative', flex: '1 1 150px', minWidth: 0 }}>
-          <input
-            type="text"
-            list="country-options"
-            placeholder="Country"
-            value={country}
-            onChange={e => { setCountry(e.target.value); updateUrl({ country: e.target.value }); }}
-            className="input-field"
-            style={{ fontSize: '0.8125rem' }}
-          />
-          <datalist id="country-options">
-            <option value="United States" />
-            <option value="Canada" />
-            <option value="Sweden" />
-            <option value="Finland" />
-            <option value="Russia" />
-            <option value="Germany" />
-            <option value="Czech Republic" />
-            <option value="Switzerland" />
-            <option value="United Kingdom" />
-            <option value="Norway" />
-            <option value="Denmark" />
-            <option value="Austria" />
-            <option value="Slovakia" />
-          </datalist>
-        </div>
+        {/* Country select — top countries from server-rendered list */}
+        <select
+          value={urlCountry}
+          onChange={(e) => setFilter('country', e.target.value)}
+          className="input-field"
+          aria-label="Filter by country"
+          style={{
+            paddingRight: '1.75rem',
+            flex: '1 1 150px',
+            minWidth: 0,
+            cursor: 'pointer',
+            fontSize: '0.8125rem',
+            fontWeight: urlCountry ? 700 : 400,
+            color: urlCountry ? '#FFB81C' : 'rgba(255,255,255,0.75)',
+            border: `1.5px solid ${urlCountry ? '#FFB81C' : 'rgba(255,255,255,0.15)'}`,
+          }}
+        >
+          <option value="">All countries</option>
+          {topCountries.map((c) => (
+            <option key={c.slug} value={c.name}>{c.name}</option>
+          ))}
+        </select>
 
-        {/* Search */}
-        <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
-          <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
-            <SearchIcon className="w-4 h-4" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search teams..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-field"
-            style={{ paddingLeft: '2.25rem', fontSize: '0.8125rem' }}
-          />
-        </div>
-
+        {/* Verified-only checkbox */}
         <button
-          onClick={() => setVerifiedOnly(v => !v)}
+          type="button"
+          onClick={() => setVerifiedOnly((v) => !v)}
+          aria-pressed={verifiedOnly}
           style={{
             background: verifiedOnly ? 'rgba(20,184,166,0.15)' : 'transparent',
             border: `1.5px solid ${verifiedOnly ? '#14B8A6' : 'rgba(255,255,255,0.2)'}`,
             color: verifiedOnly ? '#14B8A6' : 'rgba(255,255,255,0.6)',
-            borderRadius: '3px', padding: '0.5rem 0.875rem',
+            borderRadius: 3, padding: '0.5rem 0.875rem',
             fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
             letterSpacing: '0.07em', textTransform: 'uppercase',
             display: 'inline-flex', alignItems: 'center', gap: 6,
+            flex: '0 0 auto',
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-          Verified only ({verifiedCount})
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Verified only
         </button>
-        {hasFilters && (
-          <button onClick={clearFilters} style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '3px', padding: '0.5rem 0.875rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-            Clear
-          </button>
-        )}
       </div>
 
-      {/* Country filter banner — shows when ?country= set */}
-      {(initialCountry || initialLevel || initialLeague) && (
+      {/* Active filter chips — each chip has its own × button to clear JUST that filter. */}
+      {activeChips.length > 0 && (
         <div style={{
-          background: 'rgba(200,16,46,0.08)',
-          border: '1px solid rgba(200,16,46,0.25)',
-          borderRadius: 4,
-          padding: '0.625rem 0.875rem',
+          display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center',
           marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
         }}>
-          <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)' }}>
-            Showing {initialLevel && <><strong style={{ color: '#C8102E' }}>{initialLevel}</strong> </>}
-            {initialLevel && (initialCountry || initialLeague) && '· '}
-            {initialLeague && <><strong style={{ color: '#C8102E' }}>{initialLeague}</strong> </>}
-            {initialLeague && initialCountry && '· '}
-            {initialCountry && <>teams in <strong style={{ color: '#C8102E' }}>{initialCountry}</strong></>}
-            {!initialCountry && !initialLeague && initialLevel && ' teams'}
-            {initialLevel && initialLeague && ' teams'}
-            {!initialLevel && initialLeague && ' teams'}
-            {' '}
-            <span style={{ color: 'rgba(255,255,255,0.45)' }}>— {teams.length.toLocaleString()} total</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          {activeChips.map((chip) => (
             <button
-              onClick={() => { setCountry(''); setLevel(''); setLeague(''); setSearch(''); }}
+              key={chip.key}
+              type="button"
+              onClick={() => clearOneFilter(chip.key)}
+              aria-label={`Clear ${chip.key} filter (${chip.label})`}
               style={{
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: 'rgba(255,255,255,0.7)',
-                borderRadius: 3,
-                padding: '0.375rem 0.75rem',
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-              }}
-            >
-              ✕ Clear
-            </button>
-            <Link
-              href="/directory/teams"
-              style={{
-                background: '#C8102E',
+                display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                background: 'rgba(200,16,46,0.12)',
+                border: '1px solid rgba(200,16,46,0.4)',
                 color: '#fff',
-                border: 'none',
-                borderRadius: 3,
-                padding: '0.375rem 0.75rem',
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                textDecoration: 'none',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
+                borderRadius: 999, padding: '0.3rem 0.7rem',
+                fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                letterSpacing: '0.02em',
               }}
             >
-              View All Countries →
-            </Link>
-          </div>
+              <span style={{ color: 'rgba(255,255,255,0.55)', textTransform: 'capitalize' }}>{chip.key}:</span>
+              <span>{chip.label}</span>
+              <span aria-hidden="true" style={{ color: 'rgba(255,255,255,0.7)', marginLeft: 2 }}>✕</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            style={{
+              background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)',
+              fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer',
+              letterSpacing: '0.07em', textTransform: 'uppercase',
+              padding: '0.3rem 0.5rem',
+            }}
+          >
+            Clear all
+          </button>
         </div>
       )}
 
       {/* Results count */}
       {!loading && (
         <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
-          {visibleTeams.length === 0 ? 'No results' : `${visibleTeams.length} team${visibleTeams.length !== 1 ? 's' : ''}`}
-          {hasFilters ? ' matching your search' : ' in directory'}
+          {visibleTeams.length === 0
+            ? 'No results'
+            : `${visibleTeams.length.toLocaleString()} ${visibleTeams.length === 1 ? 'team' : 'teams'}`}
+          {urlQ ? ` matching “${urlQ}”` : ''}
+          {!urlQ && !hasFilters ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
         </p>
       )}
 
@@ -382,11 +432,24 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
           : visibleTeams.length === 0
             ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem' }}>
-                <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>No teams found matching your search</p>
-                <button onClick={clearFilters} style={{ color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>Clear all filters</button>
+                <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>
+                  No teams found{urlQ ? ` for “${urlQ}”` : ''}{hasFilters ? ' with the current filters' : ''}.
+                </p>
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    style={{
+                      color: 'var(--red)', background: 'none', border: 'none',
+                      cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600,
+                    }}
+                  >
+                    Clear all filters
+                  </button>
+                )}
               </div>
             )
-            : visibleTeams.map(team => (
+            : visibleTeams.map((team) => (
               <Link
                 key={team.id}
                 href={`/directory/teams/${team.slug}`}
@@ -399,8 +462,8 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                   position: 'relative',
                   transition: 'border-color 0.2s, transform 0.2s',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
                 {/* Tier badge in corner */}
                 {(team.claimed_by_tier && (team.claimed_by_tier === 'business_plus' || team.claimed_by_tier === 'federation')) && (
@@ -416,6 +479,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem', paddingRight: team.claimed_by_tier ? 70 : 0 }}>
                   {team.source === 'nhl' && (team as NHLTeam).logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={(team as NHLTeam).logo_url} alt={`${team.name} logo`} style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #C8102E, #041E42)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 700, color: '#fff', flexShrink: 0 }}>🏒</div>
@@ -441,7 +505,7 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
                         🏢 {(team as UserTeam).organization!.name}
                       </span>
                     )}
-{(team as UserTeam).league?.name && (
+                    {(team as UserTeam).league?.name && (
                       <span style={{ display: 'inline-block', marginTop: '0.5rem', fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(200,16,46,0.15)', color: 'var(--red)' }}>
                         🏆 {(team as UserTeam).league!.name}
                       </span>

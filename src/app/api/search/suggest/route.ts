@@ -164,9 +164,32 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ q, results: [] });
   }
 
+  // Category scoping — when set, only the matching entity type is queried.
+  // Used by the directory category pages (/directory/teams, /directory/players,
+  // etc.) so search results stay contextually relevant to the page the user
+  // is on. Without this param, all types are queried (homepage behavior).
+  //
+  // Mapping: directory page → entity type(s):
+  //   /directory/teams     → team
+  //   /directory/players   → player
+  //   /directory/rinks     → rink
+  //   /directory/leagues   → league
+  //   /directory/brands    → brand
+  //   /directory/coaches, /scouts, /officials, /staff → player (best-effort;
+  //     coach/scout data lives in `staff`, not players — but for the
+  //     suggest API scope, "player" is the closest match. The directory
+  //     pages fall back to their own search input if no player match.)
+  const rawCategory = req.nextUrl.searchParams.get('category')?.toLowerCase() || '';
+  const VALID_CATEGORIES = ['rink', 'team', 'player', 'league', 'brand'] as const;
+  const category = (VALID_CATEGORIES as readonly string[]).includes(rawCategory)
+    ? (rawCategory as 'rink' | 'team' | 'player' | 'league' | 'brand')
+    : null;
+  const include = (type: 'rink' | 'team' | 'player' | 'league' | 'brand'): boolean =>
+    category === null || category === type;
+
   const promises = await Promise.allSettled([
     // Rinks
-    applyMultiWordSearch(
+    include('rink') ? applyMultiWordSearch(
       supabaseAdmin
         .from('rinks')
         .select('id, name, slug, city, province_state, country')
@@ -185,10 +208,10 @@ export async function GET(req: NextRequest) {
           meta: [r.city, r.province_state, r.country].filter(Boolean).join(', '),
           matchQuality: computeMatchQuality(q, r.name, [r.city, r.province_state, r.country].filter(Boolean).join(' ')),
         }))
-      ),
+      ) : [],
 
     // Teams
-    applyMultiWordSearch(
+    include('team') ? applyMultiWordSearch(
       supabaseAdmin
         .from('teams')
         .select('id, name, slug, city, country, leagues(name)')
@@ -212,10 +235,10 @@ export async function GET(req: NextRequest) {
             matchQuality: computeMatchQuality(q, r.name, secondary),
           };
         })
-      ),
+      ) : [],
 
     // Players
-    applyMultiWordSearch(
+    include('player') ? applyMultiWordSearch(
       supabaseAdmin
         .from('players')
         .select('id, first_name, last_name, slug, position, teams(name)')
@@ -239,10 +262,10 @@ export async function GET(req: NextRequest) {
             matchQuality: computeMatchQuality(q, fullName, teamName ?? ''),
           };
         })
-      ),
+      ) : [],
 
     // Leagues
-    applyMultiWordSearch(
+    include('league') ? applyMultiWordSearch(
       supabaseAdmin
         .from('leagues')
         .select('id, name, slug, country, level')
@@ -261,10 +284,10 @@ export async function GET(req: NextRequest) {
           meta: [r.level, r.country].filter(Boolean).join(' · '),
           matchQuality: computeMatchQuality(q, r.name, [r.level, r.country].filter(Boolean).join(' ')),
         }))
-      ),
+      ) : [],
 
     // Brands
-    applyMultiWordSearch(
+    include('brand') ? applyMultiWordSearch(
       supabaseAdmin
         .from('brands')
         .select('id, name, slug, category, country_of_origin'),
@@ -282,7 +305,7 @@ export async function GET(req: NextRequest) {
           meta: [r.category, r.country_of_origin].filter(Boolean).join(' · '),
           matchQuality: computeMatchQuality(q, r.name, [r.category, r.country_of_origin].filter(Boolean).join(' ')),
         }))
-      ),
+      ) : [],
   ]);
 
   const allResults: RankedSuggestItem[] = [];
