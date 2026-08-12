@@ -275,13 +275,110 @@ export async function getCountriesForFilter(opts: {
 }
 
 /**
+ * ISO 3166-1 alpha-2 country code → full country name. Used to translate
+ * the 2-letter codes stored in team_workspaces.country_code to the
+ * full names used by the topCountries list (e.g. "US" → "United States").
+ *
+ * Subset — only the codes we expect to see in the directory. PostgREST
+ * stores them as uppercase strings; we lowercase on lookup.
+ */
+const COUNTRY_CODE_TO_NAME: Record<string, string> = {
+  US: 'United States',
+  CA: 'Canada',
+  RU: 'Russia',
+  FI: 'Finland',
+  SE: 'Sweden',
+  CH: 'Switzerland',
+  DE: 'Germany',
+  CZ: 'Czech Republic',
+  SK: 'Slovakia',
+  NO: 'Norway',
+  DK: 'Denmark',
+  AT: 'Austria',
+  IT: 'Italy',
+  FR: 'France',
+  LV: 'Latvia',
+  EE: 'Estonia',
+  PL: 'Poland',
+  BY: 'Belarus',
+  KZ: 'Kazakhstan',
+  JP: 'Japan',
+  KR: 'South Korea',
+  CN: 'China',
+  GB: 'United Kingdom',
+  AU: 'Australia',
+  NZ: 'New Zealand',
+  ES: 'Spain',
+  NL: 'Netherlands',
+  BE: 'Belgium',
+  RO: 'Romania',
+  HU: 'Hungary',
+  SI: 'Slovenia',
+  HR: 'Croatia',
+  RS: 'Serbia',
+  TR: 'Turkey',
+  IL: 'Israel',
+  AE: 'United Arab Emirates',
+  CL: 'Chile',
+  PT: 'Portugal',
+  IS: 'Iceland',
+  UA: 'Ukraine',
+  GR: 'Greece',
+  TH: 'Thailand',
+  BG: 'Bulgaria',
+  LU: 'Luxembourg',
+  GE: 'Georgia',
+  HK: 'Hong Kong',
+  IN: 'India',
+  AR: 'Argentina',
+  BR: 'Brazil',
+  CO: 'Colombia',
+  PE: 'Peru',
+  VE: 'Venezuela',
+  MX: 'Mexico',
+  CR: 'Costa Rica',
+  PA: 'Panama',
+  PY: 'Paraguay',
+  UY: 'Uruguay',
+  BO: 'Bolivia',
+  EC: 'Ecuador',
+  ID: 'Indonesia',
+  MY: 'Malaysia',
+  PH: 'Philippines',
+  SG: 'Singapore',
+  TW: 'Taiwan',
+  VN: 'Vietnam',
+  ZA: 'South Africa',
+  EG: 'Egypt',
+  MA: 'Morocco',
+  KE: 'Kenya',
+  NG: 'Nigeria',
+  GH: 'Ghana',
+  ET: 'Ethiopia',
+  // etc — add more as needed
+};
+
+function countryCodeToName(code: string | null): string | null {
+  if (!code) return null;
+  return COUNTRY_CODE_TO_NAME[code.toUpperCase()] ?? code;
+}
+
+/**
  * Builds a country → league-names[] mapping by walking all active teams.
  * Used by /directory/teams to cascade the country dropdown in real-time:
  * when the user picks League=NHL, the client intersects the current
  * level/league with this set to show only countries that have NHL teams.
  *
- * Returns a Map<country, Set<leagueName>>. ~500 active teams, so this
- * fits in memory.
+ * Returns a Map<country, Set<leagueName>>. The team_workspaces table has
+ * thousands of active teams so we don't limit the query; the JS aggregation
+ * handles the dataset in memory.
+ *
+ * 2026-08-12 fix: removed the .limit(500) on the team_workspaces query
+ * (same pattern as the .limit(50) bug in getTopLeagues — PostgREST defaults
+ * to ordering by primary key, cutting off recent teams). Also resolves
+ * 2-letter country codes (US, CA) to full names (United States, Canada) so
+ * the client's set membership check against topCountries (which uses full
+ * names) works correctly.
  */
 export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> {
   const result = new Map<string, Set<string>>();
@@ -292,9 +389,8 @@ export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> 
     );
     const { data: teams, error } = await supabase
       .from('team_workspaces')
-      .select('country, country_code, home_country, leagues(name)')
-      .eq('is_active', true)
-      .limit(500);
+      .select('country_code, home_country, leagues(name)')
+      .eq('is_active', true);
 
     if (error) {
       console.error('[getCountryLeaguesMap] query failed:', error);
@@ -302,7 +398,6 @@ export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> 
     }
 
     for (const t of (teams ?? []) as Array<{
-      country: string | null;
       country_code: string | null;
       home_country: string | null;
       leagues: { name: string } | { name: string }[] | null;
@@ -313,8 +408,11 @@ export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> 
         return t.leagues.name;
       })();
       if (!leagueName) continue;
-      const countries = [t.country, t.country_code, t.home_country].filter(Boolean) as string[];
-      for (const c of countries) {
+      const countryNames = [
+        countryCodeToName(t.country_code),
+        countryCodeToName(t.home_country),
+      ].filter(Boolean) as string[];
+      for (const c of countryNames) {
         if (!result.has(c)) result.set(c, new Set());
         result.get(c)!.add(leagueName);
       }
