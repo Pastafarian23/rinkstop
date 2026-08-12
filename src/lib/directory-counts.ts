@@ -139,9 +139,49 @@ export async function getTopLeagues(): Promise<LeagueCount[]> {
       }
     }
 
-    return Array.from(counts.values())
-      .sort((a, b) => b.team_count - a.team_count)
-      .slice(0, 25);
+    // 2026-08-12 fix: when we cap at 25, leagues from less-common levels
+    // (like NCAA, IIHF national teams) can get crowded out by leagues with
+    // many team_workspaces rows (like NAHL/NHL/AHL). When the user picks
+    // Level=College, the league <select> would be empty.
+    //
+    // Fix: for each level, ensure at least the top-3 leagues by team count
+    // are included. Then fill remaining slots with overall top leagues.
+    const { LEAGUE_LEVELS } = await import('@/lib/league-levels');
+    const LEVELS: Array<keyof typeof LEAGUE_LEVELS> = ['pro', 'junior', 'college', 'international', 'adult'];
+    const byLevel = new Map<string, LeagueCount[]>();
+    for (const lc of LEVELS) byLevel.set(lc, []);
+    for (const lc of Array.from(counts.values())) {
+      const level = LEAGUE_LEVELS[lc.name];
+      if (level) byLevel.get(level)!.push(lc);
+    }
+    // Sort each level's list by team_count DESC and take top 3
+    for (const lc of LEVELS) {
+      byLevel.set(lc, byLevel.get(lc)!.sort((a, b) => b.team_count - a.team_count).slice(0, 3));
+    }
+
+    // Build the final list: per-level top-3 first, then any remaining
+    // high-count leagues to fill up to 25.
+    const seen = new Set<string>();
+    const finalList: LeagueCount[] = [];
+    for (const lc of LEVELS) {
+      for (const item of byLevel.get(lc)!) {
+        if (!seen.has(item.slug)) {
+          finalList.push(item);
+          seen.add(item.slug);
+        }
+      }
+    }
+    // Fill remaining slots with overall top leagues by team_count
+    const remaining = Array.from(counts.values())
+      .filter((l) => !seen.has(l.slug))
+      .sort((a, b) => b.team_count - a.team_count);
+    for (const item of remaining) {
+      if (finalList.length >= 25) break;
+      finalList.push(item);
+      seen.add(item.slug);
+    }
+
+    return finalList;
   } catch (e) {
     console.error('[getTopLeagues] unexpected error:', e);
     return ZERO_LEAGUE_COUNTS;
