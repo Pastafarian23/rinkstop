@@ -10,24 +10,24 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <main style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.45)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Privacy Policy</span>
+        <span style={{ color: 'rgba(255,255,255,0.55)' }}>Privacy Policy</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '2rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '2rem' }}>
         PRIVACY POLICY
       </h1>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <p style={{ marginBottom: '1.5rem', color: '#444' }}>Last updated: August 10, 2026</p>
+      <div style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <p style={{ marginBottom: '1.5rem', color: 'rgba(255,255,255,0.5)' }}>Last updated: August 10, 2026</p>
 
         <p style={{ marginBottom: '1.5rem' }}>
           RinkStop (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates the website rinkstop.com and related services. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Information We Collect</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Information We Collect</h2>
         <p style={{ marginBottom: '1rem' }}>We collect information that you voluntarily provide to us, including:</p>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li>Email addresses submitted through our newsletter or contact forms</li>
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           <li>Any other information you voluntarily provide through our services</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Automatically Collected Information</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Automatically Collected Information</h2>
         <p style={{ marginBottom: '1rem' }}>When you visit our website, we automatically collect certain information about your device, including:</p>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li>IP address and general geographic location</li>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           <li>Cookies and similar tracking technologies (see Cookie Policy below)</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How We Use Your Information</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How We Use Your Information</h2>
         <p style={{ marginBottom: '1rem' }}>We use the information we collect to:</p>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li>Operate and maintain our website and directory services</li>
@@ -56,7 +56,7 @@ export default function PrivacyPage() {
           <li>Prevent fraud and ensure website security</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Cookie Policy</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Cookie Policy</h2>
         <p style={{ marginBottom: '1rem' }}>
           We use cookies and similar tracking technologies to operate our website and collect certain information about your browsing activity.
         </p>
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
           You can control or disable cookies through your browser settings. Disabling cookies may affect website functionality. Where required by law (EEA, UK, Switzerland), advertising and analytics cookies are only set after you provide consent through our consent management platform described below.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Third-Party Advertising</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Third-Party Advertising</h2>
         <p style={{ marginBottom: '1rem' }}>
           RinkStop may display advertisements served by third-party advertising networks. The specific networks currently in use, and the vendors they employ, are listed in our <Link href="/cookies" style={{ color: '#C8102E' }}>Cookie Policy</Link> and updated whenever a network is added or removed. As of the date at the top of this policy, the advertising networks RinkStop works with are listed below.
         </p>
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
           When a third-party advertising network is integrated with RinkStop, that network&rsquo;s privacy practices govern the data it collects. We require each network we work with to provide users with the disclosures and controls required by applicable law.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Consent Management (EEA / UK / Switzerland)</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Consent Management (EEA / UK / Switzerland)</h2>
         <p style={{ marginBottom: '1rem' }}>
           For visitors in the European Economic Area, the United Kingdom, or Switzerland, RinkStop only loads advertising and analytics scripts after you have provided consent through our consent management platform.
         </p>
@@ -98,7 +98,7 @@ export default function PrivacyPage() {
           We do not load personalized advertising scripts before consent has been recorded. We do not use deceptive design patterns (such as pre-ticked boxes, hidden reject buttons, or visual interference) to obtain consent.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Data Sharing</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Data Sharing</h2>
         <p style={{ marginBottom: '1rem' }}>We may share your information with:</p>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><strong>Service providers:</strong> Companies that help us operate our website (hosting, analytics, email delivery)</li>
@@ -107,12 +107,12 @@ export default function PrivacyPage() {
           <li><strong>Business transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Data Security</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Data Security</h2>
         <p style={{ marginBottom: '1.5rem' }}>
           We implement appropriate technical and organizational security measures to protect your personal information. However, no method of electronic storage or transmission over the internet is 100% secure, and we cannot guarantee absolute security.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Your Rights</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Your Rights</h2>
         <p style={{ marginBottom: '1rem' }}>Depending on your location, you may have the right to:</p>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li>Access the personal information we hold about you</li>
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
           To exercise any of these rights, please contact us at <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a>.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Children&apos;s Privacy</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Children&apos;s Privacy</h2>
         <p style={{ marginBottom: '1.5rem' }}>
           Our website is not intended for children under 13 years of age, and we do not knowingly collect personal information from children under 13. RinkStop&apos;s hockey directory includes information about youth hockey organizations, leagues, and programs; the editorial content on those pages describes organizations and activities, not individual minors. We do not display personally identifying information about minors on the site, and we do not allow minors to create RinkStop accounts.
         </p>
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
           Where youth hockey content is displayed, we do not enable personalized advertising or advertising retargeting on those sections. If you believe a child&rsquo;s personal information has been published on RinkStop in error, contact <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a> and we will remove it promptly.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>International Data Transfers &amp; GDPR / UK GDPR</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>International Data Transfers &amp; GDPR / UK GDPR</h2>
         <p style={{ marginBottom: '1rem' }}>
           If you are accessing our website from outside the United States, please note that your information may be transferred to and processed in the United States, where our servers are located. By using our services, you consent to such transfer.
         </p>
@@ -153,12 +153,12 @@ export default function PrivacyPage() {
           To exercise your rights under GDPR or UK GDPR (access, rectification, erasure, restriction, portability, objection), contact <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E' }}>support@rinkstop.com</a>. You also have the right to lodge a complaint with your local data protection authority.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Changes to This Policy</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Changes to This Policy</h2>
         <p style={{ marginBottom: '1.5rem' }}>
           We may update this Privacy Policy from time to time. The updated date will be posted at the top of this page. We encourage you to review this policy periodically. If the changes are material, we will provide a more prominent notice (such as a banner on the homepage or an email to registered users).
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Contact Us</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Contact Us</h2>
         <p style={{ marginBottom: '1rem' }}>
           If you have questions or concerns about this Privacy Policy or our data practices, please contact us:
         </p>
