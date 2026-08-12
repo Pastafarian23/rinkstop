@@ -38,7 +38,7 @@ const TABS: Tab[] = [
   { href: '/dashboard/notifications', label: 'Notifications', icon: BellIcon,        match: (p) => p.startsWith('/dashboard/notifications') },
 ];
 
-export default function RoleAwareTabBar() {
+export default function RoleAwareTabBar({ signedIn }: { signedIn: boolean }) {
   const pathname = usePathname() || '/';
   const [pressedHref, setPressedHref] = useState<string | null>(null);
   const [consumerUnread, setConsumerUnread] = useState(0);
@@ -50,31 +50,9 @@ export default function RoleAwareTabBar() {
     pathname === '/onboarding';
   if (hide) return null;
 
-  // Don't render for signed-out users. The drawer (MobileNav) handles
-  // public navigation; the bottom bar is a signed-in-only affordance.
-  // (Auth detection happens upstream in layout.tsx — when this component
-  // is rendered for signed-out users it's wrapped in a server check.
-  // As a defensive second line we look for the dashboard cookie/header
-  // signal; if the URL is clearly public (e.g. /, /directory, /blog)
-  // we still render — but the active state won't match, so the tabs
-  // look inactive rather than broken. Safe.)
-  const looksSignedOut =
-    pathname === '/' ||
-    pathname.startsWith('/directory') ||
-    pathname.startsWith('/blog') ||
-    pathname.startsWith('/news') ||
-    pathname.startsWith('/guides') ||
-    pathname.startsWith('/rankings') ||
-    pathname.startsWith('/rinks') ||
-    pathname.startsWith('/teams') ||
-    pathname.startsWith('/leagues') ||
-    pathname.startsWith('/hockey') ||
-    pathname.startsWith('/search') ||
-    pathname.startsWith('/pricing') ||
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/sign-') ||
-    pathname.startsWith('/onboarding');
-  if (looksSignedOut) return null;
+  // Use real auth state instead of pathname heuristics. If the server
+  // says the user is signed out, do not render the tab bar.
+  if (!signedIn) return null;
 
   function tapPressed(href: string) {
     setPressedHref(href);
