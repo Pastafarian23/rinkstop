@@ -32,7 +32,20 @@ async function leagueIdsForLevel(level: string): Promise<string[] | null> {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search');
-  const country = searchParams.get('country');
+  // Country: accept either ISO 3166-1 alpha-2 ('CA') or full name ('Canada').
+  // 2026-08-12 fix: client passes full names from the directory dropdown, but
+  // team_workspaces stores country_code (2-letter). Translate here so the
+  // filter actually matches the database.
+  const rawCountry = searchParams.get('country');
+  let country: string | null = null;
+  if (rawCountry) {
+    const { COUNTRY_TO_ISO } = await import('@/lib/country-page');
+    if (rawCountry.length === 2) {
+      country = rawCountry.toUpperCase();
+    } else {
+      country = COUNTRY_TO_ISO[rawCountry] ?? rawCountry;
+    }
+  }
   const level = searchParams.get('level');
   const league = searchParams.get('league');
   const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 500);

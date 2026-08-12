@@ -71,7 +71,21 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const slug = searchParams.get('slug');
-  const country = searchParams.get('country');   // ISO 3166-1 alpha-2 (changed from full name)
+  // Country: accept either ISO 3166-1 alpha-2 ('CA') or full name ('Canada').
+  // 2026-08-12 fix: client passes full names from the directory dropdown, but
+  // team_workspaces stores country_code (2-letter). Translate here so the
+  // filter actually matches the database. Falls back to the literal input
+  // (so a 2-letter code still works as before).
+  const rawCountry = searchParams.get('country');
+  let country: string | null = null;
+  if (rawCountry) {
+    const { COUNTRY_TO_ISO } = await import('@/lib/country-page');
+    if (rawCountry.length === 2) {
+      country = rawCountry.toUpperCase();
+    } else {
+      country = COUNTRY_TO_ISO[rawCountry] ?? rawCountry;
+    }
+  }
   const search = searchParams.get('search');
   const leagueId = searchParams.get('leagueId');
   const league = searchParams.get('league');
