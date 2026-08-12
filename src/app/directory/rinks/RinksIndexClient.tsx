@@ -99,24 +99,24 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
         <span style={{ color: '#A0A0A0' }}>Rinks</span>
       </nav>
 
-      {/* Header */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div className="label">Directory</div>
-        <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          RINKS &amp; ARENAS
-        </h1>
-      </div>
-
-      {/* View on Map button */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <Link
-          href="/directory/map"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--red)', color: '#fff', borderRadius: '6px', padding: '0.5rem 1rem', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none', letterSpacing: '0.05em', textTransform: 'uppercase' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-          View All Rinks on Map
-        </Link>
-        <div style={{ display: 'inline-flex', marginLeft: '0.5rem' }}>
+      {/* Header — h1 + View on Map + Share on a single row to save
+          vertical space (2026-08-12). On mobile the action buttons
+          wrap below the h1 via the flex-wrap. */}
+      <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="label">Directory</div>
+          <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
+            RINKS &amp; ARENAS
+          </h1>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0, paddingTop: '0.25rem' }}>
+          <Link
+            href="/directory/map"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--red)', color: '#fff', borderRadius: '6px', padding: '0.5rem 0.875rem', fontSize: '0.7rem', fontWeight: 700, textDecoration: 'none', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+            <span>Map</span>
+          </Link>
           <ShareButton
             payload={{
               title: 'Rinks & Arenas — RinkStop',
@@ -133,7 +133,7 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
-        <div style={{ position: 'relative', flex: '1 1 180px' }}>
+        <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
           <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
             <SearchIcon className="w-4 h-4" />
           </div>
@@ -152,7 +152,7 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
           value={country}
           onChange={e => setCountry(e.target.value)}
           className="input-field"
-          style={{ flex: '0 0 150px' }}
+          style={{ flex: '1 1 130px', minWidth: 0 }}
         />
         <button
           onClick={() => setVerifiedOnly(v => !v)}

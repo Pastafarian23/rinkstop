@@ -181,7 +181,7 @@ export default function PlayersIndexClient({ initialData }: Props) {
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', flex: '1 1 180px' }}>
+        <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
           <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
             <SearchIcon className="w-4 h-4" />
           </div>
@@ -196,19 +196,19 @@ export default function PlayersIndexClient({ initialData }: Props) {
         </div>
 
         {/* Position */}
-        <select value={position} onChange={e => setPosition(e.target.value)} className="input-field" style={{ flex: '0 0 150px' }}>
+        <select value={position} onChange={e => setPosition(e.target.value)} className="input-field" style={{ flex: '1 1 130px', minWidth: 0 }}>
           <option value="">All Positions</option>
           {POSITIONS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
         </select>
 
         {/* League */}
-        <select value={leagueId} onChange={e => setLeagueId(e.target.value)} className="input-field" style={{ flex: '0 0 170px' }}>
+        <select value={leagueId} onChange={e => setLeagueId(e.target.value)} className="input-field" style={{ flex: '1 1 150px', minWidth: 0 }}>
           <option value="">All Leagues</option>
           {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
 
         {/* Team */}
-        <select value={teamId} onChange={e => setTeamId(e.target.value)} className="input-field" style={{ flex: '0 0 160px' }} disabled={!leagueId}>
+        <select value={teamId} onChange={e => setTeamId(e.target.value)} className="input-field" style={{ flex: '1 1 140px', minWidth: 0 }} disabled={!leagueId}>
           <option value="">All Teams</option>
           {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
