@@ -8,13 +8,20 @@ import { supabaseAdmin } from '@/lib/supabase';
  * fallback redirects to). Returns ALL matching rows (up to 50 per type)
  * plus per-type counts so the UI can render "Showing N of M rinks".
  *
+ * Multi-word handling (audit fix 2026-08-11):
+ *   When q = "patrick kane", split into words [patrick, kane] and require
+ *   each word to match SOMEWHERE in the searchable fields. Chained .or()
+ *   filters in PostgREST are AND'd together with OR within each. This
+ *   matches "Patrick Kane", "Kane Patrick", and any row with "Patrick"
+ *   in one field and "Kane" in another.
+ *
  * Differs from /api/search/suggest:
  *   - suggest: top 8 results, no counts, fast autocomplete
  *   - results: all matching rows, per-type counts, for the full results page
  *
- * Both endpoints share the same ILIKE query strategy. When we migrate
- * to Postgres FTS, only the underlying query changes — the API contract
- * is stable.
+ * Both endpoints share the same multi-word ILIKE strategy. When we
+ * migrate to Postgres FTS, only the underlying query changes — the
+ * API contract is stable.
  *
  * Public endpoint (no auth). Rate-limited at 30/min/IP (lower than suggest
  * because it returns more data).
@@ -24,6 +31,50 @@ const RATE_LIMIT = { maxRequests: 30, windowMs: 60 * 1000 };
 async function getRateLimit() {
   const { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } = await import('@/lib/rateLimit');
   return { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup };
+}
+
+/**
+ * Split the user query into individual words. Empty words (whitespace-
+ * only splits) are dropped. Hyphens are kept as part of the word
+ * ("new-york" stays a single token).
+ */
+function tokenize(q: string): string[] {
+  return q
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 0);
+}
+
+/**
+ * Escape SQL LIKE wildcards (% and _) in user input. Prevents users
+ * from accidentally (or intentionally) using LIKE metacharacters.
+ */
+function escapeLike(s: string): string {
+  return s.replace(/[%_\\]/g, '\\$&');
+}
+
+/**
+ * Apply a multi-word ILIKE filter to a Supabase query builder.
+ * Each word in the query must match at least one of the listed fields.
+ * Words are AND'd together; fields within a word are OR'd together.
+ *
+ * Implementation: chain multiple .or() calls on the builder. PostgREST
+ * treats chained .or() filters as AND, while OR-ing the comma-separated
+ * alternatives within each .or().
+ */
+function applyMultiWordSearch<T extends { or: (s: string) => T }>(
+  builder: T,
+  q: string,
+  fields: string[]
+): T {
+  const words = tokenize(q);
+  let cur = builder;
+  for (const word of words) {
+    const escaped = escapeLike(word);
+    const alternatives = fields.map((f) => `${f}.ilike.%${escaped}%`).join(',');
+    cur = cur.or(alternatives) as T;
+  }
+  return cur;
 }
 
 export type ResultItem = {
@@ -63,16 +114,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(empty);
   }
 
-  const escaped = q.replace(/[%_\\]/g, '\\$&');
-  const pattern = `%${escaped}%`;
-
   // Run 5 parallel queries. Each returns a typed result.
   const [rinkRes, teamRes, playerRes, leagueRes, brandRes] = await Promise.allSettled([
-    supabaseAdmin
-      .from('rinks')
-      .select('id, name, slug, city, province_state, country')
-      .eq('is_active', true)
-      .or(`name.ilike.${pattern},city.ilike.${pattern},province_state.ilike.${pattern},country.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('rinks')
+        .select('id, name, slug, city, province_state, country')
+        .eq('is_active', true),
+      q,
+      ['name', 'city', 'province_state', 'country']
+    )
       .order('name', { ascending: true })
       .limit(MAX_PER_TYPE)
       .then(({ data }) =>
@@ -86,11 +137,14 @@ export async function GET(req: NextRequest) {
         }))
       ),
 
-    supabaseAdmin
-      .from('teams')
-      .select('id, name, slug, city, country, leagues(name)')
-      .eq('is_active', true)
-      .or(`name.ilike.${pattern},city.ilike.${pattern},country.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('teams')
+        .select('id, name, slug, city, country, leagues(name)')
+        .eq('is_active', true),
+      q,
+      ['name', 'city', 'country']
+    )
       .order('name', { ascending: true })
       .limit(MAX_PER_TYPE)
       .then(({ data }) =>
@@ -108,11 +162,14 @@ export async function GET(req: NextRequest) {
         })
       ),
 
-    supabaseAdmin
-      .from('players')
-      .select('id, first_name, last_name, slug, position, teams(name)')
-      .eq('is_active', true)
-      .or(`first_name.ilike.${pattern},last_name.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('players')
+        .select('id, first_name, last_name, slug, position, teams(name)')
+        .eq('is_active', true),
+      q,
+      ['first_name', 'last_name']
+    )
       .order('last_name', { ascending: true })
       .limit(MAX_PER_TYPE)
       .then(({ data }) =>
@@ -130,11 +187,14 @@ export async function GET(req: NextRequest) {
         })
       ),
 
-    supabaseAdmin
-      .from('leagues')
-      .select('id, name, slug, country, level')
-      .eq('is_active', true)
-      .or(`name.ilike.${pattern},country.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('leagues')
+        .select('id, name, slug, country, level')
+        .eq('is_active', true),
+      q,
+      ['name', 'country']
+    )
       .order('name', { ascending: true })
       .limit(MAX_PER_TYPE)
       .then(({ data }) =>
@@ -148,10 +208,13 @@ export async function GET(req: NextRequest) {
         }))
       ),
 
-    supabaseAdmin
-      .from('brands')
-      .select('id, name, slug, category, country_of_origin')
-      .or(`name.ilike.${pattern},country_of_origin.ilike.${pattern}`)
+    applyMultiWordSearch(
+      supabaseAdmin
+        .from('brands')
+        .select('id, name, slug, category, country_of_origin'),
+      q,
+      ['name', 'country_of_origin']
+    )
       .order('name', { ascending: true })
       .limit(MAX_PER_TYPE)
       .then(({ data }) =>
