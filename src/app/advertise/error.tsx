@@ -19,6 +19,20 @@ export default function AdvertiseError({
 }) {
   useEffect(() => {
     console.error('[rinkstop] /advertise error boundary:', error);
+
+    try {
+      const stack = (error?.stack ?? '').substring(0, 4000);
+      const message = (error?.message ?? '').substring(0, 1000);
+      const digest = (error?.digest ?? '').substring(0, 200);
+      const url = typeof window !== 'undefined' ? window.location.href : '';
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const body = JSON.stringify({ message, stack, digest, url, ua, ts: Date.now() });
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/log/error', body);
+      } else {
+        fetch('/api/log/error', { method: 'POST', body, keepalive: true }).catch(() => {});
+      }
+    } catch { /* logging must never throw */ }
   }, [error]);
 
   return (
