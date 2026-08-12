@@ -301,8 +301,8 @@ export default function HomeSearch() {
                       props: { q: q.trim() },
                     });
                     const blob = new Blob([payload], { type: 'application/json' });
-                    navigator.sendBeacon?.('/api/analytics', blob) ||
-                      fetch('/api/analytics', { method: 'POST', body: blob, keepalive: true });
+                    navigator.sendBeacon?.('/api/track', blob) ||
+                      fetch('/api/track', { method: 'POST', body: blob, keepalive: true });
                   } catch {
                     // best-effort analytics only
                   }
