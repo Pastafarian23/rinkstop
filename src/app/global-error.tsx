@@ -13,6 +13,26 @@ export default function GlobalError({
     // Log to console so Chrome devtools (and Vercel browser console
     // captures if enabled) show the real error.
     console.error('[rinkstop] global error boundary:', error);
+
+    // 2026-08-12 fix: POST the error to /api/log/error so the server
+    // can log it. The user reported "Something went wrong" on many
+    // pages in real browsers but NOT in headless chromium. The next
+    // time it fires in the user's browser, this captures the full
+    // stack trace and message so we can actually find the bug.
+    try {
+      const stack = (error?.stack ?? '').substring(0, 4000);
+      const message = (error?.message ?? '').substring(0, 1000);
+      const digest = (error?.digest ?? '').substring(0, 200);
+      const url = typeof window !== 'undefined' ? window.location.href : '';
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const body = JSON.stringify({ message, stack, digest, url, ua, ts: Date.now() });
+      // Use sendBeacon for reliability (survives page unload, fire-and-forget)
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/log/error', body);
+      } else {
+        fetch('/api/log/error', { method: 'POST', body, keepalive: true }).catch(() => {});
+      }
+    } catch { /* logging must never throw */ }
   }, [error]);
 
   return (
