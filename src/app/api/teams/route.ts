@@ -92,27 +92,49 @@ export async function GET(request: NextRequest) {
     if (rinkId) query = query.eq('home_rink_id', rinkId);
     if (city) query = query.ilike('home_city', `%${city}%`);
     if (country) query = query.eq('country_code', country);
-    if (leagueId) {
-      query = query.eq('league_id', leagueId);
-    } else if (league) {
-      const { data: matchedLeagues } = await supabase
-        .from('leagues')
-        .select('id')
-        .ilike('name', `%${league}%`);
-      if (matchedLeagues && matchedLeagues.length > 0) {
-        query = query.in('league_id', matchedLeagues.map((m: any) => m.id));
-      } else {
-        return NextResponse.json({ data: [], count: 0 });
-      }
-    } else if (level) {
+    // Bug fix 2026-08-12: previous `else if` chain silently dropped the
+    // level filter when both ?league and ?level were set. Now we resolve
+    // each independently and intersect when both are set.
+    let leagueIdFilter: string[] | null = null;
+    if (level) {
       const ids = await leagueIdsForLevel(level);
       if (ids === null) {
         // Bad level value → ignore
       } else if (ids.length === 0) {
+        // Level has no leagues in our DB — force empty result
         return NextResponse.json({ data: [], count: 0 });
       } else {
-        query = query.in('league_id', ids);
+        leagueIdFilter = ids;
       }
+    }
+    if (leagueId || league) {
+      let resolved: string[] = [];
+      if (leagueId) {
+        resolved = [leagueId];
+      } else if (league) {
+        // Exact-name match (case-insensitive). Wildcards over-matched previously
+        // (e.g. "College" matched "College Hockey League").
+        const { data: matchedLeagues } = await supabase
+          .from('leagues')
+          .select('id')
+          .ilike('name', league);
+        resolved = (matchedLeagues ?? []).map((m: { id: string }) => m.id);
+        if (resolved.length === 0) {
+          return NextResponse.json({ data: [], count: 0 });
+        }
+      }
+      if (leagueIdFilter === null) {
+        leagueIdFilter = resolved;
+      } else {
+        const set = new Set(resolved);
+        leagueIdFilter = leagueIdFilter.filter((id) => set.has(id));
+        if (leagueIdFilter.length === 0) {
+          return NextResponse.json({ data: [], count: 0 });
+        }
+      }
+    }
+    if (leagueIdFilter !== null) {
+      query = query.in('league_id', leagueIdFilter);
     }
     if (activeOnly && !search) query = query.eq('is_active', true);
     if (search) query = query.or(`name.ilike.%${search}%,home_city.ilike.%${search}%`);

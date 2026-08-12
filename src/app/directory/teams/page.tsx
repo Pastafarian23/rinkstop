@@ -113,24 +113,47 @@ async function fetchInitialTeams(opts: {
     .order('name')
     .limit(500);
   if (country) nhlQuery = nhlQuery.eq('country', country);
+
+  // Filter by league and/or level. Both can be set at once — intersect them.
+  // Bug fix 2026-08-12: the previous `if (league) ... else if (level)` chain
+  // silently dropped the level filter when both were set, so picking
+  // "Level: College + League: NHL" returned all NHL teams (pro, junior,
+  // college) instead of just college-level NHL teams.
+  let leagueIdFilter: string[] | null = null;
+  if (level) {
+    const ids = await leagueIdsForLevel(level);
+    if (ids && ids.length > 0) {
+      leagueIdFilter = ids;
+    } else if (ids !== null) {
+      // level set but no leagues in that tier — force empty result
+      leagueIdFilter = ['__none__'];
+    }
+    // ids === null: level value was invalid; ignore (don't filter by level)
+  }
   if (league) {
-    // Filter by league name via the joined table.
+    // Exact-name match (case-insensitive). Using ilike with wildcards
+    // previously over-matched leagues whose names CONTAINED the search
+    // string (e.g. "College" matched "College Hockey League").
     const { data: matchedLeagues } = await supabase
       .from('leagues')
       .select('id')
-      .ilike('name', `%${league}%`);
-    if (matchedLeagues && matchedLeagues.length > 0) {
-      nhlQuery = nhlQuery.in('league_id', matchedLeagues.map((m: any) => m.id));
+      .ilike('name', league);  // no wildcards — exact match
+    const leagueIds = (matchedLeagues ?? []).map((m: { id: string }) => m.id);
+
+    if (leagueIds.length === 0) {
+      // No match — force empty result
+      leagueIdFilter = ['__none__'];
+    } else if (leagueIdFilter === null) {
+      leagueIdFilter = leagueIds;
     } else {
-      nhlQuery = nhlQuery.eq('league_id', '__none__'); // force empty result
+      // Intersect with the level-derived set
+      const set = new Set(leagueIds);
+      leagueIdFilter = leagueIdFilter.filter((id) => set.has(id));
+      if (leagueIdFilter.length === 0) leagueIdFilter = ['__none__'];
     }
-  } else if (level) {
-    const ids = await leagueIdsForLevel(level);
-    if (ids && ids.length > 0) {
-      nhlQuery = nhlQuery.in('league_id', ids);
-    } else if (ids !== null) {
-      nhlQuery = nhlQuery.eq('league_id', '__none__'); // level set but no matches
-    }
+  }
+  if (leagueIdFilter !== null) {
+    nhlQuery = nhlQuery.in('league_id', leagueIdFilter);
   }
 
   let userQuery = supabaseAdmin
