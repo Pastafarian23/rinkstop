@@ -83,7 +83,7 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
-        <div style={{ position: 'relative', flex: '1 1 180px' }}>
+        <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
           <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
             <SearchIcon className="w-4 h-4" />
           </div>
@@ -102,7 +102,7 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
           value={country}
           onChange={e => setCountry(e.target.value)}
           className="input-field"
-          style={{ flex: '0 0 150px' }}
+          style={{ flex: '1 1 130px', minWidth: 0 }}
         />
         <button
           onClick={() => setVerifiedOnly(v => !v)}
