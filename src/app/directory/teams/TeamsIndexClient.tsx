@@ -171,11 +171,6 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
         </div>
       </div>
 
-      {/* SEO intro block — moved below the search/filters on 2026-08-12 so the
-          search bar is visible above the fold on mobile. Google indexes the
-          <details> contents even when collapsed. The full SEO content hub
-          still renders below this component in HockeyTeamsContent.tsx. */}
-
       {/* Filter Bar */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
@@ -462,48 +457,6 @@ export default function TeamsIndexClient({ initialTeams, country: initialCountry
             ))
         }
       </div>
-
-      {/* SEO intro block — at the bottom of the page in a <details> block
-          (2026-08-12). Was above the fold before, pushed search bar below
-          the fold on mobile. Google indexes the contents even when collapsed.
-          Anchors link to the HockeyTeamsContent server component below. */}
-      <details
-        style={{
-          marginTop: '2rem',
-          padding: '0.875rem 1rem',
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '4px',
-          color: 'rgba(255,255,255,0.78)',
-          fontSize: '0.875rem',
-          lineHeight: 1.65,
-        }}
-      >
-        <summary
-          style={{
-            cursor: 'pointer',
-            color: 'rgba(255,255,255,0.5)',
-            fontSize: '0.75rem',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            fontWeight: 700,
-            userSelect: 'none',
-          }}
-        >
-          About this hockey teams directory
-        </summary>
-        <div style={{ marginTop: '0.75rem' }}>
-          <p style={{ marginBottom: '0.6rem' }}>
-            RinkStop tracks <strong>{teamCount.toLocaleString()}+ active hockey teams</strong> across 240 leagues and 57 countries — every NHL franchise, all 32 AHL clubs, the KHL, SHL, Liiga, DEL, and NLA in Europe, the CHL (OHL, WHL, QMJHL), NCAA Division I and III men&apos;s and women&apos;s programs, IIHF national programs, and tens of thousands of amateur and youth teams.
-          </p>
-          <p>
-            Looking for teams near you? Jump to{' '}
-            <a href="#how-many-hockey-teams" style={{ color: '#7dd3fc', textDecoration: 'underline' }}>how many hockey teams there are</a>,{' '}
-            <a href="#teams-by-level" style={{ color: '#7dd3fc', textDecoration: 'underline' }}>teams by level</a>, or{' '}
-            <a href="#teams-by-country" style={{ color: '#7dd3fc', textDecoration: 'underline' }}>teams by country</a>.
-          </p>
-        </div>
-      </details>
     </div>
   );
 }
