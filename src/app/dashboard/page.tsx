@@ -84,14 +84,108 @@ export default async function DashboardPage() {
   try {
     return await renderDashboard(userId);
   } catch (err: any) {
-    // 2026-08-13: DIAGNOSTIC MODE - show the actual error inline so we can see it.
-    // Will revert to sanitized version after we find the root cause.
+    // Always log structured JSON for grep-ability in Vercel Logs UI (search
+    // "dashboard-error"). userId + name + message + first 3 stack frames +
+    // timestamp. This fires for every user, every time - diagnostics only.
+    console.error('[dashboard-error]', JSON.stringify({
+      userId,
+      name: err?.name,
+      message: err?.message,
+      digest: (err as any)?.digest,
+      stack: typeof err?.stack === 'string' ? err.stack.split('\n').slice(0, 3).join('\n') : undefined,
+      timestamp: new Date().toISOString(),
+    }));
+
+    // NEVER show raw error info to non-admin users - exposes table/column names,
+    // provider APIs, and internal stack info. Only super_admin accounts get the
+    // collapsible debug details. Everyone else gets the generic message + retry.
+    const showDebug = forceDebugAll || isSuperAdmin;
+
+    // Show a sanitized hint in the UI (collapsed by default). We expose only the
+    // error name + message + digest - no stack, no userId, no internals. If the user
+    // reports "Dashboard hit a snag", we ask them to expand this block and paste.
+    const errorName = typeof err?.name === 'string' ? err.name : 'Error';
+    const errorMessage = typeof err?.message === 'string' ? err.message : 'Unknown error';
+    const errorDigest = (err as any)?.digest ? `\nRef: ${(err as any).digest}` : '';
+
     return (
-      <div style={{ padding: '2rem', color: '#fff', background: '#0f0f0f', borderRadius: 8, margin: '2rem' }}>
-        <h2 style={{ color: '#C8102E' }}>DASHBOARD ERROR (raw - diagnostic)</h2>
-        <pre style={{ background: '#1a1a1a', padding: '1rem', borderRadius: 4, overflow: 'auto', fontSize: '0.8rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-          {`name: ${err?.name}\nmessage: ${err?.message}\ndigest: ${(err as any)?.digest}\n\nstack:\n${err?.stack?.split('\n').slice(0, 15).join('\n')}`}
-        </pre>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div
+          style={{
+            background: '#0f0f0f',
+            border: '1px solid #1e1e1e',
+            borderRadius: 12,
+            padding: '1.75rem',
+          }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: '1.5rem',
+              color: '#fff',
+              letterSpacing: '0.04em',
+              margin: '0 0 0.5rem',
+            }}
+          >
+            Dashboard hit a snag
+          </h2>
+          <p style={{ color: '#aaa', fontSize: '0.9rem', margin: '0 0 1rem' }}>
+            We couldn&rsquo;t load your dashboard just now. Your account and data
+            are safe - try refreshing in a minute, or head back to the home page
+            in the meantime.
+          </p>
+          {showDebug ? (
+            <details style={{ margin: '0 0 1rem' }}>
+              <summary style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', cursor: 'pointer', userSelect: 'none' }}>
+                Error details (tap to expand)
+              </summary>
+              <pre style={{
+                color: 'rgba(255,255,255,0.55)',
+                fontSize: '0.7rem',
+                margin: '0.5rem 0 0',
+                padding: '0.5rem 0.75rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 4,
+                overflow: 'auto',
+                maxHeight: 160,
+                fontFamily: 'monospace',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}>{errorName}: {errorMessage}{errorDigest}</pre>
+            </details>
+          ) : null}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link
+              href="/dashboard"
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#C8102E',
+                color: '#fff',
+                borderRadius: 6,
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+              }}
+            >
+              Retry
+            </Link>
+            <Link
+              href="/"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.8)',
+                borderRadius: 6,
+                textDecoration: 'none',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+              }}
+            >
+              Back to home
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -335,34 +429,22 @@ async function renderDashboard(userId: string) {
     }
   }
 
-  try {
-    return (
-      <div>
-        <div>Group 1c: UsernameBanner + Welcome + AttentionCard (REAL data with logging)</div>
-        {profile?.username ? null : (
-          <UsernameBanner
-            displayName={profile?.display_name || firstName || 'RinkStop Member'}
-          />
-        )}
-        <div data-testid="welcome-card">
-          <h1>{firstName ? `Welcome back, ${firstName}` : 'Welcome to RinkStop'}</h1>
-          <TierBadge tier={profile?.tier ?? 'free'} size="sm" />
-          {isFounder ? <FounderBadge /> : null}
-        </div>
-        <AttentionCard data={attention} />
+  return (
+    <div>
+      <div>Group 1c: UsernameBanner + Welcome + AttentionCard (REAL data with logging)</div>
+      {profile?.username ? null : (
+        <UsernameBanner
+          displayName={profile?.display_name || firstName || 'RinkStop Member'}
+        />
+      )}
+      <div data-testid="welcome-card">
+        <h1>{firstName ? `Welcome back, ${firstName}` : 'Welcome to RinkStop'}</h1>
+        <TierBadge tier={profile?.tier ?? 'free'} size="sm" />
+        {isFounder ? <FounderBadge /> : null}
       </div>
-    );
-  } catch (renderErr: any) {
-    // 2026-08-13: Render error INLINE so we can see the actual message in the HTML.
-    return (
-      <div style={{ padding: '2rem', color: '#fff', background: '#0f0f0f', borderRadius: 8, margin: '2rem' }}>
-        <h2 style={{ color: '#C8102E' }}>RENDER ERROR (visible in HTML for diagnosis)</h2>
-        <pre style={{ background: '#1a1a1a', padding: '1rem', borderRadius: 4, overflow: 'auto', fontSize: '0.8rem' }}>
-          {`message: ${renderErr?.message}\n\nstack: ${renderErr?.stack?.split('\n').slice(0, 8).join('\n')}\n\nattention data: ${JSON.stringify(attention, null, 2)}`}
-        </pre>
-      </div>
-    );
-  }
+      <AttentionCard data={attention} />
+    </div>
+  );
 
 }
 
