@@ -225,6 +225,7 @@ async function fetchInitialTeams(opts: {
     city: t.home_city ?? null,
     country: t.country_code ?? null,
     league_id: t.league_id ?? null,
+    leagues: t.leagues ?? null,
     source: 'nhl' as const,
   }));
   const userTeams = ((userRes.data || []) as any[]).map((t: any): Team => ({
