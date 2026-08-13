@@ -51,15 +51,45 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // Run independent queries in parallel so the slow one doesn't gate the
-  // whole widget. Promise.allSettled lets us degrade gracefully if one
-  // surface is broken — better than crashing the dashboard.
+  // 2026-08-13: full diagnostic logging. The error Message-digest
+  // 3131227028 keeps appearing when this function's result is passed
+  // to AttentionCard. Each query is logged with its resolved value so
+  // we can see which one is returning malformed data.
+  try {
+    const [r0, r1, r2, r3] = await Promise.allSettled([
+      loadUnreadNotifications(userId),
+      loadPendingClaims(userId),
+      loadExpiringDocuments(userId),
+      loadSubscriptionIssue(userId),
+    ]);
+    console.error('[attentionDiag] notifications:', JSON.stringify(r0));
+    console.error('[attentionDiag] claims:', JSON.stringify(r1));
+    console.error('[attentionDiag] documents:', JSON.stringify(r2));
+    console.error('[attentionDiag] subscription:', JSON.stringify(r3));
+  } catch (e: any) {
+    console.error('[attentionDiag] Promise.allSettled threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
+  }
+
   const results = await Promise.allSettled([
     loadUnreadNotifications(userId),
     loadPendingClaims(userId),
     loadExpiringDocuments(userId),
     loadSubscriptionIssue(userId),
   ]);
+
+  const unreadNotif: number | null = results[0].status === 'fulfilled' ? results[0].value as number | null : null;
+  const pendingClaims: number | null = results[1].status === 'fulfilled' ? results[1].value as number | null : null;
+  const expiringDocs: DocsResult | null = results[2].status === 'fulfilled' ? results[2].value as DocsResult | null : null;
+  const subscriptionIssue: SubscriptionResult | null = results[3].status === 'fulfilled' ? results[3].value as SubscriptionResult | null : null;
+
+  let inboxUnread: number | null = null;
+  try {
+    inboxUnread = await loadInboxUnread(userId);
+    console.error('[attentionDiag] inbox:', JSON.stringify(inboxUnread));
+  } catch (e: any) {
+    console.error('[attentionDiag] loadInboxUnread threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
+    inboxUnread = null;
+  }
 
   const unreadNotif: number | null = results[0].status === 'fulfilled' ? results[0].value : null;
   const pendingClaims: number | null = results[1].status === 'fulfilled' ? results[1].value : null;
