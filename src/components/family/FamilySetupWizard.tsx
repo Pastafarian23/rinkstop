@@ -41,14 +41,10 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-export type WizardPersona =
-  | 'parent'
-  | 'coach'
-  | 'player'
-  | 'official'
-  | 'operator'
-  | 'generic';
+import {
+  type WizardPersona,
+  accountTypeToPersona,
+} from '@/lib/wizardState';
 
 export interface FamilySetupWizardState {
   /** Identity verified via Didit (per isIdentityVerified helper) */
@@ -452,28 +448,11 @@ const PERSONA_COPY: Record<WizardPersona, PersonaCopy> = {
 };
 
 /**
- * Map an AccountType (from profile_account_types) to a WizardPersona category.
- * Multiple AccountTypes collapse to one wizard category.
+ * Re-exported from '@/lib/wizardState' so existing imports
+ * (`import { accountTypeToPersona } from '@/components/family/FamilySetupWizard'`)
+ * continue to work. New code should import from the lib path directly.
  */
-export function accountTypeToPersona(accountType: string): WizardPersona {
-  switch (accountType) {
-    case 'parent':
-      return 'parent';
-    case 'coach':
-    case 'scout':
-      return 'coach';
-    case 'player':
-      return 'player';
-    case 'referee':
-      return 'official';
-    case 'team_admin':
-    case 'league_admin':
-    case 'rink_operator':
-      return 'operator';
-    default:
-      return 'generic';
-  }
-}
+export { accountTypeToPersona } from '@/lib/wizardState';
 
 export default function FamilySetupWizard({ state, firstName, persona }: FamilySetupWizardProps) {
   const router = useRouter();
