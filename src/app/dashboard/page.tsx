@@ -432,7 +432,8 @@ async function renderDashboard(userId: string) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {profile?.username ? null : (
+      {/* Hide username banner if user already has a username OR is super admin/founder */}
+      {(profile?.username || isSuperAdmin || isFounder) ? null : (
         safe('UsernameBanner', () => (
           <UsernameBanner
             displayName={profile?.display_name || firstName || 'RinkStop Member'}
