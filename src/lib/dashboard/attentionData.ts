@@ -51,19 +51,82 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // 2026-08-13: bisect queries one at a time. Now testing loadInboxUnread.
+  // 2026-08-13: bisect queries one at a time. Now testing ROW BUILDING.
   try {
     const unreadNotif = await loadUnreadNotifications(userId);
-    console.error('[attentionDiag] unreadNotif:', JSON.stringify(unreadNotif));
     const pendingClaims = await loadPendingClaims(userId);
-    console.error('[attentionDiag] pendingClaims:', JSON.stringify(pendingClaims));
     const expiringDocs = await loadExpiringDocuments(userId);
-    console.error('[attentionDiag] expiringDocs:', JSON.stringify(expiringDocs));
     const subscriptionIssue = await loadSubscriptionIssue(userId);
-    console.error('[attentionDiag] subscriptionIssue:', JSON.stringify(subscriptionIssue));
     const inboxUnread = await loadInboxUnread(userId);
-    console.error('[attentionDiag] inboxUnread:', JSON.stringify(inboxUnread));
-    return { rows: [], allClear: true };
+
+    console.error('[attentionDiag] all queries done, building rows');
+    console.error('[attentionDiag] unreadNotif:', unreadNotif);
+    console.error('[attentionDiag] pendingClaims:', pendingClaims);
+    console.error('[attentionDiag] expiringDocs:', JSON.stringify(expiringDocs));
+    console.error('[attentionDiag] subscriptionIssue:', JSON.stringify(subscriptionIssue));
+    console.error('[attentionDiag] inboxUnread:', inboxUnread);
+
+    const rows: AttentionRow[] = [];
+
+    if (unreadNotif !== null && unreadNotif > 0) {
+      rows.push({
+        key: 'notifications',
+        icon: '🔔',
+        label: 'New notifications',
+        count: unreadNotif,
+        href: '/dashboard/notifications',
+        tone: 'red',
+      });
+    }
+
+    if (inboxUnread !== null && inboxUnread > 0) {
+      rows.push({
+        key: 'inbox',
+        icon: '✉️',
+        label: 'Unread messages',
+        count: inboxUnread,
+        href: '/dashboard/inbox',
+        tone: 'red',
+      });
+    }
+
+    if (pendingClaims !== null && pendingClaims > 0) {
+      rows.push({
+        key: 'claims',
+        icon: '📋',
+        label: 'Pending claims',
+        count: pendingClaims,
+        href: '/dashboard/claims',
+        tone: 'amber',
+      });
+    }
+
+    if (expiringDocs !== null && expiringDocs.count > 0) {
+      rows.push({
+        key: 'documents',
+        icon: '📁',
+        label: 'Documents expiring',
+        count: expiringDocs.count,
+        detail: expiringDocs.detail,
+        href: '/dashboard/documents',
+        tone: 'amber',
+      });
+    }
+
+    if (subscriptionIssue !== null && subscriptionIssue.hasIssue) {
+      rows.push({
+        key: 'subscription',
+        icon: '💳',
+        label: 'Subscription needs attention',
+        count: null,
+        detail: subscriptionIssue.detail,
+        href: '/dashboard/subscription',
+        tone: 'red',
+      });
+    }
+
+    console.error('[attentionDiag] rows built:', JSON.stringify(rows));
+    return { rows, allClear: rows.length === 0 };
   } catch (e: any) {
     console.error('[attentionDiag] query threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
     return { rows: [], allClear: true };
