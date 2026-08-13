@@ -21,10 +21,49 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase';
-import {
-  accountTypeToPersona,
-  type WizardPersona,
-} from '@/components/family/FamilySetupWizard';
+
+/**
+ * Wizard persona categories. Single source of truth — used by the
+ * dashboard page (server) for the FamilySetupWizard gate, the wizard
+ * component (client) for its copy table, and the wizard-nudge cron for
+ * persona-aware body text.
+ *
+ * Lives in lib/ (no 'use client' here) so server components can import
+ * it without tripping the server/client boundary.
+ */
+export type WizardPersona =
+  | 'parent'
+  | 'coach'
+  | 'player'
+  | 'official'
+  | 'operator'
+  | 'generic';
+
+/**
+ * Map an AccountType (from profile_account_types) to a WizardPersona
+ * category. Multiple AccountTypes collapse to one wizard category.
+ *
+ * Pure function — safe in both server and client modules.
+ */
+export function accountTypeToPersona(accountType: string): WizardPersona {
+  switch (accountType) {
+    case 'parent':
+      return 'parent';
+    case 'coach':
+    case 'scout':
+      return 'coach';
+    case 'player':
+      return 'player';
+    case 'referee':
+      return 'official';
+    case 'team_admin':
+    case 'league_admin':
+    case 'rink_operator':
+      return 'operator';
+    default:
+      return 'generic';
+  }
+}
 
 /** Shape consumed by the dashboard page — field names match existing destructuring. */
 export interface WizardState {

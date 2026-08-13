@@ -24,7 +24,8 @@ import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces'
 import { getDismissedWorkspaceIds } from '@/lib/dashboard/dismissedWorkspaces';
 import DismissWorkspaceButton from '@/components/dashboard/DismissWorkspaceButton';
 import HiddenWorkspacesFooter from '@/components/dashboard/HiddenWorkspacesFooter';
-import FamilySetupWizard, { accountTypeToPersona, type WizardPersona } from '@/components/family/FamilySetupWizard';
+import FamilySetupWizard from '@/components/family/FamilySetupWizard';
+import { accountTypeToPersona, type WizardPersona } from '@/lib/wizardState';
 import ConsumerCards, { loadConsumerCardData } from '@/components/dashboard/ConsumerCards';
 import PlayerPracticePulse, { loadPracticePulseData, type PracticePulseData } from '@/components/dashboard/PlayerPracticePulse';
 import FreeAgentToggle, { loadFreeAgentProfile } from '@/components/dashboard/FreeAgentToggle';
