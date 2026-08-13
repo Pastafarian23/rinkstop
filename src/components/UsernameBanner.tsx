@@ -112,7 +112,7 @@ export default function UsernameBanner({ displayName, onComplete }: Props) {
           </p>
           <p
             style={{
-              color: 'rgba(238,245,255,0.7)',
+              color: 'rgba(238,245,255,0.92)',
               fontSize: '0.85rem',
               margin: '0.125rem 0 0',
               lineHeight: 1.4,
