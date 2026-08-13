@@ -104,15 +104,31 @@ async function fetchInitialTeams(opts: {
   league?: string | null;
 }): Promise<Team[]> {
   const { country, level, league } = opts;
+  // Resolve the URL `country=` value to the 2-letter ISO that team_workspaces
+  // stores in `country_code`. The directory dropdown sends full English names
+  // ("Canada", "United States"), and the legacy teams table also had a `country`
+  // text column — but after PR2 (WS12) the column is `country_code` (CHAR(2)).
+  // Without this translation the country filter silently matches nothing.
+  let countryIso: string | null = null;
+  if (country) {
+    const { COUNTRY_TO_ISO } = await import('@/lib/country-page');
+    countryIso = country.length === 2 ? country.toUpperCase() : (COUNTRY_TO_ISO[country] ?? country);
+  }
+
   // Fetch both NHL-imported teams AND user-created teams (team_workspaces)
   // in parallel so the SSR HTML includes user-created teams from the start.
+  // NOTE: PR2 renamed several columns:
+  //   logo_url → avatar_url, city → home_city, country → country_code
+  // The previous select() referenced the legacy names and failed with
+  // "column does not exist", so the server-rendered teams list silently
+  // dropped every team_workspaces row (NHL filter then returned 0 NHL rows).
   let nhlQuery = supabase
     .from('team_workspaces')
-    .select('id, name, slug, logo_url, city, country, league_id')
+    .select('id, name, slug, avatar_url, home_city, country_code, league_id')
     .eq('is_active', true)
     .order('name')
     .limit(500);
-  if (country) nhlQuery = nhlQuery.eq('country', country);
+  if (countryIso) nhlQuery = nhlQuery.eq('country_code', countryIso);
 
   // Filter by league and/or level. Both can be set at once — intersect them.
   // Bug fix 2026-08-12: the previous `if (league) ... else if (level)` chain
@@ -162,10 +178,22 @@ async function fetchInitialTeams(opts: {
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(100);
-  if (country) {
+  if (countryIso) {
+    // Try the ISO code on country_code first; fall back to home_country text
+    // matching by the full English name (handles legacy rows where
+    // country_code is null but home_country was populated).
     userQuery = userQuery.or(
-      `country_code.ilike.%${country}%,home_country.ilike.%${country}%`
+      `country_code.ilike.%${countryIso}%,home_country.ilike.%${country}%`
     );
+  }
+  // Apply the same league + level filter to user teams so the result list
+  // matches what the dropdown promises. Without this, picking any league
+  // filter returned the full user-team list regardless — making the chip
+  // a lie. Special carve-out: classify user teams as 'adult' when their own
+  // level column is empty (most user-created teams are adult/amateur and
+  // haven't filled the field yet).
+  if (leagueIdFilter !== null) {
+    userQuery = userQuery.in('league_id', leagueIdFilter);
   }
   // The "level" filter for user teams: we don't have a reliable way to
   // classify user teams by level without explicit data, so:
@@ -186,7 +214,19 @@ async function fetchInitialTeams(opts: {
   if (nhlRes.error) console.error('Teams initial fetch failed:', nhlRes.error);
   if (userRes.error) console.error('User teams initial fetch failed:', userRes.error);
 
-  const nhlTeams = (nhlRes.data || []) as Team[];
+  // Alias the new column names to the legacy ones (city/country/logo_url)
+  // expected by the Team type + TeamsIndexClient card renderer. The renaming
+  // happened in PR2; we keep the public shape stable.
+  const nhlTeams = ((nhlRes.data || []) as any[]).map((t: any): Team => ({
+    id: t.id,
+    name: t.name,
+    slug: t.slug,
+    logo_url: t.avatar_url ?? null,
+    city: t.home_city ?? null,
+    country: t.country_code ?? null,
+    league_id: t.league_id ?? null,
+    source: 'nhl' as const,
+  }));
   const userTeams = ((userRes.data || []) as any[]).map((t: any): Team => ({
     id: t.id,
     name: t.name,
