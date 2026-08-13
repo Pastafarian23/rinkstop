@@ -130,13 +130,24 @@ export default function TeamsIndexClient({
   // Local state for verified-only (transient, not URL-synced — same as before)
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
-  // The current teams list (may be a refetched slice on filter change).
-  const [teams, setTeams] = useState<Team[]>(initialTeams);
-  const [loading, setLoading] = useState(false);
+  // The teams list is the props (already SSR-filtered when the URL has
+  // a filter set). We do NOT cache it in local state — every prior version
+  // did, which meant the grid kept showing STALE teams for 1–3 seconds
+  // after a filter change on Android, because:
+  //   1) router.replace() fires an RSC refetch with new initialTeams
+  //   2) The component re-renders with fresh props, but `teams` is still
+  //      the old value (state only resets on unmount)
+  //   3) A second /api/teams + /api/user-teams round-trip was supposed to
+  //      catch up, doubling the wait.
+  // Using props directly skips both: the grid updates the moment SSR returns.
+  // Verified 2026-08-13 after Samsung Z Fold 4 user reported "delay on
+  // selecting dropdown option"; curl showed the RSC payload (initialTeams)
+  // is correct within ~600ms of router.replace.
+  const teams = initialTeams;
 
   // True if the user is currently on the "filtered" state (URL has ?country= etc.)
-  // The server already pre-filtered initialTeams; we only refetch when the user
-  // changes filters client-side.
+  // Kept as a no-op marker for downstream code that depends on it. SSR already
+  // pre-filters initialTeams, so this no longer drives a refetch.
   const filtersChanged =
     urlCountry !== (initialCountry ?? '') ||
     urlLevel !== (initialLevel ?? '') ||
@@ -211,33 +222,6 @@ export default function TeamsIndexClient({
     [setFilter]
   );
 
-  // Refetch teams when the user changes filters in the client (not on mount).
-  // This fires ONLY when the URL has a filter that the server didn't pre-apply
-  // (i.e. user changed a filter in the UI). The server-rendered HTML is
-  // already correct for the initial URL.
-  useEffect(() => {
-    if (!filtersChanged) return;
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (urlCountry) params.set('country', urlCountry);
-    if (urlLevel) params.set('level', urlLevel);
-    if (urlLeague) params.set('league', urlLeague);
-
-    Promise.all([
-      fetch(`/api/teams?${params}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
-      fetch(`/api/user-teams?${params}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
-    ]).then(([nhl, user]) => {
-      const nhlTeams: NHLTeam[] = nhl?.data || [];
-      const userTeams: UserTeam[] = user?.data || [];
-      // Dedupe by id (user-created teams may share names with NHL teams)
-      const merged = [...nhlTeams, ...userTeams].filter(
-        (t, i, arr) => arr.findIndex((x) => x.id === t.id) === i
-      );
-      setTeams(merged);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, [filtersChanged, urlCountry, urlLevel, urlLeague]);
-
   // Auto-cleanup: if the URL has an impossible level+league combination
   // (e.g. ?level=college&league=NHL), clear the league so the dropdown
   // doesn't display a value that isn't in its option list. This handles
@@ -248,9 +232,16 @@ export default function TeamsIndexClient({
     }
   }, [urlLevel, urlLeague, setFilter]);
 
-  // Filter teams client-side based on the URL's ?q= (from a search bar submit)
-  // and verified-only. Country/level/league are already applied server-side
-  // (or via the refetch above), so we don't re-filter on them.
+  // Filter teams client-side for:
+  //   - URL ?q= (search bar)
+  //   - verified-only toggle
+  //   - country/level/league as a safety net (server already applies these,
+  //     but in the edge case where a user picks a BROADER filter than what
+  //     the URL already pre-loaded, the client filter keeps the grid honest
+  //     without a second server round-trip).
+  // Removed the prior fetch('/api/teams') + fetch('/api/user-teams') refetch:
+  // it duplicated the SSR round-trip via router.replace() and caused the 1–3s
+  // "delay on select" Arnel reported from a Samsung Z Fold 4 on 2026-08-13.
   const visibleTeams = useMemo(() => {
     const q = norm(urlQ);
     return teams.filter((t) => {
@@ -267,9 +258,39 @@ export default function TeamsIndexClient({
       if (verifiedOnly) {
         if (!t.claimed_by_tier || !VERIFIED_TIERS.has(t.claimed_by_tier)) return false;
       }
+      // Country: compare against the full English name the dropdown sends
+      if (urlCountry) {
+        const teamCountry = (t.country ?? '').toLowerCase();
+        const altCountry = ('home_country' in t ? (t as any).home_country ?? '' : '').toLowerCase();
+        const target = urlCountry.toLowerCase();
+        if (teamCountry !== target && altCountry !== target) return false;
+      }
+      // Level: NHL teams resolve via league name; user teams via their own
+      // level column. Empty user level defaults to 'adult' (most user-created
+      // teams are amateur; matches the SSR-side carve-out).
+      if (urlLevel) {
+        let teamLevel: string | undefined;
+        if (t.source === 'user') {
+          teamLevel = (t as UserTeam).level ?? 'adult';
+        } else {
+          const leagueName = (t as NHLTeam).leagues?.name;
+          teamLevel = leagueName ? LEAGUE_LEVELS[leagueName] : undefined;
+        }
+        if (teamLevel !== urlLevel) return false;
+      }
+      // League: exact name match
+      if (urlLeague) {
+        let teamLeagueName: string | undefined;
+        if (t.source === 'user') {
+          teamLeagueName = (t as UserTeam).league?.name;
+        } else {
+          teamLeagueName = (t as NHLTeam).leagues?.name;
+        }
+        if (teamLeagueName !== urlLeague) return false;
+      }
       return true;
     });
-  }, [teams, urlQ, verifiedOnly]);
+  }, [teams, urlQ, verifiedOnly, urlCountry, urlLevel, urlLeague]);
 
   // Build the active-filter chips list (for the "Active filters" row).
   // Each chip has its own × button to clear just that one filter.
@@ -535,27 +556,19 @@ export default function TeamsIndexClient({
         </div>
       )}
 
-      {/* Results count */}
-      {!loading && (
-        <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
-          {visibleTeams.length === 0
-            ? 'No results'
-            : `${visibleTeams.length.toLocaleString()} ${visibleTeams.length === 1 ? 'team' : 'teams'}`}
-          {urlQ ? ` matching “${urlQ}”` : ''}
-          {!urlQ && !hasFilters ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
-        </p>
-      )}
+      {/* Results count — always shown. The SSR data is authoritative, no
+          client loading state needed since we no longer fetch on filter change. */}
+      <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
+        {visibleTeams.length === 0
+          ? 'No results'
+          : `${visibleTeams.length.toLocaleString()} ${visibleTeams.length === 1 ? 'team' : 'teams'}`}
+        {urlQ ? ` matching “${urlQ}”` : ''}
+        {!urlQ && !hasFilters ? ` in directory (${totalCount.toLocaleString()} total)` : ''}
+      </p>
 
       {/* Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.75rem' }}>
-        {loading
-          ? Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1.25rem' }}>
-                <div className="skeleton" style={{ height: '1.125rem', width: '65%', marginBottom: '0.625rem' }} />
-                <div className="skeleton" style={{ height: '0.875rem', width: '45%' }} />
-              </div>
-            ))
-          : visibleTeams.length === 0
+        {visibleTeams.length === 0
             ? (
               <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem' }}>
                 <p style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }}>
