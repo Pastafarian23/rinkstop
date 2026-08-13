@@ -50,7 +50,7 @@ export default function UsernamePromptModal({ displayName, onComplete, onSkip }:
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-[#041E42] border border-white/10 rounded-xl p-6 max-w-md w-full">
         <h2 className="text-xl font-bold text-white mb-2">Claim your username</h2>
-        <p className="text-sm text-white/60 mb-4">
+        <p className="text-sm text-white/80 mb-4">
           Your profile will live at <span className="text-[#FFB81C]">rinkstop.com/profile/{username || '...'}</span>.
           You can change it later from your profile settings.
         </p>
