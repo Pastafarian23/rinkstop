@@ -431,7 +431,7 @@ async function renderDashboard(userId: string) {
 
   return (
     <div>
-      <div>Group 1b: UsernameBanner + Welcome + AttentionCard (hardcoded empty data)</div>
+      <div>Group 1c: UsernameBanner + Welcome + AttentionCard (REAL data with logging)</div>
       {profile?.username ? null : (
         <UsernameBanner
           displayName={profile?.display_name || firstName || 'RinkStop Member'}
@@ -442,7 +442,7 @@ async function renderDashboard(userId: string) {
         <TierBadge tier={profile?.tier ?? 'free'} size="sm" />
         {isFounder ? <FounderBadge /> : null}
       </div>
-      <AttentionCard data={{ rows: [], allClear: true }} />
+      <AttentionCard data={attention} />
     </div>
   );
 
