@@ -9,7 +9,6 @@ import UserMenu from '@/components/UserMenu';
 import NotificationBell from '@/components/NotificationBell';
 import TeamSwitcher from '@/components/TeamSwitcher';
 import MobileMenu from '@/components/MobileMenu';
-import SearchBar from '@/components/SearchBar';
 import { getUserTier, tierAtLeast } from '@/lib/connections';
 import {
   WORKSPACES,
@@ -361,12 +360,6 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
                 <p className="dashboard-header-email" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {email}
                 </p>
-              </div>
-            </div>
-            {/* Dashboard search bar — centered, between title block and right-side actions */}
-            <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', padding: '0 1rem' }}>
-              <div style={{ width: '100%', maxWidth: 440 }}>
-                <SearchBar source="dashboard_header" />
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
