@@ -107,8 +107,10 @@ async function fetchInitialTeams(opts: {
   country?: string | null;
   level?: string | null;
   league?: string | null;
+  limit?: number;
+  offset?: number;
 }): Promise<Team[]> {
-  const { country, level, league } = opts;
+  const { country, level, league, limit = 500, offset = 0 } = opts;
   // Resolve the URL `country=` value to the 2-letter ISO that team_workspaces
   // stores in `country_code`. The directory dropdown sends full English names
   // ("Canada", "United States"), and the legacy teams table also had a `country`
@@ -127,12 +129,15 @@ async function fetchInitialTeams(opts: {
   // The previous select() referenced the legacy names and failed with
   // "column does not exist", so the server-rendered teams list silently
   // dropped every team_workspaces row (NHL filter then returned 0 NHL rows).
+  //
+  // 2026-08-13: callers should pass `limit/offset` so the page can paginate.
+  // Default 500 stays for clients that don't paginate.
   let nhlQuery = supabase
     .from('team_workspaces')
     .select('id, name, slug, avatar_url, home_city, country_code, league_id, leagues(name)')
     .eq('is_active', true)
     .order('name')
-    .limit(500);
+    .range(offset, offset + limit - 1);
   if (countryIso) nhlQuery = nhlQuery.eq('country_code', countryIso);
 
   // Filter by league and/or level. Both can be set at once — intersect them.
@@ -182,7 +187,7 @@ async function fetchInitialTeams(opts: {
     .select('id, slug, name, country_code, home_city, home_country, age_category, age_label, level, season_label, description, organization_id, league_id, federation_id, organization:organizations(name,slug), league:leagues(name,slug), federation:federations(name,slug)')
     .eq('is_active', true)
     .order('created_at', { ascending: false })
-    .limit(100);
+    .range(offset, offset + Math.min(limit, 100) - 1);
   if (countryIso) {
     // Try the ISO code on country_code first; fall back to home_country text
     // matching by the full English name (handles legacy rows where
@@ -264,6 +269,14 @@ async function fetchInitialTeams(opts: {
   return merged;
 }
 
+// SSRed page size for the teams grid. This is the crux of the page-load
+// weight: rendering 500+ team cards into HTML was producing ~1MB of
+// uncompressed HTML and 200-300ms of TTFB on the wire. 48 cards (4 rows
+// of 12 on a 6-col grid) fits the visible viewport on every device and
+// keeps the initial HTML under ~80KB. The "Load more" button on the page
+// fetches the next batch via /api/teams?offset=N.
+const SSR_PAGE_SIZE = 48;
+
 export default async function TeamsPage({ searchParams }: { searchParams: Promise<{ country?: string; level?: string; league?: string; q?: string }> }) {
   const { country, level, league, q } = await searchParams;
   // All five queries are independent — run them in parallel so the page
@@ -277,7 +290,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
     topLeagues,
     countryLeaguesMap,
   ] = await Promise.all([
-    fetchInitialTeams({ country, level, league }),
+    fetchInitialTeams({ country, level, league, limit: SSR_PAGE_SIZE }),
     getDirectoryCountsCached(),
     getCountryTeamCountsCached(),
     getTopLeaguesCached(),
