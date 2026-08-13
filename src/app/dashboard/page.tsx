@@ -430,7 +430,20 @@ async function renderDashboard(userId: string) {
   }
 
   return (
-    <div>Test - dashboard render placeholder</div>
+    <div>
+      <div>Group 1: UsernameBanner + Welcome card + AttentionCard</div>
+      {profile?.username ? null : (
+        <UsernameBanner
+          displayName={profile?.display_name || firstName || 'RinkStop Member'}
+        />
+      )}
+      <div data-testid="welcome-card">
+        <h1>{firstName ? `Welcome back, ${firstName}` : 'Welcome to RinkStop'}</h1>
+        <TierBadge tier={profile?.tier ?? 'free'} size="sm" />
+        {isFounder ? <FounderBadge /> : null}
+      </div>
+      <AttentionCard data={attention} />
+    </div>
   );
 
 }
