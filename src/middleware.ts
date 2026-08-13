@@ -135,6 +135,19 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
+  // Auth URL redirects — common typos/variations
+  const AUTH_REDIRECTS: Record<string, string> = {
+    '/signin': '/login',
+    '/signup': '/sign-up',
+    '/register': '/sign-up',
+    '/auth': '/login',
+  };
+  const authRedirect = AUTH_REDIRECTS[path];
+  if (authRedirect) {
+    const dest = new URL(authRedirect, request.url);
+    return NextResponse.redirect(dest, 308);
+  }
+
   // Route protection (Phase 4.2, 2026-06-16): /dashboard/* requires auth.
   // Previously the auth check was inside dashboard/layout.tsx (a server-side
   // `if (!userId) redirect('/login')`). This worked, but the redirect didn't
