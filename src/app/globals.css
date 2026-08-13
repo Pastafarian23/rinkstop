@@ -737,6 +737,15 @@ img  { max-width: 100%; display: block; }
 .border-slate-600    { border-color: rgba(255,255,255,0.18); }
 .border-slate-700    { border-color: #334155; }
 .border-slate-800    { border-color: rgba(30,41,59,0.6); }
+/* Username prompt modal input — force dark bg/light text
+   because mobile browsers ignore component styles on inputs */
+.username-input {
+  background-color: #041E42 !important;
+  color: #fff !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
 .border-2           { border-width: 2px; }
 
 .rounded-xl   { border-radius: 0.75rem; }
