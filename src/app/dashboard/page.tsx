@@ -429,22 +429,35 @@ async function renderDashboard(userId: string) {
     }
   }
 
-  return (
-    <div>
-      <div>Group 1c: UsernameBanner + Welcome + AttentionCard (REAL data with logging)</div>
-      {profile?.username ? null : (
-        <UsernameBanner
-          displayName={profile?.display_name || firstName || 'RinkStop Member'}
-        />
-      )}
-      <div data-testid="welcome-card">
-        <h1>{firstName ? `Welcome back, ${firstName}` : 'Welcome to RinkStop'}</h1>
-        <TierBadge tier={profile?.tier ?? 'free'} size="sm" />
-        {isFounder ? <FounderBadge /> : null}
+  try {
+    return (
+      <div>
+        <div>Group 1c: UsernameBanner + Welcome + AttentionCard (REAL data with logging)</div>
+        {profile?.username ? null : (
+          <UsernameBanner
+            displayName={profile?.display_name || firstName || 'RinkStop Member'}
+          />
+        )}
+        <div data-testid="welcome-card">
+          <h1>{firstName ? `Welcome back, ${firstName}` : 'Welcome to RinkStop'}</h1>
+          <TierBadge tier={profile?.tier ?? 'free'} size="sm" />
+          {isFounder ? <FounderBadge /> : null}
+        </div>
+        <AttentionCard data={attention} />
       </div>
-      <AttentionCard data={attention} />
-    </div>
-  );
+    );
+  } catch (renderErr: any) {
+    // 2026-08-13: Capture render-time error to a file for diagnosis.
+    const fs = require('fs');
+    const errInfo = {
+      message: renderErr?.message,
+      stack: renderErr?.stack?.split('\n').slice(0, 5).join('\n'),
+      attention: JSON.stringify(attention, null, 2),
+      ts: Date.now(),
+    };
+    fs.appendFileSync('/tmp/dashboard-render-error.jsonl', JSON.stringify(errInfo) + '\n');
+    throw renderErr;
+  }
 
 }
 
