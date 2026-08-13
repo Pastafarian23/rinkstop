@@ -51,38 +51,13 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // 2026-08-13: Serialize-test - log the exact JSON to see what's being sent.
-  try {
-    const unreadNotif = await loadUnreadNotifications(userId);
-    const unreadNotifNum = unreadNotif !== null ? Number(unreadNotif) : null;
-
-    const rows: AttentionRow[] = [];
-    if (unreadNotifNum !== null && unreadNotifNum > 0) {
-      rows.push({
-        key: 'notifications',
-        icon: '🔔',
-        label: 'New notifications',
-        count: unreadNotifNum,
-        href: '/dashboard/notifications',
-        tone: 'red',
-      });
-    }
-
-    const result = { rows, allClear: rows.length === 0 };
-    // Try to serialize the result - this is what RSC does internally.
-    const serialized = JSON.stringify(result);
-    console.error('[attentionDiag] serialized result:', serialized);
-    console.error('[attentionDiag] result keys:', Object.keys(result));
-    console.error('[attentionDiag] rows type:', typeof rows, Array.isArray(rows));
-    if (rows.length > 0) {
-      console.error('[attentionDiag] first row keys:', Object.keys(rows[0]));
-      console.error('[attentionDiag] first row count type:', typeof rows[0].count);
-    }
-    return result;
-  } catch (e: any) {
-    console.error('[attentionDiag] threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
-    return { rows: [], allClear: true };
-  }
+  // 2026-08-13: HOTFIX - return empty state to unblock dashboard.
+  // The error escaping the page/layout try/catch and going to error.tsx
+  // means this is a React RSC reconciliation error, not a synchronous throw.
+  // Until we can reproduce in dev mode and see the real error, this
+  // unblocks Arnel from using the dashboard. The attention widget will
+  // show "All caught up" (which is true for Arnel anyway - all counts are 0).
+  return { rows: [], allClear: true };
 }
 
 

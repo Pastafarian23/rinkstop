@@ -14,20 +14,6 @@ export default function DashboardError({
     // Log the error to console — Vercel will pick it up from the browser too.
     console.error('[dashboard] route error:', error);
 
-    // 2026-08-13: also log to our server-side endpoint so we can read it
-    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      try {
-        const body = JSON.stringify({
-          digest: (error as any)?.digest,
-          name: (error as any)?.name,
-          message: (error as any)?.message,
-          stack: (error as any)?.stack?.split('\n').slice(0, 5).join('\n'),
-          ts: Date.now(),
-        });
-        navigator.sendBeacon('/api/log/error', body);
-      } catch {}
-    }
-
     // 2026-08-12: capture route-level dashboard errors server-side
     // so they are visible in production logs, not just DevTools.
     try {
