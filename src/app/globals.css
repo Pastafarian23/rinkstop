@@ -1404,3 +1404,10 @@ img  { max-width: 100%; display: block; }
     font-size: 11px !important;
   }
 }
+
+/* AttentionCard row hover effect (replaces inline onMouseEnter/onMouseLeave
+   which can't be passed across the RSC boundary) */
+.attention-row-link:hover {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}

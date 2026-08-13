@@ -120,6 +120,7 @@ export default function AttentionCard({ data }: { data: AttentionSummary }) {
             <li key={row.key}>
               <Link
                 href={row.href}
+                className="attention-row-link"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -132,14 +133,6 @@ export default function AttentionCard({ data }: { data: AttentionSummary }) {
                   color: '#fff',
                   transition: 'background 0.15s, border-color 0.15s',
                   minHeight: 44,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
                 }}
               >
                 <span
