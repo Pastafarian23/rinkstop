@@ -51,13 +51,15 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // 2026-08-13: bisect queries one at a time. Start with just loadUnreadNotifications.
+  // 2026-08-13: bisect queries one at a time. Now testing loadPendingClaims.
   try {
     const unreadNotif = await loadUnreadNotifications(userId);
     console.error('[attentionDiag] unreadNotif:', JSON.stringify(unreadNotif));
+    const pendingClaims = await loadPendingClaims(userId);
+    console.error('[attentionDiag] pendingClaims:', JSON.stringify(pendingClaims));
     return { rows: [], allClear: true };
   } catch (e: any) {
-    console.error('[attentionDiag] loadUnreadNotifications threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
+    console.error('[attentionDiag] query threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
     return { rows: [], allClear: true };
   }
 }
