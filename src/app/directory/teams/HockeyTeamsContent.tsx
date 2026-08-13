@@ -77,18 +77,22 @@ export default function HockeyTeamsContent({
   };
 
   return (
-    <section
-      id="teams-overview"
-      aria-label="Hockey teams directory overview"
-      style={{
-        maxWidth: '80rem',
-        margin: '0 auto',
-        padding: '1rem 1rem 2rem',
-        color: 'rgba(255,255,255,0.75)',
-        fontSize: '0.9375rem',
-        lineHeight: 1.7,
-      }}
-    >
+    <details style={{ maxWidth: '80rem', margin: '0 auto 2rem', padding: '0 1rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
+      <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
+        Browse teams by level, country, or start your own
+      </summary>
+      <section
+        id="teams-overview"
+        aria-label="Hockey teams directory overview"
+        style={{
+          maxWidth: '80rem',
+          margin: '0 auto',
+          padding: '1rem 1rem 2rem',
+          color: 'rgba(255,255,255,0.75)',
+          fontSize: '0.9375rem',
+          lineHeight: 1.7,
+        }}
+      >
       {/* Head-term answer block: explicit "How many hockey teams are there"
           paragraph that Google can extract directly for the bare query.
           Anchor id added 2026-08-07 so the SEO intro block above can
@@ -258,5 +262,6 @@ export default function HockeyTeamsContent({
         </p>
       </div>
     </section>
+    </details>
   );
 }
