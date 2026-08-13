@@ -51,10 +51,15 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // 2026-08-13: TEMP FIX - return empty state to verify error is in this function.
-  // If dashboard loads with this, the error is definitely in loadAttentionSummary.
-  console.error('[attentionDiag] loadAttentionSummary called (TEMP: returning empty state)');
-  return { rows: [], allClear: true };
+  // 2026-08-13: bisect queries one at a time. Start with just loadUnreadNotifications.
+  try {
+    const unreadNotif = await loadUnreadNotifications(userId);
+    console.error('[attentionDiag] unreadNotif:', JSON.stringify(unreadNotif));
+    return { rows: [], allClear: true };
+  } catch (e: any) {
+    console.error('[attentionDiag] loadUnreadNotifications threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
+    return { rows: [], allClear: true };
+  }
 }
 
 
