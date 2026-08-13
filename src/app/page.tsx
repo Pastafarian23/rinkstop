@@ -233,6 +233,7 @@ export default async function Home() {
         sameAs: [
           'https://www.wikidata.org/wiki/Q140955752',
           'https://www.wikidata.org/wiki/Q140956126',
+          'https://www.crunchbase.com/organization/rinkstop-hockey',
           'https://twitter.com/rinkstopnews',
           'https://www.facebook.com/rinkstop',
           'https://www.instagram.com/rinkstop',
