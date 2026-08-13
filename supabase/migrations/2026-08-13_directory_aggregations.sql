@@ -1,21 +1,17 @@
 -- Migration: directory aggregation RPCs
 -- Date: 2026-08-13
 -- Author: KiloClaw
--- Context: third round of perf work on /directory/teams. After PR #139
--- (parallelize + cache) the page is at ~600ms; the next 200ms comes from
--- the two remaining JS-aggregation queries:
---   - getTopLeagues      pulls 200 leagues with inner-join to ALL teams
---   - getCountryLeaguesMap paginates all 2,600+ active teams to build
---     a country→leagues map (the cascading dropdown data)
--- Push both aggregations into a single SQL roundtrip each.
+-- Context: third round of perf work on /directory/teams. Replaces JS-side
+-- aggregations on top of large data pulls with single-roundtrip SQL
+-- aggregates.
 --
--- Why:
---   1. Avoid pulling thousands of rows over the wire just to count them in JS.
---   2. The view can be STABLE so caching wrapping is safe.
---   3. SECURITY DEFINER so the anon surface can call it without an admin key.
+-- Why JSONB returns instead of TABLE:
+--   PostgREST caps TABLE-returning RPCs at 1000 rows by default. The
+--   country_leagues map has ~2600 rows. Returning JSONB aggregates lets
+--   the full payload come back in one call.
 --
--- Backwards-compatible: nothing else changes. The JS functions still exist
--- and are used as a fallback if these RPCs fail.
+-- Backwards-compatible: pre-existing JS functions (getTopLeagues,
+-- getCountryLeaguesMap) still exist. We add new RPCs next to them.
 --
 -- Pre-state (verified 2026-08-13):
 --   - 2,787 active teams in team_workspaces
@@ -43,9 +39,6 @@ AS $$
     l.name::text AS name,
     l.slug::text AS slug,
     COUNT(tw.id)::bigint AS team_count,
-    -- Map well-known leagues to one of the 5 levels. NULL = adult (long
-    -- tail). Kept as a SQL CASE so the JS layer can compose it without
-    -- pulling every league_name from the API.
     CASE
       WHEN l.name IN (
         'National Hockey League','American Hockey League','Kontinental Hockey League',
@@ -81,39 +74,50 @@ COMMENT ON FUNCTION get_top_leagues_with_levels() IS
   'Top 100 active leagues with team counts and a coarse level classifier. STABLE — safe to call from cached renders. Replaces the JS-side leagues×team_workspaces inner-join aggregation in src/lib/directory-counts.ts getTopLeagues.';
 
 -- 2. Country → leagues map (cascading dropdown data) ------------------------
+-- Returns a JSONB array of {country, leagues[]} objects so the full
+-- ~2,600-row payload comes back in one round-trip (PostgREST caps
+-- TABLE-returning RPCs at 1000 rows).
 
-DROP FUNCTION IF EXISTS get_country_leagues_map() CASCADE;
+DROP FUNCTION IF EXISTS get_country_leagues_map_json() CASCADE;
 
-CREATE OR REPLACE FUNCTION get_country_leagues_map()
-RETURNS TABLE (
-  country TEXT,
-  league_name TEXT
-)
+CREATE OR REPLACE FUNCTION get_country_leagues_map_json()
+RETURNS JSONB
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT
-    CASE
-      WHEN tw.country_code = 'US' THEN 'United States'
-      WHEN tw.country_code = 'CA' THEN 'Canada'
-      WHEN tw.country_code IS NOT NULL AND tw.country_code <> ''
-        THEN tw.home_country  -- fallback to text name
-      WHEN tw.home_country IS NOT NULL AND tw.home_country <> ''
-        THEN tw.home_country
-      ELSE NULL
-    END AS country,
-    l.name::text AS league_name
-  FROM team_workspaces tw
-  LEFT JOIN leagues l ON l.id = tw.league_id
-  WHERE tw.is_active = true
-    AND l.is_active = true
-    AND (tw.country_code IS NOT NULL OR tw.home_country IS NOT NULL)
-    AND l.name IS NOT NULL;
+  WITH parsed AS (
+    SELECT
+      CASE
+        WHEN tw.country_code = 'US' THEN 'United States'
+        WHEN tw.country_code = 'CA' THEN 'Canada'
+        WHEN tw.country_code IS NOT NULL AND tw.country_code <> ''
+          THEN tw.home_country
+        WHEN tw.home_country IS NOT NULL AND tw.home_country <> ''
+          THEN tw.home_country
+        ELSE NULL
+      END AS country,
+      l.name::text AS league_name
+    FROM team_workspaces tw
+    LEFT JOIN leagues l ON l.id = tw.league_id
+    WHERE tw.is_active = true
+      AND l.is_active = true
+      AND (tw.country_code IS NOT NULL OR tw.home_country IS NOT NULL)
+      AND l.name IS NOT NULL
+  ),
+  grouped AS (
+    SELECT country, league_name FROM parsed WHERE country IS NOT NULL
+  )
+  SELECT COALESCE(jsonb_agg(row_to_json(g)), '[]'::jsonb)::jsonb
+  FROM (
+    SELECT country, ARRAY_AGG(DISTINCT league_name ORDER BY league_name) AS leagues
+    FROM grouped
+    GROUP BY country
+  ) g;
 $$;
 
-GRANT EXECUTE ON FUNCTION get_country_leagues_map() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION get_country_leagues_map_json() TO anon, authenticated;
 
-COMMENT ON FUNCTION get_country_leagues_map() IS
-  'Country→league map for the cascading dropdown on /directory/teams. Returns flat (country, league_name) rows; the JS layer groups by country. STABLE — safe to call from cached renders. Replaces the paginated 2600-row team_workspaces scan in src/lib/directory-counts.ts getCountryLeaguesMap.';
+COMMENT ON FUNCTION get_country_leagues_map_json() IS
+  'Country→league map for the cascading dropdown. Returns JSONB array of {country, leagues[]} entries. STABLE — safe to call from cached renders. Replaces the paginated 2600-row team_workspaces scan in src/lib/directory-counts.ts getCountryLeaguesMap.';

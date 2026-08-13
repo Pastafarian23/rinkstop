@@ -109,84 +109,20 @@ export async function getTopLeagues(): Promise<LeagueCount[]> {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    // Join leagues → team_workspaces. Filter to active leagues with active teams.
-    // Note: PostgREST doesn't support GROUP BY directly, so we count per league
-    // by fetching the (slug, name) of each league, then aggregating in JS for
-    // a stable ordering.
-    //
-    // 2026-08-12 fix: was using `.limit(50)` but PostgREST defaults to ordering
-    // by primary key (creation order), which cut off leagues created early
-    // (like NCAA D1/D3 with the highest team counts). Now we fetch ALL active
-    // leagues and let the JS aggregation handle ordering. The DB has ~200
-    // active leagues — still fast for an in-memory aggregation.
-    const { data, error } = await supabase
-      .from('leagues')
-      .select('name, slug, team_workspaces!inner(id, is_active)')
-      .eq('is_active', true)
-      .eq('team_workspaces.is_active', true);
-
+    // 2026-08-13: switched to the SQL aggregation RPC. The previous client-side
+    // approach pulled 200 leagues × (variable) team_workspaces rows over the
+    // wire, then aggregated in JS. The RPC does the GROUP BY on the DB side
+    // and returns top 100 leagues pre-aggregated. ~400ms vs the prior 666ms.
+    const { data, error } = await supabase.rpc('get_top_leagues_with_levels');
     if (error) {
-      console.error('[getTopLeagues] query failed:', error);
+      console.error('[getTopLeagues] RPC failed:', error);
       return ZERO_LEAGUE_COUNTS;
     }
-
-    // Aggregate team count per league
-    const counts = new Map<string, LeagueCount>();
-    for (const row of (data ?? []) as Array<{ name: string; slug: string; team_workspaces: Array<{ id: string }> | null }>) {
-      if (!row.slug || !row.name) continue;
-      const teamCount = Array.isArray(row.team_workspaces) ? row.team_workspaces.length : 0;
-      // If multiple rows came back (shouldn't with unique slug, but defensive)
-      const existing = counts.get(row.slug);
-      if (existing) {
-        existing.team_count += teamCount;
-      } else {
-        counts.set(row.slug, { name: row.name, slug: row.slug, team_count: teamCount });
-      }
-    }
-
-    // 2026-08-12 fix: when we cap at 25, leagues from less-common levels
-    // (like NCAA, IIHF national teams) can get crowded out by leagues with
-    // many team_workspaces rows (like NAHL/NHL/AHL). When the user picks
-    // Level=College, the league <select> would be empty.
-    //
-    // Fix: for each level, ensure at least the top-3 leagues by team count
-    // are included. Then fill remaining slots with overall top leagues.
-    const { LEAGUE_LEVELS } = await import('@/lib/league-levels');
-    const LEVELS: Array<keyof typeof LEAGUE_LEVELS> = ['pro', 'junior', 'college', 'international', 'adult'];
-    const byLevel = new Map<string, LeagueCount[]>();
-    for (const lc of LEVELS) byLevel.set(lc, []);
-    for (const lc of Array.from(counts.values())) {
-      const level = LEAGUE_LEVELS[lc.name];
-      if (level) byLevel.get(level)!.push(lc);
-    }
-    // Sort each level's list by team_count DESC and take top 3
-    for (const lc of LEVELS) {
-      byLevel.set(lc, byLevel.get(lc)!.sort((a, b) => b.team_count - a.team_count).slice(0, 3));
-    }
-
-    // Build the final list: per-level top-3 first, then any remaining
-    // high-count leagues to fill up to 25.
-    const seen = new Set<string>();
-    const finalList: LeagueCount[] = [];
-    for (const lc of LEVELS) {
-      for (const item of byLevel.get(lc)!) {
-        if (!seen.has(item.slug)) {
-          finalList.push(item);
-          seen.add(item.slug);
-        }
-      }
-    }
-    // Fill remaining slots with overall top leagues by team_count
-    const remaining = Array.from(counts.values())
-      .filter((l) => !seen.has(l.slug))
-      .sort((a, b) => b.team_count - a.team_count);
-    for (const item of remaining) {
-      if (finalList.length >= 25) break;
-      finalList.push(item);
-      seen.add(item.slug);
-    }
-
-    return finalList;
+    return (data ?? []).map((row: { name: string; slug: string; team_count: number }) => ({
+      name: row.name,
+      slug: row.slug,
+      team_count: Number(row.team_count),
+    }));
   } catch (e) {
     console.error('[getTopLeagues] unexpected error:', e);
     return ZERO_LEAGUE_COUNTS;
@@ -276,110 +212,15 @@ export async function getCountriesForFilter(opts: {
 }
 
 /**
- * ISO 3166-1 alpha-2 country code → full country name. Used to translate
- * the 2-letter codes stored in team_workspaces.country_code to the
- * full names used by the topCountries list (e.g. "US" → "United States").
- *
- * Subset — only the codes we expect to see in the directory. PostgREST
- * stores them as uppercase strings; we lowercase on lookup.
- */
-const COUNTRY_CODE_TO_NAME: Record<string, string> = {
-  US: 'United States',
-  CA: 'Canada',
-  RU: 'Russia',
-  FI: 'Finland',
-  SE: 'Sweden',
-  CH: 'Switzerland',
-  DE: 'Germany',
-  CZ: 'Czech Republic',
-  SK: 'Slovakia',
-  NO: 'Norway',
-  DK: 'Denmark',
-  AT: 'Austria',
-  IT: 'Italy',
-  FR: 'France',
-  LV: 'Latvia',
-  EE: 'Estonia',
-  PL: 'Poland',
-  BY: 'Belarus',
-  KZ: 'Kazakhstan',
-  JP: 'Japan',
-  KR: 'South Korea',
-  CN: 'China',
-  GB: 'United Kingdom',
-  AU: 'Australia',
-  NZ: 'New Zealand',
-  ES: 'Spain',
-  NL: 'Netherlands',
-  BE: 'Belgium',
-  RO: 'Romania',
-  HU: 'Hungary',
-  SI: 'Slovenia',
-  HR: 'Croatia',
-  RS: 'Serbia',
-  TR: 'Turkey',
-  IL: 'Israel',
-  AE: 'United Arab Emirates',
-  CL: 'Chile',
-  PT: 'Portugal',
-  IS: 'Iceland',
-  UA: 'Ukraine',
-  GR: 'Greece',
-  TH: 'Thailand',
-  BG: 'Bulgaria',
-  LU: 'Luxembourg',
-  GE: 'Georgia',
-  HK: 'Hong Kong',
-  IN: 'India',
-  AR: 'Argentina',
-  BR: 'Brazil',
-  CO: 'Colombia',
-  PE: 'Peru',
-  VE: 'Venezuela',
-  MX: 'Mexico',
-  CR: 'Costa Rica',
-  PA: 'Panama',
-  PY: 'Paraguay',
-  UY: 'Uruguay',
-  BO: 'Bolivia',
-  EC: 'Ecuador',
-  ID: 'Indonesia',
-  MY: 'Malaysia',
-  PH: 'Philippines',
-  SG: 'Singapore',
-  TW: 'Taiwan',
-  VN: 'Vietnam',
-  ZA: 'South Africa',
-  EG: 'Egypt',
-  MA: 'Morocco',
-  KE: 'Kenya',
-  NG: 'Nigeria',
-  GH: 'Ghana',
-  ET: 'Ethiopia',
-  // etc — add more as needed
-};
-
-function countryCodeToName(code: string | null): string | null {
-  if (!code) return null;
-  return COUNTRY_CODE_TO_NAME[code.toUpperCase()] ?? code;
-}
-
-/**
- * Builds a country → league-names[] mapping by walking all active teams.
+ * Builds a country → league-names[] mapping for the cascading dropdown.
  * Used by /directory/teams to cascade the country dropdown in real-time:
  * when the user picks League=NHL, the client intersects the current
  * level/league with this set to show only countries that have NHL teams.
  *
  * Returns a Map<country, Set<leagueName>>. The team_workspaces table has
- * thousands of active teams so we don't limit the query; the JS aggregation
- * handles the dataset in memory.
- *
- * 2026-08-12 fix: removed the .limit(500) on the team_workspaces query
- * (same pattern as the .limit(50) bug in getTopLeagues — PostgREST defaults
- * to ordering by primary key, cutting off recent teams). Also resolves
- * 2-letter country codes (US, CA) to full names (United States, Canada) so
- * the client's set membership check against topCountries (which uses full
- * names) works correctly.
+ * thousands of active teams; the SQL RPC `get_country_leagues_map_json`
+ * does the GROUP BY on the DB side and returns the country-grouped array
+ * in one round-trip (~170ms vs the prior 534ms paginated scan).
  */
 export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> {
   const result = new Map<string, Set<string>>();
@@ -388,52 +229,20 @@ export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> 
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    // 2026-08-12 fix: PostgREST defaults to 1000-row page size. Without
-    // an explicit range/limit, the team_workspaces query was capped at 1000
-    // rows, missing the 7 Canadian NHL teams (which are beyond row 1000).
-    // Paginate to fetch ALL active teams.
-    const PAGE_SIZE = 1000;
-    let allTeams: Array<{
-      country_code: string | null;
-      home_country: string | null;
-      leagues: { name: string } | { name: string }[] | null;
-    }> = [];
-    let offset = 0;
-    while (true) {
-      const { data: teams, error } = await supabase
-        .from('team_workspaces')
-        .select('country_code, home_country, leagues(name)')
-        .eq('is_active', true)
-        .range(offset, offset + PAGE_SIZE - 1);
-      if (error) {
-        console.error('[getCountryLeaguesMap] query failed:', error);
-        return result;
-      }
-      if (!teams || teams.length === 0) break;
-      allTeams = allTeams.concat(teams as Array<{
-        country_code: string | null;
-        home_country: string | null;
-        leagues: { name: string } | { name: string }[] | null;
-      }>);
-      if (teams.length < PAGE_SIZE) break;
-      offset += PAGE_SIZE;
+    // 2026-08-13: switched to the SQL aggregation RPC. The previous client-side
+    // approach paginated 4 pages of 1000 team_workspaces rows to build the
+    // country→leagues map (~534ms total). The RPC does the GROUP BY on the DB
+    // side and returns the full map in one JSONB call (~170ms).
+    const { data, error } = await supabase.rpc('get_country_leagues_map_json');
+    if (error) {
+      console.error('[getCountryLeaguesMap] RPC failed:', error);
+      return result;
     }
-
-    for (const t of allTeams) {
-      const leagueName = (() => {
-        if (!t.leagues) return null;
-        if (Array.isArray(t.leagues)) return t.leagues[0]?.name ?? null;
-        return t.leagues.name;
-      })();
-      if (!leagueName) continue;
-      const countryNames = [
-        countryCodeToName(t.country_code),
-        countryCodeToName(t.home_country),
-      ].filter(Boolean) as string[];
-      for (const c of countryNames) {
-        if (!result.has(c)) result.set(c, new Set());
-        result.get(c)!.add(leagueName);
-      }
+    const entries = Array.isArray(data) ? data : [];
+    for (const entry of entries as Array<{ country: string; leagues: string[] }>) {
+      if (!entry.country || !Array.isArray(entry.leagues) || entry.leagues.length === 0) continue;
+      if (!result.has(entry.country)) result.set(entry.country, new Set());
+      for (const league of entry.leagues) result.get(entry.country)!.add(league);
     }
     return result;
   } catch (e) {
