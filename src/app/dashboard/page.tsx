@@ -447,16 +447,15 @@ async function renderDashboard(userId: string) {
       </div>
     );
   } catch (renderErr: any) {
-    // 2026-08-13: Capture render-time error to a file for diagnosis.
-    const fs = require('fs');
-    const errInfo = {
-      message: renderErr?.message,
-      stack: renderErr?.stack?.split('\n').slice(0, 5).join('\n'),
-      attention: JSON.stringify(attention, null, 2),
-      ts: Date.now(),
-    };
-    fs.appendFileSync('/tmp/dashboard-render-error.jsonl', JSON.stringify(errInfo) + '\n');
-    throw renderErr;
+    // 2026-08-13: Render error INLINE so we can see the actual message in the HTML.
+    return (
+      <div style={{ padding: '2rem', color: '#fff', background: '#0f0f0f', borderRadius: 8, margin: '2rem' }}>
+        <h2 style={{ color: '#C8102E' }}>RENDER ERROR (visible in HTML for diagnosis)</h2>
+        <pre style={{ background: '#1a1a1a', padding: '1rem', borderRadius: 4, overflow: 'auto', fontSize: '0.8rem' }}>
+          {`message: ${renderErr?.message}\n\nstack: ${renderErr?.stack?.split('\n').slice(0, 8).join('\n')}\n\nattention data: ${JSON.stringify(attention, null, 2)}`}
+        </pre>
+      </div>
+    );
   }
 
 }
