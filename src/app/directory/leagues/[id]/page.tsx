@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import LeagueDetailClient from './LeagueDetailClient';
 import LeagueSEOCopy from './LeagueSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
@@ -79,6 +80,9 @@ export default async function LeaguePage({
   const initialFollowersCount = await getFollowersCount('league', id);
 
   const league = await getLeague(id);
+  if (!league) {
+    notFound();
+  }
   const teams = league ? await getLeagueTeams(league.id) : [];
   const teamCount = Array.isArray(teams) ? teams.length : 0;
   const levelKey = (league?.level || 'other').toLowerCase();

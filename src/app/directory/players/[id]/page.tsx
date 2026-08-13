@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
@@ -145,6 +146,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PlayerPage({ params }: Props) {
   const { id } = await params;
+
+  // Reject obviously invalid ids before social lookups.
+  const { data: playerExists } = await supabaseAdmin
+    .from('players')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle();
+  if (!playerExists) {
+    notFound();
+  }
 
   // Social: look up owner + follower count in parallel (cheap, indexed).
   // Player pages may not have a claimed owner — `owner` is null in that
