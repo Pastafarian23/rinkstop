@@ -51,15 +51,91 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // 2026-08-13: HOTFIX - return empty state to unblock dashboard.
-  // The error escaping the page/layout try/catch and going to error.tsx
-  // means this is a React RSC reconciliation error, not a synchronous throw.
-  // Until we can reproduce in dev mode and see the real error, this
-  // unblocks Arnel from using the dashboard. The attention widget will
-  // show "All caught up" (which is true for Arnel anyway - all counts are 0).
-  return { rows: [], allClear: true };
-}
+  // Run independent queries in parallel so the slow one doesn't gate the
+  // whole widget. Promise.allSettled lets us degrade gracefully if one
+  // surface is broken — better than crashing the dashboard.
+  const results = await Promise.allSettled([
+    loadUnreadNotifications(userId),
+    loadPendingClaims(userId),
+    loadExpiringDocuments(userId),
+    loadSubscriptionIssue(userId),
+  ]);
 
+  const unreadNotif: number | null = results[0].status === 'fulfilled' ? results[0].value : null;
+  const pendingClaims: number | null = results[1].status === 'fulfilled' ? results[1].value : null;
+  const expiringDocs: DocsResult | null = results[2].status === 'fulfilled' ? results[2].value : null;
+  const subscriptionIssue: SubscriptionResult | null = results[3].status === 'fulfilled' ? results[3].value : null;
+
+  // Inbox unread count comes from the existing inbox loader (which is
+  // already called by the dashboard's InboxCard). We re-fetch here to
+  // keep the data loader self-contained. The cost is one extra typed
+  // count query — cheap.
+  const inboxUnread = await loadInboxUnread(userId).catch((): number | null => null);
+
+  const rows: AttentionRow[] = [];
+
+  if (unreadNotif !== null && unreadNotif > 0) {
+    rows.push({
+      key: 'notifications',
+      icon: '🔔',
+      label: 'New notifications',
+      count: unreadNotif,
+      href: '/dashboard/notifications',
+      tone: 'red',
+    });
+  }
+
+  if (inboxUnread !== null && inboxUnread > 0) {
+    rows.push({
+      key: 'inbox',
+      icon: '✉️',
+      label: 'Unread messages',
+      count: inboxUnread,
+      href: '/dashboard/inbox',
+      tone: 'red',
+    });
+  }
+
+  if (pendingClaims !== null && pendingClaims > 0) {
+    rows.push({
+      key: 'claims',
+      icon: '📋',
+      label: 'Pending claims',
+      count: pendingClaims,
+      href: '/dashboard/claims',
+      tone: 'amber',
+    });
+  }
+
+  if (expiringDocs !== null && expiringDocs.count > 0) {
+    rows.push({
+      key: 'documents',
+      icon: '📁',
+      label: 'Documents expiring',
+      count: expiringDocs.count,
+      detail: expiringDocs.detail,
+      href: '/dashboard/documents',
+      tone: 'amber',
+    });
+  }
+
+  if (subscriptionIssue !== null && subscriptionIssue.hasIssue) {
+    rows.push({
+      key: 'subscription',
+      icon: '💳',
+      label: 'Subscription needs attention',
+      count: null,
+      detail: subscriptionIssue.detail,
+      href: '/dashboard/subscription',
+      tone: 'red',
+    });
+  }
+
+  return {
+    rows,
+    allClear: rows.length === 0,
+  };
+}
 
 async function loadUnreadNotifications(userId: string): Promise<number | null> {
   try {
