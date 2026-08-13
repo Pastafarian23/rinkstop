@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { unstable_cache } from 'next/cache';
 
 export type DirectoryCounts = {
   rinks: number;
@@ -441,3 +442,45 @@ export async function getCountryLeaguesMap(): Promise<Map<string, Set<string>>> 
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// Cached wrappers — keep the original function exports unchanged so existing
+// callers stay source-compatible. The wrappers memoize the response for
+// `revalidate` seconds per call site, so a busy page like /directory/teams
+// (which calls getDirectoryCounts in generateMetadata AND in the page body)
+// makes ONE RPC call per process per revalidate window instead of two.
+//
+// Why 5 minutes: directory counts shift slowly (a few new teams per day, not
+// per second). 5 min is fine for "1,000+ ..." marketing copy. Top leagues
+// and country-leagues map are even more stable — 15 min is fine there.
+// ---------------------------------------------------------------------------
+
+const TEN_MIN = 600;
+const FIFTEEN_MIN = 900;
+
+export const getDirectoryCountsCached = unstable_cache(
+  async () => getDirectoryCounts(),
+  ['getDirectoryCounts'],
+  { revalidate: TEN_MIN, tags: ['directory-counts'] }
+);
+
+export const getCountryTeamCountsCached = unstable_cache(
+  async () => getCountryTeamCounts(),
+  ['getCountryTeamCounts'],
+  { revalidate: FIFTEEN_MIN, tags: ['directory-counts'] }
+);
+
+export const getTopLeaguesCached = unstable_cache(
+  async () => getTopLeagues(),
+  ['getTopLeagues'],
+  { revalidate: FIFTEEN_MIN, tags: ['directory-counts'] }
+);
+
+export const getCountryLeaguesMapCached = unstable_cache(
+  async (): Promise<Array<[string, string[]]>> => {
+    const map = await getCountryLeaguesMap();
+    return Array.from(map.entries()).map(([k, v]) => [k, Array.from(v)]);
+  },
+  ['getCountryLeaguesMap'],
+  { revalidate: FIFTEEN_MIN, tags: ['directory-counts'] }
+);
