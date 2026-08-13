@@ -51,18 +51,19 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // 2026-08-13: bisect ROW BUILDING. Only loadUnreadNotifications, build row if > 0.
+  // 2026-08-13: FIX - wrap count in Number() to prevent BigInt serialization crash.
   try {
     const unreadNotif = await loadUnreadNotifications(userId);
-    console.error('[attentionDiag] unreadNotif:', unreadNotif);
+    const unreadNotifNum = unreadNotif !== null ? Number(unreadNotif) : null;
+    console.error('[attentionDiag] unreadNotif:', unreadNotif, 'as Number:', unreadNotifNum);
 
     const rows: AttentionRow[] = [];
-    if (unreadNotif !== null && unreadNotif > 0) {
+    if (unreadNotifNum !== null && unreadNotifNum > 0) {
       rows.push({
         key: 'notifications',
         icon: '🔔',
         label: 'New notifications',
-        count: unreadNotif,
+        count: unreadNotifNum,
         href: '/dashboard/notifications',
         tone: 'red',
       });
