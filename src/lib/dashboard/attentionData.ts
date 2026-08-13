@@ -95,7 +95,7 @@ export async function loadAttentionSummary(userId: string): Promise<AttentionSum
   // already called by the dashboard's InboxCard). We re-fetch here to
   // keep the data loader self-contained. The cost is one extra typed
   // count query — cheap.
-  const inboxUnread = await loadInboxUnread(userId).catch((): number | null => null);
+  // (inboxUnread is already loaded above with diagnostic logging)
 
   const rows: AttentionRow[] = [];
 
