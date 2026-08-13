@@ -101,9 +101,8 @@ export default function UsernameField({
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
-          className="flex-1 bg-[#041E42] border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:border-[#FFB81C] focus:bg-[#0a0f1f] disabled:opacity-50 caret-[#FFB81C] appearance-none username-input"
+          className="flex-1 bg-white border border-white/30 rounded-lg px-3 py-2 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-[#FFB81C] focus:ring-2 focus:ring-[#FFB81C]/20 disabled:opacity-50 caret-[#041E42]"
           title={disabled ? disabledReason : undefined}
-          style={{ backgroundColor: '#041E42', color: '#fff' }}
         />
       </div>
 
