@@ -130,6 +130,15 @@ export default function TeamsIndexClient({
   // Local state for verified-only (transient, not URL-synced — same as before)
   const [verifiedOnly, setVerifiedOnly] = useState(false);
 
+  // Load-more pagination. 2026-08-13: server-side initialTeams is now capped
+  // at 48 cards (down from 500) so the page HTML is ~80KB instead of ~1MB.
+  // The "Load more" button fetches the next batch via /api/teams?offset=N
+  // and the resulting NHL rows are merged into extraTeams. User-created
+  // teams come from the same /api/user-teams endpoint.
+  const [extraTeams, setExtraTeams] = useState<Team[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
   // The teams list is the props (already SSR-filtered when the URL has
   // a filter set). We do NOT cache it in local state — every prior version
   // did, which meant the grid kept showing STALE teams for 1–3 seconds
@@ -143,7 +152,7 @@ export default function TeamsIndexClient({
   // Verified 2026-08-13 after Samsung Z Fold 4 user reported "delay on
   // selecting dropdown option"; curl showed the RSC payload (initialTeams)
   // is correct within ~600ms of router.replace.
-  const teams = initialTeams;
+  const teams = [...initialTeams, ...extraTeams];
 
   // True if the user is currently on the "filtered" state (URL has ?country= etc.)
   // Kept as a no-op marker for downstream code that depends on it. SSR already
@@ -221,6 +230,74 @@ export default function TeamsIndexClient({
     },
     [setFilter]
   );
+
+  // Load more teams via the /api/teams + /api/user-teams endpoints.
+  // Mirrors the page filter so the new batch respects the active URL
+  // filters. Pagination is by simple offset; user teams are capped at 100.
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const params = new URLSearchParams();
+    if (urlCountry) params.set('country', urlCountry);
+    if (urlLevel) params.set('level', urlLevel);
+    if (urlLeague) params.set('league', urlLeague);
+    const offset = teams.length;
+    params.set('offset', String(offset));
+    params.set('limit', '48');
+    try {
+      const [nhlRes, userRes] = await Promise.all([
+        fetch(`/api/teams?${params.toString()}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
+        fetch(`/api/user-teams?${params.toString()}`).then((r) => r.json()).catch((): { data: never[] } => ({ data: [] })),
+      ]);
+      const nhlData: any[] = (nhlRes?.data || []) as any[];
+      const userData: any[] = (userRes?.data || []) as any[];
+      const mapped: Team[] = [
+        ...nhlData.map((t): Team => ({
+          id: t.id, name: t.name, slug: t.slug,
+          logo_url: t.avatar_url ?? t.logo_url ?? null,
+          city: t.home_city ?? null, country: t.country_code ?? null,
+          league_id: t.league_id ?? null,
+          leagues: t.leagues ?? null,
+          source: 'nhl' as const,
+        })),
+        ...userData.map((t): Team => ({
+          id: t.id, name: t.name, slug: t.slug,
+          country: t.home_country ?? null, country_code: t.country_code ?? null,
+          city: t.home_city ?? null,
+          organization: t.organization ?? null, league: t.league ?? null, federation: t.federation ?? null,
+          level: t.level ?? null, age_label: t.age_label ?? null, age_category: t.age_category ?? null,
+          description: t.description ?? null, season_label: t.season_label ?? null,
+          claimed_by_tier: null,
+          source: 'user' as const,
+        })),
+      ];
+      // Dedupe by id
+      const seen = new Set<string>();
+      const unique: Team[] = [];
+      for (const t of mapped) {
+        if (seen.has(t.id)) continue;
+        seen.add(t.id);
+        unique.push(t);
+      }
+      if (unique.length === 0) {
+        setHasMore(false);
+      } else {
+        setExtraTeams((prev) => [...prev, ...unique]);
+        if (unique.length < 48) setHasMore(false);
+      }
+    } catch (e) {
+      console.error('[loadMore] failed', e);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, urlCountry, urlLevel, urlLeague, teams.length]);
+
+  // Reset extraTeams + hasMore when the filter changes (chip click,
+  // dropdown select). The new initialTeams comes from the URL change.
+  useEffect(() => {
+    setExtraTeams([]);
+    setHasMore(true);
+  }, [urlCountry, urlLevel, urlLeague]);
 
   // Auto-cleanup: if the URL has an impossible level+league combination
   // (e.g. ?level=college&league=NHL), clear the league so the dropdown
@@ -630,6 +707,37 @@ export default function TeamsIndexClient({
             ))
         }
       </div>
+
+      {/* Load more — fetches the next page via /api/teams?offset=N. 2026-08-13
+         replaces the old behavior of SSRed every team in the directory
+         (which made the page HTML ~1MB). */}
+      {hasMore && visibleTeams.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: 'transparent',
+              border: '1.5px solid rgba(255,184,28,0.4)',
+              color: '#FFB81C',
+              borderRadius: 4,
+              cursor: loadingMore ? 'wait' : 'pointer',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              transition: 'border-color 0.15s, color 0.15s',
+              opacity: loadingMore ? 0.6 : 1,
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#FFB81C'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,184,28,0.4)'; }}
+          >
+            {loadingMore ? 'Loading…' : 'Load more teams'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

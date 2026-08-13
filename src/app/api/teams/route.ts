@@ -94,6 +94,7 @@ export async function GET(request: NextRequest) {
   const city = searchParams.get('city');
   const sort = searchParams.get('sort') || 'name';
   const limit = parseInt(searchParams.get('limit') || '100', 10);
+  const offset = parseInt(searchParams.get('offset') || '0', 10);
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
   let query = supabase.from('team_workspaces').select('*, leagues(name)');
@@ -152,7 +153,7 @@ export async function GET(request: NextRequest) {
     }
     if (activeOnly && !search) query = query.eq('is_active', true);
     if (search) query = query.or(`name.ilike.%${search}%,home_city.ilike.%${search}%`);
-    query = query.limit(limit);
+    query = query.range(offset, offset + limit - 1);
   }
 
   const orderCol = sort === 'recent' ? 'created_at' : 'name';
