@@ -417,14 +417,26 @@ async function renderDashboard(userId: string) {
   const completenessPct = Math.round((completeness.filter(c => c.done).length / completeness.length) * 100);
   const firstMissing = completeness.find(c => !c.done);
 
+  // 2026-08-13: per-child diagnostic wrapper. RSC reconciliation errors
+  // don't propagate to the parent try/catch in renderDashboard, so we
+  // localize them here. Once the failing child is identified, revert to
+  // bare rendering and fix the root cause.
+  function safe(name: string, fn: () => React.ReactNode): React.ReactNode {
+    try { return fn(); }
+    catch (e: any) {
+      console.error(`[dashboard child] ${name}:`, e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
+      return null;
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {profile?.username ? null : (
+      {safe('UsernameBanner', () => (
         <UsernameBanner
           displayName={profile?.display_name || firstName || 'RinkStop Member'}
         />
-      )}
+      ))}
 
       {/* Welcome card */}
       <div style={{
@@ -503,13 +515,15 @@ async function renderDashboard(userId: string) {
           (shows "All caught up" when nothing is pending). Surfaces unread
           notifications, inbox messages, pending claims, expiring documents,
           and subscription issues in one place. (WS14 PR4, 2026-07-31.) */}
-      <AttentionCard data={attention} />
+      {safe('AttentionCard', () => (
+        <AttentionCard data={attention} />
+      ))}
 
       {/* Family Setup Wizard (Phase 1a, prep doc §3.2). Parent-only,
           identity_plus+ or business_listing+, hidden once dismissed.
           Server-rendered gate (wizardVisible) keeps the component out
           of the bundle for non-eligible users. */}
-      {wizardVisible ? (
+      {wizardVisible ? safe('FamilySetupWizard', () => (
         <FamilySetupWizard
           firstName={firstName}
           persona={accountTypeToPersona(wizardPersonaRaw ?? 'generic')}
@@ -525,18 +539,22 @@ async function renderDashboard(userId: string) {
             hasOfficialRegistration: wizardHasOfficialRegistration,
           }}
         />
-      ) : null}
+      )) : null}
 
       {/* Inbox widget - quick access to messages, available to all users */}
-      <InboxCard data={inbox} />
+      {safe('InboxCard', () => (
+        <InboxCard data={inbox} />
+      ))}
 
       {/* Consumer dashboard cards (Phase 1a, prep doc §3.3).
           Visible to ALL personal-workspace users. Empty-state CTAs are
           account-type-aware (parent/player/scout/fan). */}
-      <ConsumerCards
-        primaryType={primary}
-        data={consumerCardData}
-      />
+      {safe('ConsumerCards', () => (
+        <ConsumerCards
+          primaryType={primary}
+          data={consumerCardData}
+        />
+      ))}
 
       {/* Workspace hub - three cards: Personal / Organization / Business.
           Per Arnel's 2026-07-02 directive, this replaces the previous
@@ -569,7 +587,9 @@ async function renderDashboard(userId: string) {
           thing a player sees on /dashboard. */}
       {types.includes('player') ? (
         <div id="practice" style={{ scrollMarginTop: 80 }}>
-          <PlayerPracticePulse data={practicePulse} />
+          {safe('PlayerPracticePulse', () => (
+            <PlayerPracticePulse data={practicePulse} />
+          ))}
         </div>
       ) : null}
 
@@ -578,22 +598,26 @@ async function renderDashboard(userId: string) {
           players mark themselves visible in /directory/free-agents. */}
       {types.includes('player') && freeAgentProfile ? (
         <div id="free-agent" style={{ scrollMarginTop: 80 }}>
-          <FreeAgentToggle profile={freeAgentProfile} />
+          {safe('FreeAgentToggle', () => (
+            <FreeAgentToggle profile={freeAgentProfile} />
+          ))}
         </div>
       ) : null}
 
-      <WorkspaceHub
-        userTier={profile?.tier ?? 'free'}
-        accountTypes={types.map(t => String(t))}
-        typeData={typeData}
-        dismissedIds={dismissedIds}
-      />
+      {safe('WorkspaceHub', () => (
+        <WorkspaceHub
+          userTier={profile?.tier ?? 'free'}
+          accountTypes={types.map(t => String(t))}
+          typeData={typeData}
+          dismissedIds={dismissedIds}
+        />
+      ))}
 
       {/* Hidden workspaces footer (2026-07-22). Renders only when the user
           has dismissed at least one fully-available workspace. The
           RestoreWorkspaceButton / RestoreAllWorkspacesButton inside
           trigger router.refresh() so the main grid re-filters. */}
-      <HiddenWorkspacesFooter />
+      {safe('HiddenWorkspacesFooter', () => <HiddenWorkspacesFooter />)}
 
       {/* Choose your roles - only when user has zero account types.
           Shown AFTER the workspace hub so empty-state users can still see
@@ -647,11 +671,9 @@ async function renderDashboard(userId: string) {
       )}
 
       {/* Onboarding checklist */}
-      <OnboardingChecklist
-        userId={userId}
-        profile={profile}
-        types={types}
-      />
+      {safe('OnboardingChecklist', () => (
+        <OnboardingChecklist userId={userId} profile={profile} types={types} />
+      ))}
 
       {/* Cross-persona credentials shortcut - players/coaches/referees see
           all their federation registrations in one place. */}
