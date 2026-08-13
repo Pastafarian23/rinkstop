@@ -91,6 +91,7 @@ export default async function DashboardPage() {
       userId,
       name: err?.name,
       message: err?.message,
+      digest: (err as any)?.digest,
       stack: typeof err?.stack === 'string' ? err.stack.split('\n').slice(0, 3).join('\n') : undefined,
       timestamp: new Date().toISOString(),
     }));
@@ -101,10 +102,11 @@ export default async function DashboardPage() {
     const showDebug = forceDebugAll || isSuperAdmin;
 
     // Show a sanitized hint in the UI (collapsed by default). We expose only the
-    // error name + message - no stack, no userId, no internals. If the user
+    // error name + message + digest - no stack, no userId, no internals. If the user
     // reports "Dashboard hit a snag", we ask them to expand this block and paste.
     const errorName = typeof err?.name === 'string' ? err.name : 'Error';
     const errorMessage = typeof err?.message === 'string' ? err.message : 'Unknown error';
+    const errorDigest = (err as any)?.digest ? `\nRef: ${(err as any).digest}` : '';
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -150,7 +152,7 @@ export default async function DashboardPage() {
                 fontFamily: 'monospace',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
-              }}>{errorName}: {errorMessage}</pre>
+              }}>{errorName}: {errorMessage}{errorDigest}</pre>
             </details>
           ) : null}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
