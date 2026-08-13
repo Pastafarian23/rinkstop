@@ -432,11 +432,13 @@ async function renderDashboard(userId: string) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {safe('UsernameBanner', () => (
-        <UsernameBanner
-          displayName={profile?.display_name || firstName || 'RinkStop Member'}
-        />
-      ))}
+      {profile?.username ? null : (
+        safe('UsernameBanner', () => (
+          <UsernameBanner
+            displayName={profile?.display_name || firstName || 'RinkStop Member'}
+          />
+        ))
+      )}
 
       {/* Welcome card */}
       <div style={{
