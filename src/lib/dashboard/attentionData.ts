@@ -91,11 +91,6 @@ export async function loadAttentionSummary(userId: string): Promise<AttentionSum
     inboxUnread = null;
   }
 
-  const unreadNotif: number | null = results[0].status === 'fulfilled' ? results[0].value : null;
-  const pendingClaims: number | null = results[1].status === 'fulfilled' ? results[1].value : null;
-  const expiringDocs: DocsResult | null = results[2].status === 'fulfilled' ? results[2].value : null;
-  const subscriptionIssue: SubscriptionResult | null = results[3].status === 'fulfilled' ? results[3].value : null;
-
   // Inbox unread count comes from the existing inbox loader (which is
   // already called by the dashboard's InboxCard). We re-fetch here to
   // keep the data loader self-contained. The cost is one extra typed
