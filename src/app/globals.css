@@ -742,8 +742,16 @@ img  { max-width: 100%; display: block; }
 .username-input {
   background-color: #041E42 !important;
   color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
   -webkit-appearance: none !important;
   appearance: none !important;
+}
+.username-input:-webkit-autofill,
+.username-input:-webkit-autofill:hover,
+.username-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #041E42 inset !important;
+  transition: background-color 5000s ease-in-out 0s !important;
 }
 
 .border-2           { border-width: 2px; }
