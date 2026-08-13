@@ -233,15 +233,15 @@ export default function TeamsIndexClient({
   }, [urlLevel, urlLeague, setFilter]);
 
   // Filter teams client-side for:
-  //   - URL ?q= (search bar)
-  //   - verified-only toggle
-  //   - country/level/league as a safety net (server already applies these,
-  //     but in the edge case where a user picks a BROADER filter than what
-  //     the URL already pre-loaded, the client filter keeps the grid honest
-  //     without a second server round-trip).
-  // Removed the prior fetch('/api/teams') + fetch('/api/user-teams') refetch:
-  // it duplicated the SSR round-trip via router.replace() and caused the 1–3s
-  // "delay on select" Arnel reported from a Samsung Z Fold 4 on 2026-08-13.
+  //   - URL ?q= (search bar) — server doesn't pre-filter ?q= so we always
+  //     apply it client-side.
+  //   - verified-only toggle — local UI state.
+  // Country/level/league filters are NOT applied client-side: the server
+  // already filters initialTeams by these on every RSC round-trip. Adding
+  // a parallel client filter caused a bug where `t.leagues` was undefined
+  // (we forgot to join `leagues(name)` in the page's select), so the level
+  // check matched `undefined !== 'pro'` and dropped every NHL team. SSR
+  // is the only authority for country/level/league.
   const visibleTeams = useMemo(() => {
     const q = norm(urlQ);
     return teams.filter((t) => {
@@ -258,39 +258,9 @@ export default function TeamsIndexClient({
       if (verifiedOnly) {
         if (!t.claimed_by_tier || !VERIFIED_TIERS.has(t.claimed_by_tier)) return false;
       }
-      // Country: compare against the full English name the dropdown sends
-      if (urlCountry) {
-        const teamCountry = (t.country ?? '').toLowerCase();
-        const altCountry = ('home_country' in t ? (t as any).home_country ?? '' : '').toLowerCase();
-        const target = urlCountry.toLowerCase();
-        if (teamCountry !== target && altCountry !== target) return false;
-      }
-      // Level: NHL teams resolve via league name; user teams via their own
-      // level column. Empty user level defaults to 'adult' (most user-created
-      // teams are amateur; matches the SSR-side carve-out).
-      if (urlLevel) {
-        let teamLevel: string | undefined;
-        if (t.source === 'user') {
-          teamLevel = (t as UserTeam).level ?? 'adult';
-        } else {
-          const leagueName = (t as NHLTeam).leagues?.name;
-          teamLevel = leagueName ? LEAGUE_LEVELS[leagueName] : undefined;
-        }
-        if (teamLevel !== urlLevel) return false;
-      }
-      // League: exact name match
-      if (urlLeague) {
-        let teamLeagueName: string | undefined;
-        if (t.source === 'user') {
-          teamLeagueName = (t as UserTeam).league?.name;
-        } else {
-          teamLeagueName = (t as NHLTeam).leagues?.name;
-        }
-        if (teamLeagueName !== urlLeague) return false;
-      }
       return true;
     });
-  }, [teams, urlQ, verifiedOnly, urlCountry, urlLevel, urlLeague]);
+  }, [teams, urlQ, verifiedOnly]);
 
   // Build the active-filter chips list (for the "Active filters" row).
   // Each chip has its own × button to clear just that one filter.

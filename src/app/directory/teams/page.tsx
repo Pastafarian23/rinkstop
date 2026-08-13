@@ -124,7 +124,7 @@ async function fetchInitialTeams(opts: {
   // dropped every team_workspaces row (NHL filter then returned 0 NHL rows).
   let nhlQuery = supabase
     .from('team_workspaces')
-    .select('id, name, slug, avatar_url, home_city, country_code, league_id')
+    .select('id, name, slug, avatar_url, home_city, country_code, league_id, leagues(name)')
     .eq('is_active', true)
     .order('name')
     .limit(500);
