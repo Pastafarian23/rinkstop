@@ -51,11 +51,10 @@ interface SubscriptionResult {
 const empty: AttentionSummary = { rows: [], allClear: true };
 
 export async function loadAttentionSummary(userId: string): Promise<AttentionSummary> {
-  // 2026-08-13: FIX - wrap count in Number() to prevent BigInt serialization crash.
+  // 2026-08-13: Serialize-test - log the exact JSON to see what's being sent.
   try {
     const unreadNotif = await loadUnreadNotifications(userId);
     const unreadNotifNum = unreadNotif !== null ? Number(unreadNotif) : null;
-    console.error('[attentionDiag] unreadNotif:', unreadNotif, 'as Number:', unreadNotifNum);
 
     const rows: AttentionRow[] = [];
     if (unreadNotifNum !== null && unreadNotifNum > 0) {
@@ -69,8 +68,17 @@ export async function loadAttentionSummary(userId: string): Promise<AttentionSum
       });
     }
 
-    console.error('[attentionDiag] rows:', JSON.stringify(rows));
-    return { rows, allClear: rows.length === 0 };
+    const result = { rows, allClear: rows.length === 0 };
+    // Try to serialize the result - this is what RSC does internally.
+    const serialized = JSON.stringify(result);
+    console.error('[attentionDiag] serialized result:', serialized);
+    console.error('[attentionDiag] result keys:', Object.keys(result));
+    console.error('[attentionDiag] rows type:', typeof rows, Array.isArray(rows));
+    if (rows.length > 0) {
+      console.error('[attentionDiag] first row keys:', Object.keys(rows[0]));
+      console.error('[attentionDiag] first row count type:', typeof rows[0].count);
+    }
+    return result;
   } catch (e: any) {
     console.error('[attentionDiag] threw:', e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'));
     return { rows: [], allClear: true };
