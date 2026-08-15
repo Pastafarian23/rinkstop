@@ -159,6 +159,8 @@ export default function IdentityClient({
 
   const copy = STATUS_COPY[status] || STATUS_COPY.never_verified;
 
+  const debugSrc = iframeUrl ? new URL(iframeUrl).host : null;
+
   // Verified Identity or Business Listing+ gate
   if (!canVerify) {
     return (
@@ -186,18 +188,32 @@ export default function IdentityClient({
 
   // Iframe open → in_progress view
   if (iframeUrl) {
-    // Didit hosted verification often sets X-Frame-Options / frame-ancestors
-    // that block iframe embedding even when our CSP allows it. Redirect in the
-    // same tab so the user completes verification on Didit's domain.
-    if (typeof window !== 'undefined') {
-      window.location.href = iframeUrl;
-    }
     return (
       <div style={{ maxWidth: 880 }}>
-        <h1 style={titleStyle}>Redirecting to verification...</h1>
+        <h1 style={titleStyle}>Complete your verification</h1>
         <p style={bodyStyle}>
-          Taking you to Didit to complete your verification. If you are not redirected automatically,
-          <a href={iframeUrl} style={{ color: '#FFB81C' }}>click here</a>.
+          Didit is loading in the secure window below. Have your government-issued ID ready.
+        </p>
+        <div style={iframeWrapStyle}>
+          <iframe
+            src={iframeUrl}
+            title="Identity verification"
+            style={iframeStyle}
+            allow="camera; microphone; autoplay; encrypted-media; fullscreen"
+            referrerPolicy="no-referrer"
+            data-testid="identity-iframe"
+          />
+        </div>
+        <p style={smallNoteStyle}>
+          Session ID: <code>{sessionId}</code>. If the window doesn't load,{' '}
+          <a
+            href={iframeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#FFB81C' }}
+          >
+            open it in a new tab
+          </a>.
         </p>
       </div>
     );
