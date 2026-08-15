@@ -81,7 +81,7 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
           Hockey {roleLabel.plural}
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9375rem', maxWidth: '680px' }}>
-          {role === 'coach' && 'Head coaches and assistant coaches across the NHL, KHL, and other professional leagues.'}
+          {role === 'coach' && 'Head coaches and assistant coaches from professional leagues, community teams, and youth programs.'}
           {role === 'scout' && 'NHL team scouts responsible for player evaluation and draft preparation.'}
           {role === 'official' && 'NHL referees and linesmen working regular season and playoff games.'}
           {role === 'staff' && 'Equipment managers, trainers, and other team support staff.'}
