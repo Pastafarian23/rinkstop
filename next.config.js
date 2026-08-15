@@ -8,6 +8,7 @@ const nextConfig = {
   // in a row, CDN stuck on the build hash from 90 min earlier).
   // Bump this to the current epoch when shipping a fix you need on
   // production immediately. Cheap, safe, deterministic.
+  // Force buildId bump for next deploy
   generateBuildId: async () => `v-${Date.now()}`,
   reactStrictMode: true,
   // WS-Recovery 2026-08-11: skip ESLint during builds.
