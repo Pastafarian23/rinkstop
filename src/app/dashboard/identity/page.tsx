@@ -62,8 +62,8 @@ export default async function IdentityPage({
   }
   // Verified Identity (personal track) OR Business Listing+ (business track) can verify
   // Using tierAtLeastSameTrack which enforces same-track comparison.
-  // Personal: Identity Plus+ (or legacy pro/roster_plus). Business: Business Listing+ (or legacy business_starter).
-  const canVerify = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(tier, 'business_listing');
+  // Personal: Verified Identity+ (rank 1+). Business: Business Listing+ (rank 1+).
+  const canVerify = tierAtLeastSameTrack(tier, 'verified_identity') || tierAtLeastSameTrack(tier, 'business_listing');
 
   // Fetch current identity status from the view (canonical user_id)
   const { data: status } = await supabaseAdmin

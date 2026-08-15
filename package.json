@@ -45,6 +45,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.4.0",
     "cheerio": "^1.2.0",
+    "eslint": "^10.8.1",
     "pg": "^8.21.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^4.0.0",

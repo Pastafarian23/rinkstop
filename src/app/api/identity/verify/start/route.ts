@@ -51,10 +51,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 3. Tier gate: Roster+ required for Phase 1
-    // (Was Pro+ in earlier design; downgraded 2026-06-17 because
-    //  verification-required roles (coach, manager, etc.) are
-    //  available from Roster+. Only free/roster users are blocked.)
+    // 3. Tier gate: Verified Identity+ required for Phase 1
+    // (Matches pricing page: verification is a Verified Identity feature.)
     //
     // Owner-email fallback: if the authed Clerk user_id resolves to a
     // shadow row (e.g. an orphan Clerk user that lazy-create built with
@@ -81,7 +79,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch { /* currentUser() may throw in edge cases — fall through */ }
-    if (!tierAtLeast(tier, 'identity_plus')) {
+    if (!tierAtLeast(tier, 'verified_identity')) {
       return NextResponse.json(
         {
           error: 'tier_required',
