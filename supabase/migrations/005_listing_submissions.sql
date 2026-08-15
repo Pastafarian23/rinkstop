@@ -27,9 +27,9 @@ CREATE POLICY "Allow anonymous inserts" ON public.listing_submissions
 CREATE POLICY "Allow read by authenticated" ON public.listing_submissions
   FOR SELECT TO authenticated USING (true);
 
--- Allow anon to read (so submitters can see their own status - by email match)
-CREATE POLICY "Allow anon read own" ON public.listing_submissions
-  FOR SELECT TO anon USING (true);
+-- Service_role bypass for admin routes (supabaseAdmin client)
+CREATE POLICY "Allow service_role full" ON public.listing_submissions
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- Enable realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE public.listing_submissions;
