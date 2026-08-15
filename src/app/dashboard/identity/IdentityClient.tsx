@@ -81,6 +81,17 @@ export default function IdentityClient({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [iframeError, setIframeError] = useState<string | null>(null);
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    if (!iframeUrl) return;
+    const frame = iframeRef.current;
+    if (!frame) return;
+    const handler = () => setIframeError('Browser blocked the iframe load. Check DevTools Network for X-Frame-Options / frame-ancestors on the iframe response.');
+    frame.addEventListener('error', handler);
+    return () => frame.removeEventListener('error', handler);
+  }, [iframeUrl]);
 
   // If the user came back from Didit (via callback URL ?return=1),
   // poll the decision endpoint and update the status.
@@ -161,7 +172,49 @@ export default function IdentityClient({
 
   const debugSrc = iframeUrl ? new URL(iframeUrl).host : null;
 
-  // Verified Identity or Business Listing+ gate
+  // Iframe open → in_progress view
+  if (iframeUrl) {
+    return (
+      <div style={{ maxWidth: 880 }}>
+        <h1 style={titleStyle}>Complete your verification</h1>
+        <p style={bodyStyle}>
+          Didit is loading in the secure window below. Have your government-issued ID ready.
+        </p>
+        {debugSrc && (
+          <p style={{ color: '#FFB81C', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+            Debug iframe host: {debugSrc}
+          </p>
+        )}
+        {iframeError && (
+          <div style={{ ...errorBoxStyle, marginBottom: '0.75rem' }} role="alert">
+            {iframeError}
+          </div>
+        )}
+        <div style={iframeWrapStyle}>
+          <iframe
+            ref={iframeRef}
+            src={iframeUrl}
+            title="Identity verification"
+            style={iframeStyle}
+            allow="camera; microphone; autoplay; encrypted-media; fullscreen"
+            referrerPolicy="no-referrer"
+            data-testid="identity-iframe"
+          />
+        </div>
+        <p style={smallNoteStyle}>
+          Session ID: <code>{sessionId}</code>. If the window doesn't load,{' '}
+          <a
+            href={iframeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#FFB81C' }}
+          >
+            open it in a new tab
+          </a>.
+        </p>
+      </div>
+    );
+  }
   if (!canVerify) {
     return (
       <div style={{ maxWidth: 720 }}>
