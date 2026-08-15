@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // Helper: format NHL row to the RinkStop players shape so existing detail page works
-function formatNhlStaff(p: any) {
+function formatNhlStaff(p: any): any {
   const name = p.full_name || `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim();
   const [first, ...rest] = name.split(' ');
   const last = rest.join(' ');
-  return {
+  const result: Record<string, any> = {
     id: `nhl-${p.id}`,
     source: 'nhl',
     first_name: first || null,
@@ -37,20 +37,21 @@ function formatNhlStaff(p: any) {
       leagues: { name: p.league_name || 'NHL', slug: (p.league_name || 'nhl').toLowerCase() },
     } : null,
   };
+  return result;
 }
 
 // Helper: format community coach from team_members
 function formatCommunityCoach(m: any, teamName: string | null, teamShortName: string | null, teamLogo: string | null) {
-  const displayName = m.profiles?.display_name || 'Unknown';
+  const displayName = (m.profiles as any)?.display_name || 'Unknown';
   const [first, ...rest] = displayName.split(' ');
   const last = rest.join(' ');
-  return {
+  const result: Record<string, any> = {
     id: `team-${m.id}`,
     source: 'community',
     first_name: first || null,
     last_name: last || null,
     full_name: displayName,
-    slug: (m.profiles?.username || displayName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+    slug: ((m.profiles as any)?.username || displayName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
     position: null,
     position_abbreviation: null,
     jersey_number: null,
@@ -59,7 +60,7 @@ function formatCommunityCoach(m: any, teamName: string | null, teamShortName: st
     height_cm: null,
     weight_kg: null,
     shoots: null,
-    headshot_url: m.profiles?.avatar_url || null,
+    headshot_url: (m.profiles as any)?.avatar_url || null,
     is_active: !m.left_at,
     role: 'coach',
     was_player: false,
@@ -75,6 +76,7 @@ function formatCommunityCoach(m: any, teamName: string | null, teamShortName: st
       leagues: null,
     } : null,
   };
+  return result;
 }
 
 // Coach-related roles in team_members
@@ -137,12 +139,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       if (!membersError && members) {
         const community = members.map(m => {
-          const tw = m.team_workspaces;
+          const tw = (m as any).team_workspaces;
+          const teamName = tw?.name || null;
+          const teamShortName = tw?.short_name || null;
+          const teamLogo = tw?.avatar_url || null;
           return formatCommunityCoach(
             m,
-            tw?.name || null,
-            tw?.short_name || null,
-            tw?.avatar_url || null
+            teamName,
+            teamShortName,
+            teamLogo
           );
         });
         results.push(...community);
