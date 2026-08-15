@@ -180,16 +180,6 @@ export default function IdentityClient({
         <p style={bodyStyle}>
           Didit is loading in the secure window below. Have your government-issued ID ready.
         </p>
-        {debugSrc && (
-          <p style={{ color: '#FFB81C', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
-            Debug iframe host: {debugSrc}
-          </p>
-        )}
-        {iframeError && (
-          <div style={{ ...errorBoxStyle, marginBottom: '0.75rem' }} role="alert">
-            {iframeError}
-          </div>
-        )}
         <div style={iframeWrapStyle}>
           <iframe
             ref={iframeRef}
