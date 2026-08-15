@@ -159,6 +159,8 @@ export default function IdentityClient({
 
   const copy = STATUS_COPY[status] || STATUS_COPY.never_verified;
 
+  const debugSrc = iframeUrl ? new URL(iframeUrl).host : null;
+
   // Verified Identity or Business Listing+ gate
   if (!canVerify) {
     return (
@@ -192,6 +194,11 @@ export default function IdentityClient({
         <p style={bodyStyle}>
           Didit is loading in the secure window below. Have your government-issued ID ready.
         </p>
+        {debugSrc && (
+          <p style={{ color: '#FFB81C', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+            Debug iframe host: {debugSrc}
+          </p>
+        )}
         <div style={iframeWrapStyle}>
           <iframe
             src={iframeUrl}
