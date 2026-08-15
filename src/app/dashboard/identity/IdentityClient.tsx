@@ -17,7 +17,7 @@
  *   5. status becomes 'active' → success screen
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 
 type Status = 'never_verified' | 'active' | 'expired' | 'in_progress';
@@ -82,7 +82,7 @@ export default function IdentityClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [iframeError, setIframeError] = useState<string | null>(null);
-  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     if (!iframeUrl) return;
