@@ -21,7 +21,7 @@ export default function TermsPage() {
       </h1>
 
       <div style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.8, fontSize: '1rem' }}>
-        <p style={{ marginBottom: '1.5rem', color: 'rgba(255,255,255,0.5)' }}>Last updated: May 15, 2026</p>
+        <p style={{ marginBottom: '1.5rem', color: 'rgba(255,255,255,0.5)' }}>Last updated: August 16, 2026</p>
 
         <p style={{ marginBottom: '1.5rem' }}>
           Welcome to RinkStop. These Terms of Service (&quot;Terms&quot;) govern your access to and use of the RinkStop website (rinkstop.com) and all related services operated by RinkStop (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;). By accessing or using our website, you agree to be bound by these Terms. If you do not agree to these Terms, please do not use our website.

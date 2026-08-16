@@ -27,6 +27,10 @@ export default async function AboutPage() {
         RinkStop is a global hockey directory built to connect the hockey world  --  from NHL teams to youth programs in non-traditional markets, from professional leagues to local rinks, from established players to first-time lace-ups.
       </p>
 
+      <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '3rem' }}>
+        Last updated: August 16, 2026
+      </p>
+
       {/* Mission */}
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>OUR MISSION</h2>
@@ -126,6 +130,10 @@ export default async function AboutPage() {
         <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
           <strong style={{ color: '#fff' }}>General &amp; listing inquiries:</strong>{' '}
           <a href="mailto:support@rinkstop.com" style={{ color: '#C8102E', fontWeight: 600 }}>support@rinkstop.com</a>
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
+          <strong style={{ color: '#fff' }}>Phone:</strong>{' '}
+          <a href="tel:+17083791460" style={{ color: '#C8102E', fontWeight: 600 }}>(708) 379-1460</a>
         </p>
         <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: '0.5rem' }}>
           <strong style={{ color: '#fff' }}>Privacy &amp; data requests:</strong>{' '}
