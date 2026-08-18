@@ -53,7 +53,12 @@ tsconfig.tsbuildinfo
 /android/captures/
 /android/.idea/
 /android/app/release/
+/android/app/build/outputs/bundle/
+/android/app/build/outputs/apk/
 /rinkstop-v1-debug.apk
+
+# Backup files (manual patches left behind during local builds)
+*.bak
 
 # Build cache (regenerable, do not commit)
 /.next/
