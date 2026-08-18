@@ -598,16 +598,41 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                 🌐 Website
               </a>
             )}
-            {rink.google_maps_url && (
-              <a
-                href={rink.google_maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
-              >
-                📍 View on Google Maps
-              </a>
-            )}
+          </div>
+        )}
+
+        {/* EMBEDDED MAP — keeps users on RinkStop instead of bouncing to
+            Google Maps. Uses the no-key legacy embed URL
+            (maps.google.com/maps?q=lat,lon&output=embed) per MEMORY.md
+            2026-06-12 lesson: the Maps Embed API requires a key enabled
+            for that product, which our Google Cloud key is not. The
+            legacy URL works without any key, no API restrictions to
+            fight. Renders only when we have lat/lng for the rink.
+            (2026-08-18: replaces the "View on Google Maps" external
+            link that was under the phone number — Arnel flagged it as
+            guiding users out of RinkStop.) */}
+        {rink.latitude && rink.longitude && (
+          <div
+            data-testid="rink-embedded-map"
+            style={{
+              marginTop: '-12px',
+              marginBottom: '24px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              background: 'rgba(13,17,23,0.6)',
+            }}
+          >
+            <iframe
+              title={`${rink.name} location`}
+              width="100%"
+              height="260"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              src={`https://maps.google.com/maps?q=${rink.latitude},${rink.longitude}&z=15&output=embed`}
+              style={{ border: 0, display: 'block' }}
+              allowFullScreen
+            />
           </div>
         )}
 
