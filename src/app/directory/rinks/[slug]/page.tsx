@@ -602,39 +602,60 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         )}
 
         {/* EMBEDDED MAP — keeps users on RinkStop instead of bouncing to
-            Google Maps. Uses the no-key legacy embed URL
-            (maps.google.com/maps?q=lat,lon&output=embed) per MEMORY.md
-            2026-06-12 lesson: the Maps Embed API requires a key enabled
-            for that product, which our Google Cloud key is not. The
-            legacy URL works without any key, no API restrictions to
-            fight. Renders only when we have lat/lng for the rink.
+            Google Maps. Uses the OpenStreetMap no-key embed endpoint
+            (openstreetmap.org/export/embed.html) which returns real map
+            tiles and works in an iframe without any API key or quota.
+            The previous attempt used Google Maps' legacy
+            `maps.google.com/maps?q=...&output=embed` URL (per MEMORY.md
+            2026-06-12), but Google retired that endpoint in 2024 and
+            it now returns 404 — the iframe loads but renders a blank
+            white box. OSM is the right replacement: free, no key, no
+            quota, and Leaflet is already a project dependency.
+            Bbox is a ~1km box around the rink (0.005° lat/lng padding)
+            so users can see the surrounding streets/landmarks.
             (2026-08-18: replaces the "View on Google Maps" external
             link that was under the phone number — Arnel flagged it as
             guiding users out of RinkStop.) */}
-        {rink.latitude && rink.longitude && (
-          <div
-            data-testid="rink-embedded-map"
-            style={{
-              marginTop: '-12px',
-              marginBottom: '24px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: '1px solid var(--border)',
-              background: 'rgba(13,17,23,0.6)',
-            }}
-          >
-            <iframe
-              title={`${rink.name} location`}
-              width="100%"
-              height="260"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              src={`https://maps.google.com/maps?q=${rink.latitude},${rink.longitude}&z=15&output=embed`}
-              style={{ border: 0, display: 'block' }}
-              allowFullScreen
-            />
-          </div>
-        )}
+        {rink.latitude && rink.longitude && (() => {
+          const lat = Number(rink.latitude);
+          const lng = Number(rink.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          const bbox = `${(lng - 0.005).toFixed(5)}%2C${(lat - 0.005).toFixed(5)}%2C${(lng + 0.005).toFixed(5)}%2C${(lat + 0.005).toFixed(5)}`;
+          return (
+            <div
+              data-testid="rink-embedded-map"
+              style={{
+                marginTop: '-12px',
+                marginBottom: '24px',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '1px solid var(--border)',
+                background: 'rgba(13,17,23,0.6)',
+              }}
+            >
+              <iframe
+                title={`${rink.name} location`}
+                width="100%"
+                height="260"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`}
+                style={{ border: 0, display: 'block' }}
+                allowFullScreen
+              />
+              <div style={{ fontSize: '11px', color: 'rgba(203,213,225,0.6)', padding: '4px 8px', textAlign: 'right' }}>
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: 'inherit', textDecoration: 'none' }}
+                >
+                  View larger map ↗
+                </a>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ABOUT THIS RINK — unique editorial section. SEO-critical for thinness.
             Uses rink.notes when present; otherwise synthesizes from name + city +
