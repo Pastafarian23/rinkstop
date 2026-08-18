@@ -317,7 +317,14 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     currency: e.currency,
   }));
   const cacheRow = cacheRes.data || null;
-  const galleryPhotos = (cacheRow?.photos_urls || []).filter(Boolean);
+  // Dedupe gallery photos by exact URL while preserving order.
+  const seen = new Set<string>();
+  const galleryPhotos = (cacheRow?.photos_urls || []).filter((url: string) => {
+    if (!url) return false;
+    if (seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
 
   const blurb = buildRinkBlurb(rink);
   const provinceLabel = provinceDisplayName(rink.province_state);
