@@ -30,6 +30,7 @@ import RinkPageTabs from '@/components/rink/RinkPageTabs';
 import RinkGeoIntro from '@/components/rink/RinkGeoIntro';
 import RinkProgrammingTab from '@/components/events/RinkProgrammingTab';
 import RinkEventsTab from '@/components/events/RinkEventsTab';
+import RinkPhotoGallery from '@/components/rink/RinkPhotoGallery';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -206,7 +207,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // + Programming tab) and upcoming events (schema.org event[] + Events tab).
   // We only need schema-relevant columns for the schema builder; the tab
   // components fetch their own full payload below.
-  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes] = await Promise.all([
+  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, cacheRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -273,6 +274,11 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .gte('starts_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .order('starts_at', { ascending: true })
       .limit(50),
+    supabase
+      .from('rinks_places_cache')
+      .select('photos_urls')
+      .eq('rink_id', rink.id)
+      .maybeSingle(),
   ]);
 
   const games = gamesRes.data || [];
@@ -310,6 +316,8 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     price_cents: e.price_cents,
     currency: e.currency,
   }));
+  const cacheRow = cacheRes.data || null;
+  const galleryPhotos = (cacheRow?.photos_urls || []).filter(Boolean);
 
   const blurb = buildRinkBlurb(rink);
   const provinceLabel = provinceDisplayName(rink.province_state);
@@ -482,18 +490,13 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           );
         })()}
 
-        {/* Cover photo — sourced from Google Places when the rink has no
+        {/* Cover photo / gallery — sourced from Google Places when the rink has no
             logo_url. Renders above the H1 as the hero image.
             referrerPolicy="no-referrer" is required: Google Photos URLs
             (lh3.googleusercontent.com) return 403 if they detect a Referer
             header from non-Google origins. */}
-        {rink.cover_photo_url ? (
-          <img
-            src={rink.cover_photo_url}
-            alt={rink.name}
-            referrerPolicy="no-referrer"
-            style={{ width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 12, marginBottom: '16px', display: 'block', background: 'rgba(255,255,255,0.04)' }}
-          />
+        {([rink.cover_photo_url, ...galleryPhotos]).filter(Boolean).length > 0 ? (
+          <RinkPhotoGallery photos={[rink.cover_photo_url, ...galleryPhotos].filter(Boolean)} rinkName={rink.name} />
         ) : null}
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
