@@ -30,7 +30,7 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: true, // enabled in dev for chrome://inspect; gated in CI
+    webContentsDebuggingEnabled: false, // never enable in release; would expose WebView to adb inspection
   },
   plugins: {
     SplashScreen: {
