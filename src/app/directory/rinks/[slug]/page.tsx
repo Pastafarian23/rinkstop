@@ -858,7 +858,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         {/* GETTING HERE — derived from address. Unique per rink. */}
 
         {rink.address && (
-
           <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
               Getting to {rink.name}
@@ -867,28 +866,14 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               {rink.name} is located at <strong style={{ color: '#fff' }}>{rink.address}</strong>. Public parking is available at the venue, and the rink is accessible by car from the surrounding {rink.city} area. For public transit options to reach the rink, check the local {rink.city} transit authority schedule for the nearest stop to the {provinceLabel || rink.country} venue district.
             </p>
             {rink.latitude && rink.longitude && (
-              <>
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${rink.latitude},${rink.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: 'inline-block', color: '#38bdf8', fontSize: '14px', textDecoration: 'none', fontWeight: 600, marginBottom: '12px' }}
-                >
-                  Get directions on Google Maps →
-                </a>
-                <div style={{ marginTop: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                  <iframe
-                    title={`${rink.name} map`}
-                    width="100%"
-                    height="260"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${rink.latitude},${rink.longitude}&zoom=15`}
-                    style={{ border: 0, display: 'block' }}
-                    allowFullScreen
-                  />
-                </div>
-              </>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${rink.latitude},${rink.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-block', color: '#38bdf8', fontSize: '14px', textDecoration: 'none', fontWeight: 600 }}
+              >
+                Get directions on Google Maps →
+              </a>
             )}
           </section>
         )}
