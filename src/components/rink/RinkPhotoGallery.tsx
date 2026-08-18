@@ -9,7 +9,7 @@ type Props = {
 
 export default function RinkPhotoGallery({ photos, rinkName }: Props) {
   const [index, setIndex] = useState(0);
-  const safe = photos.filter(Boolean);
+  const safe = Array.from(new Set(photos.filter(Boolean)));
   if (safe.length === 0) return null;
   const current = safe[index % safe.length];
   const prev = () => setIndex((index - 1 + safe.length) % safe.length);
