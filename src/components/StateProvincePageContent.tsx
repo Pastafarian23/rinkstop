@@ -21,8 +21,6 @@ export interface StateProvinceContentProps {
   parentLabel: string;
   /** ISO-2 country code for the flag emoji lookup */
   countryCode: 'US' | 'CA';
-  /** Whether to render the Hockey Canada Ad slot (Canada only) */
-  showHockeyCanadaAd?: boolean;
   /** City-level rows to render as the directory list */
   cities: CityRow[];
   /** Total rink count across this state/province */
@@ -57,7 +55,6 @@ export default function StateProvincePageContent({
   parentUrl,
   parentLabel,
   countryCode,
-  showHockeyCanadaAd = false,
   cities,
   rinkCount,
   teamCount,
@@ -181,16 +178,6 @@ export default function StateProvincePageContent({
             </Link>
           </div>
         </header>
-
-        {/* Hockey Canada Ad slot — Canada only, matches country page */}
-        {showHockeyCanadaAd && (
-          <div style={{ marginBottom: '2rem', padding: '1rem', background: card, border: `1px solid ${border}`, borderRadius: '8px' }}>
-            <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: textDim, marginBottom: '0.5rem' }}>Sponsored</p>
-            <p style={{ color: textMuted, fontSize: '0.875rem', margin: 0 }}>
-              <a href="https://www.hockeycanada.ca" target="_blank" rel="noopener noreferrer" style={{ color: red, fontWeight: 700 }}>Hockey Canada</a> — official governing body for amateur hockey across Canada. Registration, development pathways, and national programs.
-            </p>
-          </div>
-        )}
 
         {/* City list */}
         <section style={{ marginBottom: '3rem' }}>

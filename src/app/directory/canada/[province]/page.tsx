@@ -188,7 +188,6 @@ export default async function CanadaProvincePage({
         parentUrl="/directory/canada"
         parentLabel="Canada"
         countryCode="CA"
-        showHockeyCanadaAd
         cities={cities}
         rinkCount={totalRinkCount}
         teamCount={totalTeamCount}
