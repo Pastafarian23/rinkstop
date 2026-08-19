@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import PlayersIndexClient from './PlayersIndexClient';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 
 interface Player {
   id: string;
@@ -126,7 +124,7 @@ export default async function PlayersPage() {
       <PlayersIndexClient initialData={initialData} />
       {/* WS16 PR2 — AdSense in-feed ad below the player list. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
-        <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
+        
       </div>
     </>
   );

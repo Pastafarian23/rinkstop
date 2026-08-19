@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { CityPageData } from '@/lib/city-page';
 import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
 import CityHockeyScene from '@/components/CityHockeyScene';
-import HockeyCanadaAd from '@/components/HockeyCanadaAd';
 import type { CityFAQEntry } from '@/lib/city-context';
 
 interface Props {
@@ -215,9 +214,7 @@ export default function CityPageContent({ data, faqs }: Props) {
           </p>
 
           {/* Hockey Canada affiliate ad — test placement, top of city page */}
-          {countryName === 'Canada' && (
-            <HockeyCanadaAd size="300x250" />
-          )}
+          
           <p
             style={{
               color: textMuted,

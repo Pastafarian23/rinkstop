@@ -56,11 +56,7 @@ export default function RinkReviews({ reviews, averageRating, totalReviews, rink
       )}
 
       {/* Reviews list */}
-      {reviews.length === 0 ? (
-        <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
-          No reviews yet. Be the first to leave one!
-        </p>
-      ) : (
+      {reviews.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '28px' }}>
           {reviews.map(review => (
             <div
@@ -99,7 +95,7 @@ export default function RinkReviews({ reviews, averageRating, totalReviews, rink
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

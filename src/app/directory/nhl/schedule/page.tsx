@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { NhlMatch, buildGameSlug, slugify } from '@/lib/nhl-data';
-import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
   title: 'NHL Schedule | Games by Date',
@@ -209,7 +208,6 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         {fmtDateLong(fromDate)} – {fmtDateLong(new Date(toDate.getTime() - 86400000))} · {totalGames} games ({liveCount} live, {finishedCount} final, {scheduledCount} upcoming)
       </p>
 
-      <TicketmasterAd size="468x60" style={{ marginBottom: '1.5rem' }} />
 
       {groups.length === 0 ? (
         <p style={{ color: 'rgba(255,255,255,0.4)' }}>No games scheduled in this date range.</p>

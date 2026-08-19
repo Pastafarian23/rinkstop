@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import TicketmasterAd from '@/components/TicketmasterAd';
 import { SCORE_CHIPS, DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip } from '@/lib/score-chips';
 
 const BASE_URL = 'https://rinkstop.com';
@@ -457,7 +456,6 @@ export default function GamesIndexClient({ initialData }: Props) {
       </div>
 
       {/* Ticketmaster NHL Banner - 468x60 */}
-      <TicketmasterAd size="468x60" />
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
@@ -507,7 +505,6 @@ export default function GamesIndexClient({ initialData }: Props) {
       )}
 
       {/* Ticketmaster NHL Banner - 300x250 */}
-      <TicketmasterAd size="300x250" style={{ marginTop: '2rem' }} />
     </div>
   );
 }

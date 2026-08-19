@@ -4,10 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { NHL_TEAM_DATA } from '@/lib/nhl-teams-data';
 import { getChainForSlug } from '@/lib/nhl-franchise-history';
-import { FANATICS_ADS } from '@/lib/fanatics-ads';
 type NHLStaticData = typeof NHL_TEAM_DATA[string];
-import NHLShopWidget from '@/components/NHLShopWidget';
-import TicketmasterAd from '@/components/TicketmasterAd';
 import SaveButton from '@/components/SaveButton';
 import SocialActions from '@/components/SocialActions';
 import EmailCaptureInline from '@/components/EmailCaptureInline';
@@ -175,7 +172,6 @@ export default function TeamDetailClient({
       )}
 
       {/* Ticketmaster NHL Banner - 468x60 */}
-      <TicketmasterAd size="468x60" />
 
       {/* Rich team info section */}
       {hasRichData && (
@@ -187,21 +183,7 @@ export default function TeamDetailClient({
           </section>
 
           {/* NHL Shop Jersey Ad */}
-          {(() => {
-            const ad = FANATICS_ADS[team.slug as string];
-            return ad ? (
-              <NHLShopWidget
-                teamName={team.name}
-                teamSlug={team.slug}
-                primaryColor={staticData.colors?.[0] || '#C8102E'}
-                secondaryColor={staticData.colors?.[1] || '#FFFFFF'}
-                affiliateLink={ad?.affiliateLink}
-                adImageUrl={ad?.imageUrl}
-                adWidth={ad?.adWidth}
-                adHeight={ad?.adHeight}
-              />
-            ) : null;
-          })()}
+{/* Fanatics ad removed 2026-08-19 */}
 
           {/* Quick stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.625rem', marginBottom: '2rem' }}>
@@ -391,7 +373,6 @@ export default function TeamDetailClient({
       )}
 
       {/* Ticketmaster NHL Banner - 300x250 */}
-      <TicketmasterAd size="300x250" />
     </div>
   );
 }

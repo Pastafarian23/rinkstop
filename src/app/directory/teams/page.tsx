@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import TeamsIndexClient, { type Team } from './TeamsIndexClient';
 import HockeyTeamsContent from './HockeyTeamsContent';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 import {
   getDirectoryCountsCached,
@@ -424,7 +422,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
       />
       {/* WS16 PR2 — AdSense in-feed ad below the team list. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
-        <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
+        
       </div>
       {country ? (
         <details style={{ maxWidth: '80rem', margin: '0 auto 2rem', padding: '0 1rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>

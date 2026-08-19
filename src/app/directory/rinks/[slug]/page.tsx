@@ -15,8 +15,6 @@ import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
 import { CANONICAL_URL } from '@/lib/constants';
 import { provinceDisplayName } from '@/lib/ca-provinces';
@@ -30,7 +28,6 @@ import RinkPageTabs from '@/components/rink/RinkPageTabs';
 import RinkGeoIntro from '@/components/rink/RinkGeoIntro';
 import RinkProgrammingTab from '@/components/events/RinkProgrammingTab';
 import RinkEventsTab from '@/components/events/RinkEventsTab';
-import RinkPhotoGallery from '@/components/rink/RinkPhotoGallery';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -222,7 +219,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // + Programming tab) and upcoming events (schema.org event[] + Events tab).
   // We only need schema-relevant columns for the schema builder; the tab
   // components fetch their own full payload below.
-  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, cacheRes] = await Promise.all([
+  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -289,11 +286,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .gte('starts_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .order('starts_at', { ascending: true })
       .limit(50),
-    supabase
-      .from('rinks_places_cache')
-      .select('photos_urls')
-      .eq('rink_id', rink.id)
-      .maybeSingle(),
   ]);
 
   const games = gamesRes.data || [];
@@ -331,15 +323,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     price_cents: e.price_cents,
     currency: e.currency,
   }));
-  const cacheRow = cacheRes.data || null;
-  // Dedupe gallery photos by exact URL while preserving order.
-  const seen = new Set<string>();
-  const galleryPhotos = (cacheRow?.photos_urls || []).filter((url: string) => {
-    if (!url) return false;
-    if (seen.has(url)) return false;
-    seen.add(url);
-    return true;
-  });
 
   const blurb = buildRinkBlurb(rink);
   const provinceLabel = provinceDisplayName(rink.province_state);
@@ -530,13 +513,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           );
         })()}
 
-        {/* Cover photo / gallery — sourced from Google Places when the rink has no
+        {/* Cover photo — sourced from Google Places when the rink has no
             logo_url. Renders above the H1 as the hero image.
             referrerPolicy="no-referrer" is required: Google Photos URLs
             (lh3.googleusercontent.com) return 403 if they detect a Referer
             header from non-Google origins. */}
-        {([rink.cover_photo_url, ...galleryPhotos]).filter(Boolean).length > 0 ? (
-          <RinkPhotoGallery photos={[rink.cover_photo_url, ...galleryPhotos].filter(Boolean)} rinkName={rink.name} />
+        {rink.cover_photo_url ? (
+          <img
+            src={rink.cover_photo_url}
+            alt={rink.name}
+            referrerPolicy="no-referrer"
+            style={{ width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 12, marginBottom: '16px', display: 'block', background: 'rgba(255,255,255,0.04)' }}
+          />
         ) : null}
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
@@ -631,39 +619,16 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                 🌐 Website
               </a>
             )}
-          </div>
-        )}
-
-        {/* EMBEDDED MAP — Google Maps Embed API. Keeps users on RinkStop
-            instead of bouncing to Google. Uses the existing
-            NEXT_PUBLIC_GOOGLE_MAPS_KEY (the same key that powers the
-            map page, rink photos, and Places API calls — the site is
-            Google Maps end-to-end).
-            (2026-08-18: replaces the "View on Google Maps" external
-            link that was under the phone number — Arnel flagged it as
-            guiding users out of RinkStop.) */}
-        {rink.latitude && rink.longitude && process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && (
-          <div
-            data-testid="rink-embedded-map"
-            style={{
-              marginTop: '-12px',
-              marginBottom: '24px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: '1px solid var(--border)',
-              background: 'rgba(13,17,23,0.6)',
-            }}
-          >
-            <iframe
-              title={`${rink.name} location`}
-              width="100%"
-              height="260"
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-              src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${rink.latitude},${rink.longitude}&zoom=15`}
-              style={{ border: 0, display: 'block' }}
-              allowFullScreen
-            />
+            {rink.google_maps_url && (
+              <a
+                href={rink.google_maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
+              >
+                📍 View on Google Maps
+              </a>
+            )}
           </div>
         )}
 
@@ -914,6 +879,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         {/* GETTING HERE — derived from address. Unique per rink. */}
 
         {rink.address && (
+
           <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
               Getting to {rink.name}
@@ -943,7 +909,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             Find an ice rink near you
           </h2>
           <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '16px' }}>
-            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? RinkStop lists every public rink, arena, and ice facility we can verify in our directory — searchable by city, country, and league. {rink.name} is one of the rinks in the directory; the {rink.ice_size || 'community'}-sized surface here serves as a hub for local hockey, figure skating, and public skating in the {rink.city || 'local'} area.
+            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? {rink.name} is a registered {rink.ice_size || 'community'}-sized ice facility in the RinkStop directory. Whether you're looking for public skating hours, youth hockey programs, or figure skating sessions, this page has the rink's verified contact details, address, and schedule information.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <Link href={`/directory/rinks?city=${encodeURIComponent(rink.city || '')}`} style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px', textDecoration: 'none' }}>
@@ -958,32 +924,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               <div style={{ color: '#fff', fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>🔍 Find rinks near me</div>
               <div style={{ color: 'var(--muted)', fontSize: '13px' }}>Search by location or venue type</div>
             </Link>
-          </div>
-
-          <h3 style={{ fontWeight: 600, color: '#fff', fontSize: '16px', marginTop: '16px', marginBottom: '12px' }}>
-            Frequently asked questions about {rink.name}
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Is {rink.name} open to public skating?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                {rink.opening_hours_json
-                  ? `Yes — ${rink.name} offers public skating sessions. Check the live hours above for today's schedule.`
-                  : `Public skating availability at ${rink.name} varies by season. Contact the rink directly via the phone number on this page to confirm current hours.`}
-              </p>
-            </details>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Does {rink.name} host youth hockey?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                Yes — {rink.name} supports youth hockey programming including learn-to-skate, learn-to-play, and minor hockey. Specific program availability depends on the current operator.
-              </p>
-            </details>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>How do I get to {rink.name}?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                {rink.address ? `${rink.name} is located at ${rink.address}. Use Google Maps for turn-by-turn directions.` : `Contact the rink directly to confirm the address before traveling.`}
-              </p>
-            </details>
           </div>
         </section>
 
@@ -1047,7 +987,25 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           </div>
         )}
 
-      </div>
+          {/* Map */}
+          {(rink.latitude && rink.longitude) ? (
+            <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '16px' }}>Location</h2>
+              <iframe
+                title={`${rink.name} location`}
+                width="100%"
+                height="240"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${rink.latitude},${rink.longitude}&zoom=15`}
+                style={{ border: 0, borderRadius: '8px' }}
+                allowFullScreen
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--border)', marginBottom: '20px' }} />
 
         {/* Games Section */}
         <RinkGames rinkId={rink.id} rinkName={rink.name} initialGames={games} />
@@ -1086,7 +1044,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         </div>
 
         {/* WS16 PR2 — AdSense display ad below the email capture block. */}
-        <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
+        
 
       </div>
     </>

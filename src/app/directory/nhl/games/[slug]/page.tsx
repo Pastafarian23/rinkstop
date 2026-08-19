@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getNhlGameById, getNhlGamesByDate, slugify, NhlMatch } from '@/lib/nhl-data';
 import { findCanonicalTeam } from '@/lib/nhl-teams-canonical';
-import TicketmasterAd from '@/components/TicketmasterAd';
 import ShareButton from '@/components/ShareButton';
 import { buildGameShare } from '@/lib/share';
 
@@ -217,7 +216,6 @@ export default async function GamePage({ params }: Props) {
                   </div>
                 </div>
 
-                <TicketmasterAd size="468x60" style={{ marginBottom: '1.5rem' }} />
 
                 {/* Game details */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>

@@ -3,8 +3,6 @@ import { notFound } from 'next/navigation';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { supabaseAdmin } from '@/lib/supabase';
 import { buildPlayerFAQs } from '@/lib/player-context';
@@ -281,7 +279,7 @@ export default async function PlayerPage({ params }: Props) {
 
       {/* WS16 PR2 — AdSense display ad below player profile, above footer. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
-        <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
+        
       </div>
     </>
   );

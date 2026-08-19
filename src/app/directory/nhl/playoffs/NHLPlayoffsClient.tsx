@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-import TicketmasterAd from '@/components/TicketmasterAd';
 
 interface UpdateEntry {
   id?: string;
@@ -95,7 +94,6 @@ export default function NHLPlayoffsClient({ initialRounds, initialUpdates }: Pro
       </div>
 
       {/* Ticketmaster NHL Banner - 468x60 */}
-      <TicketmasterAd size="468x60" />
 
       {/* Live Updates Feed */}
       <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', marginBottom: '1.5rem', borderLeft: '3px solid #C8102E' }}>
@@ -205,7 +203,6 @@ export default function NHLPlayoffsClient({ initialRounds, initialUpdates }: Pro
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
 
       {/* Ticketmaster NHL Banner - 300x250 */}
-      <TicketmasterAd size="300x250" style={{ marginTop: '1.5rem' }} />
     </div>
   );
 }
