@@ -1,31 +1,132 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 import { LeagueTeams } from '@/components/LeagueTeams';
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export const metadata: Metadata = {
-  title: 'KHL  --  Kontinental Hockey League',
-  description: 'Coverage of the KHL (Kontinental Hockey League)  --  top-tier Russian and international hockey with 23 teams across Russia, Belarus, Kazakhstan, and China.',
+  title: 'KHL — Kontinental Hockey League: 23 Teams, 4 Conferences',
+  description:
+    'The KHL (Kontinental Hockey League) is the premier professional ice hockey league of Russia and Eurasia — 23 teams across Russia, Belarus, Kazakhstan, and China. Rosters, schedules, arenas, and standings in one place.',
+  alternates: { canonical: 'https://rinkstop.com/directory/khl' },
+  openGraph: {
+    title: 'KHL — Kontinental Hockey League',
+    description:
+      'Premier professional ice hockey league of Russia and Eurasia — 23 teams across 4 countries. Rosters, schedules, and standings.',
+    url: 'https://rinkstop.com/directory/khl',
+    siteName: 'RinkStop',
+    type: 'website',
+  },
 };
 
-export default function KHLPage() {
+export const revalidate = 3600;
+
+async function fetchKhlTeamCount(): Promise<number> {
+  try {
+    const { count } = await supabase
+      .from('team_workspaces')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .eq('country_code', 'RU');
+    return count || 0;
+  } catch {
+    return 23;
+  }
+}
+
+async function fetchKhlTeams(): Promise<Array<{ name: string; city: string | null; slug: string }>> {
+  try {
+    const { data } = await supabase
+      .from('team_workspaces')
+      .select('name, slug, home_city')
+      .eq('is_active', true)
+      .eq('country_code', 'RU')
+      .order('name')
+      .limit(24);
+    return (data || []).map((t: any) => ({ name: t.name, city: t.home_city, slug: t.slug }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function KHLPage() {
+  const teamCount = await fetchKhlTeamCount();
+  const teams = await fetchKhlTeams();
+
+  const faqs = [
+    {
+      q: 'How many teams are in the KHL?',
+      a: `The KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China, organized into 4 divisions (Bobrov, Tarasov, Kharkiv, Trofey).`,
+    },
+    {
+      q: 'When was the KHL founded?',
+      a: 'The KHL was founded in 2008, replacing the Russian Superleague (RSL) as the top professional league in Russia and Eurasia.',
+    },
+    {
+      q: 'What is the KHL championship trophy?',
+      a: 'The Gagarin Cup — named after cosmonaut Yuri Gagarin — has been awarded to the KHL playoff champion since the 2008-09 season.',
+    },
+    {
+      q: 'Where can I find KHL rosters, schedules, and standings?',
+      a: `Browse ${teamCount > 23 ? teamCount : 23}+ KHL team profiles on RinkStop, each with roster, schedule, arena info, and verified profiles.`,
+    },
+  ];
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Directory', item: 'https://rinkstop.com/directory' },
+      { '@type': 'ListItem', position: 3, name: 'KHL', item: 'https://rinkstop.com/directory/khl' },
+    ],
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@graph': [{
-            '@type': 'SportsOrganization',
-            '@id': 'https://rinkstop.com/directory/khl',
-            name: 'KONTINENTAL HOCKEY LEAGUE',
-            url: 'https://rinkstop.com/directory/khl',
-            sport: 'Ice Hockey',
-            description: "Kontinental Hockey League — premier professional league of Russia and Eurasia, 23 teams.",
-            foundingDate: '2008',
-            sameAs: ['https://en.wikipedia.org/wiki/Kontinental_Hockey_League'],
-          }],
-        }) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'SportsOrganization',
+                '@id': 'https://rinkstop.com/directory/khl',
+                name: 'Kontinental Hockey League',
+                url: 'https://rinkstop.com/directory/khl',
+                sport: 'Ice Hockey',
+                description: 'Kontinental Hockey League — premier professional league of Russia and Eurasia, 23 teams.',
+                foundingDate: '2008',
+                sameAs: ['https://en.wikipedia.org/wiki/Kontinental_Hockey_League'],
+              },
+            ],
+          }),
+        }}
+      />
+
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -35,17 +136,23 @@ export default function KHLPage() {
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          KHL  --  KONTINENTAL HOCKEY LEAGUE
+        <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1.1, margin: 0 }}>
+          KHL Hockey Teams — Kontinental Hockey League
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          Europe&apos;s top professional hockey league. 23 teams across Russia, Belarus, Kazakhstan, and China.
+        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginTop: '0.5rem', maxWidth: '720px' }}>
+          {teamCount > 23 ? `${teamCount}+` : '23+'} teams across Russia, Belarus, Kazakhstan, and China — the top professional hockey league outside the NHL.
         </p>
       </div>
 
-      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
-        The Kontinental Hockey League (KHL) was founded in 2008 and is the premier professional ice hockey league of Russia and much of Eurasia. It is widely regarded as one of the top professional leagues in the world outside of the NHL. The KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China, including international entries from Finland (Helsinki Jokerit participated 2014-2022) and one of the most successful franchises of all time in SKA Saint Petersburg. The league's annual championship is the Gagarin Cup, awarded to the playoff champion since the 2008-09 season. The KHL places a heavy emphasis on player development: roughly 50% of NHL draft picks in a given year come from Russian development paths, including the MHL junior system that feeds KHL rosters.
-      </p>
+      {/* Search-term-aligned intro (≥150 words) */}
+      <section style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '820px', marginBottom: '1.75rem' }}>
+        <p style={{ margin: 0 }}>
+          The <strong>Kontinental Hockey League (KHL)</strong> is the premier professional ice hockey league of Russia and Eurasia, founded in 2008 as the successor to the Russian Superleague. Widely regarded as the strongest professional league outside the NHL, the KHL fields 23 teams across four countries — Russia, Belarus, Kazakhstan, and China — organized into four divisions (Bobrov, Tarasov, Kharkiv, Trofey). The league&apos;s top prize is the Gagarin Cup, named for cosmonaut Yuri Gagarin and contested each spring since the 2008-09 season.
+        </p>
+        <p style={{ marginTop: '0.75rem' }}>
+          KHL franchises include historic programs such as CSKA Moscow, SKA Saint Petersburg, and Dynamo Moscow, plus international entries like Barys Nur-Sultan and Kunlun Red Star. The league&apos;s junior development system — the MHL (Molodezhnaya Hokkeynaya Лига) — has produced a remarkable share of NHL draft picks, with Russian development paths accounting for roughly half of all NHL selections in recent years. Rosters, schedules, arena info, and standings for every KHL team are listed below.
+        </p>
+      </section>
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
@@ -53,7 +160,9 @@ export default function KHLPage() {
           { label: 'AHL', href: '/directory/ahl' },
           { label: 'PWHL', href: '/directory/pwhl' },
           { label: 'All Leagues', href: '/directory/leagues' },
-        ].map(n => (
+          { label: 'Browse by Country', href: '/directory/russia' },
+          { label: 'Browse by City', href: '/directory/russia/moscow' },
+        ].map((n) => (
           <Link key={n.href} href={n.href} style={{
             padding: '0.3rem 0.75rem',
             borderRadius: '4px',
@@ -69,66 +178,55 @@ export default function KHLPage() {
         ))}
       </div>
 
+      {/* Featured teams grid (DB-driven) */}
+      {teams.length > 0 && (
+        <section style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.125rem', color: '#fff', marginBottom: '1rem', fontWeight: 700 }}>
+            KHL Teams ({teams.length})
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.625rem' }}>
+            {teams.map((t) => (
+              <Link
+                key={t.slug}
+                href={`/directory/teams/${t.slug}`}
+                style={{
+                  background: 'var(--s2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  padding: '0.75rem 1rem',
+                  textDecoration: 'none',
+                  color: '#fff',
+                  display: 'block',
+                }}
+              >
+                <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{t.name}</div>
+                {t.city && <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.15rem' }}>{t.city}</div>}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* League info */}
       <div style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #0a2d5a 100%)', border: '1px solid rgba(30,91,156,0.3)', borderRadius: '8px', padding: '1.5rem 2rem', marginBottom: '2rem' }}>
         <p style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4A90D9', marginBottom: '0.5rem' }}>Kontinental Hockey League</p>
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em' }}>23 TEAMS • 4 CONFERENCES</h2>
+        <h2 style={{ fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>23 TEAMS • 4 DIVISIONS</h2>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', marginTop: '0.5rem' }}>Founded 2008 • Based in Moscow (headquarters)</p>
       </div>
 
-      {/* Conferences */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        {[
-          { name: 'Bobrov Division', teams: 'CSKA Moscow, SKA St. Petersburg, Jokerit, Severstal, Spartak Moscow, Torpedo Nizhny Novgorod', color: '#1E5B9C' },
-          { name: 'Tarasov Division', teams: 'Dynamo Moscow, Lokomotiv Yaroslavl, Nitra, HC Sochi, Torpedo Moscow Oblast, Vityaz', color: '#C8102E' },
-          { name: 'Kharkiv Division', teams: 'Avtomobilist Yekaterinburg, Metallurg Magnitogorsk, Traktor Chelyabinsk, Salavat Yulaev Ufa, Ak Bars Kazan', color: '#1E7B1E' },
-          { name: 'Trofey Division', teams: 'Amur Khabarovsk, Admiral Vladivostok, SKA-Neva, Sibir Novosibirsk, Barys Astana, Kunlun Red Star', color: '#7B3FA0' },
-        ].map(d => (
-          <div key={d.name} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
-            <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: d.color }}>Conference</span>
-            <h3 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem', marginBottom: '0.75rem' }}>{d.name}</h3>
-            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>{d.teams}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '2rem' }}>
-        {[
-          { label: 'Teams', value: '23' },
-          { label: 'Countries', value: '4' },
-          { label: 'Founded', value: '2008' },
-        ].map(s => (
-          <div key={s.label} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1rem', textAlign: 'center' }}>
-            <p style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', marginBottom: '0.25rem' }}>{s.label}</p>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Notable teams */}
-      <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.5rem' }}>
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>NOTABLE TEAMS</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
-          {[
-            { name: 'SKA St. Petersburg', location: 'St. Petersburg, Russia', color: '#004E9A' },
-            { name: 'CSKA Moscow', location: 'Moscow, Russia', color: '#C8102E' },
-            { name: 'Jokerit', location: 'Helsinki, Finland', color: '#C4D600' },
-            { name: 'Barys Astana', location: 'Astana, Kazakhstan', color: '#00A651' },
-            { name: 'Ak Bars Kazan', location: 'Kazan, Russia', color: '#E30613' },
-            { name: 'Lokomotiv Yaroslavl', location: 'Yaroslavl, Russia', color: '#FFD700' },
-          ].map(t => (
-            <div key={t.name} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '6px', padding: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: t.color, flexShrink: 0 }} />
-              <div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff' }}>{t.name}</div>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>{t.location}</div>
-              </div>
-            </div>
+      {/* FAQ section */}
+      <section style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.125rem', color: '#fff', marginBottom: '1rem', fontWeight: 700 }}>Frequently Asked Questions</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+          {faqs.map((f) => (
+            <details key={f.q} style={{ borderTop: '1px solid var(--border)', paddingTop: '0.875rem' }}>
+              <summary style={{ color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9375rem' }}>{f.q}</summary>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', lineHeight: 1.65, marginTop: '0.5rem', marginBottom: 0 }}>{f.a}</p>
+            </details>
           ))}
         </div>
-      </div>
-    
+      </section>
+
       <LeagueTeams leagueId="a08f6dac-eb1f-48b6-a11b-56fbb5642752" leagueSlug="khl" leagueName="KHL" />
     </main>
   );
