@@ -170,6 +170,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = titleBase.length > 60
     ? titleBase.slice(0, 57) + '...'
     : titleBase;
+
+  return {
+    title,
     description,
     robots: robotsMeta(decision),
     alternates: {

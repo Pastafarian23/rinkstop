@@ -19,12 +19,10 @@ function slugify(str: string): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city } = await params;
   const cityName = formatCityName(city);
+  const title = `Best Ice Rinks in ${cityName}`;
+
   return {
-    title: (() => {
-      // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
-      const base = `Best Ice Rinks in ${cityName}`;
-      return base.length > 60 ? base.slice(0, 57) + '...' : base;
-    })(),
+    title,
     description: `Discover the best ice rinks in ${cityName}. Find hockey arenas, public skating facilities, and learn-to-play programs. Your complete ${cityName} rink guide.`,
     openGraph: {
       title: `Best Ice Rinks in ${cityName}`,

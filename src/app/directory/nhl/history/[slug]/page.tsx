@@ -21,12 +21,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const result = findEntry(slug);
   if (!result) return { title: 'Not Found' };
   const { entry, chain } = result;
+  const title = `${entry.name} (${entry.years}) — ${chain.currentName}`;
+
   return {
-    title: (() => {
-      // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
-      const base = `${entry.name} (${entry.years}) — ${chain.currentName}`;
-      return base.length > 60 ? base.slice(0, 57) + '...' : base;
-    })(),
+    title,
     description: `The ${entry.name} played in ${entry.city} from ${entry.years}. Today this franchise is the ${chain.currentName}.${entry.notes ? ' ' + entry.notes : ''}`,
   };
 }
