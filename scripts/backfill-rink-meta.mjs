@@ -21,7 +21,7 @@ const supabase = createClient(get('NEXT_PUBLIC_SUPABASE_URL'), get('SUPABASE_SER
 const BACKFILL = [
   ['alain-ice-rink-hili-fun-city', 'Al Ain Ice Rink at Hili Fun City in Al Ain, UAE. Public skating, lessons, and birthday parties. Get hours, phone, directions, and admission.'],
   ['fun-zone-ice-rink', 'Fun Zone Ice Rink — public skating, hockey, and figure skating sessions. Find hours, admission, skate rental, and directions for the rink.'],
-  ['funland-centre-ice-skating-manama', 'Funland Centre Ice Skating in Manama, Bahrain. Public skating, lessons, and birthday parties. Hours, phone, and admission on the rink page.'],
+  ['funland-centre-ice-skating', 'Funland Centre Ice Skating in Manama, Bahrain. Public skating, lessons, and birthday parties. Hours, phone, and admission on the rink page.'],
   ['al-nasr-leisureland-ice-rink', 'Al Nasr Leisureland Ice Rink in Dubai, UAE. Public skating, hockey leagues, and figure skating. Hours, phone, directions, and admission.'],
   ['centro-ice-skating-arena', 'Centro Ice Skating Arena — public skating, hockey, and lessons. Hours, phone, skate rental, and directions for the arena.'],
   ['romford-ice-rink-sapphire-ice', 'Romford Ice Rink (Sapphire Ice) in Romford, London. Public skating, hockey, and figure skating. Hours, phone, skate rental, and directions.'],
@@ -43,7 +43,7 @@ const BACKFILL = [
   ['ken-yackel-west-side-arena', 'Ken Yackel West Side Arena in Ann Arbor, Michigan. Public skating, hockey leagues, and figure skating. Hours, phone, and directions.'],
   ['hemel-hempstead-planet-ice', 'Planet Ice Hemel Hempstead in Hemel Hempstead, UK. Public skating, hockey, and figure skating. Hours, phone, skate rental, and directions.'],
   ['monaco', 'Monaco ice rink — public skating, hockey, and figure skating sessions. Find hours, admission, skate rental, and directions for the rink.'],
-  ['coliseo-de-puerto-rico-jos-miguel-agrelot-limited-use', 'Coliseo de Puerto Rico (José Miguel Agrelot) in San Juan, Puerto Rico. Find event schedules, hours, phone, and directions for the arena.'],
+  ['coliseo-de-puerto-rico-jose-miguel-agrelot-limited-use', 'Coliseo de Puerto Rico (José Miguel Agrelot) in San Juan, Puerto Rico. Find event schedules, hours, phone, and directions for the arena.'],
   ['lohas-rink', 'Lohas Rink — public skating, hockey, and figure skating sessions. Find hours, admission, skate rental, and directions for the rink.'],
   ['cerogrado-parque-buenaventura', 'Hielo Cero Grado at Parque Buenaventura in Chile. Public skating, lessons, and birthday parties. Hours, phone, and directions.'],
   ['accesso-showare-center', 'accesso ShoWare Center in Kent, Washington. Public skating, hockey leagues, and figure skating. Hours, phone, admission, and directions.'],
@@ -56,7 +56,6 @@ let skipped = 0;
 let failed = 0;
 
 for (const [slug, meta_description] of BACKFILL) {
-  // Look up rink by slug first
   const { data: rink, error: lookupErr } = await supabase
     .from('rinks')
     .select('id, slug, name, meta_description')
@@ -75,7 +74,6 @@ for (const [slug, meta_description] of BACKFILL) {
     continue;
   }
 
-  // Apply meta_description (150-160 chars target)
   const { error: updateErr } = await supabase
     .from('rinks')
     .update({ meta_description })
