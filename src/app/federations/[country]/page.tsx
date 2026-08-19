@@ -58,7 +58,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!fed) return { title: 'Federation Not Found' };
 
   return {
-    title: `${fed.federationName} — ${fed.countryName} National Hockey Federation`,
+    title: (() => {
+      // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
+      const base = `${fed.federationName} — ${fed.countryName}`;
+      return base.length > 60 ? base.slice(0, 57) + '...' : base;
+    })(),
     description: `${fed.federationName} is the national ice hockey federation for ${fed.countryName}. ${fed.ageGroupNote} Registration, insurance, safeguarding, and required documents for players, coaches, and teams.`,
     alternates: {
       canonical: `https://rinkstop.com/federations/${countryToSlug(fed.countryName)}`,

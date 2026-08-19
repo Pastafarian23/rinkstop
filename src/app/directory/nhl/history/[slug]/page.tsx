@@ -22,7 +22,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!result) return { title: 'Not Found' };
   const { entry, chain } = result;
   return {
-    title: `${entry.name} (${entry.years}) — Now the ${chain.currentName}`,
+    title: (() => {
+      // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
+      const base = `${entry.name} (${entry.years}) — ${chain.currentName}`;
+      return base.length > 60 ? base.slice(0, 57) + '...' : base;
+    })(),
     description: `The ${entry.name} played in ${entry.city} from ${entry.years}. Today this franchise is the ${chain.currentName}.${entry.notes ? ' ' + entry.notes : ''}`,
   };
 }

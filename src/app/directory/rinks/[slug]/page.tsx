@@ -448,7 +448,11 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             },
             placeholder: {
               icon: 'ℹ️',
-              title: `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`,
+              title: (() => {
+                // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
+                const base = `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`;
+                return base.length > 60 ? base.slice(0, 57) + '...' : base;
+              })(),
               subtitle: 'This page exists so people searching for hockey in this area can confirm there is no permanent rink. The country/region is verified against the IIHF membership list and major sources.',
               bg: 'rgba(120,113,108,0.15)',
               border: '#78716c',
