@@ -160,8 +160,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     : (blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb);
   const provinceLabel = provinceDisplayName(rink.province_state);
 
-  return {
-    title: `${rink.name} — Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}${rink.country ? ', ' + rink.country : ''}${(() => { const parts: string[] = []; if (rink.opening_hours_json) parts.push('Hours'); if (rink.league) parts.push('Hockey'); else parts.push('Skating'); return parts.length ? ' | ' + parts.join(' & ') : ''; })()}`,
+  // Title (improvements-everywhere 2026-08-19): cap at 60 chars for Google SERP.
+  // Old template: name + city + province + country + hours/league suffix (~80-160 chars).
+  // New: name + city/country only, truncated to 60 with the city last.
+  const titleLocParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
+  const titleBase = titleLocParts
+    ? `${rink.name} — ${titleLocParts}`
+    : rink.name;
+  const title = titleBase.length > 60
+    ? titleBase.slice(0, 57) + '...'
+    : titleBase;
     description,
     robots: robotsMeta(decision),
     alternates: {
