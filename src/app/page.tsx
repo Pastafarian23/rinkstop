@@ -40,9 +40,9 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     // fall through with zeros
   }
-  const desc = `Find hockey anywhere in the world. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues — searchable by city, state, or country.`;
+  const desc = `RinkStop lists every public rink, arena, and ice facility we can verify — searchable by city, country, and league. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues.`;
   return {
-    title: 'RinkStop — The World’s Hockey Directory',
+    title: 'RinkStop — The Global Hockey Directory',
     description: desc,
     keywords: [
       'hockey directory',
@@ -202,7 +202,7 @@ export default async function Home() {
         url: 'https://rinkstop.com/',
         logo: 'https://rinkstop.com/rinkstoplogo.png',
         image: 'https://rinkstop.com/rinkstoplogo.png',
-        description: "The world's hockey directory — a global database of ice rinks, hockey teams, players, and leagues. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
+        description: "RinkStop is a global directory of ice rinks, hockey teams, players, and leagues — searchable by city, country, and league. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
         slogan: "The World's Hockey Directory",
         foundingDate: '2018',
         founder: {
@@ -304,7 +304,7 @@ export default async function Home() {
               </h1>
 
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
-                <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong>{' '}
+                <strong style={{ color: '#fff' }}>Browse every verified rink, team, player, and league we have on file.</strong>{' '}
                 {approx(counts.cities)} cities in {counts.countries} countries,{' '}
                 {approx(counts.rinks)} rinks, {approx(counts.teams)} teams,{' '}
                 {approx(counts.players)} players, {approx(counts.leagues)} leagues — searchable by city, state, or country.
