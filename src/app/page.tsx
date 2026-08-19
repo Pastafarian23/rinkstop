@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
-import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
 import AdSlot from '@/components/AdSlot';
@@ -300,7 +299,10 @@ export default async function Home() {
               <div className="label">The Global Hockey Directory</div>
 
               <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#fff', lineHeight: 0.95, marginBottom: '0.5rem' }}>
-                THE GLOBAL HOCKEY DIRECTORY
+                THE GLOBAL
+              </h1>
+              <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#C8102E', lineHeight: 0.95, marginBottom: '1rem' }}>
+                HOCKEY DIRECTORY
               </h1>
 
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
@@ -377,7 +379,6 @@ export default async function Home() {
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0.875rem 0 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <TicketmasterAd size="468x60" />
           </div>
         </div>
       </section>
@@ -457,8 +458,139 @@ export default async function Home() {
       <HomeNewsSection />
 
       <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
-        <TicketmasterAd size="300x250" />
       </div>
+
+      {/* ---- WHAT'S NEW ON RINKSTOP (homepage activity feed, item #3 from ChatGPT audit) ----- */}
+      {hasHomeActivity && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+          <div className="container">
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>WHAT&apos;S NEW ON RINKSTOP</h2>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Latest across the directory</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              {homeNewest.rinks.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏒 Newest Rinks</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.rinks.slice(0, 4).map((r: any) => (
+                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{r.name}</div>
+                        {(r.city || r.country) && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{[r.city, r.country].filter(Boolean).join(', ')}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.teams.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#2563EB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏆 Newest Teams</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.teams.slice(0, 4).map((t: any) => (
+                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{t.name}</div>
+                        {t.home_city && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{t.home_city}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.players.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#D97706', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🧑 Newest Players</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.players.slice(0, 4).map((p: any) => (
+                      <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{p.first_name} {p.last_name}</div>
+                        {p.position && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{p.position}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.articles.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#FFB81C', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>📰 Newest Articles</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.articles.slice(0, 4).map((a: any) => (
+                      <Link key={a.id} href={`/blog/${a.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{a.title}</div>
+                        {a.category && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{a.category}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ---- WHAT'S NEW ON RINKSTOP (homepage activity feed, item #3 from ChatGPT audit) ----- */}
+      {hasHomeActivity && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+          <div className="container">
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>WHAT&apos;S NEW ON RINKSTOP</h2>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Latest across the directory</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              {homeNewest.rinks.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏒 Newest Rinks</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.rinks.slice(0, 4).map((r: any) => (
+                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{r.name}</div>
+                        {(r.city || r.country) && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{[r.city, r.country].filter(Boolean).join(', ')}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.teams.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#2563EB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏆 Newest Teams</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.teams.slice(0, 4).map((t: any) => (
+                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{t.name}</div>
+                        {t.home_city && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{t.home_city}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.players.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#D97706', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🧑 Newest Players</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.players.slice(0, 4).map((p: any) => (
+                      <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{p.first_name} {p.last_name}</div>
+                        {p.position && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{p.position}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.articles.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#FFB81C', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>📰 Newest Articles</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.articles.slice(0, 4).map((a: any) => (
+                      <Link key={a.id} href={`/blog/${a.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{a.title}</div>
+                        {a.category && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{a.category}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ---- RECENT ACTIVITY ------------------------------------------------------------- */}
       {(recentRinks.length > 0 || recentTeams.length > 0 || upcomingGames.length > 0) && (

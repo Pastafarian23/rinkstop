@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getLatestSeason, getStandingsForSeason, getTodaysNhlGames, NhlMatch, NhlStanding } from '@/lib/nhl-data';
 import { teamsByDivision, teamsByConference, findCanonicalTeam, NHL_TEAMS_CANONICAL } from '@/lib/nhl-teams-canonical';
-import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const revalidate = 300; // 5 min for today's games; 1 hour for standings via sub-cache
 
@@ -187,7 +186,6 @@ export default async function NHLHubPage() {
         </div>
       </div>
 
-      <TicketmasterAd size="468x60" style={{ marginBottom: '1.5rem' }} />
 
       {/* Conferences & divisions (using canonical data) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -213,7 +211,6 @@ export default async function NHLHubPage() {
       </div>
 
       {/* Ticketmaster ad */}
-      <TicketmasterAd size="300x250" style={{ marginTop: '1.5rem' }} />
     </main>
   );
 }

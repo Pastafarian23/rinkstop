@@ -335,82 +335,11 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
           />
         );
       })()}
-      {/* WS21 — added FAQ + BreadcrumbList JSON-LD, plus above-the-fold
-          intro for GSC decay on /directory/teams (567 imp / 0.53% CTR / pos 36).
-          Page is still search-driven (TeamsIndexClient renders first), but the
-          intro + FAQ gives Google a 150-word search-term-aligned paragraph to
-          rank against "hockey teams" head queries. */}
-      {(() => {
-        const breadcrumbSchema = {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
-            { '@type': 'ListItem', position: 2, name: 'Directory', item: 'https://rinkstop.com/directory' },
-            { '@type': 'ListItem', position: 3, name: 'Hockey Teams', item: 'https://rinkstop.com/directory/teams' },
-          ],
-        };
-        const teamFaqs = [
-          {
-            q: 'How many hockey teams are in the RinkStop directory?',
-            a: `RinkStop tracks ${counts.teams.toLocaleString()}+ active hockey teams across ${counts.countries} countries and ${counts.leagues}+ leagues — professional, junior, college, amateur, and youth tiers.`,
-          },
-          {
-            q: 'How do I find hockey teams by country?',
-            a: `Use the country filter above the list, or browse directly: /directory/teams?country=United+States, /directory/teams?country=Canada, /directory/teams?country=Sweden, /directory/teams?country=Russia, etc.`,
-          },
-          {
-            q: 'How do I find hockey teams by league tier?',
-            a: `Use the level pills above the list — Pro, Junior, College, International, or Adult — or browse the league directory at /directory/leagues.`,
-          },
-          {
-            q: 'What leagues does the directory cover?',
-            a: 'NHL, AHL, KHL, SHL, Liiga, DEL, NLA, Extraliga, ECHL, OHL, WHL, QMJHL, USHL, NCAA Division I and III, PWHL, and 200+ amateur and youth leagues worldwide.',
-          },
-        ];
-        const faqSchema = {
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: teamFaqs.map((f) => ({
-            '@type': 'Question',
-            name: f.q,
-            acceptedAnswer: { '@type': 'Answer', text: f.a },
-          })),
-        };
-        return (
-          <>
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-            />
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-            />
-            <section style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
-                Find any hockey team in the world
-              </h2>
-              <p style={{ margin: 0 }}>
-                {counts.teams.toLocaleString()}+ active hockey teams across {counts.countries} countries and {counts.leagues}+ leagues — from NHL and KHL down to local youth programs. Use the search and filters below to find a team by name, league tier, country, or city.
-              </p>
-            </section>
-            <details style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
-              <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
-                Frequently asked questions
-              </summary>
-              <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                {teamFaqs.map((f) => (
-                  <div key={f.q} style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem' }}>
-                    <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#fff', margin: 0 }}>{f.q}</h3>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', marginTop: '0.4rem', marginBottom: 0 }}>{f.a}</p>
-                  </div>
-                ))}
-              </div>
-            </details>
-          </>
-        );
-      })()}
+      {/* SEO editorial section — was placed above TeamsIndexClient on 2026-06-15.
+          On 2026-08-12 we moved it BELOW the search/filter UI (after the ad slot)
+          and wrapped it in a <details> collapsed by default, so the search bar is
+          visible above the fold on mobile. Google still indexes the inner text
+          even when <details> is collapsed. Same content; just relocated. */}
       <TeamsIndexClient
         initialTeams={initialTeams}
         topCountries={topCountries.map((c) => ({ name: c.country, slug: c.country.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), teamCount: c.team_count }))}

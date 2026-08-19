@@ -7,7 +7,6 @@ import { getChainForSlug } from '@/lib/nhl-franchise-history';
 import { FANATICS_ADS } from '@/lib/fanatics-ads';
 type NHLStaticData = typeof NHL_TEAM_DATA[string];
 import NHLShopWidget from '@/components/NHLShopWidget';
-import TicketmasterAd from '@/components/TicketmasterAd';
 import SaveButton from '@/components/SaveButton';
 import SocialActions from '@/components/SocialActions';
 import EmailCaptureInline from '@/components/EmailCaptureInline';
@@ -175,7 +174,6 @@ export default function TeamDetailClient({
       )}
 
       {/* Ticketmaster NHL Banner - 468x60 */}
-      <TicketmasterAd size="468x60" />
 
       {/* Rich team info section */}
       {hasRichData && (
@@ -391,7 +389,6 @@ export default function TeamDetailClient({
       )}
 
       {/* Ticketmaster NHL Banner - 300x250 */}
-      <TicketmasterAd size="300x250" />
     </div>
   );
 }

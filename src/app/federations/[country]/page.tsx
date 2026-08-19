@@ -57,12 +57,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const fed = resolveFederation(country);
   if (!fed) return { title: 'Federation Not Found' };
 
-  // Cap at 60 chars for Google SERP preview (2026-08-19).
-  const fedTitle = `${fed.federationName} — ${fed.countryName}`;
-  const title = fedTitle.length > 60 ? fedTitle.slice(0, 57) + '...' : fedTitle;
-
   return {
-    title,
+    title: `${fed.federationName} — ${fed.countryName} National Hockey Federation`,
     description: `${fed.federationName} is the national ice hockey federation for ${fed.countryName}. ${fed.ageGroupNote} Registration, insurance, safeguarding, and required documents for players, coaches, and teams.`,
     alternates: {
       canonical: `https://rinkstop.com/federations/${countryToSlug(fed.countryName)}`,

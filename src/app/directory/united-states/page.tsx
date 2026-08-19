@@ -65,26 +65,6 @@ const CARD = '#0f0f0f';
 const RED = '#C8102E';
 const TEXT_DIM = '#555';
 
-// FAQ data for JSON-LD
-const US_FAQS = [
-  {
-    q: 'How many ice rinks are there in the United States?',
-    a: 'RinkStop tracks thousands of ice rinks across the United States, from professional NHL arenas to local community rinks and youth hockey facilities. Use the directory to find rinks by state or city.',
-  },
-  {
-    q: 'What hockey states have the most rinks?',
-    a: 'States with the most ice rinks include Minnesota, Michigan, Massachusetts, New York, and Pennsylvania — traditional hockey hotbeds with deep youth, high school, college, and pro programs.',
-  },
-  {
-    q: 'Can I find youth hockey rinks in the USA?',
-    a: 'Yes. Browse by state to find rinks that host youth hockey programs, including USA Hockey-sanctioned teams, high school rinks, and local minor hockey associations.',
-  },
-  {
-    q: 'Are there NHL rinks in the United States?',
-    a: 'The NHL has 32 teams across the United States and Canada. RinkStop lists NHL arenas with addresses, schedules, and directions. Use the state filter to find NHL rinks in your area.',
-  },
-];
-
 export async function generateMetadata(): Promise<Metadata> {
   return getCountryMetadata(COUNTRY_NAME, countryToSlug(COUNTRY_NAME));
 }
@@ -97,33 +77,6 @@ export default async function UnitedStatesPage() {
 
   return (
     <>
-      {(() => {
-        const breadcrumbSchema = {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
-            { '@type': 'ListItem', position: 2, name: 'Directory', item: 'https://rinkstop.com/directory' },
-            { '@type': 'ListItem', position: 3, name: 'Countries', item: 'https://rinkstop.com/directory' },
-            { '@type': 'ListItem', position: 4, name: 'United States', item: 'https://rinkstop.com/directory/united-states' },
-          ],
-        };
-        const faqSchema = {
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: US_FAQS.map((f) => ({
-            '@type': 'Question',
-            name: f.q,
-            acceptedAnswer: { '@type': 'Answer', text: f.a },
-          })),
-        };
-        return (
-          <>
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
-          </>
-        );
-      })()}
       <CountryPageContent data={data} />
 
       {/* US State drilldown — preserved from original USA page */}

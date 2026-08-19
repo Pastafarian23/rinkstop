@@ -97,7 +97,6 @@ interface TeamRow {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  founded_on: string | null;
   federation_id: string | null;
   organization_id: string | null;
   league_id: string | null;

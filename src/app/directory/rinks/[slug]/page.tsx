@@ -30,7 +30,6 @@ import RinkPageTabs from '@/components/rink/RinkPageTabs';
 import RinkGeoIntro from '@/components/rink/RinkGeoIntro';
 import RinkProgrammingTab from '@/components/events/RinkProgrammingTab';
 import RinkEventsTab from '@/components/events/RinkEventsTab';
-import RinkPhotoGallery from '@/components/rink/RinkPhotoGallery';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -153,26 +152,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 
   const blurb = buildRinkBlurb(rink);
-  // WS22 (2026-08-19): prefer hand-crafted meta_description column when set.
-  // Falls back to blurb (truncated to 160 chars) when null.
-  const description = (rink as any).meta_description
-    ? (rink as any).meta_description
-    : (blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb);
+  const description = blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb;
   const provinceLabel = provinceDisplayName(rink.province_state);
 
-  // Title (improvements-everywhere 2026-08-19): cap at 60 chars for Google SERP.
-  // Old template: name + city + province + country + hours/league suffix (~80-160 chars).
-  // New: name + city/country only, truncated to 60 with the city last.
-  const titleLocParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
-  const titleBase = titleLocParts
-    ? `${rink.name} — ${titleLocParts}`
-    : rink.name;
-  const title = titleBase.length > 60
-    ? titleBase.slice(0, 57) + '...'
-    : titleBase;
-
   return {
-    title,
+    title: `${rink.name} — Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}${rink.country ? ', ' + rink.country : ''}${(() => { const parts: string[] = []; if (rink.opening_hours_json) parts.push('Hours'); if (rink.league) parts.push('Hockey'); else parts.push('Skating'); return parts.length ? ' | ' + parts.join(' & ') : ''; })()}`,
     description,
     robots: robotsMeta(decision),
     alternates: {
@@ -222,7 +206,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // + Programming tab) and upcoming events (schema.org event[] + Events tab).
   // We only need schema-relevant columns for the schema builder; the tab
   // components fetch their own full payload below.
-  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, cacheRes] = await Promise.all([
+  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -289,11 +273,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .gte('starts_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .order('starts_at', { ascending: true })
       .limit(50),
-    supabase
-      .from('rinks_places_cache')
-      .select('photos_urls')
-      .eq('rink_id', rink.id)
-      .maybeSingle(),
   ]);
 
   const games = gamesRes.data || [];
@@ -331,15 +310,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     price_cents: e.price_cents,
     currency: e.currency,
   }));
-  const cacheRow = cacheRes.data || null;
-  // Dedupe gallery photos by exact URL while preserving order.
-  const seen = new Set<string>();
-  const galleryPhotos = (cacheRow?.photos_urls || []).filter((url: string) => {
-    if (!url) return false;
-    if (seen.has(url)) return false;
-    seen.add(url);
-    return true;
-  });
 
   const blurb = buildRinkBlurb(rink);
   const provinceLabel = provinceDisplayName(rink.province_state);
@@ -418,20 +388,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
-      {/* WS22 FAQ JSON-LD (2026-08-19): target top 20 high-imp rinks per GSC audit. */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: [
-            { '@type': 'Question', name: `What are the hours at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.opening_hours_json ? `Public skating and program hours are listed on the rink page; opening hours are stored in our directory and may vary by season.` : `Public skating and program hours for ${rink.name} are listed on the rink page when available. Contact the rink directly for current hours and holiday schedules.` } },
-            { '@type': 'Question', name: `Does ${rink.name} offer public skating?`, acceptedAnswer: { '@type': 'Answer', text: `Yes. ${rink.name} is listed in the RinkStop directory and offers public skating sessions along with hockey and figure skating programs. Check the rink page for current public skate times.` } },
-            { '@type': 'Question', name: `What hockey programs are available at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.league ? `${rink.name} hosts ${rink.league} games and is a hub for local hockey programs, learn-to-play, youth leagues, and adult recreational hockey.` : `${rink.name} hosts hockey programs including learn-to-play, youth leagues, and adult recreational hockey. Use the directory to find specific teams and leagues at this rink.` } },
-            { '@type': 'Question', name: `Where is ${rink.name} located?`, acceptedAnswer: { '@type': 'Answer', text: `${rink.name} is in ${rink.city || 'this area'}${rink.country ? ', ' + rink.country : ''}. The rink page includes the address, embedded map, and driving directions.` } },
-          ],
-        }) }}
-      />
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
@@ -451,11 +407,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             },
             placeholder: {
               icon: 'ℹ️',
-              title: (() => {
-                // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
-                const base = `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`;
-                return base.length > 60 ? base.slice(0, 57) + '...' : base;
-              })(),
+              title: `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`,
               subtitle: 'This page exists so people searching for hockey in this area can confirm there is no permanent rink. The country/region is verified against the IIHF membership list and major sources.',
               bg: 'rgba(120,113,108,0.15)',
               border: '#78716c',
@@ -530,13 +482,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           );
         })()}
 
-        {/* Cover photo / gallery — sourced from Google Places when the rink has no
+        {/* Cover photo — sourced from Google Places when the rink has no
             logo_url. Renders above the H1 as the hero image.
             referrerPolicy="no-referrer" is required: Google Photos URLs
             (lh3.googleusercontent.com) return 403 if they detect a Referer
             header from non-Google origins. */}
-        {([rink.cover_photo_url, ...galleryPhotos]).filter(Boolean).length > 0 ? (
-          <RinkPhotoGallery photos={[rink.cover_photo_url, ...galleryPhotos].filter(Boolean)} rinkName={rink.name} />
+        {rink.cover_photo_url ? (
+          <img
+            src={rink.cover_photo_url}
+            alt={rink.name}
+            referrerPolicy="no-referrer"
+            style={{ width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 12, marginBottom: '16px', display: 'block', background: 'rgba(255,255,255,0.04)' }}
+          />
         ) : null}
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
@@ -631,39 +588,16 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                 🌐 Website
               </a>
             )}
-          </div>
-        )}
-
-        {/* EMBEDDED MAP — Google Maps Embed API. Keeps users on RinkStop
-            instead of bouncing to Google. Uses the existing
-            NEXT_PUBLIC_GOOGLE_MAPS_KEY (the same key that powers the
-            map page, rink photos, and Places API calls — the site is
-            Google Maps end-to-end).
-            (2026-08-18: replaces the "View on Google Maps" external
-            link that was under the phone number — Arnel flagged it as
-            guiding users out of RinkStop.) */}
-        {rink.latitude && rink.longitude && process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && (
-          <div
-            data-testid="rink-embedded-map"
-            style={{
-              marginTop: '-12px',
-              marginBottom: '24px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: '1px solid var(--border)',
-              background: 'rgba(13,17,23,0.6)',
-            }}
-          >
-            <iframe
-              title={`${rink.name} location`}
-              width="100%"
-              height="260"
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-              src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${rink.latitude},${rink.longitude}&zoom=15`}
-              style={{ border: 0, display: 'block' }}
-              allowFullScreen
-            />
+            {rink.google_maps_url && (
+              <a
+                href={rink.google_maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
+              >
+                📍 View on Google Maps
+              </a>
+            )}
           </div>
         )}
 
@@ -914,6 +848,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         {/* GETTING HERE — derived from address. Unique per rink. */}
 
         {rink.address && (
+
           <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
               Getting to {rink.name}
@@ -1047,7 +982,25 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           </div>
         )}
 
-      </div>
+          {/* Map */}
+          {(rink.latitude && rink.longitude) ? (
+            <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '16px' }}>Location</h2>
+              <iframe
+                title={`${rink.name} location`}
+                width="100%"
+                height="240"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${rink.latitude},${rink.longitude}&zoom=15`}
+                style={{ border: 0, borderRadius: '8px' }}
+                allowFullScreen
+              />
+            </div>
+          ) : null}
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--border)', marginBottom: '20px' }} />
 
         {/* Games Section */}
         <RinkGames rinkId={rink.id} rinkName={rink.name} initialGames={games} />

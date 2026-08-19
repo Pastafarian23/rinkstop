@@ -14,7 +14,6 @@ import {
   NhlStanding,
 } from '@/lib/nhl-data';
 import TeamLogo from '@/components/TeamLogo';
-import TicketmasterAd from '@/components/TicketmasterAd';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -242,7 +241,6 @@ export default async function TeamPage({ params }: Props) {
         )}
       </div>
 
-      <TicketmasterAd size="468x60" style={{ marginBottom: '1.5rem' }} />
 
       {/* Stats row */}
       {standing && (
@@ -301,7 +299,6 @@ export default async function TeamPage({ params }: Props) {
           )}
 
           <div style={{ marginTop: '1.5rem' }}>
-            <TicketmasterAd size="300x250" />
           </div>
         </div>
       </div>

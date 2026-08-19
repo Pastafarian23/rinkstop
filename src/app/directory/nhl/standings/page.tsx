@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllSeasons, getLatestSeason, getStandingsForSeason, NhlStanding } from '@/lib/nhl-data';
 import { findCanonicalTeam } from '@/lib/nhl-teams-canonical';
-import TicketmasterAd from '@/components/TicketmasterAd';
 
 export const metadata: Metadata = {
   title: 'NHL Standings | Current Standings by Division',
@@ -125,7 +124,6 @@ export default async function StandingsPage({ searchParams }: { searchParams: Pr
         </div>
       </div>
 
-      <TicketmasterAd size="468x60" style={{ marginBottom: '1.5rem' }} />
 
       {standings.length === 0 ? (
         <p style={{ color: 'rgba(255,255,255,0.5)' }}>No standings data available for {season}.</p>

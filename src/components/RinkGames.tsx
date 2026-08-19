@@ -84,11 +84,7 @@ export default function RinkGames({ rinkId, rinkName, initialGames }: RinkGamesP
             </div>
           ))}
         </div>
-      ) : (
-        <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '14px', fontStyle: 'italic' }}>
-          No upcoming games scheduled at this rink.
-        </p>
-      )}
+      ) : null}
     </div>
   );
 }

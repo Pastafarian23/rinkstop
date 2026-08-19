@@ -119,15 +119,6 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      // Legacy WordPress ghost URL — the only one still 404-ing on 2026-08-19.
-      // Claude's audit flagged 4; only this one needed cleanup. The other
-      // three (/index.php/contacts-us/, /index.php/terms-and-conditions/,
-      // /index.php/store/) already 308-redirect to their canonical pages.
-      {
-        source: '/index.php/directory-rinks',
-        destination: '/directory/rinks',
-        permanent: true,
-      },
       {
         source: '/scores',
         destination: '/directory/games',

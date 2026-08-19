@@ -21,10 +21,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const result = findEntry(slug);
   if (!result) return { title: 'Not Found' };
   const { entry, chain } = result;
-  const title = `${entry.name} (${entry.years}) — ${chain.currentName}`;
-
   return {
-    title,
+    title: `${entry.name} (${entry.years}) — Now the ${chain.currentName}`,
     description: `The ${entry.name} played in ${entry.city} from ${entry.years}. Today this franchise is the ${chain.currentName}.${entry.notes ? ' ' + entry.notes : ''}`,
   };
 }
