@@ -153,7 +153,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 
   const blurb = buildRinkBlurb(rink);
-  const description = blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb;
+  // WS22 (2026-08-19): prefer hand-crafted meta_description column when set.
+  // Falls back to blurb (truncated to 160 chars) when null.
+  const description = (rink as any).meta_description
+    ? (rink as any).meta_description
+    : (blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb);
   const provinceLabel = provinceDisplayName(rink.province_state);
 
   return {
