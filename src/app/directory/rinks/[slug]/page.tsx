@@ -415,6 +415,20 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
+      {/* WS22 FAQ JSON-LD (2026-08-19): target top 20 high-imp rinks per GSC audit. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            { '@type': 'Question', name: `What are the hours at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.opening_hours_json ? `Public skating and program hours are listed on the rink page; opening hours are stored in our directory and may vary by season.` : `Public skating and program hours for ${rink.name} are listed on the rink page when available. Contact the rink directly for current hours and holiday schedules.` } },
+            { '@type': 'Question', name: `Does ${rink.name} offer public skating?`, acceptedAnswer: { '@type': 'Answer', text: `Yes. ${rink.name} is listed in the RinkStop directory and offers public skating sessions along with hockey and figure skating programs. Check the rink page for current public skate times.` } },
+            { '@type': 'Question', name: `What hockey programs are available at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.league ? `${rink.name} hosts ${rink.league} games and is a hub for local hockey programs, learn-to-play, youth leagues, and adult recreational hockey.` : `${rink.name} hosts hockey programs including learn-to-play, youth leagues, and adult recreational hockey. Use the directory to find specific teams and leagues at this rink.` } },
+            { '@type': 'Question', name: `Where is ${rink.name} located?`, acceptedAnswer: { '@type': 'Answer', text: `${rink.name} is in ${rink.city || 'this area'}${rink.country ? ', ' + rink.country : ''}. The rink page includes the address, embedded map, and driving directions.` } },
+          ],
+        }) }}
+      />
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
