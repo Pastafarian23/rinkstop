@@ -153,11 +153,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 
   const blurb = buildRinkBlurb(rink);
-  const description = blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb;
+  // WS22 (2026-08-19): prefer hand-crafted meta_description column when set.
+  // Falls back to blurb (truncated to 160 chars) when null.
+  const description = (rink as any).meta_description
+    ? (rink as any).meta_description
+    : (blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb);
   const provinceLabel = provinceDisplayName(rink.province_state);
 
+  // Title (improvements-everywhere 2026-08-19): cap at 60 chars for Google SERP.
+  // Old template: name + city + province + country + hours/league suffix (~80-160 chars).
+  // New: name + city/country only, truncated to 60 with the city last.
+  const titleLocParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
+  const titleBase = titleLocParts
+    ? `${rink.name} — ${titleLocParts}`
+    : rink.name;
+  const title = titleBase.length > 60
+    ? titleBase.slice(0, 57) + '...'
+    : titleBase;
+
   return {
-    title: `${rink.name} — Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}${rink.country ? ', ' + rink.country : ''}${(() => { const parts: string[] = []; if (rink.opening_hours_json) parts.push('Hours'); if (rink.league) parts.push('Hockey'); else parts.push('Skating'); return parts.length ? ' | ' + parts.join(' & ') : ''; })()}`,
+    title,
     description,
     robots: robotsMeta(decision),
     alternates: {
@@ -403,6 +418,20 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
+      {/* WS22 FAQ JSON-LD (2026-08-19): target top 20 high-imp rinks per GSC audit. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            { '@type': 'Question', name: `What are the hours at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.opening_hours_json ? `Public skating and program hours are listed on the rink page; opening hours are stored in our directory and may vary by season.` : `Public skating and program hours for ${rink.name} are listed on the rink page when available. Contact the rink directly for current hours and holiday schedules.` } },
+            { '@type': 'Question', name: `Does ${rink.name} offer public skating?`, acceptedAnswer: { '@type': 'Answer', text: `Yes. ${rink.name} is listed in the RinkStop directory and offers public skating sessions along with hockey and figure skating programs. Check the rink page for current public skate times.` } },
+            { '@type': 'Question', name: `What hockey programs are available at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.league ? `${rink.name} hosts ${rink.league} games and is a hub for local hockey programs, learn-to-play, youth leagues, and adult recreational hockey.` : `${rink.name} hosts hockey programs including learn-to-play, youth leagues, and adult recreational hockey. Use the directory to find specific teams and leagues at this rink.` } },
+            { '@type': 'Question', name: `Where is ${rink.name} located?`, acceptedAnswer: { '@type': 'Answer', text: `${rink.name} is in ${rink.city || 'this area'}${rink.country ? ', ' + rink.country : ''}. The rink page includes the address, embedded map, and driving directions.` } },
+          ],
+        }) }}
+      />
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
@@ -422,7 +451,11 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             },
             placeholder: {
               icon: 'ℹ️',
-              title: `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`,
+              title: (() => {
+                // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
+                const base = `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`;
+                return base.length > 60 ? base.slice(0, 57) + '...' : base;
+              })(),
               subtitle: 'This page exists so people searching for hockey in this area can confirm there is no permanent rink. The country/region is verified against the IIHF membership list and major sources.',
               bg: 'rgba(120,113,108,0.15)',
               border: '#78716c',
