@@ -35,6 +35,7 @@ interface Team {
   league?: HierarchyRef | null;
   contact_phone: string | null;
   created_at: string;
+  founded_on: string | null;
 }
 
 interface NewsRow {
@@ -652,7 +653,7 @@ export default function PublicTeamProfile({
                 padding: '1rem 1.25rem',
               }}
             >
-              {team.created_at && <InfoRow label="Founded" value={formatDate(team.created_at)} />}
+              {team.founded_on && <InfoRow label="Founded" value={formatDate(team.founded_on)} />}
               {team.level && <InfoRow label="Level" value={levelLabel ?? team.level} />}
               {ageGroup && <InfoRow label="Age group" value={ageGroup} />}
               {team.season_label && <InfoRow label="Season" value={team.season_label} />}
