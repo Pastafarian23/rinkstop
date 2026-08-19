@@ -878,7 +878,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             Find an ice rink near you
           </h2>
           <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '16px' }}>
-            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? RinkStop lists every public rink, arena, and ice facility we can verify in our directory — searchable by city, country, and league. {rink.name} is one of the rinks in the directory; the {rink.ice_size || 'community'}-sized surface here serves as a hub for local hockey, figure skating, and public skating in the {rink.city || 'local'} area.
+            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? {rink.name} is a registered {rink.ice_size || 'community'}-sized ice facility in the RinkStop directory. Whether you're looking for public skating hours, youth hockey programs, or figure skating sessions, this page has the rink's verified contact details, address, and schedule information.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <Link href={`/directory/rinks?city=${encodeURIComponent(rink.city || '')}`} style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px', textDecoration: 'none' }}>
@@ -893,32 +893,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               <div style={{ color: '#fff', fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>🔍 Find rinks near me</div>
               <div style={{ color: 'var(--muted)', fontSize: '13px' }}>Search by location or venue type</div>
             </Link>
-          </div>
-
-          <h3 style={{ fontWeight: 600, color: '#fff', fontSize: '16px', marginTop: '16px', marginBottom: '12px' }}>
-            Frequently asked questions about {rink.name}
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Is {rink.name} open to public skating?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                {rink.opening_hours_json
-                  ? `Yes — ${rink.name} offers public skating sessions. Check the live hours above for today's schedule.`
-                  : `Public skating availability at ${rink.name} varies by season. Contact the rink directly via the phone number on this page to confirm current hours.`}
-              </p>
-            </details>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Does {rink.name} host youth hockey?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                Yes — {rink.name} supports youth hockey programming including learn-to-skate, learn-to-play, and minor hockey. Specific program availability depends on the current operator.
-              </p>
-            </details>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>How do I get to {rink.name}?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                {rink.address ? `${rink.name} is located at ${rink.address}. Use Google Maps for turn-by-turn directions.` : `Contact the rink directly to confirm the address before traveling.`}
-              </p>
-            </details>
           </div>
         </section>
 
