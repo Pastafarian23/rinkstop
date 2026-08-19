@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { buildTeamShare } from '@/lib/share';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
@@ -766,7 +764,7 @@ export default function PublicTeamProfile({
       )}
 
       {/* WS16 PR2 — AdSense display ad below team profile content. */}
-      <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
+      
     </div>
   );
 }

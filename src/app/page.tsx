@@ -5,8 +5,6 @@ import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 
 // Home page is rendered statically with ISR (revalidate every 5 min).
 // The page runs 9 Supabase queries for the stats grid + recent sections;
@@ -387,7 +385,7 @@ export default async function Home() {
       {/* Between EEAT intro and Top Cities — low-intrusion, above the directory listing cards. */}
       <section style={{ background: '#0D1117', padding: '1rem 0' }}>
         <div className="container" style={{ maxWidth: '1200px' }}>
-          <AdSlot slot={ADSENSE_SLOTS.HOME_DISPLAY} type="display" />
+          
         </div>
       </section>
 

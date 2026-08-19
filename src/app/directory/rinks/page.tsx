@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import RinksIndexClient from './RinksIndexClient';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 
 interface Rink {
   id: string;
@@ -114,7 +112,7 @@ export default async function RinksPage({ searchParams }: { searchParams: Promis
       <RinksIndexClient initialRinks={initialRinks} country={country ?? null} />
       {/* WS16 PR2 — AdSense in-feed ad below the rink list. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
-        <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
+        
       </div>
     </>
   );

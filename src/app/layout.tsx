@@ -11,8 +11,6 @@ import MobileProfileButton from '@/components/MobileProfileButton';
 import RoleAwareTabBar from '@/components/RoleAwareTabBar';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
-import CookieConsent from '@/components/CookieConsent';
-import FundingChoicesCmp from '@/components/FundingChoicesCmp';
 import CommandPalette from '@/components/CommandPalette';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
@@ -232,9 +230,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="RinkStop" />
           <link rel="apple-touch-icon" href="/rinkstoplogo.png" />
-          {adsenseEligible && (
-            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3703811522107586" crossOrigin="anonymous"></script>
-          )}
+          
         </head>
         <body>
 
@@ -424,7 +420,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </footer>
-        <CookieConsent />
+        
         <FoundersClubPopup />
         {/* Post-login upgrade nudge — shows once to free users on the dashboard or homepage.
             Higher z-index than FoundersClubPopup so they don't double up. */}
@@ -437,13 +433,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             adsbygoogle.js so Google's certified consent flow can gate
             ad requests. TCF v2.3 compliant. Falls back gracefully if
             NEXT_PUBLIC_GOOGLE_ADSENSE_ID isn't set. */}
-        <FundingChoicesCmp />
+        
         {/* CookieConsent: pre-Funding-Choices consent banner. FundingChoicesCmp
             is no-ops until NEXT_PUBLIC_GOOGLE_ADSENSE_ID is set; this banner
             covers the gap so users get an Accept/Decline choice today.
             AdSense policy requires either Funding Choices OR a first-party
             consent UI on every page. Mounted globally so all routes have it. */}
-        <CookieConsent />
+        
         {/* WS16 PR2 (2026-08-03): AdSense script loader. Uses
             strategy="afterInteractive" so it doesn't block first paint.
             Individual <AdSlot> components gate the actual ad requests
