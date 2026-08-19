@@ -7,7 +7,6 @@ import {
   type Federation,
 } from '@/lib/federations';
 import { countryToSlug } from '@/lib/country-page';
-import HockeyCanadaAd from '@/components/HockeyCanadaAd';
 
 interface PageProps {
   params: Promise<{ country: string }>;
@@ -124,7 +123,7 @@ export default async function FederationPage({ params }: PageProps) {
       </div>
 
       {/* Hockey Canada affiliate ad — only on the Canada federation page */}
-      {fed.countryCode === 'CA' && <HockeyCanadaAd size="300x250" />}
+      
 
       {/* Federation overview */}
       <section

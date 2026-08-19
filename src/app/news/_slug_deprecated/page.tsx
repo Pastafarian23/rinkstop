@@ -6,8 +6,6 @@ import ShareButton from '@/components/ShareButton';
 import ArticleCtaBlock from '@/components/ArticleCtaBlock';
 import RelatedDirectorySection from '@/components/RelatedDirectorySection';
 import LocationHeader from '@/components/LocationHeader';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
@@ -401,7 +399,7 @@ export default async function BlogPostPage({ params }: Props) {
               />
 
               {/* WS16 PR2 — AdSense in-article ad after article body, before CTA. */}
-              <AdSlot slot={ADSENSE_SLOTS.ARTICLE_INARTICLE} type="in-article" />
+              
 
               {/* Inline CTA (Day 3 — article CTA backfill). Topic-matched destination. */}
               <ArticleCtaBlock

@@ -16,8 +16,6 @@ import ShareButton from '@/components/ShareButton';
 import ArticleCtaBlock from '@/components/ArticleCtaBlock';
 import RelatedDirectorySection from '@/components/RelatedDirectorySection';
 import LocationHeader from '@/components/LocationHeader';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
@@ -353,7 +351,7 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
 
-              <AdSlot slot={ADSENSE_SLOTS.ARTICLE_INARTICLE} type="in-article" />
+              
               <ArticleCtaBlock
                 slug={post.slug}
                 category={post.category ?? null}

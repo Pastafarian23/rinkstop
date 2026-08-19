@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import TicketmasterAd from '@/components/TicketmasterAd';
 import { NhlStanding } from '@/lib/nhl-data';
 
 export interface NhlCanonicalTeam {
@@ -50,7 +49,6 @@ export default function DivisionView({ title, teams, standingsByName, season, ac
         </p>
       </div>
 
-      <TicketmasterAd size="468x60" style={{ marginBottom: '1.5rem' }} />
 
       {/* Standings table */}
       <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', marginBottom: '1.5rem' }}>
