@@ -64,5 +64,6 @@ tsconfig.tsbuildinfo
 /memory/
 /scripts/_parse.cjs
 /scripts/import-rinks-v2.mjs
+/scripts/backfill-rink-meta-longtail.mjs
 _backup_2026-06-18/
 supabase/.temp/
