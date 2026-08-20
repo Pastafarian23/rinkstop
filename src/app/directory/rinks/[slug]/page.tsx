@@ -42,7 +42,23 @@ type NearbyRink = { id: string; slug: string | null; name: string; city: string 
  * Falls back to a synthetic paragraph derived from name + city + country
  * + capacity + ice_size so every rink has at least 80-120 unique words.
  */
-function buildRinkBlurb(rink: { name: string; city: string | null; country: string | null; notes: string | null; capacity: number | null; ice_size: string | null; surface_type: string | null; league?: string | null; }): string {
+function buildRinkBlurb(rink: {
+  name: string;
+  city: string | null;
+  country: string | null;
+  province_state?: string | null;
+  notes: string | null;
+  capacity: number | null;
+  ice_size: string | null;
+  surface_type: string | null;
+  league?: string | null;
+  // WS24 PR#142 (2026-08-20): inject the already-fetched nearby teams + leagues
+  // so the synthetic intro names real tenants instead of falling back to the
+  // generic "home venue for local hockey teams" line. Both arrays are
+  // deduplicated and capped upstream (limit 12 teams, 8 leagues).
+  localTeams?: Array<{ name: string }>;
+  localLeagues?: Array<{ name: string }>;
+}): string {
   // WS15 A1 (2026-08-02): only use notes verbatim when they're substantive
   // enough to serve as a full meta description on their own. Short notes
   // (e.g., "Home: Widnes Wild (NIHL). Planet Ice chain." at 43 chars) used
@@ -53,15 +69,32 @@ function buildRinkBlurb(rink: { name: string; city: string | null; country: stri
   if (rink.notes && rink.notes.trim().length > 100) {
     return rink.notes.trim();
   }
+  const cityPhrase = rink.city
+    ? `${rink.city}${rink.province_state ? ', ' + rink.province_state : ''}${rink.country ? ', ' + rink.country : ''}`
+    : rink.country || 'the area';
   const parts: string[] = [];
-  parts.push(`${rink.name} is an ice rink in ${rink.city || 'the area'}${rink.country ? ', ' + rink.country : ''}.`);
+  parts.push(`${rink.name} is an ice rink in ${cityPhrase}.`);
+
+  // Tenant-first hook (WS24 PR#142). If we have a team or league name from
+  // the parallel fetch, name it as the rink's primary tenant. This is the
+  // single biggest uniqueness win because the team/league name is the
+  // highest-signal anchor for the page (and is also a search query).
+  const teams = rink.localTeams || [];
+  const leagues = rink.localLeagues || [];
+  const tenantTeam = teams.length > 0 ? teams[0].name : null;
+  const tenantLeague = leagues.length > 0 ? leagues[0].name : rink.league || null;
+  if (tenantTeam && tenantLeague) {
+    parts.push(`${tenantTeam} of the ${tenantLeague} calls ${rink.name} home, and the arena hosts ${tenantLeague} competition throughout the regular season and playoffs.`);
+  } else if (tenantTeam) {
+    parts.push(`${tenantTeam} calls ${rink.name} home, with regular-season games and playoffs hosted at the venue.`);
+  } else if (tenantLeague) {
+    parts.push(`${rink.name} hosts ${tenantLeague} competition throughout the regular season and playoffs.`);
+  }
+
   if (rink.capacity && rink.capacity > 1000) {
     parts.push(`The arena seats ${rink.capacity.toLocaleString()} spectators, making it one of the larger hockey venues in the region${rink.city ? ' and a fixture of the ' + rink.city + ' sports scene' : ''}.`);
   } else if (rink.capacity) {
     parts.push(`With a ${rink.capacity.toLocaleString()}-seat capacity, ${rink.name} is an intimate community rink that hosts local hockey, figure skating, and public skate sessions.`);
-  }
-  if (rink.league) {
-    parts.push(`It serves as a home venue for ${rink.league} competition.`);
   }
   if (rink.ice_size === 'NHL') {
     parts.push('The rink is built to NHL dimensions and regularly hosts professional, junior, and high-level amateur hockey.');
@@ -70,7 +103,17 @@ function buildRinkBlurb(rink: { name: string; city: string | null; country: stri
   } else if (rink.ice_size) {
     parts.push(`The facility uses a ${rink.ice_size} ice surface, which is the standard for most ${rink.country ? rink.country + ' ' : ''}hockey programs.`);
   }
-  parts.push(`${rink.name} serves as a home venue for local hockey teams and as a programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey.`);
+  if (rink.surface_type) {
+    parts.push(`The playing surface is ${rink.surface_type.toLowerCase()}.`);
+  }
+  // Distinctive-programming line so the closing sentence is not identical
+  // across thousands of rinks. Only render when we have something real to
+  // anchor it (a league + a team, or just a team, or just a league).
+  if (tenantTeam && tenantLeague) {
+    parts.push(`Beyond ${tenantTeam} games, ${rink.name} is a year-round programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey in ${rink.city || rink.country || 'the area'}.`);
+  } else {
+    parts.push(`${rink.name} serves as a home venue for local hockey teams and as a programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey.`);
+  }
   return parts.join(' ');
 }
 
@@ -149,7 +192,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const uniqueWordCount = estimateRinkUniqueWordCount(rink);
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 
-  const blurb = buildRinkBlurb(rink);
+  // WS24 PR#142 (2026-08-20): teams + leagues not fetched here (generateMetadata
+  // runs separately from the page body and the rink-page intro now names real
+  // tenants from the page-body fetch). Pass empty arrays inline on the rink
+  // object since buildRinkBlurb takes a single rink parameter.
+  const blurb = buildRinkBlurb({ ...rink, localTeams: [], localLeagues: [] });
   // WS22 (2026-08-19): prefer hand-crafted meta_description column when set.
   // Falls back to blurb (truncated to 160 chars) when null.
   const description = (rink as any).meta_description
@@ -324,7 +371,17 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     currency: e.currency,
   }));
 
-  const blurb = buildRinkBlurb(rink);
+  // WS24 PR#142 (2026-08-20): pass real tenants from the parallel fetch into
+  // buildRinkBlurb so each rink's intro names its actual home team + league
+  // instead of the generic "local hockey teams" fallback. localTeams and
+  // localLeagues are already declared above (lines ~339-340) from the
+  // parallel Promise.all fetch. Spread them onto the rink object since the
+  // helper takes a single rink-shaped parameter.
+  const blurb = buildRinkBlurb({
+    ...rink,
+    localTeams: localTeams.map(t => ({ name: t.name })),
+    localLeagues: localLeagues.map(l => ({ name: l.name })),
+  });
   const provinceLabel = provinceDisplayName(rink.province_state);
   const locationLine = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
   const formerName = extractFormerName(rink.notes);
