@@ -86,13 +86,10 @@ export default function PrivacyPage() {
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Consent Management (EEA / UK / Switzerland)</h2>
         <p style={{ marginBottom: '1rem' }}>
-          For visitors in the European Economic Area, the United Kingdom, or Switzerland, RinkStop only loads advertising and analytics scripts after you have provided consent through our consent management platform.
+          For visitors in the European Economic Area, the United Kingdom, or Switzerland, RinkStop only loads advertising and analytics scripts after you have provided consent through our first-party consent banner.
         </p>
         <p style={{ marginBottom: '1rem' }}>
-          When Google AdSense is the active advertising network on RinkStop, the consent management platform we use is Google&rsquo;s Privacy &amp; Messaging API (formerly Funding Choices), which is integrated with the IAB Tech Lab Transparency &amp; Consent Framework (TCF) v2.x. This platform is operated by Google as a processor and is certified under the TCF. The platform records your choices (accept, reject, or manage preferences), transmits those choices to participating advertising vendors, and exposes a control so you can change your choice at any time.
-        </p>
-        <p style={{ marginBottom: '1rem' }}>
-          When a different advertising network is active (or when no advertising network is active), the consent flow is provided by RinkStop&rsquo;s first-party cookie banner, which records your choice in the <code>cookie_consent</code> browser local-storage key and re-prompts you when your stored choice has expired. You can change your choice at any time by clearing your browser&rsquo;s storage for rinkstop.com or by revisiting this page.
+          When Google AdSense is the active advertising network on RinkStop, the consent flow is provided by RinkStop&rsquo;s first-party consent banner. The banner is rendered on every public route, presents a clear Accept or Decline choice, and records your choice in the <code>cookie_consent</code> browser local-storage entry (<code>accepted</code> or <code>declined</code>). The Google AdSense publisher script (<code>pagead2.googlesyndication.com/pagead/js/adsbygoogle.js</code>) only loads after <code>accepted</code> is read on the client; until then no advertising request is made. You can change your choice at any time by clearing your browser&rsquo;s storage for rinkstop.com or by revisiting this page and re-prompting.
         </p>
         <p style={{ marginBottom: '1.5rem' }}>
           We do not load personalized advertising scripts before consent has been recorded. We do not use deceptive design patterns (such as pre-ticked boxes, hidden reject buttons, or visual interference) to obtain consent.
