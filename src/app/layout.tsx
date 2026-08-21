@@ -14,6 +14,12 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 // paused Funding Choices for new publishers as of 2024, so a
 // first-party banner is the standard path.
 import ConsentBanner from '@/components/ConsentBanner';
+// PR #145 (2026-08-21): first-party AdSense loader. Reads
+// localStorage.cookie_consent after hydration; only injects the
+// publisher snippet when the user has accepted. Required for the
+// AdSense resubmit so reviewers see a live script integration gated
+// on a real choice record. Skipped on excluded prefixes even after consent.
+import AdSenseLoader from '@/components/AdSenseLoader';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
@@ -463,6 +469,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             policy requirement of having a user-facing consent UI on
             every page. */}
         <ConsentBanner />
+        {/* PR #145 (2026-08-21): AdSense script loader. No-op when
+            !adsenseEligible (privacy/terms/cookies/admin/dashboard/youth
+            pages), no-op when the user has not accepted via the banner
+            above. Mounted globally so a single record gates the same
+            publisher ID across all eligible routes. */}
+        <AdSenseLoader enabled={adsenseEligible} />
         </body>
       </html>
     </ClerkProvider>
