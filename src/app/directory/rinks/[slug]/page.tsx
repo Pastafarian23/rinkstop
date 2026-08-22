@@ -826,7 +826,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               style={{ display: 'block', position: 'relative' }}
             >
               <img
-                src={`https://maps.googleapis.com/maps/api/staticmap?center=${rink.latitude},${rink.longitude}&zoom=15&size=640x280&maptype=roadmap&markers=color:red%7C${rink.latitude},${rink.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}`}
+                src={`https://maps.googleapis.com/maps/api/staticmap?center=${rink.latitude},${rink.longitude}&zoom=15&size=640x280&maptype=roadmap&markers=color:red%7C${rink.latitude},${rink.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}`}
                 alt={`${rink.name} location map`}
                 width={640}
                 height={280}
