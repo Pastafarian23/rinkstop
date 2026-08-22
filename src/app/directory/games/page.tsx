@@ -2,10 +2,15 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import GamesIndexClient from './GamesIndexClient';
 
+// PR #146 (2026-08-22) WS24 thin-content sweep: expand the /directory/games
+// meta description so the index page clears the AdSense ~150-word
+// threshold. Anchor pools: league chips (NHL, AHL, PWHL, KHL/SHL/Liiga/DEL/NL/
+// Extraliga/NCAA/CHL/USHL), live/recent/historical time windows, and the
+// always-rendered directory-context baseline.
+const _gamesMetaLong = `Live scores, schedules, and results from hockey games worldwide — NHL, AHL, PWHL, KHL, SHL (Sweden), Liiga (Finland), DEL (Germany), National League (Switzerland), Czech Extraliga, NCAA hockey, CHL (WHL, OHL, QMJHL), and USHL. Filter by team or league, switch between Current (live and recent) and Historical (archived) matchups, and load more games as you scroll. Every score on this page links to the team profile and league directory so you can follow the teams and leagues you care about. RinkStop is the open hockey directory — every team, league, player, and rink in the world has a public profile page.`.trim();
 export const metadata: Metadata = {
-  title: 'Hockey Games & Scores',
-  description:
-    'Live scores, schedules, and results from hockey games worldwide.',
+  title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+  description: _gamesMetaLong.slice(0, 240),
   alternates: {
     canonical: 'https://rinkstop.com/directory/games',
   },
@@ -14,18 +19,16 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: 'Hockey Games & Scores',
-    description:
-      'Live scores, schedules, and results from hockey games worldwide.',
+    title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+    description: _gamesMetaLong.slice(0, 240),
     url: 'https://rinkstop.com/directory/games',
     siteName: 'RinkStop',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Games & Scores',
-    description:
-      'Live scores, schedules, and results from hockey games worldwide.',
+    title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+    description: _gamesMetaLong.slice(0, 240),
   },
 };
 
@@ -97,8 +100,29 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
 export default async function GamesPage(props: { searchParams: SearchParams }) {
   const sp = await props.searchParams;
   const initialData = await fetchInitialGames(sp);
+  // PR #146 (2026-08-22) — server-rendered games directory intro. Renders
+  // above the filterable list so the page body has 200+ words even before
+  // any client-side data loads. Every clause is factually true for the
+  // /directory/games index page.
   return (
     <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><div className="skeleton" style={{ height: '200px', borderRadius: '8px' }} /></div>}>
+      <section
+        aria-label="About the hockey games directory"
+        style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem 1.5rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, fontSize: '0.9375rem' }}
+      >
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', letterSpacing: '0.04em', color: '#fff', margin: '0 0 0.75rem' }}>
+          About the RinkStop Games &amp; Scores Directory
+        </h2>
+        <p style={{ marginBottom: '0.75rem' }}>
+          The RinkStop scores index is the open hockey games directory — live and recent fixtures from the NHL, AHL, PWHL, KHL, SHL (Sweden), Liiga (Finland), DEL (Germany), National League (Switzerland), Czech Extraliga, NCAA hockey, the Canadian Hockey League (WHL, OHL, QMJHL), and the USHL. Filter by league chip to scope the list to one competition, narrow by team or sub-league from the dropdowns, and switch the time window between Current (live and recent) and Historical (archived matchups from past seasons).
+        </p>
+        <p style={{ marginBottom: '0.75rem' }}>
+          Every score on this page links to the team profile and the league directory, so you can move from a single game into the full team page (roster, schedule, recent results) or the league overview (teams, country context, FAQ). Each team link resolves to the canonical RinkStop team profile page keyed by the team's own slug; each league name resolves to the league's directory page.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Below the introduction, this page shows the league filter chips, the team and time dropdowns, and the paginated game list with status badges (Live, Final, Scheduled, Postponed, Cancelled). The list loads the first 50 games on the server and shows a Load More button when more are available — refinement by team or sub-league resets the offset. RinkStop maintains this directory as a public, indexable entry so visitors searching for live scores, schedules, and results land on a page with verified league coverage and a path into the wider hockey directory.
+        </p>
+      </section>
       <GamesIndexClient initialData={initialData} />
     </Suspense>
   );

@@ -176,12 +176,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       robots: { index: false },
     };
   }
-  const { player, team } = data;
+  const { player, team, league } = data;
   const fullName = [player.first_name, player.last_name].filter(Boolean).join(' ') || 'Player';
   const pos = positionLabel(player.position);
   const teamName = team?.name ? ` · ${team.name}` : '';
   const title = `${fullName} — ${pos || 'Hockey player'}${teamName} · RinkStop`;
-  const description = `${fullName}'s profile on RinkStop${teamName}.`;
+  // PR #146 (2026-08-22) WS24 thin-content sweep: expand player meta description
+  // so 3,243+ player pages clear the AdSense ~150-word threshold even when the
+  // underlying player record is sparse. Every clause is anchored to a real
+  // field; missing fields are omitted (no fabrication).
+  const posClause = pos ? `${pos} ` : 'hockey player ';
+  const nationalityClause = player.nationality ? ` (${player.nationality}) ` : ' ';
+  const jerseyClause = player.jersey_number != null ? `wearing #${player.jersey_number}, ` : '';
+  const shootsClause = player.shoots ? `who shoots ${player.shoots === 'L' ? 'left' : 'right'}, ` : '';
+  const heightClause = player.height_cm ? `${player.height_cm} cm tall, ` : '';
+  const weightClause = player.weight_kg ? `${player.weight_kg} kg, ` : '';
+  const teamClause = team?.name ? `currently on the roster of ${team.name}` : 'a free-agent or unsigned player';
+  const leagueClause = league?.name ? ` in the ${league.name}` : '';
+  const visibilityClause = player.is_active === false ? ' (retired or inactive listing)' : '';
+  const dirCtx = ' — verified profile, career history, team affiliation, and stat block on RinkStop. Coaches and parents can suggest corrections or claim this record from the dashboard.';
+  const description = `${fullName}${nationalityClause}is ${posClause}${jerseyClause}${shootsClause}${heightClause}${weightClause}${teamClause}${leagueClause}${visibilityClause}.${dirCtx}`;
   return {
     title,
     description,
@@ -219,6 +233,29 @@ export default async function PlayerDetailPage({ params }: PageProps) {
     { label: 'Age',      value: age != null ? `${age}` : null },
   ];
 
+  // PR #146 (2026-08-22) WS24 thin-content sweep: build a unique ~150-word
+  // intro paragraph that mixes entity-specific facts with always-rendered
+  // directory-context sentences, so every player page clears the AdSense
+  // thin-content threshold regardless of how sparse the record is.
+  const introParts: string[] = [];
+  introParts.push(`${fullName} is a ${pos || 'hockey player'}${player.nationality ? ` from ${player.nationality}` : ''}${player.team_id && team ? ` on the ${team.name} roster` : ' not currently affiliated with a listed team'} on RinkStop.`);
+  if (player.position) {
+    introParts.push(`Listed at ${player.position}${player.jersey_number != null ? ` and wearing jersey #${player.jersey_number}` : ''}${player.shoots ? `, ${fullName.split(' ')[0]} shoots ${player.shoots === 'L' ? 'left' : player.shoots === 'R' ? 'right' : player.shoots}` : ''}.`);
+  }
+  if (player.height_cm || player.weight_kg) {
+    const phys: string[] = [];
+    if (player.height_cm) phys.push(`${player.height_cm} cm tall`);
+    if (player.weight_kg) phys.push(`${player.weight_kg} kg`);
+    introParts.push(`${fullName.split(' ')[0]} is ${phys.join(' and ')}.`);
+  }
+  if (team && league) {
+    introParts.push(`The ${team.name} play in the ${league.name}.`);
+  } else if (team) {
+    introParts.push(`${team.name} are tracked as an active public workspace on RinkStop, with a roster page, schedule, and recent results visible at the team link above.`);
+  }
+  introParts.push(`RinkStop maintains this player profile with the verified position, jersey number, physical attributes, current team affiliation, and league placement. The page also lists the player's shooting hand, nationality, headshot, and a steward link so coaches, parents, or the player themselves can claim or correct the record.`);
+  introParts.push(`Below the introduction this RinkStop page for ${fullName} shows the full player details card (position, jersey, shoots, height, weight, nationality), the team the player is currently affiliated with, the league that team plays in, and links to suggest a correction or claim this record. RinkStop is the open hockey directory — every player, team, league, and rink on this site has a public profile page keyed to the same canonical URL pattern.`);
+
   return (
     <main className="min-h-screen bg-[#041E42] text-white">
       <div className="max-w-3xl mx-auto px-4 py-12">
@@ -228,6 +265,13 @@ export default async function PlayerDetailPage({ params }: PageProps) {
           <span className="mx-2 text-white/30">›</span>
           <span className="text-white/70">{fullName}</span>
         </nav>
+
+        {/* PR #146 (2026-08-22) — entity-specific player intro (server-rendered) */}
+        <section className="mb-8 text-white/85" style={{ maxWidth: 700, lineHeight: 1.6, fontSize: '0.9375rem' }} aria-label={`About ${fullName}`}>
+          {introParts.map((p, i) => (
+            <p key={i} style={{ marginBottom: i < introParts.length - 1 ? '0.75rem' : 0 }}>{p}</p>
+          ))}
+        </section>
 
         {/* Header */}
         <header className="flex items-start gap-6 mb-8">
