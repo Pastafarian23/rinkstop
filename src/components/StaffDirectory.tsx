@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import CategorySearchBar from '@/components/CategorySearchBar';
 
 interface StaffMember {
   id: string;
@@ -88,17 +89,15 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
         </p>
       </div>
 
-      {/* Search — full-width on mobile, capped at 420px on desktop. Search icon
-          gives the search bar clear visual prominence above the fold. */}
-      <div style={{ marginBottom: '1.5rem', position: 'relative', maxWidth: '420px' }}>
-        <span aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', fontSize: '0.95rem' }}>🔍</span>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder={`Search ${roleLabel.plural.toLowerCase()} by name, team, or nationality…`}
-          className="input-field"
-          style={{ paddingLeft: '2.25rem', width: '100%' }}
+      {/* Search — homepage aesthetic, scoped to this role.
+          localOnly=true: the staff directory uses client-side filtering (fast,
+          no API call). The bar matches the home-page style visually. */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <CategorySearchBar
+          category={role}
+          page={`/directory/${role}s`}
+          maxWidth={600}
+          localOnly
         />
       </div>
 

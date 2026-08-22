@@ -138,7 +138,7 @@ function computeMatchQuality(
 }
 
 export type SuggestItem = {
-  type: 'rink' | 'team' | 'player' | 'league' | 'brand';
+  type: 'rink' | 'team' | 'player' | 'league' | 'brand' | 'coach' | 'official' | 'staff' | 'scout';
   id: string;
   name: string;
   slug: string;
@@ -147,7 +147,7 @@ export type SuggestItem = {
   matchQuality: number; // higher = better match
 };
 
-type RankedSuggestItem = SuggestItem & { rankScore: number };
+type RankedSuggestItem = Omit<SuggestItem, 'type'> & { type: SuggestItem['type']; rankScore: number };
 
 export async function GET(req: NextRequest) {
   const { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } = await getRateLimit();
@@ -180,11 +180,11 @@ export async function GET(req: NextRequest) {
   //     suggest API scope, "player" is the closest match. The directory
   //     pages fall back to their own search input if no player match.)
   const rawCategory = req.nextUrl.searchParams.get('category')?.toLowerCase() || '';
-  const VALID_CATEGORIES = ['rink', 'team', 'player', 'league', 'brand'] as const;
+  const VALID_CATEGORIES = ['rink', 'team', 'player', 'league', 'brand', 'coach', 'official', 'staff', 'scout'] as const;
   const category = (VALID_CATEGORIES as readonly string[]).includes(rawCategory)
-    ? (rawCategory as 'rink' | 'team' | 'player' | 'league' | 'brand')
+    ? (rawCategory as typeof VALID_CATEGORIES[number])
     : null;
-  const include = (type: 'rink' | 'team' | 'player' | 'league' | 'brand'): boolean =>
+  const include = (type: typeof VALID_CATEGORIES[number]): boolean =>
     category === null || category === type;
 
   const promises = await Promise.allSettled([
@@ -306,6 +306,14 @@ export async function GET(req: NextRequest) {
           matchQuality: computeMatchQuality(q, r.name, [r.category, r.country_of_origin].filter(Boolean).join(' ')),
         }))
       ) : [],
+
+    // Coach / Official / Staff / Scout — StaffDirectory uses client-side filtering
+    // (localOnly=true), so these categories return empty from the suggest API.
+    // The type is accepted here so CategorySearchBar is type-safe for all roles.
+    include('coach') ? Promise.resolve([]) : Promise.resolve([]),
+    include('official') ? Promise.resolve([]) : Promise.resolve([]),
+    include('staff') ? Promise.resolve([]) : Promise.resolve([]),
+    include('scout') ? Promise.resolve([]) : Promise.resolve([]),
   ]);
 
   const allResults: RankedSuggestItem[] = [];
@@ -313,7 +321,7 @@ export async function GET(req: NextRequest) {
     if (p.status === 'fulfilled') {
       // Boost: prefer rink/team over player (rink/team are more "searchable")
       for (const item of p.value) {
-        const typeBoost =
+        const typeBoost: number =
           item.type === 'rink' || item.type === 'team' ? 0.5 :
           item.type === 'league' || item.type === 'brand' ? 0.2 :
           0;

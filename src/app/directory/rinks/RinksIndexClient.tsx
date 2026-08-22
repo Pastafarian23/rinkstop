@@ -4,7 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import type { SharePayload } from '@/lib/share';
-import { SearchIcon, FilterIcon } from '@/components/icons';
+import { FilterIcon } from '@/components/icons';
+import CategorySearchBar from '@/components/CategorySearchBar';
 import { provinceDisplayName } from '@/lib/ca-provinces';
 
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
@@ -133,19 +134,9 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
-        <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
-          <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
-            <SearchIcon className="w-4 h-4" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search rinks..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-field"
-            style={{ paddingLeft: '2.25rem' }}
-          />
-        </div>
+        {/* Search — homepage aesthetic, scoped to rinks.
+            Does NOT narrow the grid (use URL ?q= param for that). */}
+        <CategorySearchBar category="rink" page="/directory/rinks" maxWidth={600} />
         <input
           type="text"
           placeholder="Country"
