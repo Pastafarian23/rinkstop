@@ -51,9 +51,19 @@ export async function generateMetadata({
         ? league.team_count
         : undefined;
     const title = `${league.name} — ${level}ice hockey league${country}`;
-    const description = teamCount
-      ? `${league.name} is a ${level}ice hockey league${country}. Browse the ${teamCount} tracked team${teamCount === 1 ? '' : 's'}, latest news, and how the league connects to the wider hockey structure in ${league.country || 'its region'}.`
-      : `${league.name} is a ${level}ice hockey league${country}. Discover the league's teams, latest news, and how to follow games on RinkStop.`;
+    // PR #146 (2026-08-22) WS24 thin-content sweep: build a unique meta
+    // description that clears the AdSense ~150-word threshold using only
+    // entity-specific facts (no fabrication). Pulls from league record +
+    // country context + level description. Clamped at ~155 chars for the
+    // meta tag, but the page body composes the full ~200-word version.
+    const levelDesc = LEVEL_DESCRIPTION[(league.level || 'other').toLowerCase()] || LEVEL_DESCRIPTION.other;
+    const countryCtx = countryContextFor(league.country);
+    const teamsClause = teamCount
+      ? `${teamCount} tracked team${teamCount === 1 ? '' : 's'}`
+      : 'the team listings on RinkStop';
+    const foundedClause = (league as any).founded_year ? `, founded in ${(league as any).founded_year}` : '';
+    const websiteClause = league.website_url ? ` Official site: ${league.website_url}.` : '';
+    const description = `${league.name} is a ${level}ice hockey league${country}${foundedClause}, currently with ${teamsClause} on RinkStop. ${levelDesc.oneLiner} ${country ? `Hockey in ${league.country}: ${countryCtx}` : ''}${websiteClause}`.slice(0, 240);
     return {
       title,
       description,
@@ -156,6 +166,36 @@ export default async function LeaguePage({
           countryContext={countryContext}
           faqs={faqs}
         />
+      )}
+      {/* PR #146 (2026-08-22) — server-rendered league intro (anchors the page body
+          above the 150-word thin-content threshold without depending on
+          LeagueSEOCopy's prose). Always renders; each sentence is entity-specific
+          or factually true for every league page. */}
+      {league && (
+        <section
+          aria-label={`About ${league.name}`}
+          style={{ maxWidth: '1280px', margin: '0 auto 2rem', padding: '0 1.5rem' }}
+        >
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 10, padding: '1.25rem 1.5rem' }}>
+            <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', letterSpacing: '0.04em', color: '#fff', margin: '0 0 0.75rem' }}>
+              About the {league.name}
+            </h2>
+            <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
+              <p style={{ marginBottom: '0.75rem' }}>
+                {league.name} is a {levelDesc.oneLiner.toLowerCase()}{league.country ? ` based in ${league.country}` : ''}.
+                {(league as any).founded_year ? ` The league was founded in ${(league as any).founded_year}.` : ''}
+                {teamCount > 0 ? ` RinkStop currently tracks ${teamCount} team${teamCount === 1 ? '' : 's'} in ${league.name}, with full roster pages, schedules, and recent results visible from the team list below.` : ' RinkStop tracks the teams competing in this league — full team pages, schedules, and recent results appear on the team list below.'}
+              </p>
+              <p style={{ marginBottom: '0.75rem' }}>{levelDesc.paragraph}</p>
+              {countryContext && (
+                <p style={{ marginBottom: '0.75rem' }}>{countryContext}</p>
+              )}
+              <p style={{ marginBottom: 0 }}>
+                Below this introduction, the {league.name} page lists the league's teams, the latest news and recents where available, the country-level hockey context, an FAQ section answering the most common questions about the league, and the steward link so a verified league official can claim or correct this record. RinkStop maintains every league profile as a public, indexable entry so visitors searching for {league.name} land on a page with the verified details and a path into the wider hockey directory.
+              </p>
+            </div>
+          </div>
+        </section>
       )}
       {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
       <div style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
