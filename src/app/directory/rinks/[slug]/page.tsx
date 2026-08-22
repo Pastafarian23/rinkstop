@@ -811,23 +811,33 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             )}
           </div>
         )}
-        {/* Embedded map placed directly under the phone/website/view pills,
-            replacing the prior 'View on Google Maps' pill. No-key fallback
-            (maps.google.com/maps?q=lat,lng&output=embed) — the previous
-            googleapis.com/maps/embed URL returned 404 because the Maps
-            Embed API was not enabled on the Google Cloud API key. */}
+        {/* Static map placed directly under the phone/website pills,
+            replacing the prior 'View on Google Maps' pill. Static Maps
+            API works on the existing Google Cloud API key (the Embed
+            API is currently returning 404 on the same key). Static
+            non-interactive image — the 'Get directions on Google Maps →
+            link below opens the live map in a new tab. */}
         {rink.latitude && rink.longitude && (
-          <div style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-            <iframe
-              title={`${rink.name} map`}
-              width="100%"
-              height="280"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              src={`https://maps.google.com/maps?q=${rink.latitude},${rink.longitude}&output=embed`}
-              style={{ border: 0, display: 'block' }}
-              allowFullScreen
-            />
+          <div style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', background: 'rgba(255,255,255,0.04)' }}>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${rink.latitude},${rink.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'block', position: 'relative' }}
+            >
+              <img
+                src={`https://maps.googleapis.com/maps/api/staticmap?center=${rink.latitude},${rink.longitude}&zoom=15&size=640x280&maptype=roadmap&markers=color:red%7C${rink.latitude},${rink.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}`}
+                alt={`${rink.name} location map`}
+                width={640}
+                height={280}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                style={{ width: '100%', height: 'auto', display: 'block', border: 0 }}
+              />
+              <span style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.75)', color: '#fff', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}>
+                Get directions on Google Maps →
+              </span>
+            </a>
           </div>
         )}
 
