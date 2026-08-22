@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import CategorySearchBar from '@/components/CategorySearchBar';
 
 interface FreeAgentRow {
   user_id: string;
@@ -115,13 +116,9 @@ export default function FreeAgentsIndexClient({ rows }: { rows: FreeAgentRow[] }
       </header>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.6rem' }}>
-        <input
-          type="search"
-          placeholder="Search name, city, or notes"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          style={inputStyle}
-        />
+        {/* Search — homepage aesthetic, scoped to free agents.
+            Does NOT narrow the grid (use URL ?q= param for that). */}
+        <CategorySearchBar category="player" page="/directory/free-agents" localOnly />
         <select value={position} onChange={(e) => setPosition(e.target.value)} style={inputStyle}>
           <option value="">All positions</option>
           {positions.map((p) => (

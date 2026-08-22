@@ -23,8 +23,12 @@ interface CategorySearchBarProps {
    * - 'rink'     → /directory/rinks
    * - 'league'   → /directory/leagues
    * - 'brand'    → /directory/brands
+   * - 'coach'    → /directory/coaches
+   * - 'official' → /directory/officials
+   * - 'staff'    → /directory/staff
+   * - 'scout'    → /directory/scouts
    */
-  category: 'team' | 'player' | 'rink' | 'league' | 'brand';
+  category: 'team' | 'player' | 'rink' | 'league' | 'brand' | 'coach' | 'official' | 'staff' | 'scout';
   /**
    * Page this search bar lives on (used for analytics + placeholder).
    */
@@ -33,6 +37,13 @@ interface CategorySearchBarProps {
    * Optional: max-width override for the search bar.
    */
   maxWidth?: number;
+  /**
+   * When true, renders the home-page search-bar visual but does NOT call
+   * the suggest API. Use for pages where the directory has no backend
+   * suggest endpoint (e.g. staff, free-agents) — the bar still provides
+   * the visual match without broken autocomplete calls.
+   */
+  localOnly?: boolean;
 }
 
 const CATEGORY_META: Record<CategorySearchBarProps['category'], { label: string; placeholder: string; emoji: string; allResultsHref: string }> = {
@@ -65,6 +76,30 @@ const CATEGORY_META: Record<CategorySearchBarProps['category'], { label: string;
     placeholder: 'Search brands...',
     emoji: '🛍️',
     allResultsHref: '/directory/brands',
+  },
+  coach: {
+    label: 'Coach',
+    placeholder: 'Search coaches...',
+    emoji: '🏒',
+    allResultsHref: '/directory/coaches',
+  },
+  official: {
+    label: 'Official',
+    placeholder: 'Search officials...',
+    emoji: '🏒',
+    allResultsHref: '/directory/officials',
+  },
+  staff: {
+    label: 'Staff',
+    placeholder: 'Search staff...',
+    emoji: '🏒',
+    allResultsHref: '/directory/staff',
+  },
+  scout: {
+    label: 'Scout',
+    placeholder: 'Search scouts...',
+    emoji: '🏒',
+    allResultsHref: '/directory/scouts',
   },
 };
 
@@ -120,7 +155,7 @@ function Highlight({ text, q }: { text: string; q: string }) {
  * Visual style mirrors HomeSearch.tsx (CSS classes search-wrap/search-input/search-btn
  * from globals.css) so the directory pages match the homepage aesthetic.
  */
-export default function CategorySearchBar({ category, page, maxWidth = 600 }: CategorySearchBarProps) {
+export default function CategorySearchBar({ category, page, maxWidth = 600, localOnly = false }: CategorySearchBarProps) {
   const router = useRouter();
   const meta = CATEGORY_META[category];
 
@@ -143,11 +178,12 @@ export default function CategorySearchBar({ category, page, maxWidth = 600 }: Ca
       .catch(() => {/* best-effort */});
   }, []);
 
-  // Debounced suggest fetch
+  // Debounced suggest fetch — skipped when localOnly=true (staff/free-agent pages
+  // use client-side filtering; the bar is purely visual match to the homepage style)
   useEffect(() => {
     const term = q.trim();
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (term.length < 2) {
+    if (term.length < 2 || localOnly) {
       setResults([]);
       setOpen(false);
       setLoading(false);
@@ -172,7 +208,7 @@ export default function CategorySearchBar({ category, page, maxWidth = 600 }: Ca
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [q, category]);
+  }, [q, category, localOnly]);
 
   // Close on outside click
   useEffect(() => {

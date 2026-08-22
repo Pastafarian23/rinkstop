@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { SearchIcon, FilterIcon } from '@/components/icons';
+import { FilterIcon } from '@/components/icons';
+import CategorySearchBar from '@/components/CategorySearchBar';
 
 // ------ Types ----------------------------------------------------------------------------------------------------------------------------------------
 interface Player {
@@ -180,20 +181,9 @@ export default function PlayersIndexClient({ initialData }: Props) {
           <FilterIcon className="w-4 h-4" />
         </div>
 
-        {/* Search */}
-        <div style={{ position: 'relative', flex: '1 1 160px', minWidth: 0 }}>
-          <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
-            <SearchIcon className="w-4 h-4" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search by name..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-field"
-            style={{ paddingLeft: '2.25rem' }}
-          />
-        </div>
+        {/* Search — homepage aesthetic, scoped to players.
+            Does NOT narrow the grid (use URL ?q= param for that). */}
+        <CategorySearchBar category="player" page="/directory/players" maxWidth={600} />
 
         {/* Position */}
         <select value={position} onChange={e => setPosition(e.target.value)} className="input-field" style={{ flex: '1 1 130px', minWidth: 0 }}>
