@@ -809,16 +809,25 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
                 🌐 Website
               </a>
             )}
-            {rink.google_maps_url && (
-              <a
-                href={rink.google_maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: '#cbd5e1', fontSize: '13px', padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}
-              >
-                📍 View on Google Maps
-              </a>
-            )}
+          </div>
+        )}
+        {/* Embedded map placed directly under the phone/website/view pills,
+            replacing the prior 'View on Google Maps' pill. No-key fallback
+            (maps.google.com/maps?q=lat,lng&output=embed) — the previous
+            googleapis.com/maps/embed URL returned 404 because the Maps
+            Embed API was not enabled on the Google Cloud API key. */}
+        {rink.latitude && rink.longitude && (
+          <div style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+            <iframe
+              title={`${rink.name} map`}
+              width="100%"
+              height="280"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              src={`https://maps.google.com/maps?q=${rink.latitude},${rink.longitude}&output=embed`}
+              style={{ border: 0, display: 'block' }}
+              allowFullScreen
+            />
           </div>
         )}
 
@@ -1077,28 +1086,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '12px' }}>
               {rink.name} is located at <strong style={{ color: '#fff' }}>{rink.address}</strong>. Public parking is available at the venue, and the rink is accessible by car from the surrounding {rink.city} area. For public transit options to reach the rink, check the local {rink.city} transit authority schedule for the nearest stop to the {provinceLabel || rink.country} venue district.
             </p>
-            {rink.latitude && rink.longitude && (
-              <div style={{ marginTop: '12px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                <iframe
-                  title={`${rink.name} map`}
-                  width="100%"
-                  height="220"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://maps.google.com/maps?q=${rink.latitude},${rink.longitude}&output=embed`}
-                  style={{ border: 0, display: 'block' }}
-                  allowFullScreen
-                />
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${rink.latitude},${rink.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: 'inline-block', marginTop: '8px', color: '#38bdf8', fontSize: '14px', textDecoration: 'none', fontWeight: 600 }}
-                >
-                  Get directions on Google Maps →
-                </a>
-              </div>
-            )}
           </section>
         )}
 
