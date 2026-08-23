@@ -65,11 +65,11 @@ const sections: Array<{
       },
       {
         q: 'What is identity verification and how does it work?',
-        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is separate from your membership tier. Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. Identity verification is required to hold trusted roles on RinkStop — including coach, referee, scorekeeper, team manager, rink operator, and federation admin. The check is valid for two years before a re-verification is prompted. Verified Identity members and above can start the process at /dashboard/identity.',
+        a: 'Identity verification (a government ID + selfie check) confirms that your RinkStop account belongs to a real person. It is free for every profile type — players, parents, coaches, scouts, officials, rink owners, team managers, and league admins. Once verified, your public profile shows a navy-and-gold checkmark, distinct from your tier pill. The check is valid for two years before a re-verification is prompted. Start the process from /dashboard/identity; it takes about 60 seconds.',
       },
       {
         q: 'Why would I verify my identity?',
-        a: 'Verification is required to hold certain roles on RinkStop - including coach, referee, scorekeeper, team manager, rink operator, and federation admin - because those roles involve youth hockey, financial transactions, or organizational trust. Even when not required for a role, verification builds credibility: other users, league admins, and clients see the checkmark and know you are a real, identified person.',
+        a: 'Verification is free and gives your public profile a navy-and-gold checkmark that signals to coaches, league admins, parents, and fellow players that you are a real, identified person. Verified listings get more clicks in search results and more profile visits. For owners claiming rinks, teams, or leagues, verification turns your listing from "claimed but unverified" into "verified owner" — the public signal that the listing is accurate and you’re behind it.',
       },
       {
         q: 'I never got my email verification code. What do I do?',

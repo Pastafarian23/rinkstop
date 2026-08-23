@@ -241,8 +241,9 @@ function DirectoryLandingInner({ counts }: { counts: { rinks: number; teams: num
           SEE YOUR LISTING? CLAIM IT.
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9375rem', maxWidth: '500px', lineHeight: 1.6 }}>
-          Already on RinkStop? Operators can claim their rink, team, or league to edit details,
-          reply to messages, and unlock verified badges. Not listed yet? You can add it.
+          Already on RinkStop? Operators can claim their rink, team, or league — free — to edit details,
+          get a verified owner badge, and reply to messages. Verification is free for every profile type;
+          upgrade to a paid plan only when you want extra tools. Not listed yet? You can add it.
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
           <Link href="/claim-your-listing" className="btn btn-white">
