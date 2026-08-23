@@ -127,7 +127,7 @@ const sections: Array<{
       },
       {
         q: 'Who can claim a listing?',
-        a: 'Verified Identity members can claim 1 listing (a player profile). Higher tiers unlock more claims and business/club features. Free accounts can browse and submit listings but cannot claim existing ones. Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page, even on lower tiers. See exact caps per tier at /pricing.',
+        a: 'Anyone with a RinkStop account can claim one listing for free — players, parents, coaches, rink owners, team managers, and league admins. Free verification is included: complete a 60-second government ID + selfie check to add a Verified owner badge to your listing. Higher paid tiers unlock more claims and business/club features (lead capture, roster management, dues, etc.). Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page. See exact caps per tier at /pricing.',
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
@@ -337,7 +337,7 @@ const sections: Array<{
       },
       {
         q: 'Can I claim a listing before signing up?',
-        a: 'No. Claiming requires a signed-in user with a Verified Identity tier. Free accounts can browse and submit suggestions for missing listings, but cannot claim existing ones. Sign up free first, then upgrade to Verified Identity ($24.99/year) to claim.',
+        a: 'You need a RinkStop account before claiming, but the account itself is free and verification is also free. Sign up free, complete the optional free verification (~60 seconds, government ID + selfie), then claim. Verification earns your listing a "Verified owner" badge. You can pay for additional tools (lead capture, roster management, dues collection) any time after.',
       },
       {
         q: 'What payment methods are accepted?',

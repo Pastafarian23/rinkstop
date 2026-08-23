@@ -48,20 +48,25 @@ export function ClaimIntentPanel({
   const upgradeT = upgradeTier ? TIERS[upgradeTier] : null;
   const needsUpgrade = isFree || atCap || currentTier === recommendedTier === false;
 
-  // Tagline copies for the 3 user states
+  // WS25 (2026-08-23): free accounts now include 1 claim — the "isFree"
+  // branch is retained for the at_cap case but the messaging has shifted
+  // from "you need to pay" to "you can verify free and start your claim."
+  // For free users, we still nudge toward verification (the path to
+  // a 'Verified owner' badge) but the upgrade copy is reserved for when
+  // they want tools, not the claim itself.
   let statusLine: string;
   let statusColor: string;
   if (isFree) {
-    statusLine = `Your free account doesn't include claims. Upgrade to ${t.label} to continue.`;
+    statusLine = `Claiming is free. Verify your identity (free, ~60 seconds) to add a 'Verified owner' badge to your listing.`;
     statusColor = '#FFB81C';
   } else if (atCap) {
-    statusLine = `You've hit the ${currentTier} claim limit. Upgrade to ${t.label} for more.`;
+    statusLine = `You've hit the ${currentTier} claim limit. Upgrade to ${t.label} for more claims, or contact sales for Federation custom volume.`;
     statusColor = '#FF6B7A';
   } else if (currentTier === 'verified_identity' || currentTier === 'business_listing' || currentTier === 'club_starter') {
     statusLine = `Your ${currentTier} tier covers this claim. Confirm to continue.`;
     statusColor = '#14B8A6';
   } else {
-    statusLine = `Upgrade to ${t.label} to claim this listing.`;
+    statusLine = `Confirm to claim. Upgrade to ${t.label} for additional tools.`;
     statusColor = '#FFB81C';
   }
 

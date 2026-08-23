@@ -87,7 +87,7 @@ const NEXT_STEPS: Record<TierId, string[]> = {
 
 // What to upsell to (or "you've got everything" for the top of each group)
 const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: string; reason: string }> = {
-  free: { id: 'verified_identity', label: 'Verified Identity', price: formatTierPricePerYear('verified_identity'), reason: 'Required for active participation - claim your profile, unlimited roles under one identity' },
+  free: { id: 'verified_identity', label: 'Verified Identity', price: formatTierPricePerYear('verified_identity'), reason: 'Verification is free; this unlocks the Hockey Passport, payments eligibility, and message-coaches. Claim is free on Free too.' },
   verified_identity: { id: 'identity_plus', label: 'Identity Plus', price: formatTierPricePerYear('identity_plus'), reason: 'Family Hub, photos, videos, advanced analytics, achievement tracking' },
   identity_plus: { id: null, label: '—', price: '—', reason: 'You have the top individual plan. Switch to an Organization plan to manage a club, league, or federation.' },
   // Organization progression
