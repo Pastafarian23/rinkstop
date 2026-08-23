@@ -168,6 +168,26 @@ export default function PricingContent({
     return () => cancelAnimationFrame(raf);
   }, [searchParams]);
 
+  // WS24 (2026-08-23) auto-trigger: when a guest returns from
+  // /sign-up with ?tier=X&intent=upgrade, they're now signed-in.
+  // Fire the checkout flow immediately so they don't have to click
+  // the tier button a second time. One click to upgrade end-to-end.
+  useEffect(() => {
+    const intent = searchParams?.get('intent');
+    const target = searchParams?.get('tier');
+    if (intent !== 'upgrade' || !target || !isLoaded || !isSignedIn) return;
+    const tier = TIERS_DISPLAY.find((t) => t.id === target);
+    if (!tier || tier.ctaStyle === 'free' || tier.ctaStyle === 'contact') return;
+    handleCheckout(tier);
+    // Strip the intent param so a refresh doesn't re-fire.
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.delete('intent');
+    const next = `/pricing${params.toString() ? '?' + params.toString() : ''}`;
+    window.history.replaceState(null, '', next);
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn, searchParams]);
+
   async function handleCheckout(tier: Tier) {
     if (!isLoaded) return;
     setError(null);
@@ -182,9 +202,18 @@ export default function PricingContent({
       return;
     }
 
-    // Guest checkout: anonymous users now go straight to Stripe. /api/tier/upgrade
-    // accepts guests and creates a Clerk account post-payment via the welcome page.
-    // No more pre-auth gate.
+    // WS24 (2026-08-23) conversion fix: route guest checkout through
+    // sign-up FIRST, then back to /pricing?tier=X&intent=upgrade so the
+    // post-sign-in redirect lands them on this same page and the
+    // auto-trigger below fires the Stripe Checkout session with a real
+    // Clerk user_id attached. This eliminates the previous flow's
+    // post-payment magic-link email step (which 17 of 25 abandoned
+    // checkout sessions of all-time hit and never completed).
+    if (!isSignedIn) {
+      const next = `/pricing?tier=${encodeURIComponent(tier.id)}&intent=upgrade`;
+      window.location.href = `/sign-up?next=${encodeURIComponent(next)}`;
+      return;
+    }
 
     setBusy(tier.id);
     try {
