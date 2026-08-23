@@ -335,7 +335,10 @@ export const PRICING_DISPLAY_ORDER: TierName[] = [
  */
 export const MAX_CLAIMS_PER_TIER: Record<TierName, number> = {
   // Identity
-  free: 0,
+  // WS25 (2026-08-23): free tier lifted from 0 to 1 so free users can claim
+  // one listing per profile type without paying. Verification is bundled into
+  // every paid subscription at no extra cost (see /api/verification/start-free).
+  free: 1,
   verified_identity: 1, // claim your own player profile
   identity_plus: 5, // unlimited roles + family
   // Organization (player capacity)

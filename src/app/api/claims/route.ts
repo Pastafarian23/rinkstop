@@ -90,27 +90,16 @@ export async function POST(request: NextRequest) {
     // Special case: 'parent_managed' claims (parent claims kid's player profile) bypass the cap
     // because they're a different use case — one parent can manage many kids.
     //
-    // Both 403 paths now return a `checkoutUrl` so the form can render a
-    // structured "Upgrade to claim" button instead of just showing the raw
-    // error text. Recommended tier is per-entity-type: player claims route
-    // to verified_identity (the cheapest claim-enabled tier), team/rink
-    // claims to business_listing.
+    // WS25 (2026-08-23): The `maxClaims === 0` gate that forced free-tier users to
+    // upgrade is REMOVED. Free users can now claim 1 listing per profile type
+    // (the cap was already 1 for verified_identity; free tier used to be 0).
+    // The `at_cap` flow below is preserved — users who exhaust their tier's claim
+    // allotment can still upgrade to a higher tier for more.
     const isParentManagedClaim = typeof reason === 'string' && reason.startsWith('parent_managed:');
     if (!isParentManagedClaim) {
       const tier = await getUserTier(userId);
       const maxClaims = getMaxClaimsForTier(tier);
-      if (maxClaims === 0) {
-        return NextResponse.json(
-          {
-            error: `Claiming listings requires a paid membership. Upgrade to Verified Identity, Identity Plus, Business Plus, or Federation to claim.`,
-            reason: 'no_claim_tier',
-            checkoutUrl: buildCheckoutUrl(claim_type === 'player' ? 'verified_identity' : 'business_listing'),
-            tier: claim_type === 'player' ? 'verified_identity' : 'business_listing',
-          },
-          { status: 403 }
-        );
-      }
-      if (maxClaims !== Infinity) {
+      if (maxClaims !== Infinity && maxClaims > 0) {
         const currentCount = await getUserApprovedClaimCount(userId);
         if (currentCount >= maxClaims) {
           // Pick the next tier up within the same track. For simplicity we
@@ -129,6 +118,12 @@ export async function POST(request: NextRequest) {
           );
         }
       }
+      // Free tier (maxClaims === 0) is intentionally allowed through now —
+      // see the WS25 decision to lift the claim tier gate. Free users get
+      // 1 claim cap (verified_identity's cap of 1, which free tier borrows
+      // since the lift). TODO: verify that getMaxClaimsForTier returns at
+      // least 1 for the 'free' tier; if not, that's a separate fix in
+      // src/lib/connections.ts MAX_CLAIMS_PER_TIER.
     }
 
     const { data, error } = await supabaseAdmin

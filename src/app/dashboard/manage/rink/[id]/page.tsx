@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isStampsEnabled } from '@/lib/passport';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import EntityEditForm from '../../EntityEditForm';
 import { RinkQrCard } from './rink-qr-card';
 
@@ -62,6 +63,10 @@ export default async function ManageRinkPage({ params }: PageProps) {
     );
   }
 
+  // WS25 (2026-08-23): pass isVerified so the edit form can show a banner
+  // pointing unverified owners to the free verification path.
+  const ownerVerified = await isIdentityVerified(userId).catch(() => false);
+
   return (
     <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem 1.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -117,6 +122,7 @@ export default async function ManageRinkPage({ params }: PageProps) {
         initial={entity as Record<string, unknown>}
         slug={(entity as { slug?: string }).slug || null}
         publicHref={`/directory/rinks/${(entity as { slug?: string }).slug || id}`}
+        isVerified={ownerVerified}
       />
     </div>
   );

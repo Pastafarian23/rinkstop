@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type BadgeTier = 'free' | 'founding' | 'verified' | 'elite';
+export type BadgeTier = 'free' | 'pending_verification' | 'founding' | 'verified' | 'elite';
 
 interface BadgeConfig {
   tier: BadgeTier;
@@ -28,11 +28,22 @@ const FOUNDING_TYPE_LABELS: Record<string, string> = {
 const BADGE_CONFIGS: Record<BadgeTier, BadgeConfig> = {
   free: {
     tier: 'free',
-    label: 'Free',
+    label: 'Listed',
     color: '#888',
     bgColor: 'rgba(136,136,136,0.1)',
     borderColor: 'rgba(136,136,136,0.3)',
-    description: 'Basic profile',
+    description: 'Listed in directory (unclaimed)',
+  },
+  // WS25 (2026-08-23): owner claimed the listing but has not completed
+  // Didit verification. Shows on public listing as "Pending Verification"
+  // so visitors can trust that the claim is in-progress, not abandoned.
+  pending_verification: {
+    tier: 'pending_verification',
+    label: 'Pending Verification',
+    color: '#FFB81C',
+    bgColor: 'rgba(255,184,28,0.12)',
+    borderColor: 'rgba(255,184,28,0.4)',
+    description: 'Owner has claimed this listing but has not completed verification.',
   },
   founding: {
     tier: 'founding',
@@ -71,7 +82,10 @@ interface VerifiedBadgeProps {
 export function VerifiedBadge({ tier, size = 'md', showLabel = true, interactive = false, foundingType }: VerifiedBadgeProps) {
   const config = BADGE_CONFIGS[tier];
 
-  if (tier === 'free') return null;
+  // WS25 (2026-08-23): 'free' now renders a visible 'Listed' badge instead of
+  // null, so unclaimed listings show a neutral state. Callers can pass
+  // showLabel={false} to hide the text when they only want the icon.
+  if (tier === 'free' && !showLabel) return null;
 
   const displayLabel = (tier === 'founding' && foundingType && FOUNDING_TYPE_LABELS[foundingType])
     ? `Founding ${FOUNDING_TYPE_LABELS[foundingType]}`

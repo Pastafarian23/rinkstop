@@ -11,6 +11,9 @@ interface EntityEditFormProps {
   initial: Record<string, unknown>;
   slug?: string | null;
   publicHref: string;
+  // WS25 (2026-08-23): unverified owners see a banner pointing them to
+  // the free verification path. Verified owners don't see anything.
+  isVerified?: boolean;
 }
 
 // Shared edit form for rinks/teams/leagues. The fields are different per
@@ -63,7 +66,7 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
-export default function EntityEditForm({ type, id, initial, slug, publicHref }: EntityEditFormProps) {
+export default function EntityEditForm({ type, id, initial, slug, publicHref, isVerified = true }: EntityEditFormProps) {
   const [form, setForm] = useState<Record<string, unknown>>(() => {
     const out: Record<string, unknown> = {};
     for (const f of SCHEMAS[type]) {
@@ -128,6 +131,20 @@ export default function EntityEditForm({ type, id, initial, slug, publicHref }: 
           View public page ↗
         </Link>
       </div>
+
+      {!isVerified && (
+        <div style={{ background: 'rgba(255,184,28,0.08)', border: '1px solid rgba(255,184,28,0.3)', color: '#FFB81C', padding: '0.75rem 1rem', borderRadius: 8, fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span>
+            <strong>Verify to publish changes.</strong> Your edits will save, but the public listing shows 'Pending Verification' until you complete identity verification.
+          </span>
+          <Link
+            href="/dashboard/identity"
+            style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600, whiteSpace: 'nowrap' }}
+          >
+            Verify now (free) →
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div style={{ background: 'rgba(200,16,46,0.1)', border: '1px solid rgba(200,16,46,0.4)', color: '#FF6B7A', padding: '0.75rem 1rem', borderRadius: 8, fontSize: '0.875rem' }}>
