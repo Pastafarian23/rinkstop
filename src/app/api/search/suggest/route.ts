@@ -307,13 +307,33 @@ export async function GET(req: NextRequest) {
         }))
       ) : [],
 
-    // Coach / Official / Staff / Scout — StaffDirectory uses client-side filtering
-    // (localOnly=true), so these categories return empty from the suggest API.
-    // The type is accepted here so CategorySearchBar is type-safe for all roles.
-    include('coach') ? Promise.resolve([]) : Promise.resolve([]),
-    include('official') ? Promise.resolve([]) : Promise.resolve([]),
-    include('staff') ? Promise.resolve([]) : Promise.resolve([]),
-    include('scout') ? Promise.resolve([]) : Promise.resolve([]),
+    // Scout — backed by nhl_players.role='scout'. Returns SuggestItem
+    // rows that match the bar's contract. href points to the public
+    // player profile (the staff directory links scouts to /directory/players/[id]).
+    include('scout') ? applyMultiWordSearch(
+      supabaseAdmin
+        .from('nhl_players')
+        .select('id, first_name, last_name, full_name, current_team_name, current_team_abbreviation, league_name')
+        .eq('role', 'scout'),
+      q,
+      ['full_name', 'first_name', 'last_name', 'current_team_name']
+    )
+      .limit(5)
+      .then(({ data }) =>
+        (data ?? []).map((r) => {
+          const name = r.full_name || `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Unknown';
+          const meta = [r.current_team_name, r.league_name].filter(Boolean).join(' · ');
+          return {
+            type: 'scout' as const,
+            id: String(r.id),
+            name,
+            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            href: `/directory/players/${r.id}`,
+            meta,
+            matchQuality: computeMatchQuality(q, name, meta),
+          };
+        })
+      ) : [],
   ]);
 
   const allResults: RankedSuggestItem[] = [];

@@ -90,14 +90,17 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
       </div>
 
       {/* Search — homepage aesthetic, scoped to this role.
-          localOnly=true: the staff directory uses client-side filtering (fast,
-          no API call). The bar matches the home-page style visually. */}
+          Wired to /api/search/suggest?category=scout which queries
+          nhl_players (role='scout') and returns SuggestItem rows.
+          Matches the home + teams + leagues bar behavior: typing shows
+          live suggestions in a dropdown; Enter follows the highlighted match.
+          localOnly=false so the suggest API is hit (scout + coach +
+          official all return rows from nhl_players). */}
       <div style={{ marginBottom: '1.5rem' }}>
         <CategorySearchBar
           category={role}
           page={`/directory/${role}s`}
           maxWidth={600}
-          localOnly
         />
       </div>
 
