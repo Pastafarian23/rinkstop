@@ -42,14 +42,9 @@ export async function generateMetadata({
   const hasListings = data.teamCount + data.rinkCount > 0;
   const decision = { indexable: hasListings, reason: hasListings ? 'has listings' : 'no listings', uniquenessScore: hasListings ? 50 : 0 };
 
-  // PR #151 (2026-08-23) WS25 GSC Bucket-1 part 2: city page metadata.
-  // Title was "${location} Hockey - Rinks & Teams" on every Canadian
-  // and US city page — identical snippets for hundreds of cities.
-  // Now uses live data.teamCount + data.rinkCount so each city's SERP
-  // snippet is differentiated by its own data.
   return {
-    title: `${location} Hockey — ${data.teamCount} Teams, ${data.rinkCount} Rinks & Leagues`.slice(0, 70),
-    description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover ${data.rinkCount} local rinks, ${data.teamCount} teams, and the leagues that span ${resolved.name}. Browse the directory or jump to a specific rink or team profile.`.slice(0, 240),
+    title: `${location} Hockey - Rinks & Teams`,
+    description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs, junior clubs, and adult leagues across the province.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/canada/${canonicalSlug}/${citySlug}`,
     },
