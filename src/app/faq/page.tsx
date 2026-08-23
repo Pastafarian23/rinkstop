@@ -130,6 +130,10 @@ const sections: Array<{
         a: 'Anyone with a RinkStop account can claim one listing for free — players, parents, coaches, rink owners, team managers, and league admins. Free verification is included: complete a 60-second government ID + selfie check to add a Verified owner badge to your listing. Higher paid tiers unlock more claims and business/club features (lead capture, roster management, dues, etc.). Parents of youth players can claim their kid\'s profile through the "I am this player\'s parent" button on the player page. See exact caps per tier at /pricing.',
       },
       {
+        q: 'Are NHL / AHL / KHL / PWHL players and teams claimable?',
+        a: 'No. The four unambiguously professional leagues (NHL, AHL, KHL, PWHL) and their players, coaches, staff, and teams are managed by the league itself, not user-claimed. Their profiles on RinkStop are curated from verified league data feeds and show a "Verified" badge. CHL major-junior (WHL/OHL/QMJHL), NCAA (D1/D2/D3), USHL, NAHL, ECHL, IIHF, and every amateur/youth/community league stay claimable — any player or team member on those can claim their own profile.',
+      },
+      {
         q: 'I run a rink, team, or league. Which tier is right for me?',
         a: 'Club Starter covers one small club with up to 30 players. Club Pro covers up to 150 players with multiple teams. Club Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing.',
       },
