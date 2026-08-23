@@ -167,7 +167,10 @@ export default function IdentityClient({
           return;
         }
         if (res.status === 403 && data.error === 'tier_required') {
-          setError('Identity verification requires a paid tier.');
+          // Legacy path; the WS25 free flow should never hit this. Surfacing
+          // a clear error if it does (so we know to investigate) rather than
+          // the pre-WS25 'requires a paid tier' message.
+          setError('Verification is temporarily unavailable. Please contact support.');
           return;
         }
         setError(data.message || 'Failed to start verification');
