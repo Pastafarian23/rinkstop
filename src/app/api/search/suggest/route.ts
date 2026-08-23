@@ -334,6 +334,33 @@ export async function GET(req: NextRequest) {
           };
         })
       ) : [],
+
+    // Coach — backed by nhl_players.role='coach'. Same shape as the
+    // scout branch above. Returns SuggestItem rows for autocomplete.
+    include('coach') ? applyMultiWordSearch(
+      supabaseAdmin
+        .from('nhl_players')
+        .select('id, first_name, last_name, full_name, current_team_name, current_team_abbreviation, league_name')
+        .eq('role', 'coach'),
+      q,
+      ['full_name', 'first_name', 'last_name', 'current_team_name']
+    )
+      .limit(5)
+      .then(({ data }) =>
+        (data ?? []).map((r) => {
+          const name = r.full_name || `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Unknown';
+          const meta = [r.current_team_name, r.league_name].filter(Boolean).join(' · ');
+          return {
+            type: 'coach' as const,
+            id: String(r.id),
+            name,
+            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            href: `/directory/players/${r.id}`,
+            meta,
+            matchQuality: computeMatchQuality(q, name, meta),
+          };
+        })
+      ) : [],
   ]);
 
   const allResults: RankedSuggestItem[] = [];
