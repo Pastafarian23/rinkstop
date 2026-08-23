@@ -49,6 +49,7 @@ async function fetchInitialLeagues(): Promise<League[]> {
 export default async function LeaguesPage() {
   const initialLeagues = await fetchInitialLeagues();
   const top = initialLeagues.slice(0, 20);
+  const countryCount = new Set(initialLeagues.map((l) => l.country).filter(Boolean)).size;
 
   // WS21 — GSC decay: 559 imp / 0.72% CTR / pos 24
   const faqs = [
@@ -150,20 +151,7 @@ export default async function LeaguesPage() {
           <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1.1, margin: 0 }}>
             Hockey Leagues Worldwide
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginTop: '0.5rem', maxWidth: '720px' }}>
-            240+ leagues across 57 countries — professional, junior, college, international, and amateur tiers.
-          </p>
         </div>
-
-        {/* Search-term-aligned intro (≥150 words) */}
-        <section style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '820px', marginBottom: '1.75rem' }}>
-          <p style={{ margin: 0 }}>
-            RinkStop tracks <strong>240+ active hockey leagues</strong> across six continents — the most complete directory of organized ice hockey anywhere on the web. Browse professional leagues like the NHL, AHL, KHL, SHL, Liiga, DEL, and PWHL; major junior circuits including the OHL, WHL, QMJHL, and USHL; college hockey at the NCAA Division I and III levels plus U SPORTS in Canada; IIHF-sanctioned international tournaments; and amateur, women&apos;s, and youth leagues at every level.
-          </p>
-          <p style={{ marginTop: '0.75rem' }}>
-            Each league profile lists the current teams, tier, country, level, and the league&apos;s own website. Use the search and tier filters below to find a specific league, or browse the full directory by country, level, or season. League profiles are updated weekly during the active season and monthly in the off-season.
-          </p>
-        </section>
 
         {/* Tier cross-links */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
@@ -229,6 +217,17 @@ export default async function LeaguesPage() {
         </section>
 
         <LeaguesIndexClient initialLeagues={initialLeagues} />
+
+        {/* Short intro sits below the search + filter so users see the
+            interactive controls first. Matches the teams page layout. */}
+        <section style={{ maxWidth: '80rem', margin: '1.5rem auto', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+            Find any hockey league in the world
+          </h2>
+          <p style={{ margin: 0 }}>
+            {initialLeagues.length}+ active hockey leagues across {countryCount}+ countries — professional, junior, college, international, and amateur tiers. Use the search and filters above to find a league by name, tier, country, or level.
+          </p>
+        </section>
       </main>
     </>
   );
