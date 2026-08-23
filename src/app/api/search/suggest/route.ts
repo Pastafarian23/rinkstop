@@ -361,6 +361,63 @@ export async function GET(req: NextRequest) {
           };
         })
       ) : [],
+
+    // Community staff — union across all leagues/levels (AHL, college,
+    // junior, youth, amateur). Backed by team_members. Joins profiles
+    // (display_name) and team_workspaces (team name) so the dropdown
+    // shows 'Arnel Larracas — Cebu Ice Datus · community' alongside
+    // 'Anton Krysanov — Arizona Coyotes · NHL'.
+    //
+    // Why the two-stage query: PostgREST's `.or()` filter cannot use
+    // dotted joined-column paths (e.g. `profiles.display_name.ilike.*q*`
+    // returns "failed to parse logic tree"). The workaround is: query
+    // profiles by display_name/username first → collect user_ids → query
+    // team_members filtered by those user_ids. The join between
+    // team_members.user_id and profiles.user_id is the canonical link
+    // (NOT profiles.id — that is the Supabase row PK, separate from
+    // the Clerk user_id stored in profiles.user_id and team_members.user_id).
+    include('coach') || include('scout') || include('official') || include('staff') ? (async () => {
+      // Stage 1: profile lookup
+      const { data: profileRows } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, display_name, username')
+        .or(
+          tokenize(q).map(w =>
+            `display_name.ilike.*${escapeLike(w)}*,username.ilike.*${escapeLike(w)}*`
+          ).join(',') || `display_name.ilike.*${escapeLike(q)}*`
+        )
+        .limit(20);
+      const userIds = (profileRows ?? []).map(p => p.user_id).filter((x): x is string => typeof x === 'string');
+      if (userIds.length === 0) return [];
+      // Stage 2: team_members filtered by those user_ids, active only
+      const { data: memberRows } = await supabaseAdmin
+        .from('team_members')
+        .select('id, role, user_id, team_workspaces(name)')
+        .in('user_id', userIds)
+        .in('role', ['head_coach', 'assistant_coach', 'goalie_coach', 'skills_coach', 'manager', 'scout', 'official', 'staff'])
+        .is('left_at', null)
+        .limit(8);
+      const requestedCategory = category || 'coach';
+      const displayByUserId = new Map<string, { name: string }>(
+        (profileRows ?? []).map(p => [p.user_id, { name: p.display_name || p.username || 'Unknown' }])
+      );
+      return (memberRows ?? []).map((r: any) => {
+        const tw = r.team_workspaces || {};
+        const teamName = tw.name || null;
+        const profile = displayByUserId.get(r.user_id);
+        const name = profile?.name || 'Unknown';
+        const meta = teamName ? `${teamName} · community` : 'community';
+        return {
+          type: requestedCategory as typeof VALID_CATEGORIES[number],
+          id: String(r.id),
+          name,
+          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+          href: `/directory/players/${r.id}`,
+          meta,
+          matchQuality: computeMatchQuality(q, name, teamName ?? ''),
+        };
+      });
+    })() : [],
   ]);
 
   const allResults: RankedSuggestItem[] = [];
