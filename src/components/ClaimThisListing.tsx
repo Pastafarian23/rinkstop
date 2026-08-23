@@ -62,6 +62,15 @@ export default function ClaimThisListing({
   // before the user creates an account. See src/app/sign-up/ClaimIntentCard.tsx.
   const claimDestination = `/dashboard/claims?intent=claim&entity=${entityType}&id=${encodeURIComponent(entityId)}&name=${encodeURIComponent(entityName)}&source=${entityType}&tier=${DEFAULT_TIER_BY_ENTITY[entityType]}`;
 
+  const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const signedOutHeadline = entityType === 'player'
+    ? `Claim this player profile`
+    : `Own or run this ${noun}?`;
+  const signedOutDescription = entityType === 'player'
+    ? `Verify your identity to manage this profile and control who can edit it.`
+    : `Claim this listing to add your program hours, contact info, and updates — and stop the next stranger from editing it out from under you.`;
+
   const noun = entityType; // "rink", "team", "league", "player"
   const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -138,10 +147,10 @@ export default function ClaimThisListing({
           <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>🏒</span>
           <div style={textBlockStyle}>
             <div style={headlineStyle}>
-              Own or run this {noun}?
+              {signedOutHeadline}
             </div>
             <div style={descriptionStyle}>
-              Claim this listing to add your program hours, contact info, and updates — and stop the next stranger from editing it out from under you.
+              {signedOutDescription}
             </div>
           </div>
         </div>
