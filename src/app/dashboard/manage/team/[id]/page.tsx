@@ -3,6 +3,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import EntityEditForm from '../../EntityEditForm';
 
 export const dynamic = 'force-dynamic';
@@ -55,6 +56,10 @@ export default async function ManageTeamPage({ params }: PageProps) {
     );
   }
 
+  // WS25 (2026-08-23): pass isVerified so the edit form can show the
+  // verification banner for unverified team owners.
+  const ownerVerified = await isIdentityVerified(userId).catch(() => false);
+
   return (
     <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 12, padding: '1.5rem 1.75rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -75,6 +80,7 @@ export default async function ManageTeamPage({ params }: PageProps) {
         initial={entity as Record<string, unknown>}
         slug={(entity as { slug?: string }).slug || null}
         publicHref={`/directory/teams/${(entity as { slug?: string }).slug || id}`}
+        isVerified={ownerVerified}
       />
     </div>
   );
