@@ -63,7 +63,16 @@ export default async function IdentityPage({
   // Verified Identity (personal track) OR Business Listing+ (business track) can verify
   // Using tierAtLeastSameTrack which enforces same-track comparison.
   // Personal: Verified Identity+ (rank 1+). Business: Business Listing+ (rank 1+).
-  const canVerify = tierAtLeastSameTrack(tier, 'verified_identity') || tierAtLeastSameTrack(tier, 'business_listing');
+  //
+  // WS25 (2026-08-23): verification is now free for ALL tiers. canVerify stays
+  // true for every logged-in user. The verifyEndpoint prop tells the client
+  // which route to call: /api/verification/start-free for free users,
+  // /api/identity/verify/start for paid users (kept for parity with bundled
+  // verification in subscription tiers).
+  const canVerify = true;
+  const verifyEndpoint = tierAtLeastSameTrack(tier, 'verified_identity') || tierAtLeastSameTrack(tier, 'business_listing')
+    ? '/api/identity/verify/start'
+    : '/api/verification/start-free';
 
   // Fetch current identity status from the view (canonical user_id)
   const { data: status } = await supabaseAdmin
@@ -86,6 +95,7 @@ export default async function IdentityPage({
   return (
     <IdentityClient
       canVerify={canVerify}
+      verifyEndpoint={verifyEndpoint}
       tier={tier}
       status={status?.status ?? 'never_verified'}
       identityVerifiedAt={status?.identity_verified_at ?? null}

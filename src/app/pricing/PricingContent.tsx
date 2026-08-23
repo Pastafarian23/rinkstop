@@ -98,7 +98,7 @@ const FAQ = [
   },
   {
     q: 'What does Verified Identity cost?',
-    a: '$24.99 per year. Required for active participation — claiming your profile, joining teams, registering, messaging, payments, and identity-verified badges.',
+    a: '$24.99 per year. Identity verification itself is FREE for every user — it costs us ~$0.33 (Didit.me KYC) and we absorb it. The $24.99/yr fee covers the tools that go with a verified identity: Hockey Passport, payments eligibility, document storage, and messaging. You can verify for free and stay free; you only pay when you want the tools.',
   },
   {
     q: 'What does Identity Plus add?',
