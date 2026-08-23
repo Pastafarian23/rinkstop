@@ -145,12 +145,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PlayerPage({ params }: Props) {
   const { id } = await params;
 
-  // Reject obviously invalid ids before social lookups.
-  const { data: playerExists } = await supabaseAdmin
-    .from('players')
-    .select('id')
-    .eq('id', id)
-    .maybeSingle();
+  // Reject obviously invalid ids before social lookups. Look up by either
+  // UUID id OR slug — the route param is named [id] for backward compat
+  // but URLs like /directory/players/leevi-aaltonen come in as slug.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const { data: playerExists } = isUuid
+    ? await supabaseAdmin.from('players').select('id').eq('id', id).maybeSingle()
+    : await supabaseAdmin.from('players').select('id').eq('slug', id).maybeSingle();
   if (!playerExists) {
     notFound();
   }
@@ -175,11 +176,10 @@ export default async function PlayerPage({ params }: Props) {
   let seoPlayer: any = null;
   let seoFaqs: { question: string; answer: string }[] = [];
   try {
-    const { data: player } = await supabaseAdmin
-      .from('players')
-      .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))')
-      .eq('id', id)
-      .maybeSingle();
+    const playerQuery = isUuid
+      ? supabaseAdmin.from('players').select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))').eq('id', id).maybeSingle()
+      : supabaseAdmin.from('players').select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))').eq('slug', id).maybeSingle();
+    const { data: player } = await playerQuery;
     if (player) {
       const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Hockey Player';
       const teamName = (player.teams as any)?.name;
