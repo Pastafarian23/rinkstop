@@ -251,6 +251,16 @@ export default function CategorySearchBar({ category, page, maxWidth = 600, loca
     setOpen(false);
     setShowRecent(false);
     trackSearch(term);
+    // Same-page submit: pressing Enter while on /directory/<category>
+    // would re-mount StaffDirectory mid-typing, throwing the error
+    // boundary. Stay on the page and let the listing component's own
+    // filter pick up the query.
+    if (typeof window !== 'undefined' && window.location.pathname === meta.allResultsHref) {
+      // Dispatch a CustomEvent the listing can listen for if it wants
+      // to drive its own client-side filter. StaffDirectory already
+      // filters its own rows; just close + track.
+      return;
+    }
     router.push(`${meta.allResultsHref}?q=${encodeURIComponent(term)}`);
   }
 
