@@ -42,6 +42,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid claim type.' }, { status: 400 });
     }
 
+    // WS25 (2026-08-23): claimable flag gate. Pro profiles (NHL/AHL/KHL/PWHL
+    // and their players) are managed by the league, not user-claimed.
+    // Reject claims on claimable=false entities with a clear message that
+    // routes the user toward /faq for the full explanation. We do this
+    // BEFORE the tier gate so free and paid users both get the same
+    // answer — the entity isn't claimable by anyone via this form.
+    if (entity_id) {
+      const table = claim_type === 'player' ? 'players' : claim_type === 'team' ? 'teams' : claim_type === 'league' ? 'leagues' : 'rinks';
+      const { data: ent, error: entErr } = await supabaseAdmin
+        .from(table)
+        .select('id, claimable, name')
+        .eq('id', entity_id)
+        .maybeSingle();
+      if (entErr) {
+        console.error('[claims] entity lookup failed', entErr);
+        return NextResponse.json({ error: 'Could not look up listing.' }, { status: 500 });
+      }
+      if (ent && ent.claimable === false) {
+        return NextResponse.json(
+          {
+            error: 'not_claimable',
+            message: 'This listing is curated by the league and is not user-claimable. Professional teams (NHL, AHL, KHL, PWHL) and their players are managed through verified league data feeds. To get your own verified profile, claim a community, amateur, or youth profile.',
+            faq_url: '/faq#who-can-claim-a-listing',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Build the deep-link back into the pricing flow. Carries the entity
     // context so the post-Stripe success_url can resume the claim.
     // The form reads this in the 403 handler and renders a single "Upgrade

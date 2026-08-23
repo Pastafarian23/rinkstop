@@ -27,6 +27,22 @@ export default async function ClaimThisListingMount({
   entityId: string;
   entityName?: string;
 }) {
+  // WS25 (2026-08-23): claimable flag gate. Pro profiles (NHL/AHL/KHL/PWHL and
+  // their players) are managed by the league, not user-claimed. Render null
+  // before any other work so we don't waste DB calls and we don't show a
+  // claim CTA on a page where the only correct answer is "this is curated
+  // by the league." The public listing page surfaces the existing 'Verified'
+  // badge in this case (handled by the parent page, not this component).
+  const claimableTable = entityType === 'player' ? 'players' : entityType === 'team' ? 'teams' : entityType === 'league' ? 'leagues' : 'rinks';
+  const { data: claimableRow } = await supabaseAdmin
+    .from(claimableTable)
+    .select('id, claimable')
+    .eq('id', entityId)
+    .maybeSingle();
+  if (claimableRow && claimableRow.claimable === false) {
+    return null;
+  }
+
   // === Step 1: is the listing already claimed? ===
   // Leagues aren't a first-class claim_type today, so we check the underlying
   // team's claim when entityType is 'league'. For now, if we can't resolve a
