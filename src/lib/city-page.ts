@@ -442,8 +442,8 @@ export async function getCityPageData(opts: {
     proTeams,
     peerCities,
     breadcrumb,
-    title: `${locationDesc} Hockey - Teams, Rinks & Leagues`,
-    description: `Find hockey teams, ice rinks, and leagues in ${locationDesc}. Discover youth programs, adult leagues, and professional hockey near you.`,
+    title: `${locationDesc} Hockey — ${teams.length} Teams, ${rinks.length} Rinks & Leagues`.slice(0, 70),
+    description: `Find hockey teams, ice rinks, and leagues in ${locationDesc}. Discover ${rinks.length} local rinks, ${teams.length} teams${leaguesInCity.length > 0 ? ` across ${leaguesInCity.length} active leagues` : ' across youth, adult, and pro programs'}. Browse the directory or jump to a specific rink or team profile.`.slice(0, 240),
     canonicalPath: regionSlug
       ? `/directory/${countrySlug}/${regionSlug}/${citySlug}`
       : `/directory/${countrySlug}/${citySlug}`,

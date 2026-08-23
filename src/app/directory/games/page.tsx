@@ -9,7 +9,13 @@ import GamesIndexClient from './GamesIndexClient';
 // always-rendered directory-context baseline.
 const _gamesMetaLong = `Live scores, schedules, and results from hockey games worldwide — NHL, AHL, PWHL, KHL, SHL (Sweden), Liiga (Finland), DEL (Germany), National League (Switzerland), Czech Extraliga, NCAA hockey, CHL (WHL, OHL, QMJHL), and USHL. Filter by team or league, switch between Current (live and recent) and Historical (archived) matchups, and load more games as you scroll. Every score on this page links to the team profile and league directory so you can follow the teams and leagues you care about. RinkStop is the open hockey directory — every team, league, player, and rink in the world has a public profile page.`.trim();
 export const metadata: Metadata = {
-  title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+  // PR #150 (2026-08-23) WS25 GSC Bucket-1: previously pos 44.6 with 34
+  // imps / 0 clicks. Title was keyword-rich but the H1 was SCORES &
+  // FIXTURES — mismatch. Also rewrote the meta with current-time hook
+  // (searchers want live scores, not archived) and league-anchored
+  // keyword list to surface for both "hockey scores" and "hockey games
+  // today" type queries.
+  title: 'Hockey Scores Today — Live Games, Schedule & Results | RinkStop',
   description: _gamesMetaLong.slice(0, 240),
   alternates: {
     canonical: 'https://rinkstop.com/directory/games',

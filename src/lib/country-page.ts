@@ -446,9 +446,21 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
     ? `Hockey in ${countryName} — ${rinks} Rinks, ${teams} Teams & Top Leagues`
     : `Hockey in ${countryName} — Directory, Leagues & How to Get Started`;
 
+  // PR #150 (2026-08-23) WS25 GSC Bucket-1: meta upgrade for zero-click
+  // country pages (japan/india/argentina/finland — all had >40 imps and
+  // 0 clicks in 28d GSC). Old template ended with a generic sentence;
+  // new template leads with the dominant query ("hockey in {country}"),
+  // names top leagues and IIHF rank when known, and finishes with a
+  // concrete browse-action CTA instead of filler.
+  const infoNote = (data.info as any)?.note || LEAGUE_INFO[countryName]?.note || '';
+  const iihfRank = LEAGUE_INFO[countryName]?.iihfRank;
+  const topLeague = LEAGUE_INFO[countryName]?.league;
+  const leagueClause = topLeague ? ` Top league: ${topLeague}.` : '';
+  const iihfClause = iihfRank ? ` IIHF rank: ${iihfRank}.` : '';
+
   const description = hasData
-    ? `Find ice hockey rinks, teams, and leagues in ${countryName}. Browse ${rinks} rinks, ${teams} active teams, and the top leagues. ${data.info?.note || 'Complete hockey directory for players, parents, and fans.'}`
-    : `Hockey directory for ${countryName}. Find nearby rinks, learn-to-play programs, and ${LEAGUE_INFO[countryName]?.note || 'how to get started in the sport.'}`;
+    ? `Hockey in ${countryName}: ${rinks} rinks, ${teams} active teams, ${data.leagueCount || 'all major'} leagues.${leagueClause}${iihfClause} Browse teams, fixtures, and schedules, or jump to a specific rink or league.`.slice(0, 240)
+    : `Hockey in ${countryName} — directory of leagues, teams, and learn-to-play programs.${leagueClause} ${infoNote || 'How to get started in hockey in ' + countryName + '.'}`.slice(0, 240);
 
   return {
     title,

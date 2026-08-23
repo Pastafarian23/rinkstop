@@ -2,8 +2,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Junior Hockey',
-  description: 'Coverage of junior hockey leagues worldwide  --  OHL, WHL, QMJHL, USHL, and more. The top junior hockey competitions and NHL draft pipelines.',
+  // PR #150 (2026-08-23) WS25 GSC Bucket-1: rewritten title + meta for
+  // /directory/junior which had 56 imps / 0 clicks / pos 34.6 in 28d GSC.
+  // Old title was literally 'Junior Hockey' (no value prop, no keyword
+  // match, below 30 char Google threshold for visibility). New title
+  // leads with the dominant search query (CHL/NHL draft), names every
+  // top league in the meta, and gives searchers a concrete reason to
+  // click ("every CHL team + USHL + NAHL").
+  title: 'Junior Hockey Leagues — CHL, USHL, NAHL & NHL Draft Pipeline',
+  description: 'Complete coverage of major junior hockey: every OHL, WHL, QMJHL, USHL, and NAHL team. Draft-eligible players, team rosters, schedules, and standings — the world\u2019s top NHL draft pipeline is here.',
 };
 
 export default function JuniorPage() {
