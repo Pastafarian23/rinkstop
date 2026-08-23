@@ -433,6 +433,10 @@ export default function CategorySearchBar({ category, page, maxWidth = 600, loca
               player: { label: 'Player', emoji: '⭐' },
               league: { label: 'League', emoji: '🏆' },
               brand: { label: 'Brand', emoji: '🛍️' },
+              coach: { label: 'Coach', emoji: '🧑‍🏫' },
+              scout: { label: 'Scout', emoji: '🔎' },
+              official: { label: 'Official', emoji: '🟥' },
+              staff: { label: 'Staff', emoji: '🧑‍💼' },
             }[type as SuggestType];
             return (
               <li key={type} role="presentation" style={{ padding: '0.25rem 0' }}>
