@@ -156,16 +156,15 @@ export default async function PlayerPage({ params }: Props) {
   // but URLs like /directory/players/leevi-aaltonen come in as slug.
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-  // Fan out ALL independent DB calls in parallel. Player pages previously
-  // did 5 sequential DB round trips (existence check → owner → followers
-  // → seo copy → metadata fetch via HTTP self-loop). generateMetadata now
-  // also queries Supabase directly (no self-loop), and these four run in
-  // a single Promise.all so total time is max(queries), not sum.
+  // Critical path: only the player-existence check + the player row itself.
+// These are needed before we can render anything. The owner lookup and
+// follower count are non-blocking — they feed the SocialActions widget
+// (save/follow/message buttons) which renders fine with null/0 defaults
+// and updates client-side. Splitting them off the critical path keeps the
+// hero/stats/bio from blocking on social-lookup latency.
   const [
     { data: playerExists },
     { data: seoPlayer },
-    owner,
-    initialFollowersCount,
   ] = await Promise.all([
     supabaseAdmin.from('players').select('id').eq(isUuid ? 'id' : 'slug', id).maybeSingle(),
     supabaseAdmin
@@ -173,6 +172,12 @@ export default async function PlayerPage({ params }: Props) {
       .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle(),
+  ]);
+
+  // Non-critical: run in parallel but don't gate rendering on them.
+  // If either fails the page still works (message button hides, follower
+  // count starts at 0 and updates when the client component mounts).
+  const [owner, initialFollowersCount] = await Promise.all([
     getEntityOwner('player', id),
     getFollowersCount('player', id),
   ]);
@@ -271,7 +276,12 @@ export default async function PlayerPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }}
         />
       )}
-      <PlayerDetail id={id} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} />
+      <PlayerDetail
+        id={id}
+        ownerUserId={owner?.userId ?? null}
+        initialFollowersCount={initialFollowersCount}
+        initialPlayer={seoPlayer as any}
+      />
       {seoPlayer && (
         <PlayerSEOCopy
           player={seoPlayer as any}
