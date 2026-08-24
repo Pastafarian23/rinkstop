@@ -648,7 +648,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
                   alignSelf: 'flex-start',
                 }}
               >
-                Upgrade to claim this listing — from {formatTierPrice((errorAction.tier as any) || 'verified_identity')}/yr →
+                Upgrade for more claims — from {formatTierPrice((errorAction.tier as any) || 'verified_identity')}/yr →
               </Link>
             </div>
           )}

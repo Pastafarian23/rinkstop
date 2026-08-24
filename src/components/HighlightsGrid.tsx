@@ -231,17 +231,23 @@ export default function HighlightsGrid({
                       </svg>
                     </div>
 
-                    {/* Type badge */}
-                    <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem' }}>
-                      <span style={{
-                        fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.08em',
-                        padding: '0.25rem 0.5rem', borderRadius: '4px',
-                        background: highlight.type === 'VERIFIED' ? '#16A34A' : '#F59E0B',
-                        color: '#fff',
-                      }}>
-                        {highlight.type}
-                      </span>
-                    </div>
+                    {/* Source label (left of thumbnail) — YouTube/ESPN/etc.
+                        Highlights are third-party embeds, NOT directory listings,
+                        so we don't render a verification badge here. The match
+                        label below the title already shows the actual game. */}
+                    {highlight.source && (
+                      <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem' }}>
+                        <span style={{
+                          fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.08em',
+                          padding: '0.25rem 0.5rem', borderRadius: '4px',
+                          background: highlight.source === 'youtube' ? 'rgba(255,0,0,0.85)' : 'rgba(255,255,255,0.12)',
+                          color: '#fff',
+                          textTransform: 'uppercase',
+                        }}>
+                          {highlight.source}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
