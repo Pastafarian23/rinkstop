@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
-import { tierAtLeast } from '@/lib/connections';
+import { tierAtLeast } from '@/lib/tier-gate';
 
 export const dynamic = 'force-dynamic';
 

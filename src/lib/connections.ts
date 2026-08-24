@@ -4,7 +4,11 @@
 import { cache } from 'react';
 import { supabaseAdmin } from '@/lib/supabase';
 import { auth } from '@clerk/nextjs/server';
-import { TierName, MAX_CLAIMS_PER_TIER as NEW_MAX_CLAIMS, TIER_TO_TRACK, AccountTrack } from '@/lib/pricing';
+import { TierName, TIER_TO_TRACK, AccountTrack } from '@/lib/pricing';
+import { tierAtLeast, TIER_RANK, getTierMaxClaims } from '@/lib/tier-gate';
+
+// Re-export tier utilities from tier-gate so callers can import from one place.
+export { tierAtLeast, TIER_RANK };
 
 export type ConnectionStatus = 'pending' | 'accepted' | 'blocked' | 'declined';
 
@@ -18,46 +22,13 @@ export interface Connection {
   accepted_at: string | null;
 }
 
-// Tier rank within each track (separate rankings, no cross-track comparisons).
-// Within each track: free < verified_identity < identity_plus (personal)
-// Within business track: free < business_listing < business_plus
-//                          free < club_starter < club_pro < club_elite < league < federation
-// Legacy aliases (pre-2026-07-02) preserved so existing DB rows rank correctly.
-export const TIER_RANK: Record<string, number> = {
-  free: 0,
-  // New canonical personal tiers
-  verified_identity: 1,
-  identity_plus: 2,
-  // New canonical business tiers
-  business_listing: 1,
-  business_plus: 2,
-  // New organization tiers
-  club_starter: 1,
-  club_pro: 2,
-  club_elite: 3,
-  league: 4,
-  federation: 5,
-  // Legacy aliases — preserve access for pre-2026-07-02 DB rows
-  roster: 1,             // -> verified_identity
-  roster_plus: 2,        // -> identity_plus
-  pro: 2,                // -> identity_plus
-  premium: 2,            // -> identity_plus (legacy alias for `pro`)
-  business_starter: 1,   // -> business_listing
-  business_pro: 2,       // -> business_plus
-  business_premium: 2,   // -> business_plus
-  enterprise: 5,         // -> federation
-};
-
 /**
+ * Get max claims for a tier. Delegates to pricing.ts via tier-gate.ts.
  * Max number of APPROVED claims a user can hold on each tier.
  * Kids are unlimited and don't count against this cap.
  */
-export const MAX_CLAIMS_PER_TIER: Record<string, number> = {
-  ...NEW_MAX_CLAIMS,
-};
-
 export function getMaxClaimsForTier(tier: string): number {
-  return MAX_CLAIMS_PER_TIER[tier] ?? 0;
+  return getTierMaxClaims(tier);
 }
 
 /**
@@ -69,20 +40,6 @@ export function getMaxClaimsForTier(tier: string): number {
 function resolveTrack(tier: string | null | undefined): AccountTrack {
   if (!tier) return 'personal';
   return TIER_TO_TRACK[tier as TierName] ?? 'personal';
-}
-
-/**
- * Is the user's tier at least `minTier` within their track?
- * Returns false for cross-track comparisons (verified_identity vs club_starter, etc.).
- */
-export function tierAtLeast(actualTier: string, minTier: string): boolean {
-  const actualTrack = resolveTrack(actualTier);
-  const minTrack = resolveTrack(minTier);
-  // Cross-track comparison not allowed - must be within same track
-  if (actualTrack !== minTrack) return false;
-  const actualRank = TIER_RANK[actualTier] ?? 0;
-  const minRank = TIER_RANK[minTier] ?? 0;
-  return actualRank >= minRank;
 }
 
 /**

@@ -2,7 +2,8 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { currentUser } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUserId, getUserTier, tierAtLeast } from '@/lib/connections';
+import { requireUserId, getUserTier } from '@/lib/connections';
+import { tierAtLeast } from '@/lib/tier-gate';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
 const RL = { maxRequests: 30, windowMs: 60 * 1000 };
