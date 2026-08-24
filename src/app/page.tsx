@@ -506,162 +506,35 @@ export default async function Home() {
                   </div>
                 </div>
               )}
-              {homeNewest.articles.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: '#FFB81C', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>📰 Newest Articles</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {homeNewest.articles.slice(0, 4).map((a: any) => (
-                      <Link key={a.id} href={`/blog/${a.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{a.title}</div>
-                        {a.category && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{a.category}</div>}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </section>
       )}
 
-      {/* ---- WHAT'S NEW ON RINKSTOP (homepage activity feed, item #3 from ChatGPT audit) ----- */}
-      {hasHomeActivity && (
+
+      {/* ---- UPCOMING GAMES (own section — rinks/teams/players already shown above) ---------- */}
+      {upcomingGames.length > 0 && (
         <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
           <div className="container">
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>WHAT&apos;S NEW ON RINKSTOP</h2>
-              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Latest across the directory</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>UPCOMING GAMES</h2>
+              <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All Games →</Link>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-              {homeNewest.rinks.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏒 Newest Rinks</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {homeNewest.rinks.slice(0, 4).map((r: any) => (
-                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{r.name}</div>
-                        {(r.city || r.country) && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{[r.city, r.country].filter(Boolean).join(', ')}</div>}
-                      </Link>
-                    ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+              {upcomingGames.map((g: any) => {
+                const d = new Date(g.date + 'T00:00:00');
+                return (
+                  <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{g.away_team_name} @ {g.home_team_name}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                    </div>
                   </div>
-                </div>
-              )}
-              {homeNewest.teams.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: '#2563EB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏆 Newest Teams</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {homeNewest.teams.slice(0, 4).map((t: any) => (
-                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{t.name}</div>
-                        {t.home_city && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{t.home_city}</div>}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {homeNewest.players.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: '#D97706', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🧑 Newest Players</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {homeNewest.players.slice(0, 4).map((p: any) => (
-                      <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{p.first_name} {p.last_name}</div>
-                        {p.position && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{p.position}</div>}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {homeNewest.articles.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: '#FFB81C', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>📰 Newest Articles</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {homeNewest.articles.slice(0, 4).map((a: any) => (
-                      <Link key={a.id} href={`/blog/${a.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{a.title}</div>
-                        {a.category && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{a.category}</div>}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ---- RECENT ACTIVITY ------------------------------------------------------------- */}
-      {(recentRinks.length > 0 || recentTeams.length > 0 || upcomingGames.length > 0) && (
-        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
-          <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-
-              {recentRinks.length > 0 && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>NEW RINKS ADDED</h3>
-                    <Link href="/directory/rinks" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {recentRinks.map((r: any) => (
-                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{r.name}</div>
-                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{r.city}, {r.country}</div>
-                        </div>
-                        <span style={{ color: '#059669', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {recentTeams.length > 0 && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>NEW TEAMS JOINED</h3>
-                    <Link href="/directory/teams" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {recentTeams.map((t: any) => (
-                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{t.name}</div>
-                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>
-                            {t.league_name || 'Independent'}{t.city ? ` · ${t.city}` : ''}
-                          </div>
-                        </div>
-                        <span style={{ color: '#2563EB', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {upcomingGames.length > 0 && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>UPCOMING GAMES</h3>
-                    <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All Games →</Link>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {upcomingGames.map((g: any) => {
-                      const d = new Date(g.date + 'T00:00:00');
-                      return (
-                        <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{g.away_team_name} @ {g.home_team_name}</div>
-                            <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
           </div>
         </section>
