@@ -22,17 +22,22 @@ export default function HomeNewsSection() {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch('/api/blog/posts?page=1');
+        // Fetch enough to find recent non-highlight posts even when the
+        // latest N posts are all auto-generated highlight recaps. The /api
+        // default limit is 10, so we ask for 40 to skip past the highlight
+        // wall and surface blog/guides/news/analysis/recruiting content.
+        const res = await fetch('/api/blog/posts?page=1&limit=40');
         if (!res.ok) return;
         const json = await res.json();
         if (cancelled) return;
         // Filter out posts that are just highlight recaps — they already appear
         // in the LATEST HIGHLIGHTS grid above this section. Showing the same
-        // content twice made the page feel repetitive.
+        // content twice made the page feel repetitive. Keep all other
+        // categories: news, blog, guides, analysis, recruiting, business, etc.
         const filtered = (json.data || []).filter(
           (p: Post) => (p.category || '').toLowerCase() !== 'highlights'
         );
-        setPosts(filtered.slice(0, 9));
+        setPosts(filtered.slice(0, 5));
       } catch {
         if (!cancelled) setPosts([]);
       }

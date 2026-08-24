@@ -35,7 +35,11 @@ async function verifyAdmin(_request: NextRequest) {
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = 10;
+  // Allow callers to request more than 10 per page. The home page fetches
+  // up to 40 so it can skip past the latest highlight-recap wall and surface
+  // editorial content (blog, guides, news, analysis, recruiting). Cap at
+  // 100 to keep response sizes reasonable.
+  const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100);
   const offset = (page - 1) * limit;
   const highlightId = searchParams.get('highlight_id');
 
