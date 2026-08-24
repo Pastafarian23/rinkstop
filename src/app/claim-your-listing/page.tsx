@@ -454,9 +454,9 @@ export default async function ClaimYourListingPage({
             margin: '0 auto 1.5rem',
           }}
         >
-          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=rink` : '?type=rink'}`} label="Rinks · from $99/yr" active={type === 'rink'} />
-          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=team` : '?type=team'}`} label="Teams · from $149/yr" active={type === 'team'} />
-          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=player` : '?type=player'}`} label="Players · from $24.99/yr" active={type === 'player'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=rink` : '?type=rink'}`} label="Rinks · free to claim" active={type === 'rink'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=team` : '?type=team'}`} label="Teams · free to claim" active={type === 'team'} />
+          <TypeTab href={`/claim-your-listing${query ? `?q=${encodeURIComponent(query)}&type=player` : '?type=player'}`} label="Players · free to claim" active={type === 'player'} />
         </nav>
 
         {/* Search box */}
