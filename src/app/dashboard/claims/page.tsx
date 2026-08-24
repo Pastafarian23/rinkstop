@@ -122,6 +122,7 @@ export default async function ClaimsPage({
           currentTier={tier}
           atCap={atCap}
           isFree={isFree}
+          freeUserAtCap={isFree && currentCount >= 1}
           entityId={claimIntent.entityId}
         />
       ) : null}

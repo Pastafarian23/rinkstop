@@ -64,6 +64,10 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
   // === Tier state (used by hooks below — must be declared first) ===
   const isUnlimited = maxClaims === -1;
   const isFree = tier === 'free' || maxClaims === 0;
+  // Free tier has 1 claim (WS25). A free user is only truly 'at cap' when
+  // they've used it. This is separate from paid-tier atCap so free users
+  // with remaining claim capacity can use the form normally.
+  const freeUserAtCap = tier === 'free' && currentCount >= 1;
   const atCap = !isUnlimited && !isFree && currentCount >= maxClaims;
   // === Draft persistence ===
   // On mount, if we have an entity_id, load any existing draft from
@@ -75,7 +79,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
   // nothing to resume.
   useEffect(() => {
     if (draftLoaded) return;
-    if (isFree || atCap) return; // No point loading drafts when the form is gated
+    if ((!isFree && freeUserAtCap) || atCap) return; // No point loading drafts when the form is gated
     const draftKey = initialId || (initialName ? `name:${initialName}` : null);
     if (!draftKey) {
       setDraftLoaded(true);
@@ -119,7 +123,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     // Don't auto-save when gated, after submit, or when the draft is being loaded.
-    if (isFree || atCap || submitted || !draftLoaded) return;
+    if (isFree || freeUserAtCap || atCap || submitted || !draftLoaded) return;
     if (!form.entityName && !form.reason && !form.proof) return;
     // Compute the same synthetic key the API uses
     const draftKey = form.entityId || (form.entityName ? `name:${form.entityName}` : null);
@@ -221,7 +225,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
     if (!resumeMode) return;
     if (hasAutoSubmittedRef.current) return;
     if (submitted || submitting) return;
-    if (isFree || atCap) return;
+    if (isFree || freeUserAtCap || atCap) return;
     if (!draftLoaded) return; // wait for draft to load
     if (!form.entityName || !form.reason) return;
     hasAutoSubmittedRef.current = true;
@@ -387,7 +391,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
         </div>
       )}
 
-      {isFree ? (
+      {freeUserAtCap ? (
         <div style={{
           background: 'rgba(255,184,28,0.06)',
           border: '1px solid rgba(255,184,28,0.3)',
@@ -396,10 +400,10 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
           textAlign: 'center',
         }}>
           <p style={{ color: '#FFB81C', fontSize: '0.95rem', margin: '0 0 1rem', fontWeight: 600 }}>
-            Upgrade required to claim
+            Free claim used — upgrade for more
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            The Free tier doesn&apos;t include claims. Hockey Passport is {formatTierPrice('verified_identity')}/year (claim your profile + unlimited roles under one identity), Hockey Passport Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
+            You&apos;ve used your 1 free claim. Hockey Passport is {formatTierPrice('verified_identity')}/year (unlimited roles under one identity), Hockey Passport Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
           </p>
           <Link
             href={`/pricing?tier=${upgradeTier}${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`}
