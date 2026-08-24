@@ -449,7 +449,7 @@ export default async function Home() {
       {/* ---- LATEST HIGHLIGHTS ----------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
-          <HighlightsGrid limit={8} columns={4} title="LATEST HIGHLIGHTS" />
+          <HighlightsGrid limit={5} columns={4} title="LATEST HIGHLIGHTS" />
         </div>
       </section>
 
