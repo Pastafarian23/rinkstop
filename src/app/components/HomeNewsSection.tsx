@@ -22,22 +22,26 @@ export default function HomeNewsSection() {
     let cancelled = false;
     async function load() {
       try {
-        // Fetch enough to find recent non-highlight posts even when the
-        // latest N posts are all auto-generated highlight recaps. The /api
-        // default limit is 10, so we ask for 40 to skip past the highlight
-        // wall and surface blog/guides/news/analysis/recruiting content.
-        const res = await fetch('/api/blog/posts?page=1&limit=40');
-        if (!res.ok) return;
-        const json = await res.json();
-        if (cancelled) return;
-        // Filter out posts that are just highlight recaps — they already appear
-        // in the LATEST HIGHLIGHTS grid above this section. Showing the same
-        // content twice made the page feel repetitive. Keep all other
-        // categories: news, blog, guides, analysis, recruiting, business, etc.
-        const filtered = (json.data || []).filter(
-          (p: Post) => (p.category || '').toLowerCase() !== 'highlights'
-        );
-        setPosts(filtered.slice(0, 5));
+        // Fetch enough to skip past the auto-generated highlight-recap wall.
+        // With limit=100, the latest 100 posts are 98 highlights + 2 news,
+        // so we paginate to find the first 5 editorial posts (news, blog,
+        // guides, analysis, etc.). /news (the view-all page) keeps highlights
+        // since users browsing there want to see the recap content too.
+        const collected: Post[] = [];
+        for (let page = 1; page <= 8 && collected.length < 5; page++) {
+          const res = await fetch(`/api/blog/posts?page=${page}&limit=100`);
+          if (!res.ok) break;
+          const json = await res.json();
+          if (cancelled) return;
+          for (const p of json.data || []) {
+            if ((p.category || '').toLowerCase() !== 'highlights') {
+              collected.push(p);
+              if (collected.length >= 5) break;
+            }
+          }
+          if ((json.data || []).length < 100) break;
+        }
+        setPosts(collected);
       } catch {
         if (!cancelled) setPosts([]);
       }
