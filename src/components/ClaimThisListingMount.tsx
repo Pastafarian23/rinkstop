@@ -34,11 +34,28 @@ export default async function ClaimThisListingMount({
   // by the league." The public listing page surfaces the existing 'Verified'
   // badge in this case (handled by the parent page, not this component).
   const claimableTable = entityType === 'player' ? 'players' : entityType === 'team' ? 'teams' : entityType === 'league' ? 'leagues' : 'rinks';
-  const { data: claimableRow } = await supabaseAdmin
-    .from(claimableTable)
-    .select('id, claimable')
-    .eq('id', entityId)
-    .maybeSingle();
+  // The [id] route param can be a UUID OR a slug (e.g. /directory/players/noel-acciari).
+  // The id column is UUID-typed, so a slug-only param returns nothing on .eq('id').
+  // Try UUID first; fall back to slug. Teams and rinks are also looked up by slug
+  // on their detail pages, so we cover all entity types here.
+  const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entityId);
+  let claimableRow: { id: string; claimable: boolean } | null = null;
+  if (isUuidLike) {
+    const { data } = await supabaseAdmin
+      .from(claimableTable)
+      .select('id, claimable')
+      .eq('id', entityId)
+      .maybeSingle();
+    claimableRow = data;
+  }
+  if (!claimableRow) {
+    const { data } = await supabaseAdmin
+      .from(claimableTable)
+      .select('id, claimable')
+      .eq('slug', entityId)
+      .maybeSingle();
+    claimableRow = data;
+  }
   if (claimableRow && claimableRow.claimable === false) {
     return null;
   }

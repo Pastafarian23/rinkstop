@@ -172,7 +172,7 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={descriptionStyle}>
-              Claim it now — Verified Identity unlocks profile claims, Club Pro covers up to 150 players, Business Plus unlocks multiple listings, and Federation covers enterprise-scale orgs.
+              Claim it now — claiming is free. Verified Identity ($24.99/yr) adds the Hockey Passport, payments, and messaging. Paid tiers like Club Pro (up to 150 players) and Business Plus (multiple listings) add more claims and org tools.
             </div>
           </div>
         </div>

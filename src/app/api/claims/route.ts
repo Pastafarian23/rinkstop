@@ -48,13 +48,31 @@ export async function POST(request: NextRequest) {
     // routes the user toward /faq for the full explanation. We do this
     // BEFORE the tier gate so free and paid users both get the same
     // answer — the entity isn't claimable by anyone via this form.
+    //
+    // entity_id may be a UUID OR a slug (deep-links from public pages like
+    // /directory/players/noel-acciari pass the slug). Try UUID first,
+    // then fall back to slug so the gate catches every entry path.
     if (entity_id) {
       const table = claim_type === 'player' ? 'players' : claim_type === 'team' ? 'teams' : claim_type === 'league' ? 'leagues' : 'rinks';
-      const { data: ent, error: entErr } = await supabaseAdmin
-        .from(table)
-        .select('id, claimable, name')
-        .eq('id', entity_id)
-        .maybeSingle();
+      const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(entity_id));
+      let ent: { id: string; claimable: boolean; name: string } | null = null;
+      let entErr: any = null;
+      if (isUuidLike) {
+        const r = await supabaseAdmin
+          .from(table)
+          .select('id, claimable, name')
+          .eq('id', entity_id)
+          .maybeSingle();
+        ent = r.data; entErr = r.error;
+      }
+      if (!ent) {
+        const r = await supabaseAdmin
+          .from(table)
+          .select('id, claimable, name')
+          .eq('slug', entity_id)
+          .maybeSingle();
+        ent = r.data; entErr = r.error;
+      }
       if (entErr) {
         console.error('[claims] entity lookup failed', entErr);
         return NextResponse.json({ error: 'Could not look up listing.' }, { status: 500 });
