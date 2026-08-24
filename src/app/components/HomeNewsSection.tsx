@@ -26,7 +26,13 @@ export default function HomeNewsSection() {
         if (!res.ok) return;
         const json = await res.json();
         if (cancelled) return;
-        setPosts((json.data || []).slice(0, 9));
+        // Filter out posts that are just highlight recaps — they already appear
+        // in the LATEST HIGHLIGHTS grid above this section. Showing the same
+        // content twice made the page feel repetitive.
+        const filtered = (json.data || []).filter(
+          (p: Post) => (p.category || '').toLowerCase() !== 'highlights'
+        );
+        setPosts(filtered.slice(0, 9));
       } catch {
         if (!cancelled) setPosts([]);
       }
