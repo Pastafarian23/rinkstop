@@ -103,8 +103,8 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'personal',
     priceUsd: 0,
     stripePriceEnv: '',
-    tagline: 'Browse the full hockey directory, save what you find, follow what you love.',
-    cta: 'Get Started',
+    tagline: 'Browse, follow, claim your profile, and verify your identity — free, forever.',
+    cta: 'Join Free',
     features: [
       'Browse the complete hockey directory',
       'Search rinks, teams, leagues and players',
@@ -112,8 +112,11 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Follow unlimited teams or players',
       'Read reviews',
       'Public profile',
+      'Claim 1 listing (player, team, rink, or league) — free',
+      'Free identity verification (government ID + selfie, ~60 seconds)',
+      'Verified owner badge after verification',
     ],
-    footnote: 'No identity verification, no claim, no team management.',
+    footnote: 'Free is free, forever. The $24.99/yr Verified Identity tier adds the Hockey Passport, payments eligibility, document storage, and direct messaging — you only pay when you want the tools.',
   },
   verified_identity: {
     name: 'verified_identity',
