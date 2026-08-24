@@ -84,7 +84,7 @@ const HEADER_COPY: Record<ClaimType, { eyebrow: string; sub: string; placeholder
   },
   player: {
     eyebrow: 'For Players & Parents',
-    sub: 'Search for your player profile below. Claiming is free — verification is also free for every profile type. Upgrade to Verified Identity ($24.99/yr) only if you want the Hockey Passport, payments, and other tools.',
+    sub: 'Search for your player profile below. Claiming is free — verification is also free for every profile type. Upgrade to Hockey Passport ($24.99/yr) only if you want the Hockey Passport, payments, and other tools.',
     placeholder: 'Type a player first or last name…',
     bannerLabel: 'Players & parents',
     bannerPrice: 'a free verified identity',

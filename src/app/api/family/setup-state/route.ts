@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     tierAtLeastSameTrack(tier, 'business_listing');
   if (!tierOk) {
     const res = NextResponse.json(
-      { error: 'Family Setup Wizard requires Identity Plus or higher.' },
+      { error: 'Family Setup Wizard requires Hockey Passport Plus or higher.' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, result);

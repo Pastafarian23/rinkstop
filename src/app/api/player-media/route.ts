@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (!tierOk((profile?.tier as string) ?? 'free')) {
     const res = NextResponse.json(
-      { error: 'Uploading player media requires Identity Plus or higher.' },
+      { error: 'Uploading player media requires Hockey Passport Plus or higher.' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);

@@ -77,7 +77,7 @@ export default function ClaimParentButton({
     );
   }
 
-  // Identity Plus (personal) OR Business Plus+ (business) required for parent claim.
+  // Hockey Passport Plus (personal) OR Business Plus+ (business) required for parent claim.
   // Parents claim youth players - this is a personal feature, but business users
   // with higher tiers also get access.
   const personalTiers = ['roster_plus', 'pro'];

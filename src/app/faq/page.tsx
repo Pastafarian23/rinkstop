@@ -45,7 +45,7 @@ const sections: Array<{
       },
       {
         q: 'What is a "public profile" and where does it live?',
-        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Verified Identity / Identity Plus / Club Starter / Club Pro / Club Elite / League / Federation / Business Listing / Business Plus). An identity-verified checkmark - a navy-and-gold mark separate from your tier - means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
+        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Hockey Passport / Hockey Passport Plus / Club Starter / Club Pro / Club Elite / League / Federation / Business Listing / Business Plus). An identity-verified checkmark - a navy-and-gold mark separate from your tier - means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
       },
       {
         q: 'What are the username rules?',
@@ -84,7 +84,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'RinkStop has ten tiers across three groups: Individuals (Free, Verified Identity, Identity Plus), Organizations (Club Starter, Club Pro, Club Elite, League, Federation), and Businesses (Business Listing, Business Plus). The first 500 paid members get a permanent Founding Member badge. See the full tier table with caps, features, and pricing at /pricing.',
+        a: 'RinkStop has ten tiers across three groups: Individuals (Free, Hockey Passport, Hockey Passport Plus), Organizations (Club Starter, Club Pro, Club Elite, League, Federation), and Businesses (Business Listing, Business Plus). The first 500 paid members get a permanent Founding Member badge. See the full tier table with caps, features, and pricing at /pricing.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -108,7 +108,7 @@ const sections: Array<{
       },
       {
         q: 'Is there a free trial?',
-        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Verified Identity - it is $24.99/year and you can cancel anytime by emailing support.',
+        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Hockey Passport - it is $24.99/year and you can cancel anytime by emailing support.',
       },
     ],
   },
@@ -236,7 +236,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What is Family Hub?',
-        a: 'Family Hub is a section of your dashboard that lives at /dashboard/family. It is part of Identity Plus and Business Plus tiers. It lets a parent link unlimited children (managed_profiles), and view per-child data in one place: Hockey Passport, schedule, payments, achievements, career timeline, photos, videos, and secure documents. The hub is built for parents managing multiple youth players — no more logging into each kid separately.',
+        a: 'Family Hub is a section of your dashboard that lives at /dashboard/family. It is part of Hockey Passport Plus and Business Plus tiers. It lets a parent link unlimited children (managed_profiles), and view per-child data in one place: Hockey Passport, schedule, payments, achievements, career timeline, photos, videos, and secure documents. The hub is built for parents managing multiple youth players — no more logging into each kid separately.',
       },
       {
         q: 'Who is Family Hub for?',
@@ -244,7 +244,7 @@ const sections: Array<{
       },
       {
         q: 'How do I link a child to my Family Hub?',
-        a: 'Sign in with Identity Plus or Business Plus, go to /dashboard/family, and use the Family Search box to find your child by name. If they don\'t have a RinkStop profile yet, you can create one from the same flow. Linking creates a managed_profiles row tied to your user_id — the child cannot accept or decline the link, but they can see it on their own profile.',
+        a: 'Sign in with Hockey Passport Plus or Business Plus, go to /dashboard/family, and use the Family Search box to find your child by name. If they don\'t have a RinkStop profile yet, you can create one from the same flow. Linking creates a managed_profiles row tied to your user_id — the child cannot accept or decline the link, but they can see it on their own profile.',
       },
       {
         q: 'Can I unlink a child?',
@@ -260,7 +260,7 @@ const sections: Array<{
       },
       {
         q: 'What is the Family Setup Wizard?',
-        a: 'When you first sign in to Identity Plus or Business Plus with kids to link, a setup wizard walks you through linking each child and importing any existing data. You can dismiss it and run it again from /dashboard/family if you skipped it the first time.',
+        a: 'When you first sign in to Hockey Passport Plus or Business Plus with kids to link, a setup wizard walks you through linking each child and importing any existing data. You can dismiss it and run it again from /dashboard/family if you skipped it the first time.',
       },
     ],
   },
@@ -275,7 +275,7 @@ const sections: Array<{
       },
       {
         q: 'How do I get a passport QR code?',
-        a: 'Once you have a Verified Identity or higher, your passport gets a unique QR identifier. You can view it at /dashboard/passport. Operators print this QR and post it at their venue (rink, gym, clinic). Anyone can scan it with their phone to stamp your passport.',
+        a: 'Once you have a Hockey Passport or higher, your passport gets a unique QR identifier. You can view it at /dashboard/passport. Operators print this QR and post it at their venue (rink, gym, clinic). Anyone can scan it with their phone to stamp your passport.',
       },
       {
         q: 'Who can stamp my passport?',
@@ -310,7 +310,7 @@ const sections: Array<{
       },
       {
         q: 'Who can use referee tools?',
-        a: 'Anyone whose profile has the referee account type. You can request the referee account type from /dashboard/roles (requires Verified Identity or higher). League admins assign you games; the tools show what was assigned to you.',
+        a: 'Anyone whose profile has the referee account type. You can request the referee account type from /dashboard/roles (requires Hockey Passport or higher). League admins assign you games; the tools show what was assigned to you.',
       },
       {
         q: 'How do I check in to a game?',
@@ -356,11 +356,11 @@ const sections: Array<{
     qa: [
       {
         q: 'How do I send a direct message (DM) to another user?',
-        a: 'Identity Plus, Business Plus, Club Elite, League, and Federation tier members can DM each other. Free, Verified Identity, Business Listing, and lower Club tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
+        a: 'Hockey Passport Plus, Business Plus, Club Elite, League, and Federation tier members can DM each other. Free, Hockey Passport, Business Listing, and lower Club tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
       },
       {
         q: 'Why do I need a Pro tier to DM?',
-        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Identity Plus, Business Plus, Club Elite, League, or Federation) so the person on the other end knows they are dealing with a real account, not a throwaway.',
+        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Hockey Passport Plus, Business Plus, Club Elite, League, or Federation) so the person on the other end knows they are dealing with a real account, not a throwaway.',
       },
       {
         q: 'How do connection requests work?',
@@ -422,7 +422,7 @@ const sections: Array<{
       },
       {
         q: 'How do I find out if a rink, team, or league is already on RinkStop?',
-        a: 'Use the search bar on the homepage or go to /claim-your-listing and type the name. If the listing appears, it\'s already in our directory. If it does not appear, you can submit a new listing from /add-listing or claim it once you have a Verified Identity or higher membership.',
+        a: 'Use the search bar on the homepage or go to /claim-your-listing and type the name. If the listing appears, it\'s already in our directory. If it does not appear, you can submit a new listing from /add-listing or claim it once you have a Hockey Passport or higher membership.',
       },
       {
         q: 'How do I delete a review I left?',

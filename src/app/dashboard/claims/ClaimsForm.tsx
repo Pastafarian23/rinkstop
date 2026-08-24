@@ -399,7 +399,7 @@ export default function ClaimsForm({ tier, maxClaims, currentCount, recommendedT
             Upgrade required to claim
           </p>
           <p style={{ color: '#888', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 1.25rem' }}>
-            The Free tier doesn&apos;t include claims. Verified Identity is {formatTierPrice('verified_identity')}/year (claim your profile + unlimited roles under one identity), Identity Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
+            The Free tier doesn&apos;t include claims. Hockey Passport is {formatTierPrice('verified_identity')}/year (claim your profile + unlimited roles under one identity), Hockey Passport Plus is {formatTierPrice('identity_plus')}/year (Family Hub + advanced features), Business Listing is {formatTierPrice('business_listing')}/year (1 listing), Business Plus is {formatTierPrice('business_plus')}/year (multiple listings + featured placement), and Federation is custom for larger organizations.
           </p>
           <Link
             href={`/pricing?tier=${upgradeTier}${initialEntity ? `&entity=${initialEntity}&id=${encodeURIComponent(initialId)}&name=${encodeURIComponent(initialName)}` : ''}`}

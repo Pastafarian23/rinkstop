@@ -5,8 +5,8 @@
  *
  * Individuals (one Verified Hockey Identity per person, unlimited roles):
  *   - Free                       (free, $0)                 browse only
- *   - Verified Identity          (verified_identity, $24.99) required for participation
- *   - Identity Plus              (identity_plus, $59.99)     premium personal features
+ *   - Hockey Passport          (verified_identity, $24.99) required for participation
+ *   - Hockey Passport Plus              (identity_plus, $59.99)     premium personal features
  *
  * Organizations (clubs, leagues, federations, teams, associations):
  *   - Club Starter               (club_starter, $149)       small clubs (≤30 players)
@@ -116,17 +116,17 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Free identity verification (government ID + selfie, ~60 seconds)',
       'Verified owner badge after verification',
     ],
-    footnote: 'Free is free, forever. The $24.99/yr Verified Identity tier adds the Hockey Passport, payments eligibility, document storage, and direct messaging — you only pay when you want the tools.',
+    footnote: 'Free is free, forever. The $24.99/yr Hockey Passport tier unlocks payments eligibility, document storage, and direct messaging — you only pay when you want the tools.',
   },
   verified_identity: {
     name: 'verified_identity',
-    label: 'Verified Identity',
+    label: 'Hockey Passport',
     group: 'identity',
     track: 'personal',
     priceUsd: 24.99,
     stripePriceEnv: 'STRIPE_PRICE_VERIFIED_IDENTITY',
-    tagline: "Get a verified checkmark so coaches, scouts, and program directors know you're real.",
-    cta: 'Verify My Identity',
+    tagline: "Your digital hockey career record — every team, every milestone, every season, in one place anyone can find.",
+    cta: 'Get My Hockey Passport',
     popular: true,
     features: [
       'Government-ID identity verification (renews every 2 years)',
@@ -140,22 +140,22 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Team invitations',
       'Payment eligibility',
       'Registration eligibility',
-      'Verified Identity badge on profile',
+      'Hockey Passport badge on profile',
       'Priority email support',
     ],
     footnote: 'One Verified Hockey Identity holds every role you accumulate.',
   },
   identity_plus: {
     name: 'identity_plus',
-    label: 'Identity Plus',
+    label: 'Hockey Passport Plus',
     group: 'identity',
     track: 'personal',
     priceUsd: 59.99,
     stripePriceEnv: 'STRIPE_PRICE_IDENTITY_PLUS',
     tagline: 'Build your hockey story — every team, every milestone, every season, in one place anyone can find.',
-    cta: 'Upgrade to Identity Plus',
+    cta: 'Upgrade to Hockey Passport Plus',
     features: [
-      'Everything in Verified Identity',
+      'Everything in Hockey Passport',
       'Family Hub (link unlimited children)',
       'Stamps & attendance history on your passport',
       'Career timeline (auto-built from your data)',

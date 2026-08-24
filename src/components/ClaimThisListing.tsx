@@ -172,7 +172,7 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={descriptionStyle}>
-              Claim it now — claiming is free. Verified Identity ($24.99/yr) adds the Hockey Passport, payments, and messaging. Paid tiers like Club Pro (up to 150 players) and Business Plus (multiple listings) add more claims and org tools.
+              Claim it now — claiming is free. Hockey Passport ($24.99/yr) adds the Hockey Passport, payments, and messaging. Paid tiers like Club Pro (up to 150 players) and Business Plus (multiple listings) add more claims and org tools.
             </div>
           </div>
         </div>
@@ -199,7 +199,7 @@ export default function ClaimThisListing({
           </div>
         </div>
         <Link href={claimDestination} style={ctaDangerStyle}>
-          {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Identity Plus →'}
+          {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Hockey Passport Plus →'}
         </Link>
       </div>
     );

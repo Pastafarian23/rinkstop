@@ -72,7 +72,7 @@ export default async function DocumentsHubPage() {
           DOCUMENTS
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
-          Document storage and signing requires Verified Identity or higher. Verify once, then upload waivers, releases, and shared team documents — all with a full audit trail.
+          Document storage and signing requires Hockey Passport or higher. Verify once, then upload waivers, releases, and shared team documents — all with a full audit trail.
         </p>
         <Link
           href="/pricing?tier=verified_identity"
@@ -87,7 +87,7 @@ export default async function DocumentsHubPage() {
             textDecoration: 'none',
           }}
         >
-          Upgrade to Verified Identity →
+          Upgrade to Hockey Passport →
         </Link>
       </div>
     );
