@@ -144,15 +144,26 @@ export default async function ClaimThisListingMount({
   }
 
   const tier = await getUserTier(userId);
+
+  // === Step 2b: free tier — check if they've used their 1 free claim ===
   if (tier === 'free') {
-    return (
-      <ClaimThisListing
-        entityType={entityType}
-        entityId={entityId}
-        entityName={displayName}
-        state={{ kind: 'free' }}
-      />
-    );
+    const { count: approvedCount } = await supabaseAdmin
+      .from('claims')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'approved');
+    const usedFreeClaim = (approvedCount ?? 0) >= 1;
+    if (usedFreeClaim) {
+      return (
+        <ClaimThisListing
+          entityType={entityType}
+          entityId={entityId}
+          entityName={displayName}
+          state={{ kind: 'free' }}
+        />
+      );
+    }
+    // Free user with room — fall through to claim_form
   }
 
   // === Step 3: paid tier — cap check + pending check ===
