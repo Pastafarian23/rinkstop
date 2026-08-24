@@ -76,22 +76,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
   try {
-    const res = await fetch(
-      `${BASE_URL}/api/players?id=${id}`,
-      { cache: 'no-store' }
-    );
-    const json = await res.json();
-    const player = json?.data?.[0];
+    // Query Supabase directly instead of fetching our own /api/players endpoint.
+    // The previous self-loop HTTP fetch cost ~50-100ms per request — a full
+    // HTTP round-trip + the API's own DB query — on top of the page render.
+    // For SEO we only need a few fields; teams + league hydrate through the
+    // FK join.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const q = supabaseAdmin
+      .from('players')
+      .select('id, first_name, last_name, position, nationality, headshot_url, seo_title, current_team_name, teams(name, leagues(name))')
+      .eq(isUuid ? 'id' : 'slug', id)
+      .maybeSingle();
+    const { data: player } = await q;
 
     if (!player) {
       return { title: 'Player Not Found' };
     }
 
-    const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-    const teamName = player.teams?.name || player.current_team_name || null;
-    const leagueName = player.teams?.leagues?.name || '';
-    const position = POSITION_FULL[player.position] || player.position || null;
-    const description = buildPlayerDescription(player);
+    const fullName = `${(player as any).first_name ?? ''} ${(player as any).last_name ?? ''}`.trim() || 'Player';
+    const teamName = (player as any).teams?.name || (player as any).current_team_name || null;
+    const leagueName = (player as any).teams?.leagues?.name || '';
+    const position = POSITION_FULL[(player as any).position] || (player as any).position || null;
+    const description = buildPlayerDescription(player as any);
     // Root layout template appends ' | RinkStop'. Strip any trailing suffix
     // from the DB seo_title so we don't get 'X | RinkStop | RinkStop'.
     const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
@@ -149,68 +155,68 @@ export default async function PlayerPage({ params }: Props) {
   // UUID id OR slug — the route param is named [id] for backward compat
   // but URLs like /directory/players/leevi-aaltonen come in as slug.
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  const { data: playerExists } = isUuid
-    ? await supabaseAdmin.from('players').select('id').eq('id', id).maybeSingle()
-    : await supabaseAdmin.from('players').select('id').eq('slug', id).maybeSingle();
-  if (!playerExists) {
-    notFound();
-  }
 
-  // Social: look up owner + follower count in parallel (cheap, indexed).
-  // Player pages may not have a claimed owner — `owner` is null in that
-  // case and the message button won't render.
-  const [owner, initialFollowersCount] = await Promise.all([
+  // Fan out ALL independent DB calls in parallel. Player pages previously
+  // did 5 sequential DB round trips (existence check → owner → followers
+  // → seo copy → metadata fetch via HTTP self-loop). generateMetadata now
+  // also queries Supabase directly (no self-loop), and these four run in
+  // a single Promise.all so total time is max(queries), not sum.
+  const [
+    { data: playerExists },
+    { data: seoPlayer },
+    owner,
+    initialFollowersCount,
+  ] = await Promise.all([
+    supabaseAdmin.from('players').select('id').eq(isUuid ? 'id' : 'slug', id).maybeSingle(),
+    supabaseAdmin
+      .from('players')
+      .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))')
+      .eq(isUuid ? 'id' : 'slug', id)
+      .maybeSingle(),
     getEntityOwner('player', id),
     getFollowersCount('player', id),
   ]);
 
+  if (!playerExists) {
+    notFound();
+  }
+
   // Server-side JSON-LD: Person (athlete) + BreadcrumbList + FAQPage.
-  // Also reuse the same fetched player row to build the SEO copy block
-  // (server-rendered About / FAQ section) at the bottom of the page.
-  // Query the player record directly via supabaseAdmin (no self-loop HTTP
-  // hop). The client component re-fetches its own data for the actual UI;
-  // this is a duplicate read, not a coupled one — but it goes straight to
-  // the DB now, not through the public /api/players endpoint, which
-  // saves one full round trip per page load.
+  // Built from the seoPlayer row we already fetched above — no extra DB
+  // round-trip.
   let playerJsonLd: object | null = null;
-  let seoPlayer: any = null;
   let seoFaqs: { question: string; answer: string }[] = [];
   try {
-    const playerQuery = isUuid
-      ? supabaseAdmin.from('players').select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))').eq('id', id).maybeSingle()
-      : supabaseAdmin.from('players').select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))').eq('slug', id).maybeSingle();
-    const { data: player } = await playerQuery;
-    if (player) {
-      const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Hockey Player';
-      const teamName = (player.teams as any)?.name;
-      const teamSlug = (player.teams as any)?.slug;
-      const leagueName = (player.teams as any)?.leagues?.name;
-      const leagueSlug = (player.teams as any)?.leagues?.slug;
-      const leagueCountry = (player.teams as any)?.leagues?.country;
-      const position = POSITION_FULL[player.position] || player.position || 'Hockey Player';
+    if (seoPlayer) {
+      const fullName = `${seoPlayer.first_name ?? ''} ${seoPlayer.last_name ?? ''}`.trim() || 'Hockey Player';
+      const teamName = (seoPlayer.teams as any)?.name;
+      const teamSlug = (seoPlayer.teams as any)?.slug;
+      const leagueName = (seoPlayer.teams as any)?.leagues?.name;
+      const leagueSlug = (seoPlayer.teams as any)?.leagues?.slug;
+      const leagueCountry = (seoPlayer.teams as any)?.leagues?.country;
+      const position = POSITION_FULL[seoPlayer.position] || seoPlayer.position || 'Hockey Player';
 
       const faqs = buildPlayerFAQs({
         fullName,
-        firstName: player.first_name,
-        position: player.position,
-        jerseyNumber: player.jersey_number,
-        shoots: player.shoots,
-        catches: player.catches,
-        heightCm: player.height_cm,
-        weightKg: player.weight_kg,
-        birthDate: player.birth_date,
-        nationality: player.nationality,
-        bio: player.bio,
+        firstName: seoPlayer.first_name,
+        position: seoPlayer.position,
+        jerseyNumber: seoPlayer.jersey_number,
+        shoots: seoPlayer.shoots,
+        catches: seoPlayer.catches,
+        heightCm: seoPlayer.height_cm,
+        weightKg: seoPlayer.weight_kg,
+        birthDate: seoPlayer.birth_date,
+        nationality: seoPlayer.nationality,
+        bio: seoPlayer.bio,
         teamName,
         teamSlug,
         leagueName,
         leagueSlug,
         leagueCountry,
-        updatedAt: player.updated_at,
+        updatedAt: seoPlayer.updated_at,
       });
 
       seoFaqs = faqs;
-      seoPlayer = player;
 
       const jsonLdGraph: any[] = [
         {
@@ -219,15 +225,15 @@ export default async function PlayerPage({ params }: Props) {
           jobTitle: `Professional Ice Hockey Player — ${position}`,
           sport: 'Ice hockey',
           url: `${BASE_URL}/directory/players/${id}`,
-          ...(player.headshot_url ? { image: player.headshot_url } : {}),
+          ...(seoPlayer.headshot_url ? { image: seoPlayer.headshot_url } : {}),
           ...(teamName
             ? { affiliation: { '@type': 'SportsTeam', name: teamName, url: teamSlug ? `${BASE_URL}/directory/teams/${teamSlug}` : undefined, ...(leagueName ? { memberOf: { '@type': 'SportsOrganization', name: leagueName, url: leagueSlug ? `${BASE_URL}/directory/leagues/${leagueSlug}` : undefined } } : {}) } }
             : {}),
-          ...(player.nationality && player.nationality.length <= 3
-            ? { nationality: COUNTRY_NAMES[player.nationality] || player.nationality }
+          ...(seoPlayer.nationality && seoPlayer.nationality.length <= 3
+            ? { nationality: COUNTRY_NAMES[seoPlayer.nationality] || seoPlayer.nationality }
             : {}),
-          ...(player.height_cm ? { height: { '@type': 'QuantitativeValue', value: player.height_cm, unitCode: 'CMT' } } : {}),
-          ...(player.weight_kg ? { weight: { '@type': 'QuantitativeValue', value: player.weight_kg, unitCode: 'KGM' } } : {}),
+          ...(seoPlayer.height_cm ? { height: { '@type': 'QuantitativeValue', value: seoPlayer.height_cm, unitCode: 'CMT' } } : {}),
+          ...(seoPlayer.weight_kg ? { weight: { '@type': 'QuantitativeValue', value: seoPlayer.weight_kg, unitCode: 'KGM' } } : {}),
         },
         {
           '@type': 'BreadcrumbList',
@@ -268,7 +274,7 @@ export default async function PlayerPage({ params }: Props) {
       <PlayerDetail id={id} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} />
       {seoPlayer && (
         <PlayerSEOCopy
-          player={seoPlayer}
+          player={seoPlayer as any}
           career={{}}
         />
       )}
