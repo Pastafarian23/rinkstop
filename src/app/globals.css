@@ -662,6 +662,21 @@ img  { max-width: 100%; display: block; }
   animation: shimmer 1.8s infinite;
   border-radius: 4px;
 }
+.skeleton-img {
+  width: 100%;
+  height: 150px;
+  background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.8s infinite;
+}
+.skeleton-line {
+  display: block;
+  height: 14px;
+  background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: 4px;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    FORM INPUTS

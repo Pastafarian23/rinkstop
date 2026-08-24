@@ -17,6 +17,7 @@ interface Post {
 
 export default function HomeNewsSection() {
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,13 +43,43 @@ export default function HomeNewsSection() {
           if ((json.data || []).length < 100) break;
         }
         setPosts(collected);
+        if (!cancelled) setLoading(false);
       } catch {
-        if (!cancelled) setPosts([]);
+        if (!cancelled) { setPosts([]); setLoading(false); }
       }
     }
     load();
     return () => { cancelled = true; };
   }, []);
+
+  // Skeleton: same grid layout as loaded state, avoids layout shift
+  if (loading) {
+    return (
+      <section className="section-py" style={{ background: '#111823', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Latest</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>HOCKEY NEWS</h2>
+            </div>
+            <Link href="/news" className="sec-link">All News →</Link>
+          </div>
+          <div className="news-grid">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="card" style={{ background: '#1a2234', overflow: 'hidden' }}>
+                <div className="skeleton-img" />
+                <div style={{ padding: '1rem' }}>
+                  <div className="skeleton-line" style={{ width: '60px', height: '18px', marginBottom: '0.75rem' }} />
+                  <div className="skeleton-line" style={{ width: '90%', height: '16px', marginBottom: '0.4rem' }} />
+                  <div className="skeleton-line" style={{ width: '70%', height: '16px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!posts || posts.length === 0) return null;
 
