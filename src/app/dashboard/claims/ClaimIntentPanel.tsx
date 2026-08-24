@@ -14,8 +14,10 @@ export interface ClaimIntentPanelProps {
   currentTier: string;
   /** Whether the user is hitting the cap on their current tier */
   atCap: boolean;
-  /** Whether the user is on free tier (no claims allowed) */
+  /** Whether the user is on free tier */
   isFree: boolean;
+  /** Whether a free-tier user has exhausted their 1 free claim */
+  freeUserAtCap: boolean;
   /** Entity id (used for resume after checkout) */
   entityId?: string;
 }
@@ -42,23 +44,21 @@ export function ClaimIntentPanel({
   currentTier,
   atCap,
   isFree,
+  freeUserAtCap,
   entityId,
 }: ClaimIntentPanelProps) {
   const t = TIERS[recommendedTier];
   const upgradeT = upgradeTier ? TIERS[upgradeTier] : null;
-  const needsUpgrade = isFree || atCap || currentTier === recommendedTier === false;
+  const needsUpgrade = (isFree && freeUserAtCap) || atCap || currentTier === recommendedTier === false;
 
-  // WS25 (2026-08-23): free accounts now include 1 claim — the "isFree"
-  // branch is retained for the at_cap case but the messaging has shifted
-  // from "you need to pay" to "you can verify free and start your claim."
-  // For free users, we still nudge toward verification (the path to
-  // a 'Verified owner' badge) but the upgrade copy is reserved for when
-  // they want tools, not the claim itself.
   let statusLine: string;
   let statusColor: string;
-  if (isFree) {
-    statusLine = `Claiming is free. Verify your identity (free, ~60 seconds) to add a 'Verified owner' badge to your listing.`;
+  if (isFree && freeUserAtCap) {
+    statusLine = `You've used your 1 free claim. Upgrade to ${t.label} to claim more listings.`;
     statusColor = '#FFB81C';
+  } else if (isFree) {
+    statusLine = `Claiming is free. Verify your identity (free, ~60 seconds) to add a 'Verified owner' badge to your listing.`;
+    statusColor = '#14B8A6';
   } else if (atCap) {
     statusLine = `You've hit the ${currentTier} claim limit. Upgrade to ${t.label} for more claims, or contact sales for Federation custom volume.`;
     statusColor = '#FF6B7A';
@@ -235,7 +235,7 @@ export function ClaimIntentPanel({
           <TimelineStep
             n={2}
             label={`Upgrade to ${t.label}`}
-            status={isFree || atCap ? 'current' : 'done'}
+            status={(isFree && freeUserAtCap) || atCap ? 'current' : 'done'}
           />
           <TimelineStep n={3} label="Submit claim form" status="next" />
           <TimelineStep n={4} label="We review (24 hours for paid)" status="next" />
@@ -244,7 +244,7 @@ export function ClaimIntentPanel({
 
       {/* Action button */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-        {isFree || atCap ? (
+        {(isFree && freeUserAtCap) || atCap ? (
           <ClaimUpgradeButton
             tier={recommendedTier}
             entity={entity}
