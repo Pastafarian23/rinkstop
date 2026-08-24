@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get('limit') || '10', 10), 100);
   const offset = (page - 1) * limit;
   const highlightId = searchParams.get('highlight_id');
+  const notCategory = searchParams.get('not_category');
 
   // Single-article lookup by highlight_id (used by the video popup on the
   // home page, player pages, and any other surface that shows highlights).
@@ -64,12 +65,19 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from('posts')
     .select('id, slug, title, subtitle, category, reading_time_minutes, author_name, published_at, og_image_url, seo_title, seo_description, content', { count: 'exact' })
     .eq('status', 'published')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+
+  if (notCategory) {
+    // Case-insensitive: exclude all casings of "highlights" etc.
+    query = query.not('category', 'ilike', notCategory);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) return jsonResponse({ error: error.message }, 500);
 

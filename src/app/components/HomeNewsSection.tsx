@@ -23,26 +23,13 @@ export default function HomeNewsSection() {
     let cancelled = false;
     async function load() {
       try {
-        // Fetch enough to skip past the auto-generated highlight-recap wall.
-        // With limit=100, the latest 100 posts are 98 highlights + 2 news,
-        // so we paginate to find the first 5 editorial posts (news, blog,
-        // guides, analysis, etc.). /news (the view-all page) keeps highlights
-        // since users browsing there want to see the recap content too.
-        const collected: Post[] = [];
-        for (let page = 1; page <= 8 && collected.length < 5; page++) {
-          const res = await fetch(`/api/blog/posts?page=${page}&limit=100`);
-          if (!res.ok) break;
-          const json = await res.json();
-          if (cancelled) return;
-          for (const p of json.data || []) {
-            if ((p.category || '').toLowerCase() !== 'highlights') {
-              collected.push(p);
-              if (collected.length >= 5) break;
-            }
-          }
-          if ((json.data || []).length < 100) break;
-        }
-        setPosts(collected);
+        // Use the not_category filter to fetch 5 non-highlight posts in a single
+        // request instead of paginating through dozens of highlight-recap rows.
+        const res = await fetch(`/api/blog/posts?not_category=highlights&limit=5`);
+        if (!res.ok) throw new Error('fetch failed');
+        const json = await res.json();
+        if (cancelled) return;
+        setPosts((json.data || []).slice(0, 5));
         if (!cancelled) setLoading(false);
       } catch {
         if (!cancelled) { setPosts([]); setLoading(false); }
