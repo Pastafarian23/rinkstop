@@ -26,7 +26,7 @@ export default async function FamilyPage() {
 
   const tier = await getUserTier(userId);
 
-  // Family Hub is part of the Identity Plus plan (and legacy pro/roster_plus).
+  // Family Hub is part of the Hockey Passport Plus plan (and legacy pro/roster_plus).
   // The business track has its own equivalents (business_pro+ = paid business tier with multi-listing).
   // tierAtLeast handles both new and legacy tier names.
   const canAccessFamily =

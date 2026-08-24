@@ -31,16 +31,16 @@ const COMPARISON = [
     category: 'Personal identity & networking',
     rows: [
       {
-        ours: { tier: 'Verified Identity', price: '$24.99/yr' },
+        ours: { tier: 'Hockey Passport', price: '$24.99/yr' },
         them: { name: 'LinkedIn Premium Career', price: '$239.88/yr' },
         delta: '~90% cheaper',
-        note: 'RinkStop\'s Verified Identity tier covers identity verification, claiming a player profile, parent/guardian linking, and team invitations. LinkedIn Premium Career is profile boosting plus InMail credits. Both serve the same underlying need — a verified professional identity — but RinkStop\'s scope is hockey-specific. For a parent who wants to claim and verify their kid\'s youth-hockey profile, $24.99/yr is built for that job. LinkedIn at $239.88/yr is overkill.',
+        note: 'RinkStop\'s Hockey Passport tier covers identity verification, claiming a player profile, parent/guardian linking, and team invitations. LinkedIn Premium Career is profile boosting plus InMail credits. Both serve the same underlying need — a verified professional identity — but RinkStop\'s scope is hockey-specific. For a parent who wants to claim and verify their kid\'s youth-hockey profile, $24.99/yr is built for that job. LinkedIn at $239.88/yr is overkill.',
       },
       {
-        ours: { tier: 'Identity Plus', price: '$59.99/yr' },
+        ours: { tier: 'Hockey Passport Plus', price: '$59.99/yr' },
         them: { name: 'LinkedIn Premium Career', price: '$239.88/yr' },
         delta: '75% cheaper',
-        note: 'Identity Plus adds Family Hub (parent managing multiple children), advanced player analytics, achievement tracking, and unlimited photo/video uploads. For parents with two or more youth hockey players, Identity Plus pays for itself by centralizing profiles that would otherwise sit in five different apps. LinkedIn Premium Career has none of those features.',
+        note: 'Hockey Passport Plus adds Family Hub (parent managing multiple children), advanced player analytics, achievement tracking, and unlimited photo/video uploads. For parents with two or more youth hockey players, Hockey Passport Plus pays for itself by centralizing profiles that would otherwise sit in five different apps. LinkedIn Premium Career has none of those features.',
       },
     ],
   },
@@ -379,7 +379,7 @@ export default function RinkStopVsCompetitors() {
             marginBottom: '0.5rem',
           }}
         >
-          Recommended tier: <strong style={{ color: '#fff' }}>Verified Identity ($24.99/yr)</strong> or Identity Plus if you have multiple kids.
+          Recommended tier: <strong style={{ color: '#fff' }}>Hockey Passport ($24.99/yr)</strong> or Hockey Passport Plus if you have multiple kids.
         </p>
         <p
           style={{

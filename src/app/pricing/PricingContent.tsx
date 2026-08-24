@@ -97,12 +97,12 @@ const FAQ = [
     a: 'Yes. Free is permanent and free. You can browse the full directory, read reviews, save unlimited favorites, and follow unlimited teams or players — no card required, no upsell.',
   },
   {
-    q: 'What does Verified Identity cost?',
+    q: 'What does Hockey Passport cost?',
     a: '$24.99 per year. Identity verification itself is FREE for every user — it costs us ~$0.33 (Didit.me KYC) and we absorb it. The $24.99/yr fee covers the tools that go with a verified identity: Hockey Passport, payments eligibility, document storage, and messaging. You can verify for free and stay free; you only pay when you want the tools.',
   },
   {
-    q: 'What does Identity Plus add?',
-    a: 'Identity Plus ($59.99/year) adds Family Hub, unlimited children, career timeline, advanced player analytics, unlimited photos and videos, achievement tracking, advanced messaging, premium insights, and priority support.',
+    q: 'What does Hockey Passport Plus add?',
+    a: 'Hockey Passport Plus ($59.99/year) adds Family Hub, unlimited children, career timeline, advanced player analytics, unlimited photos and videos, achievement tracking, advanced messaging, premium insights, and priority support.',
   },
   {
     q: 'How do organizations subscribe differently from individuals?',

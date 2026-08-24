@@ -310,7 +310,7 @@ export default async function ProfilePage() {
         </div>
       )}
 
-      {/* Section 1: Verified Identity */}
+      {/* Section 1: Hockey Passport */}
       <PassportSection
         emoji="✅"
         title="VERIFIED IDENTITY"

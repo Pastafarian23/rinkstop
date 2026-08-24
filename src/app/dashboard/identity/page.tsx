@@ -5,12 +5,12 @@
  *
  * UX (locked design, 2026-06-17):
  *   1. Show current verification status (never_verified / active / expired)
- *   2. For Verified Identity/Business Listing+ users not yet verified: show the iframe embed (Option B)
+ *   2. For Hockey Passport/Business Listing+ users not yet verified: show the iframe embed (Option B)
  *   3. For Free users: show upgrade CTA
  *   4. For verified users: show "Identity verified" with date + expiration
  *   5. For expired: re-verify CTA
  *
- * Tier gate: Verified Identity (personal) or Business Listing+ (business) to start verification. Free users see an upsell.
+ * Tier gate: Hockey Passport (personal) or Business Listing+ (business) to start verification. Free users see an upsell.
  */
 
 import { auth, currentUser } from '@clerk/nextjs/server';
@@ -60,9 +60,9 @@ export default async function IdentityPage({
       tier = await getUserTier(byEmail.user_id);
     }
   }
-  // Verified Identity (personal track) OR Business Listing+ (business track) can verify
+  // Hockey Passport (personal track) OR Business Listing+ (business track) can verify
   // Using tierAtLeastSameTrack which enforces same-track comparison.
-  // Personal: Verified Identity+ (rank 1+). Business: Business Listing+ (rank 1+).
+  // Personal: Hockey Passport+ (rank 1+). Business: Business Listing+ (rank 1+).
   //
   // WS25 (2026-08-23): verification is now free for ALL tiers. canVerify stays
   // true for every logged-in user. The verifyEndpoint prop tells the client

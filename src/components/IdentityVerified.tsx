@@ -9,7 +9,7 @@ import React from 'react';
  * level, not checks or shields. Verification is its own entity and that is
  * the only way to get a verified check."
  *
- * Tier pills (Free/Verified Identity/Identity Plus/Club/Business Listing/etc.) are text-only. This
+ * Tier pills (Free/Hockey Passport/Hockey Passport Plus/Club/Business Listing/etc.) are text-only. This
  * checkmark appears ONLY when a user has passed Didit's government ID +
  * selfie verification AND the verification has not expired.
  *

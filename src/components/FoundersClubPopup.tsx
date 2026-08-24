@@ -106,7 +106,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
           </div>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.5rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-            VERIFY YOUR IDENTITY
+            GET YOUR HOCKEY PASSPORT
           </h2>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.75rem' }}>
             <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
@@ -151,7 +151,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               boxShadow: '0 4px 16px rgba(255,215,0,0.25)',
             }}
           >
-            Verify My Identity →
+            Get My Hockey Passport →
           </Link>
           <Link
             href="/pricing"
@@ -205,7 +205,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFB81C', display: 'inline-block' }} />
           </div>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
-            VERIFY YOUR IDENTITY
+            GET YOUR HOCKEY PASSPORT
           </h2>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.625rem' }}>
             <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
@@ -242,7 +242,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               letterSpacing: '0.02em',
             }}
           >
-            Verify My Identity →
+            Get My Hockey Passport →
           </Link>
           <Link
             href="/pricing"

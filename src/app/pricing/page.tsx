@@ -8,13 +8,13 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const metadata: Metadata = {
   title: 'Pricing — RinkStop',
   description:
-    'RinkStop pricing — Free, Verified Identity, Identity Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
+    'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
   alternates: { canonical: 'https://rinkstop.com/pricing' },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Verified Identity, Identity Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
+      'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
     url: 'https://rinkstop.com/pricing',
     siteName: 'RinkStop',
     type: 'website',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Verified Identity, Identity Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
+      'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
   },
 };
 

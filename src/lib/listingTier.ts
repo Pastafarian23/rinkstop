@@ -1,7 +1,7 @@
 // Tier rank for directory sorting (lower = higher placement).
 // This determines search result order for claimed listings.
 // Higher tiers get better placement for lead capture priority.
-// Identity Plus (personal) and Business Plus (business) both have DMs + photos.
+// Hockey Passport Plus (personal) and Business Plus (business) both have DMs + photos.
 export const TIER_RANK: Record<string, number> = {
   // Top placement: priority lead capture
   federation: 0,
@@ -24,8 +24,8 @@ export const TIER_RANK: Record<string, number> = {
 // the fallback (it returns the raw string for unknowns).
 export const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  verified_identity: 'Verified Identity',
-  identity_plus: 'Identity Plus',
+  verified_identity: 'Hockey Passport',
+  identity_plus: 'Hockey Passport Plus',
   club_starter: 'Club Starter',
   club_pro: 'Club Pro',
   club_elite: 'Club Elite',

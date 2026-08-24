@@ -16,8 +16,8 @@ export const dynamic = 'force-dynamic';
 // never silently mislabel paying subscribers.
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  verified_identity: 'Verified Identity',
-  identity_plus: 'Identity Plus',
+  verified_identity: 'Hockey Passport',
+  identity_plus: 'Hockey Passport Plus',
   club_starter: 'Club Starter',
   club_pro: 'Club Pro',
   club_elite: 'Club Elite',

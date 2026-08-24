@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 // POST /api/threads
 // Body: { recipientId, contextProfileType?, contextProfileId? }
 // Creates a thread (or returns the existing one for the same connection + context).
-// Sender must be Identity Plus (personal track) or Business Plus (business track).
+// Sender must be Hockey Passport Plus (personal track) or Business Plus (business track).
 // Recipient must be in an accepted connection.
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
@@ -134,14 +134,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot message yourself.' }, { status: 400 });
   }
 
-  // Tier check: Identity Plus (personal) or Business Plus (business) required to start DMs.
+  // Tier check: Hockey Passport Plus (personal) or Business Plus (business) required to start DMs.
   // Per privilege matrix, DMs are gated to ensure quality conversations.
   const tier = await getUserTier(userId);
-  // Personal: Identity Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
+  // Personal: Hockey Passport Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
   const canDM = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(tier, 'business_listing');
   if (!canDM) {
     return NextResponse.json(
-      { error: 'Identity Plus or Business Plus membership required to start conversations.', currentTier: tier },
+      { error: 'Hockey Passport Plus or Business Plus membership required to start conversations.', currentTier: tier },
       { status: 403 }
     );
   }

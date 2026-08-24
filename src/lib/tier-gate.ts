@@ -8,7 +8,7 @@ import { TierName, TIER_TO_TRACK, AccountTrack, MAX_CLAIMS_PER_TIER } from './pr
 
 /**
  * Personal tier hierarchy (rank order within the track).
- * Free < Verified Identity < Identity Plus
+ * Free < Hockey Passport < Hockey Passport Plus
  */
 export const PERSONAL_TIER_RANK: Record<string, number> = {
   free: 0,
@@ -119,7 +119,7 @@ export async function hasTeamAdminAccess(userId: string): Promise<{
   const tier = (profile?.tier as string) || 'free';
 
   // Team admin features require:
-  // - Personal track: Identity Plus (or legacy pro/roster_plus/premium equivalent)
+  // - Personal track: Hockey Passport Plus (or legacy pro/roster_plus/premium equivalent)
   // - Business track: any paid tier (Club Starter+, Business Listing+, etc.)
   // Cross-track: identity_plus users CAN manage teams they coach.
   const track = TIER_TO_TRACK[tier as TierName] ?? 'personal';
@@ -137,7 +137,7 @@ export async function hasTeamAdminAccess(userId: string): Promise<{
   return {
     allowed: false,
     tier,
-    reason: 'Team admin features require Identity Plus (personal) or Club Starter (business) tier or higher'
+    reason: 'Team admin features require Hockey Passport Plus (personal) or Club Starter (business) tier or higher'
   };
 }
 

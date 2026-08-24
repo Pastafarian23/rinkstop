@@ -5,7 +5,7 @@ import { TierName, getTierLabel } from '@/lib/pricing';
 
 // TierBadge supports any string. New canonical TierNames render with full
 // styling from lib/pricing.ts. Legacy DB-stored values (roster, pro, etc.)
-// fall back to getTierLabel() which surfaces "Verified Identity (legacy)"
+// fall back to getTierLabel() which surfaces "Hockey Passport (legacy)"
 // style strings so we never silently drop information.
 export type TierId = TierName | string;
 
