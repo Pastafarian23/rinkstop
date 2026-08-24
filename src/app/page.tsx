@@ -696,7 +696,7 @@ export default async function Home() {
               PICK THE PLAN THAT FITS
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6 }}>
-              Free is free, forever. Verified Identity ($24.99) unlocks profile claims. Identity Plus ($59.99) adds Family Hub and advanced analytics. Club Starter ($149) for small clubs, Club Pro ($399) for mid-sized clubs, Club Elite ($999) for large clubs. Business Listing ($99) and Business Plus ($299) for commercial businesses. Federation is custom for enterprise-scale organizations.
+              Free is free, forever. Claiming your player, rink, team, or league is free — verification is also free for every profile type. Verified Identity ($24.99/yr) unlocks the Hockey Passport, payments eligibility, and direct messaging. Identity Plus ($59.99) adds Family Hub and advanced analytics. Club Starter ($149) for small clubs, Club Pro ($399) for mid-sized clubs, Club Elite ($999) for large clubs. Business Listing ($99) and Business Plus ($299) for commercial businesses. Federation is custom for enterprise-scale organizations.
             </p>
           </div>
 
