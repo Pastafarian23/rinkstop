@@ -114,7 +114,7 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Public profile',
       'Claim 1 listing (player, team, rink, or league) — free',
       'Free identity verification (government ID + selfie, ~60 seconds)',
-      'Verified owner badge after verification',
+      'Verified badge reserved for Hockey Passport holders',
     ],
     footnote: 'Free is free, forever. The $24.99/yr Hockey Passport tier unlocks payments eligibility, document storage, and direct messaging — you only pay when you want the tools.',
   },
