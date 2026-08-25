@@ -15,6 +15,11 @@ interface Props {
    * re-renders on its own after the modal sets the cookie.
    */
   onComplete?: () => void;
+  /**
+   * Free-tier flag. When true, the modal shows an Upgrade CTA instead of
+   * a save button (added 2026-08-25 per Option A tier plan).
+   */
+  isFree?: boolean;
 }
 
 const DISMISS_KEY = 'rs.usernameBanner.dismissedAt';
@@ -33,7 +38,7 @@ const DISMISS_DAYS = 7;
  *   server-rendered parent re-fetches the profile and the banner
  *   disappears naturally.
  */
-export default function UsernameBanner({ displayName, onComplete }: Props) {
+export default function UsernameBanner({ displayName, onComplete, isFree }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -178,6 +183,7 @@ export default function UsernameBanner({ displayName, onComplete }: Props) {
             }
           }}
           onSkip={() => setShowModal(false)}
+          isFree={isFree}
         />
       ) : null}
     </>

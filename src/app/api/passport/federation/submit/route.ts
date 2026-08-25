@@ -36,6 +36,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
+  // Tier gate — federation verification requires Hockey Passport Plus.
+  // Added 2026-08-25 per Option A tier plan. The federation form page
+  // renders an upgrade CTA for non-Plus users; this API mirrors that.
+  const { data: callerProfile } = await supabaseAdmin
+    .from('profiles')
+    .select('tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if ((callerProfile?.tier ?? 'free') !== 'identity_plus') {
+    return NextResponse.json(
+      {
+        error:
+          'Federation verification is available on Hockey Passport Plus ($59.99/yr) and above.',
+        upgrade_url: '/pricing',
+        required_tier: 'identity_plus',
+      },
+      { status: 402 }
+    );
+  }
+
   let body: any;
   try {
     body = await request.json();

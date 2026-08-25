@@ -55,6 +55,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
+  // Tier gate — Hockey Passport requires Verified Identity or higher.
+  // Added 2026-08-25 per Option A tier plan. Stats are part of the Passport.
+  const { data: callerProfileStats } = await supabaseAdmin
+    .from('profiles')
+    .select('tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if ((callerProfileStats?.tier ?? 'free') === 'free') {
+    return NextResponse.json(
+      {
+        error:
+          'Hockey Passport is available on Verified Identity ($24.99/yr) and above. ' +
+          'Free accounts can view other players\u2019 passports but cannot create their own.',
+        upgrade_url: '/pricing',
+        required_tier: 'verified_identity',
+      },
+      { status: 402 }
+    );
+  }
+
   let body: any;
   try {
     body = await request.json();
