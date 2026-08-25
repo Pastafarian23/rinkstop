@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import TeamsIndexClient, { type Team } from './TeamsIndexClient';
 import HockeyTeamsContent from './HockeyTeamsContent';
+import AdSlot from '@/components/AdSlot';
+import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
 import {
   getDirectoryCountsCached,
@@ -385,6 +387,14 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
               type="application/ld+json"
               dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
             />
+            <section style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+                Find any hockey team in the world
+              </h2>
+              <p style={{ margin: 0 }}>
+                {counts.teams.toLocaleString()}+ active hockey teams across {counts.countries} countries and {counts.leagues}+ leagues — from NHL and KHL down to local youth programs. Use the search and filters below to find a team by name, league tier, country, or city.
+              </p>
+            </section>
             <details style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
               <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
                 Frequently asked questions
@@ -412,19 +422,9 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
         league={league ?? null}
         initialQuery={q ?? null}
       />
-      {/* Short intro sits below the search + filter so users see the
-          interactive controls first. Matches the leagues page layout. */}
-      <section style={{ maxWidth: '80rem', margin: '1.5rem auto', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
-          Find any hockey team in the world
-        </h2>
-        <p style={{ margin: 0 }}>
-          {counts.teams.toLocaleString()}+ active hockey teams across {counts.countries} countries and {counts.leagues}+ leagues — from NHL and KHL down to local youth programs. Use the search and filters above to find a team by name, league tier, country, or city.
-        </p>
-      </section>
       {/* WS16 PR2 — AdSense in-feed ad below the team list. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
-        
+        <AdSlot slot={ADSENSE_SLOTS.DIRECTORY_INFEED} type="in-feed" layout="-fb+5w+4e-db+4u" />
       </div>
       {country ? (
         <details style={{ maxWidth: '80rem', margin: '0 auto 2rem', padding: '0 1rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
