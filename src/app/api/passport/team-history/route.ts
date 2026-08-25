@@ -7,6 +7,8 @@
 //   - All validation server-side
 //   - Self-reported by default (no coach/league verification at insert time)
 //   - 403 if user has no player record (means user hasn't claimed a player profile yet)
+//   - 402 if user is on free tier — Hockey Passport requires Verified Identity
+//     or higher (added 2026-08-25 per Option A tier plan)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
@@ -40,6 +42,27 @@ export async function POST(request: NextRequest) {
   const userId = await resolveCanonicalUserId(session.userId, userEmail);
   if (!session.userId) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+
+  // Tier gate — Hockey Passport requires Verified Identity or higher.
+  // Free users can view other passports but cannot create their own.
+  const { data: callerProfile } = await supabaseAdmin
+    .from('profiles')
+    .select('tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const callerTier = callerProfile?.tier ?? 'free';
+  if (callerTier === 'free') {
+    return NextResponse.json(
+      {
+        error:
+          'Hockey Passport is available on Verified Identity ($24.99/yr) and above. ' +
+          'Free accounts can view other players\u2019 passports but cannot create their own.',
+        upgrade_url: '/pricing',
+        required_tier: 'verified_identity',
+      },
+      { status: 402 }
+    );
   }
 
   let body: any;

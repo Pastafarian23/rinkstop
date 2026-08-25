@@ -3,6 +3,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isIdentityVerified } from '@/lib/identity-verified';
 import EntityEditForm from '../../EntityEditForm';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +43,11 @@ export default async function ManageLeaguePage({ params }: PageProps) {
     );
   }
 
+  // WS25 (2026-08-23): pass isVerified so the edit form can show the
+  // verification banner for unverified league admins. League admin gating
+  // is via account type, not claim — so we don't gate on claims here.
+  const ownerVerified = await isIdentityVerified(userId).catch(() => false);
+
   const { data: entity, error } = await supabaseAdmin
     .from('leagues')
     .select('*')
@@ -79,6 +85,7 @@ export default async function ManageLeaguePage({ params }: PageProps) {
         initial={entity as Record<string, unknown>}
         slug={null}
         publicHref={`/directory/leagues/${id}`}
+        isVerified={ownerVerified}
       />
     </div>
   );

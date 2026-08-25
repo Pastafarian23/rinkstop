@@ -17,23 +17,56 @@ interface Post {
 
 export default function HomeNewsSection() {
   const [posts, setPosts] = useState<Post[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch('/api/blog/posts?page=1');
-        if (!res.ok) return;
+        // Use the not_category filter to fetch 5 non-highlight posts in a single
+        // request instead of paginating through dozens of highlight-recap rows.
+        const res = await fetch(`/api/blog/posts?not_category=highlights&limit=5`);
+        if (!res.ok) throw new Error('fetch failed');
         const json = await res.json();
         if (cancelled) return;
-        setPosts((json.data || []).slice(0, 9));
+        setPosts((json.data || []).slice(0, 5));
+        if (!cancelled) setLoading(false);
       } catch {
-        if (!cancelled) setPosts([]);
+        if (!cancelled) { setPosts([]); setLoading(false); }
       }
     }
     load();
     return () => { cancelled = true; };
   }, []);
+
+  // Skeleton: same grid layout as loaded state, avoids layout shift
+  if (loading) {
+    return (
+      <section className="section-py" style={{ background: '#111823', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Latest</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>HOCKEY NEWS</h2>
+            </div>
+            <Link href="/news" className="sec-link">All News →</Link>
+          </div>
+          <div className="news-grid">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="card" style={{ background: '#1a2234', overflow: 'hidden' }}>
+                <div className="skeleton-img" />
+                <div style={{ padding: '1rem' }}>
+                  <div className="skeleton-line" style={{ width: '60px', height: '18px', marginBottom: '0.75rem' }} />
+                  <div className="skeleton-line" style={{ width: '90%', height: '16px', marginBottom: '0.4rem' }} />
+                  <div className="skeleton-line" style={{ width: '70%', height: '16px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (!posts || posts.length === 0) return null;
 

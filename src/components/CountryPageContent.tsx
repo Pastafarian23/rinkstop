@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { CountryPageData } from '@/lib/country-page';
 import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
 import CountryRinksList from '@/components/CountryRinksList';
-import HockeyCanadaAd from '@/components/HockeyCanadaAd';
 
 interface Props {
   data: CountryPageData;
@@ -173,7 +172,7 @@ export default function CountryPageContent({ data }: Props) {
         {/* Hockey Canada affiliate ad — test placement, top of country page */}
         {countryName === 'Canada' && (
           <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
-            <HockeyCanadaAd size="300x250" />
+            
           </div>
         )}
 

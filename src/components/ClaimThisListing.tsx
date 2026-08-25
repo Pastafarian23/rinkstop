@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { formatTierPrice } from '@/lib/pricing';
 
 // Default tier per entity type (matches /claim-your-listing ClaimButton).
 // Used to display the entry price on the CTA so visitors know what they'll pay.
@@ -64,6 +63,13 @@ export default function ClaimThisListing({
 
   const noun = entityType; // "rink", "team", "league", "player"
   const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const signedOutHeadline = entityType === 'player'
+    ? `Claim this player profile`
+    : `Own or run this ${noun}?`;
+  const signedOutDescription = entityType === 'player'
+    ? `Verify your identity to manage this profile and control who can edit it.`
+    : `Claim this listing to add your program hours, contact info, and updates — and stop the next stranger from editing it out from under you.`;
 
   // Outer container: column layout, full width.
   const containerStyle: React.CSSProperties = {
@@ -138,10 +144,10 @@ export default function ClaimThisListing({
           <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>🏒</span>
           <div style={textBlockStyle}>
             <div style={headlineStyle}>
-              Own or run this {noun}?
+              {signedOutHeadline}
             </div>
             <div style={descriptionStyle}>
-              Claim this listing to add your program hours, contact info, and updates — and stop the next stranger from editing it out from under you.
+              {signedOutDescription}
             </div>
           </div>
         </div>
@@ -149,7 +155,7 @@ export default function ClaimThisListing({
           href={`/login?redirect_url=${encodeURIComponent(claimDestination)}`}
           style={ctaStyle}
         >
-          Sign in to claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr
+          Sign in to claim — it's free
         </Link>
       </div>
     );
@@ -166,12 +172,12 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={descriptionStyle}>
-              Claim it now — Verified Identity unlocks profile claims, Club Pro covers up to 150 players, Business Plus unlocks multiple listings, and Federation covers enterprise-scale orgs.
+              Claim it now — claiming is free. Hockey Passport ($24.99/yr) adds the Hockey Passport, payments, and messaging. Paid tiers like Club Pro (up to 150 players) and Business Plus (multiple listings) add more claims and org tools.
             </div>
           </div>
         </div>
         <Link href={claimDestination} style={ctaStyle}>
-          Unlock claim — from {formatTierPrice(DEFAULT_TIER_BY_ENTITY[entityType])}/yr →
+          Claim it — it's free →
         </Link>
       </div>
     );
@@ -193,7 +199,7 @@ export default function ClaimThisListing({
           </div>
         </div>
         <Link href={claimDestination} style={ctaDangerStyle}>
-          {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Identity Plus →'}
+          {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Hockey Passport Plus →'}
         </Link>
       </div>
     );

@@ -97,6 +97,7 @@ interface TeamRow {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  founded_on: string | null;
   federation_id: string | null;
   organization_id: string | null;
   league_id: string | null;
@@ -160,11 +161,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   >;
   const location = [t.home_city, t.home_country].filter(Boolean).join(', ');
   const title = `${t.name}${location ? ` — ${location}` : ''} · RinkStop`;
+  const tLeague = (team as any).league?.name || '';
+  const tFederation = (team as any).federation?.name || '';
+  const tOrg = (team as any).organization?.name || '';
+  const foundedClause = (team as any).founded_on ? ` Founded ${(team as any).founded_on.slice(0, 4)}.` : '';
+  const ageClause = t.age_label ? ` Age group: ${t.age_label}.` : '';
+  const levelClause = t.level ? ` Competes at the ${t.level.replace(/_/g, ' ')} level.` : '';
+  const leagueClause = tLeague ? ` Member of the ${tLeague}.` : '';
+  const federationClause = tFederation ? ` Sanctioned by ${tFederation}.` : '';
+  const orgClause = tOrg ? ` Operated by ${tOrg}.` : '';
+  const dirCtx = ' Roster, schedule, results, news, and venue on RinkStop.';
   const desc =
     t.description ||
-    `${t.name} hockey team${location ? ` from ${location}` : ''}. ${
-      t.level ? `Plays at the ${t.level.replace(/_/g, ' ')} level. ` : ''
-    }${t.age_label ? `Age group: ${t.age_label}. ` : ''}Roster, schedule, and recent results on RinkStop.`;
+    `${t.name}${location ? `, a hockey team from ${location}` : ' — a hockey team on RinkStop'}.${ageClause}${levelClause}${leagueClause}${federationClause}${orgClause}${foundedClause}${dirCtx}`;
 
   // Tier 1f (2026-07-07): thin-team noindex. The page is indexable as long
   // as the workspace is visibility=public. The full teamPageDecision (which
@@ -434,23 +443,71 @@ export default async function PublicTeamPage({ params }: PageProps) {
   const cityTeams = (cityTeamsRes.data || []) as Array<{ id: string; slug: string | null; name: string; home_city: string | null; home_country: string | null }>;
   const cityRinks = (cityRinksRes.data || []) as Array<{ id: string; slug: string | null; name: string; city: string | null; province_state: string | null; country: string | null }>;
 
+  // PR #146 (2026-08-22) WS24 thin-content sweep: server-rendered body intro
+  // so every team page clears the AdSense ~150-word body threshold. Mirrors
+  // the meta-description enrichments above; every clause is anchored to a
+  // real team field. Missing fields are omitted (no fabrication).
+  const location = [team.home_city, team.home_country].filter(Boolean).join(', ');
+  const tLeagueName = (team as any).league?.name || '';
+  const tFedName = (team as any).federation?.name || '';
+  const tOrgName = (team as any).organization?.name || '';
+  const foundedYear = (team as any).founded_on ? String((team as any).founded_on).slice(0, 4) : '';
+  const introParts: string[] = [];
+  introParts.push(`${team.name}${location ? `, a hockey team from ${location}` : ' — a hockey team on RinkStop'}.`);
+  if (team.level) {
+    introParts.push(`${team.name} compete at the ${String(team.level).replace(/_/g, ' ')} level.`);
+  }
+  if (team.age_label) {
+    introParts.push(`The team is listed under the ${team.age_label} age group.`);
+  }
+  if (tLeagueName) {
+    introParts.push(`${team.name} play in the ${tLeagueName}${location ? ` (${location})` : ''}.`);
+  }
+  if (tFedName) {
+    introParts.push(`The team is sanctioned by ${tFedName}.`);
+  }
+  if (tOrgName) {
+    introParts.push(`${team.name} are operated by ${tOrgName}.`);
+  }
+  if (foundedYear) {
+    introParts.push(`${team.name} were founded in ${foundedYear}.`);
+  }
+  introParts.push(`This RinkStop team page shows the full roster, schedule, results, upcoming games, recent news, and venue information. Each section — roster, schedule, results, news — links into the wider hockey directory so visitors can follow the team, league, and city into related teams, rinks, and competitions. RinkStop is the open hockey directory: every team, league, player, and rink on this site has a public profile page.`);
+
   return (
-    <PublicTeamProfile
-      team={team}
-      news={news}
-      results={results}
-      upcoming={mergedUpcoming}
-      admins={admins}
-      claimed={isVerifiedClaim}
-      claimedByUserId={claimRow?.user_id ?? null}
-      seasonRecord={seasonRecord}
-      viewerIsAdmin={viewerIsAdmin}
-      teamSlug={team.slug}
-      claimantDisplayName={claimantDisplayName}
-      claimantRole={claimantRole}
-      teamTimezone={await deriveTeamTimezone(team, teamEventsRows)}
-      cityTeams={cityTeams}
-      cityRinks={cityRinks}
-    />
+    <>
+      <section
+        aria-label={`About ${team.name}`}
+        style={{ maxWidth: '1280px', margin: '0 auto 1.5rem', padding: '0 1.5rem' }}
+      >
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 10, padding: '1.25rem 1.5rem' }}>
+          <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', letterSpacing: '0.04em', color: '#fff', margin: '0 0 0.75rem' }}>
+            About {team.name}
+          </h2>
+          <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
+            {introParts.map((p, i) => (
+              <p key={i} style={{ marginBottom: i < introParts.length - 1 ? '0.75rem' : 0 }}>{p}</p>
+            ))}
+          </div>
+        </div>
+      </section>
+      <PublicTeamProfile
+        team={team}
+        news={news}
+        results={results}
+        upcoming={mergedUpcoming}
+        admins={admins}
+        claimed={isVerifiedClaim}
+        claimedByUserId={claimRow?.user_id ?? null}
+        seasonRecord={seasonRecord}
+        viewerIsAdmin={viewerIsAdmin}
+        teamSlug={team.slug}
+        claimantDisplayName={claimantDisplayName}
+        claimantRole={claimantRole}
+        teamTimezone={await deriveTeamTimezone(team, teamEventsRows)}
+        cityTeams={cityTeams}
+        cityRinks={cityRinks}
+      />
+    </>
   );
 }

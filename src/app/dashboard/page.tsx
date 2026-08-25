@@ -18,7 +18,7 @@ import { loadInboxSummary } from '@/components/dashboard/dashboardInboxData';
 import { loadAttentionSummary } from '@/lib/dashboard/attentionData';
 import { isAccountType } from '@/components/dashboard/dashboardTypes';
 import type { AccountType } from '@/components/dashboard/dashboardTypes';
-import { tierAtLeast } from '@/lib/connections';
+import { tierAtLeast } from '@/lib/tier-gate';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
 import { getWorkspaceAccess, tierDisplayName } from '@/lib/dashboard/workspaces';
 import { getDismissedWorkspaceIds } from '@/lib/dashboard/dismissedWorkspaces';
@@ -437,6 +437,7 @@ async function renderDashboard(userId: string) {
         safe('UsernameBanner', () => (
           <UsernameBanner
             displayName={profile?.display_name || firstName || 'RinkStop Member'}
+            isFree={(profile?.tier ?? 'free') === 'free'}
           />
         ))
       )}

@@ -77,7 +77,11 @@ export default function ProfileSidebar({
           >
             {displayName}
           </h1>
-          {identityVerifiedAt && identityExpiresAt && (
+          {/* Show badge only for paid tiers (verified_identity, identity_plus).
+             Free users can verify (identityVerifiedAt is set) but the badge
+             is reserved for Hockey Passport holders — the status signal. */}
+          {(identityVerifiedAt && identityExpiresAt) &&
+           (profile.tier === 'verified_identity' || profile.tier === 'identity_plus') && (
             <IdentityVerified verifiedAt={identityVerifiedAt} expiresAt={identityExpiresAt} />
           )}
           {profile.is_founding_member && <FoundingMemberBadge />}
@@ -96,7 +100,7 @@ export default function ProfileSidebar({
             </>
           )}
           <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
-          <TierBadge tier={profile.tier} size="xs" />
+          <TierBadge tier={profile.tier} size="sm" />
         </div>
 
         {/* Owner-only inline edit shortcut — sits above the action row so

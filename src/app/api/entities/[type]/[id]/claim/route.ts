@@ -33,12 +33,12 @@ export async function GET(
   // (or skip for now if we have no league_id link).
   const claimType = type === 'league' ? null : type;
 
-  let claim: { id: string; user_id: string; created_at: string } | null = null;
+  let claim: { id: string; user_id: string; created_at: string; verification_status: string; verified_at: string | null } | null = null;
 
   if (claimType) {
     const { data: claimRow } = await supabaseAdmin
       .from('claims')
-      .select('id, user_id, created_at, entity_id')
+      .select('id, user_id, created_at, entity_id, verification_status, verified_at')
       .eq('claim_type', claimType)
       .eq('entity_id', id)
       .eq('status', 'approved')
@@ -47,7 +47,13 @@ export async function GET(
       .maybeSingle();
 
     if (claimRow) {
-      claim = { id: claimRow.id, user_id: claimRow.user_id, created_at: claimRow.created_at };
+      claim = {
+        id: claimRow.id,
+        user_id: claimRow.user_id,
+        created_at: claimRow.created_at,
+        verification_status: claimRow.verification_status ?? 'unverified',
+        verified_at: claimRow.verified_at ?? null,
+      };
     }
   } else if (type === 'league') {
     // For leagues, find the first approved team-claim for any team in the league (best-effort)
@@ -90,6 +96,13 @@ export async function GET(
       // Piece C: return a single boolean instead of raw timestamps.
       // The raw timestamps are not exposed to the client anymore.
       verified,
+      // WS25 (2026-08-23): surface verification_status from the new claim
+      // column so public listings can render Listed / Pending / Verified
+      // badges correctly. verified_at is null until the owner completes
+      // Didit; the public listing uses verification_status as the
+      // single source of truth for the badge state.
+      verification_status: claim.verification_status,
+      verified_at: claim.verified_at,
     },
   });
   return applyRateLimitHeaders(res, result);

@@ -49,6 +49,7 @@ async function fetchInitialLeagues(): Promise<League[]> {
 export default async function LeaguesPage() {
   const initialLeagues = await fetchInitialLeagues();
   const top = initialLeagues.slice(0, 20);
+  const countryCount = new Set(initialLeagues.map((l) => l.country).filter(Boolean)).size;
 
   // WS21 — GSC decay: 559 imp / 0.72% CTR / pos 24
   const faqs = [

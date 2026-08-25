@@ -199,7 +199,7 @@ export default function MessagesClient({ userId, initialThreads, canDM, userTier
                 fontWeight: 600,
                 textDecoration: 'none',
               }}
-              title="Direct messaging requires Verified Identity (\$24.99/yr) or any paid org tier"
+              title="Direct messaging requires Hockey Passport (\$24.99/yr) or any paid org tier"
             >
               Verify to message
             </a>

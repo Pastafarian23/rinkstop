@@ -6,7 +6,6 @@ import StateProvincePageContent, { type CityRow } from '@/components/StateProvin
 import { buildRegionIntro, buildProvinceFAQs } from '@/lib/state-faq-builder';
 import { getProvinceHockeyFacts } from '@/lib/state-hockey-facts';
 import { robotsMeta } from '@/lib/seo';
-import HockeyCanadaAd from '@/components/HockeyCanadaAd';
 
 /**
  * Canada province page: /directory/canada/{province}
@@ -180,7 +179,7 @@ export default async function CanadaProvincePage({
     <>
       {/* Hockey Canada affiliate ad — top placement, matches country + city pages */}
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem' }}>
-        <HockeyCanadaAd size="300x250" />
+        
       </div>
       <StateProvincePageContent
         regionName={provinceName}
@@ -189,7 +188,6 @@ export default async function CanadaProvincePage({
         parentUrl="/directory/canada"
         parentLabel="Canada"
         countryCode="CA"
-        showHockeyCanadaAd
         cities={cities}
         rinkCount={totalRinkCount}
         teamCount={totalTeamCount}

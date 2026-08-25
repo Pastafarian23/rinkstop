@@ -25,7 +25,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // Phase 1c-1 tier gate — per Arnel 2026-07-07 correction: ALL paid tiers can
-// send direct messages. Verified Identity ($24.99/yr) is the floor.
+// send direct messages. Hockey Passport ($24.99/yr) is the floor.
 function canDM(tier: string | null | undefined): boolean {
   return (
     tierAtLeastSameTrack(tier, 'verified_identity') ||
@@ -83,7 +83,7 @@ export async function POST(
     .maybeSingle();
   if (!canDM((profile?.tier as string) ?? 'free')) {
     const res = NextResponse.json(
-      { error: 'Direct messaging requires a paid tier (Verified Identity or higher).', code: 'tier_required' },
+      { error: 'Direct messaging requires a paid tier (Hockey Passport or higher).', code: 'tier_required' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);

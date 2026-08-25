@@ -56,6 +56,25 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
   }
 
+  // Tier gate — federation verification requires Hockey Passport ($24.99/yr) and above.
+  // Opened 2026-08-25 per Arnel: federation info should be viewable/displayable on entry-level paid plans.
+  const { data: callerProfilePatch } = await supabaseAdmin
+    .from('profiles')
+    .select('tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (!callerProfilePatch?.tier || !['verified_identity', 'identity_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation', 'business_listing', 'business_plus'].includes(callerProfilePatch.tier)) {
+    return NextResponse.json(
+      {
+        error:
+          'Federation verification is available on Hockey Passport ($24.99/yr) and above.',
+        upgrade_url: '/pricing',
+        required_tier: 'verified_identity',
+      },
+      { status: 402 }
+    );
+  }
+
   let body: any;
   try {
     body = await request.json();

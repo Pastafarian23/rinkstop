@@ -1,210 +1,223 @@
-/**
- * src/app/api/webhooks/didit/route.ts
- *
- * POST /api/webhooks/didit
- *
- * Didit webhook receiver. The PRIMARY signal that a session has completed.
- * The /api/identity/verify/decision route is a fallback for lost webhooks.
- *
- * Security:
- *   1. HMAC verify X-Signature-V2 over canonical JSON body (didit-webhook-verify.ts)
- *   2. Replay protection: reject if X-Timestamp > 300s old
- *   3. Dedupe: insert into webhook_events on success (Didit reuses event_id on retries)
- *   4. On DB failure: throw to trigger Didit retry (do NOT return 200)
- *
- * Subscribed events (per credentials/didit.json):
- *   - status.updated  (session status changed: in_progress → approved/declined/etc.)
- *   - data.updated    (session decision data was updated)
- *
- * Both fire for the same session when verification completes. We process
- * both idempotently — the second one just confirms the first.
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { verifyDiditWebhook } from '@/lib/didit-webhook-verify';
-import { scrubDecision, deriveVerificationMethod } from '@/lib/didit-scrubber';
+import { scrubDecision } from '@/lib/didit-scrubber';
 
-export const runtime = 'nodejs';   // need node:crypto
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * WS25 (2026-08-23): Didit verification webhook.
+ *
+ * Didit calls this endpoint when a verification session reaches a terminal
+ * status (approved / declined / abandoned / in_review). On `approved`:
+ *   - profiles.identity_verified_at = now()
+ *   - profiles.identity_expires_at = now() + 2 years
+ *   - profiles.didit_session_id = Didit's session_id
+ *   - profiles.verification_method = 'free' (free path) or kept existing value
+ *   - claims.verification_status = 'verified' for any pending claims on this user
+ *   - claims.verified_at = now() for those claims
+ *
+ * On `declined` / `abandoned`: surface a notification via the existing
+ * `identity_verify_recommended` emitter so the dashboard wizard re-prompts
+ * later. No claim-state change.
+ *
+ * Idempotency: Didit retries webhooks with the same X-Event-Id. We dedupe via
+ * the existing webhook_events table (added in WS14 PR1) — if a row exists with
+ * the same event_id and status='processed', we return 200 immediately.
+ *
+ * Security: HMAC over canonical JSON body via X-Signature-V2, replay window 5 min
+ * via X-Timestamp. See src/lib/didit-webhook-verify.ts.
+ */
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('Missing Supabase env vars');
+  return createClient(url, key);
+}
+
+function getDiditSecret(): string {
+  const s = process.env.DIDIT_WEBHOOK_SECRET;
+  if (!s) throw new Error('DIDIT_WEBHOOK_SECRET not set');
+  return s;
+}
+
+async function readRawBody(req: NextRequest): Promise<string> {
+  // Next.js consumes the body via req.text() before we can use it.
+  // Use the underlying request to read raw bytes.
+  return await req.text();
+}
+
+function logWebhookEvent(
+  eventId: string,
+  payload: any,
+  status: 'received' | 'processed' | 'failed',
+  errorMessage?: string
+) {
+  // Fire-and-forget. Errors here don't block the webhook handler.
+  try {
+    const supabase = getSupabase();
+    void supabase.from('webhook_events').upsert(
+      {
+        source: 'didit',
+        event_id: eventId,
+        payload: payload ?? {},
+        status,
+        error_message: errorMessage ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'source,event_id' }
+    );
+  } catch (err) {
+    console.error('[didit webhook] logWebhookEvent failed', err);
+  }
+}
 
 export async function POST(req: NextRequest) {
-  const secret = process.env.DIDIT_WEBHOOK_SECRET;
-  if (!secret) {
-    console.error('[didit/webhook] DIDIT_WEBHOOK_SECRET not set');
-    return NextResponse.json(
-      { error: 'misconfigured' },
-      { status: 500 }
-    );
+  const rawBody = await readRawBody(req);
+
+  let secret: string;
+  try {
+    secret = getDiditSecret();
+  } catch (err) {
+    console.error('[didit webhook] secret missing', err);
+    return NextResponse.json({ error: 'webhook_secret_not_set' }, { status: 500 });
   }
 
-  // 1. Read raw body (must NOT be JSON-parsed before HMAC)
-  const rawBody = await req.text();
-
-  // 2. Verify signature
-  const verification = verifyDiditWebhook({
+  const verifyResult = verifyDiditWebhook({
     rawBody,
     headers: req.headers,
     secret,
   });
-  if (!verification.valid) {
-    console.warn('[didit/webhook] signature verification failed:', verification.reason);
-    return NextResponse.json(
-      { error: 'invalid_signature', reason: verification.reason },
-      { status: 401 }
-    );
-  }
-  const { eventId } = verification;
 
-  // 3. Dedupe — check + insert into webhook_events
-  // If insert fails with unique violation, this is a retry. Skip processing.
-  const { error: dedupeErr } = await supabaseAdmin
-    .from('webhook_events')
-    .insert({ event_id: eventId, source: 'didit' });
-
-  if (dedupeErr) {
-    // Postgres unique violation = already processed
-    if (dedupeErr.code === '23505') {
-      return NextResponse.json({ received: true, deduped: true });
-    }
-    // Other DB errors: throw to trigger Didit retry
-    console.error('[didit/webhook] webhook_events insert failed:', dedupeErr);
-    throw new Error('webhook_events_insert_failed');
+  if (!('valid' in verifyResult) || !verifyResult.valid) {
+    const reason = 'reason' in verifyResult ? verifyResult.reason : 'unknown';
+    console.warn('[didit webhook] signature verification failed', reason);
+    return NextResponse.json({ error: 'invalid_signature', reason }, { status: 401 });
   }
 
-  // 4. Parse body
-  let body: any;
+  let payload: any;
   try {
-    body = JSON.parse(rawBody);
-  } catch (err) {
-    console.error('[didit/webhook] body parse failed after signature verify:', err);
-    return NextResponse.json({ error: 'invalid_body' }, { status: 400 });
+    payload = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  // 5. Extract event fields
-  // Didit V3 event shape: { event, session_id, workflow_id, data, ... }
-  const event = body.event || body.event_type || 'unknown';
-  const sessionId = body.session_id || body.data?.session_id;
-  if (!sessionId) {
-    console.warn('[didit/webhook] event missing session_id:', body);
-    return NextResponse.json({ received: true, ignored: 'no_session_id' });
-  }
+  const eventId = verifyResult.eventId;
+  logWebhookEvent(eventId, payload, 'received');
 
-  // 6. Find our local session row
-  const { data: sessionRow, error: sessionErr } = await supabaseAdmin
-    .from('didit_sessions')
-    .select('id, user_id, status')
-    .eq('session_id', sessionId)
+  // Dedup via webhook_events. If we've already processed this event_id, return 200.
+  const supabase = getSupabase();
+  const { data: existing } = await supabase
+    .from('webhook_events')
+    .select('id, status')
+    .eq('source', 'didit')
+    .eq('event_id', eventId)
     .maybeSingle();
 
-  if (sessionErr) {
-    console.error('[didit/webhook] didit_sessions lookup failed:', sessionErr);
-    throw new Error('session_lookup_failed');
-  }
-  if (!sessionRow) {
-    console.warn(`[didit/webhook] no local session for session_id=${sessionId}`);
-    // Don't throw — Didit may have been testing or this is a session from before our integration
-    return NextResponse.json({ received: true, ignored: 'unknown_session' });
+  if (existing && existing.status === 'processed') {
+    return NextResponse.json({ ok: true, dedup: true });
   }
 
-  // 7. For status.updated events, the data field has the new status
-  // For data.updated events, the data field has the full decision
-  let newStatus: string | undefined;
-  let rawDecision: any | undefined;
+  const sessionId = payload?.session_id || payload?.data?.session_id;
+  const status = payload?.status || payload?.data?.status;
+  const userId = payload?.vendor_data || payload?.data?.vendor_data;
 
-  if (event.includes('status')) {
-    // status.updated: { event, session_id, status, ... }
-    newStatus = String(body.status || '').toLowerCase();
-  }
-  if (event.includes('data') || body.data) {
-    // data.updated or any payload that includes a decision: { event, session_id, data: {...decision} }
-    rawDecision = body.data?.decision || body.data || body.decision;
+  if (!sessionId || !userId) {
+    const msg = 'missing session_id or vendor_data';
+    logWebhookEvent(eventId, payload, 'failed', msg);
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  // If neither status nor decision present, we can't process meaningfully
-  if (!newStatus && !rawDecision) {
-    return NextResponse.json({ received: true, ignored: 'no_state_change' });
-  }
+  if (status === 'approved') {
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 2);
 
-  try {
-    // 8. Update didit_sessions with the new state
-    const updateFields: Record<string, any> = {
-      event_ids: undefined,   // will overwrite below with array append
-      updated_at: new Date().toISOString(),
-    };
-    if (newStatus) updateFields.status = newStatus;
-    if (rawDecision) {
-      updateFields.decision = scrubDecision(rawDecision);
-      if (typeof rawDecision.cost_cents === 'number') {
-        updateFields.cost_cents = rawDecision.cost_cents;
-      }
-    }
-    if (newStatus && ['approved', 'declined', 'abandoned'].includes(newStatus)) {
-      updateFields.completed_at = new Date().toISOString();
+    // Update profile with verified state + free-verification method
+    // (uses the existing identity_verification_method column; free is one
+    // of the path values that coexist with didit_passport etc. since the
+    // WS25 schema cleanup).
+    const { error: profileErr } = await supabase
+      .from('profiles')
+      .update({
+        identity_verified_at: new Date().toISOString(),
+        identity_expires_at: expiresAt.toISOString(),
+        didit_session_id: sessionId,
+        identity_verification_method: 'free',
+      })
+      .eq('user_id', userId);
+
+    if (profileErr) {
+      console.error('[didit webhook] profile update failed', profileErr);
+      logWebhookEvent(eventId, payload, 'failed', profileErr.message);
+      return NextResponse.json({ error: 'profile_update_failed' }, { status: 500 });
     }
 
-    // Append the event_id to event_ids[] (atomic via SQL RPC or just do a fetch+update).
-    // For simplicity, we read the current array and append.
-    const { data: current } = await supabaseAdmin
-      .from('didit_sessions')
-      .select('event_ids')
-      .eq('id', sessionRow.id)
-      .maybeSingle();
-    const existingEventIds: string[] = current?.event_ids || [];
-    if (!existingEventIds.includes(eventId)) {
-      updateFields.event_ids = [...existingEventIds, eventId];
+    // Promote any pending claims on this user to verified.
+    // We update every claim tied to this user — verification applies to
+    // all profiles a single user verifies for, per WS25 decision.
+    const { error: claimsErr, count: claimCount } = await supabase
+      .from('claims')
+      .update({
+        verification_status: 'verified',
+        verified_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .in('verification_status', ['unverified', 'pending_verification']);
+
+    if (claimsErr) {
+      // Non-fatal: profile is verified, but claim-state sync failed.
+      // Log and continue; admin can manually reconcile.
+      console.error('[didit webhook] claims update failed', claimsErr);
     } else {
-      delete updateFields.event_ids;   // already recorded
+      console.log(`[didit webhook] promoted ${claimCount} claims to verified for user ${userId}`);
     }
 
-    const { error: updateErr } = await supabaseAdmin
-      .from('didit_sessions')
-      .update(updateFields)
-      .eq('id', sessionRow.id);
-
-    if (updateErr) {
-      console.error('[didit/webhook] didit_sessions update failed:', updateErr);
-      throw new Error('session_update_failed');
+    // Persist the scrubbed Didit decision for audit (matches the pattern
+    // set by WS3 / Didit Phase 1). Existing helper.
+    try {
+      const scrubbed = scrubDecision(payload);
+      await supabase.from('didit_sessions').upsert(
+        {
+          id: sessionId,
+          user_id: userId,
+          status: 'approved',
+          decision: scrubbed,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+    } catch (err) {
+      console.error('[didit webhook] didit_sessions upsert failed', err);
     }
 
-    // 9. If approved, update profiles. The verification expires 2 years from now.
-    if (newStatus === 'approved' && sessionRow.user_id) {
-      const now = new Date();
-      const expiresAt = new Date(now);
-      expiresAt.setFullYear(now.getFullYear() + 2);
-      const method = rawDecision
-        ? deriveVerificationMethod(rawDecision)
-        : (sessionRow.status === 'approved' ? 'didit_passport' : 'didit_passport');
-
-      const { error: profileErr } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          identity_verified_at: now.toISOString(),
-          identity_verification_method: method,
-          identity_expires_at: expiresAt.toISOString(),
-          didit_session_id: sessionRow.id,
-          updated_at: now.toISOString(),
-        })
-        .eq('user_id', sessionRow.user_id);
-
-      if (profileErr) {
-        console.error('[didit/webhook] profiles update failed:', profileErr);
-        throw new Error('profile_update_failed');
-      }
-    }
-
-    return NextResponse.json({ received: true, processed: true });
-  } catch (err) {
-    // Throw to trigger Didit retry on any DB failure.
-    // The webhook_events insert will be a no-op on retry (we inserted already),
-    // so the next retry will skip dedupe and go straight to processing.
-    // ...wait, that means a retry will hit the processing again.
-    // We need to roll back the webhook_events insert on processing failure.
-    console.error('[didit/webhook] processing error, will retry:', err);
-    // Best-effort rollback of dedupe
-    await supabaseAdmin
-      .from('webhook_events')
-      .delete()
-      .eq('event_id', eventId);
-    throw err;
+    logWebhookEvent(eventId, payload, 'processed');
+    return NextResponse.json({ ok: true, verified: true, claimsPromoted: claimCount ?? 0 });
   }
+
+  if (status === 'declined' || status === 'abandoned') {
+    // Update didit_sessions audit row but leave identity_verified_at null
+    // and don't promote claims. The dashboard wizard will re-prompt.
+    try {
+      await supabase.from('didit_sessions').upsert(
+        {
+          id: sessionId,
+          user_id: userId,
+          status,
+          decision: scrubDecision(payload),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+    } catch (err) {
+      console.error('[didit webhook] didit_sessions upsert failed', err);
+    }
+
+    logWebhookEvent(eventId, payload, 'processed');
+    return NextResponse.json({ ok: true, verified: false, status });
+  }
+
+  // in_review / other non-terminal status: log and acknowledge.
+  logWebhookEvent(eventId, payload, 'processed');
+  return NextResponse.json({ ok: true, status, terminal: false });
 }

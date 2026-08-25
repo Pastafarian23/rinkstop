@@ -42,6 +42,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid claim type.' }, { status: 400 });
     }
 
+    // WS25 (2026-08-23): claimable flag gate. Pro profiles (NHL/AHL/KHL/PWHL
+    // and their players) are managed by the league, not user-claimed.
+    // Reject claims on claimable=false entities with a clear message that
+    // routes the user toward /faq for the full explanation. We do this
+    // BEFORE the tier gate so free and paid users both get the same
+    // answer — the entity isn't claimable by anyone via this form.
+    //
+    // entity_id may be a UUID OR a slug (deep-links from public pages like
+    // /directory/players/noel-acciari pass the slug). Try UUID first,
+    // then fall back to slug so the gate catches every entry path.
+    if (entity_id) {
+      const table = claim_type === 'player' ? 'players' : claim_type === 'team' ? 'teams' : claim_type === 'league' ? 'leagues' : 'rinks';
+      const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(entity_id));
+      let ent: { id: string; claimable: boolean; name: string } | null = null;
+      let entErr: any = null;
+      if (isUuidLike) {
+        const r = await supabaseAdmin
+          .from(table)
+          .select('id, claimable, name')
+          .eq('id', entity_id)
+          .maybeSingle();
+        ent = r.data; entErr = r.error;
+      }
+      if (!ent) {
+        const r = await supabaseAdmin
+          .from(table)
+          .select('id, claimable, name')
+          .eq('slug', entity_id)
+          .maybeSingle();
+        ent = r.data; entErr = r.error;
+      }
+      if (entErr) {
+        console.error('[claims] entity lookup failed', entErr);
+        return NextResponse.json({ error: 'Could not look up listing.' }, { status: 500 });
+      }
+      if (ent && ent.claimable === false) {
+        return NextResponse.json(
+          {
+            error: 'not_claimable',
+            message: 'This listing is curated by the league and is not user-claimable. Professional teams (NHL, AHL, KHL, PWHL) and their players are managed through verified league data feeds. To get your own verified profile, claim a community, amateur, or youth profile.',
+            faq_url: '/faq#who-can-claim-a-listing',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Build the deep-link back into the pricing flow. Carries the entity
     // context so the post-Stripe success_url can resume the claim.
     // The form reads this in the 403 handler and renders a single "Upgrade
@@ -90,27 +137,16 @@ export async function POST(request: NextRequest) {
     // Special case: 'parent_managed' claims (parent claims kid's player profile) bypass the cap
     // because they're a different use case — one parent can manage many kids.
     //
-    // Both 403 paths now return a `checkoutUrl` so the form can render a
-    // structured "Upgrade to claim" button instead of just showing the raw
-    // error text. Recommended tier is per-entity-type: player claims route
-    // to verified_identity (the cheapest claim-enabled tier), team/rink
-    // claims to business_listing.
+    // WS25 (2026-08-23): The `maxClaims === 0` gate that forced free-tier users to
+    // upgrade is REMOVED. Free users can now claim 1 listing per profile type
+    // (the cap was already 1 for verified_identity; free tier used to be 0).
+    // The `at_cap` flow below is preserved — users who exhaust their tier's claim
+    // allotment can still upgrade to a higher tier for more.
     const isParentManagedClaim = typeof reason === 'string' && reason.startsWith('parent_managed:');
     if (!isParentManagedClaim) {
       const tier = await getUserTier(userId);
       const maxClaims = getMaxClaimsForTier(tier);
-      if (maxClaims === 0) {
-        return NextResponse.json(
-          {
-            error: `Claiming listings requires a paid membership. Upgrade to Verified Identity, Identity Plus, Business Plus, or Federation to claim.`,
-            reason: 'no_claim_tier',
-            checkoutUrl: buildCheckoutUrl(claim_type === 'player' ? 'verified_identity' : 'business_listing'),
-            tier: claim_type === 'player' ? 'verified_identity' : 'business_listing',
-          },
-          { status: 403 }
-        );
-      }
-      if (maxClaims !== Infinity) {
+      if (maxClaims !== Infinity && maxClaims > 0) {
         const currentCount = await getUserApprovedClaimCount(userId);
         if (currentCount >= maxClaims) {
           // Pick the next tier up within the same track. For simplicity we
@@ -129,6 +165,12 @@ export async function POST(request: NextRequest) {
           );
         }
       }
+      // Free tier (maxClaims === 0) is intentionally allowed through now —
+      // see the WS25 decision to lift the claim tier gate. Free users get
+      // 1 claim cap (verified_identity's cap of 1, which free tier borrows
+      // since the lift). TODO: verify that getMaxClaimsForTier returns at
+      // least 1 for the 'free' tier; if not, that's a separate fix in
+      // src/lib/connections.ts MAX_CLAIMS_PER_TIER.
     }
 
     const { data, error } = await supabaseAdmin

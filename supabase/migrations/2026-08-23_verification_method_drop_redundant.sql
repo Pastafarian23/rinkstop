@@ -1,0 +1,21 @@
+-- WS25 (2026-08-23): Drop redundant verification_method column.
+--
+-- The new column added in 2026-08-23_verification_method_and_status.sql
+-- duplicates profiles.identity_verification_method (which is the existing,
+-- unconstrained text column used by the Didit Phase 1 integration).
+--
+-- To avoid schema bloat and confusion, drop the new column. The existing
+-- identity_verification_method column will be reused for the path dimension
+-- (free | paid_subscription | one_time_sku | didit_passport | didit_id_card |
+-- didit_selfie_only).
+--
+-- The two-step WS25 flow:
+--   1. /api/verification/start-free writes 'free' to identity_verification_method
+--      when the user completes free Didit verification.
+--   2. /api/webhooks/didit writes 'free' on approved event (same column).
+--
+-- This migration rolls back 2026-08-23_verification_method_and_status.sql
+-- partially: keeps the claims.verification_status and claims.verified_at
+-- columns (those are new and needed), drops profiles.verification_method.
+
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS verification_method;

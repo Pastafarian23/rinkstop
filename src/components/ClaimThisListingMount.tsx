@@ -27,6 +27,39 @@ export default async function ClaimThisListingMount({
   entityId: string;
   entityName?: string;
 }) {
+  // WS25 (2026-08-23): claimable flag gate. Pro profiles (NHL/AHL/KHL/PWHL and
+  // their players) are managed by the league, not user-claimed. Render null
+  // before any other work so we don't waste DB calls and we don't show a
+  // claim CTA on a page where the only correct answer is "this is curated
+  // by the league." The public listing page surfaces the existing 'Verified'
+  // badge in this case (handled by the parent page, not this component).
+  const claimableTable = entityType === 'player' ? 'players' : entityType === 'team' ? 'teams' : entityType === 'league' ? 'leagues' : 'rinks';
+  // The [id] route param can be a UUID OR a slug (e.g. /directory/players/noel-acciari).
+  // The id column is UUID-typed, so a slug-only param returns nothing on .eq('id').
+  // Try UUID first; fall back to slug. Teams and rinks are also looked up by slug
+  // on their detail pages, so we cover all entity types here.
+  const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entityId);
+  let claimableRow: { id: string; claimable: boolean } | null = null;
+  if (isUuidLike) {
+    const { data } = await supabaseAdmin
+      .from(claimableTable)
+      .select('id, claimable')
+      .eq('id', entityId)
+      .maybeSingle();
+    claimableRow = data;
+  }
+  if (!claimableRow) {
+    const { data } = await supabaseAdmin
+      .from(claimableTable)
+      .select('id, claimable')
+      .eq('slug', entityId)
+      .maybeSingle();
+    claimableRow = data;
+  }
+  if (claimableRow && claimableRow.claimable === false) {
+    return null;
+  }
+
   // === Step 1: is the listing already claimed? ===
   // Leagues aren't a first-class claim_type today, so we check the underlying
   // team's claim when entityType is 'league'. For now, if we can't resolve a
@@ -111,15 +144,26 @@ export default async function ClaimThisListingMount({
   }
 
   const tier = await getUserTier(userId);
+
+  // === Step 2b: free tier — check if they've used their 1 free claim ===
   if (tier === 'free') {
-    return (
-      <ClaimThisListing
-        entityType={entityType}
-        entityId={entityId}
-        entityName={displayName}
-        state={{ kind: 'free' }}
-      />
-    );
+    const { count: approvedCount } = await supabaseAdmin
+      .from('claims')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'approved');
+    const usedFreeClaim = (approvedCount ?? 0) >= 1;
+    if (usedFreeClaim) {
+      return (
+        <ClaimThisListing
+          entityType={entityType}
+          entityId={entityId}
+          entityName={displayName}
+          state={{ kind: 'free' }}
+        />
+      );
+    }
+    // Free user with room — fall through to claim_form
   }
 
   // === Step 3: paid tier — cap check + pending check ===

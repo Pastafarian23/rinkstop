@@ -5,14 +5,27 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import Script from 'next/script';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
+// WS24 (2026-08-20): first-party cookie consent UI. Restores the
+// `localStorage.cookie_consent` banner that the privacy policy on disk
+// (src/app/privacy/page.tsx + src/app/cookies/page.tsx) describes and
+// that AdSense review checks for. Renders on every public route — the
+// site-level first-party CMP that takes over from the deleted Funding
+// Choices / CookieConsent components (commit 28ede9ee). Google has
+// paused Funding Choices for new publishers as of 2024, so a
+// first-party banner is the standard path.
+import ConsentBanner from '@/components/ConsentBanner';
+// PR #145 (2026-08-21): first-party AdSense loader. Reads
+// localStorage.cookie_consent after hydration; only injects the
+// publisher snippet when the user has accepted. Required for the
+// AdSense resubmit so reviewers see a live script integration gated
+// on a real choice record. Skipped on excluded prefixes even after consent.
+import AdSenseLoader from '@/components/AdSenseLoader';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
 import RoleAwareTabBar from '@/components/RoleAwareTabBar';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
-import CookieConsent from '@/components/CookieConsent';
-import FundingChoicesCmp from '@/components/FundingChoicesCmp';
 import CommandPalette from '@/components/CommandPalette';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
@@ -232,9 +245,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="RinkStop" />
           <link rel="apple-touch-icon" href="/rinkstoplogo.png" />
-          {adsenseEligible && (
-            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3703811522107586" crossOrigin="anonymous"></script>
-          )}
+          
         </head>
         <body>
 
@@ -424,7 +435,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </footer>
-        <CookieConsent />
+        
         <FoundersClubPopup />
         {/* Post-login upgrade nudge — shows once to free users on the dashboard or homepage.
             Higher z-index than FoundersClubPopup so they don't double up. */}
@@ -437,24 +448,33 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             adsbygoogle.js so Google's certified consent flow can gate
             ad requests. TCF v2.3 compliant. Falls back gracefully if
             NEXT_PUBLIC_GOOGLE_ADSENSE_ID isn't set. */}
-        <FundingChoicesCmp />
+        
         {/* CookieConsent: pre-Funding-Choices consent banner. FundingChoicesCmp
             is no-ops until NEXT_PUBLIC_GOOGLE_ADSENSE_ID is set; this banner
             covers the gap so users get an Accept/Decline choice today.
             AdSense policy requires either Funding Choices OR a first-party
             consent UI on every page. Mounted globally so all routes have it. */}
-        <CookieConsent />
-        {/* WS16 PR2 (2026-08-03): AdSense script loader. Uses
-            strategy="afterInteractive" so it doesn't block first paint.
-            Individual <AdSlot> components gate the actual ad requests
-            on user consent (localStorage.cookie_consent === 'accepted')
-            and lazy-load via IntersectionObserver. The publisher ID is
-            a NEXT_PUBLIC_* env var so it ships in the bundle; if it's
-            unset (pre-launch), AdSlot returns null and the loader
-            itself no-ops the env var. FundingChoicesCmp above pauses
-            ad requests until consent is known, so this loader sees a
-            paused state until the user acts. The publisher snippet is now
-            hardcoded in <head> (commit 1ba8093b), so this loader is dead code. */}
+        
+        {/* WS16 PR2 (2026-08-03): AdSense script loader. Removed in
+            PR #139 (WS22 ad platform removal) — the site no longer
+            runs ad units. Re-add this loader (gated on adsenseEligible
+            above) when the AdSense publisher account is approved. The
+            first-party ConsentBanner mounted just below handles the
+            user-consent side of the policy requirement; the script
+            loader is the other half. */}
+        {/* WS24 (2026-08-20): first-party cookie consent banner.
+            Renders on every public route. Reads/writes
+            localStorage.cookie_consent. Until the AdSense publisher
+            script is re-added, this banner still satisfies the
+            policy requirement of having a user-facing consent UI on
+            every page. */}
+        <ConsentBanner />
+        {/* PR #145 (2026-08-21): AdSense script loader. No-op when
+            !adsenseEligible (privacy/terms/cookies/admin/dashboard/youth
+            pages), no-op when the user has not accepted via the banner
+            above. Mounted globally so a single record gates the same
+            publisher ID across all eligible routes. */}
+        <AdSenseLoader enabled={adsenseEligible} />
         </body>
       </html>
     </ClerkProvider>

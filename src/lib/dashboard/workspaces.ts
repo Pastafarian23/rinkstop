@@ -149,13 +149,13 @@ export function getWorkspaceAccess(
   });
 }
 
-/** Format a tier name for display (e.g. 'verified_identity' -> 'Verified Identity') */
+/** Format a tier name for display (e.g. 'verified_identity' -> 'Hockey Passport') */
 export function tierDisplayName(tier: TierName | string | null | undefined): string {
   if (!tier) return 'Free';
   const map: Record<string, string> = {
     free: 'Free',
-    verified_identity: 'Verified Identity',
-    identity_plus: 'Identity Plus',
+    verified_identity: 'Hockey Passport',
+    identity_plus: 'Hockey Passport Plus',
     club_starter: 'Club Starter',
     club_pro: 'Club Pro',
     club_elite: 'Club Elite',

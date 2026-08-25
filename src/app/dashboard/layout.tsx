@@ -9,7 +9,8 @@ import UserMenu from '@/components/UserMenu';
 import NotificationBell from '@/components/NotificationBell';
 import TeamSwitcher from '@/components/TeamSwitcher';
 import MobileMenu from '@/components/MobileMenu';
-import { getUserTier, tierAtLeast } from '@/lib/connections';
+import { getUserTier } from '@/lib/connections';
+import { tierAtLeast } from '@/lib/tier-gate';
 import {
   WORKSPACES,
   getWorkspaceAccess,

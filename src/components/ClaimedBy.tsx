@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TierBadge } from './TierBadge';
 import { IdentityVerified } from './IdentityVerified';
+import { VerificationStatusBadge } from './VerificationStatusBadge';
 
 interface ClaimedBy {
   claim_id: string;
@@ -22,6 +23,11 @@ interface ClaimedBy {
   // Only meaningful when verified === true.
   identity_verified_at?: string | null;
   identity_expires_at?: string | null;
+  // WS25 (2026-08-23): claim-level verification status (single source
+  // of truth for the badge state on public listing pages). Values:
+  //   'unverified' | 'pending_verification' | 'verified'
+  verification_status?: string | null;
+  verified_at?: string | null;
 }
 
 export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'rink' | 'team' | 'league' | 'player'; entityId: string; entityName: string }) {
@@ -48,12 +54,16 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
 
   if (loading || !data) return null;
 
-  // Piece C (2026-06-24): identity verification is computed server-side
-  // via the hardened helper (verified boolean). The component just trusts
-  // the API response — no client-side re-check, no raw timestamp leak.
-  // Tier is shown as a text pill (Verified Identity / Identity Plus / Club / Business Listing / etc.).
-  // Tier alone is NOT a verification signal.
-  const isIdentityVerified = data.verified === true;
+  // WS25 (2026-08-23): verification_status from the claim row is the
+  // single source of truth for the public listing badge. The legacy
+  // `verified` boolean is preserved for backward compat but new UI uses
+  // the status string. Possible values:
+  //   'unverified'           — claim approved but owner hasn't verified yet
+  //   'pending_verification' — Didit session in flight, awaiting webhook
+  //   'verified'             — owner has completed verification
+  const status = (data.verification_status ?? (data.verified ? 'verified' : 'unverified')) as
+    | 'unverified' | 'pending_verification' | 'verified';
+  const isIdentityVerified = status === 'verified';
   const displayName = data.display_name || 'Owner';
 
   return (
@@ -92,12 +102,20 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
           ) : (
             <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{displayName}</span>
           )}
-          {isIdentityVerified && (
+          {/* Badge only for paid tiers. Free users who verified get the
+             'Pending Verification' tag instead — badge is Hockey Passport status. */}
+          {isIdentityVerified && (data.tier === 'verified_identity' || data.tier === 'identity_plus') ? (
             <IdentityVerified
               size={14}
               verifiedAt={data.identity_verified_at ?? undefined}
               expiresAt={data.identity_expires_at ?? undefined}
             />
+          ) : (
+            // WS25 (2026-08-23): pending/unverified owners get a visible
+            // 'Pending Verification' tag so visitors can tell the claim
+            // is real but not yet complete. Replaces the previous
+            // behavior of just hiding the badge.
+            <VerificationStatusBadge status={status} />
           )}
           <TierBadge tier={data.tier} size="xs" />
         </div>

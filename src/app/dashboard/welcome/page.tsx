@@ -43,7 +43,7 @@ const NEXT_STEPS: Record<TierId, string[]> = {
     'Claim your first role - click any rink/team/league and tap "Claim".',
   ],
   identity_plus: [
-    'Identity Plus is live - Family Hub, photos, videos, advanced analytics.',
+    'Hockey Passport Plus is live - Family Hub, photos, videos, advanced analytics.',
     'Verify your identity (60 seconds) to earn the check on RinkStop. Visit /dashboard/identity.',
     'Set up your Family Hub to track unlimited children.',
   ],
@@ -87,8 +87,8 @@ const NEXT_STEPS: Record<TierId, string[]> = {
 
 // What to upsell to (or "you've got everything" for the top of each group)
 const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: string; reason: string }> = {
-  free: { id: 'verified_identity', label: 'Verified Identity', price: formatTierPricePerYear('verified_identity'), reason: 'Required for active participation - claim your profile, unlimited roles under one identity' },
-  verified_identity: { id: 'identity_plus', label: 'Identity Plus', price: formatTierPricePerYear('identity_plus'), reason: 'Family Hub, photos, videos, advanced analytics, achievement tracking' },
+  free: { id: 'verified_identity', label: 'Hockey Passport', price: formatTierPricePerYear('verified_identity'), reason: 'Verification is free; this unlocks the Hockey Passport, payments eligibility, and message-coaches. Claim is free on Free too.' },
+  verified_identity: { id: 'identity_plus', label: 'Hockey Passport Plus', price: formatTierPricePerYear('identity_plus'), reason: 'Family Hub, photos, videos, advanced analytics, achievement tracking' },
   identity_plus: { id: null, label: '—', price: '—', reason: 'You have the top individual plan. Switch to an Organization plan to manage a club, league, or federation.' },
   // Organization progression
   club_starter: { id: 'club_pro', label: 'Club Pro', price: formatTierPricePerYear('club_pro'), reason: 'Up to 150 players, multiple teams, coach management' },
@@ -240,8 +240,8 @@ export default async function WelcomePage({
         </div>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', maxWidth: 480, margin: '0 auto' }}>
           {tier === 'business_plus' && 'Business Plus is unlocked. Multiple listings, featured placement, messaging, bookings - it\'s all live.'}
-          {tier === 'verified_identity' && 'You\'re on Verified Identity. Your profile claim and unlimited roles under one identity are ready.'}
-          {tier === 'identity_plus' && 'You\'re on Identity Plus. Family Hub, photos, videos, and advanced analytics are now available.'}
+          {tier === 'verified_identity' && 'You\'re on Hockey Passport. Your profile claim and unlimited roles under one identity are ready.'}
+          {tier === 'identity_plus' && 'You\'re on Hockey Passport Plus. Family Hub, photos, videos, and advanced analytics are now available.'}
           {tier === 'club_starter' && 'You\'re on Club Starter. Your organization and up to 30 players are ready to manage.'}
           {tier === 'club_pro' && 'You\'re on Club Pro. Up to 150 players, multiple teams, and advanced organization tools are live.'}
           {tier === 'club_elite' && 'You\'re on Club Elite. Unlimited teams, advanced analytics, and custom branding are unlocked.'}

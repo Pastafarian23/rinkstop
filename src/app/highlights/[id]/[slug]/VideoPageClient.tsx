@@ -148,17 +148,19 @@ export default function VideoPageClient({ highlight }: { highlight: Highlight })
                       {date && <span>{date}</span>}
                       {score && <><span>•</span><span>{score}</span></>}
                       {highlight.match.season && <><span>•</span><span>Season {highlight.match.season}</span></>}
-                      <span>•</span>
-                      <span style={{
-                        padding: '0.125rem 0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        background: highlight.type === 'VERIFIED' ? '#16a34a' : '#d97706',
-                        color: '#fff',
-                      }}>
-                        {highlight.type}
-                      </span>
+                      {highlight.source && (
+                        <><span>•</span><span style={{
+                          padding: '0.125rem 0.5rem',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          background: highlight.source === 'youtube' ? 'rgba(255,0,0,0.85)' : 'rgba(255,255,255,0.12)',
+                          color: '#fff',
+                          textTransform: 'uppercase',
+                        }}>
+                          {highlight.source}
+                        </span></>
+                      )}
                     </div>
                   </div>
 

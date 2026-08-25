@@ -52,7 +52,7 @@ export default function CookiesPage() {
           When you first visit our website, you will see a cookie consent banner informing you about our use of cookies. You can choose to Accept or Decline non-essential cookies. Your preference is stored in local storage on your device.
         </p>
         <p style={{ marginBottom: '1rem' }}>
-          For visitors in the <strong>European Economic Area (EEA), the United Kingdom, or Switzerland</strong>, consent is managed through Google&apos;s <strong>Privacy &amp; Messaging API</strong> (formerly Google Funding Choices). This is a Google-certified, IAB Europe TCF v2.3-compliant consent management platform. The CMP stores your consent choices in the <code>__tcfapi</code> shared cookie and signals them to our advertising partners (Google AdSense) under the IAB Transparency and Consent Framework technical specification.
+          For visitors in the <strong>European Economic Area (EEA), the United Kingdom, or Switzerland</strong>, RinkStop uses a first-party consent banner. When you first visit the site, a consent banner appears at the bottom of the page asking you to Accept or Decline advertising cookies. Your choice is stored in your browser&apos;s <code>cookie_consent</code> local-storage entry (<code>accepted</code> or <code>declined</code>) and is the source of truth that gates Google AdSense ad requests. We do not load any advertising scripts before you have recorded a choice. We do not use pre-ticked boxes, hidden reject buttons, or visual interference to obtain consent.
         </p>
         <p style={{ marginBottom: '1rem' }}>
           You can change your cookie preferences at any time by:
@@ -71,9 +71,9 @@ export default function CookiesPage() {
           <li><strong>__session, __client, __session_*</strong> (Clerk, ~7 days): Authentication and session management. Essential.</li>
           <li><strong>_ga, _ga_*</strong> (Google Analytics, ~2 years): Distinguishes unique users for analytics. We use only aggregate, non-identifiable analytics.</li>
           <li><strong>_gcl_au</strong> (Google Ads, ~90 days): Conversion linker to measure ad clicks.</li>
-          <li><strong>__gads, __gpi</strong> (Google AdSense, ~13 months): Used to deliver personalized ads, measure ad performance, and remember your ad preferences.</li>
-          <li><strong>IDE, _drt, _fcap, _gl_kwd</strong> (DoubleClick, ~13 months): Frequency capping, ad measurement, and keyword targeting for Google AdSense.</li>
-          <li><strong>FCNEC, _GREC, _GRECaptcha</strong> (Google Funding Choices / reCAPTCHA, ~6 months - 1 year): Consent management and bot protection.</li>
+          <li><strong>__gads, __gpi</strong> (Google AdSense, ~13 months): Used to deliver personalized ads, measure ad performance, and remember your ad preferences. Only set after you have accepted advertising cookies via the consent banner.</li>
+          <li><strong>IDE, _drt, _fcap, _gl_kwd</strong> (DoubleClick, ~13 months): Frequency capping, ad measurement, and keyword targeting for Google AdSense. Only set after consent.</li>
+          <li><strong>_GRECaptcha</strong> (Google reCAPTCHA, ~6 months): Bot protection on the contact form and certain sign-up flows.</li>
         </ul>
         <p style={{ marginBottom: '1.5rem' }}>
           This list may change as we add or remove features. We will update this page when the cookie set changes materially.

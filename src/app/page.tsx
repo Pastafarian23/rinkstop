@@ -3,11 +3,8 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
-import TicketmasterAd from '@/components/TicketmasterAd';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 
 // Home page is rendered statically with ISR (revalidate every 5 min).
 // The page runs 9 Supabase queries for the stats grid + recent sections;
@@ -43,9 +40,9 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     // fall through with zeros
   }
-  const desc = `Find hockey anywhere in the world. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues — searchable by city, state, or country.`;
+  const desc = `RinkStop lists every public rink, arena, and ice facility we can verify — searchable by city, country, and league. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues.`;
   return {
-    title: 'RinkStop — The World’s Hockey Directory',
+    title: 'RinkStop — The Global Hockey Directory',
     description: desc,
     keywords: [
       'hockey directory',
@@ -205,7 +202,7 @@ export default async function Home() {
         url: 'https://rinkstop.com/',
         logo: 'https://rinkstop.com/rinkstoplogo.png',
         image: 'https://rinkstop.com/rinkstoplogo.png',
-        description: "The world's hockey directory — a global database of ice rinks, hockey teams, players, and leagues. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
+        description: "RinkStop is a global directory of ice rinks, hockey teams, players, and leagues — searchable by city, country, and league. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
         slogan: "The World's Hockey Directory",
         foundingDate: '2018',
         founder: {
@@ -297,14 +294,17 @@ export default async function Home() {
         <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: '3rem', paddingBottom: '3rem' }}>
           <div className="hero-grid">
             <div>
-              <div className="label">The Global Hockey Directory</div>
+              <div className="label">The World's Hockey Database</div>
 
               <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#fff', lineHeight: 0.95, marginBottom: '0.5rem' }}>
-                THE GLOBAL HOCKEY DIRECTORY
+                THE GLOBAL
+              </h1>
+              <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#C8102E', lineHeight: 0.95, marginBottom: '1rem' }}>
+                HOCKEY DIRECTORY
               </h1>
 
               <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
-                <strong style={{ color: '#fff' }}>Find hockey anywhere in the world.</strong>{' '}
+                <strong style={{ color: '#fff' }}>Browse every verified rink, team, player, and league we have on file.</strong>{' '}
                 {approx(counts.cities)} cities in {counts.countries} countries,{' '}
                 {approx(counts.rinks)} rinks, {approx(counts.teams)} teams,{' '}
                 {approx(counts.players)} players, {approx(counts.leagues)} leagues — searchable by city, state, or country.
@@ -377,7 +377,6 @@ export default async function Home() {
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', padding: '0.875rem 0 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <TicketmasterAd size="468x60" />
           </div>
         </div>
       </section>
@@ -386,7 +385,7 @@ export default async function Home() {
       {/* Between EEAT intro and Top Cities — low-intrusion, above the directory listing cards. */}
       <section style={{ background: '#0D1117', padding: '1rem 0' }}>
         <div className="container" style={{ maxWidth: '1200px' }}>
-          <AdSlot slot={ADSENSE_SLOTS.HOME_DISPLAY} type="display" />
+          
         </div>
       </section>
 
@@ -450,88 +449,92 @@ export default async function Home() {
       {/* ---- LATEST HIGHLIGHTS ----------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
-          <HighlightsGrid limit={8} columns={4} title="LATEST HIGHLIGHTS" />
+          <HighlightsGrid limit={5} columns={4} title="LATEST HIGHLIGHTS" />
         </div>
       </section>
 
       <HomeNewsSection />
 
       <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
-        <TicketmasterAd size="300x250" />
       </div>
 
-      {/* ---- RECENT ACTIVITY ------------------------------------------------------------- */}
-      {(recentRinks.length > 0 || recentTeams.length > 0 || upcomingGames.length > 0) && (
+      {/* ---- WHAT'S NEW ON RINKSTOP (homepage activity feed, item #3 from ChatGPT audit) ----- */}
+      {hasHomeActivity && (
         <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
           <div className="container">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-
-              {recentRinks.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>WHAT&apos;S NEW ON RINKSTOP</h2>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Latest across the directory</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              {homeNewest.rinks.length > 0 && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>NEW RINKS ADDED</h3>
-                    <Link href="/directory/rinks" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
-                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏒 Newest Rinks</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {recentRinks.map((r: any) => (
-                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{r.name}</div>
-                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{r.city}, {r.country}</div>
-                        </div>
-                        <span style={{ color: '#059669', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
+                    {homeNewest.rinks.slice(0, 4).map((r: any) => (
+                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{r.name}</div>
+                        {(r.city || r.country) && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{[r.city, r.country].filter(Boolean).join(', ')}</div>}
                       </Link>
                     ))}
                   </div>
                 </div>
               )}
-
-              {recentTeams.length > 0 && (
+              {homeNewest.teams.length > 0 && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>NEW TEAMS JOINED</h3>
-                    <Link href="/directory/teams" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>View All →</Link>
-                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#2563EB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏆 Newest Teams</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {recentTeams.map((t: any) => (
-                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{t.name}</div>
-                          <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>
-                            {t.league_name || 'Independent'}{t.city ? ` · ${t.city}` : ''}
-                          </div>
-                        </div>
-                        <span style={{ color: '#2563EB', fontSize: '0.6875rem', fontWeight: 700 }}>NEW</span>
+                    {homeNewest.teams.slice(0, 4).map((t: any) => (
+                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{t.name}</div>
+                        {t.home_city && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{t.home_city}</div>}
                       </Link>
                     ))}
                   </div>
                 </div>
               )}
-
-              {upcomingGames.length > 0 && (
+              {homeNewest.players.length > 0 && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.05em' }}>UPCOMING GAMES</h3>
-                    <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All Games →</Link>
-                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#D97706', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🧑 Newest Players</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {upcomingGames.map((g: any) => {
-                      const d = new Date(g.date + 'T00:00:00');
-                      return (
-                        <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{g.away_team_name} @ {g.home_team_name}</div>
-                            <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {homeNewest.players.slice(0, 4).map((p: any) => (
+                      <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{p.first_name} {p.last_name}</div>
+                        {p.position && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{p.position}</div>}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </section>
+      )}
+
+
+      {/* ---- UPCOMING GAMES (own section — rinks/teams/players already shown above) ---------- */}
+      {upcomingGames.length > 0 && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>UPCOMING GAMES</h2>
+              <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All Games →</Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+              {upcomingGames.map((g: any) => {
+                const d = new Date(g.date + 'T00:00:00');
+                return (
+                  <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{g.away_team_name} @ {g.home_team_name}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -566,18 +569,19 @@ export default async function Home() {
               PICK THE PLAN THAT FITS
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6 }}>
-              Free is free, forever. Verified Identity ($24.99) unlocks profile claims. Identity Plus ($59.99) adds Family Hub and advanced analytics. Club Starter ($149) for small clubs, Club Pro ($399) for mid-sized clubs, Club Elite ($999) for large clubs. Business Listing ($99) and Business Plus ($299) for commercial businesses. Federation is custom for enterprise-scale organizations.
+              Free is free, forever — and it now includes 1 free claim and free identity verification. Hockey Passport ($24.99/yr) unlocks payments eligibility, document storage, and direct messaging. Hockey Passport Plus ($59.99/yr) adds Family Hub, career timeline, achievement tracking, and advanced analytics. For organizations: Club Starter ($149/yr, up to 30 players), Club Pro ($399/yr, up to 150), Club Elite ($999/yr, unlimited teams), League (starting $1,999/yr). For businesses: Business Listing ($99/yr) and Business Plus ($299/yr). Federation is custom for enterprise-scale organizations.
             </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', maxWidth: '1100px', margin: '0 auto' }}>
             {[
-              { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, and read the directory.', cta: 'Join Free', href: '/sign-up', ctaStyle: 'btn btn-ghost' },
-              { tier: 'verified_identity', label: 'Verified Identity', price: '$24.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Claim your player profile, unlimited roles under one identity.', cta: 'Verify My Identity', href: '/pricing?tier=verified_identity', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42', popular: true },
-              { tier: 'identity_plus', label: 'Identity Plus', price: '$59.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Family Hub, photos, videos, advanced analytics.', cta: 'Upgrade to Identity Plus', href: '/pricing?tier=identity_plus', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
+              { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, claim 1 listing, and verify your identity — free, forever.', cta: 'Join Free', href: '/sign-up', ctaStyle: 'btn btn-ghost' },
+              { tier: 'verified_identity', label: 'Hockey Passport', price: '$24.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Your digital hockey career record + payments, document storage, and messaging.', cta: 'Get My Hockey Passport', href: '/pricing?tier=verified_identity', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42', popular: true },
+              { tier: 'identity_plus', label: 'Hockey Passport Plus', price: '$59.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Career timeline, achievement tracking, advanced analytics, and 5 claims.', cta: 'Upgrade to Hockey Passport Plus', href: '/pricing?tier=identity_plus', ctaStyle: 'btn', ctaBg: '#FFB81C', ctaColor: '#041E42' },
               { tier: 'club_starter', label: 'Club Starter', price: '$149', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.35)', tagline: 'Small clubs — up to 30 players.', cta: 'Start Your Club', href: '/pricing?tier=club_starter', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
               { tier: 'club_pro', label: 'Club Pro', price: '$399', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.10)', border: 'rgba(200,16,46,0.4)', tagline: 'Mid-sized clubs — up to 150 players, multiple teams.', cta: 'Upgrade to Club Pro', href: '/pricing?tier=club_pro', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
               { tier: 'club_elite', label: 'Club Elite', price: '$999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.16)', border: 'rgba(200,16,46,0.5)', tagline: 'Large clubs — unlimited teams, advanced analytics, custom branding.', cta: 'Go Club Elite', href: '/pricing?tier=club_elite', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
+              { tier: 'league', label: 'League', price: 'From $1,999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.22)', border: 'rgba(200,16,46,0.55)', tagline: 'League-wide management — every team, every division, every season.', cta: 'Talk to Sales', href: '/pricing?tier=league', ctaStyle: 'btn', ctaBg: '#C8102E', ctaColor: '#fff' },
               { tier: 'business_listing', label: 'Business Listing', price: '$99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.35)', tagline: 'Verified business listing with contact and lead form.', cta: 'Claim Listing', href: '/pricing?tier=business_listing', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff' },
               { tier: 'business_plus', label: 'Business Plus', price: '$299', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.12)', border: 'rgba(20,184,166,0.4)', tagline: 'Multiple listings, featured placement, messaging.', cta: 'Upgrade to Business Plus', href: '/pricing?tier=business_plus', ctaStyle: 'btn', ctaBg: '#14B8A6', ctaColor: '#fff' },
             ].map((t) => (

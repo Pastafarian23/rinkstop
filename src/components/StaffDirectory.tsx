@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import CategorySearchBar from '@/components/CategorySearchBar';
 
 interface StaffMember {
   id: string;
@@ -81,24 +82,25 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
           Hockey {roleLabel.plural}
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9375rem', maxWidth: '680px' }}>
-          {role === 'coach' && 'Head coaches and assistant coaches from professional leagues, community teams, and youth programs.'}
-          {role === 'scout' && 'NHL team scouts responsible for player evaluation and draft preparation.'}
-          {role === 'official' && 'NHL referees and linesmen working regular season and playoff games.'}
+          {role === 'coach' && 'Head coaches and assistant coaches from professional leagues, community teams, and youth programs worldwide.'}
+          {role === 'scout' && 'Scouts from professional leagues and amateur programs, responsible for player evaluation and draft preparation.'}
+          {role === 'official' && 'Referees and linesmen working regular season and playoff games across professional and amateur leagues.'}
           {role === 'staff' && 'Equipment managers, trainers, and other team support staff.'}
         </p>
       </div>
 
-      {/* Search — full-width on mobile, capped at 420px on desktop. Search icon
-          gives the search bar clear visual prominence above the fold. */}
-      <div style={{ marginBottom: '1.5rem', position: 'relative', maxWidth: '420px' }}>
-        <span aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none', fontSize: '0.95rem' }}>🔍</span>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder={`Search ${roleLabel.plural.toLowerCase()} by name, team, or nationality…`}
-          className="input-field"
-          style={{ paddingLeft: '2.25rem', width: '100%' }}
+      {/* Search — homepage aesthetic, scoped to this role.
+          Wired to /api/search/suggest?category=scout which queries
+          nhl_players (role='scout') and returns SuggestItem rows.
+          Matches the home + teams + leagues bar behavior: typing shows
+          live suggestions in a dropdown; Enter follows the highlighted match.
+          localOnly=false so the suggest API is hit (scout + coach +
+          official all return rows from nhl_players). */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <CategorySearchBar
+          category={role}
+          page={`/directory/${role}s`}
+          maxWidth={600}
         />
       </div>
 

@@ -138,7 +138,7 @@ function computeMatchQuality(
 }
 
 export type SuggestItem = {
-  type: 'rink' | 'team' | 'player' | 'league' | 'brand';
+  type: 'rink' | 'team' | 'player' | 'league' | 'brand' | 'coach' | 'official' | 'staff' | 'scout';
   id: string;
   name: string;
   slug: string;
@@ -147,7 +147,7 @@ export type SuggestItem = {
   matchQuality: number; // higher = better match
 };
 
-type RankedSuggestItem = SuggestItem & { rankScore: number };
+type RankedSuggestItem = Omit<SuggestItem, 'type'> & { type: SuggestItem['type']; rankScore: number };
 
 export async function GET(req: NextRequest) {
   const { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } = await getRateLimit();
@@ -180,11 +180,11 @@ export async function GET(req: NextRequest) {
   //     suggest API scope, "player" is the closest match. The directory
   //     pages fall back to their own search input if no player match.)
   const rawCategory = req.nextUrl.searchParams.get('category')?.toLowerCase() || '';
-  const VALID_CATEGORIES = ['rink', 'team', 'player', 'league', 'brand'] as const;
+  const VALID_CATEGORIES = ['rink', 'team', 'player', 'league', 'brand', 'coach', 'official', 'staff', 'scout'] as const;
   const category = (VALID_CATEGORIES as readonly string[]).includes(rawCategory)
-    ? (rawCategory as 'rink' | 'team' | 'player' | 'league' | 'brand')
+    ? (rawCategory as typeof VALID_CATEGORIES[number])
     : null;
-  const include = (type: 'rink' | 'team' | 'player' | 'league' | 'brand'): boolean =>
+  const include = (type: typeof VALID_CATEGORIES[number]): boolean =>
     category === null || category === type;
 
   const promises = await Promise.allSettled([
@@ -306,6 +306,118 @@ export async function GET(req: NextRequest) {
           matchQuality: computeMatchQuality(q, r.name, [r.category, r.country_of_origin].filter(Boolean).join(' ')),
         }))
       ) : [],
+
+    // Scout — backed by nhl_players.role='scout'. Returns SuggestItem
+    // rows that match the bar's contract. href points to the public
+    // player profile (the staff directory links scouts to /directory/players/[id]).
+    include('scout') ? applyMultiWordSearch(
+      supabaseAdmin
+        .from('nhl_players')
+        .select('id, first_name, last_name, full_name, current_team_name, current_team_abbreviation, league_name')
+        .eq('role', 'scout'),
+      q,
+      ['full_name', 'first_name', 'last_name', 'current_team_name']
+    )
+      .limit(5)
+      .then(({ data }) =>
+        (data ?? []).map((r) => {
+          const name = r.full_name || `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Unknown';
+          const meta = [r.current_team_name, r.league_name].filter(Boolean).join(' · ');
+          return {
+            type: 'scout' as const,
+            id: String(r.id),
+            name,
+            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            href: `/directory/players/${r.id}`,
+            meta,
+            matchQuality: computeMatchQuality(q, name, meta),
+          };
+        })
+      ) : [],
+
+    // Coach — backed by nhl_players.role='coach'. Same shape as the
+    // scout branch above. Returns SuggestItem rows for autocomplete.
+    include('coach') ? applyMultiWordSearch(
+      supabaseAdmin
+        .from('nhl_players')
+        .select('id, first_name, last_name, full_name, current_team_name, current_team_abbreviation, league_name')
+        .eq('role', 'coach'),
+      q,
+      ['full_name', 'first_name', 'last_name', 'current_team_name']
+    )
+      .limit(5)
+      .then(({ data }) =>
+        (data ?? []).map((r) => {
+          const name = r.full_name || `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Unknown';
+          const meta = [r.current_team_name, r.league_name].filter(Boolean).join(' · ');
+          return {
+            type: 'coach' as const,
+            id: String(r.id),
+            name,
+            slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+            href: `/directory/players/${r.id}`,
+            meta,
+            matchQuality: computeMatchQuality(q, name, meta),
+          };
+        })
+      ) : [],
+
+    // Community staff — union across all leagues/levels (AHL, college,
+    // junior, youth, amateur). Backed by team_members. Joins profiles
+    // (display_name) and team_workspaces (team name) so the dropdown
+    // shows 'Arnel Larracas — Cebu Ice Datus · community' alongside
+    // 'Anton Krysanov — Arizona Coyotes · NHL'.
+    //
+    // Why the two-stage query: PostgREST's `.or()` filter cannot use
+    // dotted joined-column paths (e.g. `profiles.display_name.ilike.*q*`
+    // returns "failed to parse logic tree"). The workaround is: query
+    // profiles by display_name/username first → collect user_ids → query
+    // team_members filtered by those user_ids. The join between
+    // team_members.user_id and profiles.user_id is the canonical link
+    // (NOT profiles.id — that is the Supabase row PK, separate from
+    // the Clerk user_id stored in profiles.user_id and team_members.user_id).
+    include('coach') || include('scout') || include('official') || include('staff') ? (async () => {
+      // Stage 1: profile lookup
+      const { data: profileRows } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, display_name, username')
+        .or(
+          tokenize(q).map(w =>
+            `display_name.ilike.*${escapeLike(w)}*,username.ilike.*${escapeLike(w)}*`
+          ).join(',') || `display_name.ilike.*${escapeLike(q)}*`
+        )
+        .limit(20);
+      const userIds = (profileRows ?? []).map(p => p.user_id).filter((x): x is string => typeof x === 'string');
+      if (userIds.length === 0) return [];
+      // Stage 2: team_members filtered by those user_ids, active only
+      const { data: memberRows } = await supabaseAdmin
+        .from('team_members')
+        .select('id, role, user_id, team_workspaces(name)')
+        .in('user_id', userIds)
+        .in('role', ['head_coach', 'assistant_coach', 'goalie_coach', 'skills_coach', 'manager', 'scout', 'official', 'staff'])
+        .is('left_at', null)
+        .limit(8);
+      const requestedCategory = category || 'coach';
+      const displayByUserId = new Map<string, { name: string }>(
+        (profileRows ?? []).map(p => [p.user_id, { name: p.display_name || p.username || 'Unknown' }])
+      );
+      return (memberRows ?? []).map((r: any) => {
+        const tw = r.team_workspaces || {};
+        const teamName = tw.name || null;
+        const profile = displayByUserId.get(r.user_id);
+        const name = profile?.name || 'Unknown';
+        const meta = teamName ? `${teamName} · community` : 'community';
+        return {
+          type: requestedCategory as typeof VALID_CATEGORIES[number],
+          id: String(r.id),
+          name,
+          slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+          href: `/directory/players/${r.id}`,
+          meta,
+          matchQuality: computeMatchQuality(q, name, teamName ?? ''),
+        };
+      });
+    })() : [],
   ]);
 
   const allResults: RankedSuggestItem[] = [];
@@ -313,7 +425,7 @@ export async function GET(req: NextRequest) {
     if (p.status === 'fulfilled') {
       // Boost: prefer rink/team over player (rink/team are more "searchable")
       for (const item of p.value) {
-        const typeBoost =
+        const typeBoost: number =
           item.type === 'rink' || item.type === 'team' ? 0.5 :
           item.type === 'league' || item.type === 'brand' ? 0.2 :
           0;

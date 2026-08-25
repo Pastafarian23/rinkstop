@@ -196,9 +196,9 @@ function StatCard({ label, value, unit }: { label: string; value?: string | numb
 }
 
 // ------ Page --------------------------------------------------------------------------------------------------------------------------------------
-export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 0 }: { id: string; ownerUserId?: string | null; initialFollowersCount?: number }) {
-  const [player, setPlayer] = useState<Player | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 0, initialPlayer = null }: { id: string; ownerUserId?: string | null; initialFollowersCount?: number; initialPlayer?: Player | null }) {
+  const [player, setPlayer] = useState<Player | null>(initialPlayer);
+  const [loading, setLoading] = useState(!initialPlayer);
   const [otherPlayers, setOtherPlayers] = useState<Player[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
   const [homeArena, setHomeArena] = useState<{ slug: string; name: string; city: string | null; country: string | null } | null>(null);
@@ -206,12 +206,20 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    // /api/players accepts UUID, NHL id, and slug. If we arrived by UUID, redirect
-    // to the canonical /directory/players/{slug} URL so the address bar matches
-    // the human-readable identifier.
+    // If the server already gave us the player, only refetch for the
+    // UUID→slug address-bar redirect. The server-fetched row is canonical
+    // — using it as initial state means the hero, stats grid, bio, and
+    // related-players block all paint together instead of cascading in
+    // piece by piece after a second network round trip.
     const param = String(id);
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(param);
+    if (initialPlayer && (!isUuid || initialPlayer.id === param)) {
+      // Server already provided a matching player. Only fetch when we
+      // need fresh data (e.g. career stats, follow state) — handled by
+      // the dedicated useEffects below. No generic re-fetch.
+      return;
+    }
+    setLoading(true);
     fetch(`/api/players?id=${encodeURIComponent(param)}&limit=1`)
       .then(r => r.json())
       .then(d => {
@@ -224,7 +232,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id]);
+  }, [id, initialPlayer]);
 
   // Phase 1b SEO: inject noindex meta tag for thin player pages
   useEffect(() => {

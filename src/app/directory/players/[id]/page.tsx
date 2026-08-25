@@ -3,8 +3,6 @@ import { notFound } from 'next/navigation';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { supabaseAdmin } from '@/lib/supabase';
 import { buildPlayerFAQs } from '@/lib/player-context';
@@ -78,22 +76,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
 
   try {
-    const res = await fetch(
-      `${BASE_URL}/api/players?id=${id}`,
-      { cache: 'no-store' }
-    );
-    const json = await res.json();
-    const player = json?.data?.[0];
+    // Query Supabase directly instead of fetching our own /api/players endpoint.
+    // The previous self-loop HTTP fetch cost ~50-100ms per request — a full
+    // HTTP round-trip + the API's own DB query — on top of the page render.
+    // For SEO we only need a few fields; teams + league hydrate through the
+    // FK join.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const q = supabaseAdmin
+      .from('players')
+      .select('id, first_name, last_name, position, nationality, headshot_url, seo_title, current_team_name, teams(name, leagues(name))')
+      .eq(isUuid ? 'id' : 'slug', id)
+      .maybeSingle();
+    const { data: player } = await q;
 
     if (!player) {
       return { title: 'Player Not Found' };
     }
 
-    const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-    const teamName = player.teams?.name || player.current_team_name || null;
-    const leagueName = player.teams?.leagues?.name || '';
-    const position = POSITION_FULL[player.position] || player.position || null;
-    const description = buildPlayerDescription(player);
+    const fullName = `${(player as any).first_name ?? ''} ${(player as any).last_name ?? ''}`.trim() || 'Player';
+    const teamName = (player as any).teams?.name || (player as any).current_team_name || null;
+    const leagueName = (player as any).teams?.leagues?.name || '';
+    const position = POSITION_FULL[(player as any).position] || (player as any).position || null;
+    const description = buildPlayerDescription(player as any);
     // Root layout template appends ' | RinkStop'. Strip any trailing suffix
     // from the DB seo_title so we don't get 'X | RinkStop | RinkStop'.
     const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
@@ -147,72 +151,77 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PlayerPage({ params }: Props) {
   const { id } = await params;
 
-  // Reject obviously invalid ids before social lookups.
-  const { data: playerExists } = await supabaseAdmin
-    .from('players')
-    .select('id')
-    .eq('id', id)
-    .maybeSingle();
-  if (!playerExists) {
-    notFound();
-  }
+  // Reject obviously invalid ids before social lookups. Look up by either
+  // UUID id OR slug — the route param is named [id] for backward compat
+  // but URLs like /directory/players/leevi-aaltonen come in as slug.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-  // Social: look up owner + follower count in parallel (cheap, indexed).
-  // Player pages may not have a claimed owner — `owner` is null in that
-  // case and the message button won't render.
+  // Critical path: only the player-existence check + the player row itself.
+// These are needed before we can render anything. The owner lookup and
+// follower count are non-blocking — they feed the SocialActions widget
+// (save/follow/message buttons) which renders fine with null/0 defaults
+// and updates client-side. Splitting them off the critical path keeps the
+// hero/stats/bio from blocking on social-lookup latency.
+  const [
+    { data: playerExists },
+    { data: seoPlayer },
+  ] = await Promise.all([
+    supabaseAdmin.from('players').select('id').eq(isUuid ? 'id' : 'slug', id).maybeSingle(),
+    supabaseAdmin
+      .from('players')
+      .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))')
+      .eq(isUuid ? 'id' : 'slug', id)
+      .maybeSingle(),
+  ]);
+
+  // Non-critical: run in parallel but don't gate rendering on them.
+  // If either fails the page still works (message button hides, follower
+  // count starts at 0 and updates when the client component mounts).
   const [owner, initialFollowersCount] = await Promise.all([
     getEntityOwner('player', id),
     getFollowersCount('player', id),
   ]);
 
+  if (!playerExists) {
+    notFound();
+  }
+
   // Server-side JSON-LD: Person (athlete) + BreadcrumbList + FAQPage.
-  // Also reuse the same fetched player row to build the SEO copy block
-  // (server-rendered About / FAQ section) at the bottom of the page.
-  // Query the player record directly via supabaseAdmin (no self-loop HTTP
-  // hop). The client component re-fetches its own data for the actual UI;
-  // this is a duplicate read, not a coupled one — but it goes straight to
-  // the DB now, not through the public /api/players endpoint, which
-  // saves one full round trip per page load.
+  // Built from the seoPlayer row we already fetched above — no extra DB
+  // round-trip.
   let playerJsonLd: object | null = null;
-  let seoPlayer: any = null;
   let seoFaqs: { question: string; answer: string }[] = [];
   try {
-    const { data: player } = await supabaseAdmin
-      .from('players')
-      .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))')
-      .eq('id', id)
-      .maybeSingle();
-    if (player) {
-      const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Hockey Player';
-      const teamName = (player.teams as any)?.name;
-      const teamSlug = (player.teams as any)?.slug;
-      const leagueName = (player.teams as any)?.leagues?.name;
-      const leagueSlug = (player.teams as any)?.leagues?.slug;
-      const leagueCountry = (player.teams as any)?.leagues?.country;
-      const position = POSITION_FULL[player.position] || player.position || 'Hockey Player';
+    if (seoPlayer) {
+      const fullName = `${seoPlayer.first_name ?? ''} ${seoPlayer.last_name ?? ''}`.trim() || 'Hockey Player';
+      const teamName = (seoPlayer.teams as any)?.name;
+      const teamSlug = (seoPlayer.teams as any)?.slug;
+      const leagueName = (seoPlayer.teams as any)?.leagues?.name;
+      const leagueSlug = (seoPlayer.teams as any)?.leagues?.slug;
+      const leagueCountry = (seoPlayer.teams as any)?.leagues?.country;
+      const position = POSITION_FULL[seoPlayer.position] || seoPlayer.position || 'Hockey Player';
 
       const faqs = buildPlayerFAQs({
         fullName,
-        firstName: player.first_name,
-        position: player.position,
-        jerseyNumber: player.jersey_number,
-        shoots: player.shoots,
-        catches: player.catches,
-        heightCm: player.height_cm,
-        weightKg: player.weight_kg,
-        birthDate: player.birth_date,
-        nationality: player.nationality,
-        bio: player.bio,
+        firstName: seoPlayer.first_name,
+        position: seoPlayer.position,
+        jerseyNumber: seoPlayer.jersey_number,
+        shoots: seoPlayer.shoots,
+        catches: seoPlayer.catches,
+        heightCm: seoPlayer.height_cm,
+        weightKg: seoPlayer.weight_kg,
+        birthDate: seoPlayer.birth_date,
+        nationality: seoPlayer.nationality,
+        bio: seoPlayer.bio,
         teamName,
         teamSlug,
         leagueName,
         leagueSlug,
         leagueCountry,
-        updatedAt: player.updated_at,
+        updatedAt: seoPlayer.updated_at,
       });
 
       seoFaqs = faqs;
-      seoPlayer = player;
 
       const jsonLdGraph: any[] = [
         {
@@ -221,15 +230,15 @@ export default async function PlayerPage({ params }: Props) {
           jobTitle: `Professional Ice Hockey Player — ${position}`,
           sport: 'Ice hockey',
           url: `${BASE_URL}/directory/players/${id}`,
-          ...(player.headshot_url ? { image: player.headshot_url } : {}),
+          ...(seoPlayer.headshot_url ? { image: seoPlayer.headshot_url } : {}),
           ...(teamName
             ? { affiliation: { '@type': 'SportsTeam', name: teamName, url: teamSlug ? `${BASE_URL}/directory/teams/${teamSlug}` : undefined, ...(leagueName ? { memberOf: { '@type': 'SportsOrganization', name: leagueName, url: leagueSlug ? `${BASE_URL}/directory/leagues/${leagueSlug}` : undefined } } : {}) } }
             : {}),
-          ...(player.nationality && player.nationality.length <= 3
-            ? { nationality: COUNTRY_NAMES[player.nationality] || player.nationality }
+          ...(seoPlayer.nationality && seoPlayer.nationality.length <= 3
+            ? { nationality: COUNTRY_NAMES[seoPlayer.nationality] || seoPlayer.nationality }
             : {}),
-          ...(player.height_cm ? { height: { '@type': 'QuantitativeValue', value: player.height_cm, unitCode: 'CMT' } } : {}),
-          ...(player.weight_kg ? { weight: { '@type': 'QuantitativeValue', value: player.weight_kg, unitCode: 'KGM' } } : {}),
+          ...(seoPlayer.height_cm ? { height: { '@type': 'QuantitativeValue', value: seoPlayer.height_cm, unitCode: 'CMT' } } : {}),
+          ...(seoPlayer.weight_kg ? { weight: { '@type': 'QuantitativeValue', value: seoPlayer.weight_kg, unitCode: 'KGM' } } : {}),
         },
         {
           '@type': 'BreadcrumbList',
@@ -267,10 +276,15 @@ export default async function PlayerPage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }}
         />
       )}
-      <PlayerDetail id={id} ownerUserId={owner?.userId ?? null} initialFollowersCount={initialFollowersCount} />
+      <PlayerDetail
+        id={id}
+        ownerUserId={owner?.userId ?? null}
+        initialFollowersCount={initialFollowersCount}
+        initialPlayer={seoPlayer as any}
+      />
       {seoPlayer && (
         <PlayerSEOCopy
-          player={seoPlayer}
+          player={seoPlayer as any}
           career={{}}
         />
       )}
@@ -281,7 +295,7 @@ export default async function PlayerPage({ params }: Props) {
 
       {/* WS16 PR2 — AdSense display ad below player profile, above footer. */}
       <div style={{ maxWidth: '1200px', margin: '1.5rem auto', padding: '0 1rem' }}>
-        <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
+        
       </div>
     </>
   );

@@ -12,7 +12,7 @@
  *   Body: { recipient_user_id, body }
  *   Returns: { ok: true, thread_id, message }
  *
- * Tier gate: the SENDER must be on Identity Plus+ or Business Plus+ (matches
+ * Tier gate: the SENDER must be on Hockey Passport Plus+ or Business Plus+ (matches
  *   the "Advanced messaging" promise on /pricing). Receiving is free.
  */
 
@@ -33,9 +33,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // Phase 1c-1 tier gate — per Arnel 2026-07-07 correction: ALL paid tiers can
-// send direct messages. Verified Identity ($24.99/yr) is the floor. The
+// send direct messages. Hockey Passport ($24.99/yr) is the floor. The
 // 'advanced' features (group DMs, attachments) are v2 and will gate at
-// Identity Plus+ / Business Plus+ separately. For now, basic 1:1 DMs are
+// Hockey Passport Plus+ / Business Plus+ separately. For now, basic 1:1 DMs are
 // available to every tier that has spent money.
 function canDM(tier: string | null | undefined): boolean {
   return (
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (!canDM((profile?.tier as string) ?? 'free')) {
     const res = NextResponse.json(
-      { error: 'Direct messaging requires a paid tier (Verified Identity or higher).', code: 'tier_required' },
+      { error: 'Direct messaging requires a paid tier (Hockey Passport or higher).', code: 'tier_required' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);

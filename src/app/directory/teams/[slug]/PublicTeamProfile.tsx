@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { buildTeamShare } from '@/lib/share';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
@@ -35,6 +33,7 @@ interface Team {
   league?: HierarchyRef | null;
   contact_phone: string | null;
   created_at: string;
+  founded_on: string | null;
 }
 
 interface NewsRow {
@@ -550,28 +549,13 @@ export default function PublicTeamProfile({
               <RecordBadge record={seasonRecord} />
             </div>
 
-            {recentResults.length === 0 ? (
-              <EmptyState
-                icon="📊"
-                message="No results posted yet."
-                hint={
-                  viewerIsAdmin
-                    ? 'Record your game results so fans and families can follow your season.'
-                    : 'When the team posts results from their games, they’ll appear here with W/L/T badges.'
-                }
-                cta={
-                  viewerIsAdmin
-                    ? { label: 'Post a result', href: `/dashboard/team/${teamSlug}` }
-                    : undefined
-                }
-              />
-            ) : (
+            {recentResults.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {recentResults.map((r) => (
                   <ResultCard key={r.id} result={r} />
                 ))}
               </div>
-            )}
+            ) : null}
           </section>
 
           {/* Upcoming schedule */}
@@ -580,28 +564,13 @@ export default function PublicTeamProfile({
               UPCOMING
             </h2>
 
-            {upcomingGames.length === 0 ? (
-              <EmptyState
-                icon="📅"
-                message="No upcoming games scheduled."
-                hint={
-                  viewerIsAdmin
-                    ? 'Add games, practices, and tournaments so families know when to show up.'
-                    : 'When the team schedules their next game, it’ll appear here with date, venue, and home/away.'
-                }
-                cta={
-                  viewerIsAdmin
-                    ? { label: 'Add to schedule', href: `/dashboard/team/${teamSlug}` }
-                    : undefined
-                }
-              />
-            ) : (
+            {upcomingGames.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {upcomingGames.map((g) => (
                   <ScheduleCard key={g.id} game={g} timeZone={teamTimezone} />
                 ))}
               </div>
-            )}
+            ) : null}
           </section>
         </div>
 
@@ -614,28 +583,13 @@ export default function PublicTeamProfile({
               NEWS
             </h2>
 
-            {news.length === 0 ? (
-              <EmptyState
-                icon="📰"
-                message="No news posted yet."
-                hint={
-                  viewerIsAdmin
-                    ? 'Share tryout dates, roster announcements, recaps, and team stories. Manually drafted — your voice, not a feed.'
-                    : 'Game recaps, announcements, and stories from the team. Posted by coaches and admins.'
-                }
-                cta={
-                  viewerIsAdmin
-                    ? { label: 'Post news', href: `/dashboard/team/${teamSlug}` }
-                    : undefined
-                }
-              />
-            ) : (
+            {news.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {news.slice(0, 5).map((n) => (
                   <NewsCard key={n.id} item={n} />
                 ))}
               </div>
-            )}
+            ) : null}
           </section>
 
           {/* Contact + team info */}
@@ -652,7 +606,7 @@ export default function PublicTeamProfile({
                 padding: '1rem 1.25rem',
               }}
             >
-              {team.created_at && <InfoRow label="Founded" value={formatDate(team.created_at)} />}
+              {team.founded_on && <InfoRow label="Founded" value={formatDate(team.founded_on)} />}
               {team.level && <InfoRow label="Level" value={levelLabel ?? team.level} />}
               {ageGroup && <InfoRow label="Age group" value={ageGroup} />}
               {team.season_label && <InfoRow label="Season" value={team.season_label} />}
@@ -811,7 +765,7 @@ export default function PublicTeamProfile({
       )}
 
       {/* WS16 PR2 — AdSense display ad below team profile content. */}
-      <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
+      
     </div>
   );
 }

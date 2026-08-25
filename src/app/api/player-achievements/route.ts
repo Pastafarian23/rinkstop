@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (!tierOk((profile?.tier as string) ?? 'free')) {
     const res = NextResponse.json(
-      { error: 'Adding achievements requires Identity Plus or higher.' },
+      { error: 'Adding achievements requires Hockey Passport Plus or higher.' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);

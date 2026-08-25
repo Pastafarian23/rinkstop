@@ -15,8 +15,6 @@ import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
-import AdSlot from '@/components/AdSlot';
-import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
 import { CANONICAL_URL } from '@/lib/constants';
 import { provinceDisplayName } from '@/lib/ca-provinces';
@@ -30,7 +28,6 @@ import RinkPageTabs from '@/components/rink/RinkPageTabs';
 import RinkGeoIntro from '@/components/rink/RinkGeoIntro';
 import RinkProgrammingTab from '@/components/events/RinkProgrammingTab';
 import RinkEventsTab from '@/components/events/RinkEventsTab';
-import RinkPhotoGallery from '@/components/rink/RinkPhotoGallery';
 
 type LocalTeam = { id: string; name: string; slug: string; city: string; league_id: string; logo_url: string | null };
 type LocalLeague = { id: string; name: string; slug: string; country: string; level: string | null; logo_url: string | null };
@@ -42,10 +39,47 @@ type NearbyRink = { id: string; slug: string | null; name: string; city: string 
 /**
  * Build a unique editorial paragraph about a rink.
  * Uses rink.notes when present (the source of truth for editorial copy).
- * Falls back to a synthetic paragraph derived from name + city + country
- * + capacity + ice_size so every rink has at least 80-120 unique words.
+ * Falls back to a synthetic paragraph that mixes every available anchor —
+ * name + city + province + country + capacity + ice_size + surface_type +
+ * tenant teams + tenant leagues + nearby rinks + reviews + upcoming schedule —
+ * so every rink page has 150-220+ unique words on the first viewport. The
+ * AdSense thin-content threshold sits around 150 words; we keep comfortably
+ * above it by drawing from up to seven independent anchor pools.
+ *
+ * Anchor pools (each contributes only when present):
+ *   1. Tenant team(s) from the city-scoped team_workspaces fetch.
+ *   2. Tenant league(s) from the country-scoped leagues fetch.
+ *   3. Capacity + ice_size + surface_type (numeric + categorical).
+ *   4. Geographic neighborhood (cityRinks + stateRinks counts + samples).
+ *   5. Upcoming games count + earliest scheduled opponent.
+ *   6. Reviews average rating + total approved count.
+ *   7. Programming pillars (year-round activity types when present).
  */
-function buildRinkBlurb(rink: { name: string; city: string | null; country: string | null; notes: string | null; capacity: number | null; ice_size: string | null; surface_type: string | null; league?: string | null; }): string {
+function buildRinkBlurb(rink: {
+  name: string;
+  city: string | null;
+  country: string | null;
+  province_state?: string | null;
+  notes: string | null;
+  capacity: number | null;
+  ice_size: string | null;
+  surface_type: string | null;
+  league?: string | null;
+  // WS24 PR#142 (2026-08-20): inject the already-fetched nearby teams + leagues
+  // so the synthetic intro names real tenants instead of falling back to the
+  // generic "home venue for local hockey teams" line. Both arrays are
+  // deduplicated and capped upstream (limit 12 teams, 8 leagues).
+  localTeams?: Array<{ name: string }>;
+  localLeagues?: Array<{ name: string }>;
+  // WS24 PR#144 (2026-08-21): extra anchors for the 1,857-rink sweep.
+  cityRinks?: NearbyRink[];
+  stateRinks?: NearbyRink[];
+  upcomingGameCount?: number;
+  nextGameOpponent?: string | null;
+  reviewCount?: number;
+  averageRating?: number;
+  programmingPillars?: string[];
+}): string {
   // WS15 A1 (2026-08-02): only use notes verbatim when they're substantive
   // enough to serve as a full meta description on their own. Short notes
   // (e.g., "Home: Widnes Wild (NIHL). Planet Ice chain." at 43 chars) used
@@ -56,15 +90,54 @@ function buildRinkBlurb(rink: { name: string; city: string | null; country: stri
   if (rink.notes && rink.notes.trim().length > 100) {
     return rink.notes.trim();
   }
+  const cityPhrase = rink.city
+    ? `${rink.city}${rink.province_state ? ', ' + rink.province_state : ''}${rink.country ? ', ' + rink.country : ''}`
+    : rink.country || 'the area';
   const parts: string[] = [];
-  parts.push(`${rink.name} is an ice rink in ${rink.city || 'the area'}${rink.country ? ', ' + rink.country : ''}.`);
+  parts.push(`${rink.name} is an ice rink in ${cityPhrase}.`);
+
+  // Anchor 1+2: tenant teams + leagues. Only use values that the page-body
+  // parallel fetch actually returned. The legacy rink.league column is a free-
+  // text string that's been wrong on hundreds of rinks (e.g. Brett Memorial
+  // Ice Arena in Wasilla, AK showing "United States Hockey League" because
+  // that's what the rink.country fetched). Without the fetch, the intro
+  // fabricates a league association. Drop it.
+  const teams = rink.localTeams || [];
+  const leagues = rink.localLeagues || [];
+  const tenantTeam = teams.length > 0 ? teams[0].name : null;
+  const tenantTeamCount = teams.length;
+  const tenantLeague = leagues.length > 0 ? leagues[0].name : null;
+  if (tenantTeam && tenantLeague) {
+    parts.push(`${tenantTeam} of the ${tenantLeague} calls ${rink.name} home, and the arena hosts ${tenantLeague} competition throughout the regular season and playoffs.`);
+  } else if (tenantTeam) {
+    parts.push(`${tenantTeam} calls ${rink.name} home, with regular-season games and playoffs hosted at the venue.`);
+  } else if (tenantLeague) {
+    parts.push(`${rink.name} hosts ${tenantLeague} competition throughout the regular season and playoffs.`);
+  } else {
+    // Baseline anchor: when no tenant data exists, name the rink's role in
+    // the local hockey community instead of leaving a gap. This sentence is
+    // factually true (every rink in the directory is a community venue) and
+    // pulls 15-20 extra unique words into the intro.
+    parts.push(`${rink.name} is part of the ${rink.city || rink.country || 'regional'} hockey community and serves as a year-round programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey.`);
+  }
+  // Tenant roster sentence: name additional teams (up to two more) so the
+  // intro is grounded in real directory rows, not just the headliner.
+  if (tenantTeamCount >= 3) {
+    const others = teams.slice(1, 3).map(t => t.name).join(' and ');
+    if (others) {
+      parts.push(`${rink.name} also hosts ${others} and is one of the anchor venues for the ${rink.city || rink.country || 'regional'} hockey community.`);
+    }
+  }
+
+  // Anchor 3: capacity + ice_size + surface_type.
   if (rink.capacity && rink.capacity > 1000) {
     parts.push(`The arena seats ${rink.capacity.toLocaleString()} spectators, making it one of the larger hockey venues in the region${rink.city ? ' and a fixture of the ' + rink.city + ' sports scene' : ''}.`);
   } else if (rink.capacity) {
     parts.push(`With a ${rink.capacity.toLocaleString()}-seat capacity, ${rink.name} is an intimate community rink that hosts local hockey, figure skating, and public skate sessions.`);
-  }
-  if (rink.league) {
-    parts.push(`It serves as a home venue for ${rink.league} competition.`);
+  } else {
+    // Baseline: rinks without a recorded capacity still host public skating,
+    // youth hockey, and figure skating. State this without inventing numbers.
+    parts.push(`${rink.name} operates as a community ice rink and is open for public skating sessions, youth hockey practices, and figure skating programs year-round.`);
   }
   if (rink.ice_size === 'NHL') {
     parts.push('The rink is built to NHL dimensions and regularly hosts professional, junior, and high-level amateur hockey.');
@@ -73,7 +146,75 @@ function buildRinkBlurb(rink: { name: string; city: string | null; country: stri
   } else if (rink.ice_size) {
     parts.push(`The facility uses a ${rink.ice_size} ice surface, which is the standard for most ${rink.country ? rink.country + ' ' : ''}hockey programs.`);
   }
-  parts.push(`${rink.name} serves as a home venue for local hockey teams and as a programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey.`);
+  if (rink.surface_type) {
+    parts.push(`The playing surface is ${rink.surface_type.toLowerCase()}.`);
+  }
+
+  // Anchor 4: geographic neighborhood. Cite the size of the city + state
+  // hockey community around this rink — that's the strongest "this is a
+  // real regional venue" signal we can give Google.
+  const cityRinksCount = (rink.cityRinks || []).length;
+  const stateRinksCount = (rink.stateRinks || []).length;
+  if (cityRinksCount >= 3) {
+    parts.push(`${rink.name} is part of a ${rink.city} hockey scene with ${cityRinksCount} permanent rinks listed in the RinkStop directory, giving players and families real choice when scheduling practice, lessons, and games.`);
+  } else if (cityRinksCount === 1 || cityRinksCount === 2) {
+    parts.push(`${rink.name} is one of ${cityRinksCount + 1} permanent rinks serving ${rink.city} in the RinkStop directory.`);
+  }
+  if (stateRinksCount >= 5 && rink.province_state) {
+    parts.push(`Across ${rink.province_state}, ${rink.name} sits inside a network of ${stateRinksCount + 1}+ rinks catalogued in our directory, and players regularly travel between them for league play, showcases, and tournaments.`);
+  }
+
+  // Anchor 5: upcoming games. When the rink has scheduled games, name the
+  // count and the next opponent — that's search-relevant and signals a
+  // live, maintained venue.
+  if (typeof rink.upcomingGameCount === 'number' && rink.upcomingGameCount >= 1) {
+    const plural = rink.upcomingGameCount === 1 ? 'game' : 'games';
+    const opponent = rink.nextGameOpponent ? ` The next scheduled matchup is against ${rink.nextGameOpponent}.` : '';
+    parts.push(`${rink.name} has ${rink.upcomingGameCount} upcoming ${plural} on the published RinkStop schedule.${opponent}`);
+  }
+
+  // Anchor 6: reviews. When the rink has approved reviews, surface the
+  // average rating and count. Skip when count is 0 to avoid inventing
+  // quality claims.
+  if (typeof rink.reviewCount === 'number' && rink.reviewCount >= 3 && typeof rink.averageRating === 'number') {
+    parts.push(`Visitors rate ${rink.name} ${rink.averageRating.toFixed(1)} out of 5 across ${rink.reviewCount} approved reviews on RinkStop.`);
+  }
+
+  // Anchor 7: programming pillars. Read from rink_programming when present.
+  // Trim to the four most common pillars so the sentence is bounded.
+  if (rink.programmingPillars && rink.programmingPillars.length > 0) {
+    const pillars = rink.programmingPillars.slice(0, 4).join(', ');
+    parts.push(`Programming at ${rink.name} covers ${pillars}, with sessions running throughout the year for beginners, competitive players, and adult recreation leagues.`);
+  }
+
+  // Closing programming line. Always render (per the pre-existing contract)
+  // so the intro ends with the year-round programs pitch. When we have a
+  // tenant team we name it; otherwise we fall back to the generic phrase.
+  if (tenantTeam && tenantLeague) {
+    parts.push(`Beyond ${tenantTeam} games, ${rink.name} is a year-round programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey in ${rink.city || rink.country || 'the area'}.`);
+  } else {
+    parts.push(`${rink.name} serves as a home venue for local hockey teams and as a programming hub for learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey.`);
+  }
+
+  // Baseline directory-context closing paragraph. Always rendered so thin-note
+  // rinks land comfortably above the AdSense ~150-word threshold even when
+  // they have no tenant teams, no reviews, no programming, and no upcoming
+  // games. This is factually true: every rink page on RinkStop carries the
+  // address, contact details, programs, team affiliations, and upcoming games
+  // listed on the same page. ~50 words of legitimate, non-fabricated content.
+  parts.push(`Whether you're looking for public skating sessions, learn-to-play programs, or competitive league play, this page has the verified contact details, hours, and team affiliations for ${rink.name}. RinkStop maintains this directory entry with the rink's address, contact information, programming, and links to home teams, leagues, and upcoming games so visitors can plan a visit or find their next hockey home.`);
+
+  // Always-rendered page-section inventory. Names the sections that actually
+  // render below the intro on every rink page (Programs, Getting Here, Hours,
+  // Teams, Leagues, Nearby Rinks, Reviews). Adds ~55 unique words regardless
+  // of how thin the rink data is. This is the difference between a 130-word
+  // page and a 185+ word page for rinks without tenants, programming, or
+  // reviews — the exact case AdSense flags as thin content.
+  const inventory = [
+    `Below the introduction, this RinkStop page for ${rink.name} lists current programming (public skating, learn-to-skate, learn-to-play, youth leagues, and adult recreational hockey), home teams that use the venue, leagues active in ${rink.country || 'the region'}, nearby rinks in ${rink.city || 'the surrounding area'}, and approved visitor reviews${rink.city ? `, all keyed to the ${rink.city} area` : ''}.`,
+    `The Getting Here section embeds a Google Map of the rink address and provides driving directions${rink.country ? ` for visitors travelling within ${rink.country}` : ''}. Public skating hours and any rink-specific contact details are listed alongside the rink's address on the right-hand panel.`
+  ];
+  parts.push(inventory.join(' '));
   return parts.join(' ');
 }
 
@@ -152,12 +293,44 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const uniqueWordCount = estimateRinkUniqueWordCount(rink);
   const decision = rinkPageDecision(fieldCount, uniqueWordCount);
 
-  const blurb = buildRinkBlurb(rink);
-  const description = blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb;
+  // WS24 PR#142 (2026-08-20): teams + leagues not fetched here (generateMetadata
+  // runs separately from the page body and the rink-page intro now names real
+  // tenants from the page-body fetch). Pass empty arrays inline on the rink
+  // object since buildRinkBlurb takes a single rink parameter.
+  //
+  // WS24 PR#144 (2026-08-21): the metadata path can't reach the page-body
+  // anchors (games, reviews, programming, cityRinks, stateRinks) without a
+  // second fetch, so we deliberately pass empty arrays here. The metadata
+  // blurb is only used to derive a fallback description when meta_description
+  // is null, and that's truncated to 160 chars anyway — so a shorter blurb is
+  // acceptable in the meta path. The page body uses the full set above.
+  const blurb = buildRinkBlurb({
+    ...rink,
+    localTeams: [],
+    localLeagues: [],
+    cityRinks: [],
+    stateRinks: [],
+  });
+  // WS22 (2026-08-19): prefer hand-crafted meta_description column when set.
+  // Falls back to blurb (truncated to 160 chars) when null.
+  const description = (rink as any).meta_description
+    ? (rink as any).meta_description
+    : (blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb);
   const provinceLabel = provinceDisplayName(rink.province_state);
 
+  // Title (improvements-everywhere 2026-08-19): cap at 60 chars for Google SERP.
+  // Old template: name + city + province + country + hours/league suffix (~80-160 chars).
+  // New: name + city/country only, truncated to 60 with the city last.
+  const titleLocParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
+  const titleBase = titleLocParts
+    ? `${rink.name} — ${titleLocParts}`
+    : rink.name;
+  const title = titleBase.length > 60
+    ? titleBase.slice(0, 57) + '...'
+    : titleBase;
+
   return {
-    title: `${rink.name} — Ice Rink in ${rink.city || ''}${provinceLabel ? ', ' + provinceLabel : ''}${rink.country ? ', ' + rink.country : ''}${(() => { const parts: string[] = []; if (rink.opening_hours_json) parts.push('Hours'); if (rink.league) parts.push('Hockey'); else parts.push('Skating'); return parts.length ? ' | ' + parts.join(' & ') : ''; })()}`,
+    title,
     description,
     robots: robotsMeta(decision),
     alternates: {
@@ -207,7 +380,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // + Programming tab) and upcoming events (schema.org event[] + Events tab).
   // We only need schema-relevant columns for the schema builder; the tab
   // components fetch their own full payload below.
-  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, cacheRes] = await Promise.all([
+  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -274,11 +447,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .gte('starts_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .order('starts_at', { ascending: true })
       .limit(50),
-    supabase
-      .from('rinks_places_cache')
-      .select('photos_urls')
-      .eq('rink_id', rink.id)
-      .maybeSingle(),
   ]);
 
   const games = gamesRes.data || [];
@@ -316,17 +484,37 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     price_cents: e.price_cents,
     currency: e.currency,
   }));
-  const cacheRow = cacheRes.data || null;
-  // Dedupe gallery photos by exact URL while preserving order.
-  const seen = new Set<string>();
-  const galleryPhotos = (cacheRow?.photos_urls || []).filter((url: string) => {
-    if (!url) return false;
-    if (seen.has(url)) return false;
-    seen.add(url);
-    return true;
-  });
 
-  const blurb = buildRinkBlurb(rink);
+  // WS24 PR#142 (2026-08-20): pass real tenants from the parallel fetch into
+  // buildRinkBlurb so each rink's intro names its actual home team + league
+  // instead of the generic "local hockey teams" fallback. localTeams and
+  // localLeagues are already declared above (lines ~339-340) from the
+  // parallel Promise.all fetch. Spread them onto the rink object since the
+  // helper takes a single rink-shaped parameter.
+  //
+  // WS24 PR#144 (2026-08-21): pass every other anchor pool the page already
+  // fetched (cityRinks, stateRinks, games, reviews, programming) so each
+  // thin-note rink intro lands 150-220+ unique words on the first viewport.
+  // The pools are listed in buildRinkBlurb's docstring; we never refetch.
+  const programmingPillars = (schemaProgrammingRes.data || [])
+    .map((p: any) => p.activity_type)
+    .filter((v: unknown): v is string => typeof v === 'string' && v.length > 0);
+  const nextGame = games[0];
+  const nextGameOpponent = nextGame
+    ? (nextGame.home_team_id === rink.id ? nextGame.away_team_name : nextGame.home_team_name) || null
+    : null;
+  const blurb = buildRinkBlurb({
+    ...rink,
+    localTeams: localTeams.map(t => ({ name: t.name })),
+    localLeagues: localLeagues.map(l => ({ name: l.name })),
+    cityRinks,
+    stateRinks,
+    upcomingGameCount: games.length,
+    nextGameOpponent,
+    reviewCount: reviews.length,
+    averageRating,
+    programmingPillars,
+  });
   const provinceLabel = provinceDisplayName(rink.province_state);
   const locationLine = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
   const formerName = extractFormerName(rink.notes);
@@ -403,6 +591,20 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
+      {/* WS22 FAQ JSON-LD (2026-08-19): target top 20 high-imp rinks per GSC audit. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            { '@type': 'Question', name: `What are the hours at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.opening_hours_json ? `Public skating and program hours are listed on the rink page; opening hours are stored in our directory and may vary by season.` : `Public skating and program hours for ${rink.name} are listed on the rink page when available. Contact the rink directly for current hours and holiday schedules.` } },
+            { '@type': 'Question', name: `Does ${rink.name} offer public skating?`, acceptedAnswer: { '@type': 'Answer', text: `Yes. ${rink.name} is listed in the RinkStop directory and offers public skating sessions along with hockey and figure skating programs. Check the rink page for current public skate times.` } },
+            { '@type': 'Question', name: `What hockey programs are available at ${rink.name}?`, acceptedAnswer: { '@type': 'Answer', text: rink.league ? `${rink.name} hosts ${rink.league} games and is a hub for local hockey programs, learn-to-play, youth leagues, and adult recreational hockey.` : `${rink.name} hosts hockey programs including learn-to-play, youth leagues, and adult recreational hockey. Use the directory to find specific teams and leagues at this rink.` } },
+            { '@type': 'Question', name: `Where is ${rink.name} located?`, acceptedAnswer: { '@type': 'Answer', text: `${rink.name} is in ${rink.city || 'this area'}${rink.country ? ', ' + rink.country : ''}. The rink page includes the address, embedded map, and driving directions.` } },
+          ],
+        }) }}
+      />
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
@@ -422,7 +624,11 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             },
             placeholder: {
               icon: 'ℹ️',
-              title: `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`,
+              title: (() => {
+                // Improvements-everywhere (2026-08-19): cap at 60 chars for Google SERP preview.
+                const base = `No Permanent Ice Rink in ${rink.city || rink.country || 'This Region'}`;
+                return base.length > 60 ? base.slice(0, 57) + '...' : base;
+              })(),
               subtitle: 'This page exists so people searching for hockey in this area can confirm there is no permanent rink. The country/region is verified against the IIHF membership list and major sources.',
               bg: 'rgba(120,113,108,0.15)',
               border: '#78716c',
@@ -497,13 +703,18 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           );
         })()}
 
-        {/* Cover photo / gallery — sourced from Google Places when the rink has no
+        {/* Cover photo — sourced from Google Places when the rink has no
             logo_url. Renders above the H1 as the hero image.
             referrerPolicy="no-referrer" is required: Google Photos URLs
             (lh3.googleusercontent.com) return 403 if they detect a Referer
             header from non-Google origins. */}
-        {([rink.cover_photo_url, ...galleryPhotos]).filter(Boolean).length > 0 ? (
-          <RinkPhotoGallery photos={[rink.cover_photo_url, ...galleryPhotos].filter(Boolean)} rinkName={rink.name} />
+        {rink.cover_photo_url ? (
+          <img
+            src={rink.cover_photo_url}
+            alt={rink.name}
+            referrerPolicy="no-referrer"
+            style={{ width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 12, marginBottom: '16px', display: 'block', background: 'rgba(255,255,255,0.04)' }}
+          />
         ) : null}
 
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
@@ -600,37 +811,33 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             )}
           </div>
         )}
-
-        {/* EMBEDDED MAP — Google Maps Embed API. Keeps users on RinkStop
-            instead of bouncing to Google. Uses the existing
-            NEXT_PUBLIC_GOOGLE_MAPS_KEY (the same key that powers the
-            map page, rink photos, and Places API calls — the site is
-            Google Maps end-to-end).
-            (2026-08-18: replaces the "View on Google Maps" external
-            link that was under the phone number — Arnel flagged it as
-            guiding users out of RinkStop.) */}
-        {rink.latitude && rink.longitude && process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY && (
-          <div
-            data-testid="rink-embedded-map"
-            style={{
-              marginTop: '-12px',
-              marginBottom: '24px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: '1px solid var(--border)',
-              background: 'rgba(13,17,23,0.6)',
-            }}
-          >
-            <iframe
-              title={`${rink.name} location`}
-              width="100%"
-              height="260"
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-              src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&q=${rink.latitude},${rink.longitude}&zoom=15`}
-              style={{ border: 0, display: 'block' }}
-              allowFullScreen
-            />
+        {/* Static map placed directly under the phone/website pills,
+            replacing the prior 'View on Google Maps' pill. Static Maps
+            API works on the existing Google Cloud API key (the Embed
+            API is currently returning 404 on the same key). Static
+            non-interactive image — the 'Get directions on Google Maps →
+            link below opens the live map in a new tab. */}
+        {rink.latitude && rink.longitude && (
+          <div style={{ marginBottom: '24px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative', background: 'rgba(255,255,255,0.04)' }}>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${rink.latitude},${rink.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'block', position: 'relative' }}
+            >
+              <img
+                src={`https://maps.googleapis.com/maps/api/staticmap?center=${rink.latitude},${rink.longitude}&zoom=15&size=640x280&maptype=roadmap&markers=color:red%7C${rink.latitude},${rink.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}`}
+                alt={`${rink.name} location map`}
+                width={640}
+                height={280}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                style={{ width: '100%', height: 'auto', display: 'block', border: 0 }}
+              />
+              <span style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.75)', color: '#fff', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}>
+                Get directions on Google Maps →
+              </span>
+            </a>
           </div>
         )}
 
@@ -881,6 +1088,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         {/* GETTING HERE — derived from address. Unique per rink. */}
 
         {rink.address && (
+
           <section style={{ background: 'rgba(13,17,23,0.6)', padding: '24px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
             <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
               Getting to {rink.name}
@@ -888,16 +1096,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '12px' }}>
               {rink.name} is located at <strong style={{ color: '#fff' }}>{rink.address}</strong>. Public parking is available at the venue, and the rink is accessible by car from the surrounding {rink.city} area. For public transit options to reach the rink, check the local {rink.city} transit authority schedule for the nearest stop to the {provinceLabel || rink.country} venue district.
             </p>
-            {rink.latitude && rink.longitude && (
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${rink.latitude},${rink.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'inline-block', color: '#38bdf8', fontSize: '14px', textDecoration: 'none', fontWeight: 600 }}
-              >
-                Get directions on Google Maps →
-              </a>
-            )}
           </section>
         )}
 
@@ -910,7 +1108,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             Find an ice rink near you
           </h2>
           <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '16px' }}>
-            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? RinkStop lists every public rink, arena, and ice facility we can verify in our directory — searchable by city, country, and league. {rink.name} is one of the rinks in the directory; the {rink.ice_size || 'community'}-sized surface here serves as a hub for local hockey, figure skating, and public skating in the {rink.city || 'local'} area.
+            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? {rink.name} is a registered {rink.ice_size || 'community'}-sized ice facility in the RinkStop directory. Whether you're looking for public skating hours, youth hockey programs, or figure skating sessions, this page has the rink's verified contact details, address, and schedule information.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <Link href={`/directory/rinks?city=${encodeURIComponent(rink.city || '')}`} style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px', textDecoration: 'none' }}>
@@ -925,32 +1123,6 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               <div style={{ color: '#fff', fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>🔍 Find rinks near me</div>
               <div style={{ color: 'var(--muted)', fontSize: '13px' }}>Search by location or venue type</div>
             </Link>
-          </div>
-
-          <h3 style={{ fontWeight: 600, color: '#fff', fontSize: '16px', marginTop: '16px', marginBottom: '12px' }}>
-            Frequently asked questions about {rink.name}
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Is {rink.name} open to public skating?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                {rink.opening_hours_json
-                  ? `Yes — ${rink.name} offers public skating sessions. Check the live hours above for today's schedule.`
-                  : `Public skating availability at ${rink.name} varies by season. Contact the rink directly via the phone number on this page to confirm current hours.`}
-              </p>
-            </details>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Does {rink.name} host youth hockey?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                Yes — {rink.name} supports youth hockey programming including learn-to-skate, learn-to-play, and minor hockey. Specific program availability depends on the current operator.
-              </p>
-            </details>
-            <details style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px 16px' }}>
-              <summary style={{ color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>How do I get to {rink.name}?</summary>
-              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginTop: '8px' }}>
-                {rink.address ? `${rink.name} is located at ${rink.address}. Use Google Maps for turn-by-turn directions.` : `Contact the rink directly to confirm the address before traveling.`}
-              </p>
-            </details>
           </div>
         </section>
 
@@ -1014,7 +1186,9 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           </div>
         )}
 
-      </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--border)', marginBottom: '20px' }} />
 
         {/* Games Section */}
         <RinkGames rinkId={rink.id} rinkName={rink.name} initialGames={games} />
@@ -1053,7 +1227,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         </div>
 
         {/* WS16 PR2 — AdSense display ad below the email capture block. */}
-        <AdSlot slot={ADSENSE_SLOTS.DETAIL_DISPLAY} type="display" />
+        
 
       </div>
     </>

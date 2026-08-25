@@ -4,7 +4,7 @@
  * IdentityClient — the actual UI for /dashboard/identity
  *
  * States:
- *   - canVerify=false → upgrade CTA (Verified Identity or Business Listing+ required)
+ *   - canVerify=false → upgrade CTA (Hockey Passport or Business Listing+ required)
  *   - status='active'  → "Identity verified" with date + expiry
  *   - status='expired' → "Re-verify" CTA
  *   - status='never_verified' OR 'in_progress' → "Verify" CTA + iframe after start
@@ -24,6 +24,7 @@ type Status = 'never_verified' | 'active' | 'expired' | 'in_progress';
 
 interface Props {
   canVerify: boolean;
+  verifyEndpoint: string;
   tier: string;
   status: Status;
   identityVerifiedAt: string | null;
@@ -67,6 +68,7 @@ const STATUS_COPY: Record<Status, { title: string; body: string; ctaLabel?: stri
 
 export default function IdentityClient({
   canVerify,
+  verifyEndpoint,
   tier,
   status: initialStatus,
   identityVerifiedAt,
@@ -143,7 +145,21 @@ export default function IdentityClient({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/identity/verify/start', { method: 'POST' });
+      // WS25 (2026-08-23): endpoint and body shape depend on tier.
+      // Paid users keep the legacy /api/identity/verify/start path. Free
+      // users hit /api/verification/start-free with a profileType body.
+      // We default profileType to 'player' for free users who don't have a
+      // specific role — the badge applies to their personal profile.
+      const isPaid = tier === 'verified_identity' || tier === 'identity_plus'
+        || tier === 'business_listing' || tier === 'business_plus'
+        || tier === 'club_starter' || tier === 'club_pro' || tier === 'club_elite'
+        || tier === 'league' || tier === 'federation';
+      const body = isPaid ? undefined : JSON.stringify({ profileType: 'player' });
+      const res = await fetch(verifyEndpoint, {
+        method: 'POST',
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        body,
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         if (res.status === 409 && data.error === 'already_verified') {
@@ -151,7 +167,10 @@ export default function IdentityClient({
           return;
         }
         if (res.status === 403 && data.error === 'tier_required') {
-          setError('Identity verification requires a paid tier.');
+          // Legacy path; the WS25 free flow should never hit this. Surfacing
+          // a clear error if it does (so we know to investigate) rather than
+          // the pre-WS25 'requires a paid tier' message.
+          setError('Verification is temporarily unavailable. Please contact support.');
           return;
         }
         setError(data.message || 'Failed to start verification');
@@ -210,11 +229,11 @@ export default function IdentityClient({
       <div style={{ maxWidth: 720 }}>
         <h1 style={titleStyle}>Identity verification</h1>
         <p style={bodyStyle}>
-          Identity verification is available on <strong>Verified Identity</strong> (personal) or <strong>Business Listing</strong> (business). It costs you $0 — the platform absorbs the fee.
+          Identity verification is available on <strong>Hockey Passport</strong> (personal) or <strong>Business Listing</strong> (business). It costs you $0 — the platform absorbs the fee.
         </p>
         <div style={cardStyle}>
           <p style={{ ...bodyStyle, marginBottom: '1.25rem' }}>
-            Upgrade to Verified Identity ($24.99/yr) to verify your identity with a government-issued ID + selfie match. The "Identity verified" check appears on your profile and re-verifies every 2 years.
+            Upgrade to Hockey Passport ($24.99/yr) to verify your identity with a government-issued ID + selfie match. The "Identity verified" check appears on your profile and re-verifies every 2 years.
           </p>
           <Link
             href="/pricing"

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
+import { PassportCompletenessBadge } from '@/components/PassportCompletenessBadge';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import ProfileEditForm from './ProfileEditForm';
 import FollowingList from './FollowingList';
@@ -33,7 +34,7 @@ export default async function ProfilePage() {
   // Pull the profile fields editable here (bio + location + tier + founding)
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('bio, location, tier, is_founding_member, display_name, username')
+    .select('bio, location, tier, is_founding_member, display_name, username, avatar_url')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -233,7 +234,7 @@ export default async function ProfilePage() {
             Your permanent hockey record. One profile that travels with you across teams, leagues, and seasons.
           </p>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <TierBadge tier={profile?.tier || 'free'} size="xs" />
+            <TierBadge tier={profile?.tier || 'free'} size="md" />
             {profile?.is_founding_member && <FoundingMemberBadge size="sm" />}
             {identityVerified ? (
               <span
@@ -310,7 +311,41 @@ export default async function ProfilePage() {
         </div>
       )}
 
-      {/* Section 1: Verified Identity */}
+      {/* Profile completeness meter — shows free users the gap between
+          their current profile and a full Hockey Passport. The meter
+          computes 5 free-tier sections vs 5 paid-tier sections. Free users
+          see a CTA pointing to /pricing. */}
+      {(() => {
+        const freeSections = [
+          !!profile?.display_name,
+          !!profile?.username,
+          !!profile?.avatar_url,
+          !!profile?.bio,
+          !!profile?.location,
+        ].filter(Boolean).length;
+        // Paid tier adds: identity verified + team history + stats + federation + parent relationships.
+        // For free users, we compute against the 5 they CAN complete (no paywall items).
+        const totalFree = 5;
+        const completeness = Math.round((freeSections / totalFree) * 100);
+        const tier = profile?.tier || 'free';
+        // Only show for free users — paid users see the full Passport UI below.
+        if (tier !== 'free') return null;
+        return (
+          <div style={{ marginBottom: '1rem' }}>
+            <PassportCompletenessBadge
+              completed={freeSections}
+              total={totalFree}
+              passportHref="/pricing"
+              size="md"
+            />
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', margin: '0.5rem 0 0' }}>
+              Free profile is {completeness}% complete. Upgrade to Hockey Passport to add verified identity, team history, and federation verification.
+            </p>
+          </div>
+        );
+      })()}
+
+      {/* Section 1: Hockey Passport */}
       <PassportSection
         emoji="✅"
         title="VERIFIED IDENTITY"

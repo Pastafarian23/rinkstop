@@ -109,7 +109,7 @@ export default function DataMethodologyPage() {
           <li>Update the kid&rsquo;s profile photo, social handles, and external links</li>
         </ul>
         <p style={{ marginBottom: '1.5rem' }}>
-          A parent can manage multiple kids from one parent account. The parent-managed claim bypasses the standard claim cap that applies to other tiers &mdash; a parent on the Free tier can claim their kid&rsquo;s profile even though the Free tier otherwise does not allow publishing listings. Coach verification is the only thing a parent cannot do directly: only coaches on record with the kid&rsquo;s current team can verify a self-reported row. Coach endorsements are written by coaches, not parents.
+          A parent can manage multiple kids from one parent account. The parent-managed claim bypasses the standard claim cap that applies to other tiers &mdash; a parent on the Free tier can claim their kid&rsquo;s profile, and identity verification (free for everyone since WS25) earns the parent’s profile a Verified owner badge. Coach verification is the only thing a parent cannot do directly: only coaches on record with the kid&rsquo;s current team can verify a self-reported row. Coach endorsements are written by coaches, not parents.
         </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Editorial content vs directory data</h2>

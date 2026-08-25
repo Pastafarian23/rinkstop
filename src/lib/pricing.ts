@@ -5,8 +5,8 @@
  *
  * Individuals (one Verified Hockey Identity per person, unlimited roles):
  *   - Free                       (free, $0)                 browse only
- *   - Verified Identity          (verified_identity, $24.99) required for participation
- *   - Identity Plus              (identity_plus, $59.99)     premium personal features
+ *   - Hockey Passport          (verified_identity, $24.99) required for participation
+ *   - Hockey Passport Plus              (identity_plus, $59.99)     premium personal features
  *
  * Organizations (clubs, leagues, federations, teams, associations):
  *   - Club Starter               (club_starter, $149)       small clubs (≤30 players)
@@ -103,8 +103,8 @@ export const TIERS: Record<TierName, TierInfo> = {
     track: 'personal',
     priceUsd: 0,
     stripePriceEnv: '',
-    tagline: 'Browse the full hockey directory, save what you find, follow what you love.',
-    cta: 'Get Started',
+    tagline: 'Browse, follow, claim your profile, and verify your identity — free, forever.',
+    cta: 'Join Free',
     features: [
       'Browse the complete hockey directory',
       'Search rinks, teams, leagues and players',
@@ -112,18 +112,21 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Follow unlimited teams or players',
       'Read reviews',
       'Public profile',
+      'Claim 1 listing (player, team, rink, or league) — free',
+      'Free identity verification (government ID + selfie, ~60 seconds)',
+      'Verified badge reserved for Hockey Passport holders',
     ],
-    footnote: 'No identity verification, no claim, no team management.',
+    footnote: 'Free is free, forever. The $24.99/yr Hockey Passport tier unlocks payments eligibility, document storage, and direct messaging — you only pay when you want the tools.',
   },
   verified_identity: {
     name: 'verified_identity',
-    label: 'Verified Identity',
+    label: 'Hockey Passport',
     group: 'identity',
     track: 'personal',
     priceUsd: 24.99,
     stripePriceEnv: 'STRIPE_PRICE_VERIFIED_IDENTITY',
-    tagline: "Get a verified checkmark so coaches, scouts, and program directors know you're real.",
-    cta: 'Verify My Identity',
+    tagline: "Your digital hockey career record — every team, every milestone, every season, in one place anyone can find.",
+    cta: 'Get My Hockey Passport',
     popular: true,
     features: [
       'Government-ID identity verification (renews every 2 years)',
@@ -137,22 +140,22 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Team invitations',
       'Payment eligibility',
       'Registration eligibility',
-      'Verified Identity badge on profile',
+      'Hockey Passport badge on profile',
       'Priority email support',
     ],
     footnote: 'One Verified Hockey Identity holds every role you accumulate.',
   },
   identity_plus: {
     name: 'identity_plus',
-    label: 'Identity Plus',
+    label: 'Hockey Passport Plus',
     group: 'identity',
     track: 'personal',
     priceUsd: 59.99,
     stripePriceEnv: 'STRIPE_PRICE_IDENTITY_PLUS',
     tagline: 'Build your hockey story — every team, every milestone, every season, in one place anyone can find.',
-    cta: 'Upgrade to Identity Plus',
+    cta: 'Upgrade to Hockey Passport Plus',
     features: [
-      'Everything in Verified Identity',
+      'Everything in Hockey Passport',
       'Family Hub (link unlimited children)',
       'Stamps & attendance history on your passport',
       'Career timeline (auto-built from your data)',
@@ -335,7 +338,10 @@ export const PRICING_DISPLAY_ORDER: TierName[] = [
  */
 export const MAX_CLAIMS_PER_TIER: Record<TierName, number> = {
   // Identity
-  free: 0,
+  // WS25 (2026-08-23): free tier lifted from 0 to 1 so free users can claim
+  // one listing per profile type without paying. Verification is bundled into
+  // every paid subscription at no extra cost (see /api/verification/start-free).
+  free: 1,
   verified_identity: 1, // claim your own player profile
   identity_plus: 5, // unlimited roles + family
   // Organization (player capacity)
