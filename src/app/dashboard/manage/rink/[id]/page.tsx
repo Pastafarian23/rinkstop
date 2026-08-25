@@ -109,6 +109,36 @@ export default async function ManageRinkPage({ params }: PageProps) {
           🏆 Events →
         </Link>
         <Link
+          href={`/dashboard/manage/rink/${id}/staff`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          👥 Staff →
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${id}/connections`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          🤝 Connections →
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${id}/threads`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          💬 Messages →
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${id}/ice-listings`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          🧊 Ice Listings →
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${id}/contracts`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          📋 Contracts →
+        </Link>
+        <Link
           href={`/dashboard/manage/rink/${id}/disputes`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#cbd5e1', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
         >
