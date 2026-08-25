@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
 import { validateUsername, USERNAME_ERROR_MESSAGES, isInvalid } from '@/lib/username';
 import { setUsername } from '@/lib/username-server';
 import { applyModeration } from '@/lib/username-moderation';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
  * POST /api/usernames
