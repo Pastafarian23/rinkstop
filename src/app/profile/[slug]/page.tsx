@@ -5,6 +5,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { getTierLabel } from '@/lib/pricing';
+import { TierBadge } from '@/components/TierBadge';
 import { emitProfileFirstVisitor } from '@/lib/notifications/emit';
 import { PassportSections } from './passport/PassportSections';
 import CoverImageEditor from '@/components/CoverImageEditor';
@@ -638,18 +639,18 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                   borderTop: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
-                <p
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'rgba(255,255,255,0.4)',
-                    margin: 0,
-                  }}
-                >
-                  Joined {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'recently'}
-                  {tierLabel && tierLabel !== 'Free' && (
-                    <span style={{ marginLeft: '0.5rem', color: 'rgba(255,255,255,0.3)' }}>· {tierLabel} member</span>
-                  )}
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <p
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'rgba(255,255,255,0.4)',
+                      margin: 0,
+                    }}
+                  >
+                    Joined {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'recently'}
+                  </p>
+                  <TierBadge tier={profile.tier} size="sm" />
+                </div>
               </div>
             </div>
           </div>

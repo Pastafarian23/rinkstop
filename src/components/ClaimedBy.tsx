@@ -102,7 +102,9 @@ export function ClaimedBy({ entityType, entityId, entityName }: { entityType: 'r
           ) : (
             <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>{displayName}</span>
           )}
-          {isIdentityVerified ? (
+          {/* Badge only for paid tiers. Free users who verified get the
+             'Pending Verification' tag instead — badge is Hockey Passport status. */}
+          {isIdentityVerified && (data.tier === 'verified_identity' || data.tier === 'identity_plus') ? (
             <IdentityVerified
               size={14}
               verifiedAt={data.identity_verified_at ?? undefined}
