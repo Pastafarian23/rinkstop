@@ -294,7 +294,7 @@ export default async function Home() {
         <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: '3rem', paddingBottom: '3rem' }}>
           <div className="hero-grid">
             <div>
-              <div className="label">The Global Hockey Directory</div>
+              <div className="label">The World's Hockey Database</div>
 
               <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#fff', lineHeight: 0.95, marginBottom: '0.5rem' }}>
                 THE GLOBAL
