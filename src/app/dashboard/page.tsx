@@ -437,6 +437,7 @@ async function renderDashboard(userId: string) {
         safe('UsernameBanner', () => (
           <UsernameBanner
             displayName={profile?.display_name || firstName || 'RinkStop Member'}
+            isFree={(profile?.tier ?? 'free') === 'free'}
           />
         ))
       )}
