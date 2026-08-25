@@ -84,6 +84,7 @@ export default function IdentityClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [iframeError, setIframeError] = useState<string | null>(null);
+  const [showUpsell, setShowUpsell] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
@@ -140,6 +141,15 @@ export default function IdentityClient({
     }, 5000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [iframeUrl]);
+
+  // Show the Hockey Passport upsell immediately when a free user becomes verified.
+  // Covers both the polling path (status transitions → 'active') and the reload path
+  // (page loads with status='active' and tier='free').
+  useEffect(() => {
+    if (status === 'active' && tier === 'free') {
+      setShowUpsell(true);
+    }
+  }, [status, tier]);
 
   const startVerification = async () => {
     setLoading(true);
@@ -310,6 +320,30 @@ export default function IdentityClient({
         </div>
       )}
 
+      {showUpsell && (
+        <div style={upsellCardStyle}>
+          <div style={upsellBadgeStyle}>🏒</div>
+          <div style={{ flex: 1 }}>
+            <div style={upsellTitleStyle}>Your identity is verified — but the badge is locked</div>
+            <p style={upsellBodyStyle}>
+              The gold checkmark, unlimited claims, direct messaging, and coach endorsements are available exclusively to Hockey Passport holders. Verification is free — but unlocking the badge and its perks costs $24.99/year.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+              <Link
+                href="/pricing?intent=identity_verified"
+                style={upsellCtaStyle}
+                data-testid="identity-upsell-cta"
+              >
+                Unlock Hockey Passport — $24.99/yr
+              </Link>
+              <Link href="/faq" style={upsellSecondaryStyle}>
+                See what's included
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {status === 'expired' && (
         <div style={warningCardStyle}>
           <strong>Expired on {formatDate(identityExpiresAt)}.</strong> Re-verify to keep the check on your profile.
@@ -458,4 +492,63 @@ const howItWorksStyle: React.CSSProperties = {
   marginTop: '2.5rem',
   paddingTop: '1.5rem',
   borderTop: '1px solid rgba(255,255,255,0.1)',
+};
+
+const upsellCardStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '1.25rem',
+  background: 'rgba(255,184,28,0.06)',
+  border: '1.5px solid rgba(255,184,28,0.5)',
+  borderRadius: 10,
+  padding: '1.4rem 1.5rem',
+  margin: '1.25rem 0',
+};
+
+const upsellBadgeStyle: React.CSSProperties = {
+  fontSize: '2rem',
+  flexShrink: 0,
+  lineHeight: 1.2,
+  marginTop: '0.1rem',
+};
+
+const upsellTitleStyle: React.CSSProperties = {
+  fontWeight: 700,
+  fontSize: '1.05rem',
+  color: '#FFB81C',
+  marginBottom: '0.5rem',
+};
+
+const upsellBodyStyle: React.CSSProperties = {
+  color: 'rgba(255,255,255,0.7)',
+  fontSize: '0.9rem',
+  lineHeight: 1.6,
+  margin: 0,
+};
+
+const upsellCtaStyle: React.CSSProperties = {
+  display: 'inline-block',
+  background: '#C8102E',
+  color: '#fff',
+  border: 'none',
+  padding: '0.7rem 1.25rem',
+  borderRadius: 6,
+  fontSize: '0.9rem',
+  fontWeight: 600,
+  cursor: 'pointer',
+  textDecoration: 'none',
+  whiteSpace: 'nowrap',
+};
+
+const upsellSecondaryStyle: React.CSSProperties = {
+  display: 'inline-block',
+  color: 'rgba(255,255,255,0.6)',
+  border: '1px solid rgba(255,255,255,0.2)',
+  padding: '0.7rem 1.25rem',
+  borderRadius: 6,
+  fontSize: '0.9rem',
+  fontWeight: 500,
+  cursor: 'pointer',
+  textDecoration: 'none',
+  whiteSpace: 'nowrap',
 };
