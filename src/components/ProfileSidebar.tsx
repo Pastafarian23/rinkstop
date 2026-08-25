@@ -96,7 +96,7 @@ export default function ProfileSidebar({
             </>
           )}
           <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
-          <TierBadge tier={profile.tier} size="xs" />
+          <TierBadge tier={profile.tier} size="sm" />
         </div>
 
         {/* Owner-only inline edit shortcut — sits above the action row so
