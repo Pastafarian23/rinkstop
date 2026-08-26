@@ -79,6 +79,7 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
   { url: `${baseUrl}/hockey-travel`, changeFreq: 'monthly', priority: 0.5 },
   { url: `${baseUrl}/gear-brands`, changeFreq: 'monthly', priority: 0.5 },
   { url: `${baseUrl}/directory/nhl`, changeFreq: 'daily', priority: 0.9 },
+  { url: `${baseUrl}/directory/nhl/coaches`, changeFreq: 'monthly', priority: 0.7 },
   { url: `${baseUrl}/learn`, changeFreq: 'weekly', priority: 0.7 },
   { url: `${baseUrl}/ice-rinks-near-me`, changeFreq: 'monthly', priority: 0.7 },
 ];
