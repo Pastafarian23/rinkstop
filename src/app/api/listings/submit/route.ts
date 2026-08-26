@@ -8,6 +8,9 @@ if (!MATON_API_KEY) {
   throw new Error('MATON_API_KEY is not set');
 }
 const ZOHO_ACCOUNT_ID = '2958661000000008002';
+// OWASP A05 audit 2026-08-26: chat_id was hardcoded — moved to env var
+// so the Telegram notify target can be rotated without a code change.
+const TELEGRAM_NOTIFY_CHAT_ID = process.env.TELEGRAM_NOTIFY_CHAT_ID || '6543104235';
 
 async function sendTelegramNotification(submission: {
   listingType: string;
@@ -33,7 +36,7 @@ async function sendTelegramNotification(submission: {
   ].filter(Boolean).join('\n');
 
   const payload = {
-    chat_id: '6543104235',
+    chat_id: TELEGRAM_NOTIFY_CHAT_ID,
     text: `${status}${details}`,
     parse_mode: 'Markdown',
   };

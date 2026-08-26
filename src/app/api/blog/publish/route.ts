@@ -61,9 +61,46 @@ function jsonResponse(data: unknown, status: number = 200): Response {
   });
 }
 
-function requireSecret(request: NextRequest): boolean {
+function requireSecret(request: NextRequest): 'api_secret' | 'admin_secret' | 'none' {
   const key = request.headers.get('x-api-secret');
-  return !!key && key !== '' && (key === API_SECRET || key === ADMIN_SECRET);
+  if (!key || key === '') return 'none';
+  if (key === API_SECRET) return 'api_secret';
+  if (key === ADMIN_SECRET) return 'admin_secret';
+  return 'none';
+}
+
+// OWASP A05 audit 2026-08-26: log every call to /api/blog/publish so we can
+// trace content writes back to the caller IP + which secret was used.
+async function logPublishEvent(params: {
+  action: 'insert' | 'update' | 'reject';
+  secretKind: 'api_secret' | 'admin_secret' | 'none';
+  request: NextRequest;
+  slug?: string;
+  postId?: string;
+  statusCode: number;
+  error?: string;
+}): Promise<void> {
+  try {
+    const fwd = params.request.headers.get('x-forwarded-for') || '';
+    const callerIp = fwd.split(',')[0]?.trim()
+      || params.request.headers.get('x-real-ip')
+      || 'unknown';
+    const ua = params.request.headers.get('user-agent') || 'unknown';
+    await supabaseAdmin.from('publish_audit_log').insert({
+      action: params.action,
+      slug: params.slug ?? null,
+      post_id: params.postId ?? null,
+      secret_kind: params.secretKind,
+      caller_ip: callerIp,
+      user_agent: ua,
+      status_code: params.statusCode,
+      error: params.error ?? null,
+      metadata: null,
+    });
+  } catch (e) {
+    // Audit log failure must NOT block the publish.
+    console.error('[blog/publish] audit log write failed', e);
+  }
 }
 
 function normalizePostBody(body: Record<string, unknown>): Record<string, unknown> {
@@ -141,7 +178,15 @@ export async function GET(request: NextRequest) {
 //         seo_title?, seo_description?, author_name?, og_image_url?, author_role?,
 //         reading_time_minutes?, highlight_id?, published_at? }
 export async function POST(request: NextRequest) {
-  if (!requireSecret(request)) {
+  const secretKind = requireSecret(request);
+  if (secretKind === 'none') {
+    await logPublishEvent({
+      action: 'reject',
+      secretKind: 'none',
+      request,
+      statusCode: 401,
+      error: 'missing or wrong x-api-secret',
+    });
     return jsonResponse({ error: 'Unauthorized — missing or wrong x-api-secret' }, 401);
   }
   let body: Record<string, unknown>;
@@ -180,7 +225,25 @@ export async function POST(request: NextRequest) {
     .insert(normalized)
     .select('id, slug, title, status, published_at, created_at')
     .single();
-  if (error) return jsonResponse({ error: error.message }, 500);
+  if (error) {
+    await logPublishEvent({
+      action: 'insert',
+      secretKind,
+      request,
+      slug: normalized.slug as string,
+      statusCode: 500,
+      error: error.message,
+    });
+    return jsonResponse({ error: error.message }, 500);
+  }
+  await logPublishEvent({
+    action: 'insert',
+    secretKind,
+    request,
+    slug: (data as any)?.slug,
+    postId: (data as any)?.id,
+    statusCode: 201,
+  });
   return jsonResponse({ data, ok: true }, 201);
 }
 
@@ -189,7 +252,15 @@ export async function POST(request: NextRequest) {
 // Body: any subset of the post fields. Used for re-publish, status flips,
 // or content corrections done by the agent.
 export async function PUT(request: NextRequest) {
-  if (!requireSecret(request)) {
+  const secretKind = requireSecret(request);
+  if (secretKind === 'none') {
+    await logPublishEvent({
+      action: 'reject',
+      secretKind: 'none',
+      request,
+      statusCode: 401,
+      error: 'missing or wrong x-api-secret',
+    });
     return jsonResponse({ error: 'Unauthorized — missing or wrong x-api-secret' }, 401);
   }
   const slug = request.nextUrl.searchParams.get('slug');
@@ -228,7 +299,25 @@ export async function PUT(request: NextRequest) {
     .eq('slug', slug)
     .select('id, slug, title, status, published_at, updated_at')
     .single();
-  if (error) return jsonResponse({ error: error.message }, 500);
+  if (error) {
+    await logPublishEvent({
+      action: 'update',
+      secretKind,
+      request,
+      slug,
+      statusCode: 500,
+      error: error.message,
+    });
+    return jsonResponse({ error: error.message }, 500);
+  }
+  await logPublishEvent({
+    action: 'update',
+    secretKind,
+    request,
+    slug,
+    postId: (data as any)?.id,
+    statusCode: 200,
+  });
   return jsonResponse({ data, ok: true });
 }
 
