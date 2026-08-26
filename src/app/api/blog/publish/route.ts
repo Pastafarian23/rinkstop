@@ -36,6 +36,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 
+// Security note (2026-08-26 audit fix #2):
+//   - GET uses the anon client (RLS-filtered). Only published posts are readable.
+//   - POST/PUT use the admin client (service role) — required because anon can
+//     no longer INSERT/UPDATE posts after the 2026-06-16 RLS tightening.
+//   - The previous `supabaseAdmin ?? supabase` fallback was a latent bug: if
+//     SUPABASE_SERVICE_ROLE_KEY was ever unset, writes would silently fall
+//     through to the anon client and fail RLS (status='published' mismatch on
+//     insert, no INSERT policy on update). Removed.
+
 const API_SECRET = process.env.API_SECRET;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
@@ -55,10 +64,6 @@ function jsonResponse(data: unknown, status: number = 200): Response {
 function requireSecret(request: NextRequest): boolean {
   const key = request.headers.get('x-api-secret');
   return !!key && key !== '' && (key === API_SECRET || key === ADMIN_SECRET);
-}
-
-function pickSupabase() {
-  return supabaseAdmin ?? supabase;
 }
 
 function normalizePostBody(body: Record<string, unknown>): Record<string, unknown> {
@@ -105,7 +110,9 @@ export async function GET(request: NextRequest) {
   const list = url.searchParams.get('list');
 
   if (slug) {
-    const { data, error } = await pickSupabase()
+    // GET must use the anon (RLS-filtered) client: anon can read published
+    // posts but cannot see drafts. Admin would bypass RLS and leak drafts.
+    const { data, error } = await supabase
       .from('posts')
       .select('*')
       .eq('slug', slug)
@@ -116,7 +123,7 @@ export async function GET(request: NextRequest) {
 
   if (list === 'recent') {
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '10', 10), 50);
-    const { data, error } = await pickSupabase()
+    const { data, error } = await supabase
       .from('posts')
       .select('id, slug, title, subtitle, category, status, author_name, published_at, og_image_url, seo_title, seo_description, created_at')
       .order('created_at', { ascending: false })
@@ -160,7 +167,14 @@ export async function POST(request: NextRequest) {
     normalized.published_at = new Date().toISOString();
   }
 
-  const db = pickSupabase();
+  // POST writes use the service-role client (RLS-bypassing). Anon can no
+  // longer INSERT posts (2026-06-16 critical-rls-fixes). Fail loudly if
+  // service role is missing rather than silently 500'ing in RLS.
+  if (!supabaseAdmin) {
+    console.error('[blog/publish] POST called but supabaseAdmin is null — service role key missing');
+    return jsonResponse({ error: 'Server misconfigured: service role key missing' }, 500);
+  }
+  const db = supabaseAdmin;
   const { data, error } = await db
     .from('posts')
     .insert(normalized)
@@ -187,7 +201,12 @@ export async function PUT(request: NextRequest) {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
   const normalized = normalizePostBody(body);
-  const db = pickSupabase();
+  // PUT writes use the service-role client — anon UPDATE on posts is denied.
+  if (!supabaseAdmin) {
+    console.error('[blog/publish] PUT called but supabaseAdmin is null — service role key missing');
+    return jsonResponse({ error: 'Server misconfigured: service role key missing' }, 500);
+  }
+  const db = supabaseAdmin;
   // Preserve the original published_at on re-PUT unless the caller explicitly
   // sends a new one. Reading the existing row here avoids bumping publish
   // date every time the agent corrects a typo.
