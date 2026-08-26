@@ -8,9 +8,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRinkOwner } from '@/lib/owner-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { checkRateLimit, applyRateLimitHeaders } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Security audit 2026-08-26 fix #5: rate limit ice listing mutations.
+// PATCH: 60/hr per listing. DELETE: 30/hr per listing.
+const PATCH_RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 60 * 1000 };
+const DELETE_RATE_LIMIT = { maxRequests: 30, windowMs: 60 * 60 * 1000 };
 
 const VALID_SLOT_TYPES = new Set(['practice','game','tournament','camp','clinic','lesson','other']);
 const VALID_VISIBILITIES = new Set(['public','connections_only']);
@@ -27,6 +33,17 @@ export async function PATCH(
   const { id, listingId } = await params;
   const owner = await requireRinkOwner(request, id);
   if ('response' in owner) return owner.response;
+
+  // Security audit 2026-08-26 fix #5.
+  const rateKey = `ice-listing-patch:${listingId}`;
+  const rateResult = await checkRateLimit(rateKey, PATCH_RATE_LIMIT);
+  if (!rateResult.allowed) {
+    const resp = NextResponse.json(
+      { error: 'Too many update attempts on this listing. Please try again later.' },
+      { status: 429 },
+    );
+    return applyRateLimitHeaders(resp, rateResult);
+  }
 
   const { data: existing } = await supabaseAdmin
     .from('ice_listings')
@@ -97,6 +114,17 @@ export async function DELETE(
   const { id, listingId } = await params;
   const owner = await requireRinkOwner(request, id);
   if ('response' in owner) return owner.response;
+
+  // Security audit 2026-08-26 fix #5.
+  const rateKey = `ice-listing-delete:${listingId}`;
+  const rateResult = await checkRateLimit(rateKey, DELETE_RATE_LIMIT);
+  if (!rateResult.allowed) {
+    const resp = NextResponse.json(
+      { error: 'Too many delete attempts on this listing. Please try again later.' },
+      { status: 429 },
+    );
+    return applyRateLimitHeaders(resp, rateResult);
+  }
 
   const { error } = await supabaseAdmin
     .from('ice_listings')

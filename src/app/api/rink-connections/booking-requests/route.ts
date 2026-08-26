@@ -10,9 +10,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { notifyBookingRequestCreated } from '@/lib/rink-notifications';
+import { checkRateLimit, applyRateLimitHeaders } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Security audit 2026-08-26 fix #5: rate limit booking request submissions.
+// 20 creates/hr per user prevents spam/DoS without blocking legitimate use.
+const POST_RATE_LIMIT = { maxRequests: 20, windowMs: 60 * 60 * 1000 };
 
 function badRequest(msg: string) {
   return NextResponse.json({ error: msg }, { status: 400 });
@@ -49,6 +54,17 @@ export async function POST(request: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+  }
+
+  // Security audit 2026-08-26 fix #5: rate limit to prevent spam.
+  const rateKey = `booking-request:user:${userId}`;
+  const rateResult = await checkRateLimit(rateKey, POST_RATE_LIMIT);
+  if (!rateResult.allowed) {
+    const resp = NextResponse.json(
+      { error: 'Too many booking requests. Please try again later.' },
+      { status: 429 },
+    );
+    return applyRateLimitHeaders(resp, rateResult);
   }
 
   let body: Record<string, unknown>;

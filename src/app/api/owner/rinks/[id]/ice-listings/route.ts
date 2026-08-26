@@ -8,9 +8,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRinkOwner } from '@/lib/owner-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { checkRateLimit, applyRateLimitHeaders } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Security audit 2026-08-26 fix #5: rate limit ice listing creation.
+// 30 creates/hr per rink prevents spam / inventory flooding.
+const POST_RATE_LIMIT = { maxRequests: 30, windowMs: 60 * 60 * 1000 };
 
 const VALID_SLOT_TYPES = new Set(['practice','game','tournament','camp','clinic','lesson','other']);
 const VALID_VISIBILITIES = new Set(['public','connections_only']);
@@ -49,6 +54,17 @@ export async function POST(
   const { id } = await params;
   const owner = await requireRinkOwner(request, id);
   if ('response' in owner) return owner.response;
+
+  // Security audit 2026-08-26 fix #5: rate limit per rink.
+  const rateKey = `ice-listing:user:${owner.owner.rinkId}`;
+  const rateResult = await checkRateLimit(rateKey, POST_RATE_LIMIT);
+  if (!rateResult.allowed) {
+    const resp = NextResponse.json(
+      { error: 'Too many listings created. Please try again later.' },
+      { status: 429 },
+    );
+    return applyRateLimitHeaders(resp, rateResult);
+  }
 
   let body: Record<string, unknown>;
   try {
