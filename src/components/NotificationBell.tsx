@@ -236,7 +236,7 @@ export default function NotificationBell() {
             </div>
           )}
 
-          {!loading && notifications.length === 0 && (
+          {!loading && notifications.length === 0 && consumerUnread === 0 && (
             <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>🔔</div>
               No notifications yet.
@@ -244,6 +244,32 @@ export default function NotificationBell() {
                 Updates from teams you manage will appear here.
               </div>
             </div>
+          )}
+
+          {!loading && notifications.length === 0 && consumerUnread > 0 && (
+            <Link
+              href="/dashboard/notifications"
+              onClick={() => setOpen(false)}
+              style={{
+                display: 'flex',
+                gap: '0.65rem',
+                padding: '1rem',
+                background: 'rgba(255,184,28,0.05)',
+                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                textDecoration: 'none',
+                color: 'inherit',
+              }}
+            >
+              <div style={{ fontSize: '1.1rem', flexShrink: 0, lineHeight: 1.3 }}>🔔</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.825rem', color: '#fff', fontWeight: 600, marginBottom: '0.15rem' }}>
+                  {consumerUnread} unread {consumerUnread === 1 ? 'notification' : 'notifications'}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)' }}>
+                  Tap to view all notifications
+                </div>
+              </div>
+            </Link>
           )}
 
           {notifications.map((n) => (
