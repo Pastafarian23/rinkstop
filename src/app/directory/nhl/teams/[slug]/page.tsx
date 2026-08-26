@@ -13,6 +13,8 @@ import {
   NhlPlayer,
   NhlStanding,
 } from '@/lib/nhl-data';
+import { getTeamCoachingStaff } from '@/lib/nhl-coaching';
+import CoachingStaffSection from '@/components/CoachingStaffSection';
 import TeamLogo from '@/components/TeamLogo';
 
 interface Props {
@@ -175,11 +177,12 @@ export default async function TeamPage({ params }: Props) {
   const teamId = dbTeam?.id;
 
   // Fetch all data in parallel
-  const [standing, recentGames, upcomingGames, players] = await Promise.all([
+  const [standing, recentGames, upcomingGames, players, coachingStaff] = await Promise.all([
     teamId ? getCurrentStandingForTeam(teamId, team.name) : Promise.resolve(null),
     teamId ? getTeamRecentGames(teamId, 8) : Promise.resolve([]),
     teamId ? getTeamUpcomingGames(teamId, 5) : Promise.resolve([]),
     teamId ? getTeamPlayers(teamId, team.name, 20) : Promise.resolve([]),
+    teamId ? getTeamCoachingStaff(teamId, '2025-26') : Promise.resolve([]),
   ]);
 
   const winPct = standing && standing.played > 0 ? standing.wins / standing.played : 0;
@@ -302,6 +305,9 @@ export default async function TeamPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* 2025-26 Coaching Staff */}
+      {teamId && <CoachingStaffSection staff={coachingStaff} season="2025-26" />}
     </main>
   );
 }
