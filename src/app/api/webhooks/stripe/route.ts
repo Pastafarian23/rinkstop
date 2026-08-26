@@ -86,8 +86,35 @@ export async function POST(req: NextRequest) {
   }
 
   let eventRowId = 'unknown';
+  let alreadyExisted = false;
   try {
-    eventRowId = (await logReceived(event)).id;
+    const logResult = await logReceived(event);
+    eventRowId = logResult.id;
+    alreadyExisted = logResult.alreadyExisted;
+
+    // Idempotency: if we've already processed this event.id, skip the handler.
+    // Stripe retries up to 72h with the same event.id; without this guard, a
+    // retried checkout.session.completed would re-fire updateUserTier and
+    // re-insert analytics rows. (analytics upserts are already idempotent
+    // via onConflict; the danger is tier mutations + founding-member awards.)
+    //
+    // Only skip when the prior run succeeded (status='processed'). A 'received'
+    // row means the previous attempt crashed mid-handler — Stripe is correctly
+    // retrying, so we MUST reprocess.
+    if (alreadyExisted) {
+      const supabase = getSupabase() as any;
+      const { data: prior } = await supabase
+        .from('stripe_webhook_events')
+        .select('status')
+        .eq('id', eventRowId)
+        .single();
+      const priorStatus = prior?.status ?? null;
+      if (priorStatus === 'processed') {
+        console.log(`[Webhook] event ${event.id} already processed — skipping`);
+        return NextResponse.json({ received: true, deduped: true });
+      }
+      console.log(`[Webhook] event ${event.id} previously ${priorStatus ?? 'unknown'} — reprocessing`);
+    }
 
     switch (event.type) {
       case 'checkout.session.completed': {

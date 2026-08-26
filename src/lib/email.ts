@@ -63,8 +63,12 @@ function getTransport(): Transporter {
 export interface SendEmailArgs {
   to: string;
   subject: string;
-  template: TemplateName;
-  data: TemplateData[TemplateName];
+  /** Render via a typed template. Mutually exclusive with raw html/text. */
+  template?: TemplateName;
+  data?: TemplateData[TemplateName];
+  /** Send a raw HTML email (used by rink-notifications and similar fire-and-forget fan-out). */
+  html?: string;
+  text?: string;
   /** Optional reply-to override (defaults to support@). */
   replyTo?: string;
   /** Tag for log filtering (e.g. "welcome", "team-invite"). */
@@ -82,9 +86,21 @@ export interface SendEmailResult {
  * can fire-and-forget with `void sendEmail(...)`.
  */
 export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
-  const tag = args.tag || args.template;
+  const tag = args.tag || args.template || 'raw';
   try {
-    const { html, text } = renderTemplate(args.template, args.data);
+    let html: string;
+    let text: string | undefined;
+    if (args.template && args.data) {
+      const rendered = renderTemplate(args.template, args.data);
+      html = rendered.html;
+      text = rendered.text;
+    } else if (args.html) {
+      html = args.html;
+      text = args.text;
+    } else {
+      console.error(`[email] send failed [${tag} -> ${args.to}]: no template/data or html/text provided`);
+      return { ok: false, error: 'no-template-or-html' };
+    }
     const transport = getTransport();
     const fromName = process.env.ZOHOMAIL_FROM_NAME || 'RinkStop';
     const fromAddress = process.env.ZOHOMAIL_FROM_ADDRESS || args.to.includes('@rinkstop.com')
