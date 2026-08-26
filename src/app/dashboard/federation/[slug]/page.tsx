@@ -7,6 +7,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import FederationDashboardClient from './FederationDashboardClient';
 
 export const dynamic = 'force-dynamic';
 
