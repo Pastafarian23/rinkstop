@@ -232,7 +232,7 @@ export default async function NotificationsPage() {
       style={{
         padding: '24px 16px 64px',
         fontFamily: '-apple-system, system-ui, sans-serif',
-        color: '#0f172a',
+        color: '#e5e7eb',
         maxWidth: 920,
         margin: '0 auto',
       }}
@@ -245,7 +245,7 @@ export default async function NotificationsPage() {
           marginBottom: '1.5rem',
         }}
       >
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Notifications</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#fff' }}>Notifications</h1>
         {unreadCount > 0 && (
           <span
             style={{
@@ -308,7 +308,7 @@ export default async function NotificationsPage() {
                   fontWeight: 700,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  color: '#475569',
+                  color: '#cbd5e1',
                   margin: '0 0 0.5rem',
                   padding: '0 0.25rem',
                 }}
