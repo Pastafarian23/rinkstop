@@ -226,13 +226,13 @@ export default async function WelcomePage({
         }}
       >
         <div style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color, marginBottom: '0.5rem' }}>
-          Welcome
+          {upgraded ? '✓ Payment received' : 'Welcome'}
         </div>
         <h1
           className="font-sport"
           style={{ fontSize: 'clamp(2rem, 6vw, 3rem)', color: '#fff', lineHeight: 0.95, margin: '0 0 0.625rem' }}
         >
-          YOU&apos;RE IN
+          {upgraded ? 'THANKS FOR SUBSCRIBING' : 'WELCOME'}
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: '0.5rem', flexWrap: 'wrap' }}>
           <TierBadge tier={tier} size="md" />
