@@ -11,9 +11,14 @@ import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { createCheckoutSession, bookingToLineItem } from '@/lib/stripe-connect';
 import { notifyBookingApproved, notifyBookingRejected } from '@/lib/rink-notifications';
+import { checkRateLimit, applyRateLimitHeaders } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+// Security audit 2026-08-26 fix #5: rate limit booking status changes.
+// 60/hr per booking prevents rapid state cycling / DoS.
+const PATCH_RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 60 * 1000 };
 
 const VALID_STATUSES = new Set([
   'pending',
@@ -47,6 +52,17 @@ export async function PATCH(
   }
 
   const { id } = await params;
+
+  // Security audit 2026-08-26 fix #5: rate limit per booking.
+  const rateKey = `booking-request-patch:${id}`;
+  const rateResult = await checkRateLimit(rateKey, PATCH_RATE_LIMIT);
+  if (!rateResult.allowed) {
+    const resp = NextResponse.json(
+      { error: 'Too many update attempts on this booking. Please try again later.' },
+      { status: 429 },
+    );
+    return applyRateLimitHeaders(resp, rateResult);
+  }
 
   // Load the booking request
   const { data: br, error: brErr } = await supabaseAdmin
