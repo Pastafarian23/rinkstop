@@ -387,14 +387,19 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
               type="application/ld+json"
               dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
             />
-            <section style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+            <details style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
+              <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
                 Find any hockey team in the world
-              </h2>
-              <p style={{ margin: 0 }}>
-                {counts.teams.toLocaleString()}+ active hockey teams across {counts.countries} countries and {counts.leagues}+ leagues — from NHL and KHL down to local youth programs. Use the search and filters below to find a team by name, league tier, country, or city.
-              </p>
-            </section>
+              </summary>
+              <div style={{ marginTop: '0.75rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+                  Find any hockey team in the world
+                </h2>
+                <p style={{ margin: 0 }}>
+                  {counts.teams.toLocaleString()}+ active hockey teams across {counts.countries} countries and {counts.leagues}+ leagues — from NHL and KHL down to local youth programs. Use the search and filters below to find a team by name, league tier, country, or city.
+                </p>
+              </div>
+            </details>
             <details style={{ maxWidth: '80rem', margin: '0 auto 1.5rem', padding: '0 1rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
               <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
                 Frequently asked questions

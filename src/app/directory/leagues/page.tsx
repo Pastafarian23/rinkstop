@@ -156,18 +156,12 @@ export default async function LeaguesPage() {
           </p>
         </div>
 
-        {/* Search-term-aligned intro (≥150 words) */}
-        <section style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '820px', marginBottom: '1.75rem' }}>
-          <p style={{ margin: 0 }}>
-            RinkStop tracks <strong>240+ active hockey leagues</strong> across six continents — the most complete directory of organized ice hockey anywhere on the web. Browse professional leagues like the NHL, AHL, KHL, SHL, Liiga, DEL, and PWHL; major junior circuits including the OHL, WHL, QMJHL, and USHL; college hockey at the NCAA Division I and III levels plus U SPORTS in Canada; IIHF-sanctioned international tournaments; and amateur, women&apos;s, and youth leagues at every level.
-          </p>
-          <p style={{ marginTop: '0.75rem' }}>
-            Each league profile lists the current teams, tier, country, level, and the league&apos;s own website. Use the search and tier filters below to find a specific league, or browse the full directory by country, level, or season. League profiles are updated weekly during the active season and monthly in the off-season.
-          </p>
-        </section>
+        {/* Search + filters + results — render FIRST so users can immediately
+            browse. The long intro is collapsed below by default. */}
+        <LeaguesIndexClient initialLeagues={initialLeagues} />
 
         {/* Tier cross-links */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '2rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
           {[
             { label: 'Pro', href: '/directory/pro-leagues' },
             { label: 'Junior', href: '/directory/junior' },
@@ -195,41 +189,60 @@ export default async function LeaguesPage() {
           ))}
         </div>
 
+        {/* Search-term-aligned intro (≥150 words) — collapsed so users see
+            results first. The content still renders into HTML for SEO/Google
+            (the <details> body is in the DOM even when collapsed). */}
+        <details style={{ marginBottom: '1.5rem' }}>
+          <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
+            About this directory
+          </summary>
+          <section style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '820px', marginTop: '0.75rem' }}>
+            <p style={{ margin: 0 }}>
+              RinkStop tracks <strong>240+ active hockey leagues</strong> across six continents — the most complete directory of organized ice hockey anywhere on the web. Browse professional leagues like the NHL, AHL, KHL, SHL, Liiga, DEL, and PWHL; major junior circuits including the OHL, WHL, QMJHL, and USHL; college hockey at the NCAA Division I and III levels plus U SPORTS in Canada; IIHF-sanctioned international tournaments; and amateur, women&apos;s, and youth leagues at every level.
+            </p>
+            <p style={{ marginTop: '0.75rem' }}>
+              Each league profile lists the current teams, tier, country, level, and the league&apos;s own website. Use the search and tier filters above to find a specific league, or browse the full directory by country, level, or season. League profiles are updated weekly during the active season and monthly in the off-season.
+            </p>
+          </section>
+        </details>
+
         {/* Featured leagues by tier */}
-        <section style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.125rem', color: '#fff', marginBottom: '1rem', fontWeight: 700 }}>
+        <details style={{ marginBottom: '1.5rem' }}>
+          <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
             Featured leagues by tier
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {Object.entries(featuredByTier).map(([tier, leagues]) => (
-              <div key={tier} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
-                <p style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)', marginBottom: '0.5rem' }}>{tier}</p>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                  {leagues.map((name) => (
-                    <li key={name} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)' }}>
-                      {name}
-                    </li>
-                  ))}
-                </ul>
+          </summary>
+          <section style={{ marginTop: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+              {Object.entries(featuredByTier).map(([tier, leagues]) => (
+                <div key={tier} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
+                  <p style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)', marginBottom: '0.5rem' }}>{tier}</p>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    {leagues.map((name) => (
+                      <li key={name} style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)' }}>
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        </details>
+
+        {/* FAQ section */}
+        <details style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.5rem 1.5rem 1rem', marginBottom: '2rem' }}>
+          <summary style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700, userSelect: 'none', padding: '0.5rem 0' }}>
+            Frequently asked questions
+          </summary>
+          <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            {faqs.map((f) => (
+              <div key={f.q} style={{ borderTop: '1px solid var(--border)', paddingTop: '0.875rem' }}>
+                <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#fff', margin: 0 }}>{f.q}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', lineHeight: 1.65, marginTop: '0.5rem', marginBottom: 0 }}>{f.a}</p>
               </div>
             ))}
           </div>
-        </section>
-
-        {/* FAQ section */}
-        <section style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.125rem', color: '#fff', marginBottom: '1rem', fontWeight: 700 }}>Frequently Asked Questions</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            {faqs.map((f) => (
-              <details key={f.q} style={{ borderTop: '1px solid var(--border)', paddingTop: '0.875rem' }}>
-                <summary style={{ color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9375rem' }}>{f.q}</summary>
-                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', lineHeight: 1.65, marginTop: '0.5rem', marginBottom: 0 }}>{f.a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        <LeaguesIndexClient initialLeagues={initialLeagues} />
+        </details>
       </main>
     </>
   );

@@ -62,24 +62,17 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-      {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
-        <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Leagues</span>
+      {/* Breadcrumb — server already renders one above, but we keep a hidden
+          a11y copy here for the client-side filter to remain semantically self-contained. */}
+      <nav aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}>
+        <Link href="/">Home</Link>
+        <span> › </span>
+        <Link href="/directory">Directory</Link>
+        <span> › </span>
+        <span>Leagues</span>
       </nav>
 
-      {/* Header */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div className="label">Directory</div>
-        <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          HOCKEY LEAGUES
-        </h1>
-      </div>
-
-      {/* Filter Bar */}
+      {/* Filter Bar — search + country + verified-only toggle */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
           <FilterIcon className="w-4 h-4" />
