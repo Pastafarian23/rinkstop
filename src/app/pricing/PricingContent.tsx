@@ -83,6 +83,13 @@ const GROUP_ORDER: { id: TierGroup; title: string; subtitle: string }[] = [
   },
 ];
 
+const ROLE_TABS = [
+  { id: 'all', label: 'All plans' },
+  { id: 'identity', label: 'For me' },
+  { id: 'organization', label: 'For my club / team' },
+  { id: 'business', label: 'For my business' },
+];
+
 const FAQ = [
   {
     q: 'What is a Verified Hockey Identity?',
