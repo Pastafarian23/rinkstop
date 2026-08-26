@@ -272,6 +272,40 @@ export async function PUT(request: NextRequest) {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
   const normalized = normalizePostBody(body);
+  // OWASP follow-up 2026-08-26: ADMIN_SECRET is required to flip a post's
+  // status to or from 'published' (republish or unpublish). The agent's
+  // API_SECRET is fine for new posts (POST) and content corrections that
+  // don't change publish state. This prevents an API_SECRET leak from
+  // being able to silently retract or republish articles.
+  if (normalized.status && normalized.status !== undefined && secretKind !== 'admin_secret') {
+    // Look up current status to see if this is a status flip.
+    const dbCheck = supabaseAdmin;
+    if (dbCheck) {
+      const { data: current } = await dbCheck
+        .from('posts')
+        .select('status')
+        .eq('slug', slug)
+        .maybeSingle();
+      const currentStatus = current?.status as string | undefined;
+      if (
+        (currentStatus === 'published' && normalized.status !== 'published') ||
+        (currentStatus !== 'published' && normalized.status === 'published')
+      ) {
+        await logPublishEvent({
+          action: 'reject',
+          secretKind,
+          request,
+          slug,
+          statusCode: 403,
+          error: 'admin_secret_required_for_publish_flip',
+          // detail column doesn't exist on publish_audit_log; pass via metadata instead
+        });
+        return jsonResponse({
+          error: 'ADMIN_SECRET required to flip a post to or from published status. Use x-api-secret with ADMIN_SECRET.',
+        }, 403);
+      }
+    }
+  }
   // PUT writes use the service-role client — anon UPDATE on posts is denied.
   if (!supabaseAdmin) {
     console.error('[blog/publish] PUT called but supabaseAdmin is null — service role key missing');
