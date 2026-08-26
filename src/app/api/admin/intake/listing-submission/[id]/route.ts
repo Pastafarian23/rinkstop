@@ -19,7 +19,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_intake_listing-submission');
   if ('response' in auth) return auth.response;
 
   const { id } = await params;

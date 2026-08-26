@@ -130,7 +130,7 @@ export async function POST(
     return res;
   }
 
-  const gate = await getAdminFromRequest();
+  const gate = await getAdminFromRequest(request, 'admin_rinks_events');
   if ('response' in gate) return gate.response;
   const { id } = await params;
   if (!id || typeof id !== 'string') return badRequest('rink id is required.');

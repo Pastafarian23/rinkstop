@@ -45,7 +45,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ entity: string }> }
 ) {
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_bulk_[entity]');
   if ('response' in auth) return auth.response;
   const adminCtx = auth.admin;
 

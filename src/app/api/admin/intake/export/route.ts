@@ -21,7 +21,7 @@ function csvEscape(value: any): string {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_intake_export');
   if ('response' in auth) return auth.response;
 
   const { searchParams } = new URL(request.url);

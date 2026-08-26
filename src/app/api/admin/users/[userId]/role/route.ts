@@ -17,7 +17,7 @@ type ValidRole = (typeof VALID_ROLES)[number];
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   const { userId } = await params;
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_users_[userId]_role');
   if ('response' in auth) return auth.response;
   const admin = auth.admin;
 

@@ -50,7 +50,7 @@ export async function POST(
   maybeCleanup();
 
   // ---- Admin guard ----
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'corrections_review');
   if ('response' in auth) {
     return applyRateLimitHeaders(auth.response as NextResponse, rl);
   }

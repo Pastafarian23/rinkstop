@@ -1,4 +1,5 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { redirect } from 'next/navigation';
 
@@ -103,15 +104,44 @@ export async function requireAdmin(): Promise<AdminContext> {
 /**
  * For API routes - returns the admin context or a NextResponse with 401/403.
  * Use this in route.ts handlers.
+ *
+ * OWASP A09 audit 2026-08-26: takes optional `request` + `attemptedAction`
+ * so auth failures are recorded with caller IP, user agent, path, and what
+ * the caller was trying to do. If request is omitted (legacy callers),
+ * no audit log entry is written.
  */
-export async function getAdminFromRequest(): Promise<{ admin: AdminContext } | { response: Response }> {
+export async function getAdminFromRequest(
+  request?: NextRequest,
+  attemptedAction?: string,
+): Promise<{ admin: AdminContext } | { response: Response }> {
   const session = await auth();
   if (!session.userId) {
+    if (request) {
+      // Dynamic import to avoid pulling next/server into server-component paths.
+      const { logAuthFailure } = await import('./auth-audit');
+      void logAuthFailure({
+        request,
+        userId: null,
+        reason: 'no_session',
+        attemptedAction: attemptedAction ?? 'admin_access',
+        statusCode: 401,
+      });
+    }
     return { response: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
   }
 
   const user = await currentUser();
   if (!user) {
+    if (request) {
+      const { logAuthFailure } = await import('./auth-audit');
+      void logAuthFailure({
+        request,
+        userId: session.userId,
+        reason: 'no_user',
+        attemptedAction: attemptedAction ?? 'admin_access',
+        statusCode: 401,
+      });
+    }
     return { response: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
   }
 
@@ -159,6 +189,20 @@ export async function getAdminFromRequest(): Promise<{ admin: AdminContext } | {
         isSuperAdmin: dbRole === 'super_admin',
       },
     };
+  }
+
+  if (request) {
+    const { logAuthFailure } = await import('./auth-audit');
+    void logAuthFailure({
+      request,
+      userId: session.userId,
+      reason: 'not_admin',
+      attemptedAction: attemptedAction ?? 'admin_access',
+      requiredRole: 'admin',
+      callerTier: dbRole,
+      statusCode: 403,
+      detail: `email=${email}`,
+    });
   }
 
   return { response: new Response(JSON.stringify({ error: 'Admin access required' }), { status: 403, headers: { 'Content-Type': 'application/json' } }) };
