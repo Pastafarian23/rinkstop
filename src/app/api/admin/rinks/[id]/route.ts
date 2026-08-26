@@ -48,7 +48,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
  * Body: { name?, city?, state?, country?, latitude?, longitude? }
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_rinks');
   if ('response' in auth) return auth.response;
   const { id } = await params;
 

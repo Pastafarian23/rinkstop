@@ -47,7 +47,7 @@ export async function PATCH(
     return res;
   }
 
-  const gate = await getAdminFromRequest();
+  const gate = await getAdminFromRequest(request, 'admin_rinks_events_[eventId]');
   if ('response' in gate) return gate.response;
   const { id, eventId } = await params;
   if (!id || !eventId) return badRequest('rink id and event id are required.');
@@ -110,7 +110,7 @@ export async function DELETE(
     return res;
   }
 
-  const gate = await getAdminFromRequest();
+  const gate = await getAdminFromRequest(request, 'admin_rinks_events_[eventId]');
   if ('response' in gate) return gate.response;
   const { id, eventId } = await params;
   if (!id || !eventId) return badRequest('rink id and event id are required.');

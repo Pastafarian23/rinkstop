@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
  * Body: { name?, city?, country?, league_id? }
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_teams');
   if ('response' in auth) return auth.response;
   const admin = auth.admin;
   const { id } = await params;
