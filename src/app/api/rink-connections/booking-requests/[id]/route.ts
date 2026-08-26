@@ -2,17 +2,29 @@
 //
 // WS17 PR4 - Single booking request: update (approve/reject/negotiate).
 // Also for the requester to edit their own pending request.
+// Phase 2B: rink approval now creates a Stripe Checkout session.
 //
 //   PATCH  /api/rink-connections/booking-requests/[id]  — update status or details
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { createCheckoutSession, bookingToLineItem } from '@/lib/stripe-connect';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const VALID_STATUSES = new Set(['pending','negotiating','approved','rejected','cancelled']);
+const VALID_STATUSES = new Set([
+  'pending',
+  'negotiating',
+  'approved',
+  'rejected',
+  'cancelled',
+  'paid',
+  'confirmed',
+  'completed',
+  'expired',
+]);
 
 function badRequest(msg: string) {
   return NextResponse.json({ error: msg }, { status: 400 });
@@ -20,7 +32,7 @@ function badRequest(msg: string) {
 
 function isRinkOwner(claims: Record<string, unknown>[], rinkId: string): boolean {
   return claims.some(
-    (c) => c.entity_id === rinkId && c.claim_type === 'rink' && c.status === 'approved'
+    (c) => c.entity_id === rinkId && c.claim_type === 'rink' && c.status === 'approved',
   );
 }
 
@@ -38,7 +50,7 @@ export async function PATCH(
   // Load the booking request
   const { data: br, error: brErr } = await supabaseAdmin
     .from('booking_requests')
-    .select('id, rink_id, requesting_user_id, status, activity_log, connection_id')
+    .select('id, rink_id, requesting_user_id, status, activity_log, connection_id, counter_price_cents, requested_start, requested_end, notes')
     .eq('id', id)
     .single();
 
@@ -85,9 +97,7 @@ export async function PATCH(
       return badRequest(`status must be one of: ${[...VALID_STATUSES].join(', ')}.`);
     }
 
-    // Rink admin can: approve, reject, negotiate
-    // Requester can: cancel (their own, only if pending/negotiating)
-    const rinkAdminTransitions = new Set(['negotiating','approved','rejected']);
+    const rinkAdminTransitions = new Set(['negotiating', 'approved', 'rejected', 'confirmed', 'completed', 'expired']);
     const requesterTransitions = new Set(['cancelled']);
 
     if (rinkAdminTransitions.has(newStatus) && !isRinkAdmin) {
@@ -96,8 +106,8 @@ export async function PATCH(
     if (requesterTransitions.has(newStatus) && !isRequester) {
       return NextResponse.json({ error: 'Only the requester can cancel a booking request.' }, { status: 403 });
     }
-    if (newStatus === 'cancelled' && br.status !== 'pending' && br.status !== 'negotiating') {
-      return badRequest('Only pending or negotiating requests can be cancelled.');
+    if (newStatus === 'cancelled' && br.status !== 'pending' && br.status !== 'negotiating' && br.status !== 'approved') {
+      return badRequest('Only pending, negotiating, or approved requests can be cancelled.');
     }
 
     updates.status = newStatus;
@@ -155,6 +165,82 @@ export async function PATCH(
   if (error) {
     console.error('[booking-request] update failed', error);
     return NextResponse.json({ error: 'Failed to update booking request.' }, { status: 500 });
+  }
+
+  // If rink admin just approved with a price, create Stripe Checkout session
+  const justApproved = body.status === 'approved' && br.status !== 'approved';
+  const hasPrice = updates.counter_price_cents !== undefined && (updates.counter_price_cents as number | null) !== null;
+
+  if (justApproved && hasPrice) {
+    try {
+      const { data: rinkOwner } = await supabaseAdmin
+        .from('rink_owners')
+        .select('stripe_account_id, stripe_onboarding_complete')
+        .eq('rink_id', br.rink_id)
+        .maybeSingle();
+
+      if (rinkOwner?.stripe_account_id && rinkOwner.stripe_onboarding_complete) {
+        const { data: rink } = await supabaseAdmin
+          .from('rinks')
+          .select('name')
+          .eq('id', br.rink_id)
+          .single();
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://rinkstop.com';
+        const lineItem = bookingToLineItem({
+          name: `Ice Time at ${rink?.name || 'Rink'}`,
+          description: `${new Date(br.requested_start).toLocaleString()} - ${new Date(br.requested_end).toLocaleString()}${br.notes ? ` | ${br.notes}` : ''}`,
+          amount: updates.counter_price_cents as number,
+        });
+
+        const eventStart = new Date(br.requested_start);
+        const now = Date.now();
+        const hoursUntilEvent = (eventStart.getTime() - now) / (1000 * 60 * 60);
+
+        let expiresAt: number;
+        if (hoursUntilEvent < 4) {
+          expiresAt = now + 2 * 60 * 60 * 1000;
+        } else if (hoursUntilEvent < 24) {
+          expiresAt = now + 4 * 60 * 60 * 1000;
+        } else if (hoursUntilEvent < 72) {
+          expiresAt = now + 24 * 60 * 60 * 1000;
+        } else {
+          expiresAt = now + 48 * 60 * 60 * 1000;
+        }
+
+        const session = await createCheckoutSession({
+          accountId: rinkOwner.stripe_account_id,
+          lineItems: [lineItem],
+          metadata: {
+            bookingRequestId: br.id,
+            rinkId: br.rink_id,
+            type: 'ice_rental',
+          },
+          successUrl: `${appUrl}/dashboard/rink-connections/bookings?paid=1&id=${br.id}`,
+          cancelUrl: `${appUrl}/dashboard/rink-connections/bookings?cancelled=1&id=${br.id}`,
+          expiresAt,
+        });
+
+        await supabaseAdmin
+          .from('booking_requests')
+          .update({
+            payment_session_id: session.sessionId,
+            payment_session_url: session.url,
+            payment_expires_at: new Date(expiresAt).toISOString(),
+          })
+          .eq('id', id);
+
+        return NextResponse.json({
+          ok: true,
+          checkoutUrl: session.url,
+          sessionId: session.sessionId,
+          paymentWindowHours: hoursUntilEvent < 4 ? 2 : hoursUntilEvent < 24 ? 4 : hoursUntilEvent < 72 ? 24 : 48,
+        });
+      }
+    } catch (stripeErr) {
+      console.error('[booking-request] stripe checkout creation failed', stripeErr);
+      // Don't fail the whole request — approval was saved, payment can be retried
+    }
   }
 
   return NextResponse.json({ ok: true });
