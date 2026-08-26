@@ -41,7 +41,11 @@ export async function POST(request: NextRequest) {
     );
 
     // Try via SQL editor function if available
-    const { data, error } = await supabase.rpc('exec_sql', { sql: SQL }).catch(() => ({ data: null, error: { message: 'RPC not available' } }));
+    let rpcResult: { data: unknown; error: { message: string } | null } = { data: null, error: { message: 'RPC not available' } };
+    try {
+      rpcResult = await supabase.rpc('exec_sql', { sql: SQL });
+    } catch {}
+    const { data, error } = rpcResult;
 
     if (error?.message === 'RPC not available') {
       // Fallback: ALTER TABLE is not available via REST, but we can try raw PostgREST

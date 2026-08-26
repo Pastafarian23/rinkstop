@@ -50,7 +50,7 @@ export async function PATCH(
   // Load the booking request
   const { data: br, error: brErr } = await supabaseAdmin
     .from('booking_requests')
-    .select('id, rink_id, requesting_user_id, status, activity_log, connection_id, counter_price_cents, requested_start, requested_end')
+    .select('id, rink_id, requesting_user_id, status, activity_log, connection_id, counter_price_cents, requested_start, requested_end, notes')
     .eq('id', id)
     .single();
 

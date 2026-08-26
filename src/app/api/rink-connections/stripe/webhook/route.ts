@@ -17,11 +17,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature.' }, { status: 400 });
   }
 
-  const session = event.data.object as {
-    id?: string;
-    payment_status?: string;
-    metadata?: Record<string, string>;
-  };
+  const session = event.data.object as any;
+  const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : undefined;
 
   switch (event.type) {
     case 'checkout.session.completed': {
@@ -35,7 +32,7 @@ export async function POST(request: NextRequest) {
         .update({
           status: 'confirmed',
           payment_status: 'paid',
-          payment_intent_id: session.payment_intent as string,
+          payment_intent_id: paymentIntentId,
           paid_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
