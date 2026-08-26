@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { createCheckoutSession, bookingToLineItem } from '@/lib/stripe-connect';
+import { notifyBookingApproved, notifyBookingRejected } from '@/lib/rink-notifications';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -167,11 +168,44 @@ export async function PATCH(
     return NextResponse.json({ error: 'Failed to update booking request.' }, { status: 500 });
   }
 
+  // Fire-and-forget notifications after status change
+  const wasJustApproved = body.status === 'approved' && br.status !== 'approved';
+  const wasJustRejected = body.status === 'rejected' && br.status !== 'rejected';
+  const firedAt = new Date().toISOString();
+
+  if (wasJustApproved) {
+    const [rinkResult] = await Promise.all([
+      supabaseAdmin.from('rinks').select('name').eq('id', br.rink_id).single(),
+    ]);
+    const rinkName = (rinkResult.data as any)?.name ?? 'this rink';
+    notifyBookingApproved({
+      requesterUserId: br.requesting_user_id,
+      entityId: id,
+      rinkName,
+      approvedAt: firedAt,
+      callerInsertId: id,
+    }).catch(err => console.error('[booking-request] notifyBookingApproved failed', err));
+  }
+
+  if (wasJustRejected) {
+    const reason = typeof body.reason === 'string' ? body.reason.trim() : undefined;
+    const [rinkResult] = await Promise.all([
+      supabaseAdmin.from('rinks').select('name').eq('id', br.rink_id).single(),
+    ]);
+    const rinkName = (rinkResult.data as any)?.name ?? 'this rink';
+    notifyBookingRejected({
+      requesterUserId: br.requesting_user_id,
+      entityId: id,
+      rinkName,
+      reason,
+      callerInsertId: id,
+    }).catch(err => console.error('[booking-request] notifyBookingRejected failed', err));
+  }
+
   // If rink admin just approved with a price, create Stripe Checkout session
-  const justApproved = body.status === 'approved' && br.status !== 'approved';
   const hasPrice = updates.counter_price_cents !== undefined && (updates.counter_price_cents as number | null) !== null;
 
-  if (justApproved && hasPrice) {
+  if (wasJustApproved && hasPrice) {
     try {
       const { data: rinkOwner } = await supabaseAdmin
         .from('rink_owners')
