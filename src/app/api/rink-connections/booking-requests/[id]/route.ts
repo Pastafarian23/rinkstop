@@ -98,8 +98,13 @@ export async function PATCH(
       return badRequest(`status must be one of: ${[...VALID_STATUSES].join(', ')}.`);
     }
 
-    const rinkAdminTransitions = new Set(['negotiating', 'approved', 'rejected', 'confirmed', 'completed', 'expired']);
+    const rinkAdminTransitions = new Set(['negotiating', 'approved', 'rejected', 'confirmed', 'completed', 'expired', 'cancelled']);
+    // Requester can only cancel a booking that hasn't been approved yet.
+    // Once approved, the requester must contact the rink to cancel — this
+    // prevents a paid booking from being silently cancelled by the customer
+    // after the rink has confirmed. (Security audit 2026-08-26 fix #3.)
     const requesterTransitions = new Set(['cancelled']);
+    const requesterCancellableStates = new Set(['pending', 'negotiating']);
 
     if (rinkAdminTransitions.has(newStatus) && !isRinkAdmin) {
       return NextResponse.json({ error: 'Only the rink admin can perform this action.' }, { status: 403 });
@@ -107,8 +112,13 @@ export async function PATCH(
     if (requesterTransitions.has(newStatus) && !isRequester) {
       return NextResponse.json({ error: 'Only the requester can cancel a booking request.' }, { status: 403 });
     }
-    if (newStatus === 'cancelled' && br.status !== 'pending' && br.status !== 'negotiating' && br.status !== 'approved') {
-      return badRequest('Only pending, negotiating, or approved requests can be cancelled.');
+    // Rink admin can cancel from any state; requester is restricted.
+    if (newStatus === 'cancelled') {
+      if (isRinkAdmin) {
+        // Allowed: rink admin can cancel at any point (own cancellation flow).
+      } else if (!requesterCancellableStates.has(br.status)) {
+        return badRequest('Requesters can only cancel pending or negotiating requests. After approval, contact the rink to cancel.');
+      }
     }
 
     updates.status = newStatus;
