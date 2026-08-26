@@ -7,6 +7,7 @@ import { isStampsEnabled } from '@/lib/passport';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import EntityEditForm from '../../EntityEditForm';
 import { RinkQrCard } from './rink-qr-card';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,9 +64,22 @@ export default async function ManageRinkPage({ params }: PageProps) {
     );
   }
 
+  // Fetch the user's current tier for upgrade prompting.
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const userTier = profile?.tier || 'free';
+
   // WS25 (2026-08-23): pass isVerified so the edit form can show a banner
   // pointing unverified owners to the free verification path.
   const ownerVerified = await isIdentityVerified(userId).catch(() => false);
+
+  // Phase 2: if the user is on an identity track (not organization), show an
+  // upgrade prompt pointing them to the organization pricing track. Org plan
+  // users (club_starter+) already have rink management.
+  const needsOrgPlan = !['club_starter', 'club_pro', 'club_elite', 'league', 'federation'].includes(userTier);
 
   return (
     <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -145,6 +159,15 @@ export default async function ManageRinkPage({ params }: PageProps) {
           ⚖️ Disputes →
         </Link>
       </div>
+
+      {needsOrgPlan && (
+        <UpgradePrompt
+          forGroup="organization"
+          entityLabel="rink"
+          requiredTier="Club Starter"
+          userCurrentTier={userTier === 'free' ? undefined : userTier}
+        />
+      )}
 
       <EntityEditForm
         type="rink"
