@@ -11,7 +11,7 @@ import HomeCtaButtons from '@/components/HomeCtaButtons';
 // Home page is rendered statically with ISR (revalidate every 5 min).
 // The page runs 9 Supabase queries for the stats grid + recent sections;
 // force-dynamic made every request re-run those queries (1+ second TTFB).
-// 5-min staleness on directory counts is fine — users see counts as
+// 5-min staleness on directory counts is fine -- users see counts as
 // approximate and they update regularly with weekly content drops.
 //
 // Cache invalidation: also runs on `revalidatePath('/')` from any admin
@@ -42,9 +42,9 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     // fall through with zeros
   }
-  const desc = `RinkStop lists every public rink, arena, and ice facility we can verify — searchable by city, country, and league. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues.`;
+  const desc = `RinkStop lists every public rink, arena, and ice facility we can verify -- searchable by city, country, and league. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues.`;
   return {
-    title: 'RinkStop — The Global Hockey Directory',
+    title: 'RinkStop -- The Global Hockey Directory',
     description: desc,
     keywords: [
       'hockey directory',
@@ -61,7 +61,7 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: 'https://rinkstop.com/' },
     robots: { index: true, follow: true },
     openGraph: {
-      title: 'RinkStop — The World’s Hockey Directory',
+      title: 'RinkStop -- The World’s Hockey Directory',
       description: desc,
       url: 'https://rinkstop.com/',
       siteName: 'RinkStop',
@@ -72,13 +72,13 @@ export async function generateMetadata(): Promise<Metadata> {
           url: 'https://rinkstop.com/og-image.png',
           width: 1200,
           height: 630,
-          alt: 'RinkStop — The World’s Hockey Directory',
+          alt: 'RinkStop -- The World’s Hockey Directory',
         },
       ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'RinkStop — The World’s Hockey Directory',
+      title: 'RinkStop -- The World’s Hockey Directory',
       description: desc,
       images: ['https://rinkstop.com/og-image.png'],
     },
@@ -208,7 +208,7 @@ export default async function Home() {
         url: 'https://rinkstop.com/',
         name: 'RinkStop',
         description:
-          'The World’s Hockey Directory — searchable database of rinks, teams, players, and leagues worldwide.',
+          'The World’s Hockey Directory -- searchable database of rinks, teams, players, and leagues worldwide.',
         inLanguage: 'en-US',
         potentialAction: {
           '@type': 'SearchAction',
@@ -228,7 +228,7 @@ export default async function Home() {
         url: 'https://rinkstop.com/',
         logo: 'https://rinkstop.com/rinkstoplogo.png',
         image: 'https://rinkstop.com/rinkstoplogo.png',
-        description: "RinkStop is a global directory of ice rinks, hockey teams, players, and leagues — searchable by city, country, and league. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
+        description: "RinkStop is a global directory of ice rinks, hockey teams, players, and leagues -- searchable by city, country, and league. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
         slogan: "The World's Hockey Directory",
         foundingDate: '2018',
         founder: {
@@ -333,7 +333,7 @@ export default async function Home() {
                 <strong style={{ color: '#fff' }}>Browse every verified rink, team, player, and league we have on file.</strong>{' '}
                 {approx(counts.cities)} cities in {counts.countries} countries,{' '}
                 {approx(counts.rinks)} rinks, {approx(counts.teams)} teams,{' '}
-                {approx(counts.players)} players, {approx(counts.leagues)} leagues — searchable by city, state, or country.
+                {approx(counts.players)} players, {approx(counts.leagues)} leagues -- searchable by city, state, or country.
               </p>
 
               <HomeSearch />
@@ -408,7 +408,7 @@ export default async function Home() {
       </section>
 
       {/* ---- AdSense display ad (WS16 PR2) ---------------------------------------------- */}
-      {/* Between EEAT intro and Top Cities — low-intrusion, above the directory listing cards. */}
+      {/* Between EEAT intro and Top Cities -- low-intrusion, above the directory listing cards. */}
       <section style={{ background: '#0D1117', padding: '1rem 0' }}>
         <div className="container" style={{ maxWidth: '1200px' }}>
           
@@ -538,7 +538,7 @@ export default async function Home() {
       )}
 
 
-      {/* ---- UPCOMING GAMES (own section — rinks/teams/players already shown above) ---------- */}
+      {/* ---- UPCOMING GAMES (own section -- rinks/teams/players already shown above) ---------- */}
       {upcomingGames.length > 0 && (
         <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
           <div className="container">
@@ -575,7 +575,7 @@ export default async function Home() {
                 ADD YOUR TEAM, RINK, OR LEAGUE
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)', maxWidth: '540px' }}>
-                Submit a new listing to the directory — free to add. Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates (paid tier).
+                Submit a new listing to the directory -- free to add. Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates (paid tier).
               </p>
             </div>
             <div className="cta-btns">
@@ -595,7 +595,7 @@ export default async function Home() {
               PICK THE PLAN THAT FITS
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6 }}>
-              Free is free, forever — and it now includes 1 free claim and free identity verification. Hockey Passport ($24.99/yr) unlocks payments eligibility, document storage, and direct messaging. Hockey Passport Plus ($59.99/yr) adds Family Hub, career timeline, achievement tracking, and advanced analytics. For organizations: Club Starter ($149/yr, up to 30 players), Club Pro ($399/yr, up to 150), Club Elite ($999/yr, unlimited teams), League (starting $1,999/yr). For businesses: Business Listing ($99/yr) and Business Plus ($299/yr). Federation is custom for enterprise-scale organizations.
+              Free is free, forever -- and it now includes 1 free claim and free identity verification. Hockey Passport ($24.99/yr) unlocks payments eligibility, document storage, and direct messaging. Hockey Passport Plus ($59.99/yr) adds Family Hub, career timeline, achievement tracking, and advanced analytics. For organizations: Club Starter ($149/yr, up to 30 players), Club Pro ($399/yr, up to 150), Club Elite ($999/yr, unlimited teams), League (starting $1,999/yr). For businesses: Business Listing ($99/yr) and Business Plus ($299/yr). Federation is custom for enterprise-scale organizations.
             </p>
           </div>
 
@@ -620,15 +620,15 @@ export default async function Home() {
                 business_listing: 'business', business_plus: 'business',
               };
               const cards = [
-                { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, claim 1 listing, and verify your identity — free, forever.', cta: 'Join Free', href: '/sign-up' },
-                { tier: 'verified_identity', label: 'Hockey Passport', price: '$24.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Your digital hockey career record + payments, document storage, and messaging.', cta: 'Get My Hockey Passport', href: '/pricing?tier=verified_identity', popular: true },
-                { tier: 'identity_plus', label: 'Hockey Passport Plus', price: '$59.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Career timeline, achievement tracking, advanced analytics, and 5 claims.', cta: 'Upgrade to Hockey Passport Plus', href: '/pricing?tier=identity_plus' },
-                { tier: 'club_starter', label: 'Club Starter', price: '$149', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.35)', tagline: 'Small clubs — up to 30 players.', cta: 'Start Your Club', href: '/pricing?tier=club_starter' },
-                { tier: 'club_pro', label: 'Club Pro', price: '$399', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.10)', border: 'rgba(200,16,46,0.4)', tagline: 'Mid-sized clubs — up to 150 players, multiple teams.', cta: 'Upgrade to Club Pro', href: '/pricing?tier=club_pro' },
-                { tier: 'club_elite', label: 'Club Elite', price: '$999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.16)', border: 'rgba(200,16,46,0.5)', tagline: 'Large clubs — unlimited teams, advanced analytics, custom branding.', cta: 'Go Club Elite', href: '/pricing?tier=club_elite' },
-                { tier: 'league', label: 'League', price: 'From $1,999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.22)', border: 'rgba(200,16,46,0.55)', tagline: 'League-wide management — every team, every division, every season.', cta: 'Talk to Sales', href: '/pricing?tier=league' },
-                { tier: 'business_listing', label: 'Business Listing', price: '$99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.35)', tagline: 'Verified business listing with contact and lead form.', cta: 'Claim Listing', href: '/pricing?tier=business_listing' },
-                { tier: 'business_plus', label: 'Business Plus', price: '$299', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.12)', border: 'rgba(20,184,166,0.4)', tagline: 'Multiple listings, featured placement, messaging.', cta: 'Upgrade to Business Plus', href: '/pricing?tier=business_plus' },
+                { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, claim 1 listing, and verify your identity -- free, forever.', cta: 'Join Free', href: '/sign-up' },
+                { tier: 'verified_identity', label: 'Hockey Passport', price: '$24.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Your digital hockey career record + payments, document storage, and messaging.', cta: 'Get My Hockey Passport', href: '/pricing?for=identity', popular: true },
+                { tier: 'identity_plus', label: 'Hockey Passport Plus', price: '$59.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Career timeline, achievement tracking, advanced analytics, and 5 claims.', cta: 'Upgrade to Hockey Passport Plus', href: '/pricing?for=identity' },
+                { tier: 'club_starter', label: 'Club Starter', price: '$149', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.35)', tagline: 'Small clubs -- up to 30 players.', cta: 'Start Your Club', href: '/pricing?for=organization' },
+                { tier: 'club_pro', label: 'Club Pro', price: '$399', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.10)', border: 'rgba(200,16,46,0.4)', tagline: 'Mid-sized clubs -- up to 150 players, multiple teams.', cta: 'Upgrade to Club Pro', href: '/pricing?for=organization' },
+                { tier: 'club_elite', label: 'Club Elite', price: '$999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.16)', border: 'rgba(200,16,46,0.5)', tagline: 'Large clubs -- unlimited teams, advanced analytics, custom branding.', cta: 'Go Club Elite', href: '/pricing?for=organization' },
+                { tier: 'league', label: 'League', price: 'From $1,999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.22)', border: 'rgba(200,16,46,0.55)', tagline: 'League-wide management -- every team, every division, every season.', cta: 'Talk to Sales', href: '/pricing?for=organization' },
+                { tier: 'business_listing', label: 'Business Listing', price: '$99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.35)', tagline: 'Verified business listing with contact and lead form.', cta: 'Claim Listing', href: '/pricing?for=business' },
+                { tier: 'business_plus', label: 'Business Plus', price: '$299', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.12)', border: 'rgba(20,184,166,0.4)', tagline: 'Multiple listings, featured placement, messaging.', cta: 'Upgrade to Business Plus', href: '/pricing?for=business' },
               ];
               return cards.map((t) => {
                 const isCurrent = currentUserTier === t.tier;
