@@ -273,6 +273,53 @@ export default function PricingContent({
     const isContact = tier.ctaStyle === 'contact';
     const isFree = tier.ctaStyle === 'free';
     const isCustom = tier.price === 'Custom';
+
+    // Per Arnel's directive (2026-08-26): users should not see upgrade CTAs
+    // for the tier they're already on, or for any tier that's same-or-lower
+    // within the same track. The API already blocks these (see
+    // /api/tier/upgrade downgrade_not_self_serve guard), but showing the
+    // button and getting a 403 is a worse UX than just not showing it.
+    //
+    // Cross-track upgrades ARE allowed (e.g. individual -> organization), so
+    // we only block within the same track.
+    const TIER_RANK: Record<string, number> = {
+      free: 0,
+      verified_identity: 1,
+      identity_plus: 2,
+      club_starter: 1,
+      club_pro: 2,
+      club_elite: 3,
+      league: 4,
+      federation: 5,
+      business_listing: 1,
+      business_plus: 2,
+    };
+    const TIER_TO_TRACK: Record<string, 'personal' | 'business'> = {
+      free: 'personal',
+      verified_identity: 'personal',
+      identity_plus: 'personal',
+      club_starter: 'business',
+      club_pro: 'business',
+      club_elite: 'business',
+      league: 'business',
+      federation: 'business',
+      business_listing: 'business',
+      business_plus: 'business',
+    };
+    const currentTier = currentUserTier || 'free';
+    const isCurrent = currentTier === tier.id;
+    const currentRank = TIER_RANK[currentTier] ?? 0;
+    const requestedRank = TIER_RANK[tier.id] ?? 0;
+    const sameTrack = TIER_TO_TRACK[currentTier] === TIER_TO_TRACK[tier.id];
+    const isDowngradeOrSame = sameTrack && requestedRank <= currentRank && !isCurrent && !isFree;
+    // 'locked' = don't show an upgrade CTA. 'current' = current plan.
+    // We only treat "same" within track as locked; cross-track options
+    // always stay available (free -> org/business is allowed).
+    const ctaState: 'current' | 'locked' | 'available' = isCurrent
+      ? 'current'
+      : isDowngradeOrSame
+        ? 'locked'
+        : 'available';
     return (
       <div
         key={tier.id}
@@ -293,6 +340,7 @@ export default function PricingContent({
               ? `0 0 0 3px ${tier.color}, 0 8px 24px rgba(0,0,0,0.18)`
               : 'none',
           transform: highlightTier === tier.id ? 'translateY(-2px)' : 'none',
+          opacity: ctaState === 'locked' ? 0.5 : 1,
         }}
       >
         {tier.popular && (
@@ -312,6 +360,26 @@ export default function PricingContent({
             }}
           >
             Most popular
+          </div>
+        )}
+
+        {ctaState === 'current' && (
+          <div
+            style={{
+              position: 'absolute',
+              top: -10,
+              left: 16,
+              background: '#22c55e',
+              color: '#0a0a0a',
+              fontSize: 11,
+              fontWeight: 700,
+              padding: '0.2rem 0.6rem',
+              borderRadius: 999,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Current plan
           </div>
         )}
 
@@ -350,15 +418,56 @@ export default function PricingContent({
           ))}
         </ul>
 
-        <button
-          onClick={() => handleCheckout(tier)}
-          disabled={busy === tier.id}
-          data-testid={`tier-cta-${tier.id}`}
-          style={{
-            width: '100%',
-            padding: '0.75rem 1rem',
-            background: isContact
-              ? 'linear-gradient(135deg, #111827, #000)'
+        {ctaState === 'current' ? (
+          <Link
+            href="/dashboard/subscription"
+            data-testid={`tier-cta-${tier.id}`}
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              width: '100%',
+              padding: '0.75rem 1rem',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 8,
+              color: 'rgba(255,255,255,0.7)',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              textDecoration: 'none',
+            }}
+          >
+            Current plan ✓
+          </Link>
+        ) : ctaState === 'locked' ? (
+          <button
+            type="button"
+            disabled
+            data-testid={`tier-cta-${tier.id}`}
+            title={`You're already on a higher or equal ${TIER_TO_TRACK[currentTier] === 'personal' ? 'individual' : 'organization'} plan. To change, contact support@rinkstop.com.`}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              color: 'rgba(255,255,255,0.4)',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              cursor: 'not-allowed',
+            }}
+          >
+            Already included
+          </button>
+        ) : (
+          <button
+            onClick={() => handleCheckout(tier)}
+            disabled={busy === tier.id}
+            data-testid={`tier-cta-${tier.id}`}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              background: isContact
+                ? 'linear-gradient(135deg, #111827, #000)'
               : isFree
               ? 'transparent'
               : tier.color,
@@ -374,6 +483,7 @@ export default function PricingContent({
         >
           {busy === tier.id ? 'Loading...' : tier.cta}
         </button>
+        )}
         {tier.footnote && (
           <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
             {tier.footnote}
