@@ -17,7 +17,7 @@ type Source = 'leads' | 'email_captures' | 'listing_inquiries';
 type Action = 'mark_read' | 'delete';
 
 export async function POST(request: NextRequest) {
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_intake_bulk');
   if ('response' in auth) return auth.response;
 
   let body: { source?: Source; action?: Action; ids?: string[] };

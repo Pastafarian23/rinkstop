@@ -40,7 +40,7 @@ export async function PATCH(
     return res;
   }
 
-  const gate = await getAdminFromRequest();
+  const gate = await getAdminFromRequest(request, 'admin_rinks_programming_[programmingId]');
   if ('response' in gate) return gate.response;
   const { id, programmingId } = await params;
   if (!id || !programmingId) return badRequest('rink id and programming id are required.');
@@ -90,7 +90,7 @@ export async function DELETE(
     return res;
   }
 
-  const gate = await getAdminFromRequest();
+  const gate = await getAdminFromRequest(request, 'admin_rinks_programming_[programmingId]');
   if ('response' in gate) return gate.response;
   const { id, programmingId } = await params;
   if (!id || !programmingId) return badRequest('rink id and programming id are required.');

@@ -146,7 +146,7 @@ async function fetchReviewEvents(params: URLSearchParams) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await getAdminFromRequest();
+  const auth = await getAdminFromRequest(request, 'admin_audit-log');
   if ('response' in auth) return auth.response;
 
   const { searchParams } = new URL(request.url);

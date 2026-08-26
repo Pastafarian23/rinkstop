@@ -28,7 +28,7 @@ export async function POST(
     return res;
   }
 
-  const gate = await getAdminFromRequest();
+  const gate = await getAdminFromRequest(request, 'admin_federation-registrations_approve');
   if ('response' in gate) return gate.response;
 
   const { id } = await params;
