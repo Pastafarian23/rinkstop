@@ -22,7 +22,7 @@ export default async function RinkConnectionsPage() {
     .from('rink_org_connections')
     .select(`
       id, org_name, org_type, role, status, created_at, updated_at,
-      rink:rinks(id, name, slug, city, state_province, country)
+      rink:rinks(id, name, slug, city, province_state, country)
     `)
     .eq('created_by', session.userId)
     .order('created_at', { ascending: false });

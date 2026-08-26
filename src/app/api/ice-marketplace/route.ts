@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       id, rink_id, title, description, requested_price_cents, currency,
       start_time, end_time, timezone, age_group, skill_level, slot_type, visibility, status,
       created_at,
-      rink:rinks(id, name, slug, city, state_province, country)
+      rink:rinks(id, name, slug, city, province_state, country)
     `)
     .eq('visibility', 'public')
     .eq('status', status)
