@@ -1,11 +1,23 @@
-# Empty packages list — this is a single-package project, but the file
-# exists so pnpm can read the `allowBuilds` setting below. pnpm v9+ requires
-# the `packages:` field to be present (even as []) when this file exists;
-# without it, `pnpm install` fails with "packages field missing or empty".
-# This was breaking the `Build Android APK` CI workflow on every push.
+# pnpm v9+ requires the `packages:` field to be present (even as []) when
+# this file exists; without it, `pnpm install` fails with "packages field
+# missing or empty". This was breaking the `Build Android APK` CI workflow.
 packages: []
 
+# OWASP A06 audit 2026-08-26: opt-in to running install scripts for these
+# packages. Required so `@clerk/shared` and `esbuild` can run their native
+# build scripts during `pnpm install`.
 allowBuilds:
-  '@clerk/shared': set this to true or false
-  esbuild: set this to true or false
-  sharp: set this to true or false
+  '@clerk/shared': true
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - '@next/env@15.5.24'
+  - '@next/swc-darwin-arm64@15.5.24'
+  - '@next/swc-darwin-x64@15.5.24'
+  - '@next/swc-linux-arm64-gnu@15.5.24'
+  - '@next/swc-linux-arm64-musl@15.5.24'
+  - '@next/swc-linux-x64-gnu@15.5.24'
+  - '@next/swc-linux-x64-musl@15.5.24'
+  - '@next/swc-win32-arm64-msvc@15.5.24'
+  - '@next/swc-win32-x64-msvc@15.5.24'
+  - next@15.5.24
