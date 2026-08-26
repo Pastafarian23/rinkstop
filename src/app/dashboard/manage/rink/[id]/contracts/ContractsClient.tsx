@@ -12,6 +12,11 @@ interface Contract {
   signed_at: string | null;
   created_at: string;
   updated_at: string;
+  document_storage_path: string | null;
+  document_hash: string | null;
+  file_size_bytes: number | null;
+  file_mime_type: string | null;
+  uploaded_at: string | null;
   connection: { id: string; org_name: string } | null;
 }
 
@@ -41,9 +46,18 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function formatBytes(bytes: number | null): string {
+  if (!bytes) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function ContractsClient({ rinkId, initialContracts }: Props) {
   const [contracts] = useState<Contract[]>(initialContracts);
   const [filter, setFilter] = useState<'all' | 'pending' | 'signed' | 'expired'>('all');
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = contracts.filter(c => {
     if (filter === 'all') return true;
@@ -56,8 +70,58 @@ export default function ContractsClient({ rinkId, initialContracts }: Props) {
   const pendingCount = contracts.filter(c => c.status === 'sent' || c.status === 'draft').length;
   const signedCount = contracts.filter(c => c.status === 'signed').length;
 
+  async function handleUpload(contractId: string) {
+    setError(null);
+    setUploadingId(contractId);
+    try {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'application/pdf,image/*';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+
+      await new Promise<void>((resolve) => {
+        fileInput.onchange = async () => {
+          document.body.removeChild(fileInput);
+          const file = fileInput.files?.[0];
+          if (!file) return resolve();
+
+          const formData = new FormData();
+          formData.append('file', file);
+
+          try {
+            const res = await fetch(`/api/rink-connections/contracts/${contractId}/upload`, {
+              method: 'POST',
+              body: formData,
+            });
+            const json = await res.json();
+            if (!res.ok) {
+              setError(json.error || 'Upload failed');
+              return resolve();
+            }
+            window.location.reload();
+          } catch {
+            setError('Upload failed. Please try again.');
+          } finally {
+            resolve();
+          }
+        };
+        fileInput.oncancel = () => resolve();
+        fileInput.click();
+      });
+    } finally {
+      setUploadingId(null);
+    }
+  }
+
   return (
     <div>
+      {error && (
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#FCA5A5', padding: '0.75rem 1rem', borderRadius: 8, marginBottom: '1rem', fontSize: '0.85rem' }}>
+          {error}
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         {(['all','pending','signed','expired'] as const).map(f => (
           <button
@@ -87,6 +151,9 @@ export default function ContractsClient({ rinkId, initialContracts }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {filtered.map(contract => {
             const sc = STATUS_COLORS[contract.status] || { bg: 'rgba(148,163,184,0.15)', fg: '#94A3B8' };
+            const hasDocument = !!contract.document_storage_path;
+            const canUpload = contract.status === 'sent';
+
             return (
               <div key={contract.id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.875rem 1rem', background: 'rgba(13,17,23,0.6)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
@@ -99,9 +166,31 @@ export default function ContractsClient({ rinkId, initialContracts }: Props) {
                     {contract.sent_at ? `Sent ${formatDate(contract.sent_at)}` : `Created ${formatDate(contract.created_at)}`}
                     {contract.signed_at ? ` · Signed ${formatDate(contract.signed_at)}` : ''}
                     {contract.expires_at && contract.status !== 'signed' ? ` · Expires ${formatDate(contract.expires_at)}` : ''}
+                    {hasDocument ? ` · 📎 ${formatBytes(contract.file_size_bytes)} ${contract.file_mime_type || ''}`.trim() : ''}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexShrink: 0 }}>
+                  {hasDocument && (
+                    <span style={{ color: '#86efac', fontSize: '0.75rem' }}>📎 Uploaded</span>
+                  )}
+                  {canUpload && (
+                    <button
+                      onClick={() => handleUpload(contract.id)}
+                      disabled={uploadingId === contract.id}
+                      style={{
+                        background: uploadingId === contract.id ? 'rgba(56,189,248,0.1)' : 'rgba(56,189,248,0.15)',
+                        color: uploadingId === contract.id ? '#64748b' : '#7DD3FC',
+                        border: '1px solid rgba(56,189,248,0.3)',
+                        borderRadius: 6,
+                        padding: '0.25rem 0.75rem',
+                        fontSize: '0.8rem',
+                        cursor: uploadingId === contract.id ? 'not-allowed' : 'pointer',
+                        opacity: uploadingId === contract.id ? 0.6 : 1,
+                      }}
+                    >
+                      {uploadingId === contract.id ? 'Uploading...' : hasDocument ? 'Replace' : 'Upload PDF'}
+                    </button>
+                  )}
                   <span style={{ background: sc.bg, color: sc.fg, padding: '0.125rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600, textTransform: 'capitalize' }}>
                     {contract.status}
                   </span>

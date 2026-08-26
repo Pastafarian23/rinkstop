@@ -54,7 +54,7 @@ export default async function ContractsPage({ params }: PageProps) {
   const contractsResult = cids.length
     ? await supabaseAdmin
         .from('rink_contracts')
-        .select(`id, title, contract_type, status, expires_at, sent_at, signed_at, created_at, updated_at, connection:rink_org_connections(id, org_name)`)
+        .select(`id, title, contract_type, status, storage_path, document_hash, document_storage_path, file_size_bytes, file_mime_type, uploaded_at, expires_at, sent_at, signed_at, created_at, updated_at, connection:rink_org_connections(id, org_name, org_type)`)
         .in('connection_id', cids)
         .order('created_at', { ascending: false })
     : { data: [] as any[], error: null as null };

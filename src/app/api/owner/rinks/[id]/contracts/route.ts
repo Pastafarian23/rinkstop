@@ -31,6 +31,7 @@ export async function GET(
     .from('rink_contracts')
     .select(`
       id, title, contract_type, status, storage_path, document_hash,
+      document_storage_path, file_size_bytes, file_mime_type, uploaded_at,
       expires_at, sent_at, signed_at, signed_by_user_id,
       created_by, created_at, updated_at,
       connection:rink_org_connections(id, org_name, org_type)
