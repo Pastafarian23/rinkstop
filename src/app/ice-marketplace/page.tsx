@@ -37,7 +37,7 @@ interface ListingRow {
   slot_type: string | null;
   visibility: string;
   status: string;
-  rink: { id: string; name: string; slug: string | null; city: string | null; state_province: string | null; country: string | null } | null;
+  rink: { id: string; name: string; slug: string | null; city: string | null; province_state: string | null; country: string | null } | null;
 }
 
 function formatPrice(cents: number | null, currency: string): string {
@@ -157,7 +157,7 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
                   <div style={{ color: '#fff', fontWeight: 600, fontSize: '1rem' }}>{listing.title}</div>
                   <div style={{ color: '#94A3B8', fontSize: '0.85rem', marginTop: '0.25rem' }}>
                     {listing.rink?.name || 'Unknown rink'}
-                    {listing.rink?.city ? ` · ${listing.rink.city}${listing.rink.state_province ? `, ${listing.rink.state_province}` : ''}` : ''}
+                    {listing.rink?.city ? ` · ${listing.rink.city}${listing.rink.province_state ? `, ${listing.rink.province_state}` : ''}` : ''}
                   </div>
                   <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '0.25rem' }}>
                     {formatSlot(listing.start_time, tz)}

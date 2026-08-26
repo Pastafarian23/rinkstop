@@ -13,7 +13,7 @@ interface Connection {
   status: string;
   created_at: string;
   updated_at: string;
-  rink: { id: string; name: string; slug: string | null; city: string | null; state_province: string | null } | null;
+  rink: { id: string; name: string; slug: string | null; city: string | null; province_state: string | null } | null;
 }
 
 interface BookingRequest {
@@ -140,7 +140,7 @@ export default function RinkConnectionsClient({ initialConnections, initialReque
                       <div style={{ color: '#94A3B8', fontSize: '0.8rem', marginTop: '0.125rem' }}>
                         {conn.org_type} · {conn.role}
                         {conn.rink ? ` · ${conn.rink.name}` : ''}
-                        {conn.rink?.city ? ` (${conn.rink.city}${conn.rink.state_province ? `, ${conn.rink.state_province}` : ''})` : ''}
+                        {conn.rink?.city ? ` (${conn.rink.city}${conn.rink.province_state ? `, ${conn.rink.province_state}` : ''})` : ''}
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
