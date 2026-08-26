@@ -47,12 +47,42 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  // Security audit 2026-08-26 fix #4 (MEDIUM): always re-fetch live account
+  // status from Stripe. We trust the stored `stripe_account_id` (server
+  // already set it in /onboard), but verify onboarding completion against
+  // Stripe's live state instead of trusting a DB flag that was never updated.
+  //
+  // The DB flag is set to true here on transition: if Stripe confirms
+  // charges_enabled + payouts_enabled + details_submitted, and the flag is
+  // currently false, persist it. Once true, never set back to false here
+  // (Stripe account.updated webhook would be the right path for revocation,
+  // but that's out of scope for this fix).
   const status = await getAccountStatus(rinkOwner.stripe_account_id);
+
+  const stripeConfirmsComplete = Boolean(
+    status?.chargesEnabled && status?.payoutsEnabled && status?.detailsSubmitted,
+  );
+
+  if (stripeConfirmsComplete && !rinkOwner.stripe_onboarding_complete) {
+    const { error: updateErr } = await supabaseAdmin
+      .from('rink_owners')
+      .update({
+        stripe_onboarding_complete: true,
+        stripe_onboarding_completed_at: new Date().toISOString(),
+      })
+      .eq('rink_id', rinkId);
+    if (updateErr) {
+      console.error('[stripe/account-status] failed to persist onboarding_complete', updateErr);
+      // Non-fatal — return the live status so the client can render correctly.
+    } else {
+      console.log(`[stripe/account-status] marked rink ${rinkId} as onboarded (account ${rinkOwner.stripe_account_id})`);
+    }
+  }
 
   return NextResponse.json({
     status: 'connected',
     accountId: rinkOwner.stripe_account_id,
-    onboardingComplete: rinkOwner.stripe_onboarding_complete,
+    onboardingComplete: stripeConfirmsComplete || rinkOwner.stripe_onboarding_complete,
     ...status,
   });
 }
