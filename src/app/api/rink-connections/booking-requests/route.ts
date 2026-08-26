@@ -4,10 +4,12 @@
 //
 //   GET  /api/rink-connections/booking-requests   — list my booking requests
 //   POST /api/rink-connections/booking-requests  — submit a new booking request
+//   POST also triggers notifyBookingRequestCreated for rink owners
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { notifyBookingRequestCreated } from '@/lib/rink-notifications';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -81,6 +83,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Connection not found.' }, { status: 404 });
   }
 
+  const now = new Date().toISOString();
+
   const insert: Record<string, unknown> = {
     connection_id: body.connection_id as string,
     listing_id: (body.listing_id as string) || null,
@@ -96,7 +100,7 @@ export async function POST(request: NextRequest) {
     activity_log: [{
       action: 'created',
       by: userId,
-      at: new Date().toISOString(),
+      at: now,
       note: 'Booking request submitted.',
     }],
   };
@@ -110,6 +114,33 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error('[booking-requests] insert failed', error);
     return NextResponse.json({ error: 'Failed to submit booking request.' }, { status: 500 });
+  }
+
+  // Fire-and-forget: notify rink owners of new booking request
+  // Errors here must not block the response.
+  const requestId = data?.id;
+  if (requestId) {
+    // Resolve rink owner user IDs + rink name + requester name in parallel
+    const [ownersResult, requesterResult, rinkResult] = await Promise.all([
+      supabaseAdmin.from('rink_owners').select('user_id').eq('rink_id', body.rink_id as string),
+      supabaseAdmin.from('profiles').select('full_name').eq('user_id', userId).single(),
+      supabaseAdmin.from('rinks').select('name').eq('id', body.rink_id as string).single(),
+    ]);
+
+    const ownerIds = (ownersResult.data ?? []).map((o: any) => o.user_id).filter(Boolean);
+    const requesterName = (requesterResult.data as any)?.full_name ?? 'A customer';
+    const rinkName = (rinkResult.data as any)?.name ?? 'this rink';
+
+    if (ownerIds.length > 0) {
+      notifyBookingRequestCreated({
+        rinkId: body.rink_id as string,
+        rinkOwnerUserIds: ownerIds,
+        requesterName,
+        requestedAt: now,
+        rinkName,
+        callerInsertId: requestId,
+      }).catch(err => console.error('[booking-requests] notifyBookingRequestCreated failed', err));
+    }
   }
 
   return NextResponse.json({ id: data?.id }, { status: 201 });

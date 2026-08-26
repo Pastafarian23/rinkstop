@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { notifyContractSigned } from '@/lib/rink-notifications';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -126,6 +127,34 @@ export async function POST(
   if (updateErr) {
     console.error('[contract-sign] contract update failed', updateErr);
     return NextResponse.json({ error: 'Failed to update contract status.' }, { status: 500 });
+  }
+
+  // Fire-and-forget: notify rink owner that contract was signed
+  // Resolve rink owner user IDs from the connection's rink
+  const connResult = await supabaseAdmin
+    .from('rink_org_connections')
+    .select('rink_id')
+    .eq('id', contract.connection_id)
+    .single();
+
+  const rinkId = (connResult.data as any)?.rink_id;
+  if (rinkId) {
+    const ownersResult = await supabaseAdmin
+      .from('rink_owners')
+      .select('user_id')
+      .eq('rink_id', rinkId);
+    const ownerIds = (ownersResult.data ?? []).map((o: any) => o.user_id).filter(Boolean);
+    const ownerId = ownerIds[0]; // notify primary owner
+
+    notifyContractSigned({
+      rinkOwnerUserId: ownerId ?? undefined,
+      counterpartyUserId: userId,
+      counterpartyEmail: undefined,
+      contractId,
+      contractTitle: contract.title ?? 'this contract',
+      signedByName: signatory_name as string,
+      callerInsertId: sigRecord?.id ?? contractId,
+    }).catch(err => console.error('[contract-sign] notifyContractSigned failed', err));
   }
 
   return NextResponse.json({

@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { notifyMessageReceived } from '@/lib/rink-notifications';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -98,6 +99,45 @@ export async function POST(
     .from('rink_threads')
     .update({ updated_at: new Date().toISOString() })
     .eq('id', threadId);
+
+  // Fire-and-forget: notify the OTHER participant (not the sender)
+  // Recipient = connection creator if they are not the sender, else rink owners
+  const senderProfile = await supabaseAdmin
+    .from('profiles')
+    .select('full_name')
+    .eq('user_id', userId)
+    .single();
+  const senderName = (senderProfile.data as any)?.full_name ?? 'Someone';
+  const preview = ((data as any)?.content as string ?? '').slice(0, 80);
+
+  // Determine recipients: the other party in the thread
+  // If sender is the connection creator, notify rink owners; if sender is a rink owner, notify the connection creator
+  const recipients: string[] = [];
+  if (conn.created_by !== userId) {
+    recipients.push(conn.created_by);
+  } else {
+    // Sender is the connection creator — notify rink owners
+    const ownersResult = await supabaseAdmin
+      .from('rink_owners')
+      .select('user_id')
+      .eq('rink_id', conn.rink_id);
+    for (const o of (ownersResult.data ?? []) as any[]) {
+      if (o.user_id && o.user_id !== userId) recipients.push(o.user_id);
+    }
+  }
+
+  const msgId = (data as any)?.id;
+  if (recipients.length > 0 && msgId) {
+    for (const recipientId of recipients) {
+      notifyMessageReceived({
+        recipientUserId: recipientId,
+        threadId,
+        senderName,
+        preview,
+        callerInsertId: msgId,
+      }).catch(err => console.error('[messages] notifyMessageReceived failed', err));
+    }
+  }
 
   return NextResponse.json({ message: data }, { status: 201 });
 }
