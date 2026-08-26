@@ -5,7 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
-import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel } from '@/lib/pricing';
+import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel, getGroupForTier } from '@/lib/pricing';
 
 type Tier = {
   id: TierName;
@@ -69,7 +69,7 @@ const GROUP_ORDER: { id: TierGroup; title: string; subtitle: string }[] = [
   {
     id: 'identity',
     title: 'Individuals',
-    subtitle: 'One Verified Hockey Identity per person — holds every role you accumulate.',
+    subtitle: 'One Verified Hockey Identity per person -- holds every role you accumulate.',
   },
   {
     id: 'organization',
@@ -79,26 +79,26 @@ const GROUP_ORDER: { id: TierGroup; title: string; subtitle: string }[] = [
   {
     id: 'business',
     title: 'Businesses',
-    subtitle: 'Commercial businesses — shops, sharpeners, clinics, trainers, equipment rental, travel, photography.',
+    subtitle: 'Commercial businesses -- shops, sharpeners, clinics, trainers, equipment rental, travel, photography.',
   },
 ];
 
 const FAQ = [
   {
     q: 'What is a Verified Hockey Identity?',
-    a: 'A Verified Hockey Identity is a single, verified account that holds every role you accumulate over your lifetime — Player, Parent, Coach, Referee, Volunteer, Team Manager, Club Administrator, League Administrator, Federation Administrator, Business Owner. One identity, unlimited roles, never a separate subscription per role.',
+    a: 'A Verified Hockey Identity is a single, verified account that holds every role you accumulate over your lifetime -- Player, Parent, Coach, Referee, Volunteer, Team Manager, Club Administrator, League Administrator, Federation Administrator, Business Owner. One identity, unlimited roles, never a separate subscription per role.',
   },
   {
     q: 'Why are roles not separate subscriptions?',
-    a: 'Roles are not products. A coach who is also a parent and a referee should not pay three times. Your Verified Hockey Identity grows with you — you claim additional eligible roles as your involvement grows, all under the same identity.',
+    a: 'Roles are not products. A coach who is also a parent and a referee should not pay three times. Your Verified Hockey Identity grows with you -- you claim additional eligible roles as your involvement grows, all under the same identity.',
   },
   {
     q: 'Can I keep my Free account and just browse?',
-    a: 'Yes. Free is permanent and free. You can browse the full directory, read reviews, save unlimited favorites, and follow unlimited teams or players — no card required, no upsell.',
+    a: 'Yes. Free is permanent and free. You can browse the full directory, read reviews, save unlimited favorites, and follow unlimited teams or players -- no card required, no upsell.',
   },
   {
     q: 'What does Hockey Passport cost?',
-    a: '$24.99 per year. Identity verification itself is FREE for every user — it costs us ~$0.33 (Didit.me KYC) and we absorb it. The $24.99/yr fee covers the tools that go with a verified identity: Hockey Passport, payments eligibility, document storage, and messaging. You can verify for free and stay free; you only pay when you want the tools.',
+    a: '$24.99 per year. Identity verification itself is FREE for every user -- it costs us ~$0.33 (Didit.me KYC) and we absorb it. The $24.99/yr fee covers the tools that go with a verified identity: Hockey Passport, payments eligibility, document storage, and messaging. You can verify for free and stay free; you only pay when you want the tools.',
   },
   {
     q: 'What does Hockey Passport Plus add?',
@@ -106,11 +106,11 @@ const FAQ = [
   },
   {
     q: 'How do organizations subscribe differently from individuals?',
-    a: 'Individual identity subscriptions never include organization management. Organizations (clubs, leagues, federations, teams, associations) subscribe on their own plan — Club Starter, Club Pro, Club Elite, League, or Federation.',
+    a: 'Individual identity subscriptions never include organization management. Organizations (clubs, leagues, federations, teams, associations) subscribe on their own plan -- Club Starter, Club Pro, Club Elite, League, or Federation.',
   },
   {
     q: 'How do businesses subscribe?',
-    a: 'Business Listing ($99/year) for a single business claim. Business Plus ($299/year) for multiple listings, featured placement, promotions, messaging, enhanced analytics, and booking support. Business subscriptions are separate from organization subscriptions — businesses never see roster management, and organizations never see lead generation.',
+    a: 'Business Listing ($99/year) for a single business claim. Business Plus ($299/year) for multiple listings, featured placement, promotions, messaging, enhanced analytics, and booking support. Business subscriptions are separate from organization subscriptions -- businesses never see roster management, and organizations never see lead generation.',
   },
   {
     q: 'Can I upgrade mid-year?',
@@ -141,12 +141,30 @@ export default function PricingContent({
   const [error, setError] = useState<string | null>(null);
   const [showAccountType, setShowAccountType] = useState(false);
   const [highlightTier, setHighlightTier] = useState<string | null>(null);
+  const [roleTab, setRoleTab] = useState<string | null>(null);
   // WS9: when ?intent=claim is passed (from /claim-your-listing banner), show
   // a "Why upgrade?" prompt that explains the claim flow + which tiers are
   // claim-enabled. This is a soft conversion nudge; users on free tier can
   // still browse.
   const claimIntent = searchParams?.get('intent') === 'claim';
   const claimEntityType = searchParams?.get('type') ?? null;
+
+  // Role-tab: derive the default from the URL (?for=) or the user's current tier.
+  // Org/business users land on their own track; guests and identity users see all.
+  const urlRole = searchParams?.get('for');
+  const validRoleTab = urlRole === 'identity' || urlRole === 'organization' || urlRole === 'business'
+    ? urlRole
+    : null;
+  if (!roleTab) {
+    if (validRoleTab) {
+      setRoleTab(validRoleTab);
+    } else if (currentUserTier) {
+      const group = getGroupForTier(currentUserTier);
+      setRoleTab(group === 'organization' || group === 'business' ? group : 'all');
+    } else {
+      setRoleTab('all');
+    }
+  }
 
   // Deep-link support: ?tier=club_starter scrolls to that card and highlights it.
   // Fires once on mount. Cleans up the highlight after 2.5s.
@@ -567,7 +585,7 @@ export default function PricingContent({
           <span style={{ color: '#C8102E' }}>Unlimited roles.</span>
         </h1>
         <p style={{ fontSize: '1.125rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, margin: 0 }}>
-          RinkStop is the global directory for hockey rinks, teams, players, and leagues. One Verified Hockey Identity per person — for life. Pick what fits below.
+          RinkStop is the global directory for hockey rinks, teams, players, and leagues. One Verified Hockey Identity per person -- for life. Pick what fits below.
         </p>
         {claimIntent && (
           <div
@@ -609,25 +627,74 @@ export default function PricingContent({
       </section>
 
       <section id="tiers" style={{ padding: '2rem 1.5rem 4rem', maxWidth: 1200, margin: '0 auto' }}>
-        {GROUP_ORDER.map((group) => (
-          <div key={group.id} data-testid={`tier-group-${group.id}`} style={{ marginBottom: '3rem' }}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>{group.title}</h2>
-              <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', margin: 0, maxWidth: 720 }}>
-                {group.subtitle}
-              </p>
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '1rem',
-              }}
-            >
-              {tiersByGroup[group.id].map(renderTierCard)}
-            </div>
-          </div>
-        ))}
+        {(() => {
+          const active = roleTab ?? 'all';
+          const visibleGroups =
+            active === 'all'
+              ? GROUP_ORDER
+              : GROUP_ORDER.filter((g) => g.id === active);
+
+          return (
+            <>
+              <div
+                data-testid="pricing-role-tabs"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  marginBottom: '2rem',
+                }}
+              >
+                {ROLE_TABS.map((tab) => {
+                  const isActive = active === tab.id || (active === 'all' && tab.id === 'all');
+                  const nextParams = new URLSearchParams(searchParams?.toString() || '');
+                  if (tab.id === 'all') nextParams.delete('for');
+                  else nextParams.set('for', tab.id);
+                  const href = `/pricing${nextParams.toString() ? '?' + nextParams.toString() : ''}`;
+                  return (
+                    <a
+                      key={tab.id}
+                      href={href}
+                      data-testid={`pricing-tab-${tab.id}`}
+                      style={{
+                        padding: '0.5rem 0.875rem',
+                        borderRadius: 999,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        background: isActive ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                        color: isActive ? '#fff' : 'rgba(255,255,255,0.65)',
+                        border: `1px solid ${isActive ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                      }}
+                    >
+                      {tab.label}
+                    </a>
+                  );
+                })}
+              </div>
+
+              {visibleGroups.map((group) => (
+                <div key={group.id} data-testid={`tier-group-${group.id}`} style={{ marginBottom: '3rem' }}>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>{group.title}</h2>
+                    <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.6)', margin: 0, maxWidth: 720 }}>
+                      {group.subtitle}
+                    </p>
+                  </div>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                      gap: '1rem',
+                    }}
+                  >
+                    {tiersByGroup[group.id].map(renderTierCard)}
+                  </div>
+                </div>
+              ))}
+            </>
+          );
+        })()}
 
         {error && (
           <div
