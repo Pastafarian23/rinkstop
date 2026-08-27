@@ -40,25 +40,41 @@ export default function ProfileFeed({ isOwner, username, userId }: ProfileFeedPr
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mountedRef = useRef(true);
   const MAX = 1000;
 
   // Load posts on mount
   useEffect(() => {
+    mountedRef.current = true;
     if (userId) loadPosts();
     else setLoading(false);
+    return () => {
+      mountedRef.current = false;
+    };
   }, [userId]);
 
   async function loadPosts() {
     if (!userId) return;
     setLoading(true);
+    setError('');
     try {
       const r = await fetch(`/api/profile-posts?user_id=${userId}`);
-      if (r.ok) {
-        const { data } = await r.json();
+      if (!r.ok) {
+        const json = await r.json().catch(() => ({}));
+        throw new Error((json as any).error || `Failed to load posts (${r.status})`);
+      }
+      const { data } = await r.json();
+      if (mountedRef.current) {
         setPosts(data ?? []);
       }
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err.message : 'Failed to load posts');
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }
 
