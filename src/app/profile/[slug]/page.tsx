@@ -271,11 +271,12 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
     void (async () => {
       try {
         const viewer = await currentUser();
-        const viewerFirst = viewer?.firstName ?? '';
-        const viewerLast = viewer?.lastName ?? '';
+        if (!viewer) return;
+        const viewerFirst = viewer.firstName ?? '';
+        const viewerLast = viewer.lastName ?? '';
         const viewerDisplayName =
           `${viewerFirst}${viewerLast ? ' ' + viewerLast : ''}`.trim() ||
-          viewer?.username ||
+          viewer.username ||
           null;
         await emitProfileFirstVisitor(
           profile.user_id,
@@ -293,13 +294,20 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   // didit_sessions row. Bare flag is no longer trusted.
   //
   // This checks the VIEWED profile's verification, not the viewer.
-  const profileIdentityVerified = await isIdentityVerified(profile.user_id);
-  const verifiedAt = profileIdentityVerified
-    ? ((profile as any).identity_verified_at as string | null)
-    : null;
-  const expiresAt = profileIdentityVerified
-    ? ((profile as any).identity_expires_at as string | null)
-    : null;
+  let profileIdentityVerified = false;
+  let verifiedAt: string | null = null;
+  let expiresAt: string | null = null;
+  try {
+    profileIdentityVerified = await isIdentityVerified(profile.user_id);
+    verifiedAt = profileIdentityVerified
+      ? ((profile as any).identity_verified_at as string | null)
+      : null;
+    expiresAt = profileIdentityVerified
+      ? ((profile as any).identity_expires_at as string | null)
+      : null;
+  } catch (err) {
+    console.error('[profile page] isIdentityVerified failed:', err);
+  }
 
   return (
     <main className="min-h-screen bg-[#041E42] text-white">
