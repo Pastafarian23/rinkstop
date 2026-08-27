@@ -1,36 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { supabaseAdmin } from '@/lib/supabase';
 
-// DELETE /api/profile-posts/[id]
-// Soft-deletes a post. Only the owner can delete their own post.
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { userId } = await auth();
-  if (!userId) {
+type RouteContext = { params: Promise<{ id: string }> };
+
+// DELETE /api/profile-posts/[id] — owner only, soft delete
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { id } = await params;
 
-  // Verify ownership before deleting
-  const { data: post } = await supabaseAdmin
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Verify ownership before soft-deleting
+  const { data: post } = await supabase
     .from('profile_posts')
-    .select('id, user_id')
+    .select('user_id')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (!post) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-
-  if (post.user_id !== userId) {
+  if (post.user_id !== clerkUserId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await supabase
     .from('profile_posts')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
