@@ -413,7 +413,6 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               >
                 <CoverImageEditor
                   currentUrl={profile.cover_image_url ?? null}
-                  currentPosition={profile.cover_image_position ?? 'center'}
                   isOwner={isOwner}
                 />
               </div>
