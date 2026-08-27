@@ -12,9 +12,14 @@ import CoverImageEditor from '@/components/CoverImageEditor';
 import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
 import ProfileTabs from '@/components/ProfileTabs';
 import ProfileSidebar from '@/components/ProfileSidebar';
-// import ProfileFeed from '@/components/ProfileFeed';
+import ProfileFeed from '@/components/ProfileFeed';
 import ProfilePhotoHistory from '@/components/ProfilePhotoHistory';
-import ProfileErrorListeners from '@/components/ProfileErrorListeners';
+// `ProfileErrorListeners` was added during crash debugging on `ec914488`.
+// That debugging path is no longer needed, and the component's `window`
+// usage was one of the reported crash triggers on mobile, so keep it out
+// of the server-rendered profile page unless a separate debugging pass
+// re-enables it explicitly.
+// import ProfileErrorListeners from '@/components/ProfileErrorListeners';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -427,7 +432,6 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 />
               </div>
             )}
-            {isOwner && <ProfileErrorListeners />}
           </div>
 
           {/* ─── AVATAR (overlaps cover bottom) ──────────────────
@@ -622,9 +626,8 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* Posts / Media feed (placeholder until those features ship) */}
-              {/* ProfileFeed disabled for debugging - was causing crash */}
-              {/* <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} /> */}
+              {/* Posts / Media feed */}
+              <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} />
 
               {/* Passport sections — only render if user has a player record. */}
               <PassportSections profileUserId={profile.user_id} isOwner={isOwner} />
