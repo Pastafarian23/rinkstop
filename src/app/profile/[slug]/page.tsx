@@ -12,7 +12,7 @@ import CoverImageEditor from '@/components/CoverImageEditor';
 import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
 import ProfileTabs from '@/components/ProfileTabs';
 import ProfileSidebar from '@/components/ProfileSidebar';
-import ProfileFeed from '@/components/ProfileFeed';
+// import ProfileFeed from '@/components/ProfileFeed';
 import ProfilePhotoHistory from '@/components/ProfilePhotoHistory';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -650,7 +650,8 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               )}
 
               {/* Posts / Media feed (placeholder until those features ship) */}
-              <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} />
+              {/* ProfileFeed disabled for debugging - was causing crash */}
+              {/* <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} /> */}
 
               {/* Passport sections — only render if user has a player record. */}
               <PassportSections profileUserId={profile.user_id} isOwner={isOwner} />
