@@ -19,7 +19,7 @@ import ProfilePhotoHistory from '@/components/ProfilePhotoHistory';
 // usage was one of the reported crash triggers on mobile, so keep it out
 // of the server-rendered profile page unless a separate debugging pass
 // re-enables it explicitly.
-// import ProfileErrorListeners from '@/components/ProfileErrorListeners';
+import ProfileErrorListeners from '@/components/ProfileErrorListeners';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -627,6 +627,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               )}
 
               {/* Posts / Media feed */}
+              <ProfileErrorListeners />
               <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} />
 
               {/* Passport sections — only render if user has a player record. */}
