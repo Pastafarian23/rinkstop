@@ -1,230 +1,107 @@
-/* FAB */
-.fab {
-  position: fixed;
-  bottom: 88px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #4ECDC4;
-  color: #fff;
-  border: none;
-  font-size: 2rem;
-  line-height: 1;
-  cursor: pointer;
-  z-index: 900;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+.section {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  padding-bottom: 2px; /* optical center for + */
+  flex-direction: column;
+  gap: 0;
 }
 
-.fab:hover {
-  transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-}
-
-.fab:active {
-  transform: scale(0.96);
-}
-
-/* Modal backdrop */
-.modalBackdrop {
+.composerOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 950;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: fadeIn 0.15s ease;
+  padding: 1rem;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-/* Modal — bottom sheet on mobile */
-.modal {
-  background: #0a1f3d;
+.composerBox {
+  background: #1a1a1a;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: none;
   border-radius: 16px 16px 0 0;
-  padding: 1.25rem;
   width: 100%;
-  max-width: 600px;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.2s ease;
+  max-width: 560px;
+  padding: 1.25rem;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
-}
-
-.modalHeader {
+.composerHeader {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
-}
-
-.modalTitle {
-  font-family: var(--font-sport, 'Oswald', sans-serif);
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.modalClose {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0.25rem;
-  line-height: 1;
-}
-
-.modalClose:hover {
-  color: #fff;
 }
 
 .composerTextarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  border-radius: 10px;
   color: #fff;
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  padding: 0.75rem;
-  resize: vertical;
-  min-height: 100px;
+  font-size: 1rem;
+  padding: 0.875rem;
+  resize: none;
   font-family: inherit;
+  outline: none;
   box-sizing: border-box;
+  min-height: 100px;
   transition: border-color 0.15s;
 }
 
 .composerTextarea:focus {
-  outline: none;
-  border-color: #4ECDC4;
+  border-color: rgba(200, 16, 46, 0.6);
 }
 
-.composerTextarea::placeholder {
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.charCount {
-  text-align: right;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.35);
-  margin: 0.25rem 0 0.75rem;
-  min-height: 1rem;
-}
-
-.charCount[data-warn='true'] {
-  color: #f59e0b;
-}
-
-.charCount[data-over='true'] {
-  color: #ef4444;
-}
-
-.modalField {
-  margin-bottom: 1rem;
-}
-
-.modalLabel {
-  display: block;
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.55);
-  margin-bottom: 0.375rem;
-  font-weight: 500;
-}
-
-.optional {
-  color: rgba(255, 255, 255, 0.3);
-  font-weight: 400;
-}
-
-.modalInput {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: #fff;
-  font-size: 0.875rem;
-  padding: 0.625rem 0.75rem;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-
-.modalInput:focus {
-  outline: none;
-  border-color: #4ECDC4;
-}
-
-.modalInput::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.composerError {
-  color: #ef4444;
-  font-size: 0.8125rem;
-  margin: 0 0 0.75rem;
-}
-
-.modalActions {
+.composerFooter {
   display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
-.cancelBtn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: background 0.15s;
+.mediaInput {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+  outline: none;
 }
 
-.cancelBtn:hover {
-  background: rgba(255, 255, 255, 0.13);
+.mediaInput:focus {
+  border-color: rgba(200, 16, 46, 0.6);
 }
 
 .postBtn {
-  background: #4ECDC4;
+  background: var(--red, #C8102E);
+  color: #fff;
   border: none;
-  border-radius: 8px;
-  color: #0a1f3d;
-  font-size: 0.875rem;
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  padding: 0.5rem 1.25rem;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-}
-
-.postBtn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.postBtn:active:not(:disabled) {
-  transform: scale(0.97);
+  font-family: "'Bebas Neue', sans-serif";
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .postBtn:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+.errorMsg {
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+.successMsg {
+  color: #51cf66;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
 }
 
 /* Empty state */
@@ -234,122 +111,179 @@
   border-radius: 8px;
   padding: 2rem 1.5rem;
   text-align: center;
+  position: relative;
 }
 
 .emptyIcon {
+  font-size: 1.75rem;
+  margin-bottom: 0.875rem;
+  display: inline-flex;
   width: 56px;
   height: 56px;
-  border-radius: 50%;
-  background: rgba(78, 205, 196, 0.1);
-  border: 1px solid rgba(78, 205, 196, 0.25);
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
+  background: rgba(255, 184, 28, 0.1);
+  border: 1px solid rgba(255, 184, 28, 0.3);
+  border-radius: 50%;
   margin-bottom: 0.875rem;
 }
 
-.emptyPostBtn {
-  margin-top: 1.25rem;
-  background: var(--red, #c8102e);
+.emptyTitle {
+  font-family: "'Bebas Neue', sans-serif";
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
   color: #fff;
-  border: 1px solid rgba(200, 16, 46, 0.8);
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: opacity 0.15s;
+  margin: 0 0 0.5rem;
 }
 
-.emptyPostBtn:hover {
-  opacity: 0.88;
+.emptyText {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  line-height: 1.5;
 }
 
-/* Loading skeletons */
-.loadingPosts {
+/* Feed list */
+.feedList {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.postSkeleton {
-  height: 80px;
-  border-radius: 8px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
+.loadingState {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 1rem 0;
 }
 
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Post list */
-.postList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
+/* Post card */
 .postCard {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 1rem;
 }
 
 .postBody {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9375rem;
-  line-height: 1.55;
-  margin: 0 0 0.625rem;
+  color: #fff;
+  font-size: 0.95rem;
   white-space: pre-wrap;
-  word-break: break-word;
+  margin: 0 0 0.75rem;
+  line-height: 1.55;
 }
 
 .postImage {
   width: 100%;
   max-height: 280px;
   object-fit: cover;
-  border-radius: 6px;
-  margin-bottom: 0.625rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
   display: block;
 }
 
-.postFooter {
+.postMeta {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
-.postTime {
+.postDate {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .deleteBtn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.35);
   cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  transition: background 0.15s, color 0.15s;
-}
-
-.deleteBtn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-}
-
-.deleteBtnConfirm {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
   font-size: 0.75rem;
-  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+/* FAB */
+.fabButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #1d9bf0;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+  box-shadow: 0 4px 16px rgba(29, 155, 240, 0.4);
+  transition: background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.fabButton:hover {
+  background: #1a8cd8;
+  transform: scale(1.06);
+}
+
+.fabButton:active {
+  transform: scale(0.96);
+}
+
+/* Media section */
+.mediaCard {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.mediaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.mediaTitle {
+  font-family: "'Bebas Neue', sans-serif";
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.comingSoonBadge {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.mediaPlaceholder {
+  aspect-ratio: 1 / 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.mediaHint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.75rem 0 0;
+  line-height: 1.5;
 }
