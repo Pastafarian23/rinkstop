@@ -14,6 +14,7 @@ import ProfileTabs from '@/components/ProfileTabs';
 import ProfileSidebar from '@/components/ProfileSidebar';
 // import ProfileFeed from '@/components/ProfileFeed';
 import ProfilePhotoHistory from '@/components/ProfilePhotoHistory';
+import ProfileErrorListeners from '@/components/ProfileErrorListeners';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -219,35 +220,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProfileBySlugPage({ params }: PageProps) {
   const { slug } = await params;
-
-  // Capture top-level render-time and hydration errors on the profile
-  // page so the actual throw surfaces instead of a blank/error fallback.
-  if (typeof window !== 'undefined') {
-    window.addEventListener('error', (ev) => {
-      const info = {
-        message: ev.message,
-        filename: (ev as any).filename ?? null,
-        lineno: (ev as any).lineno ?? null,
-        colno: (ev as any).colno ?? null,
-        stack: (ev as any).error?.stack ?? null,
-      };
-      fetch('/api/log/profile-page-error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(info),
-        keepalive: true,
-      }).catch(() => { /* noop */ });
-    });
-    window.addEventListener('unhandledrejection', (ev) => {
-      const reason = ev.reason instanceof Error ? { message: ev.reason.message, stack: ev.reason.stack } : { value: ev.reason };
-      fetch('/api/log/profile-page-error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unhandledRejection: reason }),
-        keepalive: true,
-      }).catch(() => { /* noop */ });
-    });
-  }
 
   const data = await fetchProfile(slug);
   if (!data) notFound();
@@ -455,6 +427,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 />
               </div>
             )}
+            {isOwner && <ProfileErrorListeners />}
           </div>
 
           {/* ─── AVATAR (overlaps cover bottom) ──────────────────
