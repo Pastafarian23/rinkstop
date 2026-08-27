@@ -9,7 +9,7 @@
 
 import { useEffect } from 'react';
 
-export default function ProfileErrorListeners(): null => {
+export default function ProfileErrorListeners(): null {
   useEffect(() => {
     function onError(ev: ErrorEvent) {
       const info = {
