@@ -611,8 +611,8 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* Posts / Media feed (placeholder until those features ship) */}
-              <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} />
+              {/* Posts / Media feed */}
+              <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} />
 
               {/* Passport sections — only render if user has a player record. */}
               <PassportSections profileUserId={profile.user_id} isOwner={isOwner} />

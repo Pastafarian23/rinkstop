@@ -1,0 +1,289 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.composerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.composerBox {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 560px;
+  padding: 1.25rem;
+}
+
+.composerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.composerTextarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+  padding: 0.875rem;
+  resize: none;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  min-height: 100px;
+  transition: border-color 0.15s;
+}
+
+.composerTextarea:focus {
+  border-color: rgba(200, 16, 46, 0.6);
+}
+
+.composerFooter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mediaInput {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+  outline: none;
+}
+
+.mediaInput:focus {
+  border-color: rgba(200, 16, 46, 0.6);
+}
+
+.postBtn {
+  background: var(--red, #C8102E);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: "'Bebas Neue', sans-serif";
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.postBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.errorMsg {
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+.successMsg {
+  color: #51cf66;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+/* Empty state */
+.emptyState {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  position: relative;
+}
+
+.emptyIcon {
+  font-size: 1.75rem;
+  margin-bottom: 0.875rem;
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 184, 28, 0.1);
+  border: 1px solid rgba(255, 184, 28, 0.3);
+  border-radius: 50%;
+  margin-bottom: 0.875rem;
+}
+
+.emptyTitle {
+  font-family: "'Bebas Neue', sans-serif";
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  color: #fff;
+  margin: 0 0 0.5rem;
+}
+
+.emptyText {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Feed list */
+.feedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loadingState {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 1rem 0;
+}
+
+/* Post card */
+.postCard {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.postBody {
+  color: #fff;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  margin: 0 0 0.75rem;
+  line-height: 1.55;
+}
+
+.postImage {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.postMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.postDate {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+/* FAB */
+.fabButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #1d9bf0;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+  box-shadow: 0 4px 16px rgba(29, 155, 240, 0.4);
+  transition: background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.fabButton:hover {
+  background: #1a8cd8;
+  transform: scale(1.06);
+}
+
+.fabButton:active {
+  transform: scale(0.96);
+}
+
+/* Media section */
+.mediaCard {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.mediaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.mediaTitle {
+  font-family: "'Bebas Neue', sans-serif";
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.comingSoonBadge {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.mediaPlaceholder {
+  aspect-ratio: 1 / 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.mediaHint {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.75rem 0 0;
+  line-height: 1.5;
+}
