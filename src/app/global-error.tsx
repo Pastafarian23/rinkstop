@@ -10,15 +10,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log to console so Chrome devtools (and Vercel browser console
-    // captures if enabled) show the real error.
     console.error('[rinkstop] global error boundary:', error);
-
-    // 2026-08-12 fix: POST the error to /api/log/error so the server
-    // can log it. The user reported "Something went wrong" on many
-    // pages in real browsers but NOT in headless chromium. The next
-    // time it fires in the user's browser, this captures the full
-    // stack trace and message so we can actually find the bug.
     try {
       const stack = (error?.stack ?? '').substring(0, 4000);
       const message = (error?.message ?? '').substring(0, 1000);
@@ -26,14 +18,25 @@ export default function GlobalError({
       const url = typeof window !== 'undefined' ? window.location.href : '';
       const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
       const body = JSON.stringify({ message, stack, digest, url, ua, ts: Date.now() });
-      // Use sendBeacon for reliability (survives page unload, fire-and-forget)
       if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
         navigator.sendBeacon('/api/log/error', body);
       } else {
         fetch('/api/log/error', { method: 'POST', body, keepalive: true }).catch(() => {});
       }
+      try {
+        fetch('/api/log/profile-page-error', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, stack, digest, url, ua, ts: Date.now(), source: 'global-error-boundary' }),
+          keepalive: true,
+        }).catch(() => { /* logging must not throw */ });
+      } catch { /* noop */ }
     } catch { /* logging must never throw */ }
   }, [error]);
+
+  const message = (error?.message ?? 'Unknown error').substring(0, 1000);
+  const stack = (error?.stack ?? '').substring(0, 4000);
+  const digest = (error?.digest ?? '').substring(0, 200);
 
   return (
     <html lang="en">
@@ -46,11 +49,18 @@ export default function GlobalError({
             RinkStop hit an unexpected error. Your account and data are safe.
             Try again in a moment.
           </p>
-          {error.digest ? (
+          {digest ? (
             <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem', margin: '0 0 1rem', fontFamily: 'monospace' }}>
-              Ref: {error.digest}
+              Ref: {digest}
             </p>
           ) : null}
+          <details style={{ marginBottom: '1rem' }}>
+            <summary style={{ color: '#fff', cursor: 'pointer', marginBottom: '0.5rem' }}>Error details</summary>
+            <pre style={{ background: '#111', padding: '1rem', borderRadius: 6, overflow: 'auto', fontSize: '0.8rem', color: '#f87171' }}>{message}</pre>
+            {stack ? (
+              <pre style={{ background: '#111', padding: '1rem', borderRadius: 6, marginTop: '0.5rem', overflow: 'auto', fontSize: '0.75rem', color: '#aaa' }}>{stack}</pre>
+            ) : null}
+          </details>
           <button
             onClick={reset}
             style={{
