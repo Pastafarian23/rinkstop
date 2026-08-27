@@ -1,232 +1,166 @@
-'use client';
-import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import styles from './ProfileFeed.module.css';
-
-interface Post {
-  id: string;
-  body: string;
-  media_url: string | null;
-  created_at: string;
-}
 
 interface ProfileFeedProps {
   isOwner: boolean;
   username: string;
-  userId?: string; // Clerk user_id for the profile being viewed
 }
 
 /**
  * Right column feed for the profile page. Posts / Updates surface.
- * Pulls from /api/profile-posts when userId is provided.
+ *
+ * Current state: empty. The "posts" feature is not yet built — this
+ * component renders an empty state with a clear CTA for the owner
+ * (link to dashboard) and a polite "no posts yet" state for everyone
+ * else. When the posts schema + composer ship, this is the single file
+ * to update to swap the empty state for a real feed.
  */
-export default function ProfileFeed({ isOwner, userId }: ProfileFeedProps) {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showComposer, setShowComposer] = useState(false);
-  const [body, setBody] = useState('');
-  const [mediaUrl, setMediaUrl] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const deleteConfirm = useRef<string | null>(null);
-  const MAX_CHARS = 1000;
-
-  useEffect(() => {
-    if (userId) {
-      loadPosts();
-    }
-  }, [userId]);
-
-  async function loadPosts() {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/profile-posts?user_id=${userId}`);
-      if (res.ok) {
-        const { data } = await res.json();
-        setPosts(data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!body.trim() || submitting) return;
-    setError('');
-    setSubmitting(true);
-    try {
-      const res = await fetch('/api/profile-posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: body.trim(), media_url: mediaUrl.trim() || undefined }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setError(json.error || 'Failed to post');
-        return;
-      }
-      setPosts(prev => [json.data, ...prev]);
-      setBody('');
-      setMediaUrl('');
-      setShowComposer(false);
-      setSuccess('Posted!');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch {
-      setError('Network error');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (deleteConfirm.current !== id) {
-      deleteConfirm.current = id;
-      return;
-    }
-    deleteConfirm.current = null;
-    const res = await fetch(`/api/profile-posts/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setPosts(prev => prev.filter(p => p.id !== id));
-    }
-  }
-
-  function formatDate(ts: string) {
-    const d = new Date(ts);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
-
-  const hasPosts = posts.length > 0;
-  const showEmptyState = !loading && !hasPosts;
-
+export default function ProfileFeed({ isOwner, username }: ProfileFeedProps) {
   return (
-    <section id="posts" className={styles.section}>
-      {/* Inline composer — shown when FAB is tapped on profile page */}
-      {showComposer && (
-        <div className={styles.composerOverlay} onClick={e => { if (e.target === e.currentTarget) setShowComposer(false); }}>
-          <div className={styles.composerBox}>
-            <div className={styles.composerHeader}>
-              <span style={{ color: '#fff', fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.1rem', letterSpacing: '0.05em' }}>New Update</span>
-              <button onClick={() => setShowComposer(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1 }}>×</button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <textarea
-                autoFocus
-                value={body}
-                onChange={e => setBody(e.target.value)}
-                placeholder="Share an update..."
-                maxLength={MAX_CHARS}
-                rows={4}
-                className={styles.composerTextarea}
-              />
-              <div className={styles.composerFooter}>
-                <input
-                  type="url"
-                  value={mediaUrl}
-                  onChange={e => setMediaUrl(e.target.value)}
-                  placeholder="Image URL (optional)"
-                  className={styles.mediaInput}
-                />
-                <span style={{ fontSize: '0.7rem', color: body.length > 900 ? '#e53' : 'rgba(255,255,255,0.4)', whiteSpace: 'nowrap' }}>
-                  {body.length}/{MAX_CHARS}
-                </span>
-                <button type="submit" disabled={submitting || !body.trim()} className={styles.postBtn}>
-                  {submitting ? 'Posting...' : 'Post'}
-                </button>
+    <section id="posts" className="space-y-4">
+      {/* Empty state hero */}
+      <div
+        style={{
+          background: 'rgba(0,0,0,0.25)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 8,
+          padding: '2rem 1.5rem',
+          textAlign: 'center',
+        }}
+      >
+        <div
+          aria-hidden
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: 'rgba(255,184,28,0.1)',
+            border: '1px solid rgba(255,184,28,0.3)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.75rem',
+            marginBottom: '0.875rem',
+          }}
+        >
+          📝
+        </div>
+        <h2
+          className="font-sport"
+          style={{
+            fontSize: '1.25rem',
+            letterSpacing: '0.04em',
+            color: '#fff',
+            margin: 0,
+            marginBottom: '0.5rem',
+          }}
+        >
+          {isOwner ? 'Share your first update' : 'No posts yet'}
+        </h2>
+        <p
+          style={{
+            fontSize: '0.875rem',
+            color: 'rgba(255,255,255,0.55)',
+            margin: 0,
+            marginBottom: isOwner ? '1.25rem' : 0,
+            lineHeight: 1.5,
+          }}
+        >
+          {isOwner
+            ? 'Post updates, share highlights, and write about your hockey journey. Posts are public and indexed by search.'
+            : 'When this profile starts posting, the updates will appear here.'}
+        </p>
+        {isOwner && (
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5"
+            style={{
+              background: 'var(--red)',
+              color: '#fff',
+              border: '1px solid var(--red-dark)',
+              borderRadius: 6,
+              padding: '0.5rem 1rem',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+            }}
+          >
+            Open dashboard
+            <span aria-hidden>→</span>
+          </Link>
+        )}
+      </div>
+
+      {/* Media placeholder — same "Coming soon" pattern as the tab nav */}
+      <div id="media" style={{ scrollMarginTop: '5rem' }}>
+        <div
+          style={{
+            background: 'rgba(0,0,0,0.25)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 8,
+            padding: '1.5rem',
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2
+              className="font-sport uppercase"
+              style={{
+                fontSize: '0.75rem',
+                letterSpacing: '0.12em',
+                color: 'rgba(255,255,255,0.5)',
+                margin: 0,
+              }}
+            >
+              Media
+            </h2>
+            <span
+              style={{
+                fontSize: '0.5625rem',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.3)',
+              }}
+            >
+              Coming soon
+            </span>
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '0.5rem',
+            }}
+          >
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  aspectRatio: '1 / 1',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px dashed rgba(255,255,255,0.1)',
+                  borderRadius: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.5rem',
+                  color: 'rgba(255,255,255,0.15)',
+                }}
+                aria-hidden
+              >
               </div>
-              {error && <p className={styles.errorMsg}>{error}</p>}
-              {success && <p className={styles.successMsg}>{success}</p>}
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Feed */}
-      {showEmptyState ? (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📝</div>
-          <h2 className={styles.emptyTitle}>
-            {isOwner ? 'Share your first update' : 'No posts yet'}
-          </h2>
-          <p className={styles.emptyText}>
-            {isOwner
-              ? 'Post updates, share highlights, and write about your hockey journey. Posts are public and indexed by search.'
-              : 'When this profile starts posting, the updates will appear here.'}
-          </p>
-          {isOwner && (
-            <button
-              onClick={() => setShowComposer(true)}
-              className={styles.fabButton}
-              aria-label="Compose new post"
-            >
-              +
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className={styles.feedList}>
-          {isOwner && (
-            <button
-              onClick={() => setShowComposer(true)}
-              className={styles.fabButton}
-              aria-label="Compose new post"
-              style={{ marginBottom: '1rem' }}
-            >
-              +
-            </button>
-          )}
-          {loading ? (
-            <div className={styles.loadingState}>Loading...</div>
-          ) : (
-            posts.map(post => (
-              <article key={post.id} className={styles.postCard}>
-                <p className={styles.postBody}>{post.body}</p>
-                {post.media_url && (
-                  <img src={post.media_url} alt="" className={styles.postImage} />
-                )}
-                <div className={styles.postMeta}>
-                  <span className={styles.postDate}>{formatDate(post.created_at)}</span>
-                  {isOwner && (
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => handleDelete(post.id)}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#e53')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
-                    >
-                      {deleteConfirm.current === post.id ? 'Confirm delete' : 'Delete'}
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Media placeholder */}
-      <div id="media" style={{ scrollMarginTop: '5rem', marginTop: '1.5rem' }}>
-        <div className={styles.mediaCard}>
-          <div className={styles.mediaHeader}>
-            <h2 className={styles.mediaTitle}>Media</h2>
-            <span className={styles.comingSoonBadge}>Coming soon</span>
-          </div>
-          <div className={styles.mediaGrid}>
-            {[0, 1, 2].map(i => (
-              <div key={i} className={styles.mediaPlaceholder} />
             ))}
           </div>
-          <p className={styles.mediaHint}>
+          <p
+            className="mt-3"
+            style={{
+              fontSize: '0.75rem',
+              color: 'rgba(255,255,255,0.4)',
+              margin: 0,
+              lineHeight: 1.5,
+            }}
+          >
             Photos and videos uploaded by this profile will appear here.
           </p>
         </div>
