@@ -1,9 +1,9 @@
 // src/app/profile/[slug]/passport/HockeyStatsSection.tsx
 // RSC. Reads hockey_player_stats_season. Renders skater or goalie stats based on position_category.
 
-import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { VerificationBadge } from './VerificationBadge';
+import { StatsActions } from '@/components/passport/PassportActionsBar';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -44,28 +44,49 @@ function formatGaa(n: any): string {
 
 export async function HockeyStatsSection({
   playerId,
+  playerName,
   positionCategory,
   isOwner,
 }: {
   playerId: string;
+  playerName: string;
   positionCategory: 'forward' | 'defense' | 'goalie' | null;
   isOwner: boolean;
 }) {
   const isGoalie = positionCategory === 'goalie';
 
-  const { data: rows, error } = await supabaseAdmin
-    .from('hockey_player_stats_season')
-    .select(`
-      id, season_id, level, league_id,
-      games_played, goals, assists, plus_minus, penalty_minutes,
-      goalie_games_played, wins, losses, goals_against, saves,
-      save_percentage, shutouts, gaa,
-      verification_source, verified_at,
-      season:hockey_seasons(label, start_date)
-    `)
-    .eq('player_id', playerId)
-    .order('created_at', { ascending: false });
+  // Fetch stats rows + seasons list + team history list in parallel.
+  // All three are needed for the inline "+ Add season stats" modal.
+  const [statsRes, seasonsRes, teamHistoryRes] = await Promise.all([
+    supabaseAdmin
+      .from('hockey_player_stats_season')
+      .select(`
+        id, season_id, level, league_id,
+        games_played, goals, assists, plus_minus, penalty_minutes,
+        goalie_games_played, wins, losses, goals_against, saves,
+        save_percentage, shutouts, gaa,
+        verification_source, verified_at,
+        season:hockey_seasons(label, start_date)
+      `)
+      .eq('player_id', playerId)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('hockey_seasons')
+      .select('id, label, start_date, end_date')
+      .order('start_date', { ascending: false })
+      .limit(200),
+    supabaseAdmin
+      .from('hockey_player_team_history')
+      .select('id, team_name_snapshot, season_id, level, position, jersey_number')
+      .eq('player_id', playerId)
+      .order('start_date', { ascending: false })
+      .limit(50),
+  ]);
 
+  const rows = statsRes.data;
+  const error = statsRes.error;
+  const seasons = (seasonsRes.data as any[]) ?? [];
+  const teamHistory = (teamHistoryRes.data as any[]) ?? [];
   const sectionStyle = {
     padding: '1.25rem 1.5rem 1.5rem',
     borderTop: '1px solid rgba(255,255,255,0.08)',
@@ -95,19 +116,22 @@ export async function HockeyStatsSection({
   if (!rows || rows.length === 0) {
     return (
       <section style={sectionStyle}>
-        <h2 style={headingStyle}>Hockey stats</h2>
+        <h2 style={headingStyle}>
+          <span>Hockey stats{isGoalie ? ' (goalie)' : ''}</span>
+          {isOwner && (
+            <StatsActions
+              isOwner={isOwner}
+              playerId={playerId}
+              playerName={playerName}
+              positionCategory={positionCategory}
+              seasons={seasons}
+              teamHistory={teamHistory}
+            />
+          )}
+        </h2>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
           No season stats recorded yet.
         </p>
-        {isOwner && (
-          <Link
-            href="/dashboard/passport/stats/new"
-            className="text-sm text-[#FFB81C] hover:text-[#FFB81C]/80"
-            style={{ textDecoration: 'underline' }}
-          >
-            Add your first season stats →
-          </Link>
-        )}
       </section>
     );
   }
@@ -125,13 +149,14 @@ export async function HockeyStatsSection({
       <h2 style={headingStyle}>
         <span>Hockey stats{isGoalie ? ' (goalie)' : ''}</span>
         {isOwner && (
-          <Link
-            href="/dashboard/passport/stats/new"
-            className="text-xs text-[#FFB81C] hover:text-[#FFB81C]/80"
-            style={{ textDecoration: 'underline' }}
-          >
-            + Add season
-          </Link>
+          <StatsActions
+            isOwner={isOwner}
+            playerId={playerId}
+            playerName={playerName}
+            positionCategory={positionCategory}
+            seasons={seasons}
+            teamHistory={teamHistory}
+          />
         )}
       </h2>
 
