@@ -331,25 +331,77 @@
   color: rgba(255, 255, 255, 0.35);
 }
 
-.deleteBtn {
+/* 3-dot menu trigger. Visible on hover (desktop) and always-visible
+ * on touch devices (where there's no hover). The pattern is the same
+ * as Twitter / Instagram / Facebook post action menus.
+ */
+.postMenuTrigger {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.25rem;
+  line-height: 1;
   cursor: pointer;
-  padding: 0.2rem 0.4rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 4px;
   transition: background 0.15s, color 0.15s;
+  font-weight: 700;
+  letter-spacing: 0.1em;
 }
 
-.deleteBtn:hover {
+.postMenuTrigger:hover,
+.postMenuTrigger:focus-visible,
+.postCard:hover .postMenuTrigger {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* Dropdown panel anchored below the trigger. Positioned absolutely so
+ * it overlays content below without shifting layout.
+ */
+.postMenu {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 2.25rem;
+  background: #0a1f3d;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.25rem;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.postMenuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.postMenuItem:hover,
+.postMenuItem:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.postMenuItemDanger {
+  color: #ef4444;
+}
+
+.postMenuItemDanger:hover,
+.postMenuItemDanger:focus-visible {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
 }
 
-.deleteBtnConfirm {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
-  font-size: 0.75rem;
-  font-weight: 600;
+/* Position the trigger + menu relative to the card so the menu
+ * anchors correctly. */
+.postCard {
+  position: relative;
 }
