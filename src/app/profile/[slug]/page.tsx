@@ -12,7 +12,7 @@ import CoverImageEditor from '@/components/CoverImageEditor';
 import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
 import ProfileTabs from '@/components/ProfileTabs';
 import ProfileSidebar from '@/components/ProfileSidebar';
-import ProfileFeed from '@/components/ProfileFeed';
+import ProfileFeed from '@/components/OnlyClientProfileFeed';
 import ProfilePhotoHistory from '@/components/ProfilePhotoHistory';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
