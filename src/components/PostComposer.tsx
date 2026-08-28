@@ -67,26 +67,22 @@ function getMyProfile(): Promise<ProfileMeResponse | null> {
     .catch((): ProfileMeResponse | null => null);
 }
 
-async function postToMyProfile(body: string, imageUrl: string | null): Promise<Response> {
-  return fetch('/api/profile-posts', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      body: body.trim(),
-      media_url: imageUrl || undefined,
-    }),
-  });
-}
-
-async function uploadMedia(
-  file: File,
-  width: number,
-  height: number,
-): Promise<{ url: string }> {
+async function postToMyProfile(
+  body: string,
+  image: PendingImage | null,
+): Promise<Response> {
+  // Single-shot: send body + image in one multipart request. The server
+  // uploads to Supabase Storage and inserts the post in one round-trip.
+  // The legacy two-POST flow (/api/profile-posts/media then
+  // /api/profile-posts) is still supported on the server for back-compat
+  // but unused on the client.
   const fd = new FormData();
-  fd.append('file', file);
-  fd.append('width', String(width));
-  fd.append('height', String(height));
+  fd.append('body', body);
+  if (image) {
+    fd.append('file', image.processedFile);
+    fd.append('width', String(image.width));
+    fd.append('height', String(image.height));
+  }
 
   // 30-second hard timeout. If the server hangs (slow storage, network
   // drop, Vercel body limit silently rejecting), abort and surface a
@@ -96,7 +92,7 @@ async function uploadMedia(
 
   let r: Response;
   try {
-    r = await fetch('/api/profile-posts/media', {
+    r = await fetch('/api/profile-posts', {
       method: 'POST',
       body: fd,
       signal: controller.signal,
@@ -104,7 +100,7 @@ async function uploadMedia(
   } catch (netErr) {
     clearTimeout(timeoutId);
     if (netErr instanceof DOMException && netErr.name === 'AbortError') {
-      throw new Error('Upload timed out after 30 seconds. The file may be too large or the server is unreachable.');
+      throw new Error('Post timed out after 30 seconds. The file may be too large or the server is unreachable.');
     }
     throw new Error(
       netErr instanceof Error
@@ -113,17 +109,7 @@ async function uploadMedia(
     );
   }
   clearTimeout(timeoutId);
-
-  let json: { url?: string; error?: string } = {};
-  try {
-    json = await r.json();
-  } catch {
-    // Non-JSON response (rare). Surface status.
-    throw new Error(`Upload failed (HTTP ${r.status}).`);
-  }
-  if (!r.ok) throw new Error(json.error || `Upload failed (HTTP ${r.status}).`);
-  if (!json.url) throw new Error('Upload succeeded but no URL was returned.');
-  return { url: json.url };
+  return r;
 }
 
 /**
@@ -356,37 +342,24 @@ export default function PostComposer() {
     setSubmitting(true);
     setError('');
     try {
-      let imageUrl: string | null = null;
-      if (image) {
-        setImageStage('uploading');
-        try {
-          const up = await uploadMedia(image.processedFile, image.width, image.height);
-          imageUrl = up.url;
-        } catch (upErr) {
-          setImageStage('ready');
-          setError(upErr instanceof Error ? upErr.message : 'Upload failed.');
-          setSubmitting(false);
-          return;
-        }
-      }
-      const r = await postToMyProfile(body, imageUrl);
+      if (image) setImageStage('uploading');
+      // Single round-trip: server uploads the image (if any) and inserts
+      // the post in one request.
+      const r = await postToMyProfile(body, image);
       const json = await r.json().catch(() => ({}));
       if (!r.ok) {
         setImageStage(image ? 'ready' : 'none');
         setError(json.error ?? `Failed to post (HTTP ${r.status}).`);
         return;
       }
-      // Best-effort: tell other tabs / same-tab ProfileFeed instances to reload.
+      // Tell ProfileFeed to refresh in place — no page reload.
       try {
         window.dispatchEvent(new CustomEvent('rinkstop:post-created'));
       } catch { /* noop */ }
       closeComposer();
-      // Soft-reload only if we're on the user's own profile page.
-      if (myProfile?.username && pathname === `/profile/${myProfile.username}`) {
-        window.location.reload();
-      }
-    } catch {
-      setError('Network error, try again');
+    } catch (err) {
+      setImageStage(image ? 'ready' : 'none');
+      setError(err instanceof Error ? err.message : 'Network error, try again');
     } finally {
       setSubmitting(false);
     }
@@ -532,9 +505,7 @@ export default function PostComposer() {
                   className={styles.postBtn}
                   disabled={submitDisabled}
                 >
-                  {imageStage === 'uploading'
-                    ? 'Uploading…'
-                    : submitting
+                  {submitting
                     ? 'Posting…'
                     : 'Post'}
                 </button>
