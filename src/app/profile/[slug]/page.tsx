@@ -519,7 +519,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               />
 
               {/* Photo history grid (mini) — only shows entries with valid URLs */}
-              {photoHistory.length > 0 {photoHistory.length > 0 && ({photoHistory.length > 0 && ( (
+              {photoHistory.length > 0 && (
                 <div
                   style={{
                     background: 'rgba(0,0,0,0.25)',
