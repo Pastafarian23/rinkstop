@@ -53,8 +53,11 @@ function timeAgo(dateStr: string): string {
 export default function ProfileFeed({ isOwner, username, userId }: Props) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Per-post action menu (the "⋯" dropdown). null = no menu open.
+  const [menuPostId, setMenuPostId] = useState<string | null>(null);
+  // Post that's been confirmed for deletion but the DELETE request is
+  // still in flight. We render a faded state so the user sees feedback.
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   // Fetch posts for this profile.
   useEffect(() => {
@@ -98,24 +101,34 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
     window.dispatchEvent(new CustomEvent('rinkstop:open-composer'));
   }
 
-  function requestDelete(id: string) {
-    if (deleteId === id) {
-      performDelete(id);
-    } else {
-      setDeleteId(id);
-      if (deleteTimer.current) clearTimeout(deleteTimer.current);
-      deleteTimer.current = setTimeout(() => setDeleteId(null), 3000);
+  async function confirmDelete(id: string) {
+    setMenuPostId(null);
+    setDeletingPostId(id);
+    try {
+      const r = await fetch(`/api/profile-posts/${id}`, { method: 'DELETE' });
+      if (r.ok) {
+        setPosts((prev) => prev.filter((p) => p.id !== id));
+      } else {
+        // Restore the post if delete failed.
+        setDeletingPostId(null);
+      }
+    } catch {
+      setDeletingPostId(null);
     }
   }
 
-  async function performDelete(id: string) {
-    setDeleteId(null);
-    if (deleteTimer.current) clearTimeout(deleteTimer.current);
-    try {
-      const r = await fetch(`/api/profile-posts/${id}`, { method: 'DELETE' });
-      if (r.ok) setPosts((prev) => prev.filter((p) => p.id !== id));
-    } catch { /* silent */ }
-  }
+  // Close the post action menu when clicking outside of it.
+  useEffect(() => {
+    if (!menuPostId) return undefined;
+    function onDocClick(e: MouseEvent) {
+      const target = e.target as HTMLElement | null;
+      if (!target || !target.closest('[data-post-menu]')) {
+        setMenuPostId(null);
+      }
+    }
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [menuPostId]);
 
   return (
     <section id="posts" className="space-y-4">
@@ -171,14 +184,58 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
                 <time className={styles.postTime}>{timeAgo(post.created_at)}</time>
                 {isOwner && (
                   <button
-                    className={`${styles.deleteBtn} ${deleteId === post.id ? styles.deleteBtnConfirm : ''}`}
-                    onClick={() => requestDelete(post.id)}
-                    title={deleteId === post.id ? 'Tap again to confirm delete' : 'Delete post'}
+                    type="button"
+                    className={styles.postMenuTrigger}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuPostId(menuPostId === post.id ? null : post.id);
+                    }}
+                    aria-label="Post actions"
+                    aria-haspopup="menu"
+                    aria-expanded={menuPostId === post.id}
+                    data-post-menu
                   >
-                    {deleteId === post.id ? 'Confirm delete?' : '�'}
+                    ⋯
                   </button>
                 )}
               </div>
+              {isOwner && menuPostId === post.id && (
+                <div
+                  className={styles.postMenu}
+                  role="menu"
+                  data-post-menu
+                >
+                  <button
+                    type="button"
+                    className={`${styles.postMenuItem} ${styles.postMenuItemDanger}`}
+                    onClick={() => confirmDelete(post.id)}
+                    role="menuitem"
+                    disabled={deletingPostId === post.id}
+                  >
+                    {deletingPostId === post.id ? 'Deleting…' : 'Delete post'}
+                  </button>
+                </div>
+              )}
+              {deletingPostId === post.id && (
+                // Visual feedback that the post is being removed. We don't
+                // unmount until the network call returns so the user sees
+                // the spinner-style state for at least one frame.
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>Removing…</span>
+                </div>
+              )}
             </article>
           ))}
         </div>
