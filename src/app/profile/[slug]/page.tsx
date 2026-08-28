@@ -411,7 +411,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                   zIndex: 5,
                 }}
               >
-                <CoverImageEditor // TEMP DISABLED
+                <CoverImageEditor
                   currentUrl={profile.cover_image_url ?? null}
                   isOwner={isOwner}
                 />
@@ -519,7 +519,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               />
 
               {/* Photo history grid (mini) — only shows entries with valid URLs */}
-              {photoHistory.length > 0 && (
+              {photoHistory.length > 0 {photoHistory.length > 0 && ({photoHistory.length > 0 && ( (
                 <div
                   style={{
                     background: 'rgba(0,0,0,0.25)',
@@ -529,7 +529,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                     marginTop: '1rem',
                   }}
                 >
-                  <ProfilePhotoHistory // TEMP DISABLED photos={photoHistory} maxItems={4} />
+                  <ProfilePhotoHistory photos={photoHistory} maxItems={4} />
                 </div>
               )}
             </div>
@@ -615,7 +615,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} />
 
               {/* Passport sections — only render if user has a player record. */}
-              <PassportSections // TEMP DISABLED profileUserId={profile.user_id} isOwner={isOwner} />
+              <PassportSections profileUserId={profile.user_id} isOwner={isOwner} />
 
               {/* Cover history strip — Phase 1b public gallery. */}
               {coverHistory.length >= 1 && (
