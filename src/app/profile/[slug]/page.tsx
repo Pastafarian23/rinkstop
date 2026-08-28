@@ -8,6 +8,7 @@ import { getTierLabel } from '@/lib/pricing';
 import { TierBadge } from '@/components/TierBadge';
 import { emitProfileFirstVisitor } from '@/lib/notifications/emit';
 import { PassportSections } from './passport/PassportSections';
+import PassportRefreshWrapper from '@/components/passport/PassportRefreshWrapper';
 import CoverImageEditor from '@/components/CoverImageEditor';
 import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
 import ProfileTabs from '@/components/ProfileTabs';
@@ -615,7 +616,9 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} />
 
               {/* Passport sections — only render if user has a player record. */}
-              <PassportSections profileUserId={profile.user_id} isOwner={isOwner} />
+              <PassportRefreshWrapper>
+                <PassportSections profileUserId={profile.user_id} isOwner={isOwner} />
+              </PassportRefreshWrapper>
 
               {/* Cover history strip — Phase 1b public gallery. */}
               {coverHistory.length >= 1 && (
