@@ -87,10 +87,27 @@ async function uploadMedia(
   fd.append('file', file);
   fd.append('width', String(width));
   fd.append('height', String(height));
-  const r = await fetch('/api/profile-posts/media', { method: 'POST', body: fd });
-  const json = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(json.error || 'Upload failed.');
-  return { url: json.url as string };
+  let r: Response;
+  try {
+    r = await fetch('/api/profile-posts/media', { method: 'POST', body: fd });
+  } catch (netErr) {
+    // Network/CORS/abort — fetch itself rejected.
+    throw new Error(
+      netErr instanceof Error
+        ? `Could not reach the server: ${netErr.message}`
+        : 'Could not reach the server.',
+    );
+  }
+  let json: { url?: string; error?: string } = {};
+  try {
+    json = await r.json();
+  } catch {
+    // Non-JSON response (rare). Surface status.
+    throw new Error(`Upload failed (HTTP ${r.status}).`);
+  }
+  if (!r.ok) throw new Error(json.error || `Upload failed (HTTP ${r.status}).`);
+  if (!json.url) throw new Error('Upload succeeded but no URL was returned.');
+  return { url: json.url };
 }
 
 /**
