@@ -71,6 +71,15 @@ export default function CoverImageEditor({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // IMPORTANT: useCallback MUST be called before any early returns.
+  // Rules of hooks — same number/order of hooks on every render.
+  // Was: onCropComplete lived below the `if (!isLoaded) return null`
+  // checks, which violated this rule. React #310 crashed hydration
+  // when isLoaded flipped false → true after Clerk mounted.
+  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
   if (!isLoaded) return null;
   if (!isOwner || !isSignedIn) return null;
 
@@ -127,10 +136,6 @@ export default function CoverImageEditor({
     setCroppedAreaPixels(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
-
-  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
 
   // Convert the cropped region into a Blob using a hidden canvas.
   async function buildCroppedBlob(): Promise<Blob> {
