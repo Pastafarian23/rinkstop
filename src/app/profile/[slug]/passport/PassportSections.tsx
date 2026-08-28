@@ -24,7 +24,7 @@ export async function PassportSections({
   // A profile can have a player record only if the user has claimed the player role.
   const { data: player, error } = await supabaseAdmin
     .from('players')
-    .select('id, primary_position_category')
+    .select('id, primary_position_category, first_name, last_name')
     .eq('user_id', profileUserId)
     .maybeSingle();
 
@@ -40,6 +40,7 @@ export async function PassportSections({
 
   const playerId = player.id;
   const positionCategory = (player.primary_position_category as 'forward' | 'defense' | 'goalie' | null) ?? null;
+  const playerName = [player.first_name, player.last_name].filter(Boolean).join(' ') || 'this player';
 
   const [historyCount, statsCount, federationCount] = await Promise.all([
     supabaseAdmin.from('hockey_player_team_history').select('id', { count: 'exact', head: true }).eq('player_id', playerId),
@@ -57,8 +58,8 @@ export async function PassportSections({
   return (
     <>
       <PassportCompletenessBadge completed={completed} total={3} passportHref={`/profile/${profileUserId}/passport`} size="sm" />
-      <HockeyCareerSection playerId={playerId} isOwner={isOwner} />
-      <HockeyStatsSection playerId={playerId} positionCategory={positionCategory} isOwner={isOwner} />
+      <HockeyCareerSection playerId={playerId} playerName={playerName} isOwner={isOwner} />
+      <HockeyStatsSection playerId={playerId} playerName={playerName} positionCategory={positionCategory} isOwner={isOwner} />
       <FederationSection playerId={playerId} isOwner={isOwner} />
       <EndorsementsSection playerId={playerId} isOwner={isOwner} />
     </>
