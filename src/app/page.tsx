@@ -128,6 +128,14 @@ export default async function Home() {
     recent_rinks: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null }>;
     recent_teams: Array<{ id: string; name: string; slug: string; city: string | null; league_id: string | null; league_name: string | null }>;
     upcoming_games: Array<{ id: string; date: string; home_team_name: string | null; away_team_name: string | null; venue_name: string | null }>;
+    // Added 2026-08-28 by migration
+    // 2026-08-28_get_directory_stats_add_activity.sql. These used to be
+    // 4 separate parallel queries in this file; now folded into the
+    // single get_directory_stats() RPC call.
+    newest_rinks: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null; created_at: string }>;
+    newest_teams: Array<{ id: string; name: string; slug: string; home_city: string | null; country_code: string | null; created_at: string }>;
+    newest_players: Array<{ id: string; first_name: string; last_name: string; slug: string | null; position: string | null; nationality: string | null; created_at: string }>;
+    newest_articles: Array<{ id: string; slug: string; title: string; category: string; published_at: string | null; created_at: string }>;
   };
   if (statsError) {
     console.error('[home] get_directory_stats failed:', statsError);
@@ -166,26 +174,16 @@ export default async function Home() {
   const upcomingGames = stats.upcoming_games || [];
 
   // Item #3 from the ChatGPT retention audit (2026-08-07): "Create a
-  // homepage activity feed ('What's new on RinkStop')." 4 parallel queries
-  // for newest listings globally, ordered by created_at DESC. Bumps the
-  // homepage from a static directory landing into a living product.
-  const [
-    { data: homeNewestRinks },
-    { data: homeNewestTeams },
-    { data: homeNewestPlayers },
-    { data: homeNewestArticles },
-  ] = await Promise.all([
-    supabase.from('rinks').select('id, name, slug, city, country, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(6),
-    supabase.from('team_workspaces').select('id, name, slug, home_city, country_code, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(6),
-    supabase.from('players').select('id, first_name, last_name, slug, position, nationality, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(6),
-    supabase.from('posts').select('id, slug, title, category, published_at, created_at').eq('status', 'published').order('published_at', { ascending: false }).limit(6),
-  ]);
-
+  // homepage activity feed ('What's new on RinkStop')." As of 2026-08-28,
+  // these 4 queries are folded into get_directory_stats() RPC (one
+  // round-trip instead of five). Migration
+  // 2026-08-28_get_directory_stats_add_activity.sql added the
+  // newest_rinks/newest_teams/newest_players/newest_articles keys.
   const homeNewest = {
-    rinks: homeNewestRinks || [],
-    teams: homeNewestTeams || [],
-    players: homeNewestPlayers || [],
-    articles: homeNewestArticles || [],
+    rinks: stats.newest_rinks || [],
+    teams: stats.newest_teams || [],
+    players: stats.newest_players || [],
+    articles: stats.newest_articles || [],
   };
   const hasHomeActivity =
     homeNewest.rinks.length > 0 ||
