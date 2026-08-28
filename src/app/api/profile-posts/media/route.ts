@@ -92,7 +92,11 @@ export async function POST(request: NextRequest) {
 
   if (uploadError) {
     console.error('[profile-posts/media POST] storage upload failed:', uploadError.message);
-    return NextResponse.json({ error: 'Upload failed.' }, { status: 500 });
+    // Surface the actual Supabase error so the client can debug.
+    return NextResponse.json(
+      { error: `Storage upload failed: ${uploadError.message}` },
+      { status: 500 },
+    );
   }
 
   const { data: publicUrlData } = supabaseAdmin.storage

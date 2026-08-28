@@ -87,17 +87,33 @@ async function uploadMedia(
   fd.append('file', file);
   fd.append('width', String(width));
   fd.append('height', String(height));
+
+  // 30-second hard timeout. If the server hangs (slow storage, network
+  // drop, Vercel body limit silently rejecting), abort and surface a
+  // useful error. Without this, the spinner hangs forever with no feedback.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   let r: Response;
   try {
-    r = await fetch('/api/profile-posts/media', { method: 'POST', body: fd });
+    r = await fetch('/api/profile-posts/media', {
+      method: 'POST',
+      body: fd,
+      signal: controller.signal,
+    });
   } catch (netErr) {
-    // Network/CORS/abort — fetch itself rejected.
+    clearTimeout(timeoutId);
+    if (netErr instanceof DOMException && netErr.name === 'AbortError') {
+      throw new Error('Upload timed out after 30 seconds. The file may be too large or the server is unreachable.');
+    }
     throw new Error(
       netErr instanceof Error
         ? `Could not reach the server: ${netErr.message}`
         : 'Could not reach the server.',
     );
   }
+  clearTimeout(timeoutId);
+
   let json: { url?: string; error?: string } = {};
   try {
     json = await r.json();
@@ -357,7 +373,7 @@ export default function PostComposer() {
       const json = await r.json().catch(() => ({}));
       if (!r.ok) {
         setImageStage(image ? 'ready' : 'none');
-        setError(json.error ?? 'Failed to post');
+        setError(json.error ?? `Failed to post (HTTP ${r.status}).`);
         return;
       }
       // Best-effort: tell other tabs / same-tab ProfileFeed instances to reload.
