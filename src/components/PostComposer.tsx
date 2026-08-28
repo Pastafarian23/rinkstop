@@ -9,19 +9,25 @@
  * on profile pages remains the desktop pattern.
  *
  * Posts land on the CURRENT USER's personal profile (resolved via
- * /api/profiles/me → /api/profile-posts). Future work: context-aware
- * composers ("post about this team" on team pages, "post about this
- * league" on league pages). Scoped out for now — see LEDGER.md.
+ * /api/profiles/me → /api/profile-posts).
+ *
+ * Image upload (2026-08-28):
+ *   - File picker (no more pasting URLs — too error-prone for users)
+ *   - Client-side EXIF strip via canvas redraw (privacy: don't leak
+ *     GPS from phone photos)
+ *   - Client-side downscale to max 1920px wide (saves bandwidth,
+ *     keeps Supabase bill sane)
+ *   - 10 MB cap (validated server-side)
+ *   - Allowed: JPEG, PNG, WebP, GIF
+ *   - Stored in Supabase bucket `post-media`
  *
  * Visibility:
  *   - Only renders when Clerk says the viewer is signed in.
- *   - Hidden on auth pages (/login, /sign-up, /onboarding) where the
- *     composer would force an auth flow mid-modal.
+ *   - Hidden on auth pages (/login, /sign-up, /onboarding).
  *
- * Rules of hooks (2026-08-28 fix): every hook MUST be called in the
- * same order on every render. No early returns above useState/useEffect
- * etc. — gate visibility in JSX, not in control flow that precedes
- * hook calls.
+ * Rules of hooks: every hook MUST be called in the same order on
+ * every render. No early returns above useState/useEffect etc. — gate
+ * visibility in JSX, not in control flow that precedes hook calls.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -34,6 +40,19 @@ interface ProfileMeResponse {
 }
 
 const MAX = 1000;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_IMAGE_DIMENSION = 1920; // px — downscale anything larger
+const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+interface PendingImage {
+  file: File;
+  previewUrl: string;       // local blob URL for preview
+  width: number;
+  height: number;
+  // EXIF-stripped + downscaled version (what we'll actually upload).
+  // May equal `file` if no processing was needed (already under limit).
+  processedFile: File;
+}
 
 function getMyProfile(): Promise<ProfileMeResponse | null> {
   return fetch('/api/profiles/me')
@@ -48,15 +67,129 @@ function getMyProfile(): Promise<ProfileMeResponse | null> {
     .catch((): ProfileMeResponse | null => null);
 }
 
-function postToMyProfile(body: string, mediaUrl: string | null): Promise<Response> {
+async function postToMyProfile(body: string, imageUrl: string | null): Promise<Response> {
   return fetch('/api/profile-posts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       body: body.trim(),
-      media_url: mediaUrl?.trim() || undefined,
+      media_url: imageUrl || undefined,
     }),
   });
+}
+
+async function uploadMedia(
+  file: File,
+  width: number,
+  height: number,
+): Promise<{ url: string }> {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('width', String(width));
+  fd.append('height', String(height));
+  const r = await fetch('/api/profile-posts/media', { method: 'POST', body: fd });
+  const json = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(json.error || 'Upload failed.');
+  return { url: json.url as string };
+}
+
+/**
+ * Read a File into an HTMLImageElement so we can redraw it on a
+ * canvas (which strips EXIF metadata as a side-effect — the canvas
+ * data URL has no metadata, only pixel data). Also downscales any
+ * dimension that exceeds MAX_IMAGE_DIMENSION.
+ *
+ * Returns a NEW File in JPEG (or PNG if it had transparency, or GIF
+ * if it was a GIF — we don't re-encode GIFs to JPEG because that
+ * loses animation). For GIFs and PNGs-with-transparency we keep the
+ * original format. For everything else we re-encode JPEG quality 0.92.
+ */
+async function processImage(file: File): Promise<{
+  processedFile: File;
+  width: number;
+  height: number;
+  previewUrl: string;
+}> {
+  if (!ALLOWED_IMAGE_MIME.includes(file.type)) {
+    throw new Error('Unsupported image type. Use JPEG, PNG, WebP, or GIF.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error('Image too large. Max 10 MB.');
+  }
+
+  // GIFs: don't redraw through canvas — would lose animation. Pass
+  // through as-is, dimensions reported by the original file via a
+  // quick <img> load.
+  if (file.type === 'image/gif') {
+    const url = URL.createObjectURL(file);
+    const dims = await loadImageDimensions(url);
+    return {
+      processedFile: file,
+      width: dims.width,
+      height: dims.height,
+      previewUrl: url,
+    };
+  }
+
+  const originalUrl = URL.createObjectURL(file);
+  const img = await loadHtmlImage(originalUrl);
+
+  const targetW = Math.min(img.naturalWidth, MAX_IMAGE_DIMENSION);
+  const scale = targetW / img.naturalWidth;
+  const targetH = Math.round(img.naturalHeight * scale);
+
+  // Off-screen canvas, no DOM attachment (so it can never paint).
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    URL.revokeObjectURL(originalUrl);
+    throw new Error('Could not initialize image processor.');
+  }
+
+  // PNG with transparency: redraw as PNG. Otherwise redraw as JPEG
+  // (smaller, universal). Detecting "has transparency" requires a
+  // pixel scan, which is expensive — instead, we trust the original
+  // MIME. PNG in → PNG out. JPEG/WebP in → JPEG out.
+  const outType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+  const outExt = outType === 'image/png' ? 'png' : 'jpg';
+  const quality = outType === 'image/jpeg' ? 0.92 : undefined;
+
+  ctx.drawImage(img, 0, 0, targetW, targetH);
+  URL.revokeObjectURL(originalUrl);
+
+  const blob: Blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error('Image encoding failed.'))),
+      outType,
+      quality,
+    );
+  });
+
+  const processedFile = new File(
+    [blob],
+    file.name.replace(/\.[^.]+$/, `.${outExt}`),
+    { type: outType, lastModified: Date.now() },
+  );
+
+  const previewUrl = URL.createObjectURL(processedFile);
+
+  return { processedFile, width: targetW, height: targetH, previewUrl };
+}
+
+function loadHtmlImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Could not read image.'));
+    img.src = url;
+  });
+}
+
+async function loadImageDimensions(url: string): Promise<{ width: number; height: number }> {
+  const img = await loadHtmlImage(url);
+  return { width: img.naturalWidth, height: img.naturalHeight };
 }
 
 export default function PostComposer() {
@@ -73,11 +206,14 @@ export default function PostComposer() {
   // All hooks MUST run before any conditional returns.
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState('');
-  const [mediaUrl, setMediaUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [myProfile, setMyProfile] = useState<ProfileMeResponse['profile'] | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
+  // Image state machine: 'none' | 'processing' | 'ready' | 'uploading'
+  const [image, setImage] = useState<PendingImage | null>(null);
+  const [imageStage, setImageStage] = useState<'none' | 'processing' | 'ready' | 'uploading'>('none');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Resolve the current user's profile when the composer opens.
@@ -101,10 +237,7 @@ export default function PostComposer() {
     return undefined;
   }, [open]);
 
-  // Listen for "open composer" requests from elsewhere on the page
-  // (e.g. ProfileFeed's empty-state "Write your first post" button).
-  // Mounted unconditionally; the function is a no-op if !isSignedIn
-  // because the FAB/modal aren't rendered anyway.
+  // Listen for "open composer" requests from elsewhere on the page.
   useEffect(() => {
     function onOpenRequest() {
       setOpen(true);
@@ -112,18 +245,6 @@ export default function PostComposer() {
     }
     window.addEventListener('rinkstop:open-composer', onOpenRequest);
     return () => window.removeEventListener('rinkstop:open-composer', onOpenRequest);
-  }, []);
-
-  const openComposer = useCallback(() => {
-    setOpen(true);
-    setError('');
-  }, []);
-
-  const closeComposer = useCallback(() => {
-    setOpen(false);
-    setBody('');
-    setMediaUrl('');
-    setError('');
   }, []);
 
   // Body class to prevent background scroll while the modal is open.
@@ -136,6 +257,21 @@ export default function PostComposer() {
     return undefined;
   }, [open]);
 
+  const openComposer = useCallback(() => {
+    setOpen(true);
+    setError('');
+  }, []);
+
+  const closeComposer = useCallback(() => {
+    setOpen(false);
+    setBody('');
+    setError('');
+    // Revoke any blob URL we created for image preview.
+    if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
+    setImage(null);
+    setImageStage('none');
+  }, [image]);
+
   // Don't render until we know auth state, and only for signed-in users.
   if (!isLoaded) return null;
   if (!isSignedIn) return null;
@@ -145,15 +281,60 @@ export default function PostComposer() {
   const isOver = charsLeft < 0;
   const isEmpty = !body.trim();
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    // Reset the input so picking the same file twice fires onChange again.
+    if (e.target) e.target.value = '';
+    if (!file) return;
+    setError('');
+    setImageStage('processing');
+    try {
+      const result = await processImage(file);
+      // Revoke any previous preview URL.
+      if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
+      setImage({
+        file,
+        previewUrl: result.previewUrl,
+        width: result.width,
+        height: result.height,
+        processedFile: result.processedFile,
+      });
+      setImageStage('ready');
+    } catch (err) {
+      setImageStage('none');
+      setError(err instanceof Error ? err.message : 'Could not process image.');
+    }
+  }
+
+  function removeImage() {
+    if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
+    setImage(null);
+    setImageStage('none');
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (isEmpty || isOver || submitting) return;
     setSubmitting(true);
     setError('');
     try {
-      const r = await postToMyProfile(body, mediaUrl);
+      let imageUrl: string | null = null;
+      if (image) {
+        setImageStage('uploading');
+        try {
+          const up = await uploadMedia(image.processedFile, image.width, image.height);
+          imageUrl = up.url;
+        } catch (upErr) {
+          setImageStage('ready');
+          setError(upErr instanceof Error ? upErr.message : 'Upload failed.');
+          setSubmitting(false);
+          return;
+        }
+      }
+      const r = await postToMyProfile(body, imageUrl);
       const json = await r.json().catch(() => ({}));
       if (!r.ok) {
+        setImageStage(image ? 'ready' : 'none');
         setError(json.error ?? 'Failed to post');
         return;
       }
@@ -162,12 +343,8 @@ export default function PostComposer() {
         window.dispatchEvent(new CustomEvent('rinkstop:post-created'));
       } catch { /* noop */ }
       closeComposer();
-      // Soft-reload the current page only if we're on the user's own
-      // profile — that way the new post shows up immediately. Other
-      // pages don't need a refresh; users navigate to their profile
-      // when they want to see the post.
+      // Soft-reload only if we're on the user's own profile page.
       if (myProfile?.username && pathname === `/profile/${myProfile.username}`) {
-        // Force a server re-render so the new post appears.
         window.location.reload();
       }
     } catch {
@@ -176,6 +353,13 @@ export default function PostComposer() {
       setSubmitting(false);
     }
   }
+
+  const submitDisabled =
+    isEmpty ||
+    isOver ||
+    submitting ||
+    imageStage === 'processing' ||
+    imageStage === 'uploading';
 
   return (
     <>
@@ -239,18 +423,62 @@ export default function PostComposer() {
               >
                 {charsLeft < 50 ? `${charsLeft} left` : ''}
               </div>
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>
-                  Image URL <span className={styles.optional}>(optional)</span>
-                </label>
+
+              {/* Image picker + preview */}
+              <div className={styles.imageBlock}>
+                {imageStage === 'none' && (
+                  <button
+                    type="button"
+                    className={styles.imagePickerBtn}
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={submitting}
+                  >
+                    <span aria-hidden>📷</span>
+                    <span>Add photo</span>
+                  </button>
+                )}
+
+                {(imageStage === 'processing' || imageStage === 'uploading') && (
+                  <div className={styles.imageProcessing}>
+                    <div className={styles.spinner} aria-hidden />
+                    <span>
+                      {imageStage === 'processing'
+                        ? 'Processing image…'
+                        : 'Uploading…'}
+                    </span>
+                  </div>
+                )}
+
+                {imageStage === 'ready' && image && (
+                  <div className={styles.imagePreview}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={image.previewUrl}
+                      alt="Selected upload preview"
+                      className={styles.imagePreviewImg}
+                      style={{ aspectRatio: `${image.width} / ${image.height}` }}
+                    />
+                    <button
+                      type="button"
+                      className={styles.imageRemoveBtn}
+                      onClick={removeImage}
+                      aria-label="Remove image"
+                    >
+                      ✕ Remove
+                    </button>
+                  </div>
+                )}
+
                 <input
-                  type="url"
-                  className={styles.modalInput}
-                  placeholder="https://..."
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ALLOWED_IMAGE_MIME.join(',')}
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                  aria-hidden
                 />
               </div>
+
               {error && <p className={styles.composerError}>{error}</p>}
               <div className={styles.modalActions}>
                 <button
@@ -264,9 +492,13 @@ export default function PostComposer() {
                 <button
                   type="submit"
                   className={styles.postBtn}
-                  disabled={isEmpty || isOver || submitting}
+                  disabled={submitDisabled}
                 >
-                  {submitting ? 'Posting…' : 'Post'}
+                  {imageStage === 'uploading'
+                    ? 'Uploading…'
+                    : submitting
+                    ? 'Posting…'
+                    : 'Post'}
                 </button>
               </div>
             </form>
