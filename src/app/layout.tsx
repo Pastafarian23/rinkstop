@@ -24,6 +24,7 @@ const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
 import RoleAwareTabBar from '@/components/RoleAwareTabBar';
+import PostComposer from '@/components/PostComposer';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
 import CommandPalette from '@/components/CommandPalette';
@@ -324,6 +325,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               downstream consumers (UserMenu, header) but no longer feed
               the tab bar. */}
           <RoleAwareTabBar signedIn={signedIn} />
+          {/* Global post composer — FAB visible on mobile only (desktop
+              gets the inline composer on profile pages). Posts land on
+              the signed-in user's personal profile. Hidden on auth pages
+              (handled inside the component). */}
+          <PostComposer />
 
           {/* ---- Footer ---------------------------------------------------------------------------------------------------------- */}
           <footer style={{ background: '#041E42', borderTop: '3px solid #C8102E', marginTop: '3rem', padding: '2.5rem 0 1.5rem' }}>
