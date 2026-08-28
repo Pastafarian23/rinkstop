@@ -279,7 +279,11 @@ export default function PostComposer() {
 
   const charsLeft = MAX - body.length;
   const isOver = charsLeft < 0;
-  const isEmpty = !body.trim();
+  const hasBody = body.trim().length > 0;
+  // Posts can be text-only, image-only, or both. Disable submit only
+  // when there's no body AND no image ready, or when over the limit,
+  // or when something else is in flight.
+  const hasUsableImage = imageStage === 'ready' && image !== null;
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -314,7 +318,8 @@ export default function PostComposer() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (isEmpty || isOver || submitting) return;
+    if (!hasBody && !hasUsableImage) return;
+    if (isOver || submitting) return;
     setSubmitting(true);
     setError('');
     try {
@@ -355,7 +360,7 @@ export default function PostComposer() {
   }
 
   const submitDisabled =
-    isEmpty ||
+    (!hasBody && !hasUsableImage) ||
     isOver ||
     submitting ||
     imageStage === 'processing' ||
