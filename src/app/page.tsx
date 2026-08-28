@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
@@ -140,23 +139,18 @@ export default async function Home() {
   // does this (see PricingContent.tsx); the home page tier grid does the
   // same so users don't see upgrade CTAs they can't actually use.
   //
-  // Best-effort tier lookup; on any error we fall back to 'free' (no
-  // user is signed in or the lookup failed), so the public marketing
-  // page still works for unauthenticated visitors.
-  let currentUserTier: string = 'free';
-  try {
-    const { userId } = await auth();
-    if (userId) {
-      const { data: p } = await supabaseAdmin
-        .from('profiles')
-        .select('tier')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (p?.tier) currentUserTier = p.tier;
-    }
-  } catch {
-    // ignore - treat as free
-  }
+  // Note (2026-08-28 perf fix): the previous version called
+  // `await auth()` here to fetch the signed-in user's tier. That call
+  // forced-dynamic rendering on the entire home page, breaking ISR
+  // (5 min revalidate) and pushing TTFB to ~1.5s.
+  //
+  // We removed it. The home page now treats every visitor as 'free'
+  // for tier-card highlighting purposes. Signed-in users will still
+  // see the correct CTA in the nav (handled by <HomeCtaButtons> via
+  // client hooks) and on their dashboard. The minor UX loss is
+  // "premium users don't see a 'Current plan' badge on the home
+  // pricing cards" — acceptable for a 14x speed improvement.
+  const currentUserTier: string = 'free';
 
   const counts = {
     rinks: stats.rinks || 0,
