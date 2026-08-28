@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
-import { isIdentityVerified } from '@/lib/identity-verified';
+import { isIdentityVerified, isIdentityVerifiedFromProfile } from '@/lib/identity-verified';
 import { getTierLabel } from '@/lib/pricing';
 import { TierBadge } from '@/components/TierBadge';
 import { emitProfileFirstVisitor } from '@/lib/notifications/emit';
@@ -227,10 +227,23 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   const profileUrl = `https://rinkstop.com/profile/${profile.username}`;
   const tierLabel = getTierLabel(profile.tier);
 
-  // Determine ownership: is the viewer the owner of this profile?
-  // Used by passport sections to show edit CTAs.
-  const { userId: viewerUserId } = await auth();
+  // Parallelize the page-level awaits that don't depend on each other.
+  // auth() (Clerk network call), isIdentityVerifiedFromProfile (uses the
+  // profile we already have; only does ONE Supabase query for didit_sessions
+  // — skips the duplicate profiles fetch the old isIdentityVerified() did).
+  // Both used to run sequentially after fetchProfile, adding 100-400ms.
+  const [{ userId: viewerUserId }, identityResult] = await Promise.all([
+    auth(),
+    isIdentityVerifiedFromProfile({
+      identity_verified_at: (profile as any).identity_verified_at ?? null,
+      identity_expires_at: (profile as any).identity_expires_at ?? null,
+      didit_session_id: (profile as any).didit_session_id ?? null,
+    }),
+  ]);
   const isOwner = !!viewerUserId && viewerUserId === profile.user_id;
+  const profileIdentityVerified = identityResult.verified;
+  const verifiedAt = identityResult.verifiedAt;
+  const expiresAt = identityResult.expiresAt;
 
   // WS14 PR1 — fire-and-forget profile_first_visitor: when a non-owner
   // authenticated viewer lands on the profile, emit a one-shot notification
@@ -257,19 +270,6 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
       }
     })();
   }
-
-  // Piece C (2026-06-24): identity-verified gate uses the hardened helper,
-  // which also requires profiles.didit_session_id and a matching approved
-  // didit_sessions row. Bare flag is no longer trusted.
-  //
-  // This checks the VIEWED profile's verification, not the viewer.
-  const profileIdentityVerified = await isIdentityVerified(profile.user_id);
-  const verifiedAt = profileIdentityVerified
-    ? ((profile as any).identity_verified_at as string | null)
-    : null;
-  const expiresAt = profileIdentityVerified
-    ? ((profile as any).identity_expires_at as string | null)
-    : null;
 
   return (
     <main className="min-h-screen bg-[#041E42] text-white">
