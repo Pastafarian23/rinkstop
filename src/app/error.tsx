@@ -67,12 +67,20 @@ export default function RootError({
           margin: '0 0 0.5rem',
         }}
       >
-        Something went wrong
+        {error?.message ?? 'Something went wrong'}
       </h1>
-      <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
-        RinkStop hit an unexpected error on this page. Your account and data are safe.
-        Try again, or head back home in the meantime.
-      </p>
+      <pre
+        style={{
+          color: '#ff6b6b',
+          fontSize: '0.8rem',
+          lineHeight: 1.4,
+          margin: '0 0 1rem',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+      >
+        {error?.stack ?? 'No stack trace available'}
+      </pre>
       {error.digest ? (
         <p
           style={{
