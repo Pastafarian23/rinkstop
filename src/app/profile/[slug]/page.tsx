@@ -219,7 +219,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProfileBySlugPage({ params }: PageProps) {
   const { slug } = await params;
-
   const data = await fetchProfile(slug);
   if (!data) notFound();
 
@@ -242,12 +241,11 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
     void (async () => {
       try {
         const viewer = await currentUser();
-        if (!viewer) return;
-        const viewerFirst = viewer.firstName ?? '';
-        const viewerLast = viewer.lastName ?? '';
+        const viewerFirst = viewer?.firstName ?? '';
+        const viewerLast = viewer?.lastName ?? '';
         const viewerDisplayName =
           `${viewerFirst}${viewerLast ? ' ' + viewerLast : ''}`.trim() ||
-          viewer.username ||
+          viewer?.username ||
           null;
         await emitProfileFirstVisitor(
           profile.user_id,
@@ -265,20 +263,13 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
   // didit_sessions row. Bare flag is no longer trusted.
   //
   // This checks the VIEWED profile's verification, not the viewer.
-  let profileIdentityVerified = false;
-  let verifiedAt: string | null = null;
-  let expiresAt: string | null = null;
-  try {
-    profileIdentityVerified = await isIdentityVerified(profile.user_id);
-    verifiedAt = profileIdentityVerified
-      ? ((profile as any).identity_verified_at as string | null)
-      : null;
-    expiresAt = profileIdentityVerified
-      ? ((profile as any).identity_expires_at as string | null)
-      : null;
-  } catch (err) {
-    console.error('[profile page] isIdentityVerified failed:', err);
-  }
+  const profileIdentityVerified = await isIdentityVerified(profile.user_id);
+  const verifiedAt = profileIdentityVerified
+    ? ((profile as any).identity_verified_at as string | null)
+    : null;
+  const expiresAt = profileIdentityVerified
+    ? ((profile as any).identity_expires_at as string | null)
+    : null;
 
   return (
     <main className="min-h-screen bg-[#041E42] text-white">
@@ -620,7 +611,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* Posts / Media feed */}
+              {/* Posts / Media feed (placeholder until those features ship) */}
               <ProfileFeed isOwner={isOwner} username={profile.username ?? slug} userId={profile.user_id} />
 
               {/* Passport sections — only render if user has a player record. */}
