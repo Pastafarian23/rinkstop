@@ -176,6 +176,8 @@ export default async function PlayerPage({ params }: Props) {
       .maybeSingle(),
   ]);
 
+  console.log('[player-page] DB query result — id:', id, 'playerExists:', !!playerExists, 'seoPlayer:', !!seoPlayer, 'seoPlayer.name:', seoPlayer?.first_name, seoPlayer?.last_name);
+
   // Non-critical: run in parallel but don't gate rendering on them.
   // If either fails the page still works (message button hides, follower
   // count starts at 0 and updates when the client component mounts).
