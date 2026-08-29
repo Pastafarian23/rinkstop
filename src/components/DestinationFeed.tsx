@@ -27,6 +27,7 @@ interface Props {
   name: string;
   viewerIsAdmin?: boolean;
   composerLabel?: string;
+  initialPosts?: Post[];
 }
 
 function timeAgo(dateStr: string): string {
@@ -42,8 +43,8 @@ function timeAgo(dateStr: string): string {
   return `${d}d ago`;
 }
 
-export default function DestinationFeed({ targetType, targetId, name, viewerIsAdmin, composerLabel }: Props) {
-  const [posts, setPosts] = useState<Post[]>([]);
+export default function DestinationFeed({ targetType, targetId, name, viewerIsAdmin, composerLabel, initialPosts = [] }: Props) {
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(true);
   const [menuPostId, setMenuPostId] = useState<string | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
