@@ -158,34 +158,79 @@ export default async function PlayerPage({ params }: Props) {
   // but URLs like /directory/players/leevi-aaltonen come in as slug.
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-  // Critical path: only the player-existence check + the player row itself.
-// These are needed before we can render anything. The owner lookup and
-// follower count are non-blocking — they feed the SocialActions widget
-// (save/follow/message buttons) which renders fine with null/0 defaults
-// and updates client-side. Splitting them off the critical path keeps the
-// hero/stats/bio from blocking on social-lookup latency.
-  const [
-    { data: playerExists },
-    { data: seoPlayer },
-  ] = await Promise.all([
-    supabaseAdmin.from('players').select('id').eq(isUuid ? 'id' : 'slug', id).maybeSingle(),
-    supabaseAdmin
-      .from('players')
-      .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))')
-      .eq(isUuid ? 'id' : 'slug', id)
-      .maybeSingle(),
-  ]);
+  // Critical path: sequential queries to avoid concurrent lazy-init of
+  // supabaseAdmin causing pool issues in Vercel serverless. Each query
+  // waits for the previous to complete before starting.
+  const { data: playerExists } = await supabaseAdmin
+    .from('players')
+    .select('id')
+    .eq(isUuid ? 'id' : 'slug', id)
+    .maybeSingle();
 
-  // Non-critical: run in parallel but don't gate rendering on them.
-  // If either fails the page still works (message button hides, follower
-  // count starts at 0 and updates when the client component mounts).
+  if (!playerExists) {
+    notFound();
+  }
+
+  const { data: seoPlayer } = await supabaseAdmin
+    .from('players')
+    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, badge_tier, teams(name, slug, leagues(name, slug, country))')
+    .eq(isUuid ? 'id' : 'slug', id)
+    .maybeSingle();
+
+  if (!seoPlayer) {
+    notFound();
+  }
+
+  // Non-critical: run in parallel after the player is confirmed.
   const [owner, initialFollowersCount] = await Promise.all([
     getEntityOwner('player', id),
     getFollowersCount('player', id),
   ]);
 
-  if (!playerExists) {
-    notFound();
+  // Fetch Passport stats (self-reported, admin-only via supabaseAdmin).
+  // Runs after the player row is confirmed — no longer blocks page render.
+  let unifiedStats: any[] = [];
+  try {
+    const { data: passportStats } = await supabaseAdmin
+      .from('hockey_player_stats_season')
+      .select(`
+        id, season_id, level, games_played, goals, assists, plus_minus, penalty_minutes,
+        goalie_games_played, wins, losses, goals_against, saves, shutouts,
+        save_percentage, gaa, verification_source, verified_by, verified_at,
+        hockey_seasons!inner(label, start_date),
+        hockey_player_team_history!left(id, team_name),
+        leagues!left(id, name, slug)
+      `)
+      .eq('player_id', seoPlayer.id)
+      .order('hockey_seasons(start_date)', { ascending: false });
+
+    unifiedStats = (passportStats || []).map((s: any) => ({
+      id: s.id,
+      source: s.verification_source || 'self_reported',
+      season: s.hockey_seasons?.label || null,
+      league_name: s.leagues?.name || null,
+      level: s.level || null,
+      team_name: s.hockey_player_team_history?.team_name || null,
+      games_played: s.games_played ?? 0,
+      goals: s.goals ?? 0,
+      assists: s.assists ?? 0,
+      points: (s.goals ?? 0) + (s.assists ?? 0),
+      plus_minus: s.plus_minus ?? 0,
+      penalty_minutes: s.penalty_minutes ?? 0,
+      goalie_games_played: s.goalie_games_played ?? null,
+      wins: s.wins ?? null,
+      losses: s.losses ?? null,
+      goals_against: s.goals_against ?? null,
+      saves: s.saves ?? null,
+      shutouts: s.shutouts ?? null,
+      save_percentage: s.save_percentage ?? null,
+      gaa: s.gaa ?? null,
+      verification_source: s.verification_source,
+      verified_by: s.verified_by || null,
+      verified_at: s.verified_at || null,
+    }));
+  } catch (err) {
+    console.error('[player-page] stats fetch failed', err);
   }
 
   // Server-side JSON-LD: Person (athlete) + BreadcrumbList + FAQPage.
@@ -282,7 +327,8 @@ export default async function PlayerPage({ params }: Props) {
         id={id}
         ownerUserId={owner?.userId ?? null}
         initialFollowersCount={initialFollowersCount}
-        initialPlayer={seoPlayer as any}
+        initialPlayer={seoPlayer}
+        unifiedStats={unifiedStats}
       />
       {seoPlayer && (
         <PlayerSEOCopy
