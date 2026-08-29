@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+export const dynamic = 'force-dynamic';
+
 import { notFound } from 'next/navigation';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
