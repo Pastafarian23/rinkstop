@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildTeamShare } from '@/lib/share';
@@ -337,6 +338,36 @@ export default function PublicTeamProfile({
   const locationStr = location ? `${flag} ${location}` : null;
   const recentResults = results.slice(0, 5);
   const upcomingGames = upcoming.slice(0, 5);
+  const [showNewsForm, setShowNewsForm] = useState(false);
+  const [newsTitle, setNewsTitle] = useState('');
+  const [newsBody, setNewsBody] = useState('');
+  const [newsSaving, setNewsSaving] = useState(false);
+
+  async function submitNews(e: React.FormEvent) {
+    e.preventDefault();
+    if (!teamSlug) return;
+    const title = newsTitle.trim();
+    const body = newsBody.trim();
+    if (!title) return;
+    setNewsSaving(true);
+    try {
+      const r = await fetch(`/api/team/${encodeURIComponent(teamSlug)}/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'news', title, body: body || '', is_published: true }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error((data as any).error || 'failed');
+      setNewsTitle('');
+      setNewsBody('');
+      setShowNewsForm(false);
+      window.location.reload();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to post');
+    } finally {
+      setNewsSaving(false);
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -596,9 +627,106 @@ export default function PublicTeamProfile({
 
           {/* Team hub posts */}
           <section>
-            <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
-              TEAM HUB
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
+                TEAM HUB
+              </h2>
+              {viewerIsAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setShowNewsForm((v) => !v)}
+                  style={{
+                    padding: '0.35rem 0.75rem',
+                    background: 'var(--red)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 6,
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {showNewsForm ? 'Cancel' : '+ New post'}
+                </button>
+              )}
+            </div>
+
+            {viewerIsAdmin && showNewsForm && (
+              <form
+                onSubmit={submitNews}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 10,
+                  padding: '1rem 1.25rem',
+                  marginBottom: '0.75rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                }}
+              >
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '0.25rem' }}>Title *</label>
+                  <input
+                    value={newsTitle}
+                    onChange={(e) => setNewsTitle(e.target.value)}
+                    required
+                    maxLength={160}
+                    placeholder="Update title"
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.7rem',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 8,
+                      fontSize: '0.9375rem',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: '0.25rem' }}>Body</label>
+                  <textarea
+                    value={newsBody}
+                    onChange={(e) => setNewsBody(e.target.value)}
+                    maxLength={8000}
+                    rows={4}
+                    placeholder="What's the update?"
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.7rem',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 8,
+                      fontSize: '0.9375rem',
+                      outline: 'none',
+                      resize: 'vertical',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="submit"
+                    disabled={newsSaving}
+                    style={{
+                      padding: '0.45rem 0.9rem',
+                      background: '#FFB81C',
+                      color: '#041E42',
+                      border: 'none',
+                      borderRadius: 6,
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: newsSaving ? 'not-allowed' : 'pointer',
+                      opacity: newsSaving ? 0.7 : 1,
+                    }}
+                  >
+                    {newsSaving ? 'Posting…' : 'Publish'}
+                  </button>
+                </div>
+              </form>
+            )}
 
             {news.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
