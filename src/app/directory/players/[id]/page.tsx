@@ -90,8 +90,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { data: player } = await q;
 
     if (!player) {
+      console.error('[player-page metadata] player not found for id:', id);
       return { title: 'Player Not Found | RinkStop', robots: { index: false, follow: false } };
     }
+    console.log('[player-page metadata] found player:', player.first_name, player.last_name);
 
     const fullName = `${(player as any).first_name ?? ''} ${(player as any).last_name ?? ''}`.trim() || 'Player';
     const teamName = (player as any).teams?.name || (player as any).current_team_name || null;
@@ -185,6 +187,7 @@ export default async function PlayerPage({ params }: Props) {
   // Guard: if the player doesn't exist, return 404 immediately.
   // This must run BEFORE any secondary data fetches (stats, owner, followers)
   // so that notFound() is called in the earliest stage of rendering.
+  console.log('[player-page] playerExists:', playerExists, 'id:', id);
   if (!playerExists) {
     notFound();
   }
