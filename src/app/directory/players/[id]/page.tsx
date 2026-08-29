@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { data: player } = await q;
 
     if (!player) {
-      notFound();
+      return { title: 'Player Not Found | RinkStop', robots: { index: false, follow: false } };
     }
 
     const fullName = `${(player as any).first_name ?? ''} ${(player as any).last_name ?? ''}`.trim() || 'Player';
@@ -182,6 +182,13 @@ export default async function PlayerPage({ params }: Props) {
     getFollowersCount('player', id),
   ]);
 
+  // Guard: if the player doesn't exist, return 404 immediately.
+  // This must run BEFORE any secondary data fetches (stats, owner, followers)
+  // so that notFound() is called in the earliest stage of rendering.
+  if (!playerExists) {
+    notFound();
+  }
+
   // Fetch unified stats (Passport self-reported + highlightly official).
   // supabaseAdmin bypasses RLS so paid users' Passport stats are publicly visible.
   let unifiedStats: any[] = [];
@@ -231,10 +238,6 @@ export default async function PlayerPage({ params }: Props) {
     } catch (err) {
       console.error('[player-page] stats fetch failed', err);
     }
-  }
-
-  if (!playerExists) {
-    notFound();
   }
 
   // Server-side JSON-LD: Person (athlete) + BreadcrumbList + FAQPage.
