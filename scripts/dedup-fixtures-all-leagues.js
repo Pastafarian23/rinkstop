@@ -19,8 +19,13 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 
-const cfg = JSON.parse(fs.readFileSync('.env', 'utf8'));
-const sb = createClient(cfg.url, cfg.serviceRoleKey);
+const envText = fs.readFileSync('.env', 'utf8');
+const cfg = {};
+for (const line of envText.split('\n')) {
+  const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+  if (m) cfg[m[1]] = m[2];
+}
+const sb = createClient(cfg.NEXT_PUBLIC_SUPABASE_URL, cfg.SUPABASE_SERVICE_ROLE_KEY);
 
 const execute = process.argv.includes('--execute');
 const leagueArg = process.argv.find(a => a.startsWith('--league='))?.split('=')[1];
