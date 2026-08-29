@@ -8,10 +8,13 @@
  * a post. On desktop the FAB is hidden via CSS — the inline composer
  * on profile pages remains the desktop pattern.
  *
- * Posts land on the CURRENT USER's personal profile (resolved via
- * /api/profiles/me → /api/profile-posts).
+ * Multi-destination posting (2026-08-29):
+ *   - Default target: personal profile.
+ *   - Optional targets: team hubs and league hubs the user manages.
+ *   - Destination list comes from /api/profiles/me/targets.
+ *   - Server authorization is enforced in /api/profile-posts.
  *
- * Image upload (2026-08-28):
+ * Image upload:
  *   - File picker (no more pasting URLs — too error-prone for users)
  *   - Client-side EXIF strip via canvas redraw (privacy: don't leak
  *     GPS from phone photos)
@@ -70,23 +73,24 @@ function getMyProfile(): Promise<ProfileMeResponse | null> {
 async function postToMyProfile(
   body: string,
   image: PendingImage | null,
+  destination: { target_type: string; target_id: string } | null,
+  sport: string | null,
 ): Promise<Response> {
-  // Single-shot: send body + image in one multipart request. The server
-  // uploads to Supabase Storage and inserts the post in one round-trip.
-  // The legacy two-POST flow (/api/profile-posts/media then
-  // /api/profile-posts) is still supported on the server for back-compat
-  // but unused on the client.
   const fd = new FormData();
   fd.append('body', body);
+  if (destination) {
+    fd.append('target_type', destination.target_type);
+    fd.append('target_id', destination.target_id);
+  }
+  if (sport) {
+    fd.append('sport', sport);
+  }
   if (image) {
     fd.append('file', image.processedFile);
     fd.append('width', String(image.width));
     fd.append('height', String(image.height));
   }
 
-  // 30-second hard timeout. If the server hangs (slow storage, network
-  // drop, Vercel body limit silently rejecting), abort and surface a
-  // useful error. Without this, the spinner hangs forever with no feedback.
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -232,6 +236,16 @@ export default function PostComposer() {
   // Image state machine: 'none' | 'processing' | 'ready' | 'uploading'
   const [image, setImage] = useState<PendingImage | null>(null);
   const [imageStage, setImageStage] = useState<'none' | 'processing' | 'ready' | 'uploading'>('none');
+  const [destination, setDestination] = useState<{ target_type: string; target_id: string; name: string } | null>(null);
+  const [destinations, setDestinations] = useState<{
+    personal: { target_type: string; target_id: string; name: string };
+    teams: { target_type: string; target_id: string; name: string; slug?: string }[];
+    leagues: { target_type: string; target_id: string; name: string; slug?: string }[];
+  } | null>(null);
+  const [destinationsLoading, setDestinationsLoading] = useState(false);
+  const [sport, setSport] = useState<string | null>(null);
+  const [showDestinations, setShowDestinations] = useState(false);
+  const [showSportPicker, setShowSportPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -247,6 +261,30 @@ export default function PostComposer() {
       .finally(() => setProfileLoading(false));
   }, [open, myProfile, profileLoading]);
 
+  // Load managed destinations when the composer opens.
+  useEffect(() => {
+    if (!open || destinations) return;
+    setDestinationsLoading(true);
+    fetch('/api/profiles/me/targets')
+      .then(async (r) => {
+        if (!r.ok) return null;
+        const json = await r.json();
+        return json.data ?? null;
+      })
+      .then((data) => {
+        if (data?.personal) {
+          setDestination(data.personal);
+          setDestinations(data);
+        }
+      })
+      .catch(() => {
+        // Safe fallback: if target discovery fails, still allow personal posting.
+        const fallback = myProfile ? { target_type: 'user', target_id: myProfile.user_id, name: 'My profile' } : null;
+        if (fallback) setDestination(fallback);
+      })
+      .finally(() => setDestinationsLoading(false));
+  }, [open, destinations, myProfile]);
+
   // Focus the textarea shortly after the modal opens.
   useEffect(() => {
     if (open) {
@@ -258,7 +296,11 @@ export default function PostComposer() {
 
   // Listen for "open composer" requests from elsewhere on the page.
   useEffect(() => {
-    function onOpenRequest() {
+    function onOpenRequest(e: Event) {
+      const detail = (e as CustomEvent<{ target_type?: string; target_id?: string; name?: string }>).detail;
+      if (detail?.target_type && detail?.target_id) {
+        setDestination({ target_type: detail.target_type, target_id: detail.target_id, name: detail.name || detail.target_type });
+      }
       setOpen(true);
       setError('');
     }
@@ -279,6 +321,9 @@ export default function PostComposer() {
   const openComposer = useCallback(() => {
     setOpen(true);
     setError('');
+    setShowDestinations(false);
+    setShowSportPicker(false);
+    setSport(null);
   }, []);
 
   const closeComposer = useCallback(() => {
@@ -303,6 +348,50 @@ export default function PostComposer() {
   // when there's no body AND no image ready, or when over the limit,
   // or when something else is in flight.
   const hasUsableImage = imageStage === 'ready' && image !== null;
+
+  const postTargetLabel =
+    destination?.name ??
+    (myProfile?.display_name ? `${myProfile.display_name}'s profile` : 'your profile');
+
+  const destinationOptions = destinations
+    ? [
+        destinations.personal,
+        ...(destinations.teams ?? []),
+        ...(destinations.leagues ?? []),
+      ]
+    : [];
+
+  const sportOptions = [
+    { value: '', label: 'General' },
+    { value: 'hockey', label: 'Hockey' },
+    { value: 'figure_skating', label: 'Figure skating' },
+    { value: 'speed_skating', label: 'Speed skating' },
+    { value: 'basketball', label: 'Basketball' },
+    { value: 'soccer', label: 'Soccer' },
+    { value: 'baseball', label: 'Baseball' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  function pickDestination(next: { target_type: string; target_id: string; name: string }) {
+    setDestination(next);
+    setShowDestinations(false);
+  }
+
+  function pickSport(next: string | null) {
+    setSport(next);
+    setShowSportPicker(false);
+  }
+
+  function openDestinations() {
+    if (!destinations) return;
+    setShowSportPicker(false);
+    setShowDestinations(true);
+  }
+
+  function openSportPicker() {
+    setShowSportPicker(true);
+    setShowDestinations(false);
+  }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -343,16 +432,13 @@ export default function PostComposer() {
     setError('');
     try {
       if (image) setImageStage('uploading');
-      // Single round-trip: server uploads the image (if any) and inserts
-      // the post in one request.
-      const r = await postToMyProfile(body, image);
+      const r = await postToMyProfile(body, image, destination, sport);
       const json = await r.json().catch(() => ({}));
       if (!r.ok) {
         setImageStage(image ? 'ready' : 'none');
         setError(json.error ?? `Failed to post (HTTP ${r.status}).`);
         return;
       }
-      // Tell ProfileFeed to refresh in place — no page reload.
       try {
         window.dispatchEvent(new CustomEvent('rinkstop:post-created'));
       } catch { /* noop */ }
@@ -401,7 +487,9 @@ export default function PostComposer() {
                   Write Post
                 </div>
                 <div className={styles.modalSubtitle}>
-                  Posting to{myProfile?.display_name ? ` ${myProfile.display_name}'s profile` : ' your profile'}
+                  {destinationsLoading
+                    ? 'Loading destinations…'
+                    : `Posting to ${postTargetLabel}`}
                 </div>
               </div>
               <button
@@ -414,6 +502,86 @@ export default function PostComposer() {
               </button>
             </div>
             <form onSubmit={handleSubmit}>
+              {/* Destination selector */}
+              <div className={styles.destinationRow}>
+                <button
+                  type="button"
+                  className={styles.destinationChip}
+                  onClick={openDestinations}
+                  disabled={!destinations || destinationsLoading}
+                  title={destination ? `Destination: ${destination.name}` : 'Choose destination'}
+                >
+                  <span aria-hidden>📍</span>
+                  <span>
+                    {destination ? destination.name : 'Choose destination'}
+                  </span>
+                  <span className={styles.destinationChevron}>▾</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.sportChip}
+                  onClick={openSportPicker}
+                  title={sport ? `Sport filter: ${sport}` : 'Optional sport filter'}
+                >
+                  <span aria-hidden>🏒</span>
+                  <span>{sport ? sport.replace(/_/g, ' ') : 'Sport'}</span>
+                  <span className={styles.destinationChevron}>▾</span>
+                </button>
+              </div>
+
+              {showDestinations && destinations && (
+                <div className={styles.pickerBackdrop} onClick={() => setShowDestinations(false)}>
+                  <div
+                    className={styles.pickerSheet}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className={styles.pickerTitle}>Post to</div>
+                    {destinationOptions.map((opt) => {
+                      const selected = destination?.target_type === opt.target_type && destination?.target_id === opt.target_id;
+                      return (
+                        <button
+                          key={`${opt.target_type}:${opt.target_id}`}
+                          type="button"
+                          className={`${styles.pickerOption} ${selected ? styles.pickerOptionSelected : ''}`}
+                          onClick={() => pickDestination(opt)}
+                        >
+                          <span className={styles.pickerOptionLabel}>{opt.name}</span>
+                          <span className={styles.pickerOptionMeta}>
+                            {opt.target_type === 'user' ? 'Profile' : opt.target_type === 'team' ? 'Team hub' : 'League hub'}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {showSportPicker && (
+                <div className={styles.pickerBackdrop} onClick={() => setShowSportPicker(false)}>
+                  <div
+                    className={styles.pickerSheet}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className={styles.pickerTitle}>Sport</div>
+                    {sportOptions.map((opt) => {
+                      const selected = sport === opt.value;
+                      return (
+                        <button
+                          key={opt.value || 'none'}
+                          type="button"
+                          className={`${styles.pickerOption} ${selected ? styles.pickerOptionSelected : ''}`}
+                          onClick={() => pickSport(opt.value || null)}
+                        >
+                          <span className={styles.pickerOptionLabel}>{opt.label}</span>
+                          {selected ? <span className={styles.pickerOptionCheck}>✓</span> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <textarea
                 ref={textareaRef}
                 className={styles.composerTextarea}

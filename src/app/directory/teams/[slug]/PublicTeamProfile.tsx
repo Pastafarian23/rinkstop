@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildTeamShare } from '@/lib/share';
+import DestinationFeed from '@/components/DestinationFeed';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
 
@@ -117,6 +118,15 @@ interface Props {
     city: string | null;
     province_state: string | null;
     country: string | null;
+  }>;
+  teamPosts?: Array<{
+    id: string;
+    body: string;
+    media_url: string | null;
+    created_at: string;
+    target_type?: string | null;
+    target_id?: string | null;
+    user_id?: string | null;
   }>;
 }
 
@@ -374,21 +384,44 @@ export default function PublicTeamProfile({
               This is your public profile — what visitors see when they look you up.
             </span>
           </div>
-          <a
-            href={`/dashboard/team/${teamSlug}`}
-            style={{
-              padding: '0.45rem 0.9rem',
-              background: '#FFB81C',
-              color: '#041E42',
-              textDecoration: 'none',
-              borderRadius: 6,
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Manage team →
-          </a>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <a
+              href={`/dashboard/team/${teamSlug}`}
+              style={{
+                padding: '0.45rem 0.9rem',
+                background: '#FFB81C',
+                color: '#041E42',
+                textDecoration: 'none',
+                borderRadius: 6,
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Manage team →
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('rinkstop:open-composer', {
+                  detail: { target_type: 'team', target_id: team.id, name: team.name },
+                }));
+              }}
+              style={{
+                padding: '0.45rem 0.9rem',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 6,
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+              }}
+            >
+              + Post to team hub
+            </button>
+          </div>
         </div>
       )}
 
@@ -590,6 +623,20 @@ export default function PublicTeamProfile({
                 ))}
               </div>
             ) : null}
+          </section>
+
+          {/* Team hub posts */}
+          <section>
+            <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
+              TEAM HUB
+            </h2>
+            <DestinationFeed
+              targetType="team"
+              targetId={team.id}
+              name={team.name}
+              viewerIsAdmin={viewerIsAdmin}
+              composerLabel={`${team.name} hub`}
+            />
           </section>
 
           {/* Contact + team info */}

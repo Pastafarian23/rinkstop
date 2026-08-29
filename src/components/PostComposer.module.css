@@ -286,6 +286,126 @@
   cursor: not-allowed;
 }
 
+/* Destination + sport selector row */
+.destinationRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.destinationChip,
+.sportChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.destinationChip:hover:not(:disabled),
+.sportChip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.destinationChip:disabled,
+.sportChip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.destinationChevron {
+  font-size: 0.6875rem;
+  opacity: 0.7;
+}
+
+/* Picker sheets */
+.pickerBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 960;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+.pickerSheet {
+  background: #0a1f3d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  padding: 1rem 1.25rem 1.25rem;
+  width: 100%;
+  max-width: 600px;
+  max-height: 70vh;
+  overflow-y: auto;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.2s ease;
+}
+
+.pickerTitle {
+  font-family: var(--font-sport, 'Oswald', sans-serif);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 0.625rem;
+}
+
+.pickerOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.pickerOption + .pickerOption {
+  margin-top: 0.5rem;
+}
+
+.pickerOption:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.pickerOptionSelected {
+  background: rgba(78, 205, 196, 0.12);
+  border-color: rgba(78, 205, 196, 0.35);
+}
+
+.pickerOptionLabel {
+  font-weight: 600;
+}
+
+.pickerOptionMeta {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.pickerOptionCheck {
+  color: #4ECDC4;
+  font-weight: 700;
+}
+
 /* FAB — global layout-level */
 .fab {
   position: fixed;

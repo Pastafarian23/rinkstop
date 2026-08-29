@@ -5,6 +5,8 @@ import LeagueSEOCopy from './LeagueSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import { getFollowersCount } from '@/lib/ownership';
 import { buildLeagueFAQs, countryContextFor, LEVEL_DESCRIPTION } from '@/lib/league-context';
+import { auth } from '@clerk/nextjs/server';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
 const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('127.0.0.1')
@@ -112,6 +114,22 @@ export default async function LeaguePage({
 
   const countryContext = league ? countryContextFor(league.country) : '';
 
+  // League creator check: only the creator can post to the league hub.
+  let viewerIsLeagueAdmin = false;
+  try {
+    const { userId } = await auth();
+    if (userId && league) {
+      const { data: leagueRow } = await supabaseAdmin
+        .from('leagues')
+        .select('created_by')
+        .eq('id', league.id)
+        .maybeSingle();
+      viewerIsLeagueAdmin = leagueRow?.created_by === userId;
+    }
+  } catch {
+    // leave false
+  }
+
   // JSON-LD: SportsOrganization + BreadcrumbList + FAQPage + (optional) Person author
   const leagueJsonLd: object[] = [];
   if (league) {
@@ -157,7 +175,7 @@ export default async function LeaguePage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(leagueJsonLd) }}
         />
       )}
-      <LeagueDetailClient id={id} initialFollowersCount={initialFollowersCount} />
+      <LeagueDetailClient id={id} initialFollowersCount={initialFollowersCount} viewerIsAdmin={viewerIsLeagueAdmin} />
       {league && (
         <LeagueSEOCopy
           league={league}

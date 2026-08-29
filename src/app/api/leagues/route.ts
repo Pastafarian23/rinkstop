@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search');
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
-  let query = supabase.from('leagues').select('*');
+  let query = supabase.from('leagues').select('*, created_by');
 
   if (id) {
     query = query.eq('id', id).limit(1);
