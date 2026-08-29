@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+export const dynamic = 'force-dynamic';
+
 import { notFound } from 'next/navigation';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
@@ -90,10 +92,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { data: player } = await q;
 
     if (!player) {
-      console.error('[player-page metadata] player not found for id:', id);
-      return { title: 'Player Not Found | RinkStop', robots: { index: false, follow: false } };
+      return { title: 'Player Not Found' };
     }
-    console.log('[player-page metadata] found player:', player.first_name, player.last_name);
 
     const fullName = `${(player as any).first_name ?? ''} ${(player as any).last_name ?? ''}`.trim() || 'Player';
     const teamName = (player as any).teams?.name || (player as any).current_team_name || null;
@@ -151,8 +151,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PlayerPage({ params }: Props) {
-  try {
-    const { id } = await params;
+  const { id } = await params;
 
   // Reject obviously invalid ids before social lookups. Look up by either
   // UUID id OR slug — the route param is named [id] for backward compat
@@ -184,15 +183,6 @@ export default async function PlayerPage({ params }: Props) {
     getEntityOwner('player', id),
     getFollowersCount('player', id),
   ]);
-
-  // Guard: if the player doesn't exist, return 404 immediately.
-  // This must run BEFORE any secondary data fetches (stats, owner, followers)
-  // so that notFound() is called in the earliest stage of rendering.
-  console.log('[player-page] playerExists:', playerExists, 'id:', id, 'seoPlayer:', !!seoPlayer);
-  if (!playerExists) {
-    console.log('[player-page] calling notFound()');
-    notFound();
-  }
 
   // Fetch unified stats (Passport self-reported + highlightly official).
   // supabaseAdmin bypasses RLS so paid users' Passport stats are publicly visible.
@@ -243,6 +233,10 @@ export default async function PlayerPage({ params }: Props) {
     } catch (err) {
       console.error('[player-page] stats fetch failed', err);
     }
+  }
+
+  if (!seoPlayer) {
+    notFound();
   }
 
   // Server-side JSON-LD: Person (athlete) + BreadcrumbList + FAQPage.
@@ -359,8 +353,4 @@ export default async function PlayerPage({ params }: Props) {
       </div>
     </>
   );
-  } catch (err) {
-    console.error('[player-page] unexpected error:', err);
-    notFound();
-  }
 }
