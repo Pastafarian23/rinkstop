@@ -160,6 +160,18 @@ export default function PostComposer() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // ── Shareable card state ──────────────────────────────────────────────────
+  // Shown after a successful post so the user can share it
+  const [shareCard, setShareCard] = useState<{
+    type: 'checkin' | 'workout' | 'highlight' | 'stats' | 'rsvp';
+    title: string;
+    subtitle: string;
+    meta?: string;
+    shareText: string;
+    shareUrl?: string;
+  } | null>(null);
+
   const [myProfile, setMyProfile] = useState<ProfileMeResponse['profile'] | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
 
@@ -304,6 +316,7 @@ export default function PostComposer() {
     setBody('');
     setError('');
     setSuccess('');
+    setShareCard(null);
     if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
     setImage(null);
     setImageStage('none');
@@ -366,7 +379,13 @@ export default function PostComposer() {
       if (!r.ok) { setError(json.error ?? 'Check-in failed'); return; }
       try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
       setSuccess(`Checked in at ${checkinSelected.name}!`);
-      setTimeout(closeComposer, 1500);
+      setShareCard({
+        type: 'checkin',
+        title: `At ${checkinSelected.name}`,
+        subtitle: checkinSelected.city,
+        shareText: `🏒 I'm at ${checkinSelected.name} in ${checkinSelected.city}! ${checkinNote.trim() ? checkinNote.trim() : 'Great ice today.'}`,
+      });
+      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -396,7 +415,13 @@ export default function PostComposer() {
       if (!r.ok) { setError(json.error ?? 'Failed'); return; }
       try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
       setSuccess('Workout logged!');
-      setTimeout(closeComposer, 1500);
+      setShareCard({
+        type: 'workout',
+        title: `${typeLabel} completed`,
+        subtitle: workoutDuration ? `${workoutDuration} min` : 'Training done',
+        shareText: `💪 ${typeLabel}: ${workoutDuration ? workoutDuration + ' min' : 'completed'} — ${workoutNotes.trim() || 'Good session!'}`,
+      });
+      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -422,7 +447,14 @@ export default function PostComposer() {
       if (!r.ok) { setError(json.error ?? 'Failed'); return; }
       try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
       setSuccess('Highlight shared!');
-      setTimeout(closeComposer, 1500);
+      setShareCard({
+        type: 'highlight',
+        title: 'Highlight shared',
+        subtitle: highlightMeta.platform === 'youtube' ? '▶️ YouTube' : highlightMeta.platform === 'tiktok' ? '🎵 TikTok' : '🎬 Video',
+        shareText: `${platformIcon} Check this out: ${highlightMeta.url}`,
+        shareUrl: highlightMeta.url,
+      });
+      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -451,7 +483,14 @@ export default function PostComposer() {
       if (!r.ok) { setError(json.error ?? 'Failed'); return; }
       try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
       setSuccess(`${statGoals}G + ${statAssists}A logged!`);
-      setTimeout(closeComposer, 1500);
+      const statShareText = `📊 Tonight: ${parts.join(' + ')} — ${statNotes.trim() || 'Let us go!'}`;
+      setShareCard({
+        type: 'stats',
+        title: `${statGoals}G + ${statAssists}A`,
+        subtitle: statNotes.trim() || 'Tonight\'s stats',
+        shareText: statShareText,
+      });
+      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -476,11 +515,40 @@ export default function PostComposer() {
       if (!r.ok) { setError(json.error ?? 'RSVP failed'); return; }
       try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
       setRsvpSuccess('RSVP posted!');
-      setTimeout(() => { setRsvpSuccess(''); setRsvpSelected(null); }, 2000);
+      const rsvpShareText = `🙋 I'm in: ${rsvpSelected.title} — ${new Date(rsvpSelected.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
+      setShareCard({
+        type: 'rsvp',
+        title: `Going: ${rsvpSelected.title}`,
+        subtitle: new Date(rsvpSelected.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        shareText: rsvpShareText,
+      });
+      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // ── Share handler ─────────────────────────────────────────────────────────────
+  async function handleShare(card: NonNullable<typeof shareCard>) {
+    const shareData: ShareData = {
+      title: card.title,
+      text: card.shareText,
+    };
+    if (card.shareUrl) shareData.url = card.shareUrl;
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try { await navigator.share(shareData); } catch { /* user cancelled or share failed — fall through to clipboard */ }
+    } else {
+      // Clipboard fallback
+      try {
+        await navigator.clipboard.writeText(card.shareUrl ? `${card.shareText}\n${card.shareUrl}` : card.shareText);
+        setSuccess('Copied to clipboard!');
+        setTimeout(() => setSuccess(''), 2000);
+      } catch {
+        setError('Could not share. Try copying the text manually.');
+      }
     }
   }
 
@@ -795,10 +863,31 @@ export default function PostComposer() {
                   value={checkinNote} onChange={(e) => setCheckinNote(e.target.value)} style={{ marginTop: '0.5rem' }} />
                 {error && <p className={styles.composerError}>{error}</p>}
                 {success && <p className={styles.successMsg}>{success}</p>}
-                <div className={styles.modalActions}>
-                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                  <button type="submit" className={styles.postBtn} disabled={!checkinSelected || submitting}>{submitting ? 'Checking in…' : 'Check In'}</button>
-                </div>
+                {shareCard && (
+                  <div className={styles.shareCard}>
+                    <div className={styles.shareCardIcon}>
+                      {shareCard.type === 'checkin' ? '📍' : shareCard.type === 'workout' ? '💪' : shareCard.type === 'highlight' ? '▶️' : shareCard.type === 'stats' ? '📊' : '🙋'}
+                    </div>
+                    <div className={styles.shareCardText}>
+                      <div className={styles.shareCardTitle}>{shareCard.title}</div>
+                      <div className={styles.shareCardSubtitle}>{shareCard.subtitle}</div>
+                    </div>
+                    <div className={styles.shareCardActions}>
+                      <button type="button" className={styles.shareBtn} onClick={() => handleShare(shareCard)}>
+                        Share ↗
+                      </button>
+                      <button type="button" className={styles.cancelBtn} onClick={closeComposer} style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}>
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {!shareCard && (
+                  <div className={styles.modalActions}>
+                    <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
+                    <button type="submit" className={styles.postBtn} disabled={!checkinSelected || submitting}>{submitting ? 'Checking in…' : 'Check In'}</button>
+                  </div>
+                )}
               </form>
             )}
 
@@ -842,10 +931,25 @@ export default function PostComposer() {
                 </div>
                 {error && <p className={styles.composerError}>{error}</p>}
                 {success && <p className={styles.successMsg}>{success}</p>}
-                <div className={styles.modalActions}>
-                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                  <button type="submit" className={styles.postBtn} disabled={submitting}>{submitting ? 'Logging…' : 'Log Workout'}</button>
-                </div>
+                {shareCard && (
+                  <div className={styles.shareCard}>
+                    <div className={styles.shareCardIcon}>💪</div>
+                    <div className={styles.shareCardText}>
+                      <div className={styles.shareCardTitle}>{shareCard.title}</div>
+                      <div className={styles.shareCardSubtitle}>{shareCard.subtitle}</div>
+                    </div>
+                    <div className={styles.shareCardActions}>
+                      <button type="button" className={styles.shareBtn} onClick={() => handleShare(shareCard)}>Share ↗</button>
+                      <button type="button" className={styles.cancelBtn} onClick={closeComposer} style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}>Done</button>
+                    </div>
+                  </div>
+                )}
+                {!shareCard && (
+                  <div className={styles.modalActions}>
+                    <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
+                    <button type="submit" className={styles.postBtn} disabled={submitting}>{submitting ? 'Logging…' : 'Log Workout'}</button>
+                  </div>
+                )}
               </form>
             )}
 
@@ -868,10 +972,25 @@ export default function PostComposer() {
                 )}
                 {error && <p className={styles.composerError}>{error}</p>}
                 {success && <p className={styles.successMsg}>{success}</p>}
-                <div className={styles.modalActions}>
-                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                  <button type="submit" className={styles.postBtn} disabled={!highlightMeta || submitting}>{submitting ? 'Sharing…' : 'Share'}</button>
-                </div>
+                {shareCard && (
+                  <div className={styles.shareCard}>
+                    <div className={styles.shareCardIcon}>▶️</div>
+                    <div className={styles.shareCardText}>
+                      <div className={styles.shareCardTitle}>{shareCard.title}</div>
+                      <div className={styles.shareCardSubtitle}>{shareCard.subtitle}</div>
+                    </div>
+                    <div className={styles.shareCardActions}>
+                      <button type="button" className={styles.shareBtn} onClick={() => handleShare(shareCard)}>Share ↗</button>
+                      <button type="button" className={styles.cancelBtn} onClick={closeComposer} style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}>Done</button>
+                    </div>
+                  </div>
+                )}
+                {!shareCard && (
+                  <div className={styles.modalActions}>
+                    <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
+                    <button type="submit" className={styles.postBtn} disabled={!highlightMeta || submitting}>{submitting ? 'Sharing…' : 'Share'}</button>
+                  </div>
+                )}
               </form>
             )}
 
@@ -899,10 +1018,25 @@ export default function PostComposer() {
                 )}
                 {rsvpSuccess && <p className={styles.successMsg}>{rsvpSuccess}</p>}
                 {error && <p className={styles.composerError}>{error}</p>}
-                <div className={styles.modalActions}>
-                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                  <button type="submit" className={styles.postBtn} disabled={!rsvpSelected || submitting}>{submitting ? 'RSVPing…' : "I'm In"}</button>
-                </div>
+                {shareCard && (
+                  <div className={styles.shareCard}>
+                    <div className={styles.shareCardIcon}>🙋</div>
+                    <div className={styles.shareCardText}>
+                      <div className={styles.shareCardTitle}>{shareCard.title}</div>
+                      <div className={styles.shareCardSubtitle}>{shareCard.subtitle}</div>
+                    </div>
+                    <div className={styles.shareCardActions}>
+                      <button type="button" className={styles.shareBtn} onClick={() => handleShare(shareCard)}>Share ↗</button>
+                      <button type="button" className={styles.cancelBtn} onClick={closeComposer} style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}>Done</button>
+                    </div>
+                  </div>
+                )}
+                {!shareCard && (
+                  <div className={styles.modalActions}>
+                    <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
+                    <button type="submit" className={styles.postBtn} disabled={!rsvpSelected || submitting}>{submitting ? 'RSVPing…' : "I'm In"}</button>
+                  </div>
+                )}
               </form>
             )}
 
@@ -967,12 +1101,27 @@ export default function PostComposer() {
                   value={statNotes} onChange={(e) => setStatNotes(e.target.value)} rows={2} style={{ marginTop: '0.75rem' }} />
                 {error && <p className={styles.composerError}>{error}</p>}
                 {success && <p className={styles.successMsg}>{success}</p>}
-                <div className={styles.modalActions}>
-                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                  <button type="submit" className={styles.postBtn} disabled={(statGoals === 0 && statAssists === 0) || submitting}>
-                    {submitting ? 'Logging…' : 'Log Stats'}
-                  </button>
-                </div>
+                {shareCard && (
+                  <div className={styles.shareCard}>
+                    <div className={styles.shareCardIcon}>📊</div>
+                    <div className={styles.shareCardText}>
+                      <div className={styles.shareCardTitle}>{shareCard.title}</div>
+                      <div className={styles.shareCardSubtitle}>{shareCard.subtitle}</div>
+                    </div>
+                    <div className={styles.shareCardActions}>
+                      <button type="button" className={styles.shareBtn} onClick={() => handleShare(shareCard)}>Share ↗</button>
+                      <button type="button" className={styles.cancelBtn} onClick={closeComposer} style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}>Done</button>
+                    </div>
+                  </div>
+                )}
+                {!shareCard && (
+                  <div className={styles.modalActions}>
+                    <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
+                    <button type="submit" className={styles.postBtn} disabled={(statGoals === 0 && statAssists === 0) || submitting}>
+                      {submitting ? 'Logging…' : 'Log Stats'}
+                    </button>
+                  </div>
+                )}
               </form>
             )}
 

@@ -242,7 +242,86 @@
 .composerError {
   color: #ef4444;
   font-size: 0.8125rem;
-  margin: 0 0 0.75rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+/* ── Shareable card (post-share prompt) ─────────────────────────────────────── */
+
+.shareCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, rgba(200, 16, 46, 0.18) 0%, rgba(4, 30, 66, 0.4) 100%);
+  border: 1px solid rgba(200, 16, 46, 0.45);
+  border-radius: 12px;
+}
+
+.shareCardIcon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.shareCardText {
+  flex: 1;
+  min-width: 0;
+}
+
+.shareCardTitle {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shareCardSubtitle {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.125rem;
+}
+
+.shareCardActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.5rem 1rem;
+  background: #c8102e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.shareBtn:hover {
+  background: #a00d24;
+}
+
+/* ── Success message ──────────────────────────────────────────────────────────── */
+
+.successMsg {
+  color: #4ECDC4;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  text-align: center;
 }
 
 .modalActions {
@@ -267,18 +346,20 @@
 }
 
 .postBtn {
-  background: #4ECDC4;
+  background: #c8102e;
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 0.5rem 1.25rem;
-  font-size: 0.875rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
+  min-width: 120px;
+  transition: background 0.15s;
 }
 
 .postBtn:hover:not(:disabled) {
-  background: #3eb8af;
+  background: #a00d24;
 }
 
 .postBtn:disabled {
