@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(searchParams.get('offset') || '0', 10);
   const activeOnly = searchParams.get('activeOnly') !== 'false';
 
-  let query = supabase.from('team_workspaces').select('*, leagues(name)');
+  let query = supabase.from('team_workspaces').select('*, leagues(name)', { count: 'exact' });
 
   if (id) {
     query = query.eq('id', id).limit(1);

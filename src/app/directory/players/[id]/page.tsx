@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { data: player } = await q;
 
     if (!player) {
-      return { title: 'Player Not Found' };
+      notFound();
     }
 
     const fullName = `${(player as any).first_name ?? ''} ${(player as any).last_name ?? ''}`.trim() || 'Player';
