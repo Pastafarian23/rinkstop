@@ -64,9 +64,12 @@ async function deriveTeamTimezone(
   }
   return 'UTC';
 }
-import PublicTeamProfile from './PublicTeamProfile';
 
 export const dynamic = 'force-dynamic';
+
+import PublicTeamProfile from './PublicTeamProfile';
+import PostComposer from '@/components/PostComposer';
+import DestinationFeed from '@/components/DestinationFeed';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -237,6 +240,16 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // Recent results — last 2 seasons (or all if team is new)
   const seasonStart = new Date();
   seasonStart.setMonth(seasonStart.getMonth() - 18);
+
+  // Posts feed for team hub
+  const { data: teamPosts } = await supabaseAdmin
+    .from('profile_posts')
+    .select('id, body, media_url, created_at, target_type, target_id, user_id, sport')
+    .eq('target_type', 'team')
+    .eq('target_id', team.id)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(20);
 
   const [newsRes, resultsRes, upcomingEventsRes, adminsRes] = await Promise.all([
     supabase
@@ -507,6 +520,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
         teamTimezone={await deriveTeamTimezone(team, teamEventsRows)}
         cityTeams={cityTeams}
         cityRinks={cityRinks}
+        teamPosts={(teamPosts as any) ?? []}
       />
     </>
   );

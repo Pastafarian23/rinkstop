@@ -6,10 +6,19 @@ import LeagueRelated from '@/components/LeagueRelated';
 import SocialActions from '@/components/SocialActions';
 import EmailCaptureInline from '@/components/EmailCaptureInline';
 import { buildLeagueShare } from '@/lib/share';
+import DestinationFeed from '@/components/DestinationFeed';
 
 const BASE_URL = 'https://rinkstop.com';
 
-export default function LeagueDetailClient({ id, initialFollowersCount = 0 }: { id: string; initialFollowersCount?: number }) {
+export default function LeagueDetailClient({
+  id,
+  initialFollowersCount = 0,
+  viewerIsAdmin = false,
+}: {
+  id: string;
+  initialFollowersCount?: number;
+  viewerIsAdmin?: boolean;
+}) {
   const [league, setLeague] = useState<any>(null);
   const [teams, setTeams] = useState([]);
   const [articles, setArticles] = useState<any[]>([]);
@@ -117,7 +126,24 @@ export default function LeagueDetailClient({ id, initialFollowersCount = 0 }: { 
         </div>
       )}
 
+      {/* League hub posts */}
+      {(league as any).id && (
+        <LeagueHubSection leagueId={(league as any).id} leagueName={league.name} viewerIsAdmin={viewerIsAdmin} />
+      )}
+
       <LeagueRelated leagueId={league.id} leagueName={league.name} />
     </div>
+  );
+}
+
+function LeagueHubSection({ leagueId, leagueName, viewerIsAdmin = false }: { leagueId: string; leagueName: string; viewerIsAdmin?: boolean }) {
+  return (
+    <DestinationFeed
+      targetType="league"
+      targetId={leagueId}
+      name={leagueName}
+      viewerIsAdmin={viewerIsAdmin}
+      composerLabel={`${leagueName} hub`}
+    />
   );
 }
