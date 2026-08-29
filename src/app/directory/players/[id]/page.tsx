@@ -169,7 +169,7 @@ export default async function PlayerPage({ params }: Props) {
     supabaseAdmin.from('players').select('id').eq(isUuid ? 'id' : 'slug', id).maybeSingle(),
     supabaseAdmin
       .from('players')
-      .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, badge_tier, teams(name, slug, leagues(name, slug, country))')
+      .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, teams(name, slug, leagues(name, slug, country))')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle(),
   ]);
@@ -181,57 +181,6 @@ export default async function PlayerPage({ params }: Props) {
     getEntityOwner('player', id),
     getFollowersCount('player', id),
   ]);
-
-  // Fetch unified stats (Passport self-reported + highlightly official).
-  // supabaseAdmin bypasses RLS so paid users' Passport stats are publicly visible.
-  let unifiedStats: any[] = [];
-  let highlightlyId: string | null = null;
-  if (seoPlayer) {
-    highlightlyId = (seoPlayer as any).highlightly_id ?? null;
-    try {
-      // Passport stats
-      const { data: passportStats } = await supabaseAdmin
-        .from('hockey_player_stats_season')
-        .select(
-          `id, season_id, level, games_played, goals, assists, plus_minus, penalty_minutes,
-           goalie_games_played, wins, losses, goals_against, saves, shutouts,
-           save_percentage, gaa, verification_source, verified_by, verified_at,
-           hockey_seasons!inner(label, start_date),
-           hockey_player_team_history!left(id, team_name),
-           leagues!left(id, name, slug)`,
-        )
-        .eq('player_id', (seoPlayer as any).id)
-        .order('hockey_seasons(start_date)', { ascending: false });
-
-      unifiedStats = (passportStats || []).map((ps: any) => ({
-        id: ps.id,
-        source: ps.verification_source || 'self_reported',
-        season: ps.hockey_seasons?.label || null,
-        league_name: ps.leagues?.name || null,
-        level: ps.level || null,
-        team_name: ps.hockey_player_team_history?.team_name || null,
-        games_played: ps.games_played ?? 0,
-        goals: ps.goals ?? 0,
-        assists: ps.assists ?? 0,
-        points: (ps.goals ?? 0) + (ps.assists ?? 0),
-        plus_minus: ps.plus_minus ?? 0,
-        penalty_minutes: ps.penalty_minutes ?? 0,
-        goalie_games_played: ps.goalie_games_played ?? null,
-        wins: ps.wins ?? null,
-        losses: ps.losses ?? null,
-        goals_against: ps.goals_against ?? null,
-        saves: ps.saves ?? null,
-        shutouts: ps.shutouts ?? null,
-        save_percentage: ps.save_percentage ?? null,
-        gaa: ps.gaa ?? null,
-        verification_source: ps.verification_source,
-        verified_by: ps.verified_by || null,
-        verified_at: ps.verified_at || null,
-      }));
-    } catch (err) {
-      console.error('[player-page] stats fetch failed', err);
-    }
-  }
 
   if (!playerExists) {
     notFound();
@@ -332,7 +281,6 @@ export default async function PlayerPage({ params }: Props) {
         ownerUserId={owner?.userId ?? null}
         initialFollowersCount={initialFollowersCount}
         initialPlayer={seoPlayer as any}
-        unifiedStats={unifiedStats}
       />
       {seoPlayer && (
         <PlayerSEOCopy
