@@ -41,7 +41,7 @@ function buildPlayerBio(p: {
   nationality?: string; birth_place?: string; birth_date?: string;
   height_cm?: number; weight_kg?: number; shoots?: string; current_team_name?: string;
   teams?: { name?: string; leagues?: { name?: string } };
-  career_stats?: any[];
+  unifiedStats?: any[];
 }): string {
   const fullName = `${p.first_name ?? ''} ${p.last_name ?? ''}`.trim();
   const team = p.teams?.name || p.current_team_name;
@@ -82,12 +82,12 @@ function buildPlayerBio(p: {
     if (age > 0 && age < 100) parts.push(`At ${age} years old, ${fullName} is in the ${age < 25 ? 'early' : age < 30 ? 'prime' : 'experienced'} phase of a hockey career.`);
   }
 
-  if (p.career_stats && p.career_stats.length > 0) {
+  if (p.unifiedStats && p.unifiedStats.length > 0) {
     const isGoalie = p.position === 'goalie';
     let totalGP = 0;
     let totalG = 0, totalA = 0, totalPts = 0;
     let totalW = 0, totalSO = 0;
-    p.career_stats.forEach((s: any) => {
+    p.unifiedStats.forEach((s: any) => {
       totalGP += s.games_played || 0;
       if (isGoalie) {
         totalW += s.wins || 0;
@@ -99,8 +99,8 @@ function buildPlayerBio(p: {
       }
     });
     if (totalGP > 0) {
-      if (isGoalie) parts.push(`Across ${p.career_stats.length} season${p.career_stats.length === 1 ? '' : 's'} in the ${league || 'pros'}, ${fullName} has played ${totalGP} game${totalGP === 1 ? '' : 's'}, posted ${totalW} win${totalW === 1 ? '' : 's'}, and recorded ${totalSO} shutout${totalSO === 1 ? '' : 's'}.`);
-      else parts.push(`Across ${p.career_stats.length} season${p.career_stats.length === 1 ? '' : 's'} in the ${league || 'pros'}, ${fullName} has played ${totalGP} game${totalGP === 1 ? '' : 's'} and produced ${totalG} goal${totalG === 1 ? '' : 's'}, ${totalA} assist${totalA === 1 ? '' : 's'}, and ${totalPts} point${totalPts === 1 ? '' : 's'}.`);
+      if (isGoalie) parts.push(`Across ${p.unifiedStats.length} season${p.unifiedStats.length === 1 ? '' : 's'} in the ${league || 'pros'}, ${fullName} has played ${totalGP} game${totalGP === 1 ? '' : 's'}, posted ${totalW} win${totalW === 1 ? '' : 's'}, and recorded ${totalSO} shutout${totalSO === 1 ? '' : 's'}.`);
+      else parts.push(`Across ${p.unifiedStats.length} season${p.unifiedStats.length === 1 ? '' : 's'} in the ${league || 'pros'}, ${fullName} has played ${totalGP} game${totalGP === 1 ? '' : 's'} and produced ${totalG} goal${totalG === 1 ? '' : 's'}, ${totalA} assist${totalA === 1 ? '' : 's'}, and ${totalPts} point${totalPts === 1 ? '' : 's'}.`);
     }
   }
 
@@ -137,7 +137,7 @@ interface Player {
   recruiting_bio?: string;
   parent_contact_name?: string;
   parent_contact_email?: string;
-  career_stats?: any[];
+  unifiedStats?: any[];
   teams?: {
     name: string;
     slug?: string;
@@ -196,11 +196,11 @@ function StatCard({ label, value, unit }: { label: string; value?: string | numb
 }
 
 // ------ Page --------------------------------------------------------------------------------------------------------------------------------------
-export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 0, initialPlayer = null }: { id: string; ownerUserId?: string | null; initialFollowersCount?: number; initialPlayer?: Player | null }) {
-  const [player, setPlayer] = useState<Player | null>(initialPlayer);
+export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 0, initialPlayer = null, unifiedStats = [] }: { id: string; ownerUserId?: string | null; initialFollowersCount?: number; initialPlayer?: Player | null; unifiedStats?: any[] }) {
+  const [player, setPlayer] = useState<Player | null>(initialPlayer ? { ...initialPlayer, unifiedStats } : null);
   const [loading, setLoading] = useState(!initialPlayer);
   const [otherPlayers, setOtherPlayers] = useState<Player[]>([]);
-  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false); // kept for future Scoresheet Pro sync
   const [homeArena, setHomeArena] = useState<{ slug: string; name: string; city: string | null; country: string | null } | null>(null);
   const [teamArticles, setTeamArticles] = useState<any[]>([]);
 
@@ -244,7 +244,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
       return v != null && v !== '';
     }).length;
     // Career stats contribute substantial unique content
-    const statsWords = (player.career_stats?.length || 0) * 20;
+    const statsWords = (player.unifiedStats?.length || 0) * 20;
     // The About/bio paragraph contributes a guaranteed ~80-150 unique words now
     // (depends on what data is present; use 80 baseline)
     const bioWords = 80;
@@ -262,19 +262,6 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
       if (document.head.contains(meta)) document.head.removeChild(meta);
     };
   }, [player, homeArena]);
-
-  // Fetch career stats
-  useEffect(() => {
-    if (!player?.id) return;
-    fetch(`/api/players/player-stats-sync?playerId=${player.id}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.stats && d.stats.length > 0) {
-          setPlayer(prev => prev ? { ...prev, career_stats: d.stats } : null);
-        }
-      })
-      .catch(() => {});
-  }, [player?.id]);
 
   // Fetch other players on same team
   useEffect(() => {
@@ -642,7 +629,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
               shoots: player.shoots,
               current_team_name: (player as any).current_team_name,
               teams: player.teams,
-              career_stats: player.career_stats,
+              unifiedStats: player.unifiedStats,
             });
             return <p>{bio}</p>;
           })()}
@@ -691,49 +678,9 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
           <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em', margin: 0 }}>
             CAREER STATISTICS
           </h2>
-          <button
-            onClick={() => {
-              if (!player?.id) return;
-              setStatsLoading(true);
-              fetch('/api/highlightly/players/stats', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerId: player.id }),
-              })
-                .then(r => r.json())
-                .then(() => {
-                  setStatsLoading(false);
-                  return fetch(`/api/players/player-stats-sync?playerId=${player.id}`);
-                })
-                .then(r => r.json())
-                .then(d => {
-                  if (d.stats && d.stats.length > 0) {
-                    setPlayer(prev => prev ? { ...prev, career_stats: d.stats } : null);
-                  }
-                  setStatsLoading(false);
-                })
-                .catch(() => setStatsLoading(false));
-            }}
-            disabled={statsLoading}
-            style={{
-              fontSize: '0.6875rem',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '4px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#666',
-              cursor: statsLoading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            {statsLoading ? 'Syncing...' : 'Sync Stats'}
-          </button>
         </div>
 
-        {!player.career_stats || player.career_stats.length === 0 ? (
+        {!player.unifiedStats || player.unifiedStats.length === 0 ? (
           <div style={{
             border: '1px dashed rgba(255,255,255,0.1)',
             borderRadius: '8px',
@@ -743,9 +690,32 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
             <p style={{ color: '#444', fontSize: '0.9375rem', marginBottom: '0.5rem' }}>
               No career statistics available yet
             </p>
-            <p style={{ color: '#333', fontSize: '0.8125rem' }}>
-              Stats are synced from official league data when available.
-            </p>
+            {player.badge_tier === 'free' || !player.badge_tier ? (
+              <p style={{ color: '#333', fontSize: '0.8125rem', marginBottom: '1rem' }}>
+                Upgrade to Hockey Passport to add your season stats.
+              </p>
+            ) : (
+              <p style={{ color: '#333', fontSize: '0.8125rem', marginBottom: '1rem' }}>
+                Stats are synced from official league data when available.
+              </p>
+            )}
+            {player.badge_tier === 'free' || !player.badge_tier ? (
+              <a
+                href="/dashboard/passport"
+                style={{
+                  display: 'inline-block',
+                  background: '#14B8A6',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                }}
+              >
+                Get Hockey Passport →
+              </a>
+            ) : null}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -763,7 +733,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                 </tr>
               </thead>
               <tbody>
-                {player.career_stats.map((stat: any, i: number) => (
+                {player.unifiedStats.map((stat: any, i: number) => (
                   <tr key={stat.id || i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                     {player.position === 'goalie' ? (
                       <>
@@ -771,8 +741,8 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                         <td style={{ padding: '0.75rem 0.75rem', color: '#888' }}>{stat.games_played ?? '-'}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.wins ?? 0}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.losses ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.goals_against_avg ?? '-'}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.save_pct ? `${(parseFloat(stat.save_pct) * 100).toFixed(1)}%` : '-'}</td>
+                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.gaa ?? '-'}</td>
+                        <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.save_percentage != null ? `${(parseFloat(stat.save_percentage) * 100).toFixed(1)}%` : '-'}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.shutouts ?? 0}</td>
                       </>
                     ) : (
