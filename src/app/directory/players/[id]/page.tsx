@@ -151,7 +151,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PlayerPage({ params }: Props) {
-  const { id } = await params;
+  try {
+    const { id } = await params;
 
   // Reject obviously invalid ids before social lookups. Look up by either
   // UUID id OR slug — the route param is named [id] for backward compat
@@ -187,8 +188,9 @@ export default async function PlayerPage({ params }: Props) {
   // Guard: if the player doesn't exist, return 404 immediately.
   // This must run BEFORE any secondary data fetches (stats, owner, followers)
   // so that notFound() is called in the earliest stage of rendering.
-  console.log('[player-page] playerExists:', playerExists, 'id:', id);
+  console.log('[player-page] playerExists:', playerExists, 'id:', id, 'seoPlayer:', !!seoPlayer);
   if (!playerExists) {
+    console.log('[player-page] calling notFound()');
     notFound();
   }
 
@@ -357,4 +359,8 @@ export default async function PlayerPage({ params }: Props) {
       </div>
     </>
   );
+  } catch (err) {
+    console.error('[player-page] unexpected error:', err);
+    notFound();
+  }
 }
