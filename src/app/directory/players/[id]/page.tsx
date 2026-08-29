@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-export const dynamic = 'force-dynamic';
-
 import { notFound } from 'next/navigation';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
@@ -176,8 +174,6 @@ export default async function PlayerPage({ params }: Props) {
       .maybeSingle(),
   ]);
 
-  console.log('[player-page] DB query result — id:', id, 'playerExists:', !!playerExists, 'seoPlayer:', !!seoPlayer, 'seoPlayer.name:', seoPlayer?.first_name, seoPlayer?.last_name);
-
   // Non-critical: run in parallel but don't gate rendering on them.
   // If either fails the page still works (message button hides, follower
   // count starts at 0 and updates when the client component mounts).
@@ -237,7 +233,7 @@ export default async function PlayerPage({ params }: Props) {
     }
   }
 
-  if (!seoPlayer) {
+  if (!playerExists) {
     notFound();
   }
 
