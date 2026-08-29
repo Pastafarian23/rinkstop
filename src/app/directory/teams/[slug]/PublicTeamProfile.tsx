@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildTeamShare } from '@/lib/share';
-import DestinationFeed from '@/components/DestinationFeed';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
 
@@ -118,15 +117,6 @@ interface Props {
     city: string | null;
     province_state: string | null;
     country: string | null;
-  }>;
-  teamPosts?: Array<{
-    id: string;
-    body: string;
-    media_url: string | null;
-    created_at: string;
-    target_type?: string | null;
-    target_id?: string | null;
-    user_id?: string | null;
   }>;
 }
 
@@ -400,27 +390,6 @@ export default function PublicTeamProfile({
             >
               Manage team →
             </a>
-            <button
-              type="button"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('rinkstop:open-composer', {
-                  detail: { target_type: 'team', target_id: team.id, name: team.name },
-                }));
-              }}
-              style={{
-                padding: '0.45rem 0.9rem',
-                background: 'rgba(255,255,255,0.08)',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.18)',
-                borderRadius: 6,
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-              }}
-            >
-              + Post to team hub
-            </button>
           </div>
         </div>
       )}
@@ -630,13 +599,34 @@ export default function PublicTeamProfile({
             <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
               TEAM HUB
             </h2>
-            <DestinationFeed
-              targetType="team"
-              targetId={team.id}
-              name={team.name}
-              viewerIsAdmin={viewerIsAdmin}
-              composerLabel={`${team.name} hub`}
-            />
+
+            {news.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {news.slice(0, 10).map((n) => (
+                  <article
+                    key={n.id}
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      borderRadius: 10,
+                      padding: '1rem 1.25rem',
+                    }}
+                  >
+                    <h3 style={{ margin: '0 0 0.35rem', color: '#fff', fontSize: '1.05rem' }}>{n.title}</h3>
+                    {n.body ? (
+                      <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', lineHeight: 1.55, fontSize: '0.9375rem' }}>
+                        {n.body.length > 280 ? `${n.body.slice(0, 280)}…` : n.body}
+                      </p>
+                    ) : null}
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>
+                      {n.published_at ? new Date(n.published_at).toLocaleDateString() : ''}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem' }}>No published team updates yet.</p>
+            )}
           </section>
 
           {/* Contact + team info */}
