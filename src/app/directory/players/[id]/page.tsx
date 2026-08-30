@@ -81,21 +81,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const sb = getDirectAdminClient();
     console.log('[player-metadata] sb created=', !!sb);
-    if (!sb) return { title: 'Player (no sb)' };
+    if (!sb) return { title: 'Player' };
 
-    const { data: player, error: metaErr } = await sb
+    const { data: player } = await sb
       .from('players')
-      .select('id, first_name, last_name, position, nationality, headshot_url, seo_title, current_team_name, teams(name, leagues(name))')
+      .select('id, first_name, last_name, position, nationality, headshot_url, current_team_name, teams(name, leagues(name))')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle();
-    console.log('[player-metadata] query result=', player ? `${player.first_name} ${player.last_name}` : 'NULL', 'error=', metaErr?.message, 'metaErr_code=', metaErr?.code);
 
-    if (!player) {
-      // Debug: try a fresh query without select restrictions
-      const { data: p2, error: e2 } = await sb.from('players').select('*').eq(isUuid ? 'id' : 'slug', id).maybeSingle();
-      console.log('[player-metadata] FALLBACK query result=', p2 ? 'FOUND' : 'STILL NULL', 'error=', e2?.message, 'code=', e2?.code);
-      return { title: `Player Not Found (id=${id}, metaErr=${metaErr?.message || 'none'}, p2=${!!p2}, e2=${e2?.message || 'none'})` };
-    }
+    if (!player) return { title: 'Player Not Found' };
 
     const team0: any = Array.isArray(player.teams) ? player.teams[0] : player.teams;
     const league0: any = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
