@@ -46,13 +46,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   // Step 4: build the same React component
   if (seoPlayer) {
-    const { default: React } = await import('react');
-    const jsx = React.createElement('div', null,
-      React.createElement('h1', null, `${seoPlayer.first_name} ${seoPlayer.last_name}`),
-      React.createElement('p', null, `Position: ${seoPlayer.position || 'unknown'}`),
-      React.createElement('p', null, `Team: ${seoPlayer.teams?.name || 'no team'}`)
-    );
-    steps.reactRender = 'ok';
+    const teamArr: any[] = Array.isArray(seoPlayer.teams) ? seoPlayer.teams : (seoPlayer.teams ? [seoPlayer.teams] : []);
+    const teamName = teamArr[0]?.name || null;
+    steps.playerInfo = {
+      name: `${seoPlayer.first_name} ${seoPlayer.last_name}`,
+      position: seoPlayer.position,
+      teamName
+    };
   }
 
   return NextResponse.json(steps);
