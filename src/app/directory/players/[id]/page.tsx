@@ -44,8 +44,11 @@ function getDirectAdminClient() {
 
 function buildPlayerDescription(player: any): string {
   const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-  const teamName = player.teams?.name || player.current_team_name || null;
-  const leagueName = player.teams?.leagues?.name || '';
+  const teamArr: any[] = Array.isArray(player.teams) ? player.teams : (player.teams ? [player.teams] : []);
+  const team0 = teamArr[0];
+  const league0 = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
+  const teamName = team0?.name || player.current_team_name || null;
+  const leagueName = league0?.name || '';
   const position = POSITION_FULL[player.position] || player.position || null;
 
   const facts: string[] = [];
@@ -84,9 +87,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     if (!player) return { title: 'Player Not Found' };
 
+    const team0: any = Array.isArray(player.teams) ? player.teams[0] : player.teams;
+    const league0: any = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
     const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-    const teamName = player.teams?.name || player.current_team_name || null;
-    const leagueName = player.teams?.leagues?.name || '';
+    const teamName = team0?.name || player.current_team_name || null;
+    const leagueName = league0?.name || '';
     const position = POSITION_FULL[player.position] || player.position || null;
     const description = buildPlayerDescription(player);
     const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
@@ -211,10 +216,13 @@ export default async function PlayerPage({ params }: Props) {
   let playerJsonLd: object | null = null;
   try {
     const fullName = `${seoPlayer.first_name ?? ''} ${seoPlayer.last_name ?? ''}`.trim() || 'Hockey Player';
-    const teamName = (seoPlayer.teams as any)?.name;
-    const teamSlug = (seoPlayer.teams as any)?.slug;
-    const leagueName = (seoPlayer.teams as any)?.leagues?.name;
-    const leagueSlug = (seoPlayer.teams as any)?.leagues?.slug;
+    const teamsArr: any[] = Array.isArray(seoPlayer.teams) ? seoPlayer.teams : (seoPlayer.teams ? [seoPlayer.teams] : []);
+    const team0 = teamsArr[0] || {};
+    const league0 = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : {};
+    const teamName = team0?.name;
+    const teamSlug = team0?.slug;
+    const leagueName = league0?.name;
+    const leagueSlug = league0?.slug;
     const position = POSITION_FULL[seoPlayer.position] || seoPlayer.position || 'Hockey Player';
 
     const seoFaqs = buildPlayerFAQs({
@@ -222,7 +230,7 @@ export default async function PlayerPage({ params }: Props) {
       jerseyNumber: seoPlayer.jersey_number, shoots: seoPlayer.shoots, catches: seoPlayer.catches,
       heightCm: seoPlayer.height_cm, weightKg: seoPlayer.weight_kg, birthDate: seoPlayer.birth_date,
       nationality: seoPlayer.nationality, bio: seoPlayer.bio,
-      teamName, teamSlug, leagueName, leagueSlug, leagueCountry: (seoPlayer.teams as any)?.leagues?.country,
+      teamName, teamSlug, leagueName, leagueSlug, leagueCountry: league0?.country,
       updatedAt: seoPlayer.updated_at,
     });
 
