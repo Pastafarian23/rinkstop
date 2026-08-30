@@ -85,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const { data: player } = await sb
       .from('players')
-      .select('id, first_name, last_name, position, nationality, headshot_url, current_team_name, teams(name, leagues(name))')
+      .select('id, first_name, last_name, position, nationality, headshot_url, teams(name, leagues(name))')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle();
 
@@ -94,7 +94,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const team0: any = Array.isArray(player.teams) ? player.teams[0] : player.teams;
     const league0: any = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
     const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-    const teamName = team0?.name || player.current_team_name || null;
+    const teamName = team0?.name || null;
     const leagueName = league0?.name || '';
     const position = POSITION_FULL[player.position] || player.position || null;
     const description = buildPlayerDescription(player);
