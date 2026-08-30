@@ -168,7 +168,14 @@ export default async function PlayerPage({ params }: Props) {
     .maybeSingle();
 
   if (!playerExists) {
-    notFound();
+    // Return plain div instead of notFound() — notFound() causes RSC stream
+    // corruption when called inside a component nested in Suspense boundaries.
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Player Not Found</h1>
+        <p style={{ color: '#666' }}>We could not find a player with that name.</p>
+      </div>
+    );
   }
 
   const { data: seoPlayer } = await supabaseAdmin
@@ -178,7 +185,12 @@ export default async function PlayerPage({ params }: Props) {
     .maybeSingle();
 
   if (!seoPlayer) {
-    notFound();
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Player Not Found</h1>
+        <p style={{ color: '#666' }}>We could not find a player with that name.</p>
+      </div>
+    );
   }
 
   // Non-critical: run in parallel after the player is confirmed.
