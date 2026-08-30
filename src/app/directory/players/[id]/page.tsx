@@ -327,7 +327,7 @@ export default async function PlayerPage({ params }: Props) {
         id={id}
         ownerUserId={owner?.userId ?? null}
         initialFollowersCount={initialFollowersCount}
-        initialPlayer={seoPlayer}
+        initialPlayer={seoPlayer as any}
         unifiedStats={unifiedStats}
       />
       {seoPlayer && (
