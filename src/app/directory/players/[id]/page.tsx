@@ -72,22 +72,25 @@ function buildPlayerDescription(player: any): string {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  console.log('[player-metadata] start TEST_HARDCODED');
-  return { title: 'TEST_HARDCODED_TITLE' };
   const { id } = await params;
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const envKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log('[player-metadata] id=', id, 'isUuid=', isUuid, 'envUrl=', envUrl?.substring(0, 30), 'keySet=', !!envKey);
 
   try {
     const sb = getDirectAdminClient();
-    if (!sb) return { title: 'Player' };
+    console.log('[player-metadata] sb created=', !!sb);
+    if (!sb) return { title: 'Player (no sb)' };
 
-    const { data: player } = await sb
+    const { data: player, error: metaErr } = await sb
       .from('players')
       .select('id, first_name, last_name, position, nationality, headshot_url, seo_title, current_team_name, teams(name, leagues(name))')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle();
+    console.log('[player-metadata] query result=', player ? `${player.first_name} ${player.last_name}` : 'NULL', 'error=', metaErr?.message, 'metaErr_code=', metaErr?.code);
 
-    if (!player) return { title: 'Player Not Found' };
+    if (!player) return { title: `Player Not Found (id=${id})` };
 
     const team0: any = Array.isArray(player.teams) ? player.teams[0] : player.teams;
     const league0: any = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
