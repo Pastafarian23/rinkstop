@@ -101,8 +101,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
 
     let titlePart: string;
-    if (player.seo_title && stripSuffix(player.seo_title)) {
-      titlePart = stripSuffix(player.seo_title);
+    // seo_title column doesn't exist in production DB, so we don't SELECT it here.
+    // The page-side SELECT uses an extended field list; metadata uses a leaner one
+    // because it's not allowed to fail silently on missing columns.
+    const seoTitle = (player as any).seo_title as string | undefined;
+    if (seoTitle && stripSuffix(seoTitle)) {
+      titlePart = stripSuffix(seoTitle);
     } else if (position && teamName) {
       titlePart = `${fullName} – ${position} | ${teamName}${leagueName ? ` (${leagueName})` : ''}`;
     } else if (position) {
