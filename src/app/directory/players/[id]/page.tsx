@@ -72,18 +72,22 @@ function buildPlayerDescription(player: any): string {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  console.log('[player-metadata] start');
   const { id } = await params;
+  console.log('[player-metadata] id=', id, 'isUuid=', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
   try {
     const sb = getDirectAdminClient();
+    console.log('[player-metadata] sb=', !!sb, 'url=', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30));
     if (!sb) return { title: 'Player' };
 
-    const { data: player } = await sb
+    const { data: player, error: metaErr } = await sb
       .from('players')
       .select('id, first_name, last_name, position, nationality, headshot_url, seo_title, current_team_name, teams(name, leagues(name))')
       .eq(isUuid ? 'id' : 'slug', id)
       .maybeSingle();
+    console.log('[player-metadata] player=', player ? `${player.first_name} ${player.last_name}` : 'null', 'error=', metaErr?.message);
 
     if (!player) return { title: 'Player Not Found' };
 
