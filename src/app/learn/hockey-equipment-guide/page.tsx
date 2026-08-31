@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Equipment Guide — Skates, Sticks, Protective Gear & More | RinkStop',
+  title: 'Hockey Equipment Guide — Skates, Sticks, Protective Gear & More',
   description: 'A complete guide to hockey equipment for players, parents, and goalies. Skates, sticks, helmets, pads, and how to choose the right gear at every level.',
   keywords: ['hockey equipment', 'hockey skates', 'hockey sticks', 'hockey gear', 'hockey helmet', 'goalie equipment'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-equipment-guide' },
