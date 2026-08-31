@@ -105,7 +105,14 @@ export default function AdSlot({
 
   if (!publisherId) return null; // No env var → silently no-op (dev / pre-launch)
   if (!slot) return null; // Empty slot ID = placeholder mode, no-op
-  if (consent !== 'accepted') return null; // Not consented → render nothing
+  // Note (PR #146, 2026-08-31): we no longer early-return when the
+  // user has not accepted cookies. The <ins class="adsbygoogle">
+  // element renders regardless of consent so the AdSense reviewer can
+  // verify placement in the rendered HTML; the actual ad fill request
+  // (window.adsbygoogle.push) is gated on `consent === 'accepted'` in
+  // the useEffect above. This satisfies both AdSense program policy
+  // (visible integration) and GDPR (no personal data sent before
+  // consent).
 
   // AdSense wants the <ins> rendered first, then a push() call to fill it.
   // We render the <ins> regardless of pushed state so the script can target it.
