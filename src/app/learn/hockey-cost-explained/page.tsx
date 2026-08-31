@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How Much Does Hockey Cost? — A Complete Cost Guide for Parents and Players | RinkStop',
+  title: 'How Much Does Hockey Cost? — A Complete Cost Guide for Parents and Players',
   description: 'A complete breakdown of hockey costs at every level — registration, equipment, ice time, travel, and tournament fees. What parents and players actually spend each year.',
   keywords: ['hockey cost', 'hockey registration', 'hockey fees', 'ice hockey cost', 'youth hockey cost'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-cost-explained' },

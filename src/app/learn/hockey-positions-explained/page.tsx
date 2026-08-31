@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Hockey Positions Explained — Forwards, Defensemen, Goalies | RinkStop',
+  title: 'Hockey Positions Explained — Forwards, Defensemen, Goalies',
   description: 'A complete guide to every hockey position: centers, wings, defensemen, goalies. What each position does on the ice, the skills that matter, and how NHL teams deploy them.',
   keywords: ['hockey positions', 'centers', 'wings', 'defensemen', 'goalies', 'hockey roles'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-positions-explained' },

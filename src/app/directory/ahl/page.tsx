@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   // a string-template bug). Replaced with a single em-dash, query-aligned
   // keyword first ("American Hockey League"), and concrete value props in
   // the meta (32 teams, Calder Cup, NHL pipeline, all 31 NHL affiliates).
-  title: 'American Hockey League — AHL Teams, Schedule & Standings | RinkStop',
+  title: 'American Hockey League — AHL Teams, Schedule & Standings',
   description: 'Complete AHL coverage: 32 teams across the U.S. and Canada, Calder Cup playoffs, scores, schedules, and standings. Every NHL team fields at least one AHL affiliate — track the NHL pipeline on RinkStop.',
 };
 
