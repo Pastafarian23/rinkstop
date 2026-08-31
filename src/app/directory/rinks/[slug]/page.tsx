@@ -339,13 +339,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // Fallback differentiator from notes: pull the first short noun phrase
   // (e.g. 'home of the Al Ain Theebs', 'public skate & lessons'). Capped at
   // 30 chars so the title still fits in 60. If notes is null, fall through
-  // to the location template.
+  // to the location template. Skip the first clause if it starts with the
+  // rink name — that's not a differentiator, just restating the title.
   if (differentiators.length === 0 && (rink as any).notes) {
     const note = ((rink as any).notes as string).trim();
-    // Take the first clause (split on . or , or ' - ') up to 30 chars.
-    const firstClause = note.split(/[.,;\u2014\u2013-]/, 1)[0].trim();
-    if (firstClause && firstClause.length >= 8 && firstClause.length <= 40) {
-      differentiators.push(firstClause.length > 30 ? firstClause.slice(0, 27) + '...' : firstClause);
+    const rinkNameLower = rink.name.toLowerCase();
+    // Find the first clause that doesn't restate the rink name.
+    const clauses = note.split(/[.,;\u2014\u2013]/).map(c => c.trim()).filter(c => c.length >= 8);
+    for (const clause of clauses) {
+      const clauseLower = clause.toLowerCase();
+      // Skip clauses that start with the rink name (e.g. "Wentzville Ice Arena is a public...")
+      if (clauseLower.startsWith(rinkNameLower) || clauseLower.startsWith(rinkNameLower.replace(/[^a-z0-9 ]/g, ''))) continue;
+      if (clause.length >= 8 && clause.length <= 40) {
+        differentiators.push(clause.length > 30 ? clause.slice(0, 27) + '...' : clause);
+        break;
+      }
     }
   }
 
