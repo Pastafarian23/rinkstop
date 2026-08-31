@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   // (searchers want live scores, not archived) and league-anchored
   // keyword list to surface for both "hockey scores" and "hockey games
   // today" type queries.
-  title: 'Hockey Scores Today — Live Games, Schedule & Results | RinkStop',
+  title: 'Hockey Scores Today — Live Games, Schedule & Results',
   description: _gamesMetaLong.slice(0, 240),
   alternates: {
     canonical: 'https://rinkstop.com/directory/games',

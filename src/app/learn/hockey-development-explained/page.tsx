@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'How Hockey Development Works — Pathways from Youth to Pro | RinkStop',
+  title: 'How Hockey Development Works — Pathways from Youth to Pro',
   description: 'A complete guide to hockey player development pathways at every level — from learn-to-skate through junior hockey, NCAA, and the NHL.',
   keywords: ['hockey development', 'hockey pathway', 'youth hockey', 'junior hockey', 'NCAA hockey', 'hockey career'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-development-explained' },
