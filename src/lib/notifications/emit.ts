@@ -300,7 +300,25 @@ export async function emitSignupWelcome(userId: string): Promise<EmitResult> {
  * access a paid-tier benefit that requires identity verification.
  * Caller (e.g., /api/tier/upgrade gate check) decides when to recommend.
  *
- * Pass `benefitKey` so we can dedupe — the same benefit shouldn't fire twice.
+ * Dedup: ONE row per user (idempotent across tier clicks).
+ *
+ * Earlier versions keyed `sourceKey` on the requested tier (e.g.
+ * `verify_recommended:tier_upgrade:club_pro`). That produced up to 5
+ * separate unread notifications for one user — every CTA click on
+ * /pricing fired a fresh row. The dedup key in the consumer_notifications
+ * table is (user_id, source_key, kind); without a fixed source_key the
+ * system looked like it was emitting the same notification 5 times
+ * (Arnel-flagged 2026-08-31: "same unread notification over and over").
+ *
+ * We now use `verify_recommended:any_benefit` so all identity-verify
+ * recommendations for a given user collapse to one row. The
+ * `benefit_label` is captured in `metadata.last_benefit_label` so the
+ * UI can still surface which tier the user last tried to unlock. The
+ * recommendation itself (title + body + action_url) stays
+ * benefit-agnostic: verify once, unlock everything.
+ *
+ * `oneShot: true` — once the user accepts (clicks Verify) or dismisses,
+ * the row stays snoozed for a year.
  */
 export async function emitIdentityVerifyRecommended(
   userId: string,
@@ -310,13 +328,13 @@ export async function emitIdentityVerifyRecommended(
   return emitOnboardingNotification({
     userId,
     kind: 'identity_verify_recommended',
-    sourceKey: `verify_recommended:${benefitKey}`,
-    title: `Verify your identity to unlock ${benefitLabel}`,
+    sourceKey: 'verify_recommended:any_benefit',
+    title: 'Verify your identity to unlock Pro+ benefits',
     body: `Pro+ tiers add a verified checkmark to your profile and unlock DMs with other verified members. One-time ID verification, takes 2 minutes.`,
     actionUrl: '/dashboard/identity',
     actionLabel: 'Verify identity',
     oneShot: true,
-    metadata: { benefit_key: benefitKey, benefit_label: benefitLabel },
+    metadata: { last_benefit_key: benefitKey, last_benefit_label: benefitLabel },
   });
 }
 
