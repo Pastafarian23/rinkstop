@@ -60,19 +60,27 @@ const nextConfig = {
           // CSP origins. WS23 (2026-08-19): trimmed AdSense/Google-Ads
           // allowlist (pagead2.googlesyndication, googlesyndication,
           // googletagservices, googletagmanager, google-analytics,
-          // doubleclick, googletag). The site no longer runs any
-          // Google ad units; keeping these would only fail AdSense
-          // review (residual infrastructure). Ship clean.
+          // doubleclick, googletag). Re-added 2026-08-31 for AdSense
+          // resubmit — the AdSense policy reviewer fetches pages and
+          // expects the publisher script to load. Without these origins
+          // the browser blocks pagead2.googlesyndication.com and the
+          // site appears not to run AdSense, even though ads.txt is
+          // correct. Consent gating is enforced in AdSenseLoader (the
+          // script loads, but no ad fill is requested until
+          // localStorage.cookie_consent === 'accepted').
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.stripe.com",
+              // AdSense / Google ad stack: required for the publisher
+              // script (pagead2.googlesyndication.com) and the
+              // iframes / images / XHR / beacons it loads.
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.stripe.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.googletagmanager.com https://*.googletagservices.com https://*.googletag https://*.googleadservices.com https://*.google-analytics.com https://*.doubleclick.net",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https:",
+              "img-src 'self' data: blob: https: https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.googleadservices.com",
               "font-src 'self' data: https://*.clerk.accounts.dev https://*.clerk.com https://fonts.gstatic.com",
-              "connect-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.supabase.co https://api.stripe.com https://*.highlightly.net wss://*.supabase.co",
-              "frame-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://verification.didit.me https://verify.didit.me https://didit.me https://app.didit.me",
+              "connect-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.supabase.co https://api.stripe.com https://*.highlightly.net wss://*.supabase.co https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.googletagmanager.com https://*.google-analytics.com https://*.doubleclick.net https://*.googleadservices.com",
+              "frame-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://verification.didit.me https://verify.didit.me https://didit.me https://app.didit.me https://*.googlesyndication.com https://*.googletag https://*.doubleclick.net https://googleads.g.doubleclick.net",
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",
