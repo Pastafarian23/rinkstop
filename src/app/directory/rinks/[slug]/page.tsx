@@ -312,22 +312,82 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     stateRinks: [],
   });
   // WS22 (2026-08-19): prefer hand-crafted meta_description column when set.
-  // Falls back to blurb (truncated to 160 chars) when null.
-  const description = (rink as any).meta_description
-    ? (rink as any).meta_description
-    : (blurb.length > 160 ? blurb.slice(0, 157) + '...' : blurb);
+  // PR #180b (2026-08-31): when null, build a richer description from anchors
+  // (ice_size, capacity) instead of truncating the long blurb. The blurb
+  // still gets used by the page body; meta gets a tighter version.
   const provinceLabel = provinceDisplayName(rink.province_state);
 
   // Title (improvements-everywhere 2026-08-19): cap at 60 chars for Google SERP.
-  // Old template: name + city + province + country + hours/league suffix (~80-160 chars).
-  // New: name + city/country only, truncated to 60 with the city last.
+  // PR #180b (2026-08-31): add a differentiator tag so each rink title is
+  // distinct in SERPs. Old template was `${name} — ${city}, ${province}, ${country}`
+  // for every rink — boring, no click-worthy reason. New: append the most
+  // notable attribute when available (ice_size, capacity bucket, surface_type,
+  // home league). Falls back to the location string when no differentiator is
+  // known. Empirically (2026-08-31 audit) most top-impression rink pages have
+  // null ice_size/capacity/league but DO have a unique notes snippet — so we
+  // also extract a short noun phrase from notes when structured ones are
+  // empty. Each rink's notes are unique, so this produces unique titles.
+  const differentiators: string[] = [];
+  if (rink.ice_size === 'NHL') differentiators.push('NHL-sized rink');
+  else if (rink.ice_size === 'Olympic') differentiators.push('Olympic-sized rink');
+  else if (rink.ice_size) differentiators.push(`${rink.ice_size} rink`);
+  if (rink.capacity && rink.capacity >= 15000) differentiators.push(`${(rink.capacity / 1000).toFixed(0)}K-seat arena`);
+  else if (rink.capacity && rink.capacity >= 5000) differentiators.push('major arena');
+  if (rink.league) differentiators.push(`${rink.league} home`);
+  if (rink.surface_type === 'indoor') differentiators.push('indoor');
+  else if (rink.surface_type === 'outdoor') differentiators.push('outdoor');
+  // Fallback differentiator from notes: pull the first short noun phrase
+  // (e.g. 'home of the Al Ain Theebs', 'public skate & lessons'). Capped at
+  // 30 chars so the title still fits in 60. If notes is null, fall through
+  // to the location template.
+  if (differentiators.length === 0 && (rink as any).notes) {
+    const note = ((rink as any).notes as string).trim();
+    // Take the first clause (split on . or , or ' - ') up to 30 chars.
+    const firstClause = note.split(/[.,;\u2014\u2013-]/, 1)[0].trim();
+    if (firstClause && firstClause.length >= 8 && firstClause.length <= 40) {
+      differentiators.push(firstClause.length > 30 ? firstClause.slice(0, 27) + '...' : firstClause);
+    }
+  }
+
   const titleLocParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
-  const titleBase = titleLocParts
-    ? `${rink.name} — ${titleLocParts}`
-    : rink.name;
-  const title = titleBase.length > 60
-    ? titleBase.slice(0, 57) + '...'
-    : titleBase;
+  // If we have a differentiator, use "name | differentiator — city" template
+  // (Google's title pipe convention for attributes). Otherwise fall back to
+  // the location template.
+  let title: string;
+  if (differentiators.length > 0 && titleLocParts) {
+    const tag = differentiators[0];
+    const candidate = `${rink.name} | ${tag} — ${titleLocParts}`;
+    title = candidate.length > 60 ? candidate.slice(0, 57) + '...' : candidate;
+  } else if (titleLocParts) {
+    const candidate = `${rink.name} — ${titleLocParts}`;
+    title = candidate.length > 60 ? candidate.slice(0, 57) + '...' : candidate;
+  } else {
+    title = rink.name;
+  }
+
+  // Description (PR #180b, 2026-08-31): when meta_description is null, build
+  // a richer description from the available anchors instead of truncating
+  // the long blurb. The truncated blurb reads as "..." which kills CTR; a
+  // hand-built 140-155 char description with searchable keywords + a CTA
+  // reads better in SERPs.
+  let description: string;
+  if ((rink as any).meta_description) {
+    description = (rink as any).meta_description;
+  } else {
+    const loc = [rink.city, rink.country].filter(Boolean).join(', ');
+    const sizeTag = rink.ice_size === 'NHL' ? 'NHL-sized'
+      : rink.ice_size === 'Olympic' ? 'Olympic-sized'
+      : rink.ice_size ? `${rink.ice_size} ice`
+      : '';
+    const capacityTag = rink.capacity && rink.capacity >= 5000
+      ? ` ${rink.capacity.toLocaleString()}-seat`
+      : '';
+    const cap1 = `${rink.name}${capacityTag ? ` is a${capacityTag}` : ' is an'} ice rink in ${loc || 'its city'}.`;
+    const cap2 = sizeTag
+      ? `${cap1} ${sizeTag} surface, public skate sessions, lessons, and league play.`
+      : `${cap1} Public skate, lessons, and league play.`;
+    description = cap2.length > 155 ? cap2.slice(0, 152) + '...' : cap2;
+  }
 
   return {
     title,
