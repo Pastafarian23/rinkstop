@@ -938,6 +938,18 @@ const nextConfig = {
       { source: '/directory/teams/ska-st-petersburg', destination: '/directory/teams', permanent: true },
       { source: '/directory/teams/d-sseldorfer-eg', destination: '/directory/teams', permanent: true },
       { source: '/directory/teams/abbottford-canucks', destination: '/directory/teams', permanent: true },
+      // AdSense cleanliness — bare /rinks and /teams return 404 on the live
+      // site; canonical home for those lists is /directory/{rinks,teams}.
+      // 301 to the directory pages so any inbound link, sitemap discovery,
+      // or accidental bookmark lands on real content rather than the 404
+      // chrome (which still includes the off-season strip + nav + footer
+      // but no body content — a "broken page" signal AdSense reviewers
+      // flag when crawling sitemap-discovered URLs).
+      //
+      // 2026-09-01 — added to close the gap flagged in the
+      // memory/adsense-resubmit-checklist-2026-09-01.md audit.
+      { source: '/rinks', destination: '/directory/rinks', permanent: true },
+      { source: '/teams', destination: '/directory/teams', permanent: true },
     ];
   },
 };
