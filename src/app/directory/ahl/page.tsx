@@ -149,6 +149,47 @@ export default function AHLPage() {
       </div>
     
       <LeagueTeams leagueId="b05d6d26-d5d6-4cfd-a48b-f5646fa7d611" leagueSlug="ahl" leagueName="AHL" />
+
+      {/* AHL HISTORY — added PR #183 (2026-08-31). Unique content the individual
+          team pages can't match: founding, structural changes, Calder Cup
+          history. GSC 90d: /directory/ahl had 1,601 impressions but 0 clicks
+          at pos 33.6. The aggregator was under-ranked vs individual team
+          pages competing for the same "AHL" queries. Substance, not padding. */}
+      <section style={{ marginTop: '3rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>AHL HISTORY</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The American Hockey League was founded in <strong style={{ color: '#fff' }}>1936</strong>, eight years after the predecessor Canadian-American Hockey League folded. The AHL began with six teams in the northeastern United States and grew through the 1940s and 1950s to become the dominant minor professional league in North America. In the modern era, the AHL operates as the <strong style={{ color: '#fff' }}>top developmental circuit for the NHL</strong>: every NHL team except the Vancouver Canucks and Edmonton Oilers fields at least one AHL affiliate.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The AHL's structure has changed significantly since 1936. Through the 1990s and 2000s the league absorbed several rival circuits — the International Hockey League in 2001, and the East Coast Hockey League as a development tier in 2003 — and consolidated its footprint to 32 teams. Today the AHL operates <strong style={{ color: '#fff' }}>two conferences (Eastern, Western)</strong> split into <strong style={{ color: '#fff' }}>four divisions</strong>, with the playoff winner awarded the <strong style={{ color: '#fff' }}>Calder Cup</strong>, named for Frank Calder, the first president of the NHL.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            <strong style={{ color: '#fff' }}>NHL Pipeline:</strong> The AHL is where NHL first- and second-year pros, AHL-signed veterans, and top junior graduates develop. Most NHL rosters include 3-5 AHL graduates on any given night. The Hershey Bears hold the record for most Calder Cup titles (12); the Springfield Indians, Rochester Americans, and Hershey Bears dominated the league's first half-century. The Springfield Thunderbirds are the league's most recent expansion franchise (2016).
+          </p>
+          <p>
+            The AHL's <strong style={{ color: '#fff' }}>regular season runs from October to April</strong>, with 72 games per team. The Calder Cup Playoffs begin in late April and run through June. Calder Cup champions since 2010 include the Hershey Bears (2010), Binghamton Senators (2011), Norfolk Admirals (2012), Grand Rapids Griffins (2013, 2017), Texas Stars (2014), Manchester Monarchs (2015), Lake Erie Monsters (2016), Toronto Marlies (2018), Charlotte Checkers (2019), Dallas Stars (2020 cancelled due to COVID), Hershey Bears (2024, 2025), and the Abbotsford Canucks (2026).
+          </p>
+        </div>
+      </section>
+
+      {/* HOW THE AHL WORKS — format / structure content individual team
+          pages don't carry. Helps rank for "AHL schedule", "AHL standings",
+          "AHL format", "how many AHL teams" queries. */}
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW THE AHL WORKS</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The AHL regular season runs from the first weekend of October through mid-April. Each of the 32 teams plays 72 games: 36 home, 36 away. The schedule includes intra-division games (more frequent), inter-division games, and inter-conference games. Two points are awarded for a win, one for an overtime or shootout loss, and zero for a regulation loss.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The top four teams in each division qualify for the Calder Cup Playoffs, which run through June. All rounds are best-of-seven. The divisional semifinals, divisional finals, conference finals, and Calder Cup Finals follow the standard North American playoff format. Overtime in the AHL is five minutes of 3-on-3 hockey followed by a shootout — same as the NHL.
+          </p>
+          <p>
+            AHL rosters are capped at <strong style={{ color: '#fff' }}>20 players</strong> for the standard playing roster plus an unlimited number of players on the reserve list. NHL teams that are part of the AHL pipeline can move players between the NHL and AHL freely under the NHL/AHL transfer agreement, signed in 1995. This means an AHL game on any given night will feature a mix of prospects, NHLers on conditioning stints, AHL-only veterans, and tryout players — and the rosters can change between periods.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
