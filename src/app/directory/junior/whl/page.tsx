@@ -109,6 +109,40 @@ export default function WHLPage() {
       </div>
     
       <LeagueTeams leagueId="46f49db9-e63d-407d-a99c-802f87576ab2" leagueSlug="whl" leagueName="WHL" />
+
+      {/* WHL HISTORY + MEMORIAL CUP — added PR #183 (2026-08-31). GSC 90d:
+          /directory/junior/whl had 340 impressions but 0 clicks at pos 21.9.
+          Individual team pages (Prince Albert Raiders, Medicine Hat Tigers)
+          out-ranked the hub for "WHL teams" queries. Substance the hub can
+          own: WHL's place in the CHL, Memorial Cup format, NHL pipeline
+          context. */}
+      <section style={{ marginTop: '3rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHL HISTORY</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The Western Hockey League was founded in <strong style={{ color: '#fff' }}>1966</strong> as the Canadian Major Junior Hockey League's western counterpart. The WHL began with seven teams in western Canada and has since grown to 22 teams across four divisions: the B.C. Division, the U.S. Division (Spokane Chiefs, Tri-City Americans, Wenatchee Wild, Everett Silvertips, Seattle Thunderbirds), the Central Division, and the East Division.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The WHL operates as the western leg of the <strong style={{ color: '#fff' }}>Canadian Hockey League (CHL)</strong>, alongside the Ontario Hockey League (OHL) and the Quebec Maritimes Junior Hockey League (QMJHL). The three leagues share the <strong style={{ color: '#fff' }}>Memorial Cup</strong>, awarded annually to the CHL champion. WHL teams have won the Memorial Cup 17 times, most recently the Edmonton Oil Kings in 2022. The Lethbridge Hurricanes, Kamloops Blazers, Spokane Chiefs, Medicine Hat Tigers, and Seattle Thunderbirds are also past Memorial Cup winners.
+          </p>
+          <p>
+            The WHL's <strong style={{ color: '#fff' }}>NHL alumni list</strong> is unmatched in major junior hockey. WHL graduates have won 11 of the last 20 NHL Rookie of the Year Awards, including most recent winners Connor Bedard (Everett Silvertips, 2023), Mason McTavish (Hamilton Bulldogs → OHL, 2022), Kirill Kaprizov (Krasnoyarsk → Russia, 2021), and Cale Makar (Brooks Bandits, 2020). Other notable WHL alumni include Jarome Iginla, Mark Messier, Brett Hull, Luc Robitaille, and more than 200 current NHL players.
+          </p>
+        </div>
+      </section>
+
+      {/* MEMORIAL CUP FORMAT — what the postseason looks like, who plays */}
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>MEMORIAL CUP FORMAT</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The WHL regular season runs from late September through late March. Each team plays 68 games, with the top 8 teams in each conference qualifying for the WHL Playoffs. The first two rounds of the WHL Playoffs are played within each conference; the conference champions then meet in the WHL Championship Series, a best-of-seven.
+          </p>
+          <p>
+            The WHL Champion advances to the <strong style={{ color: '#fff' }}>Memorial Cup</strong>, the four-team tournament that concludes the CHL season each May. The Memorial Cup is a round-robin among the WHL, OHL, and QMJHL champions plus a host team, with the top four teams advancing to a single-elimination semifinal and final. The Memorial Cup is widely considered the most prestigious trophy in Canadian junior hockey.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
