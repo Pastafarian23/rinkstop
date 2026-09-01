@@ -228,6 +228,42 @@ export default async function KHLPage() {
       </section>
 
       <LeagueTeams leagueId="a08f6dac-eb1f-48b6-a11b-56fbb5642752" leagueSlug="khl" leagueName="KHL" />
+
+      {/* KHL HISTORY — added PR #183 (2026-08-31). GSC 90d: /directory/khl had
+          2,300 impressions but only 5 clicks at pos 15.1. Individual team
+          pages dominated the same queries. Substance only the league hub
+          can carry: founding context, geopolitical shifts, the Gagarin Cup
+          era. */}
+      <section style={{ marginTop: '3rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem', fontWeight: 700 }}>KHL HISTORY</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The Kontinental Hockey League was founded in <strong style={{ color: '#fff' }}>2008</strong> as the successor to the Russian Superleague (RSL), the top professional ice hockey league in Russia since 1996. The KHL was created with a broader Eurasian ambition: to bring together the best professional clubs from Russia, Belarus, Kazakhstan, and other former Soviet states into a single top-flight competition, modeled on the NHL's structure but operating across multiple time zones and languages.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The first KHL season (2008-09) featured 24 teams across four divisions: Bobrov, Tarasov, Kharkiv, and Trofey. The league has since contracted — the Kharkiv division was eliminated in 2014-15 as Ukrainian clubs were withdrawn amid the political crisis; the Kunlun Red Star (China) was added in 2016-17; and a number of Russian regional clubs have rotated in and out of the league as the structure has stabilized. Today the KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China.
+          </p>
+          <p>
+            The <strong style={{ color: '#fff' }}>Gagarin Cup</strong>, named after cosmonaut Yuri Gagarin, has been awarded to the KHL playoff champion since the 2008-09 season. Metallurg Magnitogorsk has won the Gagarin Cup three times (2014, 2016, 2024); SKA Saint Petersburg has won twice (2015, 2017); CSKA Moscow has won twice (2019, 2022); Ak Bars Kazan has won twice (2009, 2018); and Salavat Yulaev Ufa (2011), Dynamo Moscow (2012), and Lokomotiv Yaroslavl are also past champions. The KHL is widely considered the second-strongest professional league in the world after the NHL.
+          </p>
+        </div>
+      </section>
+
+      {/* HOW THE KHL WORKS — format / schedule / roster structure */}
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem', fontWeight: 700 }}>HOW THE KHL WORKS</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The KHL regular season runs from September 1 to late February, with each team playing 68 games. The KHL schedule is structured to balance geographic travel: each team plays its division rivals 4 times, and teams in the same conference play each other 2-3 times. The schedule is published in mid-summer and includes both home-and-home series and three-game road trips.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The top 8 teams in each conference qualify for the Gagarin Cup Playoffs, which run from March through April. All rounds are best-of-seven. The conference semifinals, conference finals, and Gagarin Cup Final follow standard playoff format. Overtime in the KHL is 5 minutes of 4-on-4 hockey, longer than the NHL's 3-on-3, and shootouts (5 rounds) are used in regular-season games that remain tied.
+          </p>
+          <p>
+            The KHL roster cap is <strong style={{ color: '#fff' }}>28 players</strong> for the standard playing roster, with up to 5 import players allowed. Import slots are the league's most-sought-after position; the cap is intended to balance the development of Russian and Belarusian players with the high quality of foreign imports, particularly Finnish, Swedish, Czech, and Canadian players who have moved to the KHL in recent years for higher salaries than the NHL entry-level contracts can offer.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
