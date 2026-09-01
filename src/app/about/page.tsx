@@ -5,14 +5,112 @@ import { getDirectoryCounts } from '@/lib/directory-counts';
 export const metadata: Metadata = {
   title: 'About RinkStop | The World\'s Hockey Directory',
   description: 'RinkStop is a global hockey directory connecting players, coaches, fans, and teams worldwide. Learn about our mission to organize and grow hockey at every level.',
+  // AdSense reviewer reads the E-E-A-T signals on this page. Adding
+  // alternates + explicit robots so the page is unambiguously indexable
+  // and the Person schema below can be matched against the founder
+  // (Arnel Larracas) listed elsewhere on the site.
+  alternates: { canonical: 'https://rinkstop.com/about' },
+  robots: { index: true, follow: true },
 };
 
 export const revalidate = 300;
 
 export default async function AboutPage() {
   const counts = await getDirectoryCounts();
+
+  // E-E-A-T structured data:
+  //  - Person (founder/operator, Arnel Larracas) for reviewability
+  //  - Organization (RinkStop) with founder + address + contactPoint
+  //  - WebSite + WebPage breadcrumb-style entity for the About page
+  //
+  // AdSense reviewers (and Google Search quality raters) treat named
+  // authorship with a verifiable social profile as a Trust signal. The
+  // sameAs array on Person points at the LinkedIn profile that article
+  // pages already link to, so the person entity matches between the
+  // blog (article:author) and the about page.
+  const founder = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: 'Arnel Larracas',
+    jobTitle: 'Founder, RinkStop',
+    description: 'Founder of RinkStop. Hockey coach with 20+ years of experience across Chicago, Cebu, and non-traditional markets.',
+    url: 'https://rinkstop.com/about',
+    sameAs: [
+      'https://www.linkedin.com/in/arnellarracas',
+    ],
+    worksFor: {
+      '@type': 'Organization',
+      name: 'RinkStop',
+      url: 'https://rinkstop.com',
+    },
+  };
+  const organization = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'RinkStop',
+    url: 'https://rinkstop.com',
+    legalName: 'RinkStop',
+    alternateName: 'RinkStop Hockey Directory',
+    foundingDate: '2018',
+    founder: { '@id': 'https://rinkstop.com/about#founder' },
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '709 S Riverside Dr',
+      addressLocality: 'Villa Park',
+      addressRegion: 'IL',
+      postalCode: '60181',
+      addressCountry: 'US',
+    },
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        email: 'support@rinkstop.com',
+        url: 'https://rinkstop.com/contact',
+        areaServed: 'Worldwide',
+        availableLanguage: ['English'],
+      },
+      {
+        '@type': 'ContactPoint',
+        contactType: 'editorial',
+        email: 'support@rinkstop.com',
+        url: 'https://rinkstop.com/corrections',
+        areaServed: 'Worldwide',
+        availableLanguage: ['English'],
+      },
+    ],
+    description: "The world's hockey directory. Rinks, teams, players, and leagues — searchable by city, state, or country.",
+    knowsAbout: [
+      'Ice hockey',
+      'NHL',
+      'AHL',
+      'KHL',
+      'PWHL',
+      'NCAA hockey',
+      'IIHF',
+      'Junior hockey',
+      'Hockey coaching',
+      'Hockey analytics',
+    ],
+  };
+  const webPage = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: 'About RinkStop',
+    url: 'https://rinkstop.com/about',
+    isPartOf: { '@type': 'WebSite', url: 'https://rinkstop.com', name: 'RinkStop' },
+    description: 'About RinkStop: mission, who we are, what we cover, and editorial standards.',
+  };
+
+  const aboutJsonLd = [founder, organization, webPage];
+
   return (
-    <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
+      />
+      <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
       <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
         <Link href="/" style={{ color: '#555' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -140,5 +238,6 @@ export default async function AboutPage() {
         </p>
       </div>
     </main>
+    </>
   );
 }
