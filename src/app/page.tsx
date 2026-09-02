@@ -225,8 +225,14 @@ export default async function Home() {
         foundingDate: '2018',
         founder: {
           '@type': 'Person',
+          '@id': 'https://rinkstop.com/#founder',
           name: 'Arnel Larracas',
           jobTitle: 'Founder',
+          worksFor: { '@id': 'https://rinkstop.com/#organization' },
+          url: 'https://rinkstop.com/about',
+          sameAs: ['https://www.wikidata.org/wiki/Q140956126'],
+          nationality: 'US',
+          description: 'Founder of RinkStop. Hockey coach with 20+ years of experience playing in Chicago and coaching internationally.',
         },
         address: {
           '@type': 'PostalAddress',
@@ -242,8 +248,23 @@ export default async function Home() {
           { '@type': 'Country', name: 'Canada' },
         ],
         knowsAbout: [
-          'Ice Hockey', 'Hockey Teams', 'Ice Rinks', 'Hockey Leagues',
-          'Hockey Players', 'NHL', 'NCAA Hockey', 'Junior Hockey', 'PWHL',
+          // Discipline
+          'Ice Hockey',
+          // Entity types we cover (verified 2026-09-02: 1,917 rinks, 3,243 teams, 6,351 players, 303 leagues, 85 federations)
+          'Hockey Rinks', 'Ice Rinks', 'Hockey Teams', 'Hockey Players', 'Hockey Leagues', 'Hockey Federations',
+          // Major North American leagues
+          'NHL', 'AHL', 'ECHL', 'PWHL', 'NCAA Hockey', 'USports Hockey',
+          // Major European leagues
+          'KHL', 'SHL', 'HockeyAllsvenskan', 'Liiga', 'Mestis', 'DEL', 'DEL2', 'Extraliga', '1. liga', 'ICE Hockey League',
+          // Junior leagues
+          'CHL', 'OHL', 'WHL', 'QMJHL', 'USHL', 'NAHL', 'BCHL', 'AJHL',
+          // Women's hockey
+          'Womens Hockey', 'NCAA Womens Hockey', 'PWHL',
+          // Governance and emerging markets
+          'IIHF', 'IIHF Member Federations', 'Olympic Hockey',
+          'Hockey in the Philippines', 'Hockey in the UAE', 'Hockey in Thailand', 'Hockey in South Africa', 'Hockey in Brazil',
+          // Equipment and operations
+          'Hockey Equipment', 'Hockey Skates', 'Hockey Sticks', 'Hockey Coaching',
         ],
         sameAs: [
           'https://www.wikidata.org/wiki/Q140955752',
