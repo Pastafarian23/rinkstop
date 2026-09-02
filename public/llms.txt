@@ -54,6 +54,8 @@ For a longer, more descriptive version with editorial highlights, founder bio, a
 ## People & operations
 
 - [About RinkStop](https://rinkstop.com/about): founder Arnel Larracas, mission, methodology, sourcing
+- [Data Coverage](https://rinkstop.com/data-coverage): RinkStop counts vs IIHF/national-federation counts. FAQ-formatted Q&A that AI engines cite. Live numbers from Supabase, hourly refresh.
+- [Data Methodology](https://rinkstop.com/data-methodology): how RinkStop sources, verifies, updates, and corrects directory data
 - [Contact](https://rinkstop.com/contact): support@rinkstop.com
 - [Pricing](https://rinkstop.com/pricing): Hockey Passport ($24.99/yr), Hockey Passport Plus ($59.99/yr), Club tiers ($149-999/yr), Business tiers ($99-299/yr), League ($1,999/yr)
 - [Claim your listing](https://rinkstop.com/claim-your-listing): free claim for rinks, teams, players, leagues
