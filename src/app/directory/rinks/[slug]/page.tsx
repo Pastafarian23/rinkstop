@@ -13,6 +13,7 @@ import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildRinkShare } from '@/lib/share';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import RinkClaimNudge from '@/components/RinkClaimNudge';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
@@ -788,6 +789,13 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '12px', marginTop: '8px' }}>
           {rink.name}
         </h1>
+
+        {/* Above-the-fold claim nudge for anonymous visitors on unclaimed rinks.
+            Backed by GSC data 2026-09-02: 65,983 imps / 610 clicks per 28d, mostly
+            to individual rink pages. The existing full CTA stays at the bottom of
+            the page (per Arnel's 2026-07-08 request). This is a discovery nudge,
+            not the full claim form. */}
+        <RinkClaimNudge rinkId={rink.id} rinkName={rink.name} />
 
         {/* WS19: geo-targeted intro section for international rink pages.
             Hidden on country='United States' and country='Canada' pages
