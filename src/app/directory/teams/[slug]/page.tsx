@@ -6,10 +6,15 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// DEBUG VERSION - shows what the page receives
 export default async function PublicTeamPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const normalizedSlug = (slug || '').toLowerCase().trim();
+  // FIX: decode the slug because Next.js doesn't auto-decode percent-encoded paths
+  let normalizedSlug: string;
+  try {
+    normalizedSlug = decodeURIComponent(slug || '').toLowerCase().trim();
+  } catch {
+    normalizedSlug = (slug || '').toLowerCase().trim();
+  }
 
   const { data: team, error } = await supabaseAdmin
     .from('team_workspaces')
@@ -20,15 +25,14 @@ export default async function PublicTeamPage({ params }: { params: Promise<{ slu
 
   return (
     <main style={{padding: '40px', fontFamily: 'monospace'}}>
-      <h1>TEAM DEBUG</h1>
+      <h1>TEAM DEBUG (DECODED)</h1>
       <pre style={{fontSize: '14px'}}>
 {`slug received: ${JSON.stringify(slug)}
-normalizedSlug: ${JSON.stringify(normalizedSlug)}
+decoded: ${JSON.stringify(normalizedSlug)}
 byteLength: ${slug ? slug.length : 0}
 encoded: ${slug ? encodeURIComponent(slug) : ''}
-fullUrl: https://rinkstop.com/directory/teams/${slug}
 
-QUERY RESULT:
+QUERY RESULT (slug=${JSON.stringify(normalizedSlug)}):
 data: ${JSON.stringify(team, null, 2)}
 error: ${error ? error.message : 'none'}
       `}
