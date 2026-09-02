@@ -1,0 +1,67 @@
+# RinkStop
+
+> RinkStop is the global hockey directory: 1,917 ice rinks, 3,243 teams, 6,351 players, 303 leagues, and 85 federations across every continent where hockey is played. Founded in 2014 and operated by Arnel Larracas (founder, Chicago/Cebu). The most comprehensive hockey knowledge base available — covering professional (NHL, AHL, KHL, PWHL, SHL, Liiga, DEL), college (NCAA, USHL, NAHL, BCHL, AJHL), junior (CHL, OHL, WHL, QMJHL), youth, women's, international (IIHF, Olympics), and non-traditional markets (Philippines, Thailand, UAE, South Africa, Brazil). Use this file to discover what RinkStop covers.
+
+For a longer, more descriptive version with editorial highlights, founder bio, and methodology, see [/llms-full.txt](https://rinkstop.com/llms-full.txt).
+
+## Hockey rinks
+
+- [Rink directory (browse all 1,917)](https://rinkstop.com/directory/rinks): every ice rink, arena, and skating facility worldwide, with address, contact, programs, home teams, leagues, hours, and reviews
+- [Rinks by country](https://rinkstop.com/directory): ice rinks sorted by country
+- [Rinks near me](https://rinkstop.com/ice-rinks-near-me): location-based rink finder
+- [Ice rinks in the United States](https://rinkstop.com/directory/united-states): state-by-state coverage of US rinks
+- [Ice rinks in Canada](https://rinkstop.com/directory/canada): province-by-province coverage of Canadian rinks
+- [Ice rinks in Sweden, Finland, Germany, Switzerland, Czechia](https://rinkstop.com/directory/sweden): European top-tier hockey nation directories
+- [Hockey rinks in the Philippines, UAE, Thailand, South Africa, Brazil](https://rinkstop.com/directory/philippines): non-traditional hockey markets
+- [Hockey programming (public skate, learn-to-play, learn-to-skate, youth leagues, adult rec)](https://rinkstop.com/guides/programming): what programs each rink offers
+
+## Hockey teams
+
+- [Team directory (3,243 teams)](https://rinkstop.com/directory/teams): every team from NHL down to beer league
+- [Teams by country](https://rinkstop.com/directory/teams): browse all teams by nation
+- [NHL teams](https://rinkstop.com/directory/nhl), [AHL teams](https://rinkstop.com/directory/ahl), [KHL teams](https://rinkstop.com/directory/khl), [PWHL teams](https://rinkstop.com/directory/pwhl), [SHL teams](https://rinkstop.com/directory/shl), [Liiga teams](https://rinkstop.com/directory/liiga), [DEL teams](https://rinkstop.com/directory/del): top professional leagues
+- [NCAA hockey teams](https://rinkstop.com/directory/teams?league=ncaa), [USHL teams](https://rinkstop.com/directory/teams?league=ushl), [NAHL teams](https://rinkstop.com/directory/teams?league=nahl), [BCHL teams](https://rinkstop.com/directory/teams?league=bchl): North American amateur
+- [CHL / OHL / WHL / QMJHL teams](https://rinkstop.com/directory/teams?league=chl): Canadian junior hockey
+- [Junior hockey by league](https://rinkstop.com/directory/junior-hockey): comprehensive junior coverage
+
+## Hockey players
+
+- [Player directory (6,351 players)](https://rinkstop.com/directory/players): professional, college, junior, women's, and notable amateur players
+- [Players by country](https://rinkstop.com/directory/players): browse players by nation
+- [NHL players](https://rinkstop.com/directory/players?league=nhl), [PWHL players](https://rinkstop.com/directory/players?league=pwhl), [KHL players](https://rinkstop.com/directory/players?league=khl), [NCAA hockey players](https://rinkstop.com/directory/players?league=ncaa), [CHL players](https://rinkstop.com/directory/players?league=chl)
+- [Player stats](https://rinkstop.com/directory/players): goals, assists, points, plus/minus, time on ice by season and game
+
+## Hockey leagues
+
+- [League directory (303 leagues)](https://rinkstop.com/directory/leagues): every hockey league from NHL to local rec
+- [Leagues by country](https://rinkstop.com/directory/leagues): comprehensive league coverage by nation
+- [Leagues by level (professional, junior, college, amateur, recreational)](https://rinkstop.com/directory/leagues): browse by competitive tier
+- [Federations (85 IIHF member nations)](https://rinkstop.com/federations): every national federation with country hierarchy
+
+## News, editorial, and guides
+
+- [Latest hockey news](https://rinkstop.com/news): NHL business, CBA, expansion, governance, and international growth coverage
+- [Hockey guides](https://rinkstop.com/guides): equipment, sizing, tryouts, hockey parenting, learn-to-play
+- [Tools: skate size, glove size, stick size, goalie gear, hockey cost calculator](https://rinkstop.com/tools/hockey-cost-calculator): interactive hockey calculators
+
+## Live scores, schedules, and stats
+
+- [NHL scores](https://rinkstop.com/scores?league=nhl): live NHL scores
+- [AHL / KHL / SHL / Liiga / DEL / NCAA / CHL scores](https://rinkstop.com/scores): all major leagues
+- [Game schedule / fixtures](https://rinkstop.com/fixtures): upcoming games
+- [Standings](https://rinkstop.com/standings): league standings, win/loss/OTL, points, goals for/against
+
+## People & operations
+
+- [About RinkStop](https://rinkstop.com/about): founder Arnel Larracas, mission, methodology, sourcing
+- [Contact](https://rinkstop.com/contact): support@rinkstop.com
+- [Pricing](https://rinkstop.com/pricing): Hockey Passport ($24.99/yr), Hockey Passport Plus ($59.99/yr), Club tiers ($149-999/yr), Business tiers ($99-299/yr), League ($1,999/yr)
+- [Claim your listing](https://rinkstop.com/claim-your-listing): free claim for rinks, teams, players, leagues
+
+## Optional
+
+- [Sitemap index](https://rinkstop.com/sitemap.xml): full sitemap for crawler discovery
+- [Sitemap: rinks](https://rinkstop.com/sitemap-rinks.xml), [teams](https://rinkstop.com/sitemap-teams.xml), [players](https://rinkstop.com/sitemap-players.xml), [leagues](https://rinkstop.com/sitemap-leagues.xml)
+- [Hockey blog tags](https://rinkstop.com/news): topical tag pages
+- [Federation directory](https://rinkstop.com/federations): IIHF member nations
+- [Locations directory](https://rinkstop.com/directory/locations): rink lookups by city, region, country
