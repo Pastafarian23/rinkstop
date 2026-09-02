@@ -205,3 +205,32 @@ ALTER TABLE public.stamps
 -- Drop new consistency CHECK (re-created via the migration's drop-constraint pattern in reverse)
 -- (Roll back the CHECK extensions manually if needed; values will go unused.)
 ```
+
+---
+
+## 2026-09-02 — `2026-08-26_fix_rls_disabled.sql` (was never applied — replaced)
+
+**Applied:** 2026-09-02T09:45:00Z (Wed)
+**Method:** `POST /v1/projects/yszheonqyyskkjoxoexk/database/query` via node, using Management API PAT
+**Trigger:** Supabase security alert email (2026-08-31 issue date) — 6 tables publicly accessible
+
+**Root cause:** The migration file `2026-08-26_fix_rls_disabled.sql` existed on disk but was never applied. It also contained stale column references (`player_team_history.user_id` → should be `player_id`; `team_name_review.submitted_by_user_id` → should be `requested_by`).
+
+**What this migration fixed (6 tables):**
+- `rink_owners` — RLS enabled + SELECT policy for owners + approved claimants
+- `player_team_history` — RLS enabled + public read + auth-insert policy
+- `team_aliases` — RLS enabled + public read + service_role write-only
+- `team_locations` — RLS enabled + public read + auth insert
+- `team_name_review` — RLS enabled + requester read + service_role full
+- `rinks_places_cache` — RLS enabled + public read + service_role write
+
+**Post-apply verified:**
+- `pg_tables` query: 0 user-tables with `rowsecurity=false` (spatial_ref_sys excluded — PostGIS internal, not user data)
+- 11 policies created across 6 tables
+- `claims.entity_id` cast to `text` in rink_owners policy (entity_id is TEXT in our schema)
+- `auth.uid()::text` used consistently for TEXT user_id columns (rink_owners, team_name_review)
+- `auth.uid()::text = player_id` for player_team_history (player_id is UUID)
+
+**Note:** The on-disk migration file `2026-08-26_fix_rls_disabled.sql` was replaced in-memory with corrected column references before apply. The file on disk still has the old/broken version — it should be updated to match the corrected SQL.
+
+**Cleanup:** temp file `workspace/_fix_rls_6tables.sql` should be deleted after ledger update.
