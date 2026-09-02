@@ -30,7 +30,6 @@ async function getCounts() {
     supabaseAdmin.from('players').select('*', { count: 'exact', head: true }),
     supabaseAdmin.from('leagues').select('*', { count: 'exact', head: true }),
     // IIHF member federations + the IIHF itself = 85 rows; member nations are 84.
-<<<<<<< HEAD
     supabaseAdmin.from('federations').select('*', { count: 'exact', head: true }).not('country_code', 'is', null),
     supabaseAdmin.from('rinks').select('*', { count: 'exact', head: true }).eq('country', 'United States'),
     supabaseAdmin.from('rinks').select('*', { count: 'exact', head: true }).eq('country', 'Canada'),
