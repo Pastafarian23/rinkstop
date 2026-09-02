@@ -219,6 +219,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PublicTeamPage({ params }: PageProps) {
   const { slug } = await params;
   const normalizedSlug = (slug || '').toLowerCase().trim();
+  console.log('[TEAM_DEBUG] slug received:', JSON.stringify(slug), 'normalized:', JSON.stringify(normalizedSlug), 'byteLen:', slug ? slug.length : 0, 'encoded:', slug ? encodeURIComponent(slug) : '');
   if (!normalizedSlug) notFound();
 
   // Workspace lookup (service role — pre-existing RLS recursion makes anon
