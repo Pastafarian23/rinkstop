@@ -45,13 +45,25 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const league = await getLeague(id);
+  let teamCount: number | undefined =
+    typeof league?.team_count === 'number' ? league.team_count : undefined;
+  // 2026-09-03 PR #195 follow-up: /api/leagues doesn't return team_count.
+  // Query Supabase directly for the count so the title can include it.
+  if (league && teamCount === undefined) {
+    try {
+      const { count } = await supabaseAdmin
+        .from('teams')
+        .select('*', { count: 'exact', head: true })
+        .eq('league_id', league.id)
+        .eq('is_active', true);
+      if (typeof count === 'number') teamCount = count;
+    } catch {
+      // leave undefined, fallback path handles it
+    }
+  }
   if (league) {
     const country = league.country ? ` in ${league.country}` : '';
     const level = league.level ? `${(league.level as string).replace(/_/g, ' ')} ` : '';
-    const teamCount =
-      typeof league.team_count === 'number'
-        ? league.team_count
-        : undefined;
     // 2026-09-03 PR #195: tightened title to 50-60 chars with season + count.
     // Old: "${league.name} — ${level}ice hockey league${country}" (variable, often 60-80+ chars, truncated).
     // New: "${name} 2026 — N teams" with fallback for thin leagues.
