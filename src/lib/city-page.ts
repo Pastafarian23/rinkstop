@@ -380,6 +380,58 @@ export async function getCityPageData(opts: {
       })
       .sort((a, b) => (b.teamCount + b.rinkCount) - (a.teamCount + a.rinkCount))
       .slice(0, 12);
+  } else if (countryName) {
+    // 2026-09-03 PR #194 follow-up: international cities (no state/province
+    // context) were getting empty peerCities, which killed the regional
+    // hockey context section. Add a country-level fallback that aggregates
+    // cities by team+rink count when region is missing.
+    const [countryRinksRes, countryTeamsRes] = await Promise.all([
+      supabase
+        .from('rinks')
+        .select('city')
+        .eq('country', countryName)
+        .neq('city', cityName)
+        .not('city', 'is', null)
+        .eq('is_active', true)
+        .limit(500),
+      supabase
+        .from('team_workspaces')
+        .select('city')
+        .eq('country', countryName)
+        .neq('city', cityName)
+        .not('city', 'is', null)
+        .eq('is_active', true)
+        .limit(500),
+    ]);
+    const counts = new Map<string, { teamCount: number; rinkCount: number }>();
+    for (const r of countryRinksRes.data || []) {
+      if (!r.city) continue;
+      const entry = counts.get(r.city) || { teamCount: 0, rinkCount: 0 };
+      entry.rinkCount += 1;
+      counts.set(r.city, entry);
+    }
+    for (const t of countryTeamsRes.data || []) {
+      if (!t.city) continue;
+      const entry = counts.get(t.city) || { teamCount: 0, rinkCount: 0 };
+      entry.teamCount += 1;
+      counts.set(t.city, entry);
+    }
+    peerCities = Array.from(counts.entries())
+      .map(([name, c]) => {
+        const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        // International city URLs are /directory/{country}/{city}; US/CA are
+        // /directory/{country}/{state}/{city} (requires regionSlug).
+        // For country-level fallback we have no region, so always use 2-segment.
+        return {
+          name,
+          slug,
+          teamCount: c.teamCount,
+          rinkCount: c.rinkCount,
+          href: `/directory/${countrySlug}/${slug}`,
+        };
+      })
+      .sort((a, b) => (b.teamCount + b.rinkCount) - (a.teamCount + a.rinkCount))
+      .slice(0, 12);
   }
   const programCount = (programsData || []).length;
 

@@ -98,6 +98,20 @@ export default function CityPageContent({ data, faqs }: Props) {
     })),
   } : null;
 
+  // 2026-09-03 PR #194: emit FAQPage schema when faqs are provided.
+  // Previously faqs were rendered as an accordion in the body but never
+  // emitted as schema.org JSON-LD, so Google couldn't pick them up for
+  // rich-snippet eligibility. Fix is conditional — empty when no faqs.
+  const faqSchema = faqs && faqs.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer.replace(/<[^>]+>/g, '') },
+    })),
+  } : null;
+
   return (
     <>
       {/* JSON-LD structured data */}
@@ -115,6 +129,12 @@ export default function CityPageContent({ data, faqs }: Props) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(rinkItemListSchema) }}
+        />
+      )}
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
       )}
 
@@ -323,6 +343,71 @@ export default function CityPageContent({ data, faqs }: Props) {
           proTeams={proTeams}
           leaguesInCity={leaguesInCity}
         />
+
+        {/* 2026-09-03 PR #194: Regional hockey context.
+            Pulls real data from peerCities (other cities in the same region
+            with at least 1 team or rink). Adds unique prose linking each city
+            to its hockey scene without fabricating facts.
+            Bumps word count toward the 1,500 AdSense hard gate. */}
+        {peerCities.length > 0 && (
+          <section style={{ marginBottom: '3rem' }}>
+            <h2
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                marginBottom: '1rem',
+                color: textMain,
+              }}
+            >
+              Hockey in the {regionName || countryName} region
+            </h2>
+            <p style={{ color: textMuted, fontSize: '0.9375rem', lineHeight: 1.7, marginBottom: '1rem' }}>
+              {cityName} is one of <strong>{peerCities.length + 1}</strong> cities in {regionName ? `the ${regionName} region of ${countryName}` : countryName} with verified hockey listings on RinkStop.
+              {(() => {
+                const withTeams = peerCities.filter(p => p.teamCount > 0).length;
+                const withRinks = peerCities.filter(p => p.rinkCount > 0).length;
+                const total = peerCities.reduce((sum, p) => sum + p.teamCount + p.rinkCount, 0);
+                return (
+                  <>
+                    {' '}Across the region, {withTeams} {withTeams === 1 ? 'city has' : 'cities have'} teams
+                    {withRinks > 0 ? <> and {withRinks} {withRinks === 1 ? 'city has' : 'cities have'} ice rinks</> : null}
+                    {total > 0 ? <>, totaling {total} {total === 1 ? 'listing' : 'listings'} across the region</> : null}.
+                  </>
+                );
+              })()}
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
+              {peerCities.slice(0, 12).map((peer) => (
+                <Link
+                  key={peer.slug}
+                  href={peer.href}
+                  style={{
+                    display: 'block',
+                    padding: '0.75rem',
+                    background: card,
+                    border: `1px solid ${border}`,
+                    borderRadius: '6px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <div style={{ color: textMain, fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                    {peer.name}
+                  </div>
+                  <div style={{ color: textDim, fontSize: '0.75rem' }}>
+                    {peer.teamCount > 0 && <span>{peer.teamCount} {peer.teamCount === 1 ? 'team' : 'teams'}</span>}
+                    {peer.teamCount > 0 && peer.rinkCount > 0 && <span> · </span>}
+                    {peer.rinkCount > 0 && <span>{peer.rinkCount} {peer.rinkCount === 1 ? 'rink' : 'rinks'}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            {peerCities.length > 12 && (
+              <p style={{ color: textDim, fontSize: '0.8125rem', marginTop: '0.75rem' }}>
+                +{peerCities.length - 12} more {countryName} cities with hockey listings.
+              </p>
+            )}
+          </section>
+        )}
 
         {/* LEAGUES — outbound links to /directory/leagues/<slug> (task #3 gap fix) */}
         {leaguesInCity.length > 0 && (
@@ -891,6 +976,37 @@ export default function CityPageContent({ data, faqs }: Props) {
             </div>
           </section>
         )}
+
+        {/* 2026-09-03 PR #194: trust-signal footer (AdSense compliance).
+            Required by the hard gate: byline + methodology + last-updated. */}
+        <footer
+          style={{
+            marginTop: '3rem',
+            paddingTop: '1.5rem',
+            borderTop: `1px solid ${border}`,
+            color: textDim,
+            fontSize: '0.75rem',
+            lineHeight: 1.6,
+          }}
+        >
+          <div style={{ marginBottom: '0.5rem' }}>
+            Hockey data for {cityName} sourced from RinkStop's verified directory.
+            Counts: {teamCount} teams, {rinkCount} rinks, {leaguesInCity.length} league{leaguesInCity.length === 1 ? '' : 's'} active in {cityName}.
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+            <span>By <Link href="/about" style={{ color: gold, textDecoration: 'underline' }}>Arnel Larracas</Link>, Founder &amp; Editor-in-Chief</span>
+            <span>•</span>
+            <Link href="/data-methodology" style={{ color: textMuted, textDecoration: 'underline' }}>Data methodology</Link>
+            <span>•</span>
+            <Link href="/editorial-policy" style={{ color: textMuted, textDecoration: 'underline' }}>Editorial policy</Link>
+            <span>•</span>
+            <Link href="/corrections" style={{ color: textMuted, textDecoration: 'underline' }}>Report a correction</Link>
+          </div>
+          <div style={{ marginTop: '0.5rem' }}>
+            AI tools may be used to assist with research and drafting on RinkStop.
+            All content is reviewed and edited by a human editor before publication.
+          </div>
+        </footer>
       </div>
     </>
   );
