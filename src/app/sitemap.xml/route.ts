@@ -23,6 +23,7 @@ const subSitemaps = [
   'sitemap-leagues.xml',
   'sitemap-locations.xml',
   'sitemap-news.xml',
+  'sitemap-images.xml',
 ];
 
 export async function GET() {
