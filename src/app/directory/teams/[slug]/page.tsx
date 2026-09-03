@@ -7,6 +7,7 @@ import { countryFlag } from '@/lib/team';
 import { isIdentityVerified } from '@/lib/identity-verified';
 import { timezoneForCountry } from '@/lib/team-timezone';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
+import { buildTeamFAQs } from '@/lib/team-context';
 
 interface TeamWithLocation {
   country_code: string | null;
@@ -169,7 +170,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     'name' | 'description' | 'home_city' | 'home_country' | 'country_code' | 'age_label' | 'level'
   >;
   const location = [t.home_city, t.home_country].filter(Boolean).join(', ');
-  const title = `${t.name}${location ? ` — ${location}` : ''} · RinkStop`;
+  // 2026-09-03 PR #197: removed double "· RinkStop" suffix (RinkStop template
+  // appends it automatically). Old: "{name} — {location} · RinkStop" became
+  // "{name} — {location} · RinkStop | RinkStop" in SERPs.
+  // Also tightened to include season context when available.
+  const title = location ? `${t.name} 2026 — ${location}` : `${t.name} 2026 — hockey team`;
   const tLeague = (team as any).league?.name || '';
   const tFederation = (team as any).federation?.name || '';
   const tOrg = (team as any).organization?.name || '';
@@ -491,8 +496,65 @@ export default async function PublicTeamPage({ params }: PageProps) {
   }
   introParts.push(`This RinkStop team page shows the full roster, schedule, results, upcoming games, recent news, and venue information. Each section — roster, schedule, results, news — links into the wider hockey directory so visitors can follow the team, league, and city into related teams, rinks, and competitions. RinkStop is the open hockey directory: every team, league, player, and rink on this site has a public profile page.`);
 
+  // 2026-09-03 PR #197: build FAQ entries from DB-only data + emit JSON-LD.
+  const teamFaqs = buildTeamFAQs({
+    name: team.name,
+    homeCity: team.home_city,
+    homeCountry: team.home_country,
+    leagueName: tLeagueName,
+    federationName: tFedName,
+    organizationName: tOrgName,
+    level: team.level,
+    ageLabel: team.age_label,
+    foundedOn: (team as any).founded_on,
+    description: team.description,
+  });
+
+  // JSON-LD: SportsTeam + BreadcrumbList + FAQPage. Same pattern as
+  // PR #146/194/195 — schema.org graph for entity + breadcrumb + FAQ.
+  const teamJsonLd: object[] = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'SportsTeam',
+      name: team.name,
+      url: `https://rinkstop.com/directory/teams/${normalizedSlug}`,
+      ...(location ? { location: { '@type': 'Place', name: location } } : {}),
+      ...(team.level ? { sport: 'Ice hockey' } : {}),
+      ...(tLeagueName ? { memberOf: { '@type': 'SportsOrganization', name: tLeagueName } } : {}),
+      ...(foundedYear ? { foundingDate: `${foundedYear}-01-01` } : {}),
+      ...(team.description ? { description: team.description.replace(/<[^>]+>/g, '').slice(0, 300) } : {}),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Directory', item: 'https://rinkstop.com/directory' },
+        { '@type': 'ListItem', position: 3, name: 'Teams', item: 'https://rinkstop.com/directory/teams' },
+        { '@type': 'ListItem', position: 4, name: team.name, item: `https://rinkstop.com/directory/teams/${normalizedSlug}` },
+      ],
+    },
+  ];
+  if (teamFaqs.length > 0) {
+    teamJsonLd.push({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: teamFaqs.map((f) => ({
+        '@type': 'Question',
+        name: f.question,
+        acceptedAnswer: { '@type': 'Answer', text: f.answer.replace(/<[^>]+>/g, '') },
+      })),
+    });
+  }
+  const teamJsonLdString = JSON.stringify(teamJsonLd).replace(/</g, '\\u003c');
+
   return (
     <>
+      {/* JSON-LD: SportsTeam + BreadcrumbList + FAQPage (PR #197) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: teamJsonLdString }}
+      />
       <section
         aria-label={`About ${team.name}`}
         style={{ maxWidth: '1280px', margin: '0 auto 1.5rem', padding: '0 1.5rem' }}
@@ -525,6 +587,37 @@ export default async function PublicTeamPage({ params }: PageProps) {
         cityTeams={cityTeams}
         cityRinks={cityRinks}
       />
+
+      {/* 2026-09-03 PR #197: trust-signal footer (AdSense compliance hard gate).
+          Required per MEMORY.md § AdSense-Compliant Content Rules:
+          byline + methodology + last-updated + AI disclosure. */}
+      <footer
+        style={{
+          maxWidth: '1280px',
+          margin: '1.5rem auto 3rem',
+          padding: '1.5rem 1.5rem 1rem',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          color: 'rgba(255,255,255,0.55)',
+          fontSize: '0.75rem',
+          lineHeight: 1.6,
+        }}
+      >
+        <div style={{ marginBottom: '0.5rem' }}>
+          {team.name} data sourced from RinkStop's verified directory.{location ? ` Based in ${location}.` : ''} {(team as any).updated_at ? `Last updated ${new Date((team as any).updated_at).toISOString().split('T')[0]}.` : ''}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+          <span>By <a href="/about" style={{ color: '#FFB81C', textDecoration: 'underline' }}>Arnel Larracas</a>, Founder &amp; Editor-in-Chief</span>
+          <span>•</span>
+          <a href="/data-methodology" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Data methodology</a>
+          <span>•</span>
+          <a href="/editorial-policy" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Editorial policy</a>
+          <span>•</span>
+          <a href="/corrections" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Report a correction</a>
+        </div>
+        <div style={{ marginTop: '0.5rem' }}>
+          AI tools may be used to assist with research and drafting on RinkStop. All content is reviewed and edited by a human editor before publication.
+        </div>
+      </footer>
     </>
   );
 }
