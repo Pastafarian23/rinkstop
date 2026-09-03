@@ -268,7 +268,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, notes, notes_generated, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league')
+    .select('name, slug, city, country, province_state, notes, notes_generated, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league, cover_photo_url')
     .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
@@ -292,7 +292,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       openGraph: {
         title: rink.name,
         type: 'website',
-        ...((rink as any).cover_photo_url ? { images: [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior` }] } : {}),
+        images: (rink as any).cover_photo_url ? [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior` }] : [],
       },
     };
   }
@@ -418,14 +418,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description,
       type: 'website',
       // 2026-09-03 PR #198: include rink cover photo in social previews.
-      // Also emit ImageObject schema on the page body for image search.
-      ...((rink as any).cover_photo_url ? { images: [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}` }] } : {}),
+      // Working pattern verified against /faq + /guides pages: images MUST be
+      // a literal field on openGraph. Conditional spread loses the array
+      // during Next.js 15 metadata serialization.
+      images: (rink as any).cover_photo_url
+        ? [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}` }]
+        : [],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${rink.name}`,
       description,
-      ...((rink as any).cover_photo_url ? { images: [(rink as any).cover_photo_url] } : {}),
+      images: (rink as any).cover_photo_url ? [(rink as any).cover_photo_url] : [],
     },
   };
 }
