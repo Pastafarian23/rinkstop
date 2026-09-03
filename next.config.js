@@ -267,7 +267,9 @@ const nextConfig = {
       // 8 redirect to the /directory/rinks listing because no exact or
       // fuzzy match was found in the DB.
       { source: '/directory/rinks/versowood-arena-heinola', destination: '/directory/rinks/versowood-arena', permanent: true },
-      { source: '/directory/rinks/scheels-arena', destination: '/directory/rinks/scheels-arena-fargo', permanent: true },
+      // 2026-09-03: removed broken redirect /scheels-arena → /scheels-arena-fargo
+      // The target slug was never created in the DB; canonical slug is 'scheels-arena' (verified live 2026-09-03).
+      // Removing the redirect lets /scheels-arena serve 200 directly instead of 308→404.
       { source: '/directory/rinks/td-place', destination: '/directory/rinks/td-place-arena', permanent: true },
       { source: '/directory/rinks/joynext-arena', destination: '/directory/rinks/joynext-arena-rudolf-harbig-halle', permanent: true },
       { source: '/directory/rinks/beijing-world-ice-arena-skating-rink-qinghe-mixc', destination: '/directory/rinks/world-ice-arena', permanent: true },
