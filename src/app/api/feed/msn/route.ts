@@ -1,4 +1,4 @@
-// /feed/msn — MSN-optimized RSS 2.0 feed
+// /api/feed/msn — MSN-optimized RSS 2.0 feed
 //
 // Format requirements (per Microsoft support docs):
 //   - Valid RSS 2.0
@@ -102,7 +102,7 @@ export async function GET() {
   <channel>
     <title>RinkStop Hockey News</title>
     <link>${baseUrl}/news</link>
-    <atom:link href="${baseUrl}/feed/msn" rel="self" type="application/rss+xml"/>
+    <atom:link href="${baseUrl}/api/feed/msn" rel="self" type="application/rss+xml"/>
     <description>Latest hockey news, scores, draft coverage, and original reporting on the global hockey scene. Published by RinkStop, the open hockey directory.</description>
     <language>en-us</language>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
