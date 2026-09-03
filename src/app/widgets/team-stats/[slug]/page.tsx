@@ -1,10 +1,10 @@
-// /embed/team-stats/[slug] — embeddable widget
+// /widgets/team-stats/[slug] — embeddable widget
 //
 // Returns a minimal HTML fragment (not the full app shell) that can be
 // iframed or directly embedded on partner hockey blogs.
 //
 // Usage:
-//   <iframe src="https://rinkstop.com/embed/team-stats/edmonton-oilers"
+//   <iframe src="https://rinkstop.com/widgets/team-stats/edmonton-oilers"
 //           width="400" height="320" frameborder="0"></iframe>
 //
 // This widget shows team record, last 5 games, and links back to the
@@ -113,7 +113,7 @@ footer a { color: #FFB81C; text-decoration: none; }
   <tbody>${gameRows}</tbody>
 </table>
 <footer>
-  Live data via <a href="${baseUrl}/directory/teams/${esc(slug)}" target="_blank" rel="noopener">RinkStop</a> · <a href="${baseUrl}/embed/team-stats/${esc(slug)}" target="_blank" rel="noopener">Embed</a>
+  Live data via <a href="${baseUrl}/directory/teams/${esc(slug)}" target="_blank" rel="noopener">RinkStop</a> · <a href="${baseUrl}/widgets/team-stats/${esc(slug)}" target="_blank" rel="noopener">Embed</a>
 </footer>
 </body>
 </html>`;
