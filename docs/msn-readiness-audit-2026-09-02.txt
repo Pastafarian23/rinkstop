@@ -1,0 +1,131 @@
+MSN Auto-Publishing Audit — 720 news articles
+Generated: 2026-09-03T01:09:50.891Z
+
+MSN-Ready: 13/720 (1.8%)
+
+Issue counts (top 20):
+   689 articles: author="RinkStop"
+    18 articles: no article:published_time
+    18 articles: age>365d
+
+Sample of articles that need attention:
+
+  /news/slovakia-sweden-4-2-2026-05-26-54
+    Body: 2498 chars, Author: RinkStop, PubDate: 2026-06-16T21:31:54.485922+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/montr-al-canadiens-new-jersey-devils-4-3-saturday-april-4-2026-2025021212
+    Body: 3364 chars, Author: RinkStop, PubDate: 2026-06-14T16:03:08.126639+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/new-jersey-devils-detroit-red-wings-5-3-saturday-april-11-2026-2025021265
+    Body: 3432 chars, Author: RinkStop, PubDate: 2026-06-12T16:44:23.832251+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/philadelphia-flyers-winnipeg-jets-7-1-saturday-april-11-2026-2025021272
+    Body: 3450 chars, Author: RinkStop, PubDate: 2026-06-12T16:40:35.243485+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/montr-al-canadiens-tampa-bay-lightning-3-2-friday-april-24-2026-2025030123-834ec0
+    Body: 3273 chars, Author: RinkStop, PubDate: 2026-06-12T16:43:43.180673+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/carolina-hurricanes-philadelphia-flyers-3-2-saturday-may-9-2026-2025030224-b8e0df
+    Body: 3299 chars, Author: RinkStop, PubDate: 2026-06-12T16:44:44.77063+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/youth-hockey-program-costs
+    Body: 3851 chars, Author: Arnel, PubDate: (none)
+    Issues: no article:published_time; age>365d (9999d)
+
+  /news/colorado-eagles-chicago-wolves-2-3-2026-06-02-1029052
+    Body: 2575 chars, Author: RinkStop, PubDate: 2026-06-15T12:05:44.966707+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/montr-al-canadiens-buffalo-sabres-6-2-sunday-may-10-2026-2025030213-a081a1
+    Body: 3462 chars, Author: RinkStop, PubDate: 2026-06-14T16:03:22.26599+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/post-lottery-nhl-draft-who-goes-after-gavin-mckenna
+    Body: 3257 chars, Author: Arnel, PubDate: (none)
+    Issues: no article:published_time; age>365d (9999d)
+
+  /news/buffalo-sabres-montr-al-canadiens-4-2-wednesday-may-6-2026-2025030211-ab224e
+    Body: 3301 chars, Author: RinkStop, PubDate: 2026-06-14T16:03:26.182942+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/colorado-avalanche-minnesota-wild-5-2-tuesday-may-5-2026-2025030232-a8bdea
+    Body: 3425 chars, Author: RinkStop, PubDate: 2026-06-12T16:44:20.639494+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/stanley-cup-final-2026-how-the-hurricanes-and-golden-knights-got-here
+    Body: 15848 chars, Author: RinkStop, PubDate: 2026-06-10T18:36:10.096321+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/carolina-hurricanes-philadelphia-flyers-3-2-monday-may-4-2026-2025030222-b5f3e3
+    Body: 3278 chars, Author: RinkStop, PubDate: 2026-06-12T16:44:37.03353+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/colorado-avalanche-los-angeles-kings-2-1-tuesday-april-21-2026-2025030152
+    Body: 3122 chars, Author: RinkStop, PubDate: 2026-06-15T12:05:13.474932+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/khimik-metallurg-novokuznetsk-0-3-2026-04-27-2468298
+    Body: 2520 chars, Author: RinkStop, PubDate: 2026-06-12T22:13:13.774359+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/metallurg-novokuznetsk-khimik-3-2-2026-05-04-2468301
+    Body: 2513 chars, Author: RinkStop, PubDate: 2026-06-12T22:12:49.307019+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/khimik-magnitka-magnitogorsk-2-1-2026-04-22-2466531
+    Body: 2494 chars, Author: RinkStop, PubDate: 2026-06-12T21:30:17.044267+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/eisb-ren-berlin-k-lner-haie-1-4-2026-04-20-2465989
+    Body: 2525 chars, Author: RinkStop, PubDate: 2026-06-12T21:30:21.94851+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/eisb-ren-berlin-adler-mannheim-1-4-2026-05-03-2469255
+    Body: 2512 chars, Author: RinkStop, PubDate: 2026-06-14T16:26:49.981992+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/eisb-ren-berlin-adler-mannheim-1-4-2026-05-03-2469255-5d433a
+    Body: 2533 chars, Author: RinkStop, PubDate: 2026-06-14T16:26:55.848252+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/eisb-ren-berlin-adler-mannheim-1-5-2026-04-28-2467476
+    Body: 2529 chars, Author: RinkStop, PubDate: 2026-06-12T21:23:48.573452+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/adler-mannheim-eisb-ren-berlin-5-1-2026-04-26-2467475-afbd98
+    Body: 2557 chars, Author: RinkStop, PubDate: 2026-06-12T22:13:30.464957+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/adler-mannheim-eisb-ren-berlin-3-4-2026-04-30-2467477-15df57
+    Body: 2542 chars, Author: RinkStop, PubDate: 2026-06-12T21:23:36.381803+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/anaheim-ducks-vegas-golden-knights-4-3-sunday-may-10-2026-2025030244-ba1424
+    Body: 3455 chars, Author: RinkStop, PubDate: 2026-06-12T16:44:51.204482+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/carolina-hurricanes-columbus-blue-jackets-5-1-thursday-april-2-2026-2025021197
+    Body: 3359 chars, Author: RinkStop, PubDate: 2026-06-12T16:45:10.63703+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/v-xj-lakers-r-gle-bk-4-1-2026-04-14-2461902
+    Body: 2498 chars, Author: RinkStop, PubDate: 2026-06-12T21:30:34.856898+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/skellefte-aik-lule-hf-3-2-2026-04-13-2461471
+    Body: 2517 chars, Author: RinkStop, PubDate: 2026-06-12T21:30:39.259175+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/kitchener-rangers-barrie-colts-3-4-2026-05-10-2470153
+    Body: 2571 chars, Author: RinkStop, PubDate: 2026-06-15T12:07:02.093072+00:00
+    Issues: author="RinkStop" (should be human byline)
+
+  /news/carolina-hurricanes-new-york-islanders-4-3-saturday-april-4-2026-2025021214-cd5d03
+    Body: 3405 chars, Author: RinkStop, PubDate: 2026-06-12T16:45:24.271293+00:00
+    Issues: author="RinkStop" (should be human byline)
