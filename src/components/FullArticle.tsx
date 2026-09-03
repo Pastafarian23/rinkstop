@@ -19,6 +19,7 @@ import LocationHeader from '@/components/LocationHeader';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
+import { autolinkContent } from '@/lib/autolink';
 
 const _RAW_SITE = process.env.NEXT_PUBLIC_SITE_URL || '';
 export const FULL_ARTICLE_BASE_URL =
@@ -74,6 +75,55 @@ interface RelatedPost {
   og_image_url?: string;
   author_name?: string;
   reading_time_minutes?: number;
+}
+
+/**
+ * Module-level cache for autolink entities. Per-article render calls this
+ * and re-uses the result across the same server-instance lifetime, capped
+ * at 1h via the TTL. Refresh on next request after expiry.
+ *
+ * Why module-level (vs per-request): 720 articles × 5 req/s ≈ 3,600 calls/min.
+ * Without cache that's 3,600 Supabase round-trips for the same entity list.
+ * With cache, it's 1 per hour.
+ */
+interface AutolinkEntityCache {
+  teams: { name: string; slug: string }[];
+  leagues: { name: string; slug: string }[];
+  rinks: { name: string; slug: string }[];
+  fetchedAt: number;
+}
+let _autolinkCache: AutolinkEntityCache | null = null;
+const AUTOLINK_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+async function getAutolinkEntities(): Promise<AutolinkEntityCache> {
+  const now = Date.now();
+  if (_autolinkCache && now - _autolinkCache.fetchedAt < AUTOLINK_CACHE_TTL_MS) {
+    return _autolinkCache;
+  }
+  const [teamsRes, leaguesRes, rinksRes] = await Promise.all([
+    supabaseAdmin
+      .from('teams')
+      .select('name, slug')
+      .eq('is_active', true)
+      .not('slug', 'is', null),
+    supabaseAdmin
+      .from('leagues')
+      .select('name, slug')
+      .eq('is_active', true)
+      .not('slug', 'is', null),
+    supabaseAdmin
+      .from('rinks')
+      .select('name, slug')
+      .eq('is_active', true)
+      .not('slug', 'is', null),
+  ]);
+  _autolinkCache = {
+    teams: ((teamsRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
+    leagues: ((leaguesRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
+    rinks: ((rinksRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
+    fetchedAt: now,
+  };
+  return _autolinkCache;
 }
 
 async function getRelatedPosts(currentPost: FullPost, limit: number = 6): Promise<RelatedPost[]> {
@@ -162,9 +212,24 @@ export default async function FullArticle({ post }: { post: FullPost }) {
     return notFound();
   }
 
-  const htmlContent = (post.content_html && post.content_html.trim().length > 0)
+  let htmlContent = (post.content_html && post.content_html.trim().length > 0)
     ? post.content_html
     : contentToHtml(post.content);
+
+  // 2026-09-03 Gap 9+14: auto-link team/league/rink mentions in article body.
+  // Existing autolink.ts function was unused. Wire it up + fetch entity names
+  // per-article (cached in a module-level Map so repeat article renders on the
+  // same Next.js server instance skip the DB query).
+  try {
+    const entities = await getAutolinkEntities();
+    if (entities.teams.length + entities.leagues.length + entities.rinks.length > 0) {
+      htmlContent = autolinkContent(htmlContent, entities.teams, entities.leagues, entities.rinks);
+    }
+  } catch (e) {
+    // Auto-linking is best-effort. If the DB query fails, render the
+    // unlinked article rather than failing the whole page.
+    console.error('[autolink] entity fetch failed:', e);
+  }
 
   const authorName = post.author_name || 'Arnel Larracas';
   const authorRole = post.author_role || 'Founder';
