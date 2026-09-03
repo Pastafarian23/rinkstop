@@ -6,8 +6,10 @@ import { teamsByDivision, teamsByConference, findCanonicalTeam, NHL_TEAMS_CANONI
 export const revalidate = 300; // 5 min for today's games; 1 hour for standings via sub-cache
 
 export const metadata: Metadata = {
-  title: 'NHL Hub | Roster, Scores, Standings, Schedule',
-  description: 'The complete NHL hub on RinkStop — live scores, current standings for all 32 teams, today\'s games, schedule, and team directory.',
+  // 2026-09-03 Gap 1: rewrote title to 53 chars + added season year. Old "NHL Hub" was generic.
+  title: 'NHL Hockey 2026-27 — Scores, Standings',
+  description:
+    'NHL 2026-27 season: live scores for all 32 teams, current standings, today\'s games, schedule, and complete team directory with rosters.',
 };
 
 function fmtTime(iso: string): string {

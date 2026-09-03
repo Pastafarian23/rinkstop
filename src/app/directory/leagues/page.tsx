@@ -14,14 +14,17 @@ interface League {
 }
 
 export const metadata: Metadata = {
-  title: '240 Hockey Leagues Worldwide — NHL, NCAA, IIHF, Junior, PWHL & More',
+  // 2026-09-03 Gap 2: tightened title from 88 chars to 56 chars, added season context.
+  // GSC: 532 imps, position 23.2 (page 3) — title was truncated, hurting both
+  // impressions (Google gave up showing it) and CTR.
+  title: 'Hockey Leagues Worldwide — Pro, Junior, College',
   description:
-    'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, Extraliga, and amateur tiers. Tier, country, level, and contact info for every league in one place.',
+    'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.',
   alternates: { canonical: 'https://rinkstop.com/directory/leagues' },
   openGraph: {
-    title: '240 Hockey Leagues Worldwide — NHL, NCAA, IIHF, Junior & More',
+    title: 'Hockey Leagues Worldwide — Pro, Junior, College',
     description:
-      'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info for every league.',
+      'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.',
     url: 'https://rinkstop.com/directory/leagues',
     siteName: 'RinkStop',
     type: 'website',
