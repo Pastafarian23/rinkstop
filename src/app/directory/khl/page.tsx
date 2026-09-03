@@ -9,14 +9,17 @@ const supabase = createClient(
 );
 
 export const metadata: Metadata = {
-  title: 'KHL — Kontinental Hockey League: 23 Teams, 4 Conferences',
+  // 2026-09-03 WS3 + Gap 1: rewrote title to 53 chars + added season year + current team count.
+  // Old title was 84 chars (truncated by Google SERP at ~60 chars).
+  // Old title: "KHL — Kontinental Hockey League: 23 Teams, 4 Conferences | RinkStop"
+  title: 'KHL Hockey Teams 2026-27 — Rosters, Scores',
   description:
-    'The KHL (Kontinental Hockey League) is the premier professional ice hockey league of Russia and Eurasia — 23 teams across Russia, Belarus, Kazakhstan, and China. Rosters, schedules, arenas, and standings in one place.',
+    'Kontinental Hockey League (KHL) 2026-27 season: 23 teams across Russia, Belarus, Kazakhstan, and China. Live scores, schedules, rosters, arenas, and standings — all in one place.',
   alternates: { canonical: 'https://rinkstop.com/directory/khl' },
   openGraph: {
-    title: 'KHL — Kontinental Hockey League',
+    title: 'KHL Hockey Teams 2026-27',
     description:
-      'Premier professional ice hockey league of Russia and Eurasia — 23 teams across 4 countries. Rosters, schedules, and standings.',
+      'Kontinental Hockey League 2026-27: 23 teams, 4 countries. Live scores, schedules, rosters, and standings.',
     url: 'https://rinkstop.com/directory/khl',
     siteName: 'RinkStop',
     type: 'website',
