@@ -98,6 +98,20 @@ export default function CityPageContent({ data, faqs }: Props) {
     })),
   } : null;
 
+  // 2026-09-03 PR #194: emit FAQPage schema when faqs are provided.
+  // Previously faqs were rendered as an accordion in the body but never
+  // emitted as schema.org JSON-LD, so Google couldn't pick them up for
+  // rich-snippet eligibility. Fix is conditional — empty when no faqs.
+  const faqSchema = faqs && faqs.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer.replace(/<[^>]+>/g, '') },
+    })),
+  } : null;
+
   return (
     <>
       {/* JSON-LD structured data */}
@@ -115,6 +129,12 @@ export default function CityPageContent({ data, faqs }: Props) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(rinkItemListSchema) }}
+        />
+      )}
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
       )}
 
@@ -891,6 +911,37 @@ export default function CityPageContent({ data, faqs }: Props) {
             </div>
           </section>
         )}
+
+        {/* 2026-09-03 PR #194: trust-signal footer (AdSense compliance).
+            Required by the hard gate: byline + methodology + last-updated. */}
+        <footer
+          style={{
+            marginTop: '3rem',
+            paddingTop: '1.5rem',
+            borderTop: `1px solid ${border}`,
+            color: textDim,
+            fontSize: '0.75rem',
+            lineHeight: 1.6,
+          }}
+        >
+          <div style={{ marginBottom: '0.5rem' }}>
+            Hockey data for {cityName} sourced from RinkStop's verified directory.
+            Counts: {teamCount} teams, {rinkCount} rinks, {leaguesInCity.length} league{leaguesInCity.length === 1 ? '' : 's'} active in {cityName}.
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+            <span>By <Link href="/about" style={{ color: gold, textDecoration: 'underline' }}>Arnel Larracas</Link>, Founder &amp; Editor-in-Chief</span>
+            <span>•</span>
+            <Link href="/data-methodology" style={{ color: textMuted, textDecoration: 'underline' }}>Data methodology</Link>
+            <span>•</span>
+            <Link href="/editorial-policy" style={{ color: textMuted, textDecoration: 'underline' }}>Editorial policy</Link>
+            <span>•</span>
+            <Link href="/corrections" style={{ color: textMuted, textDecoration: 'underline' }}>Report a correction</Link>
+          </div>
+          <div style={{ marginTop: '0.5rem' }}>
+            AI tools may be used to assist with research and drafting on RinkStop.
+            All content is reviewed and edited by a human editor before publication.
+          </div>
+        </footer>
       </div>
     </>
   );
