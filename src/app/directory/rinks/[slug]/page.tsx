@@ -285,7 +285,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       alternates: {
         canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
       },
-      openGraph: { title: rink.name, type: 'website' },
+      // 2026-09-03 PR #198: emit og:image even on noindex pages so social
+      // shares still preview the rink photo (LinkedIn, Twitter cards).
+      // Cast to any because the noindex branch's narrow RinkPageData type
+      // doesn't include cover_photo_url in the type signature.
+      openGraph: {
+        title: rink.name,
+        type: 'website',
+        ...((rink as any).cover_photo_url ? { images: [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior` }] } : {}),
+      },
     };
   }
 
@@ -409,6 +417,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: `${rink.name}`,
       description,
       type: 'website',
+      // 2026-09-03 PR #198: include rink cover photo in social previews.
+      // Also emit ImageObject schema on the page body for image search.
+      ...((rink as any).cover_photo_url ? { images: [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}` }] } : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${rink.name}`,
+      description,
+      ...((rink as any).cover_photo_url ? { images: [(rink as any).cover_photo_url] } : {}),
     },
   };
 }
@@ -785,7 +802,10 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         {rink.cover_photo_url ? (
           <img
             src={rink.cover_photo_url}
-            alt={rink.name}
+            // 2026-09-03 PR #198: keyword-rich alt text for image search SEO.
+            // Old: just rink.name. New: "{name} exterior — {city, country} indoor ice rink".
+            // Targets queries like "ice rink [city]", "[name] arena photos".
+            alt={`${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}`}
             referrerPolicy="no-referrer"
             style={{ width: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 12, marginBottom: '16px', display: 'block', background: 'rgba(255,255,255,0.04)' }}
           />
