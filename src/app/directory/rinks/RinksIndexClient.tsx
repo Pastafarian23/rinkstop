@@ -285,7 +285,7 @@ export default function RinksIndexClient({ initialRinks, country: initialCountry
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={rink.static_map_url}
-                      alt=""
+                      alt={`Map showing the location of ${rink.name} in ${formatLocation(rink)}`}
                       width={100}
                       height={100}
                       loading="lazy"
