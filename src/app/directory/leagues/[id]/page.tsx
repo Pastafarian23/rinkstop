@@ -52,7 +52,12 @@ export async function generateMetadata({
       typeof league.team_count === 'number'
         ? league.team_count
         : undefined;
-    const title = `${league.name} — ${level}ice hockey league${country}`;
+    // 2026-09-03 PR #195: tightened title to 50-60 chars with season + count.
+    // Old: "${league.name} — ${level}ice hockey league${country}" (variable, often 60-80+ chars, truncated).
+    // New: "${name} 2026 — N teams" with fallback for thin leagues.
+    const title = teamCount && teamCount > 0
+      ? `${league.name} 2026 — ${teamCount} teams`
+      : `${league.name} 2026 — hockey league`;
     // PR #146 (2026-08-22) WS24 thin-content sweep: build a unique meta
     // description that clears the AdSense ~150-word threshold using only
     // entity-specific facts (no fabrication). Pulls from league record +
@@ -219,6 +224,39 @@ export default async function LeaguePage({
       <div style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
         <ClaimThisListingMount entityType="league" entityId={id} />
       </div>
+
+      {/* 2026-09-03 PR #195: trust-signal footer (AdSense compliance hard gate).
+          Required per MEMORY.md § AdSense-Compliant Content Rules:
+          byline + methodology + last-updated + AI disclosure. */}
+      {league && (
+        <footer
+          style={{
+            maxWidth: '1280px',
+            margin: '1.5rem auto 3rem',
+            padding: '1.5rem 1.5rem 1rem',
+            borderTop: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.55)',
+            fontSize: '0.75rem',
+            lineHeight: 1.6,
+          }}
+        >
+          <div style={{ marginBottom: '0.5rem' }}>
+            {league.name} data sourced from RinkStop's verified directory. {teamCount > 0 ? `Currently tracking ${teamCount} team${teamCount === 1 ? '' : 's'}.` : ''} {(league as any).updated_at ? `Last updated ${new Date((league as any).updated_at).toISOString().split('T')[0]}.` : ''}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+            <span>By <a href="/about" style={{ color: '#FFB81C', textDecoration: 'underline' }}>Arnel Larracas</a>, Founder &amp; Editor-in-Chief</span>
+            <span>•</span>
+            <a href="/data-methodology" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Data methodology</a>
+            <span>•</span>
+            <a href="/editorial-policy" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Editorial policy</a>
+            <span>•</span>
+            <a href="/corrections" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Report a correction</a>
+          </div>
+          <div style={{ marginTop: '0.5rem' }}>
+            AI tools may be used to assist with research and drafting on RinkStop. All content is reviewed and edited by a human editor before publication.
+          </div>
+        </footer>
+      )}
     </>
   );
 }
