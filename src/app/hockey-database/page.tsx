@@ -86,7 +86,9 @@ export default async function HockeyDatabasePage() {
 
   const faqSchema = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
+    '@graph': [
+    {
+      '@type': 'FAQPage',
     mainEntity: [
       {
         '@type': 'Question',
@@ -153,6 +155,31 @@ export default async function HockeyDatabasePage() {
         },
       },
     ],
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Hockey Directory', item: 'https://rinkstop.com/directory' },
+        { '@type': 'ListItem', position: 3, name: 'Hockey Database', item: 'https://rinkstop.com/hockey-database' },
+      ],
+    },
+    {
+      '@type': 'WebPage',
+      '@id': 'https://rinkstop.com/hockey-database#webpage',
+      url: 'https://rinkstop.com/hockey-database',
+      name: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations',
+      description:
+        'The most comprehensive structured hockey database on the open web. 1,917+ rinks, 3,243+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked.',
+      inLanguage: 'en',
+      isPartOf: { '@id': 'https://rinkstop.com/#website' },
+      about: { '@id': 'https://rinkstop.com/#organization' },
+      author: { '@id': 'https://rinkstop.com/#founder' },
+      publisher: { '@id': 'https://rinkstop.com/#organization' },
+      datePublished: '2026-09-02',
+      dateModified: now,
+    },
+    ],
   };
 
   return (
@@ -164,6 +191,13 @@ export default async function HockeyDatabasePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
+      <nav aria-label="Breadcrumb" style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+        <Link href="/" style={{ color: '#666', textDecoration: 'none' }}>Home</Link>
+        <span style={{ margin: '0 6px' }}>›</span>
+        <Link href="/directory" style={{ color: '#666', textDecoration: 'none' }}>Directory</Link>
+        <span style={{ margin: '0 6px' }}>›</span>
+        <span style={{ color: '#222', fontWeight: 600 }}>Hockey Database</span>
+      </nav>
       <h1 style={{ fontSize: '40px', fontWeight: 800, marginBottom: '12px', lineHeight: 1.15 }}>
         Hockey Database
       </h1>
@@ -367,6 +401,34 @@ export default async function HockeyDatabasePage() {
           <Link href="/about" style={{ color: '#0066cc' }}>/about</Link> for how the directory is
           built and maintained.
         </p>
+      </section>
+
+      <section
+        aria-label="Continue browsing"
+        style={{
+          background: '#f6f7f9',
+          border: '1px solid #e3e6ea',
+          borderRadius: '8px',
+          padding: '24px',
+          marginTop: '40px',
+          marginBottom: '32px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '16px',
+        }}
+      >
+        <Link href="/directory" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Directory</div>
+          <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>Browse all rinks, teams, players →</div>
+        </Link>
+        <Link href="/data-coverage" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Data Coverage</div>
+          <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>How our counts compare to IIHF →</div>
+        </Link>
+        <Link href="/data-methodology" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
+          <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Methodology</div>
+          <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>How we source, verify, and update →</div>
+        </Link>
       </section>
 
       <footer style={{ fontSize: '13px', color: '#888', borderTop: '1px solid #eee', paddingTop: '16px' }}>
