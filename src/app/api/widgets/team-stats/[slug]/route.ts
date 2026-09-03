@@ -1,49 +1,54 @@
-// /widgets/team-stats/[slug] — embeddable widget
+// /api/widgets/team-stats/[slug] — embeddable HTML widget
 //
 // Returns a minimal HTML fragment (not the full app shell) that can be
-// iframed or directly embedded on partner hockey blogs.
+// iframed on partner hockey blogs.
 //
 // Usage:
-//   <iframe src="https://rinkstop.com/widgets/team-stats/edmonton-oilers"
-//           width="400" height="320" frameborder="0"></iframe>
-//
-// This widget shows team record, last 5 games, and links back to the
-// full team page on RinkStop. Partner sites that embed this widget
-// automatically get a link back to our full team page (see footer).
+//   <iframe src="https://rinkstop.com/api/widgets/team-stats/edmonton-oilers"
+//           width="420" height="340" frameborder="0"></iframe>
 //
 // Why this matters for SEO:
-// - Off-page signal: every partner site that embeds creates a backlink
-// - Brand exposure: our team data is on partner pages
-// - AI citation: more places = more chances to be cited as a source
+// - Every embed is a permanent backlink from a relevant hockey site
+// - Bing ranks sites with more high-quality backlinks higher
+// - Brand exposure across the hockey community
+// - AI engines (ChatGPT, Perplexity) cite us as the source
 
+import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { baseUrl } from '@/lib/sitemap-shared';
 
-export const revalidate = 300;
+export const revalidate = 300; // 5min
+
+function esc(s: string | null | undefined): string {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] || c)
+  );
+}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const html = await renderWidget(slug);
-  return new Response(html, {
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
-      'X-Frame-Options': 'ALLOWALL',
-    },
-  });
-}
 
-async function renderWidget(slug: string): Promise<string> {
-  if (!supabaseAdmin) return errorWidget('Database unavailable');
+  if (!supabaseAdmin) {
+    return new NextResponse(errorWidget('Database unavailable'), {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+
   const { data: team } = await supabaseAdmin
     .from('teams')
     .select('id, name, city, country, league_name, logo_url')
     .eq('slug', slug)
     .maybeSingle();
-  if (!team) return errorWidget('Team not found');
+
+  if (!team) {
+    return new NextResponse(errorWidget('Team not found'), {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
 
   const { data: games } = await supabaseAdmin
     .from('games')
@@ -61,7 +66,7 @@ async function renderWidget(slug: string): Promise<string> {
 
   const gameRows = (games || []).map((g: any) => {
     const isHome = g.home_team_id === team.id;
-    const won = (isHome && g.home_team_score > g.away_team_score) || 
+    const won = (isHome && g.home_team_score > g.away_team_score) ||
                 (!isHome && g.away_team_score > g.home_team_score);
     const opp = isHome ? 'vs' : '@';
     const score = isHome ? `${g.home_team_score}-${g.away_team_score}` : `${g.away_team_score}-${g.home_team_score}`;
@@ -70,11 +75,13 @@ async function renderWidget(slug: string): Promise<string> {
     return `<tr><td>${g.game_date || ''}</td><td>${opp}</td><td>${score}</td><td class="${cls}">${status}</td></tr>`;
   }).join('');
 
-  return `<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(team.name)} — Live Stats | RinkStop</title>
+<meta name="description" content="${esc(team.name)} live record and recent games. Data from RinkStop, the global hockey directory.">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #041E42; color: #fff; padding: 16px; font-size: 14px; }
@@ -113,19 +120,20 @@ footer a { color: #FFB81C; text-decoration: none; }
   <tbody>${gameRows}</tbody>
 </table>
 <footer>
-  Live data via <a href="${baseUrl}/directory/teams/${esc(slug)}" target="_blank" rel="noopener">RinkStop</a> · <a href="${baseUrl}/widgets/team-stats/${esc(slug)}" target="_blank" rel="noopener">Embed</a>
+  Live data via <a href="${baseUrl}/directory/teams/${esc(slug)}" target="_blank" rel="noopener">RinkStop</a> · <a href="${baseUrl}/widgets" target="_blank" rel="noopener">Embed</a>
 </footer>
 </body>
 </html>`;
-}
 
-function esc(s: string | null | undefined): string {
-  if (!s) return '';
-  return String(s).replace(/[&<>"']/g, (c: string) => 
-    ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c] || c)
-  );
+  return new NextResponse(html, {
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=300',
+      'X-Frame-Options': 'ALLOWALL',
+    },
+  });
 }
 
 function errorWidget(msg: string): string {
-  return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;background:#041E42;color:#fff">${msg}</body></html>`;
+  return `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:20px;background:#041E42;color:#fff">${esc(msg)}</body></html>`;
 }
