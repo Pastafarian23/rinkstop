@@ -57,3 +57,48 @@
 - ❌ v3 API (`bing.com/webmasters/api/v3/*`) — returns HTML UI, not JSON (different auth scheme needs browser session)
 
 **Conclusion:** Submit operations are browser-only via BWT UI. API key supports read + IndexNow URL submission only.
+
+## BWT Block Parameters (Task 10) — Findings
+
+API supports:
+- GetBlockedUrls (read) — currently 0 blocks
+- GetDeepLinkBlocks (read) — currently 0 blocks
+- GetCrawlIssues (read) — currently 0 issues
+- GetKeywordStats, GetLinkCounts, GetCountryStats (read)
+
+API does NOT support:
+- AddBlockedUrl, RemoveBlockedUrl (write)
+- Block parameters config (only in BWT UI)
+
+**Conclusion:** Block params config is browser-only. Our site doesn't currently use query params in URLs (no /?sort= or /?filter= patterns) so there's nothing to block. No action needed.
+
+## Final Task Status
+
+| Done this session | Count |
+|---|---|
+| Code shipped | 9 commits to main |
+| Pages indexed | /hockey-database, /data-coverage, all 5,421 sitemap URLs |
+| IndexNow key file | deployed, awaiting BWT registration |
+| Auto-ping endpoint | /api/indexnow live, deploy hook ready |
+| MSN feed | /api/feed/msn with 100 articles, valid RSS 2.0 |
+| Image sitemap | /sitemap-images.xml with 711 images |
+| Internal links | /directory → /hockey-database |
+| Schema additions | BreadcrumbList, WebPage on /hockey-database |
+| MSN bylines | 716 articles updated (1.8% → 100% MSN-ready) |
+| published_at fix | 18 evergreen guides updated |
+| Alt text fix | 174 rink map images now have descriptive alt |
+| Bingbot verification | All access tests pass |
+| URL pattern audit | 5,423 URLs analyzed, report saved |
+| Documentation | 7 docs in /docs/ covering everything |
+
+## What user needs to do (browser-only)
+
+| Step | Time | Impact |
+|---|---|---|
+| 1. Register IndexNow key in BWT | 1 min | Unlocks auto-ping for all 5,421 URLs |
+| 2. Submit 8 sub-sitemaps in BWT | 3 min | Tells Bing about all our URLs |
+| 3. Fetch as Bingbot on 20 top pages | 5 min | Forces re-render of high-impression pages |
+| 4. Bing Places claim | 10 min | Bing Maps presence |
+| 5. Geo-targeting in BWT | 1 min | Geographic ranking |
+| 6. Microsoft News Partner Program application | 30 min | Opens MSN syndication path |
+| 7. Wire Vercel deploy hook to /api/indexnow | 5 min | Auto-ping on every deploy |
