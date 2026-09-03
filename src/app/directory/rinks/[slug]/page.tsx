@@ -413,20 +413,36 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     alternates: {
       canonical: rink.slug ? `${CANONICAL_URL}/directory/rinks/${rink.slug}` : undefined,
     },
-    openGraph: {
-      title: `${rink.name}`,
-      description,
-      type: 'website',
+    openGraph: (() => {
+      const base: any = {
+        title: `${rink.name}`,
+        description,
+        type: 'website',
+      };
       // 2026-09-03 PR #198: include rink cover photo in social previews.
-      // Also emit ImageObject schema on the page body for image search.
-      ...((rink as any).cover_photo_url ? { images: [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}` }] } : {}),
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${rink.name}`,
-      description,
-      ...((rink as any).cover_photo_url ? { images: [(rink as any).cover_photo_url] } : {}),
-    },
+      // Conditional spread with TypeScript-any cast didn't render the images
+      // array in Next.js 15's Metadata serializer, so build explicit object.
+      const photo = (rink as any).cover_photo_url as string | undefined;
+      if (photo) {
+        base.images = [{
+          url: photo,
+          width: 1200,
+          height: 800,
+          alt: `${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}`,
+        }];
+      }
+      return base;
+    })(),
+    twitter: (() => {
+      const base: any = {
+        card: 'summary_large_image',
+        title: `${rink.name}`,
+        description,
+      };
+      const photo = (rink as any).cover_photo_url as string | undefined;
+      if (photo) base.images = [photo];
+      return base;
+    })(),
   };
 }
 
