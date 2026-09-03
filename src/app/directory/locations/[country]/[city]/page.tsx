@@ -70,23 +70,40 @@ export async function generateMetadata({
     `Hockey teams, rinks, and youth programs in ${displayCity}, ${displayCountry}. Browse local hockey listings on RinkStop.`;
 
   return {
-    title: `Hockey in ${displayCity} - Teams, Rinks & Programs`,
-    description,
+    // 2026-09-03 PR #194: tightened + season-aware title + description.
+    // Old: "Hockey in Birmingham - Teams, Rinks & Programs" (39 chars, no year, no count).
+    // New: includes season year + team/rink count + value props.
+    // Title format: "Hockey in {City} 2026 — N Teams, M Rinks" — varies
+    // by listing count. Empty cities keep a generic "Hockey in {City} 2026".
+    title: hasListings
+      ? `Hockey in ${displayCity} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
+      : `Hockey in ${displayCity} 2026 — RinkStop Directory`,
+    description: hasListings
+      ? `Hockey in ${displayCity}, ${displayCountry} 2026: ${data.teamCount} teams across ${data.leaguesInCity.length} leagues and ${data.rinkCount} rinks. Browse rosters, schedules, programs, and youth hockey on RinkStop.`
+      : `Hockey in ${displayCity}, ${displayCountry}: no teams or rinks currently listed on RinkStop. Submit a new listing or check nearby cities.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
     },
     robots: robotsMeta(decision),
     openGraph: {
-      title: `Hockey in ${displayCity}`,
-      description,
+      title: hasListings
+        ? `Hockey in ${displayCity} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
+        : `Hockey in ${displayCity} 2026`,
+      description: hasListings
+        ? `${data.teamCount} teams, ${data.rinkCount} rinks in ${displayCity}, ${displayCountry}. 2026 directory.`
+        : `Hockey in ${displayCity}, ${displayCountry} — no current listings.`,
       url: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
       siteName: 'RinkStop',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `Hockey in ${displayCity}`,
-      description,
+      title: hasListings
+        ? `Hockey in ${displayCity} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
+        : `Hockey in ${displayCity} 2026`,
+      description: hasListings
+        ? `${data.teamCount} teams, ${data.rinkCount} rinks in ${displayCity}, ${displayCountry}.`
+        : `Hockey in ${displayCity}, ${displayCountry}.`,
     },
   };
 }
