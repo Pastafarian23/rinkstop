@@ -48,6 +48,8 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
   { url: `${baseUrl}/editorial-policy`, changeFreq: 'yearly', priority: 0.5 },
   { url: `${baseUrl}/corrections`, changeFreq: 'yearly', priority: 0.4 },
   { url: `${baseUrl}/data-methodology`, changeFreq: 'yearly', priority: 0.5 },
+  { url: `${baseUrl}/data-coverage`, changeFreq: 'weekly', priority: 0.7 },
+  { url: `${baseUrl}/hockey-database`, changeFreq: 'weekly', priority: 0.8 },
   { url: `${baseUrl}/terms`, changeFreq: 'yearly', priority: 0.3 },
   { url: `${baseUrl}/advertise`, changeFreq: 'monthly', priority: 0.5 },
   { url: `${baseUrl}/directory/international`, changeFreq: 'monthly', priority: 0.6 },

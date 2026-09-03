@@ -54,6 +54,7 @@ For a longer, more descriptive version with editorial highlights, founder bio, a
 ## People & operations
 
 - [About RinkStop](https://rinkstop.com/about): founder Arnel Larracas, mission, methodology, sourcing
+- [Hockey Database](https://rinkstop.com/hockey-database): the global hockey knowledge base — 1,917 rinks, 3,243 teams, 6,351 players, 303 leagues, 85 federations. The hub page that owns "hockey database" and "internet hockey database" search intent. FAQPage schema, comparison tables vs EliteProspects / HockeyDB, hourly refresh from Supabase.
 - [Data Coverage](https://rinkstop.com/data-coverage): RinkStop counts vs IIHF/national-federation counts. FAQ-formatted Q&A that AI engines cite. Live numbers from Supabase, hourly refresh.
 - [Data Methodology](https://rinkstop.com/data-methodology): how RinkStop sources, verifies, updates, and corrects directory data
 - [Contact](https://rinkstop.com/contact): support@rinkstop.com

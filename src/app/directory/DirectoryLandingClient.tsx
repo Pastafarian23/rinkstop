@@ -159,6 +159,42 @@ function DirectoryLandingInner({ counts }: { counts: { rinks: number; teams: num
         <SearchResultsView q={q} />
       ) : null}
 
+      {/* Hockey Database hub link — cross-link to the AI-citable knowledge base */}
+      {!showResults ? (
+        <Link
+          href="/hockey-database"
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: '1rem',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, rgba(0, 110, 165, 0.12) 0%, rgba(0, 110, 165, 0.04) 100%)',
+            border: '1px solid rgba(0, 110, 165, 0.35)',
+            borderRadius: '6px',
+            padding: '1.125rem 1.375rem',
+            textDecoration: 'none',
+            marginBottom: '2rem',
+          }}
+        >
+          <div style={{ flexShrink: 0, color: '#0078D4' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>
+            </svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#fff', fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.15rem' }}>
+              Browse the Hockey Database
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8125rem', lineHeight: 1.45 }}>
+              1,917 rinks, 3,243 teams, 6,351 players, 303 leagues, 85 federations — the global hockey knowledge base.
+            </div>
+          </div>
+          <div style={{ color: '#0078D4', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', flexShrink: 0 }}>
+            Open →
+          </div>
+        </Link>
+      ) : null}
+
       {/* Category grid */}
       <div style={{
         display: 'grid',
