@@ -23,9 +23,11 @@ interface League {
 }
 
 export const metadata: Metadata = {
-  title: 'PWHL — Professional Women\'s Hockey League',
+  // 2026-09-03 Gap 1: rewrote title with year + team count + value props.
+  // Old title was bare ("PWHL — Professional Women's Hockey League"), 39 chars, no year.
+  title: "PWHL Women's Hockey 2026-27 — Teams, Scores",
   description:
-    "Professional Women's Hockey League teams, players, schedules, and standings.",
+    "Professional Women's Hockey League 2026-27: 8 teams across North America. Live scores, schedules, rosters, player profiles, and standings for every PWHL team.",
   alternates: {
     canonical: 'https://rinkstop.com/directory/pwhl',
   },
@@ -34,9 +36,9 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "PWHL — Professional Women's Hockey League",
+    title: "PWHL Women's Hockey 2026-27",
     description:
-      "Professional Women's Hockey League teams, players, schedules, and standings.",
+      "Professional Women's Hockey League 2026-27: 8 teams across North America. Live scores, schedules, rosters, and standings.",
     url: 'https://rinkstop.com/directory/pwhl',
     siteName: 'RinkStop',
     type: 'website',
