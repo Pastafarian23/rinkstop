@@ -1,4 +1,4 @@
-// /api/deploy/ping-search-engines
+// /api/indexnow
 //
 // Called by the Vercel deploy hook (POST) after every production deploy.
 // Submits all known URLs to IndexNow so Bing/Yandex pick up changes in
@@ -8,7 +8,7 @@
 // The deploy hook on Vercel is configured to include this header.
 //
 // To add to Vercel deploy hook:
-//   URL: https://rinkstop.com/api/deploy/ping-search-engines
+//   URL: https://rinkstop.com/api/indexnow
 //   Method: POST
 //   Headers: { "x-deploy-secret": "<ADMIN_SECRET value>" }
 //
@@ -173,9 +173,9 @@ export async function GET() {
     site: SITE,
     endpoint: INDEXNOW_ENDPOINT,
     howToUse: {
-      curl: `curl -X POST -H "x-deploy-secret: $ADMIN_SECRET" ${SITE}/api/deploy/ping-search-engines`,
+      curl: `curl -X POST -H "x-deploy-secret: $ADMIN_SECRET" ${SITE}/api/indexnow`,
       vercelHook: {
-        url: `${SITE}/api/deploy/ping-search-engines`,
+        url: `${SITE}/api/indexnow`,
         method: 'POST',
         headers: { 'x-deploy-secret': '<ADMIN_SECRET value>' },
         triggers: ['deploy-success'],
