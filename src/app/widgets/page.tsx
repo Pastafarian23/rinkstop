@@ -26,7 +26,7 @@ const WIDGETS = [
     slug: 'team-stats',
     description: 'Live team record + last 5 games for any of our 3,243+ teams',
     preview: 'iframe demo',
-    embedCode: `<iframe src="https://rinkstop.com/embed/team-stats/{team-slug}" width="420" height="340" frameborder="0" style="border-radius:8px"></iframe>`,
+    embedCode: `<iframe src="https://rinkstop.com/widgets/team-stats/{team-slug}" width="420" height="340" frameborder="0" style="border-radius:8px"></iframe>`,
     benefits: [
       'Auto-updates every 5 minutes',
       'Team colors and logo included',
@@ -86,7 +86,7 @@ export default function EmbedPage() {
               </pre>
             </details>
             <Link 
-              href={`/embed/${w.slug}/edmonton-oilers`}
+              href={`/widgets/${w.slug}/edmonton-oilers`}
               style={{ color: '#FFB81C', textDecoration: 'underline' }}
             >
               View live demo →
