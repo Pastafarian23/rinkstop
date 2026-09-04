@@ -14,13 +14,13 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // GET
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const { data: settings, error } = await supabaseAdmin
       .from('rink_rental_settings')
       .select('*')
-      .eq('rink_id', params.id)
+      .eq('rink_id', ((await params).id))
       .maybeSingle();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -37,12 +37,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // PUT — upsert settings for this rink
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const owner = await requireRinkOwnerForRental(request, params.id);
+    const owner = await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
-    const payload: Record<string, unknown> = { rink_id: params.id };
+    const payload: Record<string, unknown> = { rink_id: ((await params).id) };
 
     if (body.deposit_policy && ['none','required','optional'].includes(body.deposit_policy)) {
       payload.deposit_policy = body.deposit_policy;

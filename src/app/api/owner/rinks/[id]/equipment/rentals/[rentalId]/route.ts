@@ -17,15 +17,15 @@ const RENTAL_STATUSES = ['pending','active','overdue','returned','cancelled'];
 // GET
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; rentalId: string } },
+  { params }: { params: Promise<{ id: string; rentalId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const { data: rental, error } = await supabaseAdmin
       .from('equipment_rentals')
       .select('*')
-      .eq('id', params.rentalId)
-      .eq('rink_id', params.id)
+      .eq('id', ((await params).rentalId))
+      .eq('rink_id', ((await params).id))
       .maybeSingle();
 
     if (error || !rental) {
@@ -64,10 +64,10 @@ export async function GET(
 // PATCH — return / cancel / approve / adjust pricing
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; rentalId: string } },
+  { params }: { params: Promise<{ id: string; rentalId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
     const updatePayload: Record<string, unknown> = {};
@@ -91,7 +91,7 @@ export async function PATCH(
       const { data: rental } = await supabaseAdmin
         .from('equipment_rentals')
         .select('item_id')
-        .eq('id', params.rentalId)
+        .eq('id', ((await params).rentalId))
         .maybeSingle();
 
       if (rental) {
@@ -108,8 +108,8 @@ export async function PATCH(
     const { data: updatedRental, error } = await supabaseAdmin
       .from('equipment_rentals')
       .update(updatePayload)
-      .eq('id', params.rentalId)
-      .eq('rink_id', params.id)
+      .eq('id', ((await params).rentalId))
+      .eq('rink_id', ((await params).id))
       .select('*')
       .single();
 
@@ -131,16 +131,16 @@ export async function PATCH(
 // DELETE — cancel the rental
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; rentalId: string } },
+  { params }: { params: Promise<{ id: string; rentalId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
 
     const { data: rental, error: fetchErr } = await supabaseAdmin
       .from('equipment_rentals')
       .select('id, item_id, status')
-      .eq('id', params.rentalId)
-      .eq('rink_id', params.id)
+      .eq('id', ((await params).rentalId))
+      .eq('rink_id', ((await params).id))
       .maybeSingle();
 
     if (fetchErr || !rental) {
@@ -150,7 +150,7 @@ export async function DELETE(
     const { error } = await supabaseAdmin
       .from('equipment_rentals')
       .update({ status: 'cancelled' })
-      .eq('id', params.rentalId);
+      .eq('id', ((await params).rentalId));
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

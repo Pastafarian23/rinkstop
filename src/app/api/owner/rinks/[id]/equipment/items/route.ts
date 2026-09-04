@@ -23,9 +23,9 @@ const STATUSES = ['active','retired','lost','broken','lent'];
 const CONDITIONS = ['new','excellent','good','worn','damaged','needs_repair'];
 
 // GET /api/owner/rinks/[id]/equipment/items
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const owner = await requireRinkOwnerForRental(request, params.id);
+    const owner = await requireRinkOwnerForRental(request, ((await params).id));
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');       // active | retired | ...
     const type = searchParams.get('type');           // skates | stick | ...
@@ -58,9 +58,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // POST /api/owner/rinks/[id]/equipment/items
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const owner = await requireRinkOwnerForRental(request, params.id);
+    const owner = await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
     const required = ['label', 'type'];

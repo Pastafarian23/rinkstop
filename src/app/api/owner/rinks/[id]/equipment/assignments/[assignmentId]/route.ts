@@ -17,14 +17,14 @@ const CONDITIONS = ['new','excellent','good','worn','damaged','needs_repair'];
 // GET
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; assignmentId: string } },
+  { params }: { params: Promise<{ id: string; assignmentId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const { data: assignment, error } = await supabaseAdmin
       .from('equipment_assignments')
       .select('*')
-      .eq('id', params.assignmentId)
+      .eq('id', ((await params).assignmentId))
       .maybeSingle();
 
     if (error || !assignment) {
@@ -38,7 +38,7 @@ export async function GET(
       .eq('id', assignment.equipment_id)
       .maybeSingle();
 
-    if (!item || item.owner_id !== params.id) {
+    if (!item || item.owner_id !== ((await params).id)) {
       return NextResponse.json({ error: 'Assignment belongs to a different rink.' }, { status: 404 });
     }
 
@@ -56,10 +56,10 @@ export async function GET(
 // PATCH
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; assignmentId: string } },
+  { params }: { params: Promise<{ id: string; assignmentId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
     // Return flow: if returned_at is provided, close out the assignment
@@ -82,7 +82,7 @@ export async function PATCH(
     const { data: assignment, error } = await supabaseAdmin
       .from('equipment_assignments')
       .update(updatePayload)
-      .eq('id', params.assignmentId)
+      .eq('id', ((await params).assignmentId))
       .select('*')
       .single();
 
@@ -112,15 +112,15 @@ export async function PATCH(
 // DELETE — hard delete an assignment (with due care)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; assignmentId: string } },
+  { params }: { params: Promise<{ id: string; assignmentId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
 
     const { data: assignment, error: fetchErr } = await supabaseAdmin
       .from('equipment_assignments')
       .select('id, equipment_id')
-      .eq('id', params.assignmentId)
+      .eq('id', ((await params).assignmentId))
       .maybeSingle();
 
     if (fetchErr || !assignment) {
@@ -130,7 +130,7 @@ export async function DELETE(
     const { error: deleteErr } = await supabaseAdmin
       .from('equipment_assignments')
       .delete()
-      .eq('id', params.assignmentId);
+      .eq('id', ((await params).assignmentId));
 
     if (deleteErr) return NextResponse.json({ error: deleteErr.message }, { status: 500 });
 

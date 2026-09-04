@@ -23,15 +23,15 @@ const PROVIDERS = ['stripe','paymongo','manual'];
 // GET
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; rentalId: string } },
+  { params }: { params: Promise<{ id: string; rentalId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
 
     const { data: payments, error } = await supabaseAdmin
       .from('rental_payments')
       .select('*')
-      .eq('rental_id', params.rentalId)
+      .eq('rental_id', ((await params).rentalId))
       .order('created_at', { ascending: false });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -50,10 +50,10 @@ export async function GET(
 // POST
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; rentalId: string } },
+  { params }: { params: Promise<{ id: string; rentalId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
     // Validate
@@ -69,8 +69,8 @@ export async function POST(
     const { data: rental, error: rentalErr } = await supabaseAdmin
       .from('equipment_rentals')
       .select('id, rink_id, deposit_required_cents, deposit_paid_cents, currency')
-      .eq('id', params.rentalId)
-      .eq('rink_id', params.id)
+      .eq('id', ((await params).rentalId))
+      .eq('rink_id', ((await params).id))
       .maybeSingle();
 
     if (rentalErr || !rental) {
@@ -78,8 +78,8 @@ export async function POST(
     }
 
     const payload: Record<string, unknown> = {
-      rental_id: params.rentalId,
-      rink_id: params.id,
+      rental_id: ((await params).rentalId),
+      rink_id: ((await params).id),
       kind,
       amount_cents: Math.trunc(body.amount_cents),
       currency: String(body.currency || rental.currency),
@@ -108,7 +108,7 @@ export async function POST(
       await supabaseAdmin
         .from('equipment_rentals')
         .update({ deposit_paid_cents: newDepositPaid })
-        .eq('id', params.rentalId);
+        .eq('id', ((await params).rentalId));
     }
 
     return NextResponse.json({ payment }, { status: 201 });

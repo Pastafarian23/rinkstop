@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { rentalId: string } },
+  { params }: { params: Promise<{ rentalId: string }> },
 ) {
   try {
     const userId = await getParentUserId();
@@ -29,7 +29,7 @@ export async function POST(
     const { data: rental, error: rentalErr } = await supabaseAdmin
       .from('equipment_rentals')
       .select('*, equipment_items!inner(label)')
-      .eq('id', params.rentalId)
+      .eq('id', ((await params).rentalId))
       .eq('parent_user_id', userId)
       .maybeSingle();
 
