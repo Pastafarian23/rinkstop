@@ -1,16 +1,17 @@
 // /api/indexnow
 //
-// Called by the Vercel deploy hook (POST) after every production deploy.
-// Submits all known URLs to IndexNow so Bing/Yandex pick up changes in
-// hours instead of waiting for the regular 1-2 week crawl cycle.
+// Called by the Vercel signed-webhook forwarder at
+//   POST /api/vercel/indexnow
+// which is invoked on every production `deployment.ready`.
 //
 // Auth: requires header `x-deploy-secret: <ADMIN_SECRET>` (env var).
-// The deploy hook on Vercel is configured to include this header.
+// This route is intentionally not directly addressable from the public
+// internet; only the in-project forwarder can include the secret header,
+// because Vercel Deploy Hooks (Settings -> Git -> Deploy Hooks) cannot
+// attach custom headers. Manual/curl usage:
 //
-// To add to Vercel deploy hook:
-//   URL: https://rinkstop.com/api/indexnow
-//   Method: POST
-//   Headers: { "x-deploy-secret": "<ADMIN_SECRET value>" }
+//   curl -X POST -H "x-deploy-secret: $ADMIN_SECRET" \
+//     https://rinkstop.com/api/indexnow
 //
 // Non-blocking: errors are returned in the response body but status is 200
 // (so the deploy is not marked failed). Bing will catch up via sitemap on
