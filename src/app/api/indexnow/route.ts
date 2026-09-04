@@ -1,21 +1,19 @@
 // /api/indexnow
 //
-// Called by the Vercel signed-webhook forwarder at
-//   POST /api/vercel/indexnow
-// which is invoked on every production `deployment.ready`.
+// Called by the GitHub Actions workflow
+//   .github/workflows/ping-search-engines.yml
+// after every push to main. The workflow holds the deploy secret
+// `ADMIN_SECRET` as a GitHub repo secret and POSTs with the
+// `x-deploy-secret` header.
 //
-// Auth: requires header `x-deploy-secret: <ADMIN_SECRET>` (env var).
-// This route is intentionally not directly addressable from the public
-// internet; only the in-project forwarder can include the secret header,
-// because Vercel Deploy Hooks (Settings -> Git -> Deploy Hooks) cannot
-// attach custom headers. Manual/curl usage:
+// Manual/curl usage:
 //
 //   curl -X POST -H "x-deploy-secret: $ADMIN_SECRET" \
 //     https://rinkstop.com/api/indexnow
 //
 // Non-blocking: errors are returned in the response body but status is 200
-// (so the deploy is not marked failed). Bing will catch up via sitemap on
-// the regular crawl cycle if the ping fails.
+// (so the workflow run isn't marked failed). Bing will catch up via sitemap
+// on the regular crawl cycle if the ping fails.
 
 import { NextResponse } from 'next/server';
 import { readFileSync, existsSync } from 'fs';
