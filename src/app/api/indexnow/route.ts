@@ -23,8 +23,9 @@ import { join } from 'path';
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
+const INDEXNOW_KEY_FILE = 'f7c9d2e8a4b1f6c3d8e9a7b5c2f1d4e6.txt';
 const BATCH_SIZE = 100;
-const MAX_URLS_PER_DEPLOY = 1000; // Don't spam IndexNow on a full sitemap deploy
+const MAX_URLS_PER_DEPLOY = 10000; // IndexNow accepts up to 10,000 URLs per request
 
 interface PingResult {
   totalUrls: number;
@@ -37,13 +38,13 @@ interface PingResult {
 
 function getIndexNowKey(): string | null {
   if (process.env.INDEXNOW_KEY) return process.env.INDEXNOW_KEY;
-  // Try to read the deployed key file from the public dir
+  // Use the key that is deployed and verified with IndexNow. There are
+  // several legacy/draft key files in public; picking the first matching
+  // file makes the API silently submit with an unregistered key.
   const publicDir = join(process.cwd(), 'public');
-  if (!existsSync(publicDir)) return null;
-  const files = require('fs').readdirSync(publicDir);
-  const keyFile = files.find((f: string) => /^[0-9a-f]{32}\.txt$/.test(f));
-  if (!keyFile) return null;
-  return readFileSync(join(publicDir, keyFile), 'utf8').trim();
+  const keyPath = join(publicDir, INDEXNOW_KEY_FILE);
+  if (!existsSync(keyPath)) return null;
+  return readFileSync(keyPath, 'utf8').trim();
 }
 
 async function fetchSitemapUrls(sitemapUrl: string): Promise<string[]> {
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
   if (!key) {
     return NextResponse.json({
       ok: false,
-      error: 'No IndexNow key found. Set INDEXNOW_KEY env or add <32-hex>.txt to public/.',
+      error: `No IndexNow key found. Set INDEXNOW_KEY or restore ${INDEXNOW_KEY_FILE} in public/.`,
     }, { status: 200 });
   }
 
@@ -107,15 +108,16 @@ export async function POST(request: Request) {
   }
 
   if (urls.length === 0) {
-    // Default: pull from all 7 sub-sitemaps
+    // Default: pull from all current sub-sitemaps.
     const defaultSitemaps = [
       '/sitemap-static.xml',
       '/sitemap-rinks.xml',
       '/sitemap-teams.xml',
+      '/sitemap-players.xml',
       '/sitemap-leagues.xml',
       '/sitemap-locations.xml',
       '/sitemap-news.xml',
-      '/sitemap-players.xml',
+      '/sitemap-images.xml',
     ];
     for (const sm of defaultSitemaps) {
       try {

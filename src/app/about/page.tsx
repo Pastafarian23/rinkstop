@@ -37,6 +37,8 @@ export default async function AboutPage() {
     url: 'https://rinkstop.com/about',
     sameAs: [
       'https://www.linkedin.com/in/arnellarracas',
+      'https://www.wikidata.org/wiki/Q140956126',
+      'https://twitter.com/rinkstopnews',
     ],
     worksFor: {
       '@type': 'Organization',
@@ -102,7 +104,23 @@ export default async function AboutPage() {
     description: 'About RinkStop: mission, who we are, what we cover, and editorial standards.',
   };
 
-  const aboutJsonLd = [founder, organization, webPage];
+  const aboutJsonLd = [
+    founder,
+    {
+      ...organization,
+      '@id': 'https://rinkstop.com/#organization',
+      sameAs: [
+        'https://www.wikidata.org/wiki/Q140955752',
+        'https://www.wikidata.org/wiki/Q140956126',
+        'https://www.crunchbase.com/organization/rinkstop-hockey',
+        'https://twitter.com/rinkstopnews',
+        'https://www.facebook.com/rinkstop',
+        'https://www.instagram.com/rinkstop',
+        'https://www.linkedin.com/company/rinkstop/',
+      ],
+    },
+    webPage,
+  ];
 
   return (
     <>
