@@ -38,6 +38,31 @@ async function lookupSlugRedirect(slug: string): Promise<string | null> {
   }
 }
 
+async function lookupPlayerSlugByUuid(uuid: string): Promise<string | null> {
+  // 2026-09-04 BUG-PLAYER-UUID: UUID-based player URLs were returning
+  // 200 with 'Player Not Found' due to an unresolved server-side issue
+  // in the page render (PostgREST direct works fine, slug URLs work
+  // fine — UUID URLs render the metadata title but the page body fails).
+  // Redirect UUIDs to their canonical slug URL instead.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const endpoint = `${url}/rest/v1/players?select=slug&id=eq.${encodeURIComponent(uuid)}&limit=1`;
+    const res = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(500),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ slug: string | null }>;
+    if (rows.length === 0 || !rows[0].slug) return null;
+    return rows[0].slug;
+  } catch (e) {
+    console.error('[middleware] player uuid lookup failed:', e);
+    return null;
+  }
+}
+
 // Team slug redirect: handles renames of user-created teams.
 // Affects both the team hub (/dashboard/team/[slug]) and the public
 // profile (/directory/teams/[slug]). Public SELECT RLS means anyone can
@@ -117,7 +142,49 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  // Team slug redirect: /dashboard/team/{old} and /directory/teams/{old}
+  async function lookupPlayerSlugByUuid(uuid: string): Promise<string | null> {
+  // 2026-09-04 BUG-PLAYER-UUID: UUID-based player URLs were returning
+  // 200 with 'Player Not Found' due to an unresolved server-side issue
+  // in the page render (PostgREST direct works fine, slug URLs work
+  // fine — UUID URLs render the metadata title but the page body fails).
+  // Redirect UUIDs to their canonical slug URL instead.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const endpoint = `${url}/rest/v1/players?select=slug&id=eq.${encodeURIComponent(uuid)}&limit=1`;
+    const res = await fetch(endpoint, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(500),
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ slug: string | null }>;
+    if (rows.length === 0 || !rows[0].slug) return null;
+    return rows[0].slug;
+  } catch (e) {
+    console.error('[middleware] player uuid lookup failed:', e);
+    return null;
+  }
+}
+
+// Player UUID → slug redirect. /directory/players/<uuid> renders the
+// metadata title but the page body returns 'Player Not Found' due to
+// an unresolved server-side rendering issue. Redirecting UUIDs to their
+// canonical slug URL is a structural fix that preserves bookmarks +
+// social-share links without requiring the body query to be debugged
+// here.
+if (path.startsWith('/directory/players/') && path.length > '/directory/players/'.length) {
+  const idSegment = path.slice('/directory/players/'.length).split('/')[0];
+  if (idSegment && !idSegment.includes('.') && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idSegment)) {
+    const toSlug = await lookupPlayerSlugByUuid(idSegment);
+    if (toSlug && toSlug !== idSegment) {
+      const dest = new URL(`/directory/players/${toSlug}${path.slice('/directory/players/'.length + idSegment.length)}`, request.url);
+      return NextResponse.redirect(dest, 308);
+    }
+  }
+}
+
+// Team slug redirect: /dashboard/team/{old} and /directory/teams/{old}
   // → same paths with the new slug. Handles workspace renames.
   // Runs BEFORE the dashboard auth check so the auth redirect target is
   // the canonical (new) URL, not the old one.
