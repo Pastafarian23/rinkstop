@@ -56,6 +56,20 @@ export function inlineMarkdownToHtml(line: string): string {
       return `<a href="${safeUrl}" rel="noopener noreferrer" target="_blank">${safeUrl}</a>`;
     }
   );
+  // 5) protocol-less rinkstop.com paths. Articles often write
+  //    'rinkstop.com/guides/officiating' instead of the full URL. Match
+  //    those bare paths (no protocol) and link to https://rinkstop.com/<path>.
+  //    Conservative: only matches rinkstop.com explicitly to avoid
+  //    auto-linking every domain-shaped string in the article body.
+  //    Must run AFTER step 4 so fully-qualified URLs are already linked.
+  s = s.replace(
+    /(?<![\w/])rinkstop\.com\/[^\s<)]+/g,
+    (match) => {
+      const url = 'https://' + match;
+      const safeUrl = url.replace(/"/g, '&quot;');
+      return `<a href="${safeUrl}" rel="noopener noreferrer" target="_blank">${match}</a>`;
+    }
+  );
   return s;
 }
 
