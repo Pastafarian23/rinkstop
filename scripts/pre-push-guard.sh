@@ -45,7 +45,9 @@ fi
 
 # Gate 4: Next.js build (this catches the [slug]/[pillar] collision class)
 echo "[4/5] running pnpm build (this takes 60-120s)..."
-if ! pnpm build 2>&1 | tail -30; then
+# 2026-09-04: the 2 GiB default Node heap OOMs on this project's
+# full route compile; bump to 4 GiB to mirror the Vercel build image.
+if ! NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096" pnpm build 2>&1 | tail -30; then
   echo "FAIL: pnpm build failed"
   echo "Common cause: dynamic-segment collisions like [slug] vs [pillar] at the same depth"
   exit 1
