@@ -155,7 +155,7 @@ export default async function PlayerPage({ params }: Props) {
 
   const { data: seoPlayer, error: playerError } = await sb
     .from('players')
-    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, teams(name, slug, leagues(name, slug, country))')
+    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, teams(name, leagues(name))')
     .eq(isUuid ? 'id' : 'slug', id)
     .maybeSingle();
 
