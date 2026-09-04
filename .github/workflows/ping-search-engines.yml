@@ -1,0 +1,48 @@
+name: Ping Search Engines
+
+# Fires after every push to main (and on manual dispatch).
+# Posts to /api/indexnow with the deploy secret so Bing/Yandex
+# pick up the new URLs within minutes instead of waiting 1-2 weeks
+# for the normal crawl cycle.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ping-search-engines
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ping IndexNow
+        env:
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+        run: |
+          if [ -z "$ADMIN_SECRET" ]; then
+            echo "::error::ADMIN_SECRET GitHub secret is not set."
+            exit 1
+          fi
+          if [ -z "$SITE_URL" ]; then
+            SITE_URL="https://rinkstop.com"
+          fi
+          echo "Pinging ${SITE_URL}/api/indexnow …"
+          HTTP=$(curl -sS -o /tmp/ping.json -w '%{http_code}' \
+            -X POST "${SITE_URL}/api/indexnow" \
+            -H "x-deploy-secret: ${ADMIN_SECRET}" \
+            -H 'Content-Type: application/json' \
+            --data '{}')
+          echo "HTTP $HTTP"
+          cat /tmp/ping.json
+          echo
+          # Non-fatal if IndexNow returns 200 with failed batches — that's logged
+          # but Bing will catch up via sitemap on the regular crawl cycle.
+          if [ "$HTTP" != "200" ]; then
+            echo "::warning::IndexNow ping returned HTTP $HTTP"
+            exit 1
+          fi
