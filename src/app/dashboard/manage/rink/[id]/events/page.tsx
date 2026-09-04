@@ -128,6 +128,16 @@ export default async function OwnerEventsPage({ params }: PageProps) {
         </div>
         <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
           <Link
+            href={`/dashboard/manage/rink/${id}/event-submissions`}
+            style={{
+              background: 'transparent', border: '1px solid rgba(255,184,28,0.3)', color: '#FCD34D',
+              borderRadius: 8, padding: '0.6rem 1.1rem', fontWeight: 600,
+              fontSize: '0.875rem', textDecoration: 'none', whiteSpace: 'nowrap',
+            }}
+          >
+            Review submissions
+          </Link>
+          <Link
             href={`/dashboard/manage/rink/${id}/events/new`}
             style={{
               display: 'inline-block',

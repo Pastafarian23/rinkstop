@@ -129,6 +129,18 @@ export default async function EventsLandingPage({ searchParams }: { searchParams
       <p style={{ color: '#cbd5e1', fontSize: '15px', marginBottom: '24px', maxWidth: '720px' }}>
         Tournaments, camps, clinics, tryouts, and showcases from claimed rinks. Filter by date, location, type, and skill level. Every event links to its rink page.
       </p>
+      <div style={{ marginBottom: '16px' }}>
+        <Link
+          href="/events/submit"
+          style={{
+            display: 'inline-block',
+            background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC',
+            padding: '0.5rem 1rem', borderRadius: 6, fontSize: '0.9rem', fontWeight: 600, textDecoration: 'none',
+          }}
+        >
+          + Submit your event
+        </Link>
+      </div>
 
       <FilterBar sp={sp} />
 
