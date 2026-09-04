@@ -220,15 +220,26 @@ export default async function FullArticle({ post }: { post: FullPost }) {
   // Existing autolink.ts function was unused. Wire it up + fetch entity names
   // per-article (cached in a module-level Map so repeat article renders on the
   // same Next.js server instance skip the DB query).
-  try {
-    const entities = await getAutolinkEntities();
-    if (entities.teams.length + entities.leagues.length + entities.rinks.length > 0) {
-      htmlContent = autolinkContent(htmlContent, entities.teams, entities.leagues, entities.rinks);
+  //
+  // 2026-09-04: per-post opt-out. The autolink pass matches bare words like
+  // "Canada", "USA", "championship", "sport" against DB entity slugs (national
+  // teams, league rows), producing false-positive inline links that point at
+  // the wrong directory entry. For articles where this is undesirable (e.g.
+  // analysis pieces that use country names as prose, not as entity references),
+  // set `disable_autolink: true` on the post. Column is optional — defaults to
+  // false. Same fix protects every future article.
+  const autolinkEnabled = !(post as { disable_autolink?: boolean }).disable_autolink;
+  if (autolinkEnabled) {
+    try {
+      const entities = await getAutolinkEntities();
+      if (entities.teams.length + entities.leagues.length + entities.rinks.length > 0) {
+        htmlContent = autolinkContent(htmlContent, entities.teams, entities.leagues, entities.rinks);
+      }
+    } catch (e) {
+      // Auto-linking is best-effort. If the DB query fails, render the
+      // unlinked article rather than failing the whole page.
+      console.error('[autolink] entity fetch failed:', e);
     }
-  } catch (e) {
-    // Auto-linking is best-effort. If the DB query fails, render the
-    // unlinked article rather than failing the whole page.
-    console.error('[autolink] entity fetch failed:', e);
   }
 
   const authorName = post.author_name || 'Arnel Larracas';
