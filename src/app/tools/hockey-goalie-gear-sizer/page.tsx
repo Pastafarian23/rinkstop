@@ -24,6 +24,7 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import GoalieGearSizerClient from './GoalieGearSizerClient';
 import { trackPageView } from '@/lib/analytics';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Goalie Gear Sizer (2026) — Pads, Blocker, Glove, Chest, Stick',
@@ -31,14 +32,14 @@ export const metadata: Metadata = {
     'Free hockey goalie gear calculator — enter height, weight, age, and optional ATK / hand length to size pads, blocker, catch glove, chest protector, and stick. Bauer / CCM verified 2026.',
   alternates: { canonical: 'https://rinkstop.com/tools/hockey-goalie-gear-sizer' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Goalie Gear Sizer (2026) — Pads, Blocker, Glove, Chest, Stick',
     description:
       'Free hockey goalie gear calculator. Pads, blocker, catch glove, chest protector, and stick — by height, weight, age, ATK, and hand length.',
     url: 'https://rinkstop.com/tools/hockey-goalie-gear-sizer',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Goalie Gear Sizer (2026) — Pads, Blocker, Glove, Chest, Stick',

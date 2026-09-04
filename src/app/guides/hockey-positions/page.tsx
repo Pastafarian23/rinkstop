@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Understanding Hockey Positions',
   description: 'Centers, wings, defense, and goalies  --  what each hockey position does and how they work together. A complete guide for players, parents, and fans.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Understanding Hockey Positions',
     description: 'Centers, wings, defense, and goalies  --  what each position does and how they work together.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-positions' },
 };
 

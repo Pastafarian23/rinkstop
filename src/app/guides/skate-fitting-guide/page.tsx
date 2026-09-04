@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Skate Fitting Guide',
   description: 'How hockey skates should fit  --  common sizing mistakes, what to look for at a fitting, and when to replace skates. Get the right fit the first time.',
-  openGraph: { title: 'Skate Fitting Guide', description: 'How hockey skates should fit, common sizing mistakes, and what to look for at a fitting.', type: 'article' },
+  openGraph: withDefaultOg({ title: 'Skate Fitting Guide', description: 'How hockey skates should fit, common sizing mistakes, and what to look for at a fitting.', type: 'article' }),
   alternates: { canonical: 'https://rinkstop.com/guides/skate-fitting-guide' },
 };
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'How Hockey Development Works — Pathways from Youth to Pro',
@@ -7,13 +8,13 @@ export const metadata: Metadata = {
   keywords: ['hockey development', 'hockey pathway', 'youth hockey', 'junior hockey', 'NCAA hockey', 'hockey career'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-development-explained' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'How Hockey Development Works — A Complete Guide',
     description: 'Pathways from learn-to-skate through junior hockey, NCAA, and the NHL.',
     type: 'article',
     url: 'https://rinkstop.com/learn/hockey-development-explained',
     siteName: 'RinkStop',
-  },
+  }),
 };
 
 export default function HockeyDevelopmentExplainedPage() {

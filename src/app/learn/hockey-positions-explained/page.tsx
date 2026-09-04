@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Positions Explained — Forwards, Defensemen, Goalies',
@@ -7,13 +8,13 @@ export const metadata: Metadata = {
   keywords: ['hockey positions', 'centers', 'wings', 'defensemen', 'goalies', 'hockey roles'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-positions-explained' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Positions Explained — A Complete Guide',
     description: 'What every hockey position does on the ice, the skills that matter, and how modern NHL teams deploy them.',
     type: 'article',
     url: 'https://rinkstop.com/learn/hockey-positions-explained',
     siteName: 'RinkStop',
-  },
+  }),
 };
 
 export default function HockeyPositionsExplainedPage() {

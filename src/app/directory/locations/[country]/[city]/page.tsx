@@ -11,6 +11,7 @@ import {
 } from '@/lib/city-context';
 import { robotsMeta } from '@/lib/seo';
 import CityPageContent from '@/components/CityPageContent';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -85,7 +86,7 @@ export async function generateMetadata({
       canonical: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
     },
     robots: robotsMeta(decision),
-    openGraph: {
+    openGraph: withDefaultOg({
       title: hasListings
         ? `Hockey in ${displayCity} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
         : `Hockey in ${displayCity} 2026`,
@@ -95,7 +96,7 @@ export async function generateMetadata({
       url: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
       siteName: 'RinkStop',
       type: 'website',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title: hasListings

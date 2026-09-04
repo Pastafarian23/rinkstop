@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'IIHF World Championship Guide — Format, History, and How the Tournament Works',
   description: 'How the IIHF World Championship works: 16-team format, group stages, knockout rounds, the gold medal game, and how national teams qualify for the world\'s largest annual hockey tournament.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'IIHF World Championship Guide',
     description: 'IIHF World Championship format, history, qualifying, and the gold medal game.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/iihf-world-championship' },
 };
 

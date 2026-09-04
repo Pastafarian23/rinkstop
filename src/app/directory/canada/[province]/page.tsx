@@ -6,6 +6,7 @@ import StateProvincePageContent, { type CityRow } from '@/components/StateProvin
 import { buildRegionIntro, buildProvinceFAQs } from '@/lib/state-faq-builder';
 import { getProvinceHockeyFacts } from '@/lib/state-hockey-facts';
 import { robotsMeta } from '@/lib/seo';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 /**
  * Canada province page: /directory/canada/{province}
@@ -71,13 +72,13 @@ export async function generateMetadata({
       canonical: `https://rinkstop.com/directory/canada/${resolved.slug}`,
     },
     robots: robotsMeta(decision),
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `Hockey in ${provinceName}`,
       description: `Hockey teams, rinks, and cities in ${provinceName}, Canada.`,
       url: `https://rinkstop.com/directory/canada/${resolved.slug}`,
       siteName: 'RinkStop',
       type: 'website',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title: `Hockey in ${provinceName}`,

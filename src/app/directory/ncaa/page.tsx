@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   // 2026-09-03 Gap 1: rewrote title with year + keyword + value props.
@@ -14,14 +15,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'NCAA College Hockey 2026-27',
     description:
       'NCAA Division 1 college hockey 2026-27: men\'s and women\'s teams, conferences, scores, schedules, and rosters.',
     url: 'https://rinkstop.com/directory/college',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'NCAA College Hockey 2026-27',

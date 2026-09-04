@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'College Hockey Directory',
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'College Hockey Directory',
     description:
       'NCAA Division 1, Division 3, and ACHA college hockey teams, players, conferences, and game schedules.',
     url: 'https://rinkstop.com/directory/college',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'College Hockey Directory',

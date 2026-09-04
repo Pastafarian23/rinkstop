@@ -4,6 +4,7 @@ import { getCityPageData, resolveCAProvince, slugToTitle } from '@/lib/city-page
 import CityPageContent from '@/components/CityPageContent';
 import { PROVINCE_SLUGS, type ProvinceAbbr } from '@/lib/ca-provinces';
 import { robotsMeta } from '@/lib/seo';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -49,11 +50,11 @@ export async function generateMetadata({
       canonical: `https://rinkstop.com/directory/canada/${canonicalSlug}/${citySlug}`,
     },
     robots: robotsMeta(decision),
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `${location} Hockey`,
       description: `Hockey in ${location}: teams, rinks, and leagues.`,
       type: 'website',
-    },
+    }),
   };
 }
 

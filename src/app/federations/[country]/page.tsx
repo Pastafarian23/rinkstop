@@ -7,6 +7,7 @@ import {
   type Federation,
 } from '@/lib/federations';
 import { countryToSlug } from '@/lib/country-page';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface PageProps {
   params: Promise<{ country: string }>;
@@ -67,13 +68,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: `https://rinkstop.com/federations/${countryToSlug(fed.countryName)}`,
     },
     robots: { index: true, follow: true },
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `${fed.federationName} — ${fed.countryName}`,
       description: `Official national hockey federation for ${fed.countryName}.`,
       url: `https://rinkstop.com/federations/${countryToSlug(fed.countryName)}`,
       siteName: 'RinkStop',
       type: 'website',
-    },
+    }),
   };
 }
 

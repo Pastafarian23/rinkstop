@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import PlayersIndexClient from './PlayersIndexClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface Player {
   id: string;
@@ -34,14 +35,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: '6,352 Hockey Player Profiles — NHL, NCAA, Junior & Pro',
     description:
       'Browse 6,352 hockey player profiles from the NHL, AHL, KHL, NCAA, CHL, IIHF, and pro women’s leagues. Career stats, draft info, team history, and headshots — searchable by name, position, team, or country.',
     url: 'https://rinkstop.com/directory/players',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: '6,352 Hockey Player Profiles — NHL, NCAA, Junior & Pro',

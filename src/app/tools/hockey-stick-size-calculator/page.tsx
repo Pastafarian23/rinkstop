@@ -12,6 +12,7 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import StickSizeCalculatorClient from './StickSizeCalculatorClient';
 import { trackPageView } from '@/lib/analytics';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Stick Size Calculator (2026) — Length, Flex & Curve by Position',
@@ -19,14 +20,14 @@ export const metadata: Metadata = {
     'What size hockey stick do you need? Free calculator with length, flex, and curve recommendations by height, weight, position, and skill level. Industry-standard chin-to-nose rule + weight-based flex.',
   alternates: { canonical: 'https://rinkstop.com/tools/hockey-stick-size-calculator' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Stick Size Calculator (2026) — Length, Flex & Curve by Position',
     description:
       'Free stick-sizing tool. Length, flex, and curve recommendations by height, weight, position, and skill level.',
     url: 'https://rinkstop.com/tools/hockey-stick-size-calculator',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Stick Size Calculator (2026) — Length, Flex & Curve by Position',

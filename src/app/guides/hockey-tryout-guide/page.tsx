@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Tryout Guide',
   description: 'How to prepare for hockey tryouts at every level — youth, high school, junior, college, and adult league. What to expect, what to bring, and how to stand out.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Tryout Guide',
     description: 'How to prepare for hockey tryouts at every level — youth, high school, junior, college, and adult league.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-tryout-guide' },
 };
 

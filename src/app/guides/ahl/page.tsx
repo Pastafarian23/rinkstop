@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'AHL Guide — Calder Cup Playoffs, Format, and How the American Hockey League Works',
   description: 'Everything you need to know about the AHL (American Hockey League): 32 teams across the US and Canada, the Calder Cup playoffs, primary NHL development role, divisions, schedule, and how to follow teams.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'AHL Guide',
     description: 'AHL format, divisions, Calder Cup playoffs, and how the league develops NHL players.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/ahl' },
 };
 

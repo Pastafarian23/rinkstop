@@ -15,6 +15,7 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import SkateSizeCalculatorClient from './SkateSizeCalculatorClient';
 import { trackPageView } from '@/lib/analytics';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Skate Size Calculator (2026) — US Shoe Size → Bauer / CCM',
@@ -22,14 +23,14 @@ export const metadata: Metadata = {
     'What size hockey skate does your kid need? Free calculator — enter US shoe size (women, men, kid), get skate size, age category (youth/junior/intermediate/senior), and width recommendation.',
   alternates: { canonical: 'https://rinkstop.com/tools/hockey-skate-size-calculator' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Skate Size Calculator (2026) — US Shoe Size → Bauer / CCM',
     description:
       'Free skate-sizing tool. US shoe size → skate size, age category, and width (D vs EE). Industry-standard Bauer / CCM sizing.',
     url: 'https://rinkstop.com/tools/hockey-skate-size-calculator',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Skate Size Calculator (2026) — US Shoe Size → Bauer / CCM',

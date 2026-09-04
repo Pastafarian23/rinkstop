@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Shooting Guide - Wrist Shot, Snap Shot, Slap Shot, Backhand, and How to Score',
   description: 'Everything you need to know about hockey shooting: the four main shot types, mechanics of each, how to pick a corner, the release, follow-through, and the shooting drills that build a hard, accurate shot.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Shooting Guide',
     description: 'Wrist shot, snap shot, slap shot, backhand - mechanics, accuracy tips, and the drills that build them.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/shooting' },
 };
 

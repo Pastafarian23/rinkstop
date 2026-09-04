@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Passing Guide - Forehand, Backhand, Saucer, and How to Move the Puck',
   description: 'Everything you need to know about hockey passing: the basic passes, the saucer pass, one-touch passing, give-and-go, breakout passes, and the drills that build puck-moving skills.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Passing Guide',
     description: 'Hockey passing: forehand, backhand, saucer, one-touch, give-and-go, and breakouts.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/passing' },
 };
 

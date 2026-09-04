@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 /**
  * /hockey-database — Hub page designed to own the "hockey database" SERP.
@@ -36,14 +37,14 @@ export const metadata: Metadata = {
   ],
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://rinkstop.com/hockey-database' },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Database — The open hockey directory for AI and humans',
     description:
       'A live, structured, AI-citable database of ice hockey rinks, teams, players, leagues, and IIHF federations. Every number verifiable, every row sourced.',
     url: 'https://rinkstop.com/hockey-database',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Database — RinkStop',

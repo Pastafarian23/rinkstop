@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'NHL Draft Guide — Eligibility, Order, Process, and How Players Get Picked',
   description: 'How the NHL Draft works: age eligibility, draft order, rounds, combine, scouting, and the path from junior/amateur hockey to a professional contract.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'NHL Draft Guide',
     description: 'NHL Draft eligibility, order, rounds, combine, scouting, and the path from junior hockey to a pro contract.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/nhl-draft' },
 };
 

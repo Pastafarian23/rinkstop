@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import Breadcrumb from '@/components/Breadcrumb';
 import { Metadata } from 'next';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface Props {
   params: Promise<{ city: string }>;
@@ -24,11 +25,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description: `Discover the best ice rinks in ${cityName}. Find hockey arenas, public skating facilities, and learn-to-play programs. Your complete ${cityName} rink guide.`,
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `Best Ice Rinks in ${cityName}`,
       description: `Find the top-rated ice rinks and hockey facilities in ${cityName}.`,
       type: 'website',
-    },
+    }),
   };
 }
 

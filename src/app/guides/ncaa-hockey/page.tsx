@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'NCAA Hockey Guide — D-I, D-III, ACHA & Recruiting',
   description: 'Everything hockey players, parents, and coaches need to know about NCAA hockey: Division I and III eligibility, ACHA alternatives, the recruiting timeline, scholarship limits, and how to get noticed.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'NCAA Hockey Guide — D-I, D-III, ACHA & Recruiting',
     description: 'NCAA Division I, Division III, and ACHA hockey — eligibility, recruiting, scholarships, and how to play college hockey.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/ncaa-hockey' },
 };
 

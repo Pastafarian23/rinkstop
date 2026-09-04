@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Strength and Conditioning Guide - Off-Ice Training for Hockey Players',
   description: 'Everything you need to know about hockey strength and conditioning: the muscle groups that matter most, in-season vs off-season training, age-appropriate programs, plyometrics, mobility, and how to balance on-ice and off-ice work.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Strength and Conditioning Guide',
     description: 'Off-ice training for hockey: strength, conditioning, plyometrics, mobility, and age-appropriate programs.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/strength-conditioning' },
 };
 

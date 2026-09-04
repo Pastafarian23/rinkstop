@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Stickhandling Guide - Puck Control, Deking, and the Skills That Beat Defenders',
   description: 'Everything you need to know about hockey stickhandling: the grip, the basic moves, how to develop soft hands, off-ice training, and the drills that build puck control.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Stickhandling Guide',
     description: 'Hockey stickhandling: grip, basic moves, dekes, off-ice training, and the drills that build them.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/stickhandling' },
 };
 

@@ -5,6 +5,7 @@ import HockeyTeamsContent from './HockeyTeamsContent';
 import AdSlot from '@/components/AdSlot';
 import { ADSENSE_SLOTS } from '@/lib/adsense';
 import { LEAGUE_LEVELS, LEVEL_LABELS, LEVEL_ORDER, type Level } from '@/lib/league-levels';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 import {
   getDirectoryCountsCached,
   getCountryTeamCountsCached,
@@ -70,13 +71,13 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
       index: true,
       follow: true,
     },
-    openGraph: {
+    openGraph: withDefaultOg({
       title,
       description,
       url: qs ? `https://rinkstop.com/directory/teams?${qs}` : 'https://rinkstop.com/directory/teams',
       siteName: 'RinkStop',
       type: 'website',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title,

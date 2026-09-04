@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import StaffDirectory from '@/components/StaffDirectory';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Officials Directory',
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Officials Directory',
     description:
       'Browse hockey referees and linesmen from NHL, IIHF, and leagues worldwide.',
     url: 'https://rinkstop.com/directory/officials',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Officials Directory',

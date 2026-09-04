@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getCityPageData, resolveUSState, resolveCityName } from '@/lib/city-page';
 import { robotsMeta } from '@/lib/seo';
 import CityPageContent from '@/components/CityPageContent';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -55,11 +56,11 @@ export async function generateMetadata({
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}/${citySlug}`,
     },
     robots: robotsMeta(decision),
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `${location} Hockey`,
       description: `Hockey in ${location}: ice rinks, teams, and leagues.`,
       type: 'website',
-    },
+    }),
   };
 }
 

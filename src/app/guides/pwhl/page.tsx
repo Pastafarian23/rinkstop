@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'PWHL Guide — Walter Cup Playoffs, Format, and How the Professional Women\'s Hockey League Works',
   description: 'Everything you need to know about the PWHL (Professional Women\'s Hockey League): 8 teams across the US and Canada, the Walter Cup playoffs, format, schedule, and how it transformed women\'s professional hockey.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'PWHL Guide',
     description: 'PWHL format, Walter Cup playoffs, and the unified professional women\'s hockey league launched in 2023-24.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/pwhl' },
 };
 

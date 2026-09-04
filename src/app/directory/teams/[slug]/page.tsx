@@ -69,6 +69,7 @@ async function deriveTeamTimezone(
 export const dynamic = 'force-dynamic';
 
 import PublicTeamProfile from './PublicTeamProfile';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -213,13 +214,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical: `https://rinkstop.com/directory/teams/${normalizedSlug}`,
     },
-    openGraph: {
+    openGraph: withDefaultOg({
       title: t.name,
       description: desc,
       url: `https://rinkstop.com/directory/teams/${normalizedSlug}`,
       siteName: 'RinkStop',
       type: 'profile',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title: t.name,

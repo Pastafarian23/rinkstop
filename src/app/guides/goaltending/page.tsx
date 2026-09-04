@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Goaltending Guide - Position, Equipment, Technique, and How Goalies Are Developed',
   description: 'Everything you need to know about hockey goaltending: the position, the equipment, the core techniques, how goalies are developed through junior and pro hockey, and the greatest goalies in NHL history.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Goaltending Guide',
     description: 'Goaltending position, equipment, techniques, development paths, and the greats of NHL history.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/goaltending' },
 };
 

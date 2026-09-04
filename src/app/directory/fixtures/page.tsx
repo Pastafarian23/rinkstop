@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import FixturesClient from './FixturesClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Fixtures & Schedule',
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Fixtures & Schedule',
     description:
       'Upcoming hockey games, schedules, and fixtures from leagues worldwide.',
     url: 'https://rinkstop.com/directory/fixtures',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Fixtures & Schedule',

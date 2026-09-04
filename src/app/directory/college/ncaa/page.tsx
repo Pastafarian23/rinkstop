@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'NCAA Hockey Programs',
@@ -13,14 +14,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'NCAA Hockey Programs',
     description:
       'All NCAA hockey programs across Division 1, Division 3, and ACHA — teams, rosters, conferences, and schedules.',
     url: 'https://rinkstop.com/directory/college/ncaa',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'NCAA Hockey Programs',

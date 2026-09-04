@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import YouthProgramsClient from './YouthProgramsClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface YouthProgram {
   id: string;
@@ -26,14 +27,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Youth Hockey Programs',
     description:
       'Browse youth hockey programs, learn-to-play clinics, and developmental leagues.',
     url: 'https://rinkstop.com/directory/youth-hockey/programs',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Youth Hockey Programs',

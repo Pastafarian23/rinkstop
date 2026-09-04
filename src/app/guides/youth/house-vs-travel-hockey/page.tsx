@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'House vs Travel Hockey: How to Choose the Right Level',
   description: 'A parent\'s guide to house vs travel hockey — what each level means in USA Hockey\'s tier system, what it costs, time commitment, and how to pick the right fit for your kid.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'House vs Travel Hockey: How to Choose the Right Level',
     description: 'House vs travel hockey explained — USA Hockey tiers, costs, time, and how to decide for your kid.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/youth/house-vs-travel-hockey' },
 };
 

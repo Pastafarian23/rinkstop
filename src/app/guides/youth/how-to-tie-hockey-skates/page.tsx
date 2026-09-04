@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'How to Tie Hockey Skates: A Step-by-Step Guide for Beginners',
   description: 'How to tie hockey skates properly — the standard crisscross lacing method, fixing lace bite, the right knot, and advanced techniques (lock lacing, double cross, dropping an eyelet).',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'How to Tie Hockey Skates',
     description: 'Step-by-step hockey skate lacing for beginners — standard crisscross, lace bite fixes, and advanced methods.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/youth/how-to-tie-hockey-skates' },
 };
 

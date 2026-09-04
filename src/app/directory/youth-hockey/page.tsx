@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Youth Hockey Guide',
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Youth Hockey Guide',
     description:
       'How to get started in youth hockey, find a program, and learn the game at every age.',
     url: 'https://rinkstop.com/directory/youth-hockey',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Youth Hockey Guide',

@@ -4,6 +4,7 @@ import StateProvincePageContent, { type CityRow } from '@/components/StateProvin
 import { buildRegionIntro, buildStateFAQs } from '@/lib/state-faq-builder';
 import { getStateHockeyFacts } from '@/lib/state-hockey-facts';
 import { robotsMeta } from '@/lib/seo';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 /**
  * US state page: /directory/united-states/{state}
@@ -97,11 +98,11 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}`,
     },
     robots: robotsMeta(decision),
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `${stateName} Hockey`,
       description: `Hockey in ${stateName}: ice rinks, teams, leagues, and youth programs.`,
       type: 'website',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title: `${stateName} Hockey`,

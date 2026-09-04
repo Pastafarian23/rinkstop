@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 const supabase = supabaseAdmin;
 
@@ -16,14 +17,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey News',
     description:
       'Latest hockey news, trades, injuries, and scores from NHL and leagues worldwide.',
     url: 'https://rinkstop.com/news',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey News',

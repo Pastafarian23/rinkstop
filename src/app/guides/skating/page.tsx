@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Skating Guide - Stride, Edge Work, Crossovers, and Skating Drills',
   description: 'Everything you need to know about hockey skating: the mechanics of the hockey stride, edge work, crossovers, stopping, transitions, and the fundamental drills every player should learn.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Skating Guide',
     description: 'Hockey skating mechanics, edge work, crossovers, stopping, and the drills that build them.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/skating' },
 };
 

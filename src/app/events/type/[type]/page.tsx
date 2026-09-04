@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { CANONICAL_URL } from '@/lib/constants';
 import EventCard from '@/components/events/EventCard';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 const TYPE_LABEL: Record<string, string> = {
   tournament: 'Tournaments',
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ type: str
     title: `Hockey ${label} — RinkStop`,
     description: `Upcoming ${label.toLowerCase()} at hockey rinks worldwide.`,
     alternates: { canonical: `${CANONICAL_URL}/events/type/${type}` },
-    openGraph: { title: `Hockey ${label}`, type: 'website' },
+    openGraph: withDefaultOg({ title: `Hockey ${label}`, type: 'website' }),
   };
 }
 

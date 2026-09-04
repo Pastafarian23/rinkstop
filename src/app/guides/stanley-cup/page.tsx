@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Stanley Cup Guide — History, Playoffs, Format, and How the Trophy Works',
   description: 'Everything hockey fans need to know about the Stanley Cup: 130-year history, the playoff format, the trophy itself, Conn Smythe and Conn Smythe winners, and how a new champion is crowned each June.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Stanley Cup Guide',
     description: 'Stanley Cup history, playoffs, format, Conn Smythe, and how the trophy is awarded.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/stanley-cup' },
 };
 

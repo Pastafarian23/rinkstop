@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import DirectoryLandingClient from './DirectoryLandingClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Directory',
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Directory',
     description:
       'Find hockey teams, players, leagues, rinks, and more from every corner of the globe.',
     url: 'https://rinkstop.com/directory',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Directory',

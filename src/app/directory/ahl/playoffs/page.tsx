@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import AHLPlayoffsClient from './AHLPlayoffsClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface StoredRound {
   seriesDesc: string;
@@ -27,14 +28,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: '2026 AHL Playoffs Bracket & Calder Cup Coverage',
     description:
       'Live coverage of the 2026 AHL Playoffs and Calder Cup bracket.',
     url: 'https://rinkstop.com/directory/ahl/playoffs',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: '2026 AHL Playoffs Bracket & Calder Cup Coverage',

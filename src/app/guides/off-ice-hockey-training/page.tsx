@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Off-Ice Training for Hockey Players',
   description: 'The best dryland exercises to build explosive power, edge strength, and durability for hockey players. No ice required  --  train like the pros.',
-  openGraph: { title: 'Off-Ice Training for Hockey Players', description: 'The best dryland exercises to build explosive power, edge strength, and durability.', type: 'article' },
+  openGraph: withDefaultOg({ title: 'Off-Ice Training for Hockey Players', description: 'The best dryland exercises to build explosive power, edge strength, and durability.', type: 'article' }),
   alternates: { canonical: 'https://rinkstop.com/guides/off-ice-hockey-training' },
 };
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import GamesIndexClient from './GamesIndexClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 // PR #146 (2026-08-22) WS24 thin-content sweep: expand the /directory/games
 // meta description so the index page clears the AdSense ~150-word
@@ -24,13 +25,13 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
     description: _gamesMetaLong.slice(0, 240),
     url: 'https://rinkstop.com/directory/games',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',

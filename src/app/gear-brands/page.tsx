@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Equipment Brands — Bauer, CCM, Warrior, True & More (2026 Guide)',
@@ -8,13 +9,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://rinkstop.com/gear-brands',
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Equipment Brands — Bauer, CCM, Warrior, True & More',
     description:
       'Hockey equipment brand directory: reviews, comparisons, and buying guides for skates, sticks, pads, and protective gear.',
     type: 'website',
     url: 'https://rinkstop.com/gear-brands',
-  },
+  }),
 };
 
 export default function GearBrandsPage() {
