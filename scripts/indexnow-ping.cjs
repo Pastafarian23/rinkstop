@@ -21,23 +21,18 @@ const https = require('https');
 
 const HOST = (process.env.SITE_URL || 'https://rinkstop.com').replace(/\/$/, '');
 const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
+const INDEXNOW_KEY_FILE = 'f7c9d2e8a4b1f6c3d8e9a7b5c2f1d4e6.txt';
 const BATCH_SIZE = 100;
 const REQUEST_TIMEOUT_MS = 10000;
 
 function loadKey() {
   if (process.env.INDEXNOW_KEY) return process.env.INDEXNOW_KEY;
-  // Fall back: read the first *-key*.txt or d4a8b1e6... style key file in public/
-  // (deployed key file path is fetched from the live site so the script works in any env)
-  // For local execution, just pick a known key file.
+  // The live key file above is the one that returns 200/202 from IndexNow.
+  // Several legacy key files exist in public; do not select them by directory order.
   const publicDir = path.join(__dirname, '..', 'public');
-  const files = fs.readdirSync(publicDir);
-  // IndexNow key files are 32-char hex names; ignore rinkstop-indexnow- (old misnamed) and
-  // d4a8b1... (current properly-named) and f7c9d2... (additional)
-  const candidates = files.filter(f => /^[0-9a-f]{32}\.txt$/.test(f));
-  if (candidates.length > 0) {
-    return fs.readFileSync(path.join(publicDir, candidates[0]), 'utf8').trim();
-  }
-  throw new Error('No IndexNow key found. Set INDEXNOW_KEY env var or create <key>.txt in public/');
+  const keyPath = path.join(publicDir, INDEXNOW_KEY_FILE);
+  if (fs.existsSync(keyPath)) return fs.readFileSync(keyPath, 'utf8').trim();
+  throw new Error(`No IndexNow key found at ${keyPath}. Set INDEXNOW_KEY or restore the verified key file.`);
 }
 
 function parseArgs(argv) {
@@ -126,15 +121,16 @@ async function main() {
     urls.push(...sitemapUrls);
   }
   if (urls.length === 0) {
-    // Default: ping all 7 sub-sitemaps
+    // Default: ping all current sub-sitemaps.
     const defaultSitemaps = [
       `${HOST}/sitemap-static.xml`,
       `${HOST}/sitemap-rinks.xml`,
       `${HOST}/sitemap-teams.xml`,
+      `${HOST}/sitemap-players.xml`,
       `${HOST}/sitemap-leagues.xml`,
       `${HOST}/sitemap-locations.xml`,
       `${HOST}/sitemap-news.xml`,
-      `${HOST}/sitemap-players.xml`,
+      `${HOST}/sitemap-images.xml`,
     ];
     for (const sm of defaultSitemaps) {
       try {
