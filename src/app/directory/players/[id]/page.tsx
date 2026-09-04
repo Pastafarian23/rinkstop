@@ -154,17 +154,22 @@ export default async function PlayerPage({ params }: Props) {
     return <div style={{ textAlign: 'center', padding: '4rem' }}>Configuration error — please try again.</div>;
   }
 
-  // 2026-09-04: Diagnostic simplification — drop the teams/leagues join
-  // from the body query. The metadata path's query (which works) doesn't
-  // include `slug` or `country`, but the body query did. The deep join
-  // through the legacy `teams` table (national teams, not team_workspaces)
-  // appears to fail for UUID-keyed rows in some Next.js server contexts.
-  // Removed the join; downstream code already handles missing teams.
+  // 2026-09-04: Use supabaseAdmin proxy (lazy-init) instead of inline
+  // createClient via getDirectAdminClient(). The inline pattern worked
+  // for slug URLs but mysteriously returned null for UUID URLs even
+  // though the metadata path (which used the proxy) succeeded. The
+  // proxy returns the same SupabaseClient type, so this is a safe
+  // drop-in.
+  // 2026-09-04: Also simplified the SELECT to match the metadata query
+  // shape. Removed `slug` and `country` from the join since they're
+  // not on the legacy `teams` (national teams) table.
   const { data: seoPlayer, error: playerError } = await supabaseAdmin
     .from('players')
-    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id')
+    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, teams(name, leagues(name))')
     .eq(isUuid ? 'id' : 'slug', id)
     .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const playerTyped: any = seoPlayer;
 
   if (playerError) {
     console.error('[player-page] DB error:', playerError);
@@ -230,23 +235,23 @@ export default async function PlayerPage({ params }: Props) {
 
   let playerJsonLd: object | null = null;
   try {
-    const fullName = `${seoPlayer.first_name ?? ''} ${seoPlayer.last_name ?? ''}`.trim() || 'Hockey Player';
-    const teamsArr: any[] = Array.isArray(seoPlayer.teams) ? seoPlayer.teams : (seoPlayer.teams ? [seoPlayer.teams] : []);
+    const fullName = `${playerTyped.first_name ?? ''} ${playerTyped.last_name ?? ''}`.trim() || 'Hockey Player';
+    const teamsArr: any[] = Array.isArray(playerTyped.teams) ? playerTyped.teams : (playerTyped.teams ? [playerTyped.teams] : []);
     const team0 = teamsArr[0] || {};
     const league0 = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : {};
     const teamName = team0?.name;
     const teamSlug = team0?.slug;
     const leagueName = league0?.name;
     const leagueSlug = league0?.slug;
-    const position = POSITION_FULL[seoPlayer.position] || seoPlayer.position || 'Hockey Player';
+    const position = POSITION_FULL[playerTyped.position] || playerTyped.position || 'Hockey Player';
 
     const seoFaqs = buildPlayerFAQs({
-      fullName, firstName: seoPlayer.first_name, position: seoPlayer.position,
-      jerseyNumber: seoPlayer.jersey_number, shoots: seoPlayer.shoots, catches: seoPlayer.catches,
-      heightCm: seoPlayer.height_cm, weightKg: seoPlayer.weight_kg, birthDate: seoPlayer.birth_date,
-      nationality: seoPlayer.nationality, bio: seoPlayer.bio,
+      fullName, firstName: playerTyped.first_name, position: playerTyped.position,
+      jerseyNumber: playerTyped.jersey_number, shoots: playerTyped.shoots, catches: playerTyped.catches,
+      heightCm: playerTyped.height_cm, weightKg: playerTyped.weight_kg, birthDate: playerTyped.birth_date,
+      nationality: playerTyped.nationality, bio: playerTyped.bio,
       teamName, teamSlug, leagueName, leagueSlug, leagueCountry: league0?.country,
-      updatedAt: seoPlayer.updated_at,
+      updatedAt: playerTyped.updated_at,
     });
 
     playerJsonLd = {
@@ -258,7 +263,7 @@ export default async function PlayerPage({ params }: Props) {
           jobTitle: `Professional Ice Hockey Player — ${position}`,
           sport: 'Ice hockey',
           url: `${BASE_URL}/directory/players/${id}`,
-          ...(seoPlayer.headshot_url ? { image: seoPlayer.headshot_url } : {}),
+          ...(playerTyped.headshot_url ? { image: playerTyped.headshot_url } : {}),
           ...(teamName ? {
             affiliation: {
               '@type': 'SportsTeam', name: teamName,
@@ -268,10 +273,10 @@ export default async function PlayerPage({ params }: Props) {
               } : {}),
             },
           } : {}),
-          ...(seoPlayer.nationality && seoPlayer.nationality.length <= 3
-            ? { nationality: COUNTRY_NAMES[seoPlayer.nationality] || seoPlayer.nationality } : {}),
-          ...(seoPlayer.height_cm ? { height: { '@type': 'QuantitativeValue', value: seoPlayer.height_cm, unitCode: 'CMT' } } : {}),
-          ...(seoPlayer.weight_kg ? { weight: { '@type': 'QuantitativeValue', value: seoPlayer.weight_kg, unitCode: 'KGM' } } : {}),
+          ...(playerTyped.nationality && playerTyped.nationality.length <= 3
+            ? { nationality: COUNTRY_NAMES[playerTyped.nationality] || playerTyped.nationality } : {}),
+          ...(playerTyped.height_cm ? { height: { '@type': 'QuantitativeValue', value: playerTyped.height_cm, unitCode: 'CMT' } } : {}),
+          ...(playerTyped.weight_kg ? { weight: { '@type': 'QuantitativeValue', value: playerTyped.weight_kg, unitCode: 'KGM' } } : {}),
         },
         {
           '@type': 'BreadcrumbList',
@@ -303,10 +308,10 @@ export default async function PlayerPage({ params }: Props) {
         id={id}
         ownerUserId={owner?.userId ?? null}
         initialFollowersCount={initialFollowersCount}
-        initialPlayer={seoPlayer as any}
+        initialPlayer={playerTyped}
         unifiedStats={unifiedStats}
       />
-      <PlayerSEOCopy player={seoPlayer as any} career={{}} />
+      <PlayerSEOCopy player={playerTyped} career={{}} />
       <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
         <ClaimThisListingMount entityType="player" entityId={id} />
       </div>
@@ -327,8 +332,8 @@ export default async function PlayerPage({ params }: Props) {
         }}
       >
         <div style={{ marginBottom: '0.5rem' }}>
-          {`${seoPlayer?.first_name ?? ''} ${seoPlayer?.last_name ?? ''}`.trim() || 'Player'} data sourced from RinkStop's verified hockey directory.
-          {seoPlayer?.updated_at ? ` Last updated ${new Date(seoPlayer.updated_at).toISOString().split('T')[0]}.` : ''}
+          {`${playerTyped?.first_name ?? ''} ${playerTyped?.last_name ?? ''}`.trim() || 'Player'} data sourced from RinkStop's verified hockey directory.
+          {playerTyped?.updated_at ? ` Last updated ${new Date(playerTyped.updated_at).toISOString().split('T')[0]}.` : ''}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
           <span>By <a href="/about" style={{ color: '#FFB81C', textDecoration: 'underline' }}>Arnel Larracas</a>, Founder &amp; Editor-in-Chief</span>
