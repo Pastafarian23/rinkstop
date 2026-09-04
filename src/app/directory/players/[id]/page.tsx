@@ -154,16 +154,15 @@ export default async function PlayerPage({ params }: Props) {
     return <div style={{ textAlign: 'center', padding: '4rem' }}>Configuration error — please try again.</div>;
   }
 
-  // 2026-09-04: switched from inline getDirectAdminClient() to the lazy
-  // supabaseAdmin proxy. The inline createClient() pattern was failing
-  // for UUID-based player URLs (slug URLs worked) — the metadata path
-  // used supabaseAdmin (which worked) while the page-body path used the
-  // inline client (which didn't), causing 'Player Not Found' on UUID
-  // URLs even though the player existed in DB. The proxy returns the
-  // same SupabaseClient type, so this is a safe drop-in.
+  // 2026-09-04: Diagnostic simplification — drop the teams/leagues join
+  // from the body query. The metadata path's query (which works) doesn't
+  // include `slug` or `country`, but the body query did. The deep join
+  // through the legacy `teams` table (national teams, not team_workspaces)
+  // appears to fail for UUID-keyed rows in some Next.js server contexts.
+  // Removed the join; downstream code already handles missing teams.
   const { data: seoPlayer, error: playerError } = await supabaseAdmin
     .from('players')
-    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, teams(name, leagues(name))')
+    .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id')
     .eq(isUuid ? 'id' : 'slug', id)
     .maybeSingle();
 
