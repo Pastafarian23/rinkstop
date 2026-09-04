@@ -303,6 +303,39 @@ export default async function PlayerPage({ params }: Props) {
       <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
         <ClaimThisListingMount entityType="player" entityId={id} />
       </div>
+
+      {/* 2026-09-04 Layer 5 (aggressive growth plan) trust footer.
+          AdSense hard gate requires byline + methodology + last-updated +
+          AI disclosure on every content surface; player pages were the
+          last surface missing this footer. */}
+      <footer
+        style={{
+          maxWidth: '1280px',
+          margin: '1.5rem auto 3rem',
+          padding: '1.5rem 1.5rem 1rem',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          color: 'rgba(255,255,255,0.55)',
+          fontSize: '0.75rem',
+          lineHeight: 1.6,
+        }}
+      >
+        <div style={{ marginBottom: '0.5rem' }}>
+          {`${seoPlayer?.first_name ?? ''} ${seoPlayer?.last_name ?? ''}`.trim() || 'Player'} data sourced from RinkStop's verified hockey directory.
+          {seoPlayer?.updated_at ? ` Last updated ${new Date(seoPlayer.updated_at).toISOString().split('T')[0]}.` : ''}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+          <span>By <a href="/about" style={{ color: '#FFB81C', textDecoration: 'underline' }}>Arnel Larracas</a>, Founder &amp; Editor-in-Chief</span>
+          <span>•</span>
+          <a href="/data-methodology" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Data methodology</a>
+          <span>•</span>
+          <a href="/editorial-policy" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Editorial policy</a>
+          <span>•</span>
+          <a href="/corrections" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Report a correction</a>
+        </div>
+        <div style={{ marginTop: '0.5rem' }}>
+          AI tools may be used to assist with research and drafting on RinkStop. All content is reviewed and edited by a human editor before publication.
+        </div>
+      </footer>
     </>
   );
 }
