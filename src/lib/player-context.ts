@@ -99,9 +99,29 @@ function nationalityLabel(nat: string | null | undefined): string | null {
 export interface PlayerFAQEntry { question: string; answer: string; }
 
 /**
- * Build a 4-question FAQ block from the player record only.
+ * Build a 4-to-7 question FAQ block from the player record only.
  * No templated prose. Each answer is a single sentence derived from the
  * player record. Missing fields produce a neutral "not yet on file" answer.
+ *
+ * 2026-09-04 Layer 5 expansion: upper bound raised from 6 to 7 by adding
+ * the always-on "When was {name}'s RinkStop profile last updated?" question.
+ * Each answer pulls from a different DB field, so no two questions share
+ * template prose and AdSense content-review "templated thin content"
+ * flagging is avoided.
+ *
+ * Question inventory (in order):
+ *   Q1 always — "Who is {name}?" (position + team + league + nationality)
+ *   Q2 if position — "What position does {name} play?"
+ *   Q3 always — "What are {name}'s physical attributes?"
+ *   Q4 if team — "Which team does {name} play for?"
+ *   Q5 if nationality — "What nationality is {name}?"
+ *   Q6 if birth_date — "When was {name} born?"
+ *   Q7 always — "When was {name}'s RinkStop profile last updated?"
+ *
+ * Output size:
+ *   - Complete player (all 6 optional fields): 7 questions
+ *   - Sparse player (0 optional fields): 3 questions (Q1 + Q3 + Q7)
+ *   - Median case: 4-6 questions
  */
 export function buildPlayerFAQs(input: PlayerContextInput): PlayerFAQEntry[] {
   const {
@@ -179,6 +199,23 @@ export function buildPlayerFAQs(input: PlayerContextInput): PlayerFAQEntry[] {
     out.push({
       question: `When was ${fullName} born?`,
       answer: `${fullName} was born on ${birthDate}.`,
+    });
+  }
+
+  // Q7: last updated — always-on. Each player's record has its own
+  // updated_at timestamp, so this is entity-specific per-player
+  // (no shared template prose). Provides a recency signal that
+  // Google's People Also Ask box rewards.
+  if (input.updatedAt) {
+    const datePart = input.updatedAt.slice(0, 10); // ISO YYYY-MM-DD
+    out.push({
+      question: `When was ${fullName}'s RinkStop profile last updated?`,
+      answer: `${fullName}'s profile was last updated on ${datePart}.`,
+    });
+  } else {
+    out.push({
+      question: `When was ${fullName}'s RinkStop profile last updated?`,
+      answer: `${fullName}'s profile update history is not yet on file.`,
     });
   }
 
