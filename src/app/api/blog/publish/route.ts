@@ -128,6 +128,7 @@ function normalizePostBody(body: Record<string, unknown>): Record<string, unknow
   if (typeof body.reading_time_minutes === 'number') out.reading_time_minutes = body.reading_time_minutes;
   if (typeof body.highlight_id === 'number') out.highlight_id = body.highlight_id;
   if (typeof body.published_at === 'string') out.published_at = body.published_at;
+  if (typeof body.disable_autolink === 'boolean') out.disable_autolink = body.disable_autolink;
   return out;
 }
 
