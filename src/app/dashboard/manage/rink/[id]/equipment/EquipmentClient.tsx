@@ -154,6 +154,33 @@ export default function EquipmentClient({
     if (r.ok) await refreshRentals();
   };
 
+  // Record payment (manual cash/bank/etc — not Stripe)
+  const recordPayment = async (rental: any) => {
+    const amountStr = prompt(`Record payment for ${rental.equipment_items?.label || 'rental'}.\nAmount in PHP (${rental.currency}):`, '');
+    if (!amountStr) return;
+    const amount = parseInt(amountStr);
+    if (!amount || isNaN(amount)) return alert('Amount must be a number.');
+    const kind = prompt('Payment kind: deposit, monthly, late_fee, damage, refund', 'monthly') || 'monthly';
+    const r = await fetch(`/api/owner/rinks/${rinkId}/equipment/rentals/${rental.id}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount_cents: amount,
+        kind,
+        status: 'succeeded',
+        provider: 'manual',
+        currency: rental.currency,
+      }),
+    });
+    if (r.ok) {
+      alert('Payment recorded.');
+      await refreshRentals();
+    } else {
+      const j = await r.json();
+      alert(j.error || 'Failed to record payment.');
+    }
+  };
+
   // Settings save
   const saveSettings = async () => {
     setLoading(true);
@@ -293,6 +320,11 @@ export default function EquipmentClient({
                   </div>
 
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    {rental.status !== 'cancelled' && rental.status !== 'returned' && (
+                      <button onClick={() => recordPayment(rental)} style={{ background: 'rgba(255,184,28,0.15)', border: '1px solid rgba(255,184,28,0.3)', color: '#FCD34D', padding: '0.35rem 0.75rem', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                        + Record Payment
+                      </button>
+                    )}
                     {rental.status === 'pending' && (
                       <button onClick={() => updateRentalStatus(rental.id, 'active')} style={{ background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.3)', color: '#86EFAC', padding: '0.35rem 0.75rem', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
                         Approve & Activate

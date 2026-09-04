@@ -7,6 +7,9 @@
 // RLS-gated: signed-in user must own the rink.
 
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { requireRinkOwnerForRental } from '@/lib/rental/owner-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 

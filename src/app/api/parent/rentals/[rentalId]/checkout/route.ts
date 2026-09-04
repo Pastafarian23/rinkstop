@@ -22,13 +22,13 @@ export async function POST(
     }
 
     const origin = request.headers.get('origin') || `https://${request.headers.get('host')}`;
-    const successUrl = `${origin}/account/rentals/${params.rentalId}?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${origin}/account/rentals/${params.rentalId}?checkout=cancelled`;
+    const successUrl = `${origin}/dashboard/rentals?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${origin}/dashboard/rentals?checkout=cancelled`;
 
     // Load rental + item + parent email
     const { data: rental, error: rentalErr } = await supabaseAdmin
       .from('equipment_rentals')
-      .select('*, equipment_items!inner(label), rinks!inner(stripe_account_id)')
+      .select('*, equipment_items!inner(label)')
       .eq('id', params.rentalId)
       .eq('parent_user_id', userId)
       .maybeSingle();
@@ -37,15 +37,27 @@ export async function POST(
       return NextResponse.json({ error: 'Rental not found.' }, { status: 404 });
     }
 
-    // Get parent email from Clerk (we use a service-role call)
-    // For now, fetch from profiles
+    // Get parent email from profiles
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('email')
       .eq('user_id', userId)
       .maybeSingle();
 
-    const stripeAccountId = (rental as any).rinks?.stripe_account_id || undefined;
+    // Get Stripe Connect account from rink_owners (NOT rinks - that's the bug we just fixed)
+    // Multiple owners can exist per rink; pick the first with a stripe_account_id set.
+    const { data: rinkOwner } = await supabaseAdmin
+      .from('rink_owners')
+      .select('stripe_account_id, stripe_onboarding_complete')
+      .eq('rink_id', rental.rink_id)
+      .not('stripe_account_id', 'is', null)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const stripeAccountId = (rinkOwner?.stripe_onboarding_complete && rinkOwner?.stripe_account_id)
+      ? rinkOwner.stripe_account_id
+      : undefined;
 
     const { url, sessionId } = await createRentalCheckoutSession({
       rentalId: rental.id,
