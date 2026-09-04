@@ -20,27 +20,44 @@ import path from 'node:path';
 
 const SITE = 'https://rinkstop.com';
 const HOST = 'rinkstop.com';
+const INDEXNOW_KEY_FILE = 'f7c9d2e8a4b1f6c3d8e9a7b5c2f1d4e6.txt';
 
-// Load key from the file we serve at the root (it has the same content as
-// the local /root/.openclaw/workspace/rinkstop-indexnow-key.txt).
-const localKeyPath = '/root/.openclaw/workspace/rinkstop-indexnow-key.txt';
-const KEY = fs.readFileSync(localKeyPath, 'utf8').trim();
+// Prefer INDEXNOW_KEY when explicitly supplied. Otherwise use the deployed
+// key file that IndexNow accepts, rather than an old local-only key.
+function loadKey() {
+  if (process.env.INDEXNOW_KEY) return process.env.INDEXNOW_KEY;
+  const repoKeyPath = new URL(`../public/${INDEXNOW_KEY_FILE}`, import.meta.url);
+  if (fs.existsSync(repoKeyPath)) return fs.readFileSync(repoKeyPath, 'utf8').trim();
+  throw new Error(`No IndexNow key found. Set INDEXNOW_KEY or restore ${INDEXNOW_KEY_FILE} in public/.`);
+}
+const KEY = loadKey();
 
-// Discover the key filename (public/ + KEY + .txt). We uploaded it as
-// public/{key}.txt in the previous commit.
+// Discover the key filename from the key value.
 const keyFileUrl = `${SITE}/${KEY}.txt`;
 
 async function getSitemapUrls() {
-  const r = await fetch(`${SITE}/sitemap.xml`);
-  if (!r.ok) throw new Error(`sitemap.xml fetch failed: ${r.status}`);
-  const xml = await r.text();
+  const sitemaps = [
+    `${SITE}/sitemap-static.xml`,
+    `${SITE}/sitemap-rinks.xml`,
+    `${SITE}/sitemap-teams.xml`,
+    `${SITE}/sitemap-players.xml`,
+    `${SITE}/sitemap-leagues.xml`,
+    `${SITE}/sitemap-locations.xml`,
+    `${SITE}/sitemap-news.xml`,
+    `${SITE}/sitemap-images.xml`,
+  ];
   const urls = [];
-  const re = /<loc>([^<]+)<\/loc>/g;
-  let m;
-  while ((m = re.exec(xml)) !== null) {
-    urls.push(m[1]);
+  for (const sitemap of sitemaps) {
+    const r = await fetch(sitemap);
+    if (!r.ok) throw new Error(`${sitemap} fetch failed: ${r.status}`);
+    const xml = await r.text();
+    const re = /<loc>([^<]+)<\/loc>/g;
+    let m;
+    while ((m = re.exec(xml)) !== null) {
+      urls.push(m[1]);
+    }
   }
-  return urls;
+  return [...new Set(urls)];
 }
 
 async function ping(urls) {
