@@ -1,17 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'RinkStop vs SportsEngine, Hudl, Yelp & LinkedIn (2026 Pricing Comparison)',
   description:
     'Side-by-side comparison of RinkStop\'s pricing against SportsEngine HQ, Hudl, LinkedIn Premium, Yelp, and BBB. Detailed value analysis for rink owners, club admins, parents, and players. Updated July 2026.',
   alternates: { canonical: 'https://rinkstop.com/guides/rinkstop-vs-competitors' },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'RinkStop vs SportsEngine, Hudl, Yelp & LinkedIn (2026 Pricing Comparison)',
     description:
       'How RinkStop\'s pricing compares to SportsEngine HQ, Hudl, LinkedIn Premium, Yelp, and BBB. For rink owners, club admins, parents, and players.',
     type: 'article',
-  },
+  }),
   keywords: [
     'rinkstop vs sportsengine',
     'rinkstop vs hudl',

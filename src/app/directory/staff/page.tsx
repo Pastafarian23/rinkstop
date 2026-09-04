@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import StaffDirectory from '@/components/StaffDirectory';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Staff Directory',
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Staff Directory',
     description:
       'Browse hockey front-office staff, scouts, and executives from NHL, AHL, KHL, and more.',
     url: 'https://rinkstop.com/directory/staff',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Staff Directory',

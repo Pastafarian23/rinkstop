@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { LeagueTeams } from '@/components/LeagueTeams';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,14 +17,14 @@ export const metadata: Metadata = {
   description:
     'Kontinental Hockey League (KHL) 2026-27 season: 23 teams across Russia, Belarus, Kazakhstan, and China. Live scores, schedules, rosters, arenas, and standings — all in one place.',
   alternates: { canonical: 'https://rinkstop.com/directory/khl' },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'KHL Hockey Teams 2026-27',
     description:
       'Kontinental Hockey League 2026-27: 23 teams, 4 countries. Live scores, schedules, rosters, and standings.',
     url: 'https://rinkstop.com/directory/khl',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
 };
 
 export const revalidate = 3600;

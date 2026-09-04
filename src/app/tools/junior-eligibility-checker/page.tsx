@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import JuniorEligibilityCheckerClient from './JuniorEligibilityCheckerClient';
 import { trackPageView } from '@/lib/analytics';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Junior Hockey Eligibility Checker (2026) — OHL / WHL / QMJHL / USHL / NCAA',
@@ -25,14 +26,14 @@ export const metadata: Metadata = {
     'Is your player eligible for junior hockey? Free checker — enter birth year + month, get a league-by-league eligibility grid for OHL, WHL, QMJHL, USHL, NCDC, NAHL, BCHL, AJHL, and NCAA.',
   alternates: { canonical: 'https://rinkstop.com/tools/junior-eligibility-checker' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Junior Hockey Eligibility Checker (2026) — OHL / WHL / QMJHL / USHL / NCAA',
     description:
       'Free junior hockey eligibility checker. League-by-league grid for OHL, WHL, QMJHL, USHL, NCDC, NAHL, BCHL, AJHL, and NCAA.',
     url: 'https://rinkstop.com/tools/junior-eligibility-checker',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Junior Hockey Eligibility Checker (2026) — OHL / WHL / QMJHL / USHL / NCAA',

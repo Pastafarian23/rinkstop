@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import StaffDirectory from '@/components/StaffDirectory';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Scouts Directory',
@@ -12,14 +13,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Scouts Directory',
     description:
       'Browse hockey scouts from NHL, AHL, KHL, and leagues worldwide.',
     url: 'https://rinkstop.com/directory/scouts',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Scouts Directory',

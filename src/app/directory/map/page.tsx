@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import MapClient from './MapClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface MapRink {
   id: string;
@@ -27,13 +28,13 @@ export async function generateMetadata(): Promise<Metadata> {
     description: desc,
     alternates: { canonical: 'https://rinkstop.com/directory/map' },
     robots: { index: true, follow: true },
-    openGraph: {
+    openGraph: withDefaultOg({
       title: 'Hockey Rinks & Arenas Map',
       description: desc,
       url: 'https://rinkstop.com/directory/map',
       siteName: 'RinkStop',
       type: 'website',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title: 'Hockey Rinks & Arenas Map',

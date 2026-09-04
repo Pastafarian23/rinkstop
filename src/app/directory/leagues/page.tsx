@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import LeaguesIndexClient from './LeaguesIndexClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface League {
   id: string;
@@ -21,14 +22,14 @@ export const metadata: Metadata = {
   description:
     'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.',
   alternates: { canonical: 'https://rinkstop.com/directory/leagues' },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Leagues Worldwide — Pro, Junior, College',
     description:
       'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.',
     url: 'https://rinkstop.com/directory/leagues',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
 };
 
 // ISR-cached for 1 hour (2026-07-22 perf pass).

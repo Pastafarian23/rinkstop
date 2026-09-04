@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'USHL Guide — Clark Cup Playoffs, Format, and How the US Hockey League Works',
   description: 'Everything you need to know about the USHL (United States Hockey League): the only Tier 1 USA Hockey junior league, 16 teams, Clark Cup playoffs, draft pipeline to NCAA and NHL, and the USHL Draft.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'USHL Guide',
     description: 'USHL format, Clark Cup playoffs, the USA Hockey Tier 1 junior league, and the primary path to NCAA and NHL for American players.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/ushl' },
 };
 

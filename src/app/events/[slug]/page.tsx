@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { CANONICAL_URL } from '@/lib/constants';
 import { COUNTRY_MAP } from '@/lib/country-page';
 import ActivityBadge from '@/components/events/ActivityBadge';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 type EventRow = {
   id: string;
@@ -66,7 +67,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description: desc,
     alternates: { canonical: `${CANONICAL_URL}/events/${slug}` },
     robots: { index: event.status !== 'draft', follow: true },
-    openGraph: { title: event.title, description: desc, type: 'website', url: `${CANONICAL_URL}/events/${slug}`, siteName: 'RinkStop' },
+    openGraph: withDefaultOg({ title: event.title, description: desc, type: 'website', url: `${CANONICAL_URL}/events/${slug}`, siteName: 'RinkStop' }),
     twitter: { card: 'summary_large_image' },
   };
 }

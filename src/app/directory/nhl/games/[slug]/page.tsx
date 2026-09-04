@@ -5,6 +5,7 @@ import { getNhlGameById, getNhlGamesByDate, slugify, NhlMatch } from '@/lib/nhl-
 import { findCanonicalTeam } from '@/lib/nhl-teams-canonical';
 import ShareButton from '@/components/ShareButton';
 import { buildGameShare } from '@/lib/share';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -18,11 +19,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${parsed.awayName} at ${parsed.homeName} | ${parsed.date}`,
     description: `${parsed.awayName} vs ${parsed.homeName} on ${parsed.date}. Box score, final score, and game details on RinkStop.`,
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `${parsed.awayName} vs ${parsed.homeName} | ${parsed.date}`,
       description: `NHL game — ${parsed.awayName} at ${parsed.homeName}.`,
       type: 'website',
-    },
+    }),
   };
 }
 

@@ -1,15 +1,16 @@
 import { Metadata } from 'next';
 import TryoutGuideForm from '@/components/TryoutGuideForm';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'The Hockey Tryout Survival Guide (Free PDF)',
   description:
     'A 25-page guide for hockey parents. What coaches actually look for, how to prep in 2 weeks, what to say on the car ride home. Free download from a 20-year coach.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'The Hockey Tryout Survival Guide',
     description:
       'Free 25-page guide for hockey parents. Written by a 20-year coach. No spam, no upsell — just the guide.',
-  },
+  }),
 };
 
 const PREVIEW_SECTIONS = [

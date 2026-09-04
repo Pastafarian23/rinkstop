@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import CountryPageClient from './CountryPageClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface LeagueEntry { id: string; name: string }
 interface CityEntry {
@@ -62,13 +63,13 @@ export async function generateMetadata({
       index: true,
       follow: true,
     },
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `Hockey in ${name}`,
       description,
       url: `https://rinkstop.com/directory/locations/${country}`,
       siteName: 'RinkStop',
       type: 'website',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title: `Hockey in ${name}`,

@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ExternalLinkIcon } from '@/components/icons';
 import { getBrandList } from '@/lib/brand-page';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Equipment Brands',
@@ -18,14 +19,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Equipment Brands',
     description:
       'Browse 32 hockey equipment and gear brands — sticks, skates, protective gear, and apparel.',
     url: 'https://rinkstop.com/directory/brands',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Equipment Brands',

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { CANONICAL_URL } from '@/lib/constants';
 import { COUNTRY_MAP } from '@/lib/country-page';
 import EventCard from '@/components/events/EventCard';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 function stateLabel(state: string): string {
   return state.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ country: 
     title: `Hockey Events in ${label}, ${countryLabel} — RinkStop`,
     description: `Upcoming tournaments, camps, clinics, and tryouts at hockey rinks in ${label}, ${countryLabel}.`,
     alternates: { canonical: `${CANONICAL_URL}/events/region/${country}/${state}` },
-    openGraph: { title: `Hockey Events in ${label}, ${countryLabel}`, type: 'website' },
+    openGraph: withDefaultOg({ title: `Hockey Events in ${label}, ${countryLabel}`, type: 'website' }),
   };
 }
 

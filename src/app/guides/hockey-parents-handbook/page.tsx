@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: "Hockey Parent's Handbook",
   description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette. A parent's guide to navigating youth hockey from Mites to Midgets.",
-  openGraph: {
+  openGraph: withDefaultOg({
     title: "Hockey Parent's Handbook",
     description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette.",
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-parents-handbook' },
 };
 

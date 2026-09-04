@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'KHL Guide — Gagarin Cup Playoffs, Format, and How the Kontinental Hockey League Works',
   description: 'Everything you need to know about the KHL (Kontinental Hockey League): 22 teams across Russia, Belarus, Kazakhstan, and China, the Gagarin Cup playoffs, conferences, schedule, and how to follow teams.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'KHL Guide',
     description: 'KHL format, conferences, Gagarin Cup playoffs, and the largest professional hockey league outside the NHL.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/khl' },
 };
 

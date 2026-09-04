@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { CANONICAL_URL } from '@/lib/constants';
 import { COUNTRY_MAP } from '@/lib/country-page';
 import EventCard from '@/components/events/EventCard';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 type Rink = { id: string; name: string; slug: string; city: string | null; province_state: string | null; country: string | null };
 type EventRow = {
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `Events at ${rink.name} — RinkStop`,
     description: `Upcoming hockey events, tournaments, camps, and tryouts at ${rink.name}${rink.city ? ` in ${rink.city}` : ''}.`,
     alternates: { canonical: `${CANONICAL_URL}/events/rink/${slug}` },
-    openGraph: { title: `Events at ${rink.name}`, type: 'website' },
+    openGraph: withDefaultOg({ title: `Events at ${rink.name}`, type: 'website' }),
   };
 }
 

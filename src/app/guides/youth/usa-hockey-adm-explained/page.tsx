@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: "USA Hockey's ADM Explained: What the American Development Model Means for Your Kid",
   description: "A parent's guide to USA Hockey's American Development Model (ADM) — what the 8 stages look like, the 10 guiding principles, and why early specialization hurts long-term development.",
-  openGraph: {
+  openGraph: withDefaultOg({
     title: "USA Hockey's ADM Explained",
     description: "The American Development Model — what it is, what the stages mean, and what it means for your kid's hockey journey.",
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/youth/usa-hockey-adm-explained' },
 };
 

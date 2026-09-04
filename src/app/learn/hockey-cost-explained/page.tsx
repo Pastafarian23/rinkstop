@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'How Much Does Hockey Cost? — A Complete Cost Guide for Parents and Players',
@@ -7,13 +8,13 @@ export const metadata: Metadata = {
   keywords: ['hockey cost', 'hockey registration', 'hockey fees', 'ice hockey cost', 'youth hockey cost'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-cost-explained' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'How Much Does Hockey Cost? — A Complete Cost Guide',
     description: 'Registration, equipment, ice time, travel, and tournament fees at every level.',
     type: 'article',
     url: 'https://rinkstop.com/learn/hockey-cost-explained',
     siteName: 'RinkStop',
-  },
+  }),
 };
 
 export default function HockeyCostExplainedPage() {

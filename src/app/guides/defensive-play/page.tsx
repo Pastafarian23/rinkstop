@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Defensive Play Guide - Positioning, Gap Control, and How to Win the Defensive Zone',
   description: 'Everything you need to know about hockey defensive play: defensive positioning, gap control, stick checking, defending the rush, breaking out, and the drills that build defensive skills.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Defensive Play Guide',
     description: 'Hockey defensive play: positioning, gap control, stick checking, and breaking out.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/defensive-play' },
 };
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import NHLPlayoffsClient from './NHLPlayoffsClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface UpdateEntry {
   id?: string;
@@ -42,14 +43,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: '2026 NHL Playoffs Bracket & Live Coverage',
     description:
       'Live coverage of the 2026 NHL Playoffs and Stanley Cup bracket.',
     url: 'https://rinkstop.com/directory/nhl/playoffs',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: '2026 NHL Playoffs Bracket & Live Coverage',

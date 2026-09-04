@@ -1,19 +1,20 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Data Coverage — How RinkStop Compares to the Global Hockey Universe',
   description: 'How RinkStop\'s indexed directory (1,917 rinks, 3,243 teams, 6,351 players, 84 IIHF federations) compares to authoritative external counts from IIHF, national federations, and league registries.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://rinkstop.com/data-coverage' },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'RinkStop Data Coverage — vs. IIHF, USA Hockey, Hockey Canada',
     description: 'Side-by-side comparison of RinkStop\'s indexed counts vs. authoritative external sources.',
     url: 'https://rinkstop.com/data-coverage',
     siteName: 'RinkStop',
     type: 'article',
-  },
+  }),
 };
 
 // All numbers below come from a live Supabase count() at request time.

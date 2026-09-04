@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import PWHLPlayoffsClient from './PWHLPlayoffsClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface StoredGame {
   date: string;
@@ -50,14 +51,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'PWHL Playoffs',
     description:
       'PWHL playoff bracket, scores, and postseason coverage.',
     url: 'https://rinkstop.com/directory/pwhl/playoffs',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'PWHL Playoffs',

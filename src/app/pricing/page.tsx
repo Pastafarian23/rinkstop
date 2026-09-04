@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import PricingContent from './PricingContent';
 import { trackPageView, trackEvent } from '@/lib/analytics';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Pricing — RinkStop',
@@ -11,14 +12,14 @@ export const metadata: Metadata = {
     'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
   alternates: { canonical: 'https://rinkstop.com/pricing' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Pricing — RinkStop',
     description:
       'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
     url: 'https://rinkstop.com/pricing',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Pricing — RinkStop',

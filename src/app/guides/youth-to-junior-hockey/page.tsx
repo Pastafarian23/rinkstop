@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'From Youth to Junior Hockey',
   description: 'What it takes to make the jump from youth travel hockey to junior leagues  --  NCAA, CHL, USHL, NAHL, and the junior-to-pro pathway explained.',
-  openGraph: { title: 'From Youth to Junior Hockey', description: 'What it takes to make the jump from youth travel hockey to junior leagues.', type: 'article' },
+  openGraph: withDefaultOg({ title: 'From Youth to Junior Hockey', description: 'What it takes to make the jump from youth travel hockey to junior leagues.', type: 'article' }),
   alternates: { canonical: 'https://rinkstop.com/guides/youth-to-junior-hockey' },
 };
 

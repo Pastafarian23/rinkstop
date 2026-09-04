@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Equipment Guide — Skates, Sticks, Protective Gear & More',
@@ -7,13 +8,13 @@ export const metadata: Metadata = {
   keywords: ['hockey equipment', 'hockey skates', 'hockey sticks', 'hockey gear', 'hockey helmet', 'goalie equipment'],
   alternates: { canonical: 'https://rinkstop.com/learn/hockey-equipment-guide' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Equipment Guide — A Complete Guide for Players and Parents',
     description: 'Skates, sticks, helmets, pads, and how to choose the right gear at every level of hockey.',
     type: 'article',
     url: 'https://rinkstop.com/learn/hockey-equipment-guide',
     siteName: 'RinkStop',
-  },
+  }),
 };
 
 export default function HockeyEquipmentGuidePage() {

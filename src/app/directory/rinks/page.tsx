@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import RinksIndexClient from './RinksIndexClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface Rink {
   id: string;
@@ -37,13 +38,13 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     description: desc,
     alternates: { canonical: country ? `https://rinkstop.com/directory/rinks?country=${encodeURIComponent(country)}` : 'https://rinkstop.com/directory/rinks' },
     robots: { index: true, follow: true },
-    openGraph: {
+    openGraph: withDefaultOg({
       title,
       description: desc,
       url: country ? `https://rinkstop.com/directory/rinks?country=${encodeURIComponent(country)}` : 'https://rinkstop.com/directory/rinks',
       siteName: 'RinkStop',
       type: 'website',
-    },
+    }),
     twitter: {
       card: 'summary_large_image',
       title,

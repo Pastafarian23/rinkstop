@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import GloveSizeCalculatorClient from './GloveSizeCalculatorClient';
 import { trackPageView } from '@/lib/analytics';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Glove Size Calculator (2026) — Find the Right Glove by Height or Measurement',
@@ -25,14 +26,14 @@ export const metadata: Metadata = {
     'What size hockey glove does your kid need? Free calculator with two modes — height-based OR arm measurement (fingertip to elbow). Industry-standard Bauer / Pure Hockey sizing.',
   alternates: { canonical: 'https://rinkstop.com/tools/hockey-glove-size-calculator' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Glove Size Calculator (2026) — Find the Right Glove by Height or Measurement',
     description:
       'Free hockey glove sizing tool. Two modes: by height or by arm measurement. Industry-standard Bauer / Pure Hockey sizing.',
     url: 'https://rinkstop.com/tools/hockey-glove-size-calculator',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Glove Size Calculator (2026) — Find the Right Glove by Height or Measurement',

@@ -16,6 +16,7 @@ import {
 import { getTeamCoachingStaff } from '@/lib/nhl-coaching';
 import CoachingStaffSection from '@/components/CoachingStaffSection';
 import TeamLogo from '@/components/TeamLogo';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -32,11 +33,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${team.name} | Roster, Schedule, Standings`,
     description: `${team.name} — ${team.city}, ${team.state}. ${team.division} Division, ${team.conference} Conference. Current record, schedule, scores, and roster on RinkStop.`,
-    openGraph: {
+    openGraph: withDefaultOg({
       title: `${team.name}`,
       description: `${team.name} hockey team page — record, schedule, scores, and roster.`,
       type: 'website',
-    },
+    }),
     alternates: {
       canonical: `https://rinkstop.com/directory/nhl/teams/${team.slug}`,
     },

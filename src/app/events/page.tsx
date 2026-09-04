@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import EventCard from '@/components/events/EventCard';
 import { CANONICAL_URL } from '@/lib/constants';
 import { COUNTRY_MAP } from '@/lib/country-page';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const revalidate = 300;
 
@@ -68,7 +69,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     description: `Browse hockey ${(typeLabel || 'events, tournaments, camps, and tryouts').toLowerCase()} ${sp.country ? 'in ' + countryLabel : 'worldwide'}. Real events from claimed rinks. Filter by date, skill level, age, and gender.`,
     alternates: { canonical: `${CANONICAL_URL}/events` },
     robots: { index: true, follow: true },
-    openGraph: { title: `${head} — RinkStop`, type: 'website', url: `${CANONICAL_URL}/events`, siteName: 'RinkStop' },
+    openGraph: withDefaultOg({ title: `${head} — RinkStop`, type: 'website', url: `${CANONICAL_URL}/events`, siteName: 'RinkStop' }),
     twitter: { card: 'summary_large_image' },
   };
 }

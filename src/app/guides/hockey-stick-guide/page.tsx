@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'How to Choose a Hockey Stick',
   description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick. The complete guide to finding the right stick for your shot, position, and budget.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'How to Choose a Hockey Stick',
     description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-stick-guide' },
 };
 

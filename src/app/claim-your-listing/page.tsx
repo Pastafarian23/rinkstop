@@ -8,6 +8,7 @@ import { getDirectoryCounts } from '@/lib/directory-counts';
 import { ClaimButton } from './ClaimButton';
 import { ClaimAbandonTracker } from './ClaimAbandonTracker';
 import AddListingLink from './AddListingLink';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Claim Your Listing on RinkStop',
@@ -15,13 +16,13 @@ export const metadata: Metadata = {
     "Search for your rink or team's RinkStop listing and claim it. Verified listings get a checkmark, lead capture, and featured rotation.",
   alternates: { canonical: 'https://rinkstop.com/claim-your-listing' },
   robots: { index: true, follow: true },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Claim Your Listing on RinkStop',
     description: "Search for your rink or team and claim your listing. Verified listings get a checkmark, lead capture, and featured rotation.",
     url: 'https://rinkstop.com/claim-your-listing',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary',
     title: 'Claim Your Listing on RinkStop',

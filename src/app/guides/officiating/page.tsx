@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Hockey Officiating Guide - Referees, Linesmen, Signals, and How Penalties Are Called',
   description: 'Everything you need to know about hockey officiating: the role of referees and linesmen, standard signals, how penalties are assessed, the most commonly called infractions, and how to become an official.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Officiating Guide',
     description: 'Hockey officiating: referees, linesmen, signals, penalties, and how to become an official.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/officiating' },
 };
 

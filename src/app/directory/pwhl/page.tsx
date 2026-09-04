@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import PWHLClient from './PWHLClient';
 import { LeagueTeams } from '@/components/LeagueTeams';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface Team {
   id: string;
@@ -35,14 +36,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: "PWHL Women's Hockey 2026-27",
     description:
       "Professional Women's Hockey League 2026-27: 8 teams across North America. Live scores, schedules, rosters, and standings.",
     url: 'https://rinkstop.com/directory/pwhl',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: "PWHL — Professional Women's Hockey League",

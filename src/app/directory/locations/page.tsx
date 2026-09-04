@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import LocationsIndexClient from './LocationsIndexClient';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface CountryEntry {
   country: string;
@@ -23,14 +24,14 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'Hockey Locations by Country & City',
     description:
       'Browse hockey teams, rinks, and youth programs by country and city worldwide.',
     url: 'https://rinkstop.com/directory/locations',
     siteName: 'RinkStop',
     type: 'website',
-  },
+  }),
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Locations by Country & City',

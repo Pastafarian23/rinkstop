@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'CHL Guide — Memorial Cup, Major Junior Hockey, and the Canadian Hockey League',
   description: 'Everything you need to know about the CHL (Canadian Hockey League): three member leagues (OHL, WHL, QMJHL), 60+ teams, the Memorial Cup, the CHL Import Draft, and how it develops NHL talent.',
-  openGraph: {
+  openGraph: withDefaultOg({
     title: 'CHL Guide',
     description: 'CHL format, the Memorial Cup, the OHL/WHL/QMJHL, and the primary development path for NHL players.',
     type: 'article',
-  },
+  }),
   alternates: { canonical: 'https://rinkstop.com/guides/chl' },
 };
 

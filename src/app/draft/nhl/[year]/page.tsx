@@ -22,6 +22,7 @@ import PicksBrowser from './PicksBrowser';
 import YearDropdown from './YearDropdown';
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withDefaultOg } from '@/lib/metadata-defaults';
 
 interface YearArchive {
   year: number;
@@ -113,13 +114,13 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
       description,
       alternates: { canonical: `https://rinkstop.com${DRAFT_NHL_BASE}/${year}` },
       robots: { index: true, follow: true },
-      openGraph: {
+      openGraph: withDefaultOg({
         title,
         description,
         url: `https://rinkstop.com${DRAFT_NHL_BASE}/${year}`,
         siteName: 'RinkStop',
         type: 'article',
-      },
+      }),
       twitter: {
         card: 'summary_large_image',
         title,
