@@ -16,9 +16,9 @@ export const runtime = 'nodejs';
 const RENTAL_STATUSES = ['pending','active','overdue','returned','cancelled'];
 
 // GET
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const parentUserId = searchParams.get('parent_user_id');
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     let query = supabaseAdmin
       .from('equipment_rentals')
       .select('*', { count: 'exact' })
-      .eq('rink_id', params.id)
+      .eq('rink_id', ((await params).id))
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -50,9 +50,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // POST
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const owner = await requireRinkOwnerForRental(request, params.id);
+    const owner = await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
     const required = ['parent_user_id', 'item_id', 'starts_at'];

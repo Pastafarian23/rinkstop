@@ -14,9 +14,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // GET
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get('item_id');
     const assigneeUserId = searchParams.get('assignee_user_id');
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // POST
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const owner = await requireRinkOwnerForRental(request, params.id);
+    const owner = await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
     if (!body.equipment_id || !body.assignee_user_id) {

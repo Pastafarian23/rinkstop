@@ -24,16 +24,16 @@ const CONDITIONS = ['new','excellent','good','worn','damaged','needs_repair'];
 // GET /api/owner/rinks/[id]/equipment/items/{itemId}
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; itemId: string } },
+  { params }: { params: Promise<{ id: string; itemId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const { data: item, error } = await supabaseAdmin
       .from('equipment_items')
       .select('*')
-      .eq('id', params.itemId)
+      .eq('id', ((await params).itemId))
       .eq('owner_type', 'rink')
-      .eq('owner_id', params.id)
+      .eq('owner_id', ((await params).id))
       .maybeSingle();
 
     if (error || !item) {
@@ -54,10 +54,10 @@ export async function GET(
 // PATCH /api/owner/rinks/[id]/equipment/items/{itemId}
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; itemId: string } },
+  { params }: { params: Promise<{ id: string; itemId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
     const body = await request.json();
 
     // Build only allowed fields
@@ -77,9 +77,9 @@ export async function PATCH(
     const { data: item, error } = await supabaseAdmin
       .from('equipment_items')
       .update(allowed)
-      .eq('id', params.itemId)
+      .eq('id', ((await params).itemId))
       .eq('owner_type', 'rink')
-      .eq('owner_id', params.id)
+      .eq('owner_id', ((await params).id))
       .select('*')
       .single();
 
@@ -102,17 +102,17 @@ export async function PATCH(
 // Soft-delete by setting status='retired' (preserves assignment history).
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; itemId: string } },
+  { params }: { params: Promise<{ id: string; itemId: string }> },
 ) {
   try {
-    await requireRinkOwnerForRental(request, params.id);
+    await requireRinkOwnerForRental(request, ((await params).id));
 
     const { data: item, error } = await supabaseAdmin
       .from('equipment_items')
       .update({ status: 'retired' })
-      .eq('id', params.itemId)
+      .eq('id', ((await params).itemId))
       .eq('owner_type', 'rink')
-      .eq('owner_id', params.id)
+      .eq('owner_id', ((await params).id))
       .eq('status', 'active')
       .select('id')
       .maybeSingle();
