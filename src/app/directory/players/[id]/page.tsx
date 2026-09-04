@@ -8,6 +8,7 @@ import PlayerSEOCopy from './PlayerSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildPlayerFAQs } from '@/lib/player-context';
+import { supabaseAdmin } from '@/lib/supabase';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -153,7 +154,14 @@ export default async function PlayerPage({ params }: Props) {
     return <div style={{ textAlign: 'center', padding: '4rem' }}>Configuration error — please try again.</div>;
   }
 
-  const { data: seoPlayer, error: playerError } = await sb
+  // 2026-09-04: switched from inline getDirectAdminClient() to the lazy
+  // supabaseAdmin proxy. The inline createClient() pattern was failing
+  // for UUID-based player URLs (slug URLs worked) — the metadata path
+  // used supabaseAdmin (which worked) while the page-body path used the
+  // inline client (which didn't), causing 'Player Not Found' on UUID
+  // URLs even though the player existed in DB. The proxy returns the
+  // same SupabaseClient type, so this is a safe drop-in.
+  const { data: seoPlayer, error: playerError } = await supabaseAdmin
     .from('players')
     .select('id, first_name, last_name, slug, position, headshot_url, nationality, height_cm, weight_kg, jersey_number, shoots, catches, birth_date, bio, updated_at, highlightly_id, teams(name, leagues(name))')
     .eq(isUuid ? 'id' : 'slug', id)
