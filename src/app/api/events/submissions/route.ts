@@ -8,11 +8,11 @@
 //
 // Rate-limited to prevent spam (10 submissions per hour per IP).
 //
-// NOTE: actual DB columns are: title, description, event_type, starts_at, ends_at,
-// source_url, rink_id, submitter_name, submitter_email, status, submission_source,
-// rejection_reason, reviewed_at, reviewed_by, created_event_id, raw_payload.
-// (Per OpenAPI schema; supersedes the 2026-08-04_rink_programming_and_events.sql
-// migration which was never applied to dev/prod in this exact form.)
+// NOTE: actual DB columns per migration 2026-08-04_rink_programming_and_events.sql:
+// proposed_title, proposed_event_type, proposed_starts_at, proposed_ends_at,
+// proposed_timezone, proposed_address, proposed_url, notes, status, source,
+// submitter_name, submitter_email, submitter_user_id, rink_id,
+// resolved_by_user_id, resolved_at, resolution_notes, created_at, updated_at.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
@@ -101,20 +101,16 @@ export async function POST(request: NextRequest) {
       rink_id: rinkId,
       submitter_name: String(body.submitter_name).trim(),
       submitter_email: String(body.submitter_email).trim().toLowerCase(),
-      title: String(body.title).trim(),
-      event_type: String(body.event_type),
-      starts_at: new Date(body.starts_at).toISOString(),
-      ends_at: new Date(body.ends_at).toISOString(),
-      source_url: body.registration_url || body.source_url || null,
-      description: body.description || null,
+      proposed_title: String(body.title).trim(),
+      proposed_event_type: String(body.event_type),
+      proposed_starts_at: new Date(body.starts_at).toISOString(),
+      proposed_ends_at: new Date(body.ends_at).toISOString(),
+      proposed_timezone: 'America/New_York',
+      proposed_address: body.address || null,
+      proposed_url: body.registration_url || body.source_url || null,
+      notes: body.notes || null,
       status: 'pending',
-      submission_source: 'public_form',
-      raw_payload: {
-        submitted_address: body.address || null,
-        submitted_notes: body.notes || null,
-        submitted_timezone: body.timezone || null,
-        submitter_user_id: submitterUserId,
-      },
+      source: 'public_form',
     };
 
     const { data: submission, error } = await supabaseAdmin
