@@ -99,17 +99,13 @@ export async function POST(request: NextRequest) {
 
     const payload: Record<string, unknown> = {
       rink_id: rinkId,
-      submitter_name: String(body.submitter_name).trim(),
-      submitter_email: String(body.submitter_email).trim().toLowerCase(),
-      proposed_title: String(body.title).trim(),
-      proposed_event_type: String(body.event_type),
-      proposed_starts_at: new Date(body.starts_at).toISOString(),
-      proposed_ends_at: new Date(body.ends_at).toISOString(),
-      proposed_timezone: 'America/New_York',
-      proposed_address: body.address || null,
-      proposed_url: body.registration_url || body.source_url || null,
-      status: 'pending',
-      source: 'public_form',
+      title: String(body.title).trim(),
+      event_type: String(body.event_type),
+      starts_at: new Date(body.starts_at).toISOString(),
+      ends_at: new Date(body.ends_at).toISOString(),
+      source_url: body.registration_url || body.source_url || null,
+      submission_source: 'public_form',
+      raw_payload: body as Record<string, unknown>,
     };
 
     const { data: submission, error } = await supabaseAdmin
