@@ -108,7 +108,6 @@ export async function POST(request: NextRequest) {
       proposed_timezone: 'America/New_York',
       proposed_address: body.address || null,
       proposed_url: body.registration_url || body.source_url || null,
-      notes: body.notes || null,
       status: 'pending',
       source: 'public_form',
     };
