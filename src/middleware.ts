@@ -38,17 +38,27 @@ async function lookupSlugRedirect(slug: string): Promise<string | null> {
   }
 }
 
-async function lookupPlayerSlugByUuid(uuid: string): Promise<string | null> {
+async function lookupEntitySlugByUuid(
+  table: 'players' | 'leagues' | 'team_workspaces' | 'rinks',
+  uuid: string,
+): Promise<string | null> {
   // 2026-09-04 BUG-PLAYER-UUID: UUID-based player URLs were returning
   // 200 with 'Player Not Found' due to an unresolved server-side issue
-  // in the page render (PostgREST direct works fine, slug URLs work
-  // fine — UUID URLs render the metadata title but the page body fails).
-  // Redirect UUIDs to their canonical slug URL instead.
+  // in the page render. Redirecting UUIDs to their canonical slug URL
+  // was added as a structural fix.
+  //
+  // 2026-09-07: Same bug class discovered for leagues/teams/rinks — UUID
+  // URLs were indexable in Google (522 impr / 0% CTR on a single OHL
+  // UUID URL was the smoking gun). Generalized this helper to cover all
+  // 4 entity tables. Each page handler accepts the URL segment as either
+  // a UUID or a slug; the canonical form is always the slug, so we
+  // redirect here at the middleware layer so crawlers + users always land
+  // on the slug URL.
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   try {
-    const endpoint = `${url}/rest/v1/players?select=slug&id=eq.${encodeURIComponent(uuid)}&limit=1`;
+    const endpoint = `${url}/rest/v1/${table}?select=slug&id=eq.${encodeURIComponent(uuid)}&limit=1`;
     const res = await fetch(endpoint, {
       headers: { apikey: key, Authorization: `Bearer ${key}` },
       signal: AbortSignal.timeout(500),
@@ -58,7 +68,7 @@ async function lookupPlayerSlugByUuid(uuid: string): Promise<string | null> {
     if (rows.length === 0 || !rows[0].slug) return null;
     return rows[0].slug;
   } catch (e) {
-    console.error('[middleware] player uuid lookup failed:', e);
+    console.error(`[middleware] ${table} uuid lookup failed:`, e);
     return null;
   }
 }
@@ -142,44 +152,38 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  async function lookupPlayerSlugByUuid(uuid: string): Promise<string | null> {
-  // 2026-09-04 BUG-PLAYER-UUID: UUID-based player URLs were returning
-  // 200 with 'Player Not Found' due to an unresolved server-side issue
-  // in the page render (PostgREST direct works fine, slug URLs work
-  // fine — UUID URLs render the metadata title but the page body fails).
-  // Redirect UUIDs to their canonical slug URL instead.
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  try {
-    const endpoint = `${url}/rest/v1/players?select=slug&id=eq.${encodeURIComponent(uuid)}&limit=1`;
-    const res = await fetch(endpoint, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(500),
-    });
-    if (!res.ok) return null;
-    const rows = (await res.json()) as Array<{ slug: string | null }>;
-    if (rows.length === 0 || !rows[0].slug) return null;
-    return rows[0].slug;
-  } catch (e) {
-    console.error('[middleware] player uuid lookup failed:', e);
-    return null;
-  }
-}
-
-// Player UUID → slug redirect. /directory/players/<uuid> renders the
-// metadata title but the page body returns 'Player Not Found' due to
-// an unresolved server-side rendering issue. Redirecting UUIDs to their
-// canonical slug URL is a structural fix that preserves bookmarks +
-// social-share links without requiring the body query to be debugged
-// here.
-if (path.startsWith('/directory/players/') && path.length > '/directory/players/'.length) {
-  const idSegment = path.slice('/directory/players/'.length).split('/')[0];
-  if (idSegment && !idSegment.includes('.') && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idSegment)) {
-    const toSlug = await lookupPlayerSlugByUuid(idSegment);
-    if (toSlug && toSlug !== idSegment) {
-      const dest = new URL(`/directory/players/${toSlug}${path.slice('/directory/players/'.length + idSegment.length)}`, request.url);
-      return NextResponse.redirect(dest, 308);
+// UUID → slug redirect for all 4 directory entity types. /directory/<entity>/<uuid>
+// would otherwise be indexable by Google with 0% CTR (users don't recognize
+// UUIDs in URLs). Slug URLs are canonical; we 308 here so crawlers + users
+// always end up on the slug URL. Player UUIDs had this since 2026-09-04;
+// leagues, teams, rinks added 2026-09-07 (per GSC audit: OHL league UUID
+// URL alone had 522 impr at 0% CTR).
+//
+// Note: rinks already redirect inside their page handler (see
+// src/app/directory/rinks/[slug]/page.tsx redirect()). Doing it here too
+// is a no-op for rinks (the path never reaches the page handler because
+// we return a Response object), but it saves a DB roundtrip and is
+// defensive — if a future refactor of the page handler drops the redirect,
+// this middleware catches it.
+const UUID_SEGMENT_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ENTITY_UUID_PREFIXES: Array<{
+  prefix: string;
+  table: 'players' | 'leagues' | 'team_workspaces' | 'rinks';
+}> = [
+  { prefix: '/directory/players/', table: 'players' },
+  { prefix: '/directory/leagues/', table: 'leagues' },
+  { prefix: '/directory/teams/', table: 'team_workspaces' },
+  { prefix: '/directory/rinks/', table: 'rinks' },
+];
+for (const { prefix, table } of ENTITY_UUID_PREFIXES) {
+  if (path.startsWith(prefix) && path.length > prefix.length) {
+    const idSegment = path.slice(prefix.length).split('/')[0];
+    if (idSegment && !idSegment.includes('.') && UUID_SEGMENT_RE.test(idSegment)) {
+      const toSlug = await lookupEntitySlugByUuid(table, idSegment);
+      if (toSlug && toSlug !== idSegment) {
+        const dest = new URL(`${prefix}${toSlug}${path.slice(prefix.length + idSegment.length)}`, request.url);
+        return NextResponse.redirect(dest, 308);
+      }
     }
   }
 }
