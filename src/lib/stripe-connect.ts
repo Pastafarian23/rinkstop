@@ -13,7 +13,9 @@ import Stripe from 'stripe';
 // `exports` map. Until we either bump to `moduleResolution: node16` or
 // downgrade `stripe`, the `LineItem` references need a one-line escape.
 // Functionality unchanged — these were always just parameter shapes.
-// @ts-expect-error TS2724 — Stripe v22 namespace export layout
+// @ts-ignore — Stripe v22 namespace export layout: tsc on local v22 sees the error,
+// tsc on Vercel's cached older Stripe doesn't (so we use @ts-ignore rather than
+// @ts-expect-error, which would fail as "unused directive" on Vercel).
 type CheckoutLineItem = Stripe.Checkout.SessionCreateParams.LineItem;
 
 if (!process.env.STRIPE_SECRET_KEY) {
