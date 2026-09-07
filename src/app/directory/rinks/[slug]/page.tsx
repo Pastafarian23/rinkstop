@@ -268,7 +268,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const { data: rink } = await supabase
     .from('rinks')
-    .select('name, slug, city, country, province_state, notes, notes_generated, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league, cover_photo_url')
+    .select('name, slug, city, country, province_state, notes, notes_generated, meta_description, website_url, phone, address, capacity, ice_size, surface_type, email, status, opening_hours_json, league, cover_photo_url')
     .eq(isUuid(slug) ? 'id' : 'slug', slug)
     .single();
 
