@@ -5,6 +5,17 @@
 
 import Stripe from 'stripe';
 
+// Stripe v22 changed the public type layout: `Stripe.Checkout` resolves
+// to the class instance (which has `sessions`, not `SessionCreateParams`).
+// The namespace types (LineItem etc.) still live at
+// stripe/resources/Checkout/Sessions but `moduleResolution: bundler` in
+// our tsconfig doesn't expose that subpath through the package's
+// `exports` map. Until we either bump to `moduleResolution: node16` or
+// downgrade `stripe`, the `LineItem` references need a one-line escape.
+// Functionality unchanged — these were always just parameter shapes.
+// @ts-expect-error TS2724 — Stripe v22 namespace export layout
+type CheckoutLineItem = Stripe.Checkout.SessionCreateParams.LineItem;
+
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set');
 }
@@ -78,7 +89,7 @@ export async function getAccountStatus(
 
 export type CheckoutSessionParams = {
   accountId: string; // Connect destination account
-  lineItems: Stripe.Checkout.SessionCreateParams.LineItem[];
+  lineItems: CheckoutLineItem[];
   metadata: Record<string, string>;
   successUrl: string;
   cancelUrl: string;
@@ -130,7 +141,7 @@ export function bookingToLineItem(opts: {
   description: string;
   amount: number; // in cents
   quantity?: number;
-}): Stripe.Checkout.SessionCreateParams.LineItem {
+}): CheckoutLineItem {
   return {
     quantity: opts.quantity ?? 1,
     price_data: {
