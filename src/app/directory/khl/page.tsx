@@ -29,13 +29,24 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
+// 2026-09-07 fix: the KHL page was filtering by `country_code = 'RU'`, which
+// returned ALL active Russian teams across VHL, MHL, and other lower
+// leagues (125 rows) — not just KHL. The page body hardcoded "23 teams"
+// (which IS the actual current KHL count) but the dynamic count rendered
+// "125+" because the query was wrong. Switching to filter by `league_id`
+// against the KHL leagues row makes the dynamic count match the constant.
+// 43 rows total linked to KHL; 23 active+public (matches the body),
+// 20 inactive+private (historic teams like Jokerit, Kunlun, Dynamo Riga —
+// left the league).
+const KHL_LEAGUE_ID = 'a08f6dac-eb1f-48e6-a11b-56fbb5642752';
+
 async function fetchKhlTeamCount(): Promise<number> {
   try {
     const { count } = await supabase
       .from('team_workspaces')
       .select('id', { count: 'exact', head: true })
-      .eq('is_active', true)
-      .eq('country_code', 'RU');
+      .eq('league_id', KHL_LEAGUE_ID)
+      .eq('is_active', true);
     return count || 0;
   } catch {
     return 23;
@@ -47,8 +58,8 @@ async function fetchKhlTeams(): Promise<Array<{ name: string; city: string | nul
     const { data } = await supabase
       .from('team_workspaces')
       .select('name, slug, home_city')
+      .eq('league_id', KHL_LEAGUE_ID)
       .eq('is_active', true)
-      .eq('country_code', 'RU')
       .order('name')
       .limit(24);
     return (data || []).map((t: any) => ({ name: t.name, city: t.home_city, slug: t.slug }));
