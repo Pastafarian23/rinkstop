@@ -11,7 +11,7 @@ export async function LeagueTeams({ leagueId, leagueSlug, leagueName }: Props) {
   // Fetch teams for this league
   const { data: teams } = await supabase
     .from('team_workspaces')
-    .select('id, slug, name, home_city, logo_url')
+    .select('id, slug, name, home_city, avatar_url')
     .eq('league_id', leagueId)
     .eq('is_active', true)
     .order('name', { ascending: true })
@@ -61,8 +61,8 @@ export async function LeagueTeams({ leagueId, leagueSlug, leagueName }: Props) {
               transition: 'background 0.15s',
             }}
           >
-            {t.logo_url ? (
-              <img src={t.logo_url} alt={`${t.name} logo`} style={{ width: 24, height: 24, borderRadius: '4px', objectFit: 'contain', flexShrink: 0 }} loading="lazy" />
+            {t.avatar_url ? (
+              <img src={t.avatar_url} alt={`${t.name} logo`} style={{ width: 24, height: 24, borderRadius: '4px', objectFit: 'contain', flexShrink: 0 }} loading="lazy" />
             ) : (
               <div style={{ width: 24, height: 24, borderRadius: '4px', background: 'rgba(56,189,248,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', flexShrink: 0 }}>🏒</div>
             )}
