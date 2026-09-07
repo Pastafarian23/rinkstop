@@ -11,12 +11,26 @@ import Stripe from 'stripe';
 // stripe/resources/Checkout/Sessions but `moduleResolution: bundler` in
 // our tsconfig doesn't expose that subpath through the package's
 // `exports` map. Until we either bump to `moduleResolution: node16` or
-// downgrade `stripe`, the `LineItem` references need a one-line escape.
-// Functionality unchanged — these were always just parameter shapes.
-// @ts-ignore — Stripe v22 namespace export layout: tsc on local v22 sees the error,
-// tsc on Vercel's cached older Stripe doesn't (so we use @ts-ignore rather than
-// @ts-expect-error, which would fail as "unused directive" on Vercel).
-type CheckoutLineItem = Stripe.Checkout.SessionCreateParams.LineItem;
+// downgrade `stripe`, we use a manual mirror of the LineItem shape below
+// (functionally equivalent — the runtime values we build here are exactly
+// what Stripe's API expects; only the type lookup is short-circuited).
+type CheckoutLineItem = {
+  quantity?: number;
+  price_data?: {
+    currency: string;
+    unit_amount: number;
+    product_data: {
+      name: string;
+      description?: string;
+      images?: string[];
+      metadata?: Record<string, string>;
+    };
+    adjustable_quantity?: { enabled?: boolean; minimum?: number; maximum?: number };
+    tax_rates?: string[];
+  };
+  price?: string;
+  metadata?: Record<string, string>;
+};
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set');
