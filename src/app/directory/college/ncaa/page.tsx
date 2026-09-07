@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
@@ -34,10 +34,11 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-const supabase = createClient(
-  'https://placeholder.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
-);
+// 2026-09-07 fix: was hardcoded to 'https://placeholder.supabase.co' which
+// made every query on these 5 college pages fail silently and render "0
+// teams". Switched to the shared singleton client (same pattern as every
+// other page in the project) which respects NEXT_PUBLIC_SUPABASE_URL +
+// NEXT_PUBLIC_SUPABASE_ANON_KEY env vars in production.
 
 const NCAA_LEAGUE_ID = '498c6b36-a83a-4e81-9829-a2f9ca3a03f8';
 
