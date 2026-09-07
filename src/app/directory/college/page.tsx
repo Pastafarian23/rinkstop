@@ -57,7 +57,7 @@ export default async function CollegeHubPage({
 
   const query = supabase
     .from('team_workspaces')
-    .select('id, name, slug, city, division')
+    .select('id, name, slug, home_city, division')
     .eq('league_id', NCAA_LEAGUE_ID)
     .order('name');
 
@@ -130,7 +130,7 @@ export default async function CollegeHubPage({
                 transition: 'border-color 0.15s',
               }}>
                 <h3 style={{ color: '#fff', fontSize: '0.9375rem', fontWeight: 700 }}>{team.name}</h3>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '0.25rem' }}>{team.city}</p>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '0.25rem' }}>{team.home_city}</p>
                 {team.division && (
                   <span style={{ display: 'inline-block', marginTop: '0.375rem', fontSize: '0.5625rem', color: '#C8102E', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                     {team.division}
