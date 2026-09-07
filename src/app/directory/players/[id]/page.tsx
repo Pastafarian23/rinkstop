@@ -171,9 +171,6 @@ export default async function PlayerPage({ params }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const playerTyped: any = seoPlayer;
 
-  // TEMP DIAG (2026-09-07): trace UUID player page-body bug.
-  console.log('[player-page-diag] id=', id, 'isUuid=', isUuid, 'seoPlayer=', seoPlayer ? `${seoPlayer.first_name} ${seoPlayer.last_name}` : 'NULL', 'error=', playerError ? JSON.stringify(playerError) : 'none');
-
   if (playerError) {
     console.error('[player-page] DB error:', playerError);
   }
