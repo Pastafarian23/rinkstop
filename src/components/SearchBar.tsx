@@ -3,7 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type SuggestType = 'rink' | 'team' | 'player' | 'league' | 'brand';
+type SuggestType =
+  | 'rink'
+  | 'team'
+  | 'player'
+  | 'league'
+  | 'brand'
+  | 'coach'
+  | 'scout'
+  | 'official'
+  | 'staff';
 
 interface SuggestItem {
   type: SuggestType;
@@ -21,13 +30,30 @@ interface SearchHistoryRow {
   last_searched_at: string;
 }
 
+// All 9 types must be covered. The API at /api/search/suggest returns
+// any of these depending on which tables yielded a match. A missing
+// entry here used to crash the homepage (TypeError: Cannot read
+// properties of undefined (reading 'emoji') on Arnel Larracas search,
+// 2026-09-07 — coach/staff branch returned a row but TYPE_META only
+// knew 5 types).
+//
+// If a new type is ever added to the API, add it here too (the
+// fall-through `?? DEFAULT_META` keeps the UI from crashing in the
+// meantime, but the row will lack a label/emoji).
 const TYPE_META: Record<SuggestType, { label: string; emoji: string; groupOrder: number }> = {
   rink: { label: 'Rink', emoji: '🏟️', groupOrder: 1 },
   team: { label: 'Team', emoji: '🏒', groupOrder: 2 },
   player: { label: 'Player', emoji: '⭐', groupOrder: 3 },
   league: { label: 'League', emoji: '🏆', groupOrder: 4 },
   brand: { label: 'Brand', emoji: '🛍️', groupOrder: 5 },
+  coach: { label: 'Coach', emoji: '👔', groupOrder: 6 },
+  scout: { label: 'Scout', emoji: '🔭', groupOrder: 7 },
+  official: { label: 'Official', emoji: '🦓', groupOrder: 8 },
+  staff: { label: 'Staff', emoji: '👥', groupOrder: 9 },
 };
+
+// Safe fall-through for any type we forgot to register above.
+const DEFAULT_META = { label: 'Result', emoji: '🔎', groupOrder: 99 };
 
 interface SearchBarProps {
   /**
@@ -393,7 +419,7 @@ export default function SearchBar({
             .sort(([a], [b]) => a - b)
             .map(([, items]) => {
               const first = items[0];
-              const meta = TYPE_META[first.type];
+              const meta = TYPE_META[first.type] ?? DEFAULT_META;
               return (
                 <li key={first.type} role="presentation">
                   {/* Group label */}
