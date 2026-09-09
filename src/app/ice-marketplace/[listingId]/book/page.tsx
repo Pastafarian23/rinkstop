@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ listingId: string }>;
 }
 
 function formatPrice(cents: number | null, currency: string): string {
@@ -44,7 +44,7 @@ function formatSlot(dateStr: string, tz: string): string {
 }
 
 export default async function PublicBookPage({ params }: PageProps) {
-  const { id } = await params;
+  const { listingId: id } = await params;
 
   const { data: listing } = await supabaseAdmin
     .from('ice_listings')
