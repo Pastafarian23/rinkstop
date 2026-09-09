@@ -248,6 +248,59 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
       )}
 
       <IceMarketplaceSEO total={total} />
+
+      {/* JSON-LD: FAQ schema for rich snippet eligibility */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: 'What is the RinkStop ice marketplace?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'The RinkStop ice marketplace is where rinks, clubs, and teams list open ice time, practice slots, and clinic ice for sale. Buyers can browse by city, age group, and skill level, then request a booking directly from the listing.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'How do I book open ice?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Find a listing that matches your city, date, and budget. Click "Request to book" on the listing, fill in your name and email, and the rink owner will reply directly with availability and payment instructions.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'How much does open ice cost per hour?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Open ice is listed by the hour. Prices vary by rink, day, and time of day — off-peak practice ice at small rinks often starts under $100/hour, while prime-time slots at large arenas run $300+/hour. Each listing shows the exact price.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Can I list my rink\u2019s open ice on RinkStop?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Yes. Rinks, clubs, and teams can list their open ice for free. Founding partners pay 0% take-rate for the first 6 months. Apply at rinkstop.com/launch.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'What cities are covered?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'RinkStop lists open ice in cities across the United States, Canada, and growing international markets. Use the city cloud on this page, or browse the country and province directories to find ice near you.',
+                },
+              },
+            ],
+          }),
+        }}
+      />
     </div>
   );
 }
