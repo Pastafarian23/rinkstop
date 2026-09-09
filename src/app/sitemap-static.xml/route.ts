@@ -42,6 +42,7 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
   { url: `${baseUrl}/tools/hockey-skate-size-calculator`, changeFreq: 'monthly', priority: 0.7 },
   { url: `${baseUrl}/tools/junior-eligibility-checker`, changeFreq: 'monthly', priority: 0.7 },
   { url: `${baseUrl}/tools/hockey-goalie-gear-sizer`, changeFreq: 'monthly', priority: 0.7 },
+  { url: `${baseUrl}/launch`, changeFreq: 'monthly', priority: 0.8 },
   { url: `${baseUrl}/draft/nhl/2026`, changeFreq: 'yearly', priority: 0.6 },
   { url: `${baseUrl}/about`, changeFreq: 'monthly', priority: 0.6 },
   { url: `${baseUrl}/privacy`, changeFreq: 'yearly', priority: 0.3 },
