@@ -4,6 +4,7 @@ import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildToolShare } from '@/lib/share';
+import ToolUpsell from '@/components/ToolUpsell';
 
 type Position = 'forward' | 'defense' | 'goalie';
 type Skill = 'beginner' | 'intermediate' | 'advanced';
@@ -530,6 +531,9 @@ export default function StickSizeCalculatorClient() {
             variant="brand"
           />
         </div>
+
+        {/* Upsell — Verified Hockey Passport CTA (ToolUpsell). */}
+        <ToolUpsell toolSlug="hockey-stick-size-calculator" />
 
         <div style={{
           background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: '12px',

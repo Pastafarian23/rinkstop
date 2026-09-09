@@ -26,6 +26,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import ShareButton from '@/components/ShareButton';
 import { buildToolShare } from '@/lib/share';
+import ToolUpsell from '@/components/ToolUpsell';
 
 type ShoeType = 'women' | 'men' | 'kid';
 type Category = 'Youth' | 'Junior' | 'Intermediate' | 'Senior';
@@ -498,6 +499,9 @@ export default function SkateSizeCalculatorClient() {
             variant="brand"
           />
         </div>
+
+        {/* Upsell — Verified Hockey Passport CTA (ToolUpsell). */}
+        <ToolUpsell toolSlug="hockey-skate-size-calculator" />
 
         {/* Tertiary CTAs */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
