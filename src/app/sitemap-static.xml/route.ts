@@ -85,6 +85,9 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
   { url: `${baseUrl}/directory/nhl/coaches`, changeFreq: 'monthly', priority: 0.7 },
   { url: `${baseUrl}/learn`, changeFreq: 'weekly', priority: 0.7 },
   { url: `${baseUrl}/ice-rinks-near-me`, changeFreq: 'monthly', priority: 0.7 },
+  { url: `${baseUrl}/ice-marketplace`, changeFreq: 'daily', priority: 0.9 },
+  { url: `${baseUrl}/open-ice-near-me`, changeFreq: 'weekly', priority: 0.8 },
+  { url: `${baseUrl}/rent-hockey-ice`, changeFreq: 'weekly', priority: 0.8 },
 ];
 
 export async function GET() {
