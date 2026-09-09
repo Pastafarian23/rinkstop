@@ -6,7 +6,7 @@
 //
 // Two URL shapes:
 //   - US/CA: /ice-marketplace/{country}/{province}/{city}
-//   - Other: /ice-marketplace/{country}/{city}
+//   - Other: /ice-marketplace/{country}/cities/{city}
 //
 // We dedupe by (country, province_or_null, city) so each city hub
 // appears once even if multiple rinks exist there. Province is read
@@ -116,7 +116,7 @@ export async function GET() {
       const citySlug = cityToSlug(row.city);
       const path = provinceSlug
         ? `/ice-marketplace/${countrySlug}/${provinceSlug}/${citySlug}`
-        : `/ice-marketplace/${countrySlug}/${citySlug}`;
+        : `/ice-marketplace/${countrySlug}/cities/${citySlug}`;
       const lastmod = row.updated_at || new Date().toISOString();
       const key = path;
       const existing = cities.get(key);

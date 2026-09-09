@@ -7,7 +7,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
-import CityMarketplaceClient from '../../_components/CityMarketplaceClient';
+import CityMarketplaceClient from '../../../_components/CityMarketplaceClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `Open Ice Time in ${location} | RinkStop`,
     description: `Find open ice time and hockey practice slots for sale or rent in ${location}. Browse practice ice, tournament slots, and clinic ice from local rinks and clubs.`,
-    alternates: { canonical: `https://rinkstop.com/ice-marketplace/${countrySlug}/${citySlug}` },
+    alternates: { canonical: `https://rinkstop.com/ice-marketplace/${countrySlug}/cities/${citySlug}` },
     robots: { index: true, follow: true },
   };
 }
