@@ -95,7 +95,7 @@ export default function CityMarketplaceClient({
               '@type': 'Offer',
               price: (l.requested_price_cents / 100).toFixed(2),
               priceCurrency: l.currency || 'USD',
-              url: `${SITE}/ice-marketplace/${l.id}/book`,
+              url: `${SITE}/book-ice/${l.id}`,
               availability: 'https://schema.org/InStock',
             }
           : undefined,
@@ -313,7 +313,7 @@ export default function CityMarketplaceClient({
                       {formatPrice(listing.requested_price_cents, listing.currency)}
                     </span>
                     <Link
-                      href={`/ice-marketplace/${listing.id}/book`}
+                      href={`/book-ice/${listing.id}`}
                       style={{
                         background: '#C8102E',
                         color: '#fff',

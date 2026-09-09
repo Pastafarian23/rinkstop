@@ -61,7 +61,7 @@ export default function CountryMarketplaceClient({ countrySlug, countryName, cou
         endDate: l.end_time,
         eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
         location: r ? { '@type': 'Place', name: r.name, address: [r.city, r.province_state, r.country].filter(Boolean).join(', ') || undefined } : undefined,
-        offers: l.requested_price_cents ? { '@type': 'Offer', price: (l.requested_price_cents / 100).toFixed(2), priceCurrency: l.currency || 'USD', url: `${SITE}/ice-marketplace/${l.id}/book`, availability: 'https://schema.org/InStock' } : undefined,
+        offers: l.requested_price_cents ? { '@type': 'Offer', price: (l.requested_price_cents / 100).toFixed(2), priceCurrency: l.currency || 'USD', url: `${SITE}/book-ice/${l.id}`, availability: 'https://schema.org/InStock' } : undefined,
       },
     };
   });
@@ -145,7 +145,7 @@ export default function CountryMarketplaceClient({ countrySlug, countryName, cou
                     {formatPrice(listing.requested_price_cents, listing.currency)}
                   </span>
                   <Link
-                    href={`/ice-marketplace/${listing.id}/book`}
+                    href={`/book-ice/${listing.id}`}
                     style={{
                       background: '#C8102E', color: '#fff', padding: '0.375rem 0.875rem',
                       borderRadius: 6, textDecoration: 'none', fontSize: '0.8rem', fontWeight: 700,

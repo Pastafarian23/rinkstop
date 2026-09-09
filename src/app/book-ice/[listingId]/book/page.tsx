@@ -1,4 +1,4 @@
-// /ice-marketplace/[id]/book
+// /book-ice/[listingId]
 //
 // Public booking inquiry form. Anonymous (no auth required).
 // Posts to /api/public-booking which inserts to public_booking_inquiries.
