@@ -87,7 +87,7 @@ export default async function ProvinceMarketplacePage({ params }: PageProps) {
     .select('id', { count: 'exact', head: true })
     .eq('is_active', true)
     .ilike('country', countryName)
-    .or(`province_state.eq.${provinceName},province_state.ilike.${provinceName.slice(0, 2)}`);
+    .or(`province_state.ilike.${provinceName},province_state.ilike.${provinceName.slice(0, 2)}`);
 
   if (!provinceRinkCount || provinceRinkCount === 0) {
     notFound();

@@ -106,7 +106,7 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
   if (countryName) rinksQuery = rinksQuery.ilike('country', countryName);
   if (isUSorCA && provinceName) {
     // rinks table may have full state name OR abbr; we have the full name
-    rinksQuery = rinksQuery.or(`province_state.eq.${provinceName},province_state.ilike.${provinceName.slice(0, 2)}`);
+    rinksQuery = rinksQuery.or(`province_state.ilike.${provinceName},province_state.ilike.${provinceName.slice(0, 2)}`);
   }
   const { data: cityRinks } = await rinksQuery.limit(50);
 
@@ -130,7 +130,7 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
     .ilike('rink.city', cityName);
   if (countryName) listingsQuery = listingsQuery.ilike('rink.country', countryName);
   if (isUSorCA && provinceName) {
-    listingsQuery = listingsQuery.or(`rink.province_state.eq.${provinceName},rink.province_state.ilike.${provinceName.slice(0, 2)}`);
+    listingsQuery = listingsQuery.or(`rink.province_state.ilike.${provinceName},rink.province_state.ilike.${provinceName.slice(0, 2)}`);
   }
   const { data: listingsRaw } = await listingsQuery.order('start_time', { ascending: true }).limit(100);
 
