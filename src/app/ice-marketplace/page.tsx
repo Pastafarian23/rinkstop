@@ -178,6 +178,14 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
                       View rink
                     </Link>
                   )}
+                  <Link
+                    href={`/ice-marketplace/${listing.id}/book`}
+                    data-marketplace-book="true"
+                    data-listing-id={listing.id}
+                    style={{ background: '#C8102E', color: '#fff', padding: '0.375rem 0.875rem', borderRadius: 6, textDecoration: 'none', fontSize: '0.8rem', fontWeight: 700 }}
+                  >
+                    Request to book
+                  </Link>
                 </div>
               </div>
             );
