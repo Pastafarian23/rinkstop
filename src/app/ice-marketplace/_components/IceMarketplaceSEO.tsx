@@ -67,7 +67,7 @@ export default function IceMarketplaceSEO({ total, listings = [] }: Props) {
               '@type': 'Offer',
               price: (l.requested_price_cents / 100).toFixed(2),
               priceCurrency: l.currency || 'USD',
-              url: `${SITE}/ice-marketplace/${l.id}/book`,
+              url: `${SITE}/book-ice/${l.id}`,
               availability: 'https://schema.org/InStock',
             }
           : undefined,
