@@ -79,11 +79,15 @@ export default function EditorialPolicyPage() {
           RinkStop may use technology-assisted research and drafting tools during content production. Concretely:
         </p>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
-          <li>AI tools may be used to gather and organize source material, to suggest article outlines, or to assist with translation and copyediting.</li>
+          <li>AI tools may be used to assist with research, drafting, data summarization, and headline generation.</li>
           <li>AI tools may not be used to publish a finished article without a named human author who is responsible for the content.</li>
-          <li>All published editorial content is reviewed and edited by the RinkStop editorial team for accuracy, relevance, and originality before publication.</li>
-          <li>AI-generated images are not used on editorial articles. Article images are sourced from official league feeds, public-domain archives, or commissioned photography.</li>
+          <li>All published editorial content is reviewed, fact-checked, and edited by a human editor before publication.</li>
+          <li>Bylined articles are the work of Arnel Larracas, Founder &amp; Editor-in-Chief, who is accountable for the final output.</li>
+          <li>AI-generated images are not used on editorial articles. Article images are sourced from official league feeds, public-domain archives, or commissioned photography. When an image is AI-generated, the caption is labeled accordingly.</li>
         </ul>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9375rem', color: '#cfd6e4' }}>
+          <strong>Short version:</strong> AI-assisted, human-reviewed. By Arnel Larracas.
+        </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Fact-checking process</h2>
         <p style={{ marginBottom: '1rem' }}>
