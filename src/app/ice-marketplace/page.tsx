@@ -6,12 +6,32 @@
 
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { supabaseAdmin } from '@/lib/supabase';
+import { withDefaultOg } from '@/lib/metadata-defaults';
+import CityCloud from './_components/CityCloud';
+import IceMarketplaceSEO from './_components/IceMarketplaceSEO';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Ice Marketplace — RinkStop',
-  description: 'Browse available ice time across rinks on RinkStop. Find open slots, practice ice, tournament ice, and more.',
+  title: 'Open Ice Time & Hockey Practice Slots for Sale | RinkStop',
+  description:
+    'Find open ice time, practice slots, and hockey rink rentals near you. Rinks, clubs, and teams list available ice on RinkStop — book by the hour, filtered by city, age group, and skill level.',
+  alternates: { canonical: 'https://rinkstop.com/ice-marketplace' },
+  robots: { index: true, follow: true, 'max-image-preview': 'large' },
+  openGraph: withDefaultOg({
+    title: 'Open Ice Time & Hockey Practice Slots for Sale | RinkStop',
+    description:
+      'Browse open ice time across rinks. Practice ice, tournament slots, and clinic ice — filter by city, age group, and skill level.',
+    url: 'https://rinkstop.com/ice-marketplace',
+    siteName: 'RinkStop',
+    type: 'website',
+  }),
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Open Ice Time for Sale | RinkStop',
+    description: 'Practice ice, tournament slots, and clinic ice — book by the hour.',
+  },
 };
 
 interface SearchParams {
@@ -97,13 +117,18 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1rem' }}>
       {/* Hero */}
-      <div style={{ textAlign: 'center', padding: '2.5rem 0 2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: '0.5rem' }}>
-          Ice Marketplace
+      <div style={{ textAlign: 'center', padding: '2.5rem 0 1.5rem' }}>
+        <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 800, color: '#fff', marginBottom: '0.5rem', lineHeight: 1.15 }}>
+          Open Ice Time for Sale
         </h1>
-        <p style={{ color: '#94A3B8', fontSize: '1rem' }}>
-          Available ice time across rinks on RinkStop.
-          {total > 0 && ` Showing ${offset + 1}–${Math.min(offset + limit, total)} of ${total} listings.`}
+        <p style={{ color: '#94A3B8', fontSize: '1rem', maxWidth: 720, margin: '0 auto 0.5rem' }}>
+          Browse practice ice, tournament slots, and clinic ice from rinks, clubs, and teams.
+          {total > 0 && ` ${total} open ${total === 1 ? 'slot' : 'slots'} available right now.`}
+        </p>
+        <p style={{ color: '#64748B', fontSize: '0.85rem' }}>
+          Looking for ice in a specific city? Browse{' '}
+          <Link href="/directory/rinks" style={{ color: '#38BDF8', textDecoration: 'underline' }}>all rinks</Link>
+          {' '}or jump to a city hub below.
         </p>
       </div>
 
@@ -214,6 +239,15 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
           )}
         </div>
       )}
+
+      {/* SEO: city hub cloud + informational copy. Links to top cities
+          where we have ice listings (or any city with rinks) so search
+          engines can crawl from /ice-marketplace to per-city pages. */}
+      {listings.length > 0 && (
+        <CityCloud listings={listings} />
+      )}
+
+      <IceMarketplaceSEO total={total} />
     </div>
   );
 }
