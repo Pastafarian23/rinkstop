@@ -27,13 +27,14 @@ export async function GET() {
   // promising coverage we don't deliver.
   const { data: players } = await supabaseAdmin
     .from('players')
-    // Include all columns isHighQualityPlayer checks: team_id, position,
-    // nationality, headshot_url. We push team_id not-null + (position OR
-    // nationality OR headshot_url not null) into the WHERE clause via
-    // PostgREST, but we still need to SELECT these fields so the in-memory
-    // isHighQualityPlayer() check has them to evaluate (filtering returns
-    // false on undefined, which would silently drop every row).
-    .select('id, updated_at, first_name, last_name, position, nationality, headshot_url')
+    // SELECT all columns the in-memory isHighQualityPlayer() check
+    // evaluates (team_id, position, nationality, headshot_url). Even
+    // though the WHERE clause guarantees team_id not-null server-side,
+    // the in-memory filter STILL needs to read each field to confirm —
+    // it returns false on undefined and would silently drop every row.
+    // (Found 2026-09-09: previous fix added position/nationality/headshot
+    // but missed team_id, which is the first thing the filter checks.)
+    .select('id, updated_at, first_name, last_name, team_id, position, nationality, headshot_url')
     .eq('is_active', true)
     .not('team_id', 'is', null)
     .or('position.not.is.null,nationality.not.is.null,headshot_url.not.is.null')
