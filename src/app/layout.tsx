@@ -184,7 +184,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // is also 'directed to children' under COPPA / TFAT — same exclusion.
     '/guides/youth',
   ];
-  const ADSENSE_EXCLUDED_EXACT = new Set(['/about', '/contact', '/advertise', '/cookies']);
+  const ADSENSE_EXCLUDED_EXACT = new Set([
+    '/about',
+    '/contact',
+    '/advertise',
+    '/cookies',
+    // Trust/policy pages added in PR #184 — same AdSense-exclusion rationale
+    // as the originals. Editors don't monetize reader complaints, methodology
+    // disclosures, or editorial standards.
+    '/editorial-policy',
+    '/corrections',
+    '/data-methodology',
+  ]);
   const adsenseEligible = !ADSENSE_EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) &&
                           !ADSENSE_EXCLUDED_EXACT.has(pathname);
 
