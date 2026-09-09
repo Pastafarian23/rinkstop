@@ -398,8 +398,31 @@ export default async function BlogPostPage({ params }: Props) {
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
 
+              {/* AI-assistance disclaimer (MEMORY.md approved wording 2026-09-03). */}
+              <div
+                style={{
+                  marginTop: '1.5rem',
+                  padding: '1rem 1.25rem',
+                  background: '#fafafa',
+                  borderLeft: '3px solid #041E42',
+                  borderRadius: '0 4px 4px 0',
+                  fontSize: '0.8125rem',
+                  lineHeight: 1.6,
+                  color: '#555',
+                }}
+              >
+                <p style={{ margin: 0 }}>
+                  AI tools may be used to assist with research, drafting, data
+                  summarization, and headline generation on RinkStop. All content
+                  is reviewed, fact-checked, and edited by a human editor before
+                  publication. Bylined articles are the work of Arnel Larracas,
+                  Founder &amp; Editor-in-Chief, who is accountable for the final
+                  output.
+                </p>
+              </div>
+
               {/* WS16 PR2 — AdSense in-article ad after article body, before CTA. */}
-              
+
 
               {/* Inline CTA (Day 3 — article CTA backfill). Topic-matched destination. */}
               <ArticleCtaBlock
@@ -441,7 +464,7 @@ export default async function BlogPostPage({ params }: Props) {
                 <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.25rem', color: '#1a1a1a' }}>Arnel Larracas</div>
                 <div style={{ color: '#C8102E', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>{authorRole}</div>
                 <p style={{ color: '#555', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
-                  Writer and hockey enthusiast.
+                  Founder of RinkStop. Hockey coach with 20+ years of experience playing in Chicago and coaching internationally, including non-traditional markets like the Philippines. Bylined author on every RinkStop editorial article.
                 </p>
                 <a
                   href="https://www.linkedin.com/in/arnellarracas"

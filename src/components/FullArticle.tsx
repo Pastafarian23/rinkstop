@@ -427,7 +427,31 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                 dangerouslySetInnerHTML={{ __html: htmlContent }}
               />
 
-              
+              {/* AI-assistance disclaimer (MEMORY.md approved wording 2026-09-03).
+                  Required for MSN/Apple News/NewsBreak syndication compliance and as
+                  a Google E-E-A-T signal for AdSense reviewer. */}
+              <div
+                style={{
+                  marginTop: '1.5rem',
+                  padding: '1rem 1.25rem',
+                  background: '#fafafa',
+                  borderLeft: '3px solid #041E42',
+                  borderRadius: '0 4px 4px 0',
+                  fontSize: '0.8125rem',
+                  lineHeight: 1.6,
+                  color: '#555',
+                }}
+              >
+                <p style={{ margin: 0 }}>
+                  AI tools may be used to assist with research, drafting, data
+                  summarization, and headline generation on RinkStop. All content
+                  is reviewed, fact-checked, and edited by a human editor before
+                  publication. Bylined articles are the work of Arnel Larracas,
+                  Founder &amp; Editor-in-Chief, who is accountable for the final
+                  output.
+                </p>
+              </div>
+
               <ArticleCtaBlock
                 slug={post.slug}
                 category={post.category ?? null}
@@ -472,7 +496,7 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                   {authorRole}
                 </div>
                 <p style={{ color: '#555', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
-                  Writer and hockey enthusiast.
+                  Founder of RinkStop. Hockey coach with 20+ years of experience playing in Chicago and coaching internationally, including non-traditional markets like the Philippines. Bylined author on every RinkStop editorial article.
                 </p>
                 <a
                   href="https://www.linkedin.com/in/arnellarracas"
