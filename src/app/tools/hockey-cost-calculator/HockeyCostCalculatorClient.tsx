@@ -4,6 +4,7 @@ import { useState, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildToolShare } from '@/lib/share';
+import ToolUpsell from '@/components/ToolUpsell';
 
 type Level = 'house' | 'a' | 'aa' | 'aaa' | 'junior' | 'adult';
 type Region = 'sunless' | 'hockey_belt' | 'northeast' | 'west' | 'midatlantic' | 'south' | 'canada' | 'europe';
@@ -435,6 +436,9 @@ export default function HockeyCostCalculatorClient() {
             variant="brand"
           />
         </div>
+
+        {/* Upsell — Verified Hockey Passport CTA (ToolUpsell). Track clicks via data-upsell-cta attr. */}
+        <ToolUpsell toolSlug="hockey-cost-calculator" />
 
         {/* Breakdown */}
         <div style={{
