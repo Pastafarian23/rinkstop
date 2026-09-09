@@ -90,8 +90,16 @@ const staticUrls: { url: string; changeFreq: 'daily' | 'weekly' | 'monthly' | 'y
 export async function GET() {
   const countryUrls = countries.map(c => ({ url: `${baseUrl}/directory/${c}`, changeFreq: 'monthly' as const, priority: 0.7 }));
   const usStateUrls = usStates.map(s => ({ url: `${baseUrl}/directory/united-states/${s}`, changeFreq: 'monthly' as const, priority: 0.5 }));
+  // Ice marketplace: top-level hub gets high priority; per-country hubs
+  // get lower priority but still listed so search engines can discover
+  // them. Per-city URLs are added to sitemap-locations (see below).
+  const marketplaceCountryUrls = countries.map(c => ({
+    url: `${baseUrl}/ice-marketplace/${c}`,
+    changeFreq: 'weekly' as const,
+    priority: 0.6,
+  }));
 
-  const all = [...staticUrls, ...countryUrls, ...usStateUrls];
+  const all = [...staticUrls, ...countryUrls, ...usStateUrls, ...marketplaceCountryUrls];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
