@@ -14,6 +14,27 @@ import CityMarketplaceClient from '../../../_components/CityMarketplaceClient';
 
 export const dynamic = 'force-dynamic';
 
+const US_STATE_ABBR: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new-hampshire': 'NH', 'new-jersey': 'NJ',
+  'new-mexico': 'NM', 'new-york': 'NY', 'north-carolina': 'NC', 'north-dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode-island': 'RI', 'south-carolina': 'SC',
+  'south-dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+  'virginia': 'VA', 'washington': 'WA', 'west-virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+  'district-of-columbia': 'DC',
+};
+
+const CA_PROVINCE_ABBR: Record<string, string> = {
+  'Alberta': 'AB', 'British Columbia': 'BC', 'Manitoba': 'MB',
+  'New Brunswick': 'NB', 'Newfoundland and Labrador': 'NL', 'Nova Scotia': 'NS',
+  'Northwest Territories': 'NT', 'Nunavut': 'NU', 'Ontario': 'ON',
+  'Prince Edward Island': 'PE', 'Quebec': 'QC', 'Saskatchewan': 'SK', 'Yukon': 'YT',
+};
+
 interface PageProps {
   params: Promise<{ country: string; province: string; city: string }>;
 }
@@ -94,6 +115,7 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
     ? US_STATES[provinceSlug] || CA_PROVINCES[provinceSlug] || titleCase(provinceSlug.replace(/-/g, ' '))
     : null;
   const cityName = titleCase(citySlug.replace(/-/g, ' '));
+  const stateAbbr = isUSorCA && US_STATE_ABBR[provinceSlug.toLowerCase()] ? US_STATE_ABBR[provinceSlug.toLowerCase()] : '';
 
   // Lookup city in the rinks table to gate the page. If we have no rinks
   // for this city, the page noindexes itself (404-ish) so Google
@@ -105,8 +127,8 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
     .ilike('city', cityName);
   if (countryName) rinksQuery = rinksQuery.ilike('country', countryName);
   if (isUSorCA && provinceName) {
-    // rinks table may have full state name OR abbr; we have the full name
-    rinksQuery = rinksQuery.or(`province_state.ilike.${provinceName},province_state.ilike.${provinceName.slice(0, 2)}`);
+    // rinks table may have full state name OR abbr; we look up the abbr from US_STATE_ABBR
+    rinksQuery = rinksQuery.or(`province_state.eq.${provinceName},province_state.eq.${stateAbbr}`);
   }
   const { data: cityRinks } = await rinksQuery.limit(50);
 
@@ -130,7 +152,7 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
     .ilike('rink.city', cityName);
   if (countryName) listingsQuery = listingsQuery.ilike('rink.country', countryName);
   if (isUSorCA && provinceName) {
-    listingsQuery = listingsQuery.or(`rink.province_state.ilike.${provinceName},rink.province_state.ilike.${provinceName.slice(0, 2)}`);
+    listingsQuery = listingsQuery.or(`rink.province_state.eq.${provinceName},rink.province_state.eq.${stateAbbr}`);
   }
   const { data: listingsRaw } = await listingsQuery.order('start_time', { ascending: true }).limit(100);
 

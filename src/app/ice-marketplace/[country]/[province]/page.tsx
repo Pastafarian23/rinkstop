@@ -11,6 +11,27 @@ import ProvinceMarketplaceClient from '../../_components/ProvinceMarketplaceClie
 
 export const dynamic = 'force-dynamic';
 
+const US_STATE_ABBR: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+  'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+  'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+  'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+  'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new-hampshire': 'NH', 'new-jersey': 'NJ',
+  'new-mexico': 'NM', 'new-york': 'NY', 'north-carolina': 'NC', 'north-dakota': 'ND', 'ohio': 'OH',
+  'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode-island': 'RI', 'south-carolina': 'SC',
+  'south-dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+  'virginia': 'VA', 'washington': 'WA', 'west-virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+  'district-of-columbia': 'DC',
+};
+
+const CA_PROVINCE_ABBR: Record<string, string> = {
+  'Alberta': 'AB', 'British Columbia': 'BC', 'Manitoba': 'MB',
+  'New Brunswick': 'NB', 'Newfoundland and Labrador': 'NL', 'Nova Scotia': 'NS',
+  'Northwest Territories': 'NT', 'Nunavut': 'NU', 'Ontario': 'ON',
+  'Prince Edward Island': 'PE', 'Quebec': 'QC', 'Saskatchewan': 'SK', 'Yukon': 'YT',
+};
+
 interface PageProps {
   params: Promise<{ country: string; province: string }>;
 }
@@ -75,6 +96,7 @@ export default async function ProvinceMarketplacePage({ params }: PageProps) {
   const provinceName = isUSorCA
     ? US_STATE_FULL[provinceSlug] || CA_PROVINCE_FULL[provinceSlug] || titleCase(provinceSlug.replace(/-/g, ' '))
     : null;
+  const stateAbbr = isUSorCA && US_STATE_ABBR[provinceSlug] ? US_STATE_ABBR[provinceSlug] : '';
 
   // For non-US/CA this URL shape doesn't make sense (no province layer)
   if (!isUSorCA) {
@@ -105,7 +127,7 @@ export default async function ProvinceMarketplacePage({ params }: PageProps) {
     .eq('status', 'available')
     .gte('start_time', new Date().toISOString())
     .ilike('rink.country', countryName)
-    .or(`rink.province_state.eq.${provinceName},rink.province_state.ilike.${provinceName.slice(0, 2)}`)
+    .or(`rink.province_state.eq.${provinceName},rink.province_state.eq.${stateAbbr}`)
     .order('start_time', { ascending: true })
     .limit(200);
 
