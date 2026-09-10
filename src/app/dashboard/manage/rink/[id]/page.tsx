@@ -154,6 +154,12 @@ export default async function ManageRinkPage({ params }: PageProps) {
           📥 Booking Inquiries →
         </Link>
         <Link
+          href={`/dashboard/manage/rink/${id}/bookings`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#86EFAC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+        >
+          📋 Bookings →
+        </Link>
+        <Link
           href={`/dashboard/manage/rink/${id}/contracts`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', color: '#7DD3FC', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
         >

@@ -11,6 +11,7 @@ const NAV = [
   { href: '/admin/teams', label: 'Teams', icon: '🏒' },
   { href: '/admin/rinks', label: 'Rinks', icon: '🏟️' },
   { href: '/admin/users', label: 'Users', icon: '👥' },
+  { href: '/admin/bookings', label: 'Bookings', icon: '📋' },
   { href: '/admin/games', label: 'Games', icon: '🎮' },
   { href: '/admin/leagues', label: 'Leagues', icon: '🏆' },
   { href: '/admin/players', label: 'Players', icon: '⭐' },
