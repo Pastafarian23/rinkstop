@@ -113,7 +113,7 @@ function thankYouPage(rinkName: string, contactName: string, listingTitle: strin
 
 export async function POST(request: NextRequest) {
   if (!supabaseAdmin) {
-    return errorPage('Service unavailable. Please email partners@rinkstop.com directly.', 503);
+    return errorPage('Service unavailable. Please email support@rinkstop.com directly.', 503);
   }
 
   // Rate limit by IP

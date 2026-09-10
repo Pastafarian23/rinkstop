@@ -38,7 +38,7 @@ li { padding: 4px 0; color: rgba(255,255,255,0.8); }
 <p><a href="${baseUrl}/api/widgets/team-stats/toronto-maple-leafs" target="_blank">View live demo →</a></p>
 </div>
 
-<p>For hockey sites with 5,000+ monthly visitors, apply to the RinkStop Partner Program: <a href="mailto:partners@rinkstop.com?subject=Partner%20Program%20Application">partners@rinkstop.com</a></p>
+<p>For hockey sites with 5,000+ monthly visitors, apply to the RinkStop Partner Program: <a href="mailto:support@rinkstop.com?subject=Partner%20Program%20Application">support@rinkstop.com</a></p>
 </body>
 </html>`;
   return new NextResponse(html, {

@@ -100,7 +100,7 @@ function thankYouPage(orgName: string, contactName: string): NextResponse {
     <ul>
       <li>Browse the <a href="/ice-marketplace">ice marketplace</a></li>
       <li>Check out the <a href="/directory/rinks">rink directory</a></li>
-      <li>Email <a href="mailto:partners@rinkstop.com">partners@rinkstop.com</a> with any questions</li>
+      <li>Email <a href="mailto:support@rinkstop.com">support@rinkstop.com</a> with any questions</li>
     </ul>
 
     <p style="margin-top: 2rem;"><a href="/">← Back to RinkStop</a></p>
@@ -115,7 +115,7 @@ function thankYouPage(orgName: string, contactName: string): NextResponse {
 
 export async function POST(request: NextRequest) {
   if (!supabaseAdmin) {
-    return validationError('', 'Service unavailable. Please email partners@rinkstop.com.');
+    return validationError('', 'Service unavailable. Please email support@rinkstop.com.');
   }
 
   const form = await request.formData();
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     console.error('[launch-signup] supabase insert error', { error, contactEmail, orgName });
     return validationError(
       '',
-      'We could not save your application right now. Please try again or email partners@rinkstop.com directly.'
+      'We could not save your application right now. Please try again or email support@rinkstop.com directly.'
     );
   }
 
