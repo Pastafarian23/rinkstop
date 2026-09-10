@@ -43,7 +43,9 @@ export type TemplateName =
   | 'team-post'
   | 'listing-submission-confirmation'
   | 'payment-pending'
-  | 'notification';
+  | 'notification'
+  | 'booking-created-buyer'
+  | 'booking-created-rink';
 
 export interface TemplateData {
   welcome: {
@@ -106,6 +108,46 @@ export interface TemplateData {
     body: string;
     actionUrl: string | null;
     actionLabel: string | null;
+  };
+  /**
+   * Sent to the BUYER (Cebu Ice Datus or any team/person) when Arnel
+   * creates an admin-arranged booking on their behalf. Pilot booking
+   * model — /dashboard/admin/bookings/new creates the booking, this
+   * email goes to the buyer with the payment link.
+   */
+  'booking-created-buyer': {
+    buyerName: string;
+    rinkName: string;
+    startTimeIso: string;       // ISO 8601 with timezone
+    endTimeIso: string;
+    startTimeLocal: string;     // human-readable in rink's local TZ
+    endTimeLocal: string;
+    priceFormatted: string;     // e.g. "USD $150.00"
+    feeFormatted: string;       // e.g. "USD $15.00"
+    totalFormatted: string;     // equals priceFormatted for the pilot
+    paymentUrl: string;         // Stripe Checkout URL
+    bookingId: string;          // for tracking
+    rinkStopBookingUrl: string;  // /dashboard/my-bookings link
+  };
+  /**
+   * Sent to the RINK CONTACT (SM Seaside manager, etc.) when Arnel
+   * creates an admin-arranged booking. Arnel is the broker for the
+   * pilot — he forwards this email manually to the rink.
+   */
+  'booking-created-rink': {
+    rinkName: string;
+    buyerName: string;
+    buyerTeam: string | null;   // e.g. "Cebu Ice Datus" or null if individual
+    buyerEmail: string;
+    buyerPhone: string | null;
+    startTimeLocal: string;
+    endTimeLocal: string;
+    settlementFormatted: string;  // e.g. "PHP ₱8,775.00" — what the rink receives
+    feeFormatted: string;          // e.g. "USD $15.00" — RinkStop's facilitation fee
+    totalFormatted: string;        // e.g. "USD $150.00"
+    notes: string | null;
+    confirmUrl: string;            // /dashboard/manage/rink/[id]/bookings (rink owner clicks)
+    bookingId: string;
   };
 }
 
@@ -239,6 +281,10 @@ export function renderTemplate<T extends TemplateName>(name: T, data: TemplateDa
       return paymentPending(data as TemplateData['payment-pending']);
     case 'notification':
       return notification(data as TemplateData['notification']);
+    case 'booking-created-buyer':
+      return bookingCreatedBuyer(data as TemplateData['booking-created-buyer']);
+    case 'booking-created-rink':
+      return bookingCreatedRink(data as TemplateData['booking-created-rink']);
   }
 }
 
@@ -425,6 +471,116 @@ function paymentPending(d: TemplateData['payment-pending']): Rendered {
     `Amount: ${d.currency} ${d.amount}`,
     ``,
     `Open: ${d.approveLink}`,
+  ].filter(Boolean).join('\n');
+  return {
+    html: shell(subject, bodyHtml),
+    text: bodyText + footerText(),
+  };
+}
+
+// --- bookingCreatedBuyer ---------------------------------------------------
+//
+// Sent to the buyer (team or individual) when Arnel creates an admin-arranged
+// booking on their behalf. Pilot booking model — /dashboard/admin/bookings/new
+// creates the booking + fires this email + the rink-side email.
+
+function bookingCreatedBuyer(d: TemplateData['booking-created-buyer']): Rendered {
+  const subject = `Your booking at ${d.rinkName} is ready to pay`;
+  const bodyHtml = `
+    <h1 style="margin:0 0 12px 0;font-size:22px;color:${COLORS.navy};font-weight:800;line-height:1.3;">Booking confirmed — payment pending</h1>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">
+      Hi ${escape(d.buyerName)}, RinkStop has booked ice time for you at <strong>${escape(d.rinkName)}</strong>. Pay the booking total below to confirm.
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:16px 0;background:${COLORS.ice};border-radius:6px;padding:16px;">
+      <tr><td style="font-size:14px;color:${COLORS.navy};">
+        <div style="margin-bottom:6px;"><strong>Slot:</strong> ${escape(d.startTimeLocal)} – ${escape(d.endTimeLocal)}</div>
+        <div style="margin-bottom:6px;"><strong>Rink:</strong> ${escape(d.rinkName)}</div>
+        <div style="margin-bottom:6px;"><strong>Booking total:</strong> ${escape(d.totalFormatted)}</div>
+        <div style="font-size:13px;color:${COLORS.textMuted};">Includes RinkStop's facilitation fee (${escape(d.feeFormatted)}). The rink receives the balance.</div>
+      </td></tr>
+    </table>
+    ${button(d.paymentUrl, 'Pay now →', 'red')}
+    <p style="margin:16px 0 0 0;font-size:13px;color:${COLORS.textMuted};">
+      After payment, you'll get a confirmation email and a copy of the booking agreement. Track status anytime in your RinkStop inbox: <a href="${escape(d.rinkStopBookingUrl)}" style="color:${COLORS.link};text-decoration:underline;">${escape(d.rinkStopBookingUrl)}</a>
+    </p>
+    <p style="margin:24px 0 0 0;font-size:12px;color:${COLORS.textMuted};">
+      Booking reference: <code style="background:#f1f5f9;padding:2px 6px;border-radius:3px;font-family:monospace;">${escape(d.bookingId)}</code>
+    </p>
+  `;
+  const bodyText = [
+    `Booking confirmed — payment pending`,
+    ``,
+    `Hi ${d.buyerName},`,
+    ``,
+    `RinkStop has booked ice time for you at ${d.rinkName}.`,
+    ``,
+    `Slot: ${d.startTimeLocal} – ${d.endTimeLocal}`,
+    `Rink: ${d.rinkName}`,
+    `Booking total: ${d.totalFormatted}`,
+    `  Includes RinkStop's facilitation fee (${d.feeFormatted}). The rink receives the balance.`,
+    ``,
+    `Pay now: ${d.paymentUrl}`,
+    ``,
+    `Track status: ${d.rinkStopBookingUrl}`,
+    ``,
+    `Booking reference: ${d.bookingId}`,
+  ].join('\n');
+  return {
+    html: shell(subject, bodyHtml),
+    text: bodyText + footerText(),
+  };
+}
+
+// --- bookingCreatedRink ----------------------------------------------------
+//
+// Sent to the rink contact (SM Seaside manager) when Arnel creates an
+// admin-arranged booking. Arnel forwards this email manually to the rink
+// during the pilot. Once the rink claims RinkStop, the confirmUrl leads
+// them to a dashboard page where they can confirm or decline.
+
+function bookingCreatedRink(d: TemplateData['booking-created-rink']): Rendered {
+  const subject = `New booking: ${d.buyerName} wants ${d.startTimeLocal}`;
+  const bodyHtml = `
+    <h1 style="margin:0 0 12px 0;font-size:22px;color:${COLORS.navy};font-weight:800;line-height:1.3;">New booking at ${escape(d.rinkName)}</h1>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;">
+      <strong>${escape(d.buyerName)}</strong>${d.buyerTeam ? ` (${escape(d.buyerTeam)})` : ''} has booked ice time at <strong>${escape(d.rinkName)}</strong> through RinkStop.
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:16px 0;background:${COLORS.ice};border-radius:6px;padding:16px;">
+      <tr><td style="font-size:14px;color:${COLORS.navy};">
+        <div style="margin-bottom:6px;"><strong>Slot:</strong> ${escape(d.startTimeLocal)} – ${escape(d.endTimeLocal)}</div>
+        <div style="margin-bottom:6px;"><strong>Buyer contact:</strong> ${escape(d.buyerEmail)}${d.buyerPhone ? ` · ${escape(d.buyerPhone)}` : ''}</div>
+        <div style="margin-bottom:6px;"><strong>Total:</strong> ${escape(d.totalFormatted)}</div>
+        <div style="margin-bottom:6px;"><strong>RinkStop facilitation fee:</strong> ${escape(d.feeFormatted)}</div>
+        <div style="margin-bottom:0;"><strong>Your settlement:</strong> <span style="color:${COLORS.navy};font-weight:700;">${escape(d.settlementFormatted)}</span></div>
+      </td></tr>
+    </table>
+    ${d.notes ? `<p style="margin:16px 0;font-size:14px;line-height:1.6;padding:12px;background:#fffbeb;border-left:3px solid ${COLORS.gold};border-radius:4px;"><strong>Note from buyer:</strong> ${escape(d.notes)}</p>` : ''}
+    ${button(d.confirmUrl, 'Confirm booking →', 'red')}
+    <p style="margin:16px 0 0 0;font-size:13px;color:${COLORS.textMuted};">
+      Settlement is paid out by RinkStop after the booking completes. For the pilot, payouts are processed manually via bank transfer or GCash by Arnel.
+    </p>
+    <p style="margin:24px 0 0 0;font-size:12px;color:${COLORS.textMuted};">
+      Booking reference: <code style="background:#f1f5f9;padding:2px 6px;border-radius:3px;font-family:monospace;">${escape(d.bookingId)}</code>
+    </p>
+  `;
+  const bodyText = [
+    `New booking at ${d.rinkName}`,
+    ``,
+    `${d.buyerName}${d.buyerTeam ? ` (${d.buyerTeam})` : ''} has booked ice time through RinkStop.`,
+    ``,
+    `Slot: ${d.startTimeLocal} – ${d.endTimeLocal}`,
+    `Buyer contact: ${d.buyerEmail}${d.buyerPhone ? ` · ${d.buyerPhone}` : ''}`,
+    `Total: ${d.totalFormatted}`,
+    `RinkStop facilitation fee: ${d.feeFormatted}`,
+    `Your settlement: ${d.settlementFormatted}`,
+    ``,
+    d.notes ? `Note from buyer: ${d.notes}\n` : '',
+    `Confirm booking: ${d.confirmUrl}`,
+    ``,
+    `Settlement is paid out by RinkStop after the booking completes.`,
+    `For the pilot, payouts are processed manually via bank transfer or GCash.`,
+    ``,
+    `Booking reference: ${d.bookingId}`,
   ].filter(Boolean).join('\n');
   return {
     html: shell(subject, bodyHtml),
