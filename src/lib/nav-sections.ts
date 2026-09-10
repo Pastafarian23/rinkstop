@@ -78,6 +78,16 @@ const CONTENT_LINKS: NavItem[] = [
   { href: '/gear-brands',   label: 'Gear'          },
 ];
 
+const FREE_TOOLS: NavItem[] = [
+  { href: '/tools',                                                label: 'All Free Tools'              },
+  { href: '/tools/hockey-cost-calculator',                         label: 'Hockey Cost Calculator'    },
+  { href: '/tools/junior-eligibility-checker',                      label: 'Junior Eligibility Checker' },
+  { href: '/tools/hockey-skate-size-calculator',                   label: 'Skate Size Calculator'      },
+  { href: '/tools/hockey-glove-size-calculator',                   label: 'Glove Size Calculator'      },
+  { href: '/tools/hockey-stick-size-calculator',                   label: 'Stick Size Calculator'      },
+  { href: '/tools/hockey-goalie-gear-sizer',                       label: 'Goalie Gear Sizer'           },
+];
+
 const ABOUT_LINKS: NavItem[] = [
   { href: '/faq',            label: 'FAQ'             },
   { href: '/about',          label: 'About Us'        },
@@ -96,5 +106,6 @@ export const NAV_SECTIONS: NavSection[] = [
   { label: 'Junior Hockey',  sub: JUNIOR        },
   { label: 'Youth & Adult',  sub: YOUTH_AMATEUR },
   { label: 'Content',        sub: CONTENT_LINKS },
+  { label: 'Free Tools',     sub: FREE_TOOLS    },
   { label: 'About',          sub: ABOUT_LINKS   },
 ];

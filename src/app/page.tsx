@@ -446,6 +446,54 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ---- FREE TOOLS + GUIDES (cross-link surface) --------------------------------- */}
+      <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Free Tools &amp; Guides</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>PLAN YOUR SEASON</h2>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <Link href="/tools" className="sec-link">All tools →</Link>
+              <Link href="/guides" className="sec-link">All guides →</Link>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+            <Link href="/tools/hockey-cost-calculator" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>💰</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Hockey Cost Calculator</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Estimate your season by age, state, and level.</div>
+            </Link>
+            <Link href="/tools/junior-eligibility-checker" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🎯</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Junior Eligibility Checker</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>CHL / USHL / NCAA by birth year.</div>
+            </Link>
+            <Link href="/tools/hockey-skate-size-calculator" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>⛸️</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Skate, Glove &amp; Stick Sizing</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Free sizing for every new player.</div>
+            </Link>
+            <Link href="/guides/hockey-parents-handbook" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>👪</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Hockey Parents Handbook</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>First-year parent survival guide.</div>
+            </Link>
+            <Link href="/guides/youth-to-junior-hockey" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🛤️</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Youth to Junior Pathways</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>NCAA vs CHL vs USHL explained.</div>
+            </Link>
+            <Link href="/guides/nhl-draft" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏆</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>NHL Draft Guide</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Eligibility, order, combine, path.</div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ---- TOP HOCKEY CITIES ----------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">

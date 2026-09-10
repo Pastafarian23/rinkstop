@@ -26,6 +26,8 @@ const subSitemaps = [
   'sitemap-images.xml',
   'sitemap-ice-marketplace.xml',
   'sitemap-events.xml',
+  'sitemap-tools.xml',
+  'sitemap-guides.xml',
 ];
 
 export async function GET() {
