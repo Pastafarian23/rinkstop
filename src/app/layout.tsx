@@ -378,6 +378,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </div>
 
                 <div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Free Tools</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {[
+                      ['/tools','All tools'],
+                      ['/tools/hockey-cost-calculator','Cost Calculator'],
+                      ['/tools/junior-eligibility-checker','Junior Eligibility'],
+                      ['/tools/hockey-skate-size-calculator','Skate Size'],
+                      ['/tools/hockey-glove-size-calculator','Glove Size'],
+                      ['/tools/hockey-stick-size-calculator','Stick Size'],
+                      ['/tools/hockey-goalie-gear-sizer','Goalie Gear'],
+                      ['/guides','All guides'],
+                      ['/guides/hockey-parents-handbook','Parents Handbook'],
+                    ].map(([href,label]) => (
+                      <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
                   <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Company</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {[
