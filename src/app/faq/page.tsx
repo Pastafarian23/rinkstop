@@ -2,17 +2,33 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'FAQ',
-  description: 'Frequently asked questions about RinkStop - the world\'s hockey directory. Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, and more.',
+  title: 'FAQ — RinkStop Hockey Directory | Accounts, Listings, Marketplace, Tools',
+  description: 'Frequently asked questions about RinkStop — the world\'s hockey directory. Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, ice marketplace, events, programs, and 6 free hockey calculators.',
+  keywords: [
+    'hockey directory FAQ',
+    'RinkStop questions',
+    'hockey passport FAQ',
+    'rink marketplace questions',
+    'hockey cost calculator',
+    'hockey skate size calculator',
+    'junior hockey eligibility',
+    'hockey events directory',
+    'youth hockey programs',
+    'hockey parents handbook',
+  ],
   alternates: { canonical: 'https://rinkstop.com/faq' },
   openGraph: {
-    title: 'FAQ',
-    description: 'Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, and more.',
+    title: 'FAQ — RinkStop',
+    description: 'Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, ice marketplace, events, programs, and free tools.',
     url: 'https://rinkstop.com/faq',
     siteName: 'RinkStop',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
   },
 };
+
+// Last-verified stamp is also injected into the JSON-LD `dateModified` so
+// Google sees a real freshness signal. Bump this when content changes.
+const FAQ_LAST_UPDATED = '2026-09-10';
 
 // All Q&A content is defined here as data so we can render it both as visible
 // <details> accordions AND as a JSON-LD FAQPage schema (for Google rich results).
@@ -186,7 +202,7 @@ const sections: Array<{
       },
       {
         q: 'I am new to hockey. Where should I start?',
-        a: 'Read our /guides section, starting with the "How to Fit Hockey Equipment" guide (separate versions for parents and adult players). Then visit /directory/youth-hockey for "Learn to Play" programs in your area, or /learn for adult beginner resources.',
+        a: 'Read the free Hockey Parents Handbook at /guides/hockey-parents-handbook (or "How to Fit Hockey Equipment" if you are an adult player). Then visit /directory/youth-hockey for "Learn to Play" programs in your area, or /learn for adult beginner resources. The Hockey Cost Calculator at /tools/hockey-cost-calculator will give you a realistic budget before you commit.',
       },
     ],
   },
@@ -418,7 +434,7 @@ const sections: Array<{
       },
       {
         q: 'How do I use the Hockey Cost Calculator?',
-        a: 'The Hockey Cost Calculator at /tools/hockey-cost-calculator estimates how much hockey costs per year in the United States. Enter the player\'s age, your state, and hockey level (House/Rec, Travel A/AA, or AAA), and the calculator returns a breakdown covering registration fees, equipment, ice time, tournaments, travel, and other costs - all based on 2026 data. No sign-up is required. The calculator is free to use and the results are shareable.',
+        a: 'The Hockey Cost Calculator at /tools/hockey-cost-calculator estimates how much hockey costs per year in the United States. Enter the player\'s age, your state, and hockey level (House/Rec, Travel A/AA, or AAA), and the calculator returns a breakdown covering registration fees, equipment, ice time, tournaments, travel, and other costs - all based on 2026 data. No sign-up is required. The calculator is free to use and the results are shareable. See the Tools section above for the other five free calculators (skate size, glove size, stick size, goalie gear, junior eligibility).',
       },
       {
         q: 'How do I find out if a rink, team, or league is already on RinkStop?',
@@ -431,6 +447,114 @@ const sections: Array<{
       {
         q: 'How do I get help?',
         a: 'Open a /dashboard/support ticket for any account, listing, or technical issue. Tickets are routed to the right team (general, listings, billing, or technical) and we respond within 1-2 business days, or 24 hours for paid-tier members. For partnership or advertising inquiries, see /advertise. For general inquiries (media, mailing address, privacy requests), see /about#contact.',
+      },
+    ],
+  },
+  {
+    id: 'ice-marketplace',
+    title: 'Ice Marketplace & Bookings',
+    icon: '🧊',
+    qa: [
+      {
+        q: 'What is the RinkStop ice marketplace?',
+        a: 'The ice marketplace at /ice-marketplace is where rinks and operators list open ice time for sale and where buyers (teams, coaches, parents, adult pickup players) request bookings. RinkStop brokers the agreement and the payment, so neither side has to chase the other offline. Listings are searchable by city and by country.',
+      },
+      {
+        q: 'How do I find open ice near me?',
+        a: 'Go to /ice-marketplace, /open-ice-near-me, or /rent-hockey-ice. You can filter by city and country. Each listing shows the slot time, slot type, age group, skill level, and price. Click any listing to see full details and a "Request to book" button.',
+      },
+      {
+        q: 'How do I request a booking?',
+        a: 'Open a listing and click "Request to book." You will be asked for your name, email, phone, team or organization, and any notes. The form takes 60 seconds. RinkStop forwards the request to the rink and you get a payment link by email once the rink confirms.',
+      },
+      {
+        q: 'Why is the rink contact info hidden on listing pages?',
+        a: 'Direct phone numbers and email addresses are intentionally not shown to keep bookings on the platform. When you click "Request to book," RinkStop brokers the agreement and handles the payment — you do not have to call the rink yourself. The rink receives your contact details only after you submit the form, and only inside their RinkStop inbox.',
+      },
+      {
+        q: 'How do rinks list open ice for sale?',
+        a: 'Claim your rink on RinkStop at /claim-your-listing (free), then go to /dashboard/manage/rink/[id]/ice-listings. Create a listing with the slot date, time, slot type, age group, skill level, and price. The listing goes live immediately and is searchable on /ice-marketplace. You can also publish recurring slots (every Saturday morning, etc.) once the model is proven with your first booking.',
+      },
+      {
+        q: 'What is the founding partner program?',
+        a: 'The founding partner program at /launch is for rinks and operators who want early access to the booking platform, priority placement in /ice-marketplace, and a reduced facilitation fee in exchange for committing before general availability. Submitting the form takes 2 minutes and there is no commitment until you sign up. Founding partner slots are limited per region.',
+      },
+      {
+        q: 'How much does RinkStop charge for a booking?',
+        a: 'RinkStop keeps a facilitation fee of 10% of the booking total for the pilot. For example, a $150 booking pays $15 to RinkStop and $135 to the rink. The fee is shown to both sides on the booking confirmation. The fee may change after the pilot as we add payment processing and Stripe Connect.',
+      },
+      {
+        q: 'What payment methods are supported for ice bookings?',
+        a: 'Stripe is the default. Cards (Visa, Mastercard, Amex, Discover, JCB) and most country-specific debit cards work today. PayMongo and PayMaya support for the Philippines (GCash, Maya wallet, PH bank transfer) is on the roadmap and will be added once the first few pilot bookings close.',
+      },
+    ],
+  },
+  {
+    id: 'events-programs',
+    title: 'Events & Youth Programs',
+    icon: '📅',
+    qa: [
+      {
+        q: 'What kinds of events appear on RinkStop?',
+        a: 'Public skating sessions, learn-to-play clinics, try-hockey-for-free days, tournaments, tryouts, camps, and one-off special events. Each event has a date, time, location, age group, skill level, and a link to register or learn more. Browse at /events.',
+      },
+      {
+        q: 'How do I submit an event?',
+        a: 'Go to /events/submit and pick your event type (public session, clinic, tournament, tryout, camp, or other). Fill in the name, dates, rink, age group, skill level, contact, and a description. No account is required to submit. RinkStop reviews every submission within 1-2 business days and emails you at the address you provided.',
+      },
+      {
+        q: 'How do I find youth hockey programs in my area?',
+        a: 'Go to /directory/youth-hockey and filter by country, state, age group, and program type (learn-to-play, house league, travel, AAA, etc.). Each program links to the rink and the team(s) that run it. You can also use /learn for adult beginner resources.',
+      },
+      {
+        q: 'What is the difference between events, programming, and listings?',
+        a: 'Listings (on /directory) are rinks, teams, players, and leagues. Programming is recurring weekly slots at a rink (open hockey Tuesday nights, etc.). Events are one-off dates (tournament, tryout, public skate). RinkStop treats them as separate surfaces so you can search each independently.',
+      },
+      {
+        q: 'How do I add a youth program to RinkStop?',
+        a: 'Once you have claimed your rink or team, go to /dashboard/manage/rink/[id]/programming. Add a recurring program (day of week, time, age group, skill level) and it shows up on /directory/youth-hockey. New visitors searching for "youth hockey near me" land on the program page and can contact you through RinkStop.',
+      },
+    ],
+  },
+  {
+    id: 'tools',
+    title: 'Tools & Calculators',
+    icon: '🛠️',
+    qa: [
+      {
+        q: 'What free tools does RinkStop offer?',
+        a: 'Six hockey calculators and one parents handbook. All free, no sign-up required: Hockey Cost Calculator (estimates annual cost by age/state/level), Hockey Skate Size Calculator, Hockey Glove Size Calculator, Hockey Stick Size Calculator, Hockey Goalie Gear Sizer, Junior Eligibility Checker (CHL/NCAA eligibility by birth year and league), and the Hockey Parents Handbook at /guides/hockey-parents-handbook.',
+      },
+      {
+        q: 'Are the calculators accurate?',
+        a: 'The Hockey Cost Calculator uses 2026 survey data across registration, equipment, ice time, tournaments, travel, and other costs. The size calculators use manufacturer fit charts and standard sizing conventions. None of the calculators are medical or legal advice — they are planning tools.',
+      },
+      {
+        q: 'Do I need to create an account to use the tools?',
+        a: 'No. All calculators work without an account. Results are not saved. If you create a free account, you can save the results and revisit them from /dashboard.',
+      },
+      {
+        q: 'How do I use the Junior Eligibility Checker?',
+        a: 'Go to /tools/junior-eligibility-checker. Enter the player\'s birth year. The tool returns eligibility windows for CHL (WHL/OHL/QMJHL), NCAA (D1/D2/D3), USHL, NAHL, and NCDC. It shows which leagues the player is age-eligible for and when those windows close. Built for parents and players planning junior or college paths.',
+      },
+    ],
+  },
+  {
+    id: 'parents',
+    title: 'Hockey Parents Handbook',
+    icon: '👪',
+    qa: [
+      {
+        q: 'What is the Hockey Parents Handbook?',
+        a: 'A free, comprehensive guide at /guides/hockey-parents-handbook for parents of youth hockey players. It covers cost expectations by age and level, time commitment, what equipment your kid actually needs, how to find a good program, travel decisions, how to talk to coaches, safety, injury basics, and parent etiquette. Updated annually. Written by RinkStop staff with input from coaches and parents.',
+      },
+      {
+        q: 'Who is the Hockey Parents Handbook for?',
+        a: 'Parents of kids 4-18 who play or want to play hockey. The Handbook is especially useful for first-year parents who do not know what to expect. It is also useful for parents whose kids are moving from learn-to-play to travel, or from youth to junior hockey.',
+      },
+      {
+        q: 'Is the Handbook available offline?',
+        a: 'Not currently. It is a web guide at /guides/hockey-parents-handbook. If you want a printable version, use your browser\'s print-to-PDF feature (works on every modern browser). The cost calculator at /tools/hockey-cost-calculator is a companion tool that gives you a personalized number to compare against the Handbook\'s ranges.',
       },
     ],
   },
@@ -456,6 +580,27 @@ export default function FAQPage() {
         Everything you need to know about RinkStop. Can&apos;t find what you&apos;re looking for?{' '}
         <Link href="/about#contact" style={{ color: '#C8102E' }}>Contact us</Link>.
       </p>
+
+      {/* Featured-snippet block: short direct answer to "What is RinkStop?" — the
+          answer Google most often pulls for voice/featured-snippet placement on
+          an FAQ page. 50-60 words, keyword-rich, with a clear next step. */}
+      <aside
+        aria-label="Quick answer"
+        style={{
+          background: 'rgba(56,189,248,0.06)',
+          border: '1px solid rgba(56,189,248,0.18)',
+          borderLeft: '3px solid #38BDF8',
+          borderRadius: '8px',
+          padding: '1rem 1.25rem',
+          marginBottom: '2rem',
+          color: 'rgba(255,255,255,0.85)',
+          fontSize: '0.9375rem',
+          lineHeight: 1.7,
+        }}
+      >
+        <strong style={{ color: '#38BDF8' }}>What is RinkStop?</strong>{' '}
+        RinkStop is the world’s hockey directory: 1,800+ rinks, 3,200+ teams, 6,300+ players, 240+ leagues, and 140+ countries in one searchable index. It is free to browse, free to claim your own listing, and includes six free hockey calculators (cost, skate size, glove size, stick size, goalie gear, junior eligibility). RinkStop also brokers ice-time bookings through its <Link href="/ice-marketplace" style={{ color: '#38BDF8' }}>ice marketplace</Link> and tracks verified career data via <Link href="/dashboard/passport" style={{ color: '#38BDF8' }}>Hockey Passport</Link>.
+      </aside>
 
       {/* Quick jump links to each section */}
       <nav aria-label="FAQ sections" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -505,7 +650,43 @@ export default function FAQPage() {
         </Link>
       </section>
 
-      {/* JSON-LD FAQPage schema for Google rich results */}
+      {/* JSON-LD: BreadcrumbList (for Google breadcrumb display in SERP) +
+          WebPage (page identity + freshness signal) + FAQPage (rich results).
+          Three separate <script> tags so a parse error in one doesn't kill the others. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+              { '@type': 'ListItem', position: 2, name: 'FAQ', item: 'https://rinkstop.com/faq' },
+            ],
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: 'RinkStop FAQ',
+            description: 'Frequently asked questions about RinkStop — the world\'s hockey directory. Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, ice marketplace, events, programs, and free tools.',
+            url: 'https://rinkstop.com/faq',
+            inLanguage: 'en-US',
+            isPartOf: { '@type': 'WebSite', name: 'RinkStop', url: 'https://rinkstop.com/' },
+            datePublished: '2026-05-01',
+            dateModified: FAQ_LAST_UPDATED,
+            speakable: {
+              '@type': 'SpeakableSpecification',
+              xpath: ['/html/head/title', "//*[@itemprop='name']"],
+            },
+            primaryImageOfPage: { '@type': 'ImageObject', url: 'https://rinkstop.com/og-image.png' },
+          }),
+        }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -514,6 +695,7 @@ export default function FAQPage() {
             '@type': 'FAQPage',
             name: 'RinkStop FAQ',
             url: 'https://rinkstop.com/faq',
+            dateModified: FAQ_LAST_UPDATED,
             mainEntity: allQAs.map(({ q, a }) => ({
               '@type': 'Question',
               name: q,
