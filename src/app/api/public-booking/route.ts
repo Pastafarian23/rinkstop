@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { headers } from 'next/headers';
 import { checkRateLimit, applyRateLimitHeaders } from '@/lib/rateLimit';
+import { notifyBookingRequestCreated } from '@/lib/rink-notifications';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -163,39 +164,74 @@ export async function POST(request: NextRequest) {
     return errorPage('This listing is no longer accepting inquiries.');
   }
 
-  const { error: insertErr } = await supabaseAdmin.from('public_booking_inquiries').insert({
-    listing_id: listing.id,
-    rink_id: listing.rink_id,
-    contact_name: contactName,
-    contact_email: contactEmail,
-    contact_phone: contactPhone,
-    team_or_org: teamOrOrg,
-    requested_start: listing.start_time,
-    requested_end: listing.end_time,
-    requested_price_cents: listing.requested_price_cents,
-    notes,
-    source,
-    source_url: sourceUrl,
-    status: 'new',
-    ip_address: ip,
-    user_agent: userAgent,
-  });
+  const { data: inserted, error: insertErr } = await supabaseAdmin
+    .from('public_booking_inquiries')
+    .insert({
+      listing_id: listing.id,
+      rink_id: listing.rink_id,
+      contact_name: contactName,
+      contact_email: contactEmail,
+      contact_phone: contactPhone,
+      team_or_org: teamOrOrg,
+      requested_start: listing.start_time,
+      requested_end: listing.end_time,
+      requested_price_cents: listing.requested_price_cents,
+      notes,
+      source,
+      source_url: sourceUrl,
+      status: 'new',
+      ip_address: ip,
+      user_agent: userAgent,
+    })
+    .select('id')
+    .single();
 
-  if (insertErr) {
+  if (insertErr || !inserted) {
     console.error('[public-booking] insert failed', { insertErr, listingId, contactEmail });
     return errorPage('We could not save your inquiry right now. Please try again or email the rink directly.', 500);
   }
 
-  // TODO: notify rink owner via email. For now, log so I can see in
-  // Vercel logs and follow up.
-  // eslint-disable-next-line no-console
-  console.log('[public-booking] new inquiry', {
-    listingId,
-    rinkId: listing.rink_id,
-    rinkName: (listing.rink as any)?.name,
-    contactEmail,
-    listingTitle: listing.title,
-  });
+  // Best-effort: notify rink owner (in-app + email). Never block the
+  // visitor's thank-you page on notification failure — the inquiry row
+  // is saved, owner can still see it in their dashboard.
+  try {
+    const { data: claims } = await supabaseAdmin
+      .from('claims')
+      .select('user_id')
+      .eq('claim_type', 'rink')
+      .eq('entity_id', listing.rink_id)
+      .eq('status', 'approved');
+
+    const rinkOwnerUserIds = (claims || [])
+      .map((c: any) => c.user_id)
+      .filter((id: unknown): id is string => typeof id === 'string' && id.length > 0);
+
+    if (rinkOwnerUserIds.length > 0) {
+      await notifyBookingRequestCreated({
+        rinkId: listing.rink_id,
+        rinkOwnerUserIds,
+        requesterName: contactName,
+        requestedAt: listing.start_time,
+        rinkName: (listing.rink as any)?.name || 'your rink',
+        callerInsertId: `public_booking_inquiry:${inserted.id}`,
+      });
+
+      await supabaseAdmin
+        .from('public_booking_inquiries')
+        .update({ status: 'emailed_rink' })
+        .eq('id', inserted.id);
+    } else {
+      console.warn('[public-booking] no approved rink owner claim found', {
+        rinkId: listing.rink_id,
+        listingId,
+      });
+    }
+  } catch (notifyErr) {
+    console.error('[public-booking] owner notification failed (inquiry still saved)', {
+      notifyErr,
+      inquiryId: inserted.id,
+    });
+  }
 
   const rinkName = (listing.rink as any)?.name || 'the rink';
   return thankYouPage(rinkName, contactName, listing.title);
