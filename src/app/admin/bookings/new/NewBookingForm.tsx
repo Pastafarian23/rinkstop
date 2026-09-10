@@ -174,7 +174,7 @@ export default function NewBookingForm({ rinks, teams }: Props) {
       <div style={{ background: '#ecfdf5', border: '1px solid #10b981', borderRadius: 8, padding: '1.5rem', color: '#065f46' }}>
         <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.25rem', fontWeight: 700 }}>Booking created</h2>
         <p style={{ margin: '0 0 1rem', lineHeight: 1.5 }}>
-          Buyer has been emailed the payment link. Rink contact email went to partners@rinkstop.com — forward it manually.
+          Buyer has been emailed the payment link. Rink-side email (subject prefixed <code>[RINK FORWARD]</code>) went to <strong>support@rinkstop.com</strong> — filter on that prefix and forward to the rink manually.
         </p>
         <div style={{ background: '#fff', borderRadius: 6, padding: '0.75rem', marginBottom: '0.75rem' }}>
           <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: 4 }}>Booking ID</div>
