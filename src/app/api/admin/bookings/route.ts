@@ -261,13 +261,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     tag: 'booking-created-buyer',
   }).catch((e) => console.error('[admin/bookings] buyer email failed', e));
 
-  // 4. Send rink email — goes to Arnel (partners@rinkstop.com), who forwards
-  // manually. We can't email the rink directly because rinks.email is null
-  // for almost all rinks (per WS20 audit) and there's no automated forwarding.
-  // Using partners@ as the broker mailbox for the pilot.
+  // 4. Send rink email — goes to Arnel via support@rinkstop.com (the ONLY
+  // mailbox currently configured in Zoho SMTP — partners@rinkstop.com is NOT
+  // a created/active mailbox, see /root/.openclaw/credentials/zoho.json).
+  // Arnel monitors support@rinkstop.com and forwards rink-facing emails to
+  // the rink manually for the pilot. We can't email the rink directly because
+  // rinks.email is null for almost all rinks (per WS20 audit).
   void sendEmail({
-    to: 'partners@rinkstop.com',
-    subject: `New booking: ${body.buyer_contact_name} wants ${startLocal}`,
+    to: 'support@rinkstop.com',
+    // Prefix subject with [RINK FORWARD] so Arnel can filter and forward to
+    // the rink without mixing in buyer replies that hit the same mailbox.
+    subject: `[RINK FORWARD] ${body.buyer_contact_name} wants ${startLocal} at ${rinkName}`,
     template: 'booking-created-rink',
     data: {
       rinkName: rinkName,
