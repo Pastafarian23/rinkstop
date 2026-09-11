@@ -146,11 +146,12 @@ export default function HockeyDevelopmentPathwayPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/hockey-development-pathway"}
+      href={`/learn/hockey-development-pathway`}
       title={`Hockey Development Pathway`}
       description={`The North American path: Learn to Play → House → Travel → High School → Junior → College → Pro. Each level, what to expect, what it costs.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={12}
     />
 </main>

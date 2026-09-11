@@ -149,11 +149,12 @@ export default function EquipmentOnABudgetPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/equipment-on-a-budget"}
+      href={`/learn/equipment-on-a-budget`}
       title={`Hockey Equipment on a Budget`}
       description={`What to buy new vs. used vs. borrow, what to skip, what NOT to cheap out on. Plus the cost calculator link and gear libraries.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={7}
     />
 </main>

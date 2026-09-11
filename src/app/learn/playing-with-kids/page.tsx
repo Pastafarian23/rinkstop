@@ -148,11 +148,12 @@ export default function PlayingWithKidsPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/playing-with-kids"}
+      href={`/learn/playing-with-kids`}
       title={`Playing Hockey With Your Kid`}
       description={`Adult-league intro for parents who never played. How to start, what gear you need, how to find a beginner-friendly beer league near you.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={8}
     />
 </main>

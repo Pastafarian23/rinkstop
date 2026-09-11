@@ -133,11 +133,12 @@ export default function SkateFittingPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/skate-fitting"}
+      href={`/learn/skate-fitting`}
       title={`How to Fit Hockey Skates`}
       description={`A step-by-step guide for beginners. Heel lock, toe room, ankle support, the lace test, width, and how to break in new skates.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={7}
     />
 </main>

@@ -150,11 +150,12 @@ export default function HockeyRulesPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/hockey-rules"}
+      href={`/learn/hockey-rules`}
       title={`Hockey Rules for Beginners`}
       description={`Every NHL rule in plain language. Offside, icing, faceoffs, penalties, power plays, and overtime — the 12-minute primer new fans and players need.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={12}
     />
 </main>

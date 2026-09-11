@@ -148,11 +148,12 @@ export default function CostByAgePage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/cost-by-age"}
+      href={`/learn/cost-by-age`}
       title={`Hockey Cost by Age`}
       description={`What youth hockey costs from 6U to 18U: registration, equipment, ice time, travel. Includes the cost calculator link.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={8}
     />
 </main>

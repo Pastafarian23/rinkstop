@@ -145,11 +145,12 @@ export default function HockeyDevelopmentExplainedPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/hockey-development-explained"}
+      href={`/learn/hockey-development-explained`}
       title={`How Hockey Development Works`}
       description={`Pathways from youth to pro. The seven levels of hockey development, what to expect at each, and how to plan a realistic long-term path for a developing player.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={9}
     />
 </main>

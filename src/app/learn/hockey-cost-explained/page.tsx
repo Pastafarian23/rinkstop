@@ -166,11 +166,12 @@ export default function HockeyCostExplainedPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/hockey-cost-explained"}
+      href={`/learn/hockey-cost-explained`}
       title={`How Much Does Hockey Cost?`}
       description={`A complete cost guide for parents and players. The real costs of hockey by age, level, and region — registration, equipment, ice time, travel, and the hidden expenses most people forget.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={8}
     />
 </main>

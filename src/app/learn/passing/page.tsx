@@ -171,11 +171,12 @@ export default function PassingPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/passing"}
+      href={`/learn/passing`}
       title={`How to Pass a Hockey Puck`}
       description={`Forehand, backhand, saucer, one-touch, give-and-go. The right pass for every situation, with technique breakdowns for each.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={9}
     />
 </main>

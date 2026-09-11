@@ -141,11 +141,12 @@ export default function FaceOffsPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/face-offs"}
+      href={`/learn/face-offs`}
       title={`How to Win Face-offs`}
-      description={`Center technique, wing technique, the grip, stick position, timing, and the rules on what you can and can\u2019t do at the dot.`}
-      verified={"2026-09-10"}
+      description={`Center technique, wing technique, the grip, stick position, timing, and the rules on what you can and can&apos;t do at the dot.`}
+      verified={`2026-09-10`}
       readTime={7}
     />
 </main>

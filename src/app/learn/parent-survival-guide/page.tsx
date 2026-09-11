@@ -139,11 +139,12 @@ export default function ParentSurvivalGuidePage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/parent-survival-guide"}
+      href={`/learn/parent-survival-guide`}
       title={`Hockey Parent Survival Guide`}
       description={`Day 1, Week 1, Month 1, Season 1. Onboarding for first-time parents: what to bring, what to say (and not say), how to talk to coaches.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={10}
     />
 </main>
