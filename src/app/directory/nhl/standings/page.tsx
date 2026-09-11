@@ -130,7 +130,7 @@ export default async function StandingsPage({ searchParams }: { searchParams: Pr
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           <div>
-            <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#041E42', background: 'rgba(255,255,255,0.06)', padding: '0.5rem 1rem', borderRadius: '6px', marginBottom: '1rem', letterSpacing: '0.04em' }}>
+            <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#C8102E', background: 'rgba(255,255,255,0.06)', padding: '0.5rem 1rem', borderRadius: '6px', marginBottom: '1rem', letterSpacing: '0.04em' }}>
               EASTERN CONFERENCE
             </h2>
             <StandingTable title="Atlantic Division" rows={divisions.Atlantic} />

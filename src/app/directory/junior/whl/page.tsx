@@ -26,14 +26,14 @@ export default function WHLPage() {
           }],
         }) }}
       />
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory/junior" style={{ color: '#555' }}>Junior</Link>
+        <Link href="/directory/junior" style={{ color: 'rgba(255,255,255,0.4)' }}>Junior</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>WHL</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>WHL</span>
 
       <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
         The Western Hockey League was founded in 1966 and is one of three Major Junior leagues that make up the Canadian Hockey League — 

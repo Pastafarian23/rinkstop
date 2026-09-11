@@ -51,7 +51,7 @@ export default function FixturesClient({ initialFixtures }: { initialFixtures: a
   });
 
   const statusStyle: Record<string, { color: string; label: string }> = {
-    scheduled:  { color: '#555',    label: 'Scheduled'  },
+    scheduled:  { color: 'rgba(255,255,255,0.4)',    label: 'Scheduled'  },
     in_progress:{ color: '#00d4ff', label: 'In Progress'},
     completed: { color: '#34d399', label: 'Completed'  },
     cancelled: { color: '#C8102E', label: 'Cancelled'  },
@@ -62,10 +62,10 @@ export default function FixturesClient({ initialFixtures }: { initialFixtures: a
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Scores</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Scores</span>
       </nav>
 
       {/* Header */}
@@ -99,7 +99,7 @@ export default function FixturesClient({ initialFixtures }: { initialFixtures: a
                   <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: '0.2rem' }}>{f.home_score ?? '-'}</p>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.6875rem', color: '#555', marginBottom: '0.25rem' }}>{formatDate(f.scheduled_at)}</p>
+                  <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>{formatDate(f.scheduled_at)}</p>
                   <span style={{ display: 'inline-block', padding: '0.2rem 0.5rem', borderRadius: '99px', fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: s.color, border: `1px solid ${s.color}40` }}>
                     {s.label}
                   </span>
@@ -109,7 +109,7 @@ export default function FixturesClient({ initialFixtures }: { initialFixtures: a
                   <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: '0.2rem' }}>{f.away_score ?? '-'}</p>
                 </div>
                 {f.venue?.name && (
-                  <p style={{ width: '100%', textAlign: 'center', fontSize: '0.6875rem', color: '#444', marginTop: '0.25rem' }}>{f.venue.name}</p>
+                  <p style={{ width: '100%', textAlign: 'center', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.55)', marginTop: '0.25rem' }}>{f.venue.name}</p>
                 )}
               </div>
             );

@@ -69,12 +69,12 @@ export default async function CollegeHubPage({
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>College Hockey</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>College Hockey</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -110,12 +110,12 @@ export default async function CollegeHubPage({
         ))}
       </div>
 
-      <p style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem', letterSpacing: '0.04em' }}>
+      <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem', letterSpacing: '0.04em' }}>
         {teams?.length || 0} TEAM{teams?.length !== 1 ? 'S' : ''}
       </p>
 
       {!teams || teams.length === 0 ? (
-        <div style={{ color: '#666', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ color: 'rgba(255,255,255,0.4)', padding: '2rem', textAlign: 'center' }}>
           No teams found.
         </div>
       ) : (

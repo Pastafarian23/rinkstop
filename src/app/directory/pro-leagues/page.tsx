@@ -11,7 +11,7 @@ const PRO_LEAGUES = [
     name: 'National Hockey League',
     abbr: 'NHL',
     href: '/directory/nhl',
-    color: '#041E42',
+    color: '#C8102E',
     country: '🇺🇸🇨🇦',
     level: 'Tier 1',
     desc: 'The world\'s premier professional hockey league. 32 teams across the US and Canada.',
@@ -52,12 +52,12 @@ const PRO_LEAGUES = [
 export default function ProLeaguesPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Professional Leagues</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Professional Leagues</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>

@@ -155,12 +155,12 @@ export default function PlayersIndexClient({ initialData }: Props) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 mb-8" style={{ fontSize: '0.75rem', color: '#555555' }}>
-        <Link href="/" style={{ color: '#555555', textDecoration: 'none' }} className="hover:text-white transition-colors">Home</Link>
+      <nav className="flex items-center gap-2 mb-8" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }} className="hover:text-white transition-colors">Home</Link>
         <BreadcrumbSeparator />
-        <Link href="/directory" style={{ color: '#555555', textDecoration: 'none' }} className="hover:text-white transition-colors">Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }} className="hover:text-white transition-colors">Directory</Link>
         <BreadcrumbSeparator />
-        <span style={{ color: '#A0A0A0' }}>Players</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Players</span>
       </nav>
 
       {/* Header */}
@@ -177,7 +177,7 @@ export default function PlayersIndexClient({ initialData }: Props) {
         marginBottom: '1.25rem', padding: '0.875rem 1rem',
         background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'rgba(255,255,255,0.4)' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
 
@@ -216,7 +216,7 @@ export default function PlayersIndexClient({ initialData }: Props) {
 
       {/* Results count + pagination info */}
       {!loading && (
-        <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1.25rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1.25rem' }}>
           {totalCount === 0
             ? 'No results'
             : `${totalCount} player${totalCount !== 1 ? 's' : ''}${hasFilters ? ' matching your filters' : ' in directory'}`}
@@ -297,7 +297,7 @@ export default function PlayersIndexClient({ initialData }: Props) {
                     <div style={{
                       width: 44, height: 44, borderRadius: '4px', background: '#1a1a1a',
                       flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '1rem', fontWeight: 700, color: '#444',
+                      fontSize: '1rem', fontWeight: 700, color: 'rgba(255,255,255,0.55)',
                     }}>
                       {(player.first_name?.[0] || '') + (player.last_name?.[0] || '')}
                     </div>

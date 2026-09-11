@@ -33,12 +33,12 @@ export default function PWHLClient({ league, teams }: Props) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>PWHL</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>PWHL</span>
       </nav>
 
       {/* Header */}
@@ -100,7 +100,7 @@ export default function PWHLClient({ league, teams }: Props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.75rem' }}>
           {teams.length === 0 ? (
-            <div style={{ gridColumn: '1 / -1', color: '#666', padding: '2rem', textAlign: 'center' }}>
+            <div style={{ gridColumn: '1 / -1', color: 'rgba(255,255,255,0.4)', padding: '2rem', textAlign: 'center' }}>
               No PWHL teams found.
             </div>
           ) : (

@@ -25,14 +25,14 @@ export default function IIHFPage() {
           }],
         }) }}
       />
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory/international" style={{ color: '#555' }}>International</Link>
+        <Link href="/directory/international" style={{ color: 'rgba(255,255,255,0.4)' }}>International</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>IIHF</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>IIHF</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -88,7 +88,7 @@ export default function IIHFPage() {
           {
             name: 'U20 World Junior Championship',
             abbr: 'WJC',
-            color: '#041E42',
+            color: '#C8102E',
             desc: 'NHL draft prospects compete for gold. Held annually in late December/early January.',
             timing: 'December-January',
           },

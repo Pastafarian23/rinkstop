@@ -185,11 +185,11 @@ function StatCard({ label, value, unit }: { label: string; value?: string | numb
       padding: '1rem 0.75rem',
       textAlign: 'center',
     }}>
-      <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555', marginBottom: '0.375rem' }}>
+      <p style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '0.375rem' }}>
         {label}
       </p>
       <p style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', lineHeight: 1 }}>
-        {value}{unit ? <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#888', marginLeft: '0.2em' }}>{unit}</span> : null}
+        {value}{unit ? <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'rgba(255,255,255,0.5)', marginLeft: '0.2em' }}>{unit}</span> : null}
       </p>
     </div>
   );
@@ -358,7 +358,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
 
   if (!player) return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '4rem 1rem', textAlign: 'center' }}>
-      <p style={{ color: '#555', fontSize: '1.125rem', marginBottom: '1.5rem' }}>Player not found</p>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.125rem', marginBottom: '1.5rem' }}>Player not found</p>
       <Link href="/directory/players" style={{ color: '#14B8A6', textDecoration: 'underline' }}>
         &larr; Back to Players Directory
       </Link>
@@ -374,14 +374,14 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
 
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 mb-8" style={{ fontSize: '0.75rem', color: '#555' }}>
-        <Link href="/" style={{ color: '#555', textDecoration: 'none' }} className="hover:text-white transition-colors">Home</Link>
+      <nav className="flex items-center gap-2 mb-8" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }} className="hover:text-white transition-colors">Home</Link>
         <span style={{ margin: '0 0.3rem', color: 'rgba(255,255,255,0.2)' }}>›</span>
-        <Link href="/directory" style={{ color: '#555', textDecoration: 'none' }} className="hover:text-white transition-colors">Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }} className="hover:text-white transition-colors">Directory</Link>
         <span style={{ margin: '0 0.3rem', color: 'rgba(255,255,255,0.2)' }}>›</span>
-        <Link href="/directory/players" style={{ color: '#555', textDecoration: 'none' }} className="hover:text-white transition-colors">Players</Link>
+        <Link href="/directory/players" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }} className="hover:text-white transition-colors">Players</Link>
         <span style={{ margin: '0 0.3rem', color: 'rgba(255,255,255,0.2)' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{player.first_name} {player.last_name}</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{player.first_name} {player.last_name}</span>
       </nav>
 
       {/* Back link */}
@@ -441,7 +441,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                 </span>
               )}
               {player.is_active === false && (
-                <span style={{ display: 'inline-block', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: '#555' }}>
+                <span style={{ display: 'inline-block', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>
                   Inactive
                 </span>
               )}
@@ -461,7 +461,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
               <VerifiedBadge tier={player.badge_tier || 'free'} size="md" />
               {player.badge_tier && player.badge_tier !== 'free' && player.subscription_expires_at && (
-                <span style={{ fontSize: '0.6875rem', color: '#555' }}>
+                <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>
                   Expires {new Date(player.subscription_expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               )}
@@ -529,7 +529,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
             </div>
 
             {player.nationality && (
-              <p style={{ color: '#666', fontSize: '0.875rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem' }}>
                 🇬🇧 {player.nationality}
               </p>
             )}
@@ -566,7 +566,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
               <div key={i} style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '1rem' }}>
                 <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#14B8A6', marginBottom: '0.25rem' }}>{cert.type}</div>
                 <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#fff', marginBottom: '0.2rem' }}>{cert.name}</div>
-                <div style={{ fontSize: '0.75rem', color: '#666' }}>{cert.issuer}{cert.year ? ` · ${cert.year}` : ''}</div>
+                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{cert.issuer}{cert.year ? ` · ${cert.year}` : ''}</div>
               </div>
             ))}
           </div>
@@ -594,7 +594,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{video.title || 'Highlight Video'}</div>
-                    <div style={{ fontSize: '0.6875rem', color: '#666', textTransform: 'capitalize' }}>{video.platform || 'Video'}</div>
+                    <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', textTransform: 'capitalize' }}>{video.platform || 'Video'}</div>
                   </div>
                 </div>
               </a>
@@ -637,7 +637,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
           {/* Quick fact list: birth place, draft, home arena */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
             {(player as any).birth_place && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#888', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', borderRadius: '999px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', borderRadius: '999px' }}>
                 <span style={{ color: '#14B8A6' }}>📍</span> Born in {(player as any).birth_place}{player.nationality ? `, ${COUNTRY_NAMES[player.nationality] || player.nationality}` : ''}
               </span>
             )}
@@ -650,14 +650,14 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
               </Link>
             )}
             {player.position && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#888', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', borderRadius: '999px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', borderRadius: '999px' }}>
                 <span style={{ color: '#14B8A6' }}>🏒</span> {positionLabel(player.position)}
               </span>
             )}
             {player.teams?.leagues?.name && (
               <Link
                 href={`/directory/leagues/${player.teams.leagues.slug || 'nhl'}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#888', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', borderRadius: '999px', textDecoration: 'none' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', padding: '0.3rem 0.7rem', background: 'rgba(255,255,255,0.04)', borderRadius: '999px', textDecoration: 'none' }}
               >
                 <span style={{ color: '#14B8A6' }}>🏆</span> {player.teams.leagues.name}
               </Link>
@@ -687,7 +687,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
             padding: '2.5rem 1rem',
             textAlign: 'center',
           }}>
-            <p style={{ color: '#444', fontSize: '0.9375rem', marginBottom: '0.5rem' }}>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginBottom: '0.5rem' }}>
               No career statistics available yet
             </p>
             {player.badge_tier === 'free' || !player.badge_tier ? (
@@ -724,10 +724,10 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   {player.position === 'goalie'
                     ? ['Season', 'GP', 'W', 'L', 'GAA', 'SV%', 'SO'].map(h => (
-                        <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', color: '#666', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
+                        <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', color: 'rgba(255,255,255,0.4)', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
                       ))
                     : ['Season', 'GP', 'G', 'A', 'Pts', 'PIM', '+/-'].map(h => (
-                        <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', color: '#666', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
+                        <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: 'left', color: 'rgba(255,255,255,0.4)', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
                       ))
                   }
                 </tr>
@@ -738,7 +738,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                     {player.position === 'goalie' ? (
                       <>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff', fontWeight: 600 }}>{stat.season}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#888' }}>{stat.games_played ?? '-'}</td>
+                        <td style={{ padding: '0.75rem 0.75rem', color: 'rgba(255,255,255,0.5)' }}>{stat.games_played ?? '-'}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.wins ?? 0}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.losses ?? 0}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.gaa ?? '-'}</td>
@@ -748,11 +748,11 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                     ) : (
                       <>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff', fontWeight: 600 }}>{stat.season}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#888' }}>{stat.games_played ?? '-'}</td>
+                        <td style={{ padding: '0.75rem 0.75rem', color: 'rgba(255,255,255,0.5)' }}>{stat.games_played ?? '-'}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.goals ?? 0}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: '#fff' }}>{stat.assists ?? 0}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: 'var(--red)', fontWeight: 700 }}>{stat.points ?? 0}</td>
-                        <td style={{ padding: '0.75rem 0.75rem', color: '#888' }}>{stat.penalty_minutes ?? 0}</td>
+                        <td style={{ padding: '0.75rem 0.75rem', color: 'rgba(255,255,255,0.5)' }}>{stat.penalty_minutes ?? 0}</td>
                         <td style={{ padding: '0.75rem 0.75rem', color: (stat.plus_minus ?? 0) >= 0 ? '#14B8A6' : '#ef4444' }}>
                           {stat.plus_minus != null ? (stat.plus_minus >= 0 ? `+${stat.plus_minus}` : stat.plus_minus) : '-'}
                         </td>
@@ -821,7 +821,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                   <div style={{
                     width: 36, height: 36, borderRadius: '4px', background: '#1a1a1a',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.875rem', fontWeight: 700, color: '#444', flexShrink: 0,
+                    fontSize: '0.875rem', fontWeight: 700, color: 'rgba(255,255,255,0.55)', flexShrink: 0,
                   }}>
                     {(p.first_name?.[0] || '') + (p.last_name?.[0] || '')}
                   </div>
@@ -831,7 +831,7 @@ export default function PlayerDetail({ id, ownerUserId, initialFollowersCount = 
                     {p.first_name} {p.last_name}
                   </p>
                   {p.position && (
-                    <p style={{ fontSize: '0.75rem', color: '#555' }}>{positionLabel(p.position)}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{positionLabel(p.position)}</p>
                   )}
                 </div>
               </Link>

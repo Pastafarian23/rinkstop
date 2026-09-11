@@ -67,14 +67,14 @@ export default function YouthProgramsClient({ initialPrograms, initialCountry }:
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1rem 4rem' }}>
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', paddingTop: '1.25rem', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', paddingTop: '1.25rem', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory/youth-hockey" style={{ color: '#555555' }}>Youth Hockey</Link>
+        <Link href="/directory/youth-hockey" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth Hockey</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Programs</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Programs</span>
       </nav>
 
       {/* Header */}
@@ -94,7 +94,7 @@ export default function YouthProgramsClient({ initialPrograms, initialCountry }:
         marginBottom: '1.25rem', padding: '0.875rem 1rem',
         background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'rgba(255,255,255,0.4)' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
 
@@ -124,7 +124,7 @@ export default function YouthProgramsClient({ initialPrograms, initialCountry }:
 
         {/* Search */}
         <div style={{ position: 'relative', flex: '1 1 180px' }}>
-          <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#555555', pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)', pointerEvents: 'none' }}>
             <SearchIcon className="w-4 h-4" />
           </div>
           <input
@@ -153,7 +153,7 @@ export default function YouthProgramsClient({ initialPrograms, initialCountry }:
       </div>
 
       {/* Results count */}
-      <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
+      <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1rem' }}>
         {filtered.length === 0
           ? 'No programs found'
           : `${filtered.length} program${filtered.length !== 1 ? 's' : ''}`}

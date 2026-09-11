@@ -238,7 +238,7 @@ export default function CountriesPage() {
         <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', letterSpacing: '0.04em', marginBottom: 8, color: '#fff' }}>
           HOCKEY BY COUNTRY
         </h1>
-        <p style={{ color: '#888', fontSize: '1rem', maxWidth: 600, margin: '0 auto' }}>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', maxWidth: 600, margin: '0 auto' }}>
           Explore ice hockey programs, teams, and rinks worldwide. {ALL_COUNTRIES.length} countries indexed.
         </p>
       </div>
@@ -252,14 +252,14 @@ export default function CountriesPage() {
             const regionCountries = hockeyNations.filter(c => c.region === region);
             return (
               <div key={region} style={{ marginBottom: 32 }}>
-                <h3 style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#666', marginBottom: 12 }}>{region}</h3>
+                <h3 style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>{region}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
                   {regionCountries.map(n => (
                     <Link key={n.country} href={`/directory/${slugify(n.country)}`} style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
                       <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>{n.flag}</span>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff', marginBottom: 2 }}>{n.country}</div>
-                        {n.leagues && <div style={{ fontSize: '0.7rem', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.leagues}</div>}
+                        {n.leagues && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.leagues}</div>}
                       </div>
                       <span style={{ fontSize: '0.65rem', color: '#C8102E', fontWeight: 600, flexShrink: 0 }}>VIEW →</span>
                     </Link>
@@ -271,14 +271,14 @@ export default function CountriesPage() {
         </div>
 
         <div style={{ marginBottom: 48 }}>
-          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#555', letterSpacing: '0.04em', marginBottom: 24, borderBottom: '1px solid #1e1e1e', paddingBottom: 12 }}>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: 24, borderBottom: '1px solid #1e1e1e', paddingBottom: 12 }}>
             ❄️ COUNTRIES WITHOUT ESTABLISHED ICE HOCKEY ({noHockeyNations.length})
           </h2>
           {regions.filter(r => noHockeyNations.some(c => c.region === r)).map(region => {
             const regionCountries = noHockeyNations.filter(c => c.region === region);
             return (
               <div key={region} style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#444', marginBottom: 10 }}>{region}</h3>
+                <h3 style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', marginBottom: 10 }}>{region}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
                   {regionCountries.map(n => (
                     <Link key={n.country} href={`/directory/${slugify(n.country)}`} style={{ background: '#0f0f0f', border: '1px solid #1e1e1e', borderRadius: 6, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', opacity: 0.7 }}>
@@ -286,7 +286,7 @@ export default function CountriesPage() {
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff' }}>{n.country}</div>
                       </div>
-                      <span style={{ fontSize: '0.6rem', color: '#555', flexShrink: 0 }}>INFO →</span>
+                      <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>INFO →</span>
                     </Link>
                   ))}
                 </div>
