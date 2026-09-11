@@ -41,8 +41,8 @@ const COLORS = {
   border: '#1e1e1e',
   red: '#C8102E',
   textMain: '#fff',
-  textMuted: '#aaa',
-  textDim: '#666',
+  textMuted: 'rgba(255,255,255,0.6)',
+  textDim: 'rgba(255,255,255,0.4)',
   gold: '#FFB81C',
   ice: '#EEF5FF',
 };
