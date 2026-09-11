@@ -373,14 +373,14 @@ export default function PublicTeamProfile({
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1.25rem' }}>
-        <Link href="/" style={{ color: '#555555', textDecoration: 'none' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.25rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555', textDecoration: 'none' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory/teams" style={{ color: '#555555', textDecoration: 'none' }}>Teams</Link>
+        <Link href="/directory/teams" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Teams</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{team.name}</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{team.name}</span>
       </nav>
 
       {/* Admin banner: shown only to viewers who manage this team. */}
@@ -411,7 +411,7 @@ export default function PublicTeamProfile({
               style={{
                 padding: '0.45rem 0.9rem',
                 background: '#FFB81C',
-                color: '#041E42',
+                color: '#C8102E',
                 textDecoration: 'none',
                 borderRadius: 6,
                 fontSize: '0.8rem',
@@ -713,7 +713,7 @@ export default function PublicTeamProfile({
                     style={{
                       padding: '0.45rem 0.9rem',
                       background: '#FFB81C',
-                      color: '#041E42',
+                      color: '#C8102E',
                       border: 'none',
                       borderRadius: 6,
                       fontSize: '0.8rem',

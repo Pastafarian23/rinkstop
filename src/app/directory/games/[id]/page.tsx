@@ -24,7 +24,7 @@ interface Game {
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
-  scheduled: { color: '#555', label: 'Scheduled' },
+  scheduled: { color: 'rgba(255,255,255,0.4)', label: 'Scheduled' },
   in_progress: { color: '#00d4ff', label: 'In Progress' },
   completed: { color: '#34d399', label: 'Completed' },
   cancelled: { color: '#C8102E', label: 'Cancelled' },
@@ -97,18 +97,18 @@ export default function GamePage() {
 
   return (
       <div style={{ maxWidth: '700px', marginLeft: 'auto', marginRight: 'auto', padding: '2rem 1rem', textAlign: 'center' }}> 
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory/games" style={{ color: '#555' }}>Scores</Link>
+        <Link href="/directory/games" style={{ color: 'rgba(255,255,255,0.4)' }}>Scores</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{awayName} @ {homeName}</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{awayName} @ {homeName}</span>
       </nav>
 
       {/* Game Header */}
       <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '2rem', textAlign: 'center', marginBottom: '1.5rem' }}>
         {/* Date */}
-        <p style={{ fontSize: '0.875rem', color: '#888', marginBottom: '1.5rem' }}>
+        <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.5rem' }}>
           {formatDate(game.scheduled_at || game.date)}
         </p>
 
@@ -121,7 +121,7 @@ export default function GamePage() {
             )}
             <p style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff' }}>{awayName}</p>
             {game.away_team && (
-              <p style={{ fontSize: '0.75rem', color: '#555' }}>@{game.away_team.slug?.toUpperCase()}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>@{game.away_team.slug?.toUpperCase()}</p>
             )}
           </div>
 
@@ -158,19 +158,19 @@ export default function GamePage() {
             )}
             <p style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff' }}>{homeName}</p>
             {game.home_team && (
-              <p style={{ fontSize: '0.75rem', color: '#555' }}>{game.home_team.slug?.toUpperCase()}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{game.home_team.slug?.toUpperCase()}</p>
             )}
           </div>
         </div>
 
         {/* League */}
         {game.league?.name && (
-          <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>{game.league.name}</p>
+          <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.5rem' }}>{game.league.name}</p>
         )}
 
         {/* Venue */}
         {game.venue_details?.name && (
-          <p style={{ fontSize: '0.75rem', color: '#444', marginTop: '0.25rem' }}>@{game.venue_details.name}</p>
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', marginTop: '0.25rem' }}>@{game.venue_details.name}</p>
         )}
 
         {/* Share — full popover (X, FB, LI, WhatsApp, Reddit, Email, Copy).
@@ -194,11 +194,11 @@ export default function GamePage() {
       {/* Period Scores */}
       {game.period_scores && Array.isArray(game.period_scores) && (
         <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Period Scores</h3>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Period Scores</h3>
           <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             {game.period_scores.map((p: any, i: number) => (
               <div key={i} style={{ background: 'var(--s1)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem 1rem', textAlign: 'center' }}>
-                <p style={{ fontSize: '0.625rem', color: '#555', marginBottom: '0.25rem' }}>P{i + 1}</p>
+                <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>P{i + 1}</p>
                 <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{p.home} - {p.away}</p>
               </div>
             ))}

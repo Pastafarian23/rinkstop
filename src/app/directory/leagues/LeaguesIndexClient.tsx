@@ -74,7 +74,7 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
 
       {/* Filter Bar — search + country + verified-only toggle */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', padding: '0.875rem 1rem', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: '4px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'rgba(255,255,255,0.4)' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
         {/* Search — homepage aesthetic, scoped to leagues.
@@ -112,7 +112,7 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
 
       {/* Results count */}
       {!loading && (
-        <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1rem' }}>
           {filtered.length === 0 ? 'No results' : `${filtered.length} league${filtered.length !== 1 ? 's' : ''}`}
           {hasFilters ? ' matching your search' : ' in directory'}
         </p>

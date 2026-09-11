@@ -47,14 +47,14 @@ function TeamCard({ t, fallback }: { t: typeof CENTRAL_TEAMS[0]; fallback: strin
 export default function NHLWesternPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <Link href="/directory">Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <Link href="/directory/nhl">NHL</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Western Conference</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Western Conference</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>

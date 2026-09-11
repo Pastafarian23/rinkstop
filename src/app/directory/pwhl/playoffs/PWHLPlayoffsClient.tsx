@@ -112,7 +112,7 @@ export default function PWHLPlayoffsClient({ initialRounds, initialUpdates }: Pr
     return (
       <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem', opacity: seriesOver ? 0.55 : 1, transition: 'opacity 0.3s', borderTop: seriesOver ? `3px solid rgba(78,205,196,0.5)` : isInProgress ? `3px solid ${PWHL_TEAL}` : '3px solid transparent' }}>
         <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-          <span style={{ fontSize: '0.5625rem', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.desc}</span>
+          <span style={{ fontSize: '0.5625rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.desc}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -127,7 +127,7 @@ export default function PWHLPlayoffsClient({ initialRounds, initialUpdates }: Pr
         </div>
         {s.nextGame?.date && !seriesOver && (
           <div style={{ marginTop: '0.5rem', textAlign: 'center' }}>
-            <span style={{ fontSize: '0.5625rem', color: '#444' }}>
+            <span style={{ fontSize: '0.5625rem', color: 'rgba(255,255,255,0.55)' }}>
               Next: {new Date(s.nextGame.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
           </div>
@@ -158,12 +158,12 @@ export default function PWHLPlayoffsClient({ initialRounds, initialUpdates }: Pr
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory/pwhl" style={{ color: '#555' }}>PWHL</Link>
+        <Link href="/directory/pwhl" style={{ color: 'rgba(255,255,255,0.4)' }}>PWHL</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Playoffs</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Playoffs</span>
       </nav>
 
       <div style={{ marginBottom: '1rem' }}>

@@ -404,12 +404,12 @@ export default function TeamsIndexClient({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Teams</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Teams</span>
       </nav>
 
       {/* Header */}
@@ -447,7 +447,7 @@ export default function TeamsIndexClient({
         marginBottom: '1rem', padding: '0.75rem 1rem',
         background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 4,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#555555' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'rgba(255,255,255,0.4)' }}>
           <FilterIcon className="w-4 h-4" />
         </div>
 
@@ -605,7 +605,7 @@ export default function TeamsIndexClient({
 
       {/* Results count — always shown. The SSR data is authoritative, no
           client loading state needed since we no longer fetch on filter change. */}
-      <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1rem' }}>
+      <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1rem' }}>
         {visibleTeams.length === 0
           ? 'No results'
           : `${visibleTeams.length.toLocaleString()} ${visibleTeams.length === 1 ? 'team' : 'teams'}`}

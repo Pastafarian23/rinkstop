@@ -314,12 +314,12 @@ export default function YouthHockeyPage() {
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 1rem 4rem' }}>
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', paddingTop: '1.25rem', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', paddingTop: '1.25rem', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Youth Hockey</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Youth Hockey</span>
       </nav>
 
       {/* Hero Header */}

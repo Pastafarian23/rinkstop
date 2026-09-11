@@ -201,9 +201,9 @@ export default function MapClient({ initialRinks }: Props) {
         fullscreenControl: true,
         styles: [
           { elementType: 'geometry', stylers: [{ color: '#0a2a52' }] },
-          { elementType: 'labels.text.stroke', stylers: [{ color: '#041E42' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#C8102E' }] },
           { elementType: 'labels.text.fill', stylers: [{ color: '#EEF5FF' }] },
-          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#041E42' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#C8102E' }] },
           { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#0a2a52' }] },
           { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#EEF5FF' }] },
           { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },

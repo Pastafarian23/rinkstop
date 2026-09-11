@@ -45,7 +45,7 @@ interface InitialData {
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
-  scheduled:  { color: '#555',    label: 'Scheduled'  },
+  scheduled:  { color: 'rgba(255,255,255,0.4)',    label: 'Scheduled'  },
   in_progress:{ color: '#00d4ff', label: 'Live'       },
   completed: { color: '#34d399', label: 'Final'      },
   cancelled: { color: '#C8102E', label: 'Cancelled'  },
@@ -95,7 +95,7 @@ function GameCard({ game }: { game: Game }) {
           <span style={{ color: '#333', fontSize: '0.875rem' }}>@</span>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>{game.away_score ?? '-'}</span>
         </div>
-        <p style={{ fontSize: '0.6875rem', color: '#555', marginTop: '0.25rem' }}>{formatDate(game.scheduled_at || game.date)}</p>
+        <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>{formatDate(game.scheduled_at || game.date)}</p>
         <span style={{
           display: 'inline-block',
           marginTop: '0.25rem',
@@ -127,7 +127,7 @@ function GameCard({ game }: { game: Game }) {
 
       {game.league?.name && (
         <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: '0.25rem' }}>
-          <span style={{ fontSize: '0.6875rem', color: '#666' }}>{game.league.name}</span>
+          <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{game.league.name}</span>
         </div>
       )}
     </div>
@@ -144,7 +144,7 @@ function Dropdown({
   disabled?: boolean;
 }) {
   return (
-    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#888' }}>
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
       <span>{label}:</span>
       <select
         value={value}
@@ -349,10 +349,10 @@ export default function GamesIndexClient({ initialData }: Props) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Scores</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Scores</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -405,7 +405,7 @@ export default function GamesIndexClient({ initialData }: Props) {
               textTransform: 'uppercase',
               cursor: 'pointer',
               background: 'transparent',
-              color: '#888',
+              color: 'rgba(255,255,255,0.5)',
               border: '1px dashed var(--border)',
             }}
           >

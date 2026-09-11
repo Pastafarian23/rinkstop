@@ -28,12 +28,12 @@ export default function LocationsIndexClient({ initialCountries }: Props) {
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem 4rem' }}>
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', padding: '1.5rem 0 0', marginBottom: '0' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', padding: '1.5rem 0 0', marginBottom: '0' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Locations</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Locations</span>
       </nav>
 
       {/* Header */}

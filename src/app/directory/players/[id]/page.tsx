@@ -179,7 +179,7 @@ export default async function PlayerPage({ params }: Props) {
     return (
       <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Player Not Found</h1>
-        <p style={{ color: '#666' }}>We could not find a player with that name.</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)' }}>We could not find a player with that name.</p>
       </div>
     );
   }

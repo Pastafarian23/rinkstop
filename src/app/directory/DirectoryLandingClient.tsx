@@ -116,14 +116,14 @@ function DirectoryLandingInner({ counts }: { counts: { rinks: number; teams: num
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#A0A0A0' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.6)' }}>Directory</Link>
         {showResults ? (
           <>
             <span style={{ margin: '0 0.4rem' }}>›</span>
-            <span style={{ color: '#A0A0A0' }}>Search</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)' }}>Search</span>
           </>
         ) : null}
       </nav>

@@ -67,7 +67,7 @@ export default async function UnitedKingdomPage() {
             Browse by City
           </h2>
           {ukCities.length === 0 ? (
-            <p style={{ color: '#888', fontSize: 14 }}>No UK city listings yet.</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>No UK city listings yet.</p>
           ) : (
             <div
               style={{
@@ -93,7 +93,7 @@ export default async function UnitedKingdomPage() {
                   }}
                 >
                   <span style={{ fontSize: 14, fontWeight: 600 }}>{c.city}</span>
-                  <span style={{ fontSize: 12, color: '#888' }}>{c.count} rink{c.count !== 1 ? 's' : ''}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{c.count} rink{c.count !== 1 ? 's' : ''}</span>
                 </Link>
               ))}
             </div>

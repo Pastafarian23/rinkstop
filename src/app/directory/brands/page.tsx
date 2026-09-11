@@ -97,12 +97,12 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Brands</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Brands</span>
       </nav>
 
       {/* Header */}
@@ -122,7 +122,7 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
               borderRadius: '4px',
               padding: '0.2rem 0.6rem',
               fontSize: '0.75rem',
-              color: '#888',
+              color: 'rgba(255,255,255,0.5)',
               fontWeight: 600,
               letterSpacing: '0.08em',
             }}
@@ -130,7 +130,7 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
             {displayCount} BRANDS
           </span>
         </div>
-        <p style={{ color: '#555555', fontSize: '0.875rem', marginTop: '0.5rem', maxWidth: '640px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem', maxWidth: '640px' }}>
           Equipment, apparel, and accessories from the brands trusted by players at every level — with affiliate links to shop directly.
         </p>
       </div>
@@ -175,7 +175,7 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
 
       {/* Brand Grid */}
       {brands.length === 0 ? (
-        <div style={{ color: '#444', padding: '3rem 0', textAlign: 'center' }}>
+        <div style={{ color: 'rgba(255,255,255,0.55)', padding: '3rem 0', textAlign: 'center' }}>
           No brands found{activeCategory !== 'all' ? ` in ${activeCategory}` : ''}.
         </div>
       ) : (
@@ -239,7 +239,7 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
 
                   {/* Description */}
                   {brand.description && (
-                    <p style={{ color: '#666', fontSize: '0.8125rem', marginTop: '0.4rem', lineHeight: 1.5 }}>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', marginTop: '0.4rem', lineHeight: 1.5 }}>
                       {brand.description}
                     </p>
                   )}
@@ -247,7 +247,7 @@ export default async function BrandsPage(props: { searchParams: SearchParams }) 
                   {/* Origin + CTA */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.6rem' }}>
                     {brand.country_of_origin && (
-                      <span style={{ fontSize: '0.6875rem', color: '#444', letterSpacing: '0.04em' }}>
+                      <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em' }}>
                         {brand.country_of_origin}
                       </span>
                     )}
