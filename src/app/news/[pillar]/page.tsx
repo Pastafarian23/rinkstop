@@ -175,12 +175,12 @@ export default async function PillarPage({ params }: { params: Promise<{ pillar:
     const description = PILLAR_DESCRIPTIONS[pillar] || '';
     return (
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-        <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-          <Link href="/" style={{ color: '#555' }}>Home</Link>
+        <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+          <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
-          <Link href="/news" style={{ color: '#555' }}>News</Link>
+          <Link href="/news" style={{ color: 'rgba(255,255,255,0.4)' }}>News</Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
-          <span style={{ color: '#A0A0A0' }}>{label}</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</span>
         </nav>
 
         <div style={{ marginBottom: '2rem' }}>

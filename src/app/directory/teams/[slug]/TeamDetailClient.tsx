@@ -65,12 +65,12 @@ export default function TeamDetailClient({
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '0.875rem' }}>
-        <Link href="/directory" style={{ color: '#555' }}>Directory</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.875rem' }}>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory/teams" style={{ color: '#555' }}>Teams</Link>
+        <Link href="/directory/teams" style={{ color: 'rgba(255,255,255,0.4)' }}>Teams</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{team.name}</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{team.name}</span>
       </nav>
 
       {/* Sticky team header */}
@@ -320,7 +320,7 @@ export default function TeamDetailClient({
       {/* Roster */}
       <div>
         <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.03em', marginBottom: '0.875rem' }}>
-          ROSTER  --  {players.length} PLAYERS
+          ROSTER — {players.length} PLAYERS
         </h2>
         {players.length === 0 ? (
           <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.875rem' }}>No roster data available.</p>

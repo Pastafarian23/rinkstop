@@ -75,7 +75,7 @@ export default function GearBrandsPage() {
           HOCKEY EQUIPMENT BRANDS
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          Equipment brands, reviews, comparisons, and what to buy  --  from skates to sticks.
+          Equipment brands, reviews, comparisons, and what to buy — from skates to sticks.
         </p>
       </div>
 
