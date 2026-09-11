@@ -72,10 +72,28 @@ const YOUTH_AMATEUR: NavItem[] = [
 const CONTENT_LINKS: NavItem[] = [
   { href: '/blog',           label: 'All Articles'  },
   { href: '/news',           label: 'News'          },
-  { href: '/guides',         label: 'Guides'        },
   { href: '/rankings',       label: 'Rankings'      },
   { href: '/hockey-travel',  label: 'Hockey Travel' },
   { href: '/gear-brands',   label: 'Gear'          },
+];
+
+const LEARN_LINKS: NavItem[] = [
+  { href: '/learn',                          label: 'All Learn Pages'           },
+  { href: '/learn/first-day-on-ice',         label: 'Your First Day'            },
+  { href: '/learn/age-to-start-hockey',      label: 'When to Start'             },
+  { href: '/learn/choosing-a-program',       label: 'Choosing a Program'        },
+  { href: '/learn/hockey-development-pathway', label: 'Development Pathway'      },
+  { href: '/learn/cost-by-age',              label: 'Hockey Cost by Age'        },
+  { href: '/learn/parent-survival-guide',    label: 'Parent Survival Guide'    },
+  { href: '/learn/playing-with-kids',        label: 'Playing Hockey With Kids'  },
+  { href: '/learn/how-to-watch-hockey',      label: 'How to Watch Hockey'       },
+  { href: '/learn/equipment-on-a-budget',    label: 'Equipment on a Budget'     },
+  { href: '/learn/how-to-skate',             label: 'How to Skate'              },
+  { href: '/learn/stopping',                 label: 'How to Stop'               },
+  { href: '/learn/shooting',                 label: 'How to Shoot'              },
+  { href: '/learn/hockey-rules',             label: 'Hockey Rules'              },
+  { href: '/learn/hockey-terminology',        label: 'Hockey Glossary'           },
+  { href: '/guides',                         label: 'All Guides'                },
 ];
 
 const FREE_TOOLS: NavItem[] = [
@@ -107,5 +125,6 @@ export const NAV_SECTIONS: NavSection[] = [
   { label: 'Youth & Adult',  sub: YOUTH_AMATEUR },
   { label: 'Content',        sub: CONTENT_LINKS },
   { label: 'Free Tools',     sub: FREE_TOOLS    },
+  { label: 'Learn',          sub: LEARN_LINKS   },
   { label: 'About',          sub: ABOUT_LINKS   },
 ];
