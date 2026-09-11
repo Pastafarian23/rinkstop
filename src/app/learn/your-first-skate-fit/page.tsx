@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'Your First Skate Fit — At the Store, Step-by-Step',
@@ -154,6 +155,17 @@ export default function YourFirstSkateFitPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/your-first-skate-fit'
+      title='Your First Skate Fit'
+      description='At the store, step-by-step: what to ask the fitter, what to look for, what to walk away from, and what to do if the first pair doesn\u2019t work.'
+      verified='2026-09-10'
+      readTime={6}
+    />
+</main>
   );
 }

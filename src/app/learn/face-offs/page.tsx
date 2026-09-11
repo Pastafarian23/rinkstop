@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'How to Win Face-offs in Hockey — Technique and Rules',
@@ -138,6 +139,17 @@ export default function FaceOffsPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/face-offs'
+      title='How to Win Face-offs'
+      description='Center technique, wing technique, the grip, stick position, timing, and the rules on what you can and can\u2019t do at the dot.'
+      verified='2026-09-10'
+      readTime={7}
+    />
+</main>
   );
 }

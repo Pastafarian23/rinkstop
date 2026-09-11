@@ -43,12 +43,16 @@ export default function DirectoryPage() {
             <strong style={{ color: '#38BDF8' }}>Planning a season?</strong>{' '}
             See costs by age, state, and level with the{' '}
             <Link href="/tools/hockey-cost-calculator" style={{ color: '#38BDF8', textDecoration: 'underline' }}>Hockey Cost Calculator</Link>,
-            or read the{' '}
-            <Link href="/guides/hockey-parents-handbook" style={{ color: '#38BDF8', textDecoration: 'underline' }}>Hockey Parents Handbook</Link>.
+            read the{' '}
+            <Link href="/guides/hockey-parents-handbook" style={{ color: '#38BDF8', textDecoration: 'underline' }}>Hockey Parents Handbook</Link>,
+            or browse{' '}
+            <Link href="/learn" style={{ color: '#38BDF8', textDecoration: 'underline' }}>Learn Hockey</Link>
+            {' '}— 24 beginner-friendly explainers.
           </div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <Link href="/tools" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All tools →</Link>
             <Link href="/guides" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All guides →</Link>
+            <Link href="/learn" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All learn →</Link>
           </div>
         </div>
       </section>

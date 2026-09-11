@@ -162,6 +162,8 @@ export default function GuidesIndexPage() {
           <RelatedLink href="/faq" title="RinkStop FAQ" desc="Accounts, listings, billing" />
           <RelatedLink href="/guides/hockey-parents-handbook" title="Hockey Parents Handbook" desc="First-year parent guide" />
           <RelatedLink href="/tools/junior-eligibility-checker" title="Junior Eligibility Checker" desc="CHL/USHL/NCAA by birth year" />
+          <RelatedLink href="/learn" title="Learn Hockey" desc="24 beginner explainers for new players & parents" />
+          <RelatedLink href="/learn/hockey-rules" title="Hockey Rules (12 min primer)" desc="Offside, icing, penalties explained" />
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'When Can My Kid Start Hockey? — Age-by-Region Answer for Parents',
@@ -131,6 +132,17 @@ export default function AgeToStartHockeyPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+  
+    <LearnJsonLd
+      href='/learn/age-to-start-hockey'
+      title='When Can My Kid Start Hockey?'
+      description='The age-by-region answer (USA Hockey ADM, Hockey Canada, IIHF), when to specialize, and when to switch sports.'
+      verified='2026-09-10'
+      readTime={7}
+    />
+</main>
   );
 }
