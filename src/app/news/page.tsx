@@ -67,10 +67,10 @@ export default async function BlogPage() {
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
 
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>News</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>News</span>
       </nav>
 
       {/* Header */}
@@ -116,7 +116,7 @@ export default async function BlogPage() {
       {!posts || posts.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
           <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1.125rem', marginBottom: '0.5rem' }}>No posts yet.</p>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.875rem' }}>Check back soon  --  new content is coming.</p>
+          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.875rem' }}>Check back soon — new content is coming.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
