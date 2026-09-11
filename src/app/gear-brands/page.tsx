@@ -49,7 +49,7 @@ export default function GearBrandsPage() {
                 name: 'How much does a full set of hockey equipment cost?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'A full set of hockey equipment for a new player costs $400-800. For competitive players at the youth travel or junior level, expect $1,500-3,000. For NHL-level equipment, individual skates alone run $700-1,000 plus custom fitting. Browse our hockey cost guide for age-by-age breakdowns.',
+                  text: 'A full set of hockey equipment for a new player costs approximately $400-800 (2026 retail estimates, varies by retailer and season). For competitive players at the youth travel or junior level, expect $1,500-3,000. For NHL-level equipment, individual skates alone run $700-1,000 plus custom fitting. For current prices see our hockey cost calculator.',
                 },
               },
               {
@@ -57,7 +57,7 @@ export default function GearBrandsPage() {
                 name: 'Where can I buy hockey equipment?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'Hockey equipment is sold through specialty retailers like Pure Hockey, Hockey Monkey, and Perani\u2019s, plus local pro shops. Online retailers include HockeyStickMan, Ice Warehouse, and SidelineSwap (used gear). RinkStop has a complete equipment guide for what to buy new vs. used.',
+                  text: 'Hockey equipment is sold through specialty retailers (Pure Hockey, Hockey Monkey, Perani\u2019s are major US chains), local pro shops, and direct-to-consumer brand sites. Online retailers include Ice Warehouse and SidelineSwap (used gear). RinkStop has a complete equipment guide for what to buy new vs. used.',
                 },
               },
             ],
@@ -305,12 +305,31 @@ export default function GearBrandsPage() {
           floats during butterfly.
         </p>
         <p style={{ marginBottom: '1rem' }}>
-          <strong>Cost difference.</strong> A full senior goalie set runs $1,500 to $3,500,
+          <strong>Cost difference.</strong> A full senior goalie set runs $1,500 to $3,500 (approximate, as of 2026),
           roughly 2x the cost of a comparable player set. The biggest line items are the leg
           pads ($500 to $1,000 for senior) and the glove ($400 to $900). Used gear from
           out-grown junior sets is the best entry point for new goalies.
         </p>
       </section>
+
+      {/* Trust footer — required by AdSense-Compliant Content Rules. */}
+      <footer style={{ marginTop: '3rem', padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', lineHeight: 1.6 }}>
+        <p style={{ marginBottom: '0.5rem' }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Editorial standards.</strong>{' '}
+          By Arnel Larracas, Founder & Editor-in-Chief, RinkStop. Last reviewed 2026-09-11.
+        </p>
+        <p style={{ marginBottom: '0.5rem' }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Price estimates.</strong>{' '}
+          Equipment cost ranges quoted on this page are 2026 US retail estimates compiled from manufacturer MSRPs and major retailer listings (Pure Hockey, Hockey Monkey, Perani's). Actual prices vary by retailer, model year, and sale timing. For live pricing, use our hockey cost calculator.
+        </p>
+        <p>
+          <a href="/editorial-policy" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Editorial policy</a>
+          {' · '}
+          <a href="/corrections" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Report a correction</a>
+          {' · '}
+          <a href="/data-methodology" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>Data methodology</a>
+        </p>
+      </footer>
     </main>
   );
 }
