@@ -62,6 +62,63 @@ export default function LearnHubPage() {
         </p>
       </div>
 
+      {/* Ready to play? Primary CTA — funnel new readers into a real program */}
+      {/* Added 2026-09-11 phase 6C — the /learn audience is at the top of */}
+      {/* the player funnel, so the next step (find a program) gets a button, */}
+      {/* not a buried link. */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '0.75rem',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+          padding: '0.875rem 1rem',
+          background: 'rgba(200,16,46,0.08)',
+          border: '1px solid rgba(200,16,46,0.25)',
+          borderRadius: '8px',
+        }}
+      >
+        <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', flex: 1, minWidth: 220 }}>
+          <strong style={{ color: '#fff' }}>Ready to get on the ice?</strong> Find a learn-to-play program near you.
+        </span>
+        <Link
+          href="/directory/youth-hockey/learn-to-play"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '0.5rem 1rem',
+            background: '#C8102E',
+            color: '#fff',
+            borderRadius: '6px',
+            fontWeight: 700,
+            fontSize: '0.875rem',
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Find a Learn-to-Play Program
+        </Link>
+        <Link
+          href="/directory"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '0.5rem 1rem',
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: '#fff',
+            borderRadius: '6px',
+            fontWeight: 700,
+            fontSize: '0.875rem',
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Browse all rinks
+        </Link>
+      </div>
+
       {/* Featured-snippet block */}
       <aside
         aria-label="Quick answer"

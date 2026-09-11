@@ -46,44 +46,59 @@ export default function HockeyTerminologyPage() {
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Puck</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The black rubber disc. Officially 1 inch thick, 3 inches in diameter, 6 ounces.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Apple, biscuit, rock, hamburger, donut</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>All slang for the puck. Different terms in different regions and locker rooms.</dd>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>The five-hole</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The open space between a goalie's legs. A shot through the five-hole is a "five-hole goal" or, in slang, going "between the pipes" low.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Top shelf</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Upper part of the net. "Top shelf where mom keeps the peanut butter" is the classic goalie comment.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-terminology" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the glossary (full)  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
         </dl>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>The rink</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Blue line</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The line that separates the offensive/defensive zones from the neutral zone. Offsides are called when a player crosses before the puck.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Red line</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Center of the ice. Used for icing calls and (historically) two-line passes.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Faceoff dot</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The 9 spots where faceoffs happen (2 in each zone, 4 in the neutral zone, 1 center).</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Slot</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The area in front of the net between the faceoff circles. Where most goals are scored from.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Point</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The area just inside the blue line where defencemen take shots from. "Shoot from the point" means shoot from the blue line.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → positions explained  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>The boards</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The white wall around the rink. "Going to the boards" or "cycling along the boards" means playing the puck behind the opponent's net.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-terminology" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the glossary (full)  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>The crease</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The blue-painted semicircle in front of the net. The goalie's space — opponents can't run into the goalie here.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-terminology" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the glossary (full)  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
         </dl>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Positions</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Forward</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>One of the three skaters responsible for offense. Includes center and two wings.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → positions explained  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Center</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The forward who takes most faceoffs and plays both offense and defense. Considered the "quarterback" of the line.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → positions explained  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Winger (LW / RW)</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Forwards who play the sides. Left wing and right wing.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → positions explained  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Defenceman (D)</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Plays defense. Usually two on the ice at a time.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → positions explained  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Goaltender, goalie, netminder, tendy</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The player in the net. "Tendy" is locker-room slang.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → positions explained  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>D-man, blueliner</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>More slang for defenceman. A "blueliner" plays at or near the blue line.</dd>
         </dl>
@@ -92,16 +107,22 @@ export default function HockeyTerminologyPage() {
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Breakaway</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>When a player has the puck and no defender between them and the goalie except the goalie. Penalty shot if fouled.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>One-timer</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A shot taken directly off a pass without stopping the puck first. Hard to defend.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/passing" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → passing techniques  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Saucer pass</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A pass that floats over an opponent's stick or a puddle. Named for its flying-saucer shape.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/passing" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → passing techniques  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Deke</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Short for "deke" (deception). A move to fake out a defender — usually faking one direction then going another.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/how-to-skate" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → skating fundamentals  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Celly, celly</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Slang for a goal celebration. A big celly is a big celebration. Some are choreographed.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-rules" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → the rules primer  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Dangle</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>To stickhandle past a defender with a fancy move. "He dangled through three guys" means he made them look silly.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/how-to-skate" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → skating fundamentals  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Top cheddar, mitts</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Slang for the hands/gloves. "Top cheddar" is a goal scorer's hands. "Mitts" are the gloves.</dd>
         </dl>
@@ -110,12 +131,16 @@ export default function HockeyTerminologyPage() {
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Pipe</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The inside post of the goal. "Off the pipe and in" means a shot that hit the post and went in.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → goaltender positions  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Iron</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Same as the pipe — the post of the goal.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/hockey-positions-explained" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → goaltender positions  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Snipe, snipe show, snipe city</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A perfectly placed shot. Top-shelf snipe = perfect shot to the upper corner.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/shooting" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → shooting techniques  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Bar down</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A shot that hits the crossbar and goes down into the net. Considered one of the prettiest goals.</dd>
+          <div style={{ marginTop: "0.25rem", marginBottom: "0.5rem", fontSize: "0.8125rem" }}>  <Link href="/learn/shooting" style={{ color: "#C8102E", fontWeight: 600 }}>    Read the full explainer → shooting techniques  </Link>  <span style={{ color: "rgba(255,255,255,0.3)" }}> · </span>  <Link href="/directory/youth-hockey/learn-to-play" style={{ color: "rgba(255,255,255,0.55)" }}>    Find a program near you  </Link></div>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Glove side / blocker side</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The two sides of the goalie. Goalies catch with their glove hand; they deflect with their blocker (the square pad on the stick hand). Knowing which side is which helps read shot placement.</dd>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Tendy, keeper, puck-stopper</dt>
