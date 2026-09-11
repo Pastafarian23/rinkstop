@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function ParentSurvivalGuidePage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Parent Survival Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Parent Survival Guide</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOCKEY PARENT SURVIVAL GUIDE
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         Day 1, Week 1, Month 1, Season 1. Onboarding for first-time hockey parents.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Day 1: before the first practice</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Day 1: before the first practice</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>What to bring:</strong> Nothing if the program provides equipment. Otherwise: helmet, gloves, base layers, water bottle, snack for after.
         </p>
@@ -48,7 +48,7 @@ export default function ParentSurvivalGuidePage() {
           <strong>What to expect:</strong> A lot of waiting, a lot of dressing help, and a kid who may or may not want to be there. Both reactions are normal.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Week 1: the first practice routine</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Week 1: the first practice routine</h2>
         <p style={{ marginBottom: '1rem' }}>
           Establish a routine early. The same drop-off time, the same parking spot, the same snack for after. Kids thrive on routine. Parents do too.
         </p>
@@ -59,7 +59,7 @@ export default function ParentSurvivalGuidePage() {
           <strong>After-practice conversations:</strong> Don't grill your kid about what they learned. Better questions: "What was the best part?" "Did the coach do anything cool?" "Are you going back next week?"
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Month 1: the first bumps</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Month 1: the first bumps</h2>
         <p style={{ marginBottom: '1rem' }}>
           Your kid will have at least one bad practice. Maybe a fall, maybe a conflict with another kid, maybe a coach who was sharper than usual. This is normal.
         </p>
@@ -70,7 +70,7 @@ export default function ParentSurvivalGuidePage() {
           The one exception: if your kid is being bullied, or if a coach is being verbally abusive, that's not a "bump." That's a problem, and you should escalate. Most coaches and programs are good. The bad ones are obvious and rare.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Season 1: what the year will look like</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Season 1: what the year will look like</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>Practices:</strong> 1-2 per week for 6U-8U, 2-3 per week for 10U+. Each is 45-90 minutes. You can drop off or stay — both are fine, but consistency matters.
         </p>
@@ -81,7 +81,7 @@ export default function ParentSurvivalGuidePage() {
           <strong>Off-ice:</strong> Most kids under 10 don't need off-ice training. They need unstructured play. Running around the yard, riding bikes, playing tag. The best off-ice training for a 7-year-old is "be a kid."
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 10 things to never say in the bleachers</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 10 things to never say in the bleachers</h2>
         <p style={{ marginBottom: '1rem' }}>
           These are the lines that make coaches wince. Don't say them. Even if you're thinking them.
         </p>
@@ -98,7 +98,7 @@ export default function ParentSurvivalGuidePage() {
           <li>"You're not having fun? Maybe we should quit." — Don't put the quit option in their head. Ask what would make it more fun.</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to talk to coaches</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to talk to coaches</h2>
         <p style={{ marginBottom: '1rem' }}>
           The right time: after practice, briefly. Not in front of the kid. Not via text unless the coach has set that channel up. Not at a game.
         </p>
@@ -109,7 +109,7 @@ export default function ParentSurvivalGuidePage() {
           The wrong questions (most of the time): anything about playing time, line combinations, or other kids. Coaches have limited ice time and many players. They make decisions for the team, not for any individual parent.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to actually be concerned</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to actually be concerned</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most "concerns" are just adjustment phases. But there are real signals to watch for:
         </p>
@@ -124,7 +124,7 @@ export default function ParentSurvivalGuidePage() {
           If you see these, talk to the program director. If they don't help, change programs. There's no hockey program worth your kid's mental health.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/first-day-on-ice" style={{ color: '#C8102E' }}>Your first day on the ice</Link></li>
           <li><Link href="/learn/cost-by-age" style={{ color: '#C8102E' }}>Hockey cost by age</Link></li>
@@ -132,9 +132,9 @@ export default function ParentSurvivalGuidePage() {
           <li><Link href="/guides/hockey-parents-handbook" style={{ color: '#C8102E' }}>Hockey parents handbook (full)</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

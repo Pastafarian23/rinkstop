@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function AgeToStartHockeyPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>When Can My Kid Start Hockey?</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>When Can My Kid Start Hockey?</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         WHEN CAN MY KID START HOCKEY?
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         The age-by-region answer, when to specialize, and when to switch sports. Plus the red flags to avoid.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The short answer</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The short answer</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most kids can start learn-to-play hockey at age 4-6. The official age cutoffs vary by country and by association. In the United States, USA Hockey's ADM (American Development Model) recommends starting in the 6U age group, which is age 5-6. In Canada, Hockey Canada's Initiation Program is designed for ages 5-6. In most of Europe, the youngest age group is 6-7.
         </p>
@@ -45,7 +45,7 @@ export default function AgeToStartHockeyPage() {
           But age is just one factor. The bigger question is whether your kid is ready — physically, mentally, and emotionally.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The official age cutoffs by country</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The official age cutoffs by country</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>USA Hockey (ADM):</strong> 6U (ages 5-6), 8U (7-8), 10U (9-10), 12U (11-12), 14U (13-14), 16U (15-16), 18U (17-18). Most kids start at 6U, but some associations offer learn-to-skate programs for 4-year-olds. The ADM is explicit: no organized hockey before age 6 unless it's a learn-to-skate program.
         </p>
@@ -59,7 +59,7 @@ export default function AgeToStartHockeyPage() {
           <strong>USA Hockey Inline:</strong> The roller hockey variant allows younger age groups in some associations. The same ADM principles apply.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Is your kid actually ready? The 5 readiness questions</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Is your kid actually ready? The 5 readiness questions</h2>
         <p style={{ marginBottom: '1rem' }}>
           Age is a starting point, not the answer. Before you sign your kid up, ask:
         </p>
@@ -71,7 +71,7 @@ export default function AgeToStartHockeyPage() {
           <li><strong>Do they actually want to do this?</strong> This is the most important question. If your kid has been asking to play, that's a green light. If you're pushing it, wait six months and try again.</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to specialize (and when not to)</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to specialize (and when not to)</h2>
         <p style={{ marginBottom: '1rem' }}>
           Hockey is one of the few sports where the official development model is explicit about <strong>delayed specialization</strong>. USA Hockey's ADM, Hockey Canada's Long-Term Player Development plan, and the IIHF's player development framework all agree: kids should play multiple sports through age 12-13, and only specialize in hockey after puberty.
         </p>
@@ -85,7 +85,7 @@ export default function AgeToStartHockeyPage() {
           <strong>Good signs:</strong> Your kid asks to go to practice. Your kid wants to play in the yard after practice. Your kid asks to try goalie or a different position. Your kid mentions a specific coach or teammate they like.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The "one sport" trap</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The "one sport" trap</h2>
         <p style={{ marginBottom: '1rem' }}>
           Many hockey parents are told that if their kid doesn't play hockey year-round starting at age 7, they'll fall behind. This is wrong. The research on early specialization is clear: year-round single-sport athletes don't become better hockey players. They become more injured.
         </p>
@@ -99,7 +99,7 @@ export default function AgeToStartHockeyPage() {
           <li>Off-season activities that complement hockey (sprinting, plyometrics, mobility)</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Switching sports: a feature, not a bug</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Switching sports: a feature, not a bug</h2>
         <p style={{ marginBottom: '1rem' }}>
           Kids who play soccer through age 10 develop better edge work and balance than kids who only play hockey. Kids who do gymnastics through age 9 have better body awareness. Kids who swim through age 11 have better aerobic capacity.
         </p>
@@ -110,7 +110,7 @@ export default function AgeToStartHockeyPage() {
           So if your kid wants to play hockey AND soccer AND basketball, let them. They'll be a better hockey player for it.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The junior pathway (the long view)</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The junior pathway (the long view)</h2>
         <p style={{ marginBottom: '1rem' }}>
           If your kid is good enough to consider junior hockey (CHL, USHL, NAHL, NCAA), the eligibility windows are firm. The CHL (OHL, WHL, QMJHL) drafts players who are 16-20. The USHL is for players under 20. NCAA D1 hockey has academic eligibility plus a sliding scale based on birth year.
         </p>
@@ -118,7 +118,7 @@ export default function AgeToStartHockeyPage() {
           Use the <Link href="/tools/junior-eligibility-checker" style={{ color: '#C8102E' }}>junior eligibility checker</Link> to see where your kid stands based on birth year. The earlier you understand the windows, the more time you have to plan.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/hockey-development-pathway" style={{ color: '#C8102E' }}>Hockey development pathway</Link></li>
           <li><Link href="/learn/cost-by-age" style={{ color: '#C8102E' }}>Hockey cost by age</Link></li>
@@ -127,9 +127,9 @@ export default function AgeToStartHockeyPage() {
           <li><Link href="/guides/youth/usa-hockey-adm-explained" style={{ color: '#C8102E' }}>USA Hockey's ADM explained</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

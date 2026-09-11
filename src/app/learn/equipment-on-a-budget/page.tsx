@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function EquipmentOnABudgetPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Equipment on a Budget</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Equipment on a Budget</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOCKEY EQUIPMENT ON A BUDGET
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         What to buy new, what to buy used, and what to skip entirely. The 80/20 of outfitting your kid for hockey without spending $500.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 3-tier rule</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 3-tier rule</h2>
         <p style={{ marginBottom: '1rem' }}>
           Every piece of hockey equipment falls into one of three tiers:
         </p>
@@ -51,7 +51,7 @@ export default function EquipmentOnABudgetPage() {
           <strong>Tier 3: Skip until you know your kid is sticking with it.</strong> Premium composite sticks, top-end skates for adults, custom jerseys. These are for the player who has committed to years of hockey.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first-year budget: $200-400</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first-year budget: $200-400</h2>
         <p style={{ marginBottom: '1rem' }}>
           If your kid is starting 6U-8U and might outgrow everything in 12-18 months, here's the budget that doesn't waste money:
         </p>
@@ -71,7 +71,7 @@ export default function EquipmentOnABudgetPage() {
           Total: $230-595 depending on how much you buy used.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Where to buy used</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Where to buy used</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>Your rink's pro shop:</strong> Most rinks have a used-gear section. The advantage: you can try it on. The disadvantage: selection is limited.
         </p>
@@ -85,7 +85,7 @@ export default function EquipmentOnABudgetPage() {
           <strong>End-of-season sales:</strong> Most rinks and associations have a gear swap in March-April. The good stuff goes fast. Show up early.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What NOT to cheap out on</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What NOT to cheap out on</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>The helmet.</strong> A certified helmet is the single most important piece of equipment your kid wears. Buy new. Replace every 5-7 years or after any significant impact. Most youth hockey associations require HECC-certified helmets — don't buy a helmet that doesn't have the HECC sticker.
         </p>
@@ -96,7 +96,7 @@ export default function EquipmentOnABudgetPage() {
           <strong>The mouthguard.</strong> A $5 boil-and-bite mouthguard is fine. Just wear one.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to skip entirely (for the first year)</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to skip entirely (for the first year)</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>Top-end composite sticks.</strong> A $250 stick is a 5% performance improvement over a $50 stick. The performance gap is real but tiny. A 6-year-old cannot tell the difference. Buy entry-level composite for the first year.
         </p>
@@ -113,7 +113,7 @@ export default function EquipmentOnABudgetPage() {
           <strong>Visors vs. cages.</strong> Both are safe. Cages are cheaper ($20-40 vs. $80-150) and offer better protection against sticks. Visors offer better visibility. Cages are the default for kids. Your kid can switch to a visor at 14U+ if they want.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Gear libraries and rental programs</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Gear libraries and rental programs</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most learn-to-play programs include equipment for the first 4-8 weeks. Some associations run "gear libraries" where families can borrow equipment for a season. Ask your program director.
         </p>
@@ -121,7 +121,7 @@ export default function EquipmentOnABudgetPage() {
           Some community rinks have equipment exchange events in the fall and spring. You can swap your outgrown gear for the next size up. These are gold.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to upgrade</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to upgrade</h2>
         <p style={{ marginBottom: '1rem' }}>
           Upgrade gear when:
         </p>
@@ -133,7 +133,7 @@ export default function EquipmentOnABudgetPage() {
           <li>Your kid has been playing for 2+ years and is clearly committed</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/skate-fitting" style={{ color: '#C8102E' }}>How to fit hockey skates</Link></li>
           <li><Link href="/learn/your-first-skate-fit" style={{ color: '#C8102E' }}>Your first skate fit</Link></li>
@@ -142,9 +142,9 @@ export default function EquipmentOnABudgetPage() {
           <li><Link href="/tools/hockey-cost-calculator" style={{ color: '#C8102E' }}>Hockey cost calculator</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function PassingPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Passing</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Passing</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOW TO PASS
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
           Passing is the single biggest separator between new players and experienced ones. Master these passes and you'll play a different game.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The forehand pass</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The forehand pass</h2>
         <p style={{ marginBottom: '1rem' }}>
           The most common pass in hockey. You're moving the puck from your forehand side to a teammate's forehand side.
         </p>
@@ -55,7 +55,7 @@ export default function PassingPage() {
           Common mistake: sweeping with the top hand. The top hand is for control; the bottom hand is for power. Players who sweep with the top hand have weak, slow passes.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The backhand pass</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The backhand pass</h2>
         <p style={{ marginBottom: '1rem' }}>
           You receive the puck on your backhand side and you need to move it without turning the blade over. The backhand pass is a high-skill move because the geometry is awkward.
         </p>
@@ -72,7 +72,7 @@ export default function PassingPage() {
           A good backhand pass is the mark of an experienced player. The puck stays flat and fast, the player doesn't have to turn their body, and the play keeps flowing. Work on this — it's worth it.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The saucer pass</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The saucer pass</h2>
         <p style={{ marginBottom: '1rem' }}>
           A pass that floats — about 6-12 inches off the ice — over an obstacle. The obstacle is usually a defender's stick or a puddle. The pass lands flat on the recipient's stick, so it's easy to receive.
         </p>
@@ -88,7 +88,7 @@ export default function PassingPage() {
           Saucer passes are advanced because the lift is hard to calibrate. Too little and the puck doesn't clear; too much and it lands on the back of the recipient's neck. Practice this on a quiet rink with a partner who can give you feedback.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The one-touch pass</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The one-touch pass</h2>
         <p style={{ marginBottom: '1rem' }}>
           You receive the puck and pass it without stopping it. This is the highest-skill pass because you have to read the play, position your stick, and redirect the puck in one motion.
         </p>
@@ -105,7 +105,7 @@ export default function PassingPage() {
           One-touch passes are what make a hockey team look fast. If you can redirect a pass to a teammate in stride without breaking your own stride, you save a half-second every time — and a half-second is most of hockey.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The give-and-go</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The give-and-go</h2>
         <p style={{ marginBottom: '1rem' }}>
           You pass to a teammate, then move to an open space. Your teammate passes it back to you in your new space. The classic two-man give-and-go is one of the simplest and most effective plays in hockey.
         </p>
@@ -121,7 +121,7 @@ export default function PassingPage() {
           The give-and-go works because most defenders freeze for a beat when they don't have the puck. That beat is your window. Skating through the window is the entire skill.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to use each pass</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to use each pass</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>Forehand pass</strong> — the default. Most of your passes will be forehand. Use it when the teammate is on your forehand side and there's no obstacle in the way.
         </p>
@@ -138,7 +138,7 @@ export default function PassingPage() {
           <strong>Give-and-go</strong> — when you have the puck in the offensive zone and a teammate is supporting. Pass and move. The simplest and most effective offensive play in hockey.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Receiving a pass</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Receiving a pass</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most new players focus on passing, but receiving is half the equation. The right way to receive:
         </p>
@@ -149,7 +149,7 @@ export default function PassingPage() {
           <li>Call for the pass if you want it. The passer may not see you.</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to practice passing</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to practice passing</h2>
         <p style={{ marginBottom: '1rem' }}>
           Stationary passing is the foundation. Stand 15 feet apart, pass back and forth, both forehand and backhand. Once forehand and backhand are automatic, increase the distance. Once that's automatic, add a target (a puck, a cone, a circle drawn in the snow). Add a moving target. Add a defender. Add a clock.
         </p>
@@ -157,16 +157,16 @@ export default function PassingPage() {
           Moving passing — passing while you and your partner are skating — is the next step. Start slow. Work up to game speed.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/shooting" style={{ color: '#C8102E' }}>How to shoot</Link></li>
           <li><Link href="/learn/face-offs" style={{ color: '#C8102E' }}>How to win face-offs</Link></li>
           <li><Link href="/guides/passing" style={{ color: '#C8102E' }}>Hockey passing guide (full)</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

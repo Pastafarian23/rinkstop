@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function StickFittingPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Stick Fitting</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Stick Fitting</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOW TO CHOOSE A HOCKEY STICK
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         Four things matter: length, flex, curve pattern, and lie. Get all four right and the stick disappears in your hands.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Length</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Length</h2>
         <p style={{ marginBottom: '1rem' }}>
           Stand in your shoes (not skates) and hold the stick vertically with the toe on the floor in front of you. The shaft should reach somewhere between your chin and your nose. Chin = mid-length stick. Nose = slightly longer. Anything higher than your nose and you'll be reaching; anything below your chin and you'll be cramped.
         </p>
@@ -48,7 +48,7 @@ export default function StickFittingPage() {
           Junior sticks are sold in inches: 41, 44, 47, 50, 52, 54, 56, 58, 60. Senior sticks are sold in flex number and length: 65" / 75 flex, 65" / 85 flex, etc. Buy the junior or senior length that matches your height.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The chin test (with skates on)</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The chin test (with skates on)</h2>
         <p style={{ marginBottom: '1rem' }}>
           The chin test is the standard. With your skates on (or the right shoes on — your normal skate height is about an inch and a half), stand the stick on its toe in front of you. The shaft should reach your chin. If it's at your collarbone, it's too long. If it's at your mouth, it's slightly long. If it's past your nose, it's definitely too long.
         </p>
@@ -59,7 +59,7 @@ export default function StickFittingPage() {
           When in doubt, shorter is better. A stick you can grow into is a stick you can use.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Flex: the most important spec</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Flex: the most important spec</h2>
         <p style={{ marginBottom: '1rem' }}>
           Flex is how much the stick bends when you load it with your bottom hand. Lower flex number = stiffer stick. Higher flex number = softer stick. A 75 flex stick requires 75 pounds of force to bend one inch.
         </p>
@@ -73,7 +73,7 @@ export default function StickFittingPage() {
           Use our <Link href="/tools/hockey-stick-size-calculator" style={{ color: '#C8102E' }}>stick size calculator</Link> to translate your height and weight to a starting length and flex.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Curve pattern: P92, P88, and the rest</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Curve pattern: P92, P88, and the rest</h2>
         <p style={{ marginBottom: '1rem' }}>
           The blade curve (or "pattern") determines how the puck moves when you shoot and stickhandle. There are dozens of patterns, but most fall into a few families:
         </p>
@@ -88,7 +88,7 @@ export default function StickFittingPage() {
           For your first stick, get a P92. It's the most versatile curve and the one you'll find on most NHLers' sticks. After a year, you'll have an opinion.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Lie: the angle of the blade</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Lie: the angle of the blade</h2>
         <p style={{ marginBottom: '1rem' }}>
           Lie is the angle between the shaft and the blade. Higher lie = the blade sits more upright. Lower lie = the blade lays flatter on the ice.
         </p>
@@ -99,12 +99,12 @@ export default function StickFittingPage() {
           Most adult sticks are sold in 5 or 6 lie. Most kids are in 4-5 lie. If you don't have a strong opinion, leave the default.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Composite vs. wood</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Composite vs. wood</h2>
         <p style={{ marginBottom: '1rem' }}>
           Wood sticks are still made and are cheaper ($30-50), but composite sticks are now the standard. They're lighter, more durable, and shoot harder. Wood is fine for a recreational player who doesn't care about performance. Composite is the right choice for anyone playing more than a few times a year.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to cut a stick to length</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to cut a stick to length</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most sticks come longer than you need. Cutting is fine — it just shortens the shaft and doesn't change the flex much (unless you cut a lot). To cut:
         </p>
@@ -116,7 +116,7 @@ export default function StickFittingPage() {
           <li>Re-attach the butt end of the grip. Most sticks have a removable butt end that pops off before cutting.</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/tools/hockey-stick-size-calculator" style={{ color: '#C8102E' }}>Free stick size calculator</Link></li>
           <li><Link href="/guides/hockey-stick-guide" style={{ color: '#C8102E' }}>How to choose a hockey stick (full)</Link></li>
@@ -124,9 +124,9 @@ export default function StickFittingPage() {
           <li><Link href="/learn/shooting" style={{ color: '#C8102E' }}>How to shoot</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function YourFirstSkateFitPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Your First Skate Fit</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Your First Skate Fit</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         YOUR FIRST SKATE FIT
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         At the store, step by step. What to ask the fitter, what to look for, and what to walk away from.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Before you go</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Before you go</h2>
         <p style={{ marginBottom: '1rem' }}>
           Use the <Link href="/tools/hockey-skate-size-calculator" style={{ color: '#C8102E' }}>skate size calculator</Link> to translate your US shoe size to a starting point. The result is a starting point, not a destination. Sizes vary by brand and model.
         </p>
@@ -48,7 +48,7 @@ export default function YourFirstSkateFitPage() {
           <strong>Bring your kid's shin guards.</strong> If they have them. A skate should be fitted with shin guards in the skate. Most stores have loaners, but bring what you have.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>At the store: the right questions</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>At the store: the right questions</h2>
         <p style={{ marginBottom: '1rem' }}>
           A good fitter asks you more questions than you ask them. The conversation should go:
         </p>
@@ -59,7 +59,7 @@ export default function YourFirstSkateFitPage() {
           If the fitter doesn't ask at least some of these, they're not actually fitting — they're selling. Find another fitter.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 8 checks during the fit</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 8 checks during the fit</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>1. The insole check.</strong> Take the insole out of the skate. Stand on it. Your heel should be at the back of the insole. Your big toe should almost reach the front. If there's more than ¼ inch of insole showing in front of your toes, the skate is too long.
         </p>
@@ -85,7 +85,7 @@ export default function YourFirstSkateFitPage() {
           <strong>8. The lacing test.</strong> Lace the skates the way the fitter shows you. Snug at the toe, slightly looser in the middle, snug at the top. Then stand and bend your knees. Your heel should stay locked.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to walk away from</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to walk away from</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>The fitter who only measures your foot length.</strong> Foot length is one input. Width, arch height, ankle stability, and intended use all matter. A length-only fitter is going to sell you the wrong skate.
         </p>
@@ -99,7 +99,7 @@ export default function YourFirstSkateFitPage() {
           <strong>The "try it and see" return policy.</strong> Skates that don't fit can't be returned once they're sharpened. A good store will let you walk around the store in them for 15-20 minutes before committing. Some stores have a "first fit" guarantee where they'll re-fit free if the first pair doesn't work after break-in.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The breaking-in myth</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The breaking-in myth</h2>
         <p style={{ marginBottom: '1rem' }}>
           "Skates need to be broken in" is true in a narrow sense and wrong in a bigger one.
         </p>
@@ -113,7 +113,7 @@ export default function YourFirstSkateFitPage() {
           If your kid complains of pain in the first 3 sessions, go back to the fitter. Don't wait.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>After the fit: the first month</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>After the fit: the first month</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>Wear them around the house.</strong> 1-2 hours a day for the first week, with skate guards on. The heat from your foot softens the boot.
         </p>
@@ -130,7 +130,7 @@ export default function YourFirstSkateFitPage() {
           <strong>Re-evaluate after 5 sessions.</strong> If hot spots develop, return to the fitter. Most stores will punch or heat-mold the boot to fix pressure points. Don't just live with the pain.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to get a second pair</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to get a second pair</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most kids outgrow skates every 1-2 years. Signs it's time for a new pair:
         </p>
@@ -142,7 +142,7 @@ export default function YourFirstSkateFitPage() {
           <li>You can fit two fingers between the heel and the back of the boot (a clear sign they've outgrown them)</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/tools/hockey-skate-size-calculator" style={{ color: '#C8102E' }}>Skate size calculator</Link></li>
           <li><Link href="/learn/skate-fitting" style={{ color: '#C8102E' }}>How to fit hockey skates</Link></li>
@@ -150,9 +150,9 @@ export default function YourFirstSkateFitPage() {
           <li><Link href="/learn/cost-by-age" style={{ color: '#C8102E' }}>Hockey cost by age</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

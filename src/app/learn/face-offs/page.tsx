@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function FaceOffsPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Face-offs</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Face-offs</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOW TO WIN FACE-OFFS
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
           Face-offs are won in the details. The grip, the stick position, the timing of the pull, and the rules you can and can't break.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Why face-offs matter</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Why face-offs matter</h2>
         <p style={{ marginBottom: '1rem' }}>
           Every play starts with a face-off. Win the draw, and you start with the puck. Lose it, and the other team starts with possession. In close games, the team that wins more face-offs usually wins.
         </p>
@@ -45,7 +45,7 @@ export default function FaceOffsPage() {
           For centers especially, face-off technique is a core skill. A center who wins 60% of their draws is more valuable than one who wins 50%, even if everything else is equal.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The grip</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The grip</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most face-off coaches teach one of two grips:
         </p>
@@ -55,7 +55,7 @@ export default function FaceOffsPage() {
           Start with the top-hand grip. It's the more reliable draw for most players.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Stick position</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Stick position</h2>
         <p style={{ marginBottom: '1rem' }}>
           Your blade goes flat on the ice, with the toe of the blade just behind the dot. The blade should be in the same plane as the opponent's — that way you're not at a disadvantage from the start.
         </p>
@@ -66,7 +66,7 @@ export default function FaceOffsPage() {
           Common mistake: standing too tall. Get low — knees bent, weight on your skates, butt down. The lower you are, the harder you can pull.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The pull</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The pull</h2>
         <p style={{ marginBottom: '1rem' }}>
           The puck drops. You have a fraction of a second to react. The two strategies:
         </p>
@@ -76,7 +76,7 @@ export default function FaceOffsPage() {
           The pull is mostly about timing and hand strength. The more you practice, the more reliable your draw becomes.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Wing face-offs</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Wing face-offs</h2>
         <p style={{ marginBottom: '1rem' }}>
           Only the center takes the face-off in the NHL. In youth hockey and many recreational leagues, both centers and the two wings (or one center and one wing) take it. The technique is the same, with these adjustments:
         </p>
@@ -86,7 +86,7 @@ export default function FaceOffsPage() {
           <li>Be ready to move in any direction. The wing's first step is more important than the center's draw.</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The rules on what you can and can't do</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The rules on what you can and can't do</h2>
         <p style={{ marginBottom: '1rem' }}>
           The linesman drops the puck, and from that moment, you can:
         </p>
@@ -108,7 +108,7 @@ export default function FaceOffsPage() {
           The linesman will kick you out of the draw if you violate any of these. The center will be ejected from a second violation in the same game.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Special face-off situations</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Special face-off situations</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most face-offs are after a whistle. Some happen during play (e.g., after an offside call). The strategy is slightly different in each case:
         </p>
@@ -119,7 +119,7 @@ export default function FaceOffsPage() {
           <li><strong>Penalty-kill face-off (defensive zone):</strong> You're killing a penalty. Don't try to win clean. Try to draw the puck back to your D-man to set up a clear, or to the boards for a battle.</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to practice face-offs</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to practice face-offs</h2>
         <p style={{ marginBottom: '1rem' }}>
           Find a teammate. Stand at any dot. Drop the puck. Take turns. The first to 10 wins. The more reps, the more automatic the draw becomes.
         </p>
@@ -127,16 +127,16 @@ export default function FaceOffsPage() {
           Good face-off centers practice 20+ draws per session, multiple times a week. It's a small but high-impact habit.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/hockey-rules" style={{ color: '#C8102E' }}>Hockey rules explained</Link></li>
           <li><Link href="/learn/hockey-positions-explained" style={{ color: '#C8102E' }}>Hockey positions explained</Link></li>
           <li><Link href="/learn/passing" style={{ color: '#C8102E' }}>How to pass</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

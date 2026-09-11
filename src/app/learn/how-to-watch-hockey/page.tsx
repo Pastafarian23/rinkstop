@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function HowToWatchHockeyPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>How to Watch Hockey</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>How to Watch Hockey</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOW TO WATCH HOCKEY
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         For new fans: how to follow the play, what the camera is missing, why possession matters, and how to enjoy a game without knowing every rule.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first thing to know: the camera lies</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first thing to know: the camera lies</h2>
         <p style={{ marginBottom: '1rem' }}>
           Hockey is a fast sport. The TV camera follows the puck. This means the camera spends 90% of its time on the puck carrier and 10% of its time on everything else. The 10% is where the game actually lives.
         </p>
@@ -45,7 +45,7 @@ export default function HowToWatchHockeyPage() {
           Watch the players without the puck. Watch the defencemen positioning. Watch the forwards setting up for a breakout. Watch the goalie tracking the play. The puck carrier is the least interesting person on the ice.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 5 things to watch for</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The 5 things to watch for</h2>
         <p style={{ marginBottom: '1rem' }}>
           When you first start watching hockey, the puck feels like it's teleporting around the ice and you can't follow anything. Here's how to find the structure.
         </p>
@@ -57,7 +57,7 @@ export default function HowToWatchHockeyPage() {
           <li><strong>The hits.</strong> A clean body check is a 0.3-second play that ends with the puck carrier on the ice. If you blink you miss it. The buildup is the forecheck. The hit is the punctuation.</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Why the score doesn't tell the story</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Why the score doesn't tell the story</h2>
         <p style={{ marginBottom: '1rem' }}>
           A 3-1 hockey game can be 60 minutes of one team dominating. A 1-0 game can be wide open end-to-end. The score in hockey is misleading in a way that the score in basketball or football is not.
         </p>
@@ -71,7 +71,7 @@ export default function HowToWatchHockeyPage() {
           <li><strong>Faceoff win percentage:</strong> Especially in the defensive zone. Winning the draw after an icing means you keep the puck instead of giving it back.</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The seasons of hockey</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The seasons of hockey</h2>
         <p style={{ marginBottom: '1rem' }}>
           Hockey is an 82-game regular season plus playoffs. The games are different depending on the time of year.
         </p>
@@ -91,7 +91,7 @@ export default function HowToWatchHockeyPage() {
           <strong>May-June:</strong> The Conference Finals and Stanley Cup Final. The best hockey of the year.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to pick a team</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to pick a team</h2>
         <p style={{ marginBottom: '1rem' }}>
           New fans often default to a local team. If you have one, watch them. If you don't, here's how to pick.
         </p>
@@ -105,7 +105,7 @@ export default function HowToWatchHockeyPage() {
           <strong>Your hometown team</strong> is the most fun when you can go to games. The cost of a single ticket to a non-marquee team is $30-80. Going to a game is a much better way to learn hockey than watching on TV.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Five rules for a new fan</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Five rules for a new fan</h2>
         <ol style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li>The puck must enter the offensive zone before any attacking player. That's offside.</li>
           <li>You can't shoot the puck from your half all the way down without anyone touching it. That's icing.</li>
@@ -114,7 +114,7 @@ export default function HowToWatchHockeyPage() {
           <li>After regulation, it's sudden-death overtime, then shootout. (Playoff games keep going to sudden-death overtime until someone scores.)</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/hockey-rules" style={{ color: '#C8102E' }}>Hockey rules explained</Link></li>
           <li><Link href="/learn/hockey-terminology" style={{ color: '#C8102E' }}>Hockey glossary</Link></li>
@@ -122,9 +122,9 @@ export default function HowToWatchHockeyPage() {
           <li><Link href="/glossary" style={{ color: '#C8102E' }}>Full glossary (100+ terms)</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
