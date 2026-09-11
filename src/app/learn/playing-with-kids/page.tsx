@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
+import MarkReadButton from '@/components/learn/MarkReadButton';
 
 export const metadata: Metadata = {
   title: 'Playing Hockey With Your Kid — A Parent\'s Adult League Guide',
@@ -148,6 +149,9 @@ export default function PlayingWithKidsPage() {
         </p>
       </div>
 
+            <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <MarkReadButton href="/learn/playing-with-kids" title="PLAYING HOCKEY WITH YOUR KID" />
+      </div>
 
     <LearnJsonLd
       href={`/learn/playing-with-kids`}

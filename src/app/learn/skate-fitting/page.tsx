@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
+import MarkReadButton from '@/components/learn/MarkReadButton';
 
 export const metadata: Metadata = {
   title: 'How to Fit Hockey Skates — A Step-by-Step Guide for Beginners',
@@ -133,6 +134,9 @@ export default function SkateFittingPage() {
         </p>
       </div>
 
+            <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <MarkReadButton href="/learn/skate-fitting" title="HOW TO FIT HOCKEY SKATES" />
+      </div>
 
     <LearnJsonLd
       href={`/learn/skate-fitting`}
