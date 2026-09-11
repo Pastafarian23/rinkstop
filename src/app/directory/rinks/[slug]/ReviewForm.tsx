@@ -77,7 +77,7 @@ export default function ReviewForm({ rinkId, rinkName, onReviewSubmitted }: Revi
             onMouseEnter={() => setHoverRating(i)}
             onMouseLeave={() => setHoverRating(0)}
             style={{
-              color: i <= active ? '#FFD700' : '#555',
+              color: i <= active ? '#FFD700' : 'rgba(255,255,255,0.4)',
               fontSize: '22px',
               lineHeight: 1,
               transition: 'color 0.1s',
