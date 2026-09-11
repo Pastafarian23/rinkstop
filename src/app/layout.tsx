@@ -388,6 +388,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       ['/tools/hockey-glove-size-calculator','Glove Size'],
                       ['/tools/hockey-stick-size-calculator','Stick Size'],
                       ['/tools/hockey-goalie-gear-sizer','Goalie Gear'],
+                      ['/learn','Learn Hockey'],
+                      ['/learn/age-to-start-hockey','When to Start Hockey'],
+                      ['/learn/cost-by-age','Hockey Cost by Age'],
                       ['/guides','All guides'],
                       ['/guides/hockey-parents-handbook','Parents Handbook'],
                     ].map(([href,label]) => (
