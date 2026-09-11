@@ -29,7 +29,7 @@ export default function CountryPageContent({ data }: Props) {
     newest,
   } = data;
 
-  const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = '#888', textDim = '#555';
+  const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = 'rgba(255,255,255,0.6)', textDim = 'rgba(255,255,255,0.4)';
   const rinkN = rinkCount;
   const teamN = teamCount;
   const leagueN = leagueCount;

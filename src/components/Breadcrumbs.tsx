@@ -10,6 +10,8 @@ interface BreadcrumbsProps {
 }
 
 export default function Breadcrumbs({ links }: BreadcrumbsProps) {
+  const linkColor = 'rgba(255,255,255,0.4)';
+  const hoverColor = '#fff';
   return (
     <nav
       aria-label="Breadcrumb"
@@ -18,11 +20,11 @@ export default function Breadcrumbs({ links }: BreadcrumbsProps) {
         alignItems: 'center',
         gap: '0.25rem',
         fontSize: '0.75rem',
-        color: '#555555',
+        color: linkColor,
         marginBottom: '1rem',
       }}
     >
-      <a href="/" style={{ color: '#555555', textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = '#555555')}>
+      <a href="/" style={{ color: linkColor, textDecoration: 'none' }} onMouseEnter={e => (e.currentTarget.style.color = hoverColor)} onMouseLeave={e => (e.currentTarget.style.color = linkColor)}>
         Home
       </a>
 
@@ -30,13 +32,13 @@ export default function Breadcrumbs({ links }: BreadcrumbsProps) {
         <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
           <span style={{ color: 'rgba(255,255,255,0.2)', margin: '0 0.1rem' }}>›</span>
           {i === links.length - 1 ? (
-            <span style={{ color: 'rgba(255,255,255,0.4)' }}>{link.label}</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)' }}>{link.label}</span>
           ) : (
             <a
               href={link.href}
-              style={{ color: '#555555', textDecoration: 'none' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#555555')}
+              style={{ color: linkColor, textDecoration: 'none' }}
+              onMouseEnter={e => (e.currentTarget.style.color = hoverColor)}
+              onMouseLeave={e => (e.currentTarget.style.color = linkColor)}
             >
               {link.label}
             </a>

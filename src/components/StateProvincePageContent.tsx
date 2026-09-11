@@ -64,7 +64,7 @@ export default function StateProvincePageContent({
   topLeagues = [],
 }: StateProvinceContentProps) {
   const cityCount = cities.length;
-  const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = '#888', textDim = '#555';
+  const bg = '#0a0a0a', card = '#0f0f0f', border = '#1e1e1e', red = '#C8102E', textMain = '#fff', textMuted = 'rgba(255,255,255,0.6)', textDim = 'rgba(255,255,255,0.4)';
   const flagEmoji = flag || (countryCode === 'US' ? '🇺🇸' : '🇨🇦');
 
   // FAQ schema (server-rendered JSON-LD for crawlers)
@@ -98,12 +98,12 @@ export default function StateProvincePageContent({
 
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem 4rem' }}>
         {/* Breadcrumb nav */}
-        <nav style={{ fontSize: '0.75rem', color: '#555555', padding: '1.5rem 0 0', marginBottom: '0' }}>
-          <Link href="/" style={{ color: '#555555' }}>Home</Link>
+        <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', padding: '1.5rem 0 0', marginBottom: '0' }}>
+          <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
-          <Link href="/directory" style={{ color: '#555555' }}>Directory</Link>
+          <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
-          <Link href={parentUrl} style={{ color: '#555555' }}>{parentLabel}</Link>
+          <Link href={parentUrl} style={{ color: 'rgba(255,255,255,0.4)' }}>{parentLabel}</Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
           <span style={{ color: '#A0A0A0' }}>{regionName}</span>
         </nav>
@@ -118,7 +118,7 @@ export default function StateProvincePageContent({
           </h1>
 
           {/* Intro paragraph (pre-built from state-faq-builder, no invention) */}
-          <p style={{ color: '#555', fontSize: '1.0625rem', lineHeight: 1.7, maxWidth: '800px', marginBottom: '1.5rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.0625rem', lineHeight: 1.7, maxWidth: '800px', marginBottom: '1.5rem' }}>
             {intro}
           </p>
 
@@ -209,7 +209,7 @@ export default function StateProvincePageContent({
                   <div style={{ fontWeight: 600, fontSize: '1.0625rem', marginBottom: '0.5rem', color: textMain }}>
                     {city}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#888', display: 'flex', gap: '1rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', display: 'flex', gap: '1rem' }}>
                     {team_count > 0 && <span>🏒 {team_count} teams</span>}
                     {rink_count > 0 && <span>⛸️ {rink_count} rinks</span>}
                   </div>
