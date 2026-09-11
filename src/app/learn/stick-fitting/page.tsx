@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'How to Choose a Hockey Stick — Length, Flex, Curve, Lie',
@@ -128,6 +129,17 @@ export default function StickFittingPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/stick-fitting'
+      title='How to Choose a Hockey Stick'
+      description='Length by height, flex by weight, blade curves (P92, P88, P28), lie angle, and how to cut a stick to fit.'
+      verified='2026-09-10'
+      readTime={9}
+    />
+</main>
   );
 }

@@ -150,15 +150,9 @@ export const LEARN: LearnEntry[] = [
     verified: '2026-09-10',
     readTime: 10,
     relatedGuides: ['/guides/shooting', '/guides/stickhandling'],
-  },
-];
+  },,
+  // ─── The 10 unique-to-RinkStop pages (Phase 3) ──────────────────────────
 
-/**
- * Phase 3 — the 10 unique-to-RinkStop pages. Filled in as they're built.
- * Each entry is a target for the next PR; until then, the /learn index
- * only renders the 12 fundamentals + skills pages above.
- */
-export const LEARN_PLACEHOLDER: LearnEntry[] = [
   {
     href: '/learn/first-day-on-ice',
     title: 'Your First Day on the Ice',
@@ -249,6 +243,27 @@ export const LEARN_PLACEHOLDER: LearnEntry[] = [
     readTime: 6,
     relatedTools: ['/tools/hockey-skate-size-calculator'],
     relatedGuides: ['/guides/skate-fitting-guide'],
+  },
+  // ─── Pre-existing /learn pages (not in PR #1 catalog originally) ─────
+  {
+    href: '/learn/hockey-cost-explained',
+    title: 'How Much Does Hockey Cost?',
+    desc: 'A complete cost guide for parents and players. The real costs of hockey by age, level, and region — registration, equipment, ice time, travel, and the hidden expenses most people forget.',
+    category: 'parenting',
+    verified: '2026-09-10',
+    readTime: 8,
+    relatedTools: ['/tools/hockey-cost-calculator'],
+    relatedGuides: ['/guides/hockey-parents-handbook'],
+  },
+  {
+    href: '/learn/hockey-development-explained',
+    title: 'How Hockey Development Works',
+    desc: 'Pathways from youth to pro. The seven levels of hockey development, what to expect at each, and how to plan a realistic long-term path for a developing player.',
+    category: 'getting-started',
+    verified: '2026-09-10',
+    readTime: 9,
+    relatedTools: ['/tools/junior-eligibility-checker'],
+    relatedGuides: ['/guides/nhl-draft', '/guides/ncaa-hockey', '/guides/youth-to-junior-hockey'],
   },
 ];
 

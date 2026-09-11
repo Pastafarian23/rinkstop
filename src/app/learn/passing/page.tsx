@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'How to Pass a Hockey Puck — Forehand, Backhand, Saucer, and More',
@@ -168,6 +169,17 @@ export default function PassingPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/passing'
+      title='How to Pass a Hockey Puck'
+      description='Forehand, backhand, saucer, one-touch, give-and-go. The right pass for every situation, with technique breakdowns for each.'
+      verified='2026-09-10'
+      readTime={9}
+    />
+</main>
   );
 }

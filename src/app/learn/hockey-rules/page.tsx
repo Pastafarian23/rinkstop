@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'Hockey Rules for Beginners — Every NHL Rule in Plain Language',
@@ -147,6 +148,17 @@ export default function HockeyRulesPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/hockey-rules'
+      title='Hockey Rules for Beginners'
+      description='Every NHL rule in plain language. Offside, icing, faceoffs, penalties, power plays, and overtime — the 12-minute primer new fans and players need.'
+      verified='2026-09-10'
+      readTime={12}
+    />
+</main>
   );
 }

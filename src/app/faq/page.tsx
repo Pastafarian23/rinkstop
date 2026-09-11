@@ -151,7 +151,7 @@ const sections: Array<{
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Club Starter covers one small club with up to 30 players. Club Pro covers up to 150 players with multiple teams. Club Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing.',
+        a: 'Club Starter covers one small club with up to 30 players. Club Pro covers up to 150 players with multiple teams. Club Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing. New rink operators should also read How to Choose a Learn-to-Play Program at /learn/choosing-a-program/.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
@@ -182,7 +182,7 @@ const sections: Array<{
       },
       {
         q: 'How do I find ice rinks near me?',
-        a: 'Go to /directory/rinks and browse by country or state. Each rink has a page with address, hours, amenities, reviews, and a map. The home page also has a "Find rinks near me" search bar.',
+        a: 'Go to /directory/rinks and browse by country or state. Each rink has a page with address, hours, amenities, reviews, and a map. The home page also has a "Find rinks near me" search bar. New to hockey? See our First Day on the Ice walk-through and the Choosing a Learn-to-Play Program guide (both at /learn/).',
       },
       {
         q: 'How do I save a team, player, or rink?',
@@ -202,7 +202,7 @@ const sections: Array<{
       },
       {
         q: 'I am new to hockey. Where should I start?',
-        a: 'Read the free Hockey Parents Handbook at /guides/hockey-parents-handbook (or "How to Fit Hockey Equipment" if you are an adult player). Then visit /directory/youth-hockey for "Learn to Play" programs in your area, or /learn for adult beginner resources. The Hockey Cost Calculator at /tools/hockey-cost-calculator will give you a realistic budget before you commit.',
+        a: 'Read the free Hockey Parents Handbook at /guides/hockey-parents-handbook (or "How to Fit Hockey Equipment" if you are an adult player). For first-time parents, the First Day on the Ice walk-through and the age-to-start answer (both at /learn/) are good starting points. The Hockey Rules primer at /learn/hockey-rules/ (12 min read) is what new fans should read first. Visit /directory/youth-hockey for "Learn to Play" programs in your area. The Hockey Cost Calculator at /tools/hockey-cost-calculator will give you a realistic budget before you commit.',
       },
     ],
   },

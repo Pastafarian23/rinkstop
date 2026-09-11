@@ -535,6 +535,36 @@ export default async function Home() {
               <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>How to Watch Hockey</div>
               <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>For new fans: how to follow the play.</div>
             </Link>
+            <Link href="/learn/hockey-development-pathway" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🛤️</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Development Pathway</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>7 levels from Learn-to-Play to Pro.</div>
+            </Link>
+            <Link href="/learn/cost-by-age" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>💵</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Hockey Cost by Age</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>6U to 18U cost breakdown.</div>
+            </Link>
+            <Link href="/learn/parent-survival-guide" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>👪</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Parent Survival Guide</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Day 1 to Season 1 — onboarding for new parents.</div>
+            </Link>
+            <Link href="/learn/playing-with-kids" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏒</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Playing With Your Kid</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Adult-league intro for parents who never played.</div>
+            </Link>
+            <Link href="/learn/equipment-on-a-budget" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🛒</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Equipment on a Budget</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>What to buy new, used, and skip.</div>
+            </Link>
+            <Link href="/learn/your-first-skate-fit" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>👟</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Your First Skate Fit</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>At the store, step by step.</div>
+            </Link>
           </div>
         </div>
       </section>

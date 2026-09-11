@@ -142,6 +142,18 @@ export default async function EventsLandingPage({ searchParams }: { searchParams
         </Link>
       </div>
 
+      {/* New-to-hockey cross-link callout */}
+      <section style={{ background: 'rgba(56,189,248,0.06)', border: '1px solid rgba(56,189,248,0.18)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.875rem', flex: 1 }}>
+          <strong style={{ color: '#38BDF8' }}>New to hockey?</strong>{' '}
+          See our{' '}
+          <Link href="/learn/first-day-on-ice" style={{ color: '#38BDF8', textDecoration: 'underline' }}>first-day walk-through</Link>
+          {' '}or read{' '}
+          <Link href="/learn/hockey-tryout-guide" style={{ color: '#38BDF8', textDecoration: 'underline' }}>what coaches look for at tryouts</Link>.
+        </div>
+        <Link href="/learn" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All learn →</Link>
+      </section>
+
       <FilterBar sp={sp} />
 
       {countries.length > 0 && !filtersActive && (

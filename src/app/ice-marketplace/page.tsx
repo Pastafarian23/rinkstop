@@ -249,6 +249,22 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
 
       <IceMarketplaceSEO total={total} />
 
+      {/* New-to-hockey cross-link callout */}
+      <section style={{ background: 'rgba(56,189,248,0.06)', borderTop: '1px solid rgba(56,189,248,0.18)', borderBottom: '1px solid rgba(56,189,248,0.18)', padding: '1rem 0' }}>
+        <div className="container" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.875rem' }}>
+            <strong style={{ color: '#38BDF8' }}>New to hockey?</strong>{' '}
+            See our{' '}
+            <Link href="/learn/first-day-on-ice" style={{ color: '#38BDF8', textDecoration: 'underline' }}>first-day walk-through</Link>,
+            read{' '}
+            <Link href="/learn/how-to-skate" style={{ color: '#38BDF8', textDecoration: 'underline' }}>how to skate</Link>,
+            or start with{' '}
+            <Link href="/learn/hockey-rules" style={{ color: '#38BDF8', textDecoration: 'underline' }}>hockey rules (12 min)</Link>.
+          </div>
+          <Link href="/learn" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All learn pages →</Link>
+        </div>
+      </section>
+
       {/* JSON-LD: FAQ schema for rich snippet eligibility */}
       <script
         type="application/ld+json"

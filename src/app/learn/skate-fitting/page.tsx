@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'How to Fit Hockey Skates — A Step-by-Step Guide for Beginners',
@@ -130,6 +131,17 @@ export default function SkateFittingPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/skate-fitting'
+      title='How to Fit Hockey Skates'
+      description='A step-by-step guide for beginners. Heel lock, toe room, ankle support, the lace test, width, and how to break in new skates.'
+      verified='2026-09-10'
+      readTime={7}
+    />
+</main>
   );
 }

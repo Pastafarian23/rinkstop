@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'How Much Does Hockey Cost? — A Complete Cost Guide for Parents and Players',
@@ -163,6 +164,17 @@ export default function HockeyCostExplainedPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/hockey-cost-explained'
+      title='How Much Does Hockey Cost?'
+      description='A complete cost guide for parents and players. The real costs of hockey by age, level, and region — registration, equipment, ice time, travel, and the hidden expenses most people forget.'
+      verified='2026-09-10'
+      readTime={8}
+    />
+</main>
   );
 }

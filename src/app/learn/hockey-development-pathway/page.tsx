@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'Hockey Development Pathway — From Learn to Play to Pro',
@@ -143,6 +144,17 @@ export default function HockeyDevelopmentPathwayPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/hockey-development-pathway'
+      title='Hockey Development Pathway'
+      description='The North American path: Learn to Play → House → Travel → High School → Junior → College → Pro. Each level, what to expect, what it costs.'
+      verified='2026-09-10'
+      readTime={12}
+    />
+</main>
   );
 }

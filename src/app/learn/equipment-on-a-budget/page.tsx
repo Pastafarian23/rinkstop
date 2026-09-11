@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'Hockey Equipment on a Budget — What to Buy New, Used, and Skip',
@@ -146,6 +147,17 @@ export default function EquipmentOnABudgetPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/equipment-on-a-budget'
+      title='Hockey Equipment on a Budget'
+      description='What to buy new vs. used vs. borrow, what to skip, what NOT to cheap out on. Plus the cost calculator link and gear libraries.'
+      verified='2026-09-10'
+      readTime={7}
+    />
+</main>
   );
 }

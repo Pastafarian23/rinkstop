@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'How to Choose a Learn-to-Play Hockey Program — 7 Questions to Ask',
@@ -126,6 +127,17 @@ export default function ChoosingAProgramPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+  
+    <LearnJsonLd
+      href='/learn/choosing-a-program'
+      title='How to Choose a Learn-to-Play Program'
+      description='The 7 questions to ask before signing your kid up. Cost, ice time, coach-to-player ratio, what to bring, red flags.'
+      verified='2026-09-10'
+      readTime={8}
+    />
+</main>
   );
 }

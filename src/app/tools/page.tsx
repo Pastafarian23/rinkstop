@@ -198,6 +198,9 @@ export default function ToolsIndexPage() {
           <RelatedLink href="/guides/youth-to-junior-hockey" title="Youth to Junior Hockey" desc="CHL vs NCAA vs USHL pathways" />
           <RelatedLink href="/guides/skate-fitting-guide" title="Skate Fitting Guide" desc="Bauer, CCM, half-size, width" />
           <RelatedLink href="/guides/hockey-tryout-guide" title="Tryout Guide" desc="What coaches look for, by age" />
+          <RelatedLink href="/learn" title="Learn Hockey" desc="24 beginner-friendly explainers" />
+          <RelatedLink href="/learn/first-day-on-ice" title="Your First Day on the Ice" desc="Walk-through for new parents" />
+          <RelatedLink href="/learn/choosing-a-program" title="Choosing a Learn-to-Play Program" desc="7 questions + red flags" />
         </div>
       </section>
 

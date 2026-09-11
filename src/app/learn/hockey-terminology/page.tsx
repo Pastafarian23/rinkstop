@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'Hockey Glossary — 70+ Hockey Terms and Slang Explained',
@@ -191,6 +192,17 @@ export default function HockeyTerminologyPage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/hockey-terminology'
+      title='Hockey Glossary'
+      description='70+ hockey terms and slang words. From apple, biscuit, and barn to five-hole, tic-tac-toe, and bar down — every beginner hockey term explained.'
+      verified='2026-09-10'
+      readTime={6}
+    />
+</main>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import LearnJsonLd from '@/components/LearnJsonLd';
 
 export const metadata: Metadata = {
   title: 'Your First Day on the Ice — A Complete Walk-Through for New Hockey Parents',
@@ -136,6 +137,17 @@ export default function FirstDayOnIcePage() {
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
-    </main>
+
+
+
+    
+    <LearnJsonLd
+      href='/learn/first-day-on-ice'
+      title='Your First Day on the Ice'
+      description='What to expect at your first learn-to-play session: the parking lot, the dressing room, the ice, and the other parents.'
+      verified='2026-09-10'
+      readTime={6}
+    />
+</main>
   );
 }
