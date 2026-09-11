@@ -141,7 +141,7 @@ export default async function JoinPage({ params }: PageProps) {
                   display: 'inline-block',
                   padding: '0.5rem 1rem',
                   background: '#FFB81C',
-                  color: '#041E42',
+                  color: '#C8102E',
                   borderRadius: 6,
                   textDecoration: 'none',
                   fontWeight: 700,

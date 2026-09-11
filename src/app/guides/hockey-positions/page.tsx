@@ -47,7 +47,7 @@ export default function HockeyPositions() {
             <div key={p.pos} style={{ padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>{p.icon}</p>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.2rem' }}>{p.pos}</p>
-              <p style={{ fontSize: '0.75rem', color: '#777' }}>{p.role}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{p.role}</p>
             </div>
           ))}
         </div>
@@ -88,7 +88,7 @@ export default function HockeyPositions() {
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {['Faceoffs', 'Two-way play', 'Backcheck', 'Shutdown defense', 'Offensive playmaking'].map(s => (
-              <span key={s} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', fontSize: '0.75rem', color: '#777' }}>{s}</span>
+              <span key={s} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '999px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{s}</span>
             ))}
           </div>
         </div>
@@ -99,14 +99,14 @@ export default function HockeyPositions() {
             <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '0.75rem' }}>
               Plays on the left side of the ice. Typically responsible for covering the left lane defensively and forechecking along the left boards. Many elite left wing scorers play a perimeter game from the left circle.
             </p>
-            <p style={{ fontSize: '0.8125rem', color: '#777' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Key skills:</strong> Board play, left-side shooting, forecheck</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Key skills:</strong> Board play, left-side shooting, forecheck</p>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>Right Wing (RW)  --  The Right Side</h3>
             <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '0.75rem' }}>
               Plays on the right side of the ice. Tasked with forechecking and retrieving pucks along the right boards. In systems with a strong-side bias, right wing often rotates to cover the strong side as the third forward back.
             </p>
-            <p style={{ fontSize: '0.8125rem', color: '#777' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Key skills:</strong> Right-side retrieval, net-front, forecheck</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Key skills:</strong> Right-side retrieval, net-front, forecheck</p>
           </div>
         </div>
       </section>
@@ -164,7 +164,7 @@ export default function HockeyPositions() {
             ].map(g => (
               <div key={g.title} style={{ padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{g.title}</p>
-                <p style={{ fontSize: '0.75rem', color: '#777', lineHeight: 1.5 }}>{g.desc}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{g.desc}</p>
               </div>
             ))}
           </div>

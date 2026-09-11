@@ -76,7 +76,7 @@ export default function HockeyParentsHandbook() {
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E' }}>{a.age}</p>
                 <div>
                   <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff' }}>{a.label}</p>
-                  <p style={{ fontSize: '0.75rem', color: '#777' }}>{a.note}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{a.note}</p>
                 </div>
               </div>
             ))}
@@ -189,7 +189,7 @@ export default function HockeyParentsHandbook() {
               '"I liked how you helped your teammate up."',
               '"That was a great effort  --  I can see you improving."',
             ].map(s => (
-              <p key={s} style={{ fontSize: '0.8125rem', color: '#777', paddingLeft: '1rem', borderLeft: '2px solid rgba(0,150,80,0.3)' }}>{s}</p>
+              <p key={s} style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', paddingLeft: '1rem', borderLeft: '2px solid rgba(0,150,80,0.3)' }}>{s}</p>
             ))}
           </div>
         </div>

@@ -78,7 +78,7 @@ export default function SignUpError({
         }}>
           Hang on — RinkStop is loading
         </h1>
-        <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
           We hit a brief hiccup. Retrying automatically — this usually clears in a second or two.
         </p>
         {error.digest ? (

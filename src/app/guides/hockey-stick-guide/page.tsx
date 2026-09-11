@@ -77,7 +77,7 @@ export default function HockeyStickGuide() {
             {[['75 flex', '110-140 lbs'], ['80 flex', '130-160 lbs'], ['85 flex', '150-180 lbs'], ['90 flex', '170-195 lbs'], ['100 flex', '190-220 lbs'], ['110 flex', '220+ lbs']].map(([f, w]) => (
               <div key={f} style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
                 <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{f}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#777' }}>{w}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)' }}>{w}</p>
               </div>
             ))}
           </div>
@@ -129,7 +129,7 @@ export default function HockeyStickGuide() {
               <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{k.name}</p>
               <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.5rem' }}>{k.desc}</p>
               <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.375rem' }}><strong style={{ color: '#ccc' }}>Best for:</strong> {k.best}</p>
-              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)' }}><strong style={{ color: '#777' }}>Examples:</strong> {k.ex}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Examples:</strong> {k.ex}</p>
             </div>
           ))}
         </div>
@@ -169,7 +169,7 @@ export default function HockeyStickGuide() {
             {[['Lie 4', 'Shorter players / smaller skates'], ['Lie 5', 'Average height players'], ['Lie 6', 'Taller players / larger skates']].map(([l, who]) => (
               <div key={l} style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.04)', borderRadius: '6px' }}>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff' }}>{l}</p>
-                <p style={{ fontSize: '0.75rem', color: '#777' }}>{who}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{who}</p>
               </div>
             ))}
           </div>

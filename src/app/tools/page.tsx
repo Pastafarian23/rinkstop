@@ -108,10 +108,10 @@ const TOOLS_LAST_UPDATED = '2026-09-10';
 export default function ToolsIndexPage() {
   return (
     <main style={{ maxWidth: 1280, margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Tools</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Tools</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>

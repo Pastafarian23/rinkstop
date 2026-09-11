@@ -129,7 +129,7 @@ export default function HelmetFittingGuideYouth() {
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
                 <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.head}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#777', textAlign: 'right' }}>Ages {row.age}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', textAlign: 'right' }}>Ages {row.age}</p>
               </div>
             ))}
           </div>

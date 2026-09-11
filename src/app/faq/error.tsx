@@ -59,7 +59,7 @@ export default function FaqError({
       >
         FAQ is unavailable right now
       </h1>
-      <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
+      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
         We couldn&rsquo;t load the FAQ just now. Your account and data are safe.
         Try again, or email us if it keeps failing.
       </p>
