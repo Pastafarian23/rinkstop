@@ -21,10 +21,53 @@ export const metadata: Metadata = {
 export default function GearBrandsPage() {
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: 'What are the top hockey equipment brands?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'The top hockey equipment brands are Bauer (skates, sticks, protective), CCM (skates, sticks, helmets), Warrior (sticks, gloves, protective), True (skates, sticks), and Easton (sticks, historically strong). Bauer and CCM dominate NHL locker rooms; True is the fastest-growing challenger brand in pro hockey since 2017.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Which hockey brand makes the best skates?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Bauer Vapor and CCM JetSpeed are the two flagship NHL skate lines. Bauer Supreme and CCM Tacks are the classic-fit alternatives. True custom skates are popular with NHL players who want the exact boot shape and stiffness profile. For recreational players, Bauer and CCM mid-tier lines offer the best fit-to-price ratio.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'How much does a full set of hockey equipment cost?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'A full set of hockey equipment for a new player costs $400-800. For competitive players at the youth travel or junior level, expect $1,500-3,000. For NHL-level equipment, individual skates alone run $700-1,000 plus custom fitting. Browse our hockey cost guide for age-by-age breakdowns.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Where can I buy hockey equipment?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Hockey equipment is sold through specialty retailers like Pure Hockey, Hockey Monkey, and Perani\u2019s, plus local pro shops. Online retailers include HockeyStickMan, Ice Warehouse, and SidelineSwap (used gear). RinkStop has a complete equipment guide for what to buy new vs. used.',
+                },
+              },
+            ],
+          }),
+        }}
+      />
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Hockey Equipment Brands</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hockey Equipment Brands</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>

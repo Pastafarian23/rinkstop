@@ -35,17 +35,68 @@ export default function AHLPage() {
           }],
         }) }}
       />
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: 'How many teams are in the AHL?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'The AHL fields 32 teams across the United States and Canada for the 2026-27 season, organized into 2 conferences and 4 divisions.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'When was the AHL founded?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'The American Hockey League was founded in 1936. The Calder Cup, named after NHL’s first president Frank Calder, has been the AHL championship trophy since 1937.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'What is the relationship between the AHL and the NHL?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'The AHL is the NHL’s primary developmental league. All 32 NHL teams field at least one AHL affiliate, making it the dominant talent pipeline for professional hockey in North America. More than 95% of NHL players have spent time in the AHL.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'How do players get assigned to the AHL?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'NHL teams assign players to their AHL affiliates via contracts. Players typically advance to the AHL after 4 seasons of major junior, college, or European professional experience, or are sent down by their NHL parent club during the season.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Where can I find AHL rosters, schedules, and standings?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Browse AHL team profiles on RinkStop, each with roster, schedule, arena info, and verified profiles. Live scores, standings, and playoff brackets are updated throughout the season.',
+                },
+              },
+            ],
+          }),
+        }}
+      />
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: '#555' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)' }}>Directory</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>AHL</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>AHL</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          AHL  --  AMERICAN HOCKEY LEAGUE
+          AHL — American Hockey League
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
 
@@ -111,7 +162,7 @@ export default function AHLPage() {
         {[
           {
             name: 'Eastern Conference',
-            color: '#041E42',
+            color: '#C8102E',
             desc: 'Calder Cup contenders from the Northeast and Atlantic regions.',
             teams: 'Milwaukee Admirals, Cleveland Monsters, Toronto Marlies, Laval Rocket, Rochester Americans, Belleville Sens, Hartford Wolf Pack, Springfield Thunderbirds, Charlotte Checkers, Wilkes-Barre/Scranton Penguins',
           },
