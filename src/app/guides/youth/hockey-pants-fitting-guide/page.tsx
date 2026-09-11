@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function HockeyPantsFittingGuideYouth() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/youth" style={{ color: '#555' }}>Youth</Link>
+        <Link href="/guides/youth" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Hockey Pants Fitting Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hockey Pants Fitting Guide</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -60,7 +60,7 @@ export default function HockeyPantsFittingGuideYouth() {
       {/* What they protect */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT HOCKEY PANTS PROTECT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Hockey pants (also called breezers) protect the lower back, kidneys, hips, thighs, and tailbone. They sit at the natural waist and extend down to the top of the shin guards. The kidney pad on the back is the most important piece — a puck to the lower back is the most common serious-impact injury in hockey.
         </p>
       </section>
@@ -68,7 +68,7 @@ export default function HockeyPantsFittingGuideYouth() {
       {/* The fit test */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FIT TEST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Work through these checks. The pants fail if any of them don&apos;t pass.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -92,7 +92,7 @@ export default function HockeyPantsFittingGuideYouth() {
       {/* Sizing */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SIZING (YOUTH)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Measure the waist circumference at the natural waist (just above the hip bone). Match the measurement to the manufacturer&apos;s youth chart. Hockey pants run large — a 24-inch kid typically wears Youth Small.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -106,13 +106,13 @@ export default function HockeyPantsFittingGuideYouth() {
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.waist}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.waist}</p>
                 <p style={{ fontSize: '0.8125rem', color: '#777', textAlign: 'right' }}>Ages {row.age}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           <strong style={{ color: '#ccc' }}>Note on belts and laces:</strong> most youth hockey pants have an internal belt or a back lace for fine-tuning the waist. If the kid is between sizes, drop down a size and tighten the belt to fit — this gives a slightly narrower leg for skating.
         </p>
       </section>
@@ -120,7 +120,7 @@ export default function HockeyPantsFittingGuideYouth() {
       {/* When to size up */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO SIZE UP</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Size up when the waistband sags toward the hips even with the belt fully tightened, the kidney pad no longer covers from the ribs to the hips, or the kid has visibly grown between seasons. Most parents replace pants every 2 seasons for kids 8-13.
         </p>
       </section>
@@ -128,7 +128,7 @@ export default function HockeyPantsFittingGuideYouth() {
       {/* Used gear */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>USED HOCKEY PANTS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           Pants are one of the safest pieces of equipment to buy used. Check that the plastic thigh guards aren&apos;t cracked, the foam is firm (not crumbling), the belt or lace is functional, and the kidney pad is intact. The main concern is fit — youth sizes are specific to the kid&apos;s waist measurement, so a used pair only works if it actually fits the player.
         </p>
       </section>

@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function AHLGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>AHL</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>AHL</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>AHL GUIDE</h1>
@@ -38,7 +38,7 @@ export default function AHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT IS THE AHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The American Hockey League is a professional ice hockey league based in the United States and Canada. Founded in 1936, it has operated as the primary developmental league for the National Hockey League since 2001. Every team is affiliated with one or more NHL organizations, and the league\'s role is to bridge the gap between junior hockey and the NHL.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The American Hockey League is a professional ice hockey league based in the United States and Canada. Founded in 1936, it has operated as the primary developmental league for the National Hockey League since 2001. Every team is affiliated with one or more NHL organizations, and the league\'s role is to bridge the gap between junior hockey and the NHL.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { label: 'Founded', value: '1936 (as the International-American Hockey League)' },
@@ -58,7 +58,7 @@ export default function AHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>DIVISIONS AND FORMAT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The AHL is split into two conferences and four divisions. The Eastern Conference contains the Atlantic and North divisions; the Western Conference contains the Central and Pacific divisions.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The AHL is split into two conferences and four divisions. The Eastern Conference contains the Atlantic and North divisions; the Western Conference contains the Central and Pacific divisions.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { conference: 'Eastern Conference', divisions: 'Atlantic, North' },
@@ -72,12 +72,12 @@ export default function AHLGuide() {
             </div>
           ))}
         </div>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Each division has 8 teams. The top 4 teams in each division qualify for the Calder Cup Playoffs. Teams play a 72-game schedule with home-and-home series against every other team in their division, plus inter-conference and inter-division games to round out the calendar.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Each division has 8 teams. The top 4 teams in each division qualify for the Calder Cup Playoffs. Teams play a 72-game schedule with home-and-home series against every other team in their division, plus inter-conference and inter-division games to round out the calendar.</p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE CALDER CUP PLAYOFFS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>16 teams qualify (top 4 from each of the 4 divisions). The format varies by round:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>16 teams qualify (top 4 from each of the 4 divisions). The format varies by round:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { round: 'Division Semifinals', teams: '8 → 4', format: 'Best-of-5', note: 'Top 4 teams in each division. Higher seed hosts Games 1, 2, 5 if necessary.' },
@@ -98,7 +98,7 @@ export default function AHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RECENT CALDER CUP CHAMPIONS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent champions and runners-up:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent champions and runners-up:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { year: '2025', winner: 'Abbotsford Canucks', note: 'Vancouver affiliate' },
@@ -119,7 +119,7 @@ export default function AHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FRANCHISE LEADERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most successful franchises in AHL history by Calder Cup titles:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most successful franchises in AHL history by Calder Cup titles:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { rank: 1, team: 'Hershey Bears', cups: 12 },
@@ -139,7 +139,7 @@ export default function AHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FOLLOW THE AHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find AHL teams, scores, and standings.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find AHL teams, scores, and standings.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/teams?league=ahl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ All 32 AHL teams</Link>
           <Link href="/standings/ahl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ AHL standings and playoff bracket</Link>
@@ -150,7 +150,7 @@ export default function AHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/stanley-cup" style={{ color: '#C8102E' }}>Stanley Cup Guide</Link> — the NHL\'s championship trophy</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/iihf-world-championship" style={{ color: '#C8102E' }}>IIHF World Championship Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/nhl-draft" style={{ color: '#C8102E' }}>NHL Draft Guide</Link> — where AHL players often pass through</li>

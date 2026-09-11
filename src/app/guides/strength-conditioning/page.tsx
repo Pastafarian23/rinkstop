@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function StrengthConditioningGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Strength and Conditioning</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Strength and Conditioning</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>HOCKEY STRENGTH AND CONDITIONING GUIDE</h1>
@@ -31,7 +31,7 @@ export default function StrengthConditioningGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHY OFF-ICE TRAINING MATTERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey players at every level benefit from structured off-ice training. The demands of the sport - repeated 30-45 second shifts of high-intensity skating, body contact, rapid direction changes - require a specific combination of strength, power, conditioning, and mobility that hockey practice alone doesn\'t fully develop.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey players at every level benefit from structured off-ice training. The demands of the sport - repeated 30-45 second shifts of high-intensity skating, body contact, rapid direction changes - require a specific combination of strength, power, conditioning, and mobility that hockey practice alone doesn\'t fully develop.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { label: 'Injury prevention', value: 'Off-ice training strengthens joints, tendons, and stabilizers. Players with consistent off-ice programs have measurably lower injury rates.' },
@@ -50,7 +50,7 @@ export default function StrengthConditioningGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE KEY TRAINING COMPONENTS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A complete hockey S and C program addresses five distinct components. Each develops a different physical capacity that contributes to on-ice performance:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A complete hockey S and C program addresses five distinct components. Each develops a different physical capacity that contributes to on-ice performance:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Strength', desc: 'Maximal force production. Built through compound lifts (squats, deadlifts, presses) at moderate-to-heavy loads. Foundation for power and injury prevention.' },
@@ -71,7 +71,7 @@ export default function StrengthConditioningGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE BEST EXERCISES FOR HOCKEY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey-specific training prioritizes exercises that build the capacities the sport demands:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey-specific training prioritizes exercises that build the capacities the sport demands:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Squat (back, front, single-leg)', desc: 'The single most important exercise. Builds the leg strength that powers the skating stride.' },
@@ -95,7 +95,7 @@ export default function StrengthConditioningGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>AGE-APPROPRIATE TRAINING</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Training load should match physical development. The general principle: bodyweight movements and movement quality before external loading.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Training load should match physical development. The general principle: bodyweight movements and movement quality before external loading.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { age: 'Under 8', focus: 'Fun, movement variety, bodyweight play', desc: 'Focus on running, jumping, climbing, balance games. No structured strength training.' },
@@ -117,7 +117,7 @@ export default function StrengthConditioningGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>IN-SEASON VS OFF-SEASON</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The training program changes based on the season. Trying to set personal records during a 30-game schedule is a recipe for injury and burnout.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The training program changes based on the season. Trying to set personal records during a 30-game schedule is a recipe for injury and burnout.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { phase: 'Off-season (3-4 months)', focus: 'Build strength, size, and conditioning base', desc: 'Higher volume, heavier loads. Strength gains are most achievable during this period.' },
@@ -137,7 +137,7 @@ export default function StrengthConditioningGuide() {
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/coaches" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find strength coaches →</Link><Link href="/directory/brands?category=training" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Browse training brands →</Link>
         </div>
@@ -145,7 +145,7 @@ export default function StrengthConditioningGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/off-ice-hockey-training" style={{ color: '#C8102E' }}>Off-Ice Training</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-nutrition" style={{ color: '#C8102E' }}>Hockey Nutrition</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/skating" style={{ color: '#C8102E' }}>Hockey Skating Guide</Link></li>

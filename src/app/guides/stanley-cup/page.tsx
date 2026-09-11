@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function StanleyCupGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Stanley Cup</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Stanley Cup</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>STANLEY CUP GUIDE</h1>
@@ -38,7 +38,7 @@ export default function StanleyCupGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>A 130-YEAR TROPHY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Stanley Cup is the oldest professional sports trophy in North America. It pre-dates the NHL by 24 years. Lord Stanley of Preston — the Governor General of Canada — donated it in 1892 as a challenge trophy for the top amateur hockey club in Canada. The first winners were the Montreal Hockey Club in 1893.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Stanley Cup is the oldest professional sports trophy in North America. It pre-dates the NHL by 24 years. Lord Stanley of Preston — the Governor General of Canada — donated it in 1892 as a challenge trophy for the top amateur hockey club in Canada. The first winners were the Montreal Hockey Club in 1893.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { year: '1893', event: 'First awarded to Montreal Hockey Club (AHAC)' },
@@ -61,7 +61,7 @@ export default function StanleyCupGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE PLAYOFF FORMAT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>16 teams qualify. 4 rounds. Best-of-7 throughout. The full playoff bracket takes ~2 months from the last regular-season game to the Cup presentation.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>16 teams qualify. 4 rounds. Best-of-7 throughout. The full playoff bracket takes ~2 months from the last regular-season game to the Cup presentation.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { round: 'First Round', teams: '16 → 8', format: 'Best-of-7', note: 'Division winners vs wild cards. Generally plays out in 5-7 games per series.' },
@@ -82,8 +82,8 @@ export default function StanleyCupGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE TROPHY ITSELF</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Stanley Cup has had three physical versions in its history. The current "Presentation Cup" was introduced in 1958 when the original bowl became too fragile to engrave. A second Presentation Cup was created in 1963 and is currently in use; the original Dominion Hockey Challenge Cup remains on display at the Hockey Hall of Fame in Toronto.</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Stanley Cup has had three physical versions in its history. The current "Presentation Cup" was introduced in 1958 when the original bowl became too fragile to engrave. A second Presentation Cup was created in 1963 and is currently in use; the original Dominion Hockey Challenge Cup remains on display at the Hockey Hall of Fame in Toronto.</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Dimensions:</strong> ~89 cm tall, ~15.5 kg, base diameter ~30 cm</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Material:</strong> silver alloy (originally sterling silver; nickel alloy added over time) with a copper and zinc base</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Engraving:</strong> each year's winning team, players, coaches, and training staff are engraved on the band. The Cup holds roughly 13 winning teams before the oldest are "retired" to the Hockey Hall of Fame.</li>
@@ -93,7 +93,7 @@ export default function StanleyCupGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>CONN SMYTHE TROPHY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Conn Smythe Trophy is awarded to the playoff MVP. Both winning and losing Final teams are eligible. Named after Conn Smythe, owner-coach-manager of the Toronto Maple Leafs from 1927 to 1961.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Conn Smythe Trophy is awarded to the playoff MVP. Both winning and losing Final teams are eligible. Named after Conn Smythe, owner-coach-manager of the Toronto Maple Leafs from 1927 to 1961.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { year: '2024', winner: 'Connor McDavid', team: 'Edmonton Oilers' },
@@ -114,7 +114,7 @@ export default function StanleyCupGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FRANCHISE LEADERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most successful franchises in Stanley Cup history.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most successful franchises in Stanley Cup history.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { rank: 1, team: 'Montreal Canadiens', cups: 24 },
@@ -139,7 +139,7 @@ export default function StanleyCupGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FOLLOW THE PLAYOFFS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find every NHL team and follow the playoff bracket.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find every NHL team and follow the playoff bracket.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/teams?league=nhl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ All 32 NHL teams</Link>
           <Link href="/standings/nhl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ NHL standings and playoff bracket</Link>
@@ -150,7 +150,7 @@ export default function StanleyCupGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/nhl-draft" style={{ color: '#C8102E' }}>NHL Draft Guide</Link> — eligibility, rounds, combine</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-positions-explained" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-development-explained" style={{ color: '#C8102E' }}>Hockey Development Explained</Link></li>

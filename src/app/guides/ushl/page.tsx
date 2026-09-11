@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function USHLGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>USHL</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>USHL</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>USHL GUIDE</h1>
@@ -38,7 +38,7 @@ export default function USHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT IS THE USHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The United States Hockey League is the only Tier 1 junior ice hockey league sanctioned by USA Hockey. It is the top junior circuit in the United States and serves as the primary development path for American-born players heading to NCAA Division I hockey and eventually the NHL.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The United States Hockey League is the only Tier 1 junior ice hockey league sanctioned by USA Hockey. It is the top junior circuit in the United States and serves as the primary development path for American-born players heading to NCAA Division I hockey and eventually the NHL.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { label: 'Founded', value: '1961' },
@@ -59,7 +59,7 @@ export default function USHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>CONFERENCES AND FORMAT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The USHL is split into two conferences of 8 teams each. Teams play a 62-game regular season from September through April, including the USHL Fall Classic and various showcase events that bring NHL scouts together to evaluate draft-eligible players.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The USHL is split into two conferences of 8 teams each. Teams play a 62-game regular season from September through April, including the USHL Fall Classic and various showcase events that bring NHL scouts together to evaluate draft-eligible players.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { conference: 'Eastern Conference', note: '8 teams, primarily Eastern Midwest' },
@@ -77,7 +77,7 @@ export default function USHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE CLARK CUP PLAYOFFS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The top 8 teams in the USHL qualify for the Clark Cup Playoffs. The format:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The top 8 teams in the USHL qualify for the Clark Cup Playoffs. The format:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { round: 'Conference Quarterfinals', teams: '8 → 4', format: 'Best-of-5', note: 'Top 8 teams play within their conferences. Higher seed hosts Games 1, 2, 5 if necessary.' },
@@ -98,7 +98,7 @@ export default function USHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RECENT CLARK CUP CHAMPIONS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent champions:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent champions:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { year: '2025', winner: 'Fargo Force', note: 'Western Conference' },
@@ -119,27 +119,27 @@ export default function USHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>USHL AS A PATH TO NCAA AND NHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Unlike the CHL, the USHL preserves NCAA eligibility. The standard career path for top USHL players is:</p>
-        <ol style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Unlike the CHL, the USHL preserves NCAA eligibility. The standard career path for top USHL players is:</p>
+        <ol style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li style={{ marginBottom: '0.5rem' }}>Play 1–3 seasons in the USHL</li>
           <li style={{ marginBottom: '0.5rem' }}>Commit to an NCAA Division I program</li>
           <li style={{ marginBottom: '0.5rem' }}>Play 3–4 seasons of college hockey</li>
           <li style={{ marginBottom: '0.5rem' }}>Sign with an NHL organization and go to the AHL or ECHL for development</li>
           <li style={{ marginBottom: '0.5rem' }}>Reach the NHL</li>
         </ol>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Notable USHL alumni include:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Notable USHL alumni include:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Jack Hughes</strong> — USNTDP (played USHL games), drafted 1st overall 2019</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Patrick Kane</strong> — USNTDP, drafted 1st overall 2007</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Seth Jones</strong> — USNTDP, drafted 4th overall 2013</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Johnny Gaudreau</strong> — Dubuque Fighting Saints, undrafted but signed by Calgary</li>
         </ul>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Roughly 30–40% of NHL players drafted in the first round in any given year come from the USHL or USNTDP pathway.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Roughly 30–40% of NHL players drafted in the first round in any given year come from the USHL or USNTDP pathway.</p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FOLLOW THE USHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find USHL teams.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find USHL teams.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/teams?league=ushl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ All 16 USHL teams</Link>
           <Link href="/standings/ushl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ USHL standings and playoff bracket</Link>
@@ -150,7 +150,7 @@ export default function USHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/ncaa-hockey" style={{ color: '#C8102E' }}>NCAA Hockey Guide</Link> — where most USHL players go next</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/nhl-draft" style={{ color: '#C8102E' }}>NHL Draft Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/chl" style={{ color: '#C8102E' }}>CHL Guide</Link> — the Canadian equivalent pathway</li>

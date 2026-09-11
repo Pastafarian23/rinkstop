@@ -48,10 +48,10 @@ const GUIDES_LAST_UPDATED = '2026-09-10';
 export default function GuidesIndexPage() {
   return (
     <main style={{ maxWidth: 1280, margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Guides</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Guides</span>
       </nav>
 
       <div style={{ marginBottom: '1.5rem' }}>
@@ -107,7 +107,7 @@ export default function GuidesIndexPage() {
         return (
           <section key={cat.id} id={cat.id} style={{ marginBottom: '3rem', scrollMarginTop: '1rem' }}>
             <div style={{ marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888' }}>
+              <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)' }}>
                 {entries.length} {entries.length === 1 ? 'GUIDE' : 'GUIDES'}
               </span>
               <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

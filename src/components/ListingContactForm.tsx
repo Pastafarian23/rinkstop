@@ -129,7 +129,7 @@ export default function ListingContactForm({
             margin: '0 0 0.25rem',
             fontSize: '1.1rem',
             fontWeight: 700,
-            color: '#041E42',
+            color: '#C8102E',
           }}
         >
           {heading || HEADING_DEFAULT[listingType]}

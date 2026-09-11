@@ -123,12 +123,12 @@ const FAQ = [
 export default function RinkStopVsCompetitors() {
   return (
     <div style={{ maxWidth: '920px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>RinkStop vs Competitors</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>RinkStop vs Competitors</span>
       </nav>
 
       <span

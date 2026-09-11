@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function ShootingGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Shooting</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Shooting</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>HOCKEY SHOOTING GUIDE</h1>
@@ -31,7 +31,7 @@ export default function ShootingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FOUR MAIN SHOTS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Every hockey shot is a variation of four basic shot types. Mastering all four gives a player a complete offensive toolkit:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Every hockey shot is a variation of four basic shot types. Mastering all four gives a player a complete offensive toolkit:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Wrist shot', speed: '60-85 mph (NHL avg)', accuracy: 'Highest', desc: 'The most versatile and accurate shot. The puck is loaded with energy through a sweeping motion of the stick blade, then released with a quick wrist snap. Used everywhere on the ice.' },
@@ -53,8 +53,8 @@ export default function ShootingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE WRIST SHOT MECHANICS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The wrist shot is the foundation of every other shot. Players who haven\'t mastered the wrist shot typically struggle with the snap shot and slap shot as well.</p>
-        <ol style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The wrist shot is the foundation of every other shot. Players who haven\'t mastered the wrist shot typically struggle with the snap shot and slap shot as well.</p>
+        <ol style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li style={{ marginBottom: '0.5rem' }}>Position the puck slightly behind your back foot at a 90-degree angle to your body</li>
           <li style={{ marginBottom: '0.5rem' }}>Cup the puck with the blade. The toe of the blade should curl around the back of the puck.</li>
           <li style={{ marginBottom: '0.5rem' }}>Drag the puck forward, loading energy as the blade flexes against the ice</li>
@@ -62,12 +62,12 @@ export default function ShootingGuide() {
           <li style={{ marginBottom: '0.5rem' }}>Follow through toward the target, keeping the blade pointed where you want the puck to go</li>
           <li style={{ marginBottom: '0.5rem' }}>Weight transfers from the back leg to the front leg through the shot</li>
         </ol>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The mistake most beginners make: pushing the puck instead of snapping it. Pushing produces a slow, easy-to-save shot. Snapping transfers the energy from the stick blade through the puck in a fraction of a second.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The mistake most beginners make: pushing the puck instead of snapping it. Pushing produces a slow, easy-to-save shot. Snapping transfers the energy from the stick blade through the puck in a fraction of a second.</p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SNAP SHOT VS SLAP SHOT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The snap shot and slap shot both generate high velocity, but through very different mechanics:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The snap shot and slap shot both generate high velocity, but through very different mechanics:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Snap shot', pros: 'Faster release. Harder for goalies to track.', cons: 'Lower peak velocity than slap shot', desc: 'Stick travels only a few inches. Velocity comes from rapid wrist rotation and blade flex. Ideal for one-timers, tight spaces, and quick releases in traffic.' },
@@ -86,7 +86,7 @@ export default function ShootingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SHOOTING DRILLS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A consistent shooting practice routine will accelerate development more than any other skill work. The most effective drills:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A consistent shooting practice routine will accelerate development more than any other skill work. The most effective drills:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Target practice', desc: 'Place small targets (water bottles, taped squares, hole targets) in each corner of the net. Shoot 10 reps from each corner of the offensive zone. Aim for 70%+ accuracy.' },
@@ -107,8 +107,8 @@ export default function ShootingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SHOOTING IN GAME SITUATIONS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The best shooters combine mechanics with smart situational play. The most common in-game shooting scenarios:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The best shooters combine mechanics with smart situational play. The most common in-game shooting scenarios:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Slot shot:</strong> The most common scoring location. Quick wrist or snap shot, placed top corner or five-hole before the goalie can set.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>One-timer:</strong> The puck is passed to a player in motion, who shoots without stopping it. Hardest shot for a goalie to track.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Point shot:</strong> Defensemen shooting from the blue line. Usually a slap shot aimed at traffic in front of the net.</li>
@@ -119,7 +119,7 @@ export default function ShootingGuide() {
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/players" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find top scorers →</Link>
         </div>
@@ -127,7 +127,7 @@ export default function ShootingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-stick-guide" style={{ color: '#C8102E' }}>Hockey Stick Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/skating" style={{ color: '#C8102E' }}>Hockey Skating Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/off-ice-hockey-training" style={{ color: '#C8102E' }}>Off-Ice Training Guide</Link></li>

@@ -104,7 +104,7 @@ export default function ClaimThisListing({
   // narrow screens, but the button still tries to fit on one line.
   const ctaStyle: React.CSSProperties = {
     background: '#FFB81C',
-    color: '#041E42',
+    color: '#C8102E',
     padding: '10px 16px',
     borderRadius: 8,
     textDecoration: 'none',

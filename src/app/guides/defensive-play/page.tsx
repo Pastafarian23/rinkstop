@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function DefensivePlayGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Defensive Play</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Defensive Play</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>HOCKEY DEFENSIVE PLAY GUIDE</h1>
@@ -31,8 +31,8 @@ export default function DefensivePlayGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>DEFENSIVE POSITIONING</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Good defense starts with positioning. A defenseman in the right spot can break up a play without ever touching the puck. The fundamentals:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Good defense starts with positioning. A defenseman in the right spot can break up a play without ever touching the puck. The fundamentals:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Gap control:</strong> the distance between you and the puck carrier. A proper gap closes down the rush and forces dump-ins or off-target shots.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Angle:</strong> the line from the puck to the net you take. Good angle forces the puck carrier to a specific part of the ice. Bad angle gives them the entire zone.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Stick position:</strong> stick on the ice, blade angled to take away the pass or shot. The stick is the primary defensive tool, not the body.</li>
@@ -42,7 +42,7 @@ export default function DefensivePlayGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE DEFENSIVE ZONE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Playing defense in your own zone is structured around layers of coverage. The standard structure:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Playing defense in your own zone is structured around layers of coverage. The standard structure:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'F1 (first forward low)', desc: 'Puck battles along the boards and in the corners. The most physically demanding defensive role.' },
@@ -64,7 +64,7 @@ export default function DefensivePlayGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>STICK CHECKING</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The stick check is the foundation of defensive play. Done correctly, it disrupts the puck without taking a penalty. Done poorly, it sends you to the box. The key stick checks:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The stick check is the foundation of defensive play. Done correctly, it disrupts the puck without taking a penalty. Done poorly, it sends you to the box. The key stick checks:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Stick poke', desc: 'A quick jab at the puck with the blade. Used to disrupt a passer or break up a play from distance.' },
@@ -85,8 +85,8 @@ export default function DefensivePlayGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>BREAKOUTS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>After winning the puck in the defensive zone, the team needs to exit the zone cleanly. The standard breakout patterns:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>After winning the puck in the defensive zone, the team needs to exit the zone cleanly. The standard breakout patterns:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>D-to-D (defenseman to defenseman):</strong> the strongest defenseman gets the puck, swings it across the ice to the weak-side D, who moves it up. Used when the strong side is pressured.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>D-to-F (defenseman to forward):</strong> the defenseman passes up the boards or through the middle to a forward. Used when the forward is open and the lane is clear.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Reverse:</strong> the puck goes back to the goalie, then up the opposite side. Used when the original breakout lane is closed.</li>
@@ -97,7 +97,7 @@ export default function DefensivePlayGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>DEFENSIVE DRILLS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most effective defensive drills for practice:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most effective defensive drills for practice:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Gap control drill', desc: 'Forwards skate the puck down the boards; defensemen work on proper gap and angle. 10 reps each side. The foundation drill for defensemen.' },
@@ -118,7 +118,7 @@ export default function DefensivePlayGuide() {
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/players?position=defenseman" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find top defensemen in the directory →</Link><Link href="/directory/teams" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Browse hockey teams by league →</Link>
         </div>
@@ -126,7 +126,7 @@ export default function DefensivePlayGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-positions" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/skating" style={{ color: '#C8102E' }}>Hockey Skating Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/stickhandling" style={{ color: '#C8102E' }}>Hockey Stickhandling Guide</Link></li>

@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function NCAAHockeyGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>NCAA Hockey</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>NCAA Hockey</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>NCAA HOCKEY GUIDE</h1>
@@ -38,7 +38,7 @@ export default function NCAAHockeyGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE NCAA HOCKEY LANDSCAPE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>College hockey in the United States runs across three tiers. Knowing the difference helps you target the right programs for your skill level, academics, and budget.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>College hockey in the United States runs across three tiers. Knowing the difference helps you target the right programs for your skill level, academics, and budget.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'NCAA Division I', count: '64 men\'s, 44 women\'s programs', scholarship: '18 scholarships per team (men, post-2022 settlement), 18 (women)', cost: '~$60K-80K/year (scholarships common but rarely full-ride)', who: 'Top junior, prep, and high school players', note: 'Highest level. Most players come through USHL, NAHL, NCDC, BCHL, or major prep schools. Combine-level athletes.' },
@@ -65,8 +65,8 @@ export default function NCAAHockeyGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>ELIGIBILITY 101</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>NCAA eligibility is the gate every D-I and D-II recruit must pass. Here's the checklist, in priority order.</p>
-        <ol style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>NCAA eligibility is the gate every D-I and D-II recruit must pass. Here's the checklist, in priority order.</p>
+        <ol style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Register with the NCAA Eligibility Center</strong> by start of junior year. The registration fee is ~$100; fee waivers are available for students on free/reduced lunch.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Complete 16 NCAA-approved core courses</strong> by graduation: 4 English, 3 math (Algebra I + higher), 2 natural science, 1 social science, plus additional college-prep units. Your high school counselor can confirm which courses qualify.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Earn a minimum core-course GPA</strong>: 2.3 for D-I, 2.2 for D-II. Note: this is core-course GPA, not overall GPA — failing an elective won't hurt you, but failing a core course will.</li>
@@ -79,7 +79,7 @@ export default function NCAAHockeyGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE RECRUITING TIMELINE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recruiting windows for NCAA D-I hockey are tightly regulated. The NCAA calendar is more restrictive than other sports — coaches can't just call you anytime. Knowing the calendar is half the battle.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recruiting windows for NCAA D-I hockey are tightly regulated. The NCAA calendar is more restrictive than other sports — coaches can't just call you anytime. Knowing the calendar is half the battle.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { age: '14-15 (Freshman)', action: 'Build the foundation. Play at the highest level you can. No D-I contact allowed yet.' },
@@ -98,7 +98,7 @@ export default function NCAAHockeyGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW TO GET NOTICED</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>There is no single path. Most recruited D-I players came through one of four channels. The 80/20 of recruiting: <strong style={{ color: '#fff' }}>skating ability, compete level, and coachability are what get you noticed — not stats or awards.</strong></p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>There is no single path. Most recruited D-I players came through one of four channels. The 80/20 of recruiting: <strong style={{ color: '#fff' }}>skating ability, compete level, and coachability are what get you noticed — not stats or awards.</strong></p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Junior hockey (USHL, NAHL, NCDC, BCHL, AJHL)', desc: 'Tier 1 (USHL) and Tier 2 (NAHL) USA Hockey leagues. The NCDC is the USHL\'s development league. Canadian junior leagues (BCHL, AJHL) keep NCAA eligibility. Most D-I recruits play 1-2 years of junior before college.' },
@@ -116,8 +116,8 @@ export default function NCAAHockeyGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SCHOLARSHIPS AND COSTS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey is one of the few NCAA sports where full-ride scholarships are rare. Most D-I players get partial aid; a small percentage get full rides. Cost is real — plan for it.</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey is one of the few NCAA sports where full-ride scholarships are rare. Most D-I players get partial aid; a small percentage get full rides. Cost is real — plan for it.</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>D-I men (post-2022 settlement):</strong> each program gets 18 scholarships (the equivalent of full rides), but coaches split them — a typical D-I roster of 26 players might see 8-10 on full scholarship, 10-12 on partial, the rest walk-on or academic aid only.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>D-I women:</strong> 18 scholarships per team. The post-2022 settlement equalized the limits with men. Most D-I women programs offer partial-to-full aid to a majority of the roster.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>D-III:</strong> no athletic scholarships. Academic merit, need-based aid, and school-specific scholarships are how families pay.</li>
@@ -127,7 +127,7 @@ export default function NCAAHockeyGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FINDING THE RIGHT FIT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse NCAA, ACHA, and junior programs in the directory:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse NCAA, ACHA, and junior programs in the directory:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/teams?level=college" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ NCAA D-I and D-III college teams</Link>
           <Link href="/directory/teams?level=junior" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ USHL, NAHL, NCDC, BCHL junior teams</Link>
@@ -138,7 +138,7 @@ export default function NCAAHockeyGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-tryout-guide" style={{ color: '#C8102E' }}>Hockey Tryout Guide</Link> — camps, showcases, and tryout prep</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-positions-explained" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link> — every position, role, and deployment</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-cost-explained" style={{ color: '#C8102E' }}>Hockey Cost Explained</Link> — the real numbers at every level</li>

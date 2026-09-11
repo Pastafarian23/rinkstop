@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function HowToFitHockeyEquipmentAdult() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/adult" style={{ color: '#555' }}>Adult</Link>
+        <Link href="/guides/adult" style={{ color: 'rgba(255,255,255,0.4)' }}>Adult</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>How to Fit Hockey Equipment</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>How to Fit Hockey Equipment</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -62,10 +62,10 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Intro */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>ADULT GEAR FIT IS DIFFERENT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           If you played as a kid, you probably don&apos;t remember what your gear felt like. Adult equipment is sized differently, has more options, and the fit principles are slightly different because your body has changed.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Three things make adult gear fit different from youth:
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -76,7 +76,7 @@ export default function HowToFitHockeyEquipmentAdult() {
           ].map(item => (
             <div key={item.title} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{item.title}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{item.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{item.desc}</p>
             </div>
           ))}
         </div>
@@ -85,16 +85,16 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Helmet */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HELMET + CAGE / VISOR</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           For adult players, the certification requirement depends on where you play:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• <strong style={{ color: '#fff' }}>USA Hockey sanctioned play</strong> (including most adult leagues affiliated with USA Hockey) requires an HECC-certified helmet and face mask. HECC certification means the helmet has been tested to ASTM F1045 (helmets) and ASTM F513 (face masks) standards.</li>
           <li>• <strong style={{ color: '#fff' }}>Hockey Canada sanctioned play</strong> requires a CSA-certified helmet (CAN/CSA Z262.1 standard) — look for the round blue and red tamper-proof label.</li>
           <li>• <strong style={{ color: '#fff' }}>Independent adult leagues</strong> vary. Some require HECC or CSA, some accept any hockey helmet. Check with your league before buying.</li>
           <li>• <strong style={{ color: '#fff' }}>Open skate / recreational</strong> — no certification is legally required, but a certified helmet is strongly recommended.</li>
         </ul>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '1rem' }}>
           You can verify a helmet is still certified at hecc.org or csagroup.org by searching the manufacturer and model.
         </p>
 
@@ -121,7 +121,7 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Shoulder Pads */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SHOULDER PADS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Adult shoulder pads come in three fits: <strong style={{ color: '#fff' }}>tapered</strong> (narrow through the chest and waist — the modern fit most NHL players use), <strong style={{ color: '#fff' }}>classic</strong> (a roomier, traditional fit), and <strong style={{ color: '#fff' }}>loose/relaxed</strong> (for goalies and players who want maximum mobility).
         </p>
 
@@ -143,7 +143,7 @@ export default function HowToFitHockeyEquipmentAdult() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure chest circumference at the widest point. Senior sizes run S, M, L, XL (some brands go to XXL). Many adult women and smaller-framed men fit best in Junior or Intermediate sizes, which run narrower and shorter. If you&apos;re between sizes, size up — shoulder pads compress the chest on impact, and a too-small pad will limit your breathing.
         </p>
       </section>
@@ -167,7 +167,7 @@ export default function HowToFitHockeyEquipmentAdult() {
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure from the center of the back of the elbow to the wrist. Senior sizes run 11&quot;-14&quot;, intermediate 10&quot;-11&quot;, junior 9&quot;-10&quot;.
         </p>
       </section>
@@ -175,17 +175,17 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Pants vs. Girdle */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>PANTS VS. GIRDLE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Adult players have two choices for lower-body protection:
         </p>
         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>Hockey pants (breezers)</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>The traditional choice. Padded shorts with a tall waist, integrated kidney protection in the back, and large thigh guards. Easier to put on and take off. More protective, especially for blocking shots. The default for most adult players.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>The traditional choice. Padded shorts with a tall waist, integrated kidney protection in the back, and large thigh guards. Easier to put on and take off. More protective, especially for blocking shots. The default for most adult players.</p>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>Hockey girdle</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>A compression-fit base layer with padding sewn in at the hips, tailbone, thighs, and kidneys. Lighter, more mobile, lower profile. Preferred by players who want to feel fast — common among college and pro players, increasingly popular in adult leagues.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>A compression-fit base layer with padding sewn in at the hips, tailbone, thighs, and kidneys. Lighter, more mobile, lower profile. Preferred by players who want to feel fast — common among college and pro players, increasingly popular in adult leagues.</p>
           </div>
         </div>
         <p style={{ color: '#fff', fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem' }}>Fit (for both)</p>
@@ -204,7 +204,7 @@ export default function HowToFitHockeyEquipmentAdult() {
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem', marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem', marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure waist circumference at the natural waist. Match to the brand-specific chart. Hockey pants run large compared to street pants — a 32-inch adult waist typically wears a Senior Medium.
         </p>
       </section>
@@ -228,7 +228,7 @@ export default function HowToFitHockeyEquipmentAdult() {
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure from the center of the kneecap straight down to the top of the skate, then add about 1 inch. Senior sizes run 14&quot;-17&quot;, intermediate 12&quot;-14&quot;, junior 10&quot;-12&quot;.
         </p>
       </section>
@@ -236,7 +236,7 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Gloves */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GLOVES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           For adult players, glove fit is the most personal piece of equipment. A glove that&apos;s too big makes the stick feel like a broom handle. A glove that&apos;s too small cramps the hand and makes it hard to grip the stick.
         </p>
 
@@ -257,7 +257,7 @@ export default function HowToFitHockeyEquipmentAdult() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure from the base of the palm to the tip of the middle finger. Senior gloves run 13&quot;-15&quot;, intermediate 12&quot;-13&quot;, junior 11&quot;-12&quot;. Many adult women and smaller-framed men prefer a 12&quot; or 13&quot; intermediate or junior glove for better stick feel.
         </p>
       </section>
@@ -265,7 +265,7 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Jock / Jill */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>JOCK / JILL + BASE LAYER</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Most adult players wear an integrated compression short with a built-in cup (jock) or pelvic shield (jill). The traditional separate jock + garter belt is still used but less common.
         </p>
 
@@ -291,7 +291,7 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Women-Specific Section */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WOMEN-SPECIFIC GEAR</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Women&apos;s hockey equipment has improved dramatically in the last decade. Several pieces are now made specifically for female anatomy, and the fit differences are meaningful — not cosmetic.
         </p>
 
@@ -324,12 +324,12 @@ export default function HowToFitHockeyEquipmentAdult() {
           ].map(item => (
             <div key={item.piece} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{item.piece}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{item.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{item.desc}</p>
             </div>
           ))}
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           A practical note: women-specific gear is improving but still has a smaller selection than men&apos;s. You may need to try several brands and models before finding the right fit. Read reviews from women specifically, not general product reviews — the fit feedback from male reviewers won&apos;t tell you what you need to know.
         </p>
       </section>
@@ -337,7 +337,7 @@ export default function HowToFitHockeyEquipmentAdult() {
       {/* Rec vs Competitive */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>REC LEAGUE VS. COMPETITIVE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The level you play affects what gear you need. Most adult players fall into three categories:
         </p>
 
@@ -349,7 +349,7 @@ export default function HowToFitHockeyEquipmentAdult() {
           ].map(t => (
             <div key={t.tier} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{t.tier}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{t.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{t.desc}</p>
             </div>
           ))}
         </div>

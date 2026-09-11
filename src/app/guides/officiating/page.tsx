@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function OfficiatingGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Officiating</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Officiating</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>HOCKEY OFFICIATING GUIDE</h1>
@@ -31,7 +31,7 @@ export default function OfficiatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE OFFICIATING CREW</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>An NHL game uses four officials: two referees and two linesmen. Lower levels may use fewer:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>An NHL game uses four officials: two referees and two linesmen. Lower levels may use fewer:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Referee (2 in NHL)', desc: 'The primary rule enforcer. Calls penalties, awards goals, handles video review, and manages game flow. Wears the orange armband.' },
@@ -50,7 +50,7 @@ export default function OfficiatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>STANDARD SIGNALS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Officials use a standard set of hand signals to communicate calls. The most common:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Officials use a standard set of hand signals to communicate calls. The most common:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Arms crossed above head', desc: 'Goal scored. Used after the puck crosses the line and any video review confirms.' },
@@ -72,7 +72,7 @@ export default function OfficiatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE MOST COMMON PENALTIES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The standard penalty minutes (minor = 2 min, major = 5 min, misconduct = 10 min, match = ejection) are applied for these common infractions:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The standard penalty minutes (minor = 2 min, major = 5 min, misconduct = 10 min, match = ejection) are applied for these common infractions:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Tripping', desc: 'Using the stick, skate, or body to knock an opponent off balance. Always a minor penalty. Includes slew-footing.' },
@@ -98,8 +98,8 @@ export default function OfficiatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE POWER PLAY AND PENALTY KILL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>When one team has more players on the ice due to a penalty, the situation has specific names:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>When one team has more players on the ice due to a penalty, the situation has specific names:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Power play:</strong> the team with the man advantage. Standard 5-on-4 with one skater in the box; 5-on-3 if two penalties are taken.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Penalty kill:</strong> the team short-handed. Defending against the power play with one fewer skater.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Delayed penalty:</strong> the offending team has not yet touched the puck; the referee signals with arms out. The non-penalized team retains possession.</li>
@@ -109,20 +109,20 @@ export default function OfficiatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW TO BECOME AN OFFICIAL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey needs officials at every level. The path:</p>
-        <ol style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey needs officials at every level. The path:</p>
+        <ol style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li style={{ marginBottom: '0.5rem' }}>Complete the officiating certification course offered by your country or region (USA Hockey, Hockey Canada, IIHF, etc.)</li>
           <li style={{ marginBottom: '0.5rem' }}>Start with youth or recreational games, where the pace is slower and the consequences of mistakes are smaller</li>
           <li style={{ marginBottom: '0.5rem' }}>Build skills: positioning, angle of view, skating, and game management</li>
           <li style={{ marginBottom: '0.5rem' }}>Move up to higher levels: travel hockey, junior hockey, college hockey, minor league professional, and ultimately the NHL</li>
           <li style={{ marginBottom: '0.5rem' }}>Continue training and evaluation; even NHL officials attend annual development camps</li>
         </ol>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Officiating is a great way to stay involved in hockey after playing days end. It pays (modestly at the youth level, very well at the NHL level) and the demand is high.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Officiating is a great way to stay involved in hockey after playing days end. It pays (modestly at the youth level, very well at the NHL level) and the demand is high.</p>
       </section>
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/leagues" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Browse hockey leagues worldwide →</Link><Link href="/directory/players?position=referee" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find referees and officials →</Link>
         </div>
@@ -130,7 +130,7 @@ export default function OfficiatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-rules" style={{ color: '#C8102E' }}>Hockey Rules for Beginners</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-positions" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/defensive-play" style={{ color: '#C8102E' }}>Hockey Defensive Play Guide</Link></li>

@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function SkatingGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Skating</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Skating</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>HOCKEY SKATING GUIDE</h1>
@@ -31,7 +31,7 @@ export default function SkatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHY SKATING IS THE FOUNDATION</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey is played on ice, and the player who skates better has a fundamental advantage. Skating affects every part of the game.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Hockey is played on ice, and the player who skates better has a fundamental advantage. Skating affects every part of the game.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { label: 'Forward stride', value: 'The primary skating motion. Power comes from full leg extension and pushing through the heel.' },
@@ -51,8 +51,8 @@ export default function SkatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FORWARD STRIDE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The forward stride looks simple but has a precise mechanical sequence. Most recreational skaters use only 60-70% of their potential stride length; even small corrections can yield significant speed gains.</p>
-        <ol style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The forward stride looks simple but has a precise mechanical sequence. Most recreational skaters use only 60-70% of their potential stride length; even small corrections can yield significant speed gains.</p>
+        <ol style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li style={{ marginBottom: '0.5rem' }}>Start with knees bent at roughly 110-120 degrees, weight balanced, head up</li>
           <li style={{ marginBottom: '0.5rem' }}>Push out to the side with the inside edge of the lead skate, fully extending the leg</li>
           <li style={{ marginBottom: '0.5rem' }}>Recover the leg back underneath the body, keeping the blade on the ice</li>
@@ -64,7 +64,7 @@ export default function SkatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EDGE WORK</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Every skate blade has two edges: inside (toward the body) and outside (away from the body). Hockey skates are designed so a slight lean of the ankle engages one edge or the other. Edge work is the foundation of every advanced skating move.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Every skate blade has two edges: inside (toward the body) and outside (away from the body). Hockey skates are designed so a slight lean of the ankle engages one edge or the other. Edge work is the foundation of every advanced skating move.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Inside edge', desc: 'The blade leans toward the body. Used in tight turns, crossovers, and most lateral movement.' },
@@ -85,7 +85,7 @@ export default function SkatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FUNDAMENTAL DRILLS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A solid 20-minute skating routine built around these fundamentals will accelerate development for players of any age or level:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A solid 20-minute skating routine built around these fundamentals will accelerate development for players of any age or level:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'C-cuts (forward)', desc: 'Half-moon pushes on each foot, alternating sides. 10 reps each foot, 2 sets. Builds edge strength.' },
@@ -108,8 +108,8 @@ export default function SkatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>OFF-ICE SKATING TRAINING</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Off-ice training can accelerate on-ice development. The most effective off-ice work targets the same muscle groups and movement patterns used in skating:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Off-ice training can accelerate on-ice development. The most effective off-ice work targets the same muscle groups and movement patterns used in skating:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Inline (roller) hockey:</strong> The closest off-ice training to ice. Mechanics transfer almost directly. Used widely by NHL players for summer conditioning.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Slide board:</strong> A two-board setup that mimics the lateral skating motion. Builds stride power without ice.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Plyometrics and balance work:</strong> Box jumps, single-leg hops, and balance board exercises develop the ankle and knee stability that good skating requires.</li>
@@ -119,7 +119,7 @@ export default function SkatingGuide() {
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/players" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find fast skaters in the directory →</Link><Link href="/directory/brands?category=skates" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Browse skate brands →</Link>
         </div>
@@ -127,7 +127,7 @@ export default function SkatingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/skate-fitting-guide" style={{ color: '#C8102E' }}>Skate Fitting Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/off-ice-hockey-training" style={{ color: '#C8102E' }}>Off-Ice Training Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-positions" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link></li>

@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function HelmetFittingGuideYouth() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/youth" style={{ color: '#555' }}>Youth</Link>
+        <Link href="/guides/youth" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Helmet Fitting Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Helmet Fitting Guide</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -61,10 +61,10 @@ export default function HelmetFittingGuideYouth() {
       {/* Why it matters */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHY THE HELMET IS NON-NEGOTIABLE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The helmet is the single most important piece of equipment your kid wears. A properly fitted, certified helmet is the biggest factor in preventing head injuries — including concussions. The other pieces of equipment (shoulder pads, shin guards, etc.) protect against impact. The helmet protects the brain. Get this one right above all else.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           Two things have to be true: the helmet has to be <strong style={{ color: '#fff' }}>certified</strong> (not every helmet is legal for play), and it has to <strong style={{ color: '#fff' }}>fit</strong> (a certified helmet that doesn&apos;t fit doesn&apos;t protect).
         </p>
       </section>
@@ -72,14 +72,14 @@ export default function HelmetFittingGuideYouth() {
       {/* Certification */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>CERTIFICATION: HECC, ASTM, AND CSA</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           In the U.S., every helmet worn in USA Hockey sanctioned play (which includes most youth leagues, high school hockey, and college hockey) must carry an <strong style={{ color: '#fff' }}>HECC certification sticker</strong>. HECC certification means the helmet has been independently tested to:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• <strong style={{ color: '#fff' }}>ASTM F1045</strong> — Standard Performance Specification for Ice Hockey Helmets. Tests coverage (what areas of the head the helmet must protect), shock absorption, and retention system strength.</li>
           <li>• <strong style={{ color: '#fff' }}>ASTM F513</strong> — Standard Safety Specification for Eye and Face Protective Equipment. Tests full face masks for stick-blade penetration, impact resistance, and field of vision.</li>
         </ul>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           In Canada, the equivalent is <strong style={{ color: '#fff' }}>CSA Z262.1</strong> — look for the round blue and red tamper-proof label. Half visors use the <strong style={{ color: '#fff' }}>CAN/CSA Z262.2</strong> standard.
         </p>
         <div style={{ background: 'rgba(200,16,46,0.06)', border: '1px solid rgba(200,16,46,0.15)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
@@ -93,7 +93,7 @@ export default function HelmetFittingGuideYouth() {
       {/* The fit test */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FIT TEST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Work through these five steps in order. If the helmet fails any of them, try a different size, a different shape, or a different brand.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -109,7 +109,7 @@ export default function HelmetFittingGuideYouth() {
                 <p style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#C8102E', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Step {s.step}</p>
                 <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>{s.title}</p>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{s.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{s.desc}</p>
             </div>
           ))}
         </div>
@@ -128,13 +128,13 @@ export default function HelmetFittingGuideYouth() {
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.head}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.head}</p>
                 <p style={{ fontSize: '0.8125rem', color: '#777', textAlign: 'right' }}>Ages {row.age}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           These are general ranges. Every brand fits differently — Bauer tends to be rounder, CCM tends to be more elongated, True fits more like a baseball cap. Always use the manufacturer&apos;s chart and, ideally, try the helmet on the kid before buying.
         </p>
       </section>
@@ -142,10 +142,10 @@ export default function HelmetFittingGuideYouth() {
       {/* When to replace */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO REPLACE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Replace the helmet in any of these situations:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• <strong style={{ color: '#fff' }}>Immediately after any significant impact</strong> — falls onto concrete, pucks to the head, collisions with the boards. Even if the shell isn&apos;t cracked, the foam has absorbed energy and is compromised.</li>
           <li>• Every <strong style={{ color: '#fff' }}>5-7 years</strong> regardless of impact history. The foam degrades over time.</li>
           <li>• If the <strong style={{ color: '#fff' }}>manufacture date</strong> on the certification sticker is more than 7 years old.</li>

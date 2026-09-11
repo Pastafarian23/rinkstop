@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function HockeyPantsFittingGuideAdult() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/adult" style={{ color: '#555' }}>Adult</Link>
+        <Link href="/guides/adult" style={{ color: 'rgba(255,255,255,0.4)' }}>Adult</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Hockey Pants Fitting Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hockey Pants Fitting Guide</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -60,17 +60,17 @@ export default function HockeyPantsFittingGuideAdult() {
       {/* Pants vs Girdle */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>PANTS VS. GIRDLE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           For adult players, you have two choices for lower-body protection. The fit principles are the same; the feel and protection profile differ.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Hockey pants (breezers)</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>Padded shorts with a tall waist, integrated kidney protection, and large thigh guards. Easier to put on and take off. More protective, especially for blocking shots. The default for most adult players and the safer choice for new players.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>Padded shorts with a tall waist, integrated kidney protection, and large thigh guards. Easier to put on and take off. More protective, especially for blocking shots. The default for most adult players and the safer choice for new players.</p>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Hockey girdle</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>A compression-fit base layer with padding sewn in at the hips, tailbone, thighs, and kidneys. Lighter, more mobile, lower profile. Preferred by players who want to feel fast — common among college and pro players, increasingly popular in adult leagues. Better for women and players with a wider hip-to-waist ratio.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>A compression-fit base layer with padding sewn in at the hips, tailbone, thighs, and kidneys. Lighter, more mobile, lower profile. Preferred by players who want to feel fast — common among college and pro players, increasingly popular in adult leagues. Better for women and players with a wider hip-to-waist ratio.</p>
           </div>
         </div>
       </section>
@@ -78,7 +78,7 @@ export default function HockeyPantsFittingGuideAdult() {
       {/* The fit test */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FIT TEST (BOTH)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Same checks apply to both pants and girdles.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -102,7 +102,7 @@ export default function HockeyPantsFittingGuideAdult() {
       {/* Sizing */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SIZING (ADULT)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Measure waist circumference at the natural waist (just above the hip bone). Match the measurement to the brand-specific chart. Hockey pants run large compared to street pants — a 32-inch adult waist typically wears a Senior Medium.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -117,13 +117,13 @@ export default function HockeyPantsFittingGuideAdult() {
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.4fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.waist}</p>
-                <p style={{ fontSize: '0.75rem', color: '#666', textAlign: 'right' }}>{row.note}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.waist}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textAlign: 'right' }}>{row.note}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           <strong style={{ color: '#ccc' }}>For women:</strong> junior pants often fit better than senior pants. Senior pants are designed for male hip geometry; on women, they gap at the waist and slide down. If women-specific pants aren&apos;t available in your size, junior pants or a girdle (the compression fit adapts more easily) are the next-best options.
         </p>
       </section>
@@ -131,10 +131,10 @@ export default function HockeyPantsFittingGuideAdult() {
       {/* When to upgrade */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO UPGRADE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Hockey pants and girdles don&apos;t have a hard "replace by" date. Most adult players replace them every 3-5 years, or sooner if:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• The foam has compressed and the padding feels noticeably thinner than when new.</li>
           <li>• The plastic thigh guards are cracked.</li>
           <li>• The belt or back lace no longer holds the pants snugly.</li>
