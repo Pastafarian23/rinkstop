@@ -114,7 +114,7 @@ export default async function BlogRelatedServer({
       <h2 style={{
         fontFamily: '"Bebas Neue", Impact, sans-serif',
         fontSize: '1.125rem',
-        color: '#041E42',
+        color: '#C8102E',
         letterSpacing: '0.04em',
         marginBottom: '1rem',
         paddingBottom: '0.5rem',
@@ -154,7 +154,7 @@ export default async function BlogRelatedServer({
                 <p style={{
                   fontWeight: 700,
                   fontSize: '0.8125rem',
-                  color: '#1a1a1a',
+                  color: 'rgba(255,255,255,0.7)',
                   lineHeight: 1.35,
                   marginBottom: '0.25rem',
                   display: '-webkit-box',
@@ -168,7 +168,7 @@ export default async function BlogRelatedServer({
                   display: 'flex',
                   gap: '0.4rem',
                   fontSize: '0.6875rem',
-                  color: '#999',
+                  color: 'rgba(255,255,255,0.6)',
                   flexWrap: 'wrap',
                 }}>
                   {post.category && (

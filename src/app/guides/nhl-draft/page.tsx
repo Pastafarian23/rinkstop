@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function NHLDraftGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>NHL Draft</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>NHL Draft</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>NHL DRAFT GUIDE</h1>
@@ -38,7 +38,7 @@ export default function NHLDraftGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE DRAFT LANDSCAPE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The NHL Draft happens once a year, in late June or early July. It's where every NHL team's future takes shape. 224 picks, 7 rounds, two days.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The NHL Draft happens once a year, in late June or early July. It's where every NHL team's future takes shape. 224 picks, 7 rounds, two days.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Round 1', picks: '32', note: 'Where stars are drafted. Top-15 picks are typically NHL-ready within 1-2 years. Picks 16-32 usually need 2-4 years of development in juniors, AHL, or NCAA.' },
@@ -57,8 +57,8 @@ export default function NHLDraftGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHO IS ELIGIBLE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>NHL Draft eligibility is age-based, with international exceptions. The 18-and-under rule means most top prospects are 17-18 at the draft.</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>NHL Draft eligibility is age-based, with international exceptions. The 18-and-under rule means most top prospects are 17-18 at the draft.</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>North American players:</strong> at least 18 by September 15 of the draft year AND not older than 22 by September 15. So a player turning 18 in early 2026 is eligible for the 2026 Draft. Most first-round picks are 17-18.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>European players:</strong> any player 18+ by September 15 of the draft year is eligible. First two seasons of pro/minor in North America count as the eligibility window for any player who turns 18 in that window.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>NCAA-bound players:</strong> drafted players can keep their NCAA eligibility by declining to sign with the NHL team for 30 days after the draft (essentially the first 30 days of June/July). Most NCAA-bound players are drafted and either sign the pro contract (losing NCAA eligibility) or go to college and re-negotiate later. Connor McDavid was drafted #1 in 2015 and spent one more year in the OHL; many NCAA-bound picks use a similar path.</li>
@@ -68,7 +68,7 @@ export default function NHLDraftGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE PATH TO THE DRAFT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Most NHL draft picks come through one of four developmental paths. The path matters less than the player's individual development curve.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Most NHL draft picks come through one of four developmental paths. The path matters less than the player's individual development curve.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'CHL (OHL, WHL, QMJHL)', desc: 'Major junior. 16-20 year olds, 60-72 game seasons, high-visibility. Most first-round picks come from here. NHL teams scout heavily.' },
@@ -86,7 +86,7 @@ export default function NHLDraftGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT SCOUTS LOOK FOR</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The 80/20 of NHL draft scouting: <strong style={{ color: '#fff' }}>skating, hockey IQ, compete level, and projection.</strong> These are weighted in roughly that order.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The 80/20 of NHL draft scouting: <strong style={{ color: '#fff' }}>skating, hockey IQ, compete level, and projection.</strong> These are weighted in roughly that order.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { weight: '30%', name: 'Skating', desc: 'Speed, acceleration, edge work, balance, transition from forward to backward. Skating is the hardest skill to develop and the one scouts can\'t teach. A player who skates well can be taught the rest.' },
@@ -106,8 +106,8 @@ export default function NHLDraftGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>AFTER THE DRAFT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Being drafted is the start, not the end. Two years from the date of the draft, the player has to either sign an entry-level contract with the team that drafted them, or become an unrestricted free agent.</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Being drafted is the start, not the end. Two years from the date of the draft, the player has to either sign an entry-level contract with the team that drafted them, or become an unrestricted free agent.</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Entry-level contract (ELC):</strong> max 3 years, max $925K base salary (2023-24 figures, scale adjusts). Performance bonuses can push total compensation to $1.5M+. After the ELC, the player becomes a Restricted Free Agent (RFA).</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Development path:</strong> most first-round picks spend 1-3 years in the AHL after signing, playing 30-50 NHL games per year. Top-5 picks often play 50-70 NHL games in their first pro season.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Unsigned draftees:</strong> a player who is drafted but doesn't sign within 2 years becomes a UFA. They can sign with any NHL team. This is rare but happens — e.g., high-end European prospects who stay in Europe.</li>
@@ -116,7 +116,7 @@ export default function NHLDraftGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FIND THE TEAMS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find NHL, AHL, junior, and college programs by region.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find NHL, AHL, junior, and college programs by region.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/teams?level=pro" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ NHL, AHL, KHL, SHL, Liiga pro teams</Link>
           <Link href="/directory/teams?level=junior" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ CHL, USHL, NAHL, BCHL junior teams</Link>
@@ -127,7 +127,7 @@ export default function NHLDraftGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/ncaa-hockey" style={{ color: '#C8102E' }}>NCAA Hockey Guide</Link> — Division I, III, ACHA, recruiting</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-positions-explained" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link> — every position, role, and deployment</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-tryout-guide" style={{ color: '#C8102E' }}>Hockey Tryout Guide</Link> — camps, showcases, and tryout prep</li>

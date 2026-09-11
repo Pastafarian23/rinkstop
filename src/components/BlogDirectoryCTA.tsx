@@ -151,14 +151,14 @@ export default function BlogDirectoryCTA({ category, tags, title }: BlogDirector
       <h2 style={{
         fontFamily: '"Bebas Neue", Impact, sans-serif',
         fontSize: '1.25rem',
-        color: '#041E42',
+        color: '#C8102E',
         letterSpacing: '0.04em',
         marginBottom: '0.4rem',
       }}>
         Find It on RinkStop
       </h2>
       <p style={{
-        color: '#555',
+        color: 'rgba(255,255,255,0.4)',
         fontSize: '0.875rem',
         marginBottom: '1.25rem',
         lineHeight: 1.5,
@@ -191,7 +191,7 @@ export default function BlogDirectoryCTA({ category, tags, title }: BlogDirector
               <h3 style={{
                 fontSize: '0.9375rem',
                 fontWeight: 700,
-                color: '#041E42',
+                color: '#C8102E',
                 margin: 0,
                 lineHeight: 1.25,
               }}>
@@ -199,7 +199,7 @@ export default function BlogDirectoryCTA({ category, tags, title }: BlogDirector
               </h3>
             </div>
             <p style={{
-              color: '#555',
+              color: 'rgba(255,255,255,0.4)',
               fontSize: '0.8125rem',
               lineHeight: 1.5,
               marginBottom: '0.75rem',

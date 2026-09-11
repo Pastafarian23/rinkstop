@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function HockeyTryoutGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Hockey Tryout Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hockey Tryout Guide</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>HOCKEY TRYOUT GUIDE</h1>
@@ -38,7 +38,7 @@ export default function HockeyTryoutGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE TRYOUT LANDSCAPE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Tryouts vary dramatically by level. Knowing what to expect helps you calibrate effort, prep, and mental approach. Most leagues publish tryout dates, fees, and format on their team page — browse the <Link href="/directory/teams" style={{ color: '#C8102E' }}>team directory</Link> to find listings near you.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Tryouts vary dramatically by level. Knowing what to expect helps you calibrate effort, prep, and mental approach. Most leagues publish tryout dates, fees, and format on their team page — browse the <Link href="/directory/teams" style={{ color: '#C8102E' }}>team directory</Link> to find listings near you.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Youth house / rec', format: '1 day, 1-2 sessions', cost: '$0-50', who: 'Ages 4-14, beginner to intermediate', note: 'Low-stakes. Most leagues place every player who registers. Focus on having fun and learning.' },
@@ -52,12 +52,12 @@ export default function HockeyTryoutGuide() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{t.name}</p>
-                  <p style={{ fontSize: '0.75rem', color: '#555' }}>{t.note}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{t.note}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#C8102E', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{t.format}</span>
-                  <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#888', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{t.cost}</span>
-                  <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#666', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{t.who}</span>
+                  <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{t.cost}</span>
+                  <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{t.who}</span>
                 </div>
               </div>
             </div>
@@ -67,7 +67,7 @@ export default function HockeyTryoutGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>PRE-TRYOUT PREPARATION (6-8 WEEKS)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Use the 6-8 week window before tryouts to peak. Don't try new skills cold — tighten what you already know.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Use the 6-8 week window before tryouts to peak. Don't try new skills cold — tighten what you already know.</p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {[
@@ -81,7 +81,7 @@ export default function HockeyTryoutGuide() {
               <div key={w.week} style={{ display: 'grid', gridTemplateColumns: '130px 150px 1fr', gap: '0.75rem', padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', alignItems: 'flex-start' }}>
                 <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#C8102E' }}>{w.week}</p>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff' }}>{w.focus}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.5 }}>{w.detail}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{w.detail}</p>
               </div>
             ))}
           </div>
@@ -90,7 +90,7 @@ export default function HockeyTryoutGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>TRYOUT DAY: WHAT TO BRING</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Equipment checklist. Show up with the full kit in working order.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Equipment checklist. Show up with the full kit in working order.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
           {[
             { item: 'Helmet', note: 'CSA or HECC certified. No cracks. Chin strap adjusted.' },
@@ -108,18 +108,18 @@ export default function HockeyTryoutGuide() {
           ].map(g => (
             <div key={g.item} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{g.item}</p>
-              <p style={{ fontSize: '0.75rem', color: '#888', lineHeight: 1.4 }}>{g.note}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>{g.note}</p>
             </div>
           ))}
         </div>
-        <p style={{ fontSize: '0.8125rem', color: '#555', marginTop: '0.75rem', lineHeight: 1.6, background: 'rgba(200,16,46,0.05)', border: '1px solid rgba(200,16,46,0.12)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
-          <strong style={{ color: '#999' }}>Pro tip:</strong> Label every piece — helmet, gloves, stick, pants, jock, water bottle. Rinks lose equipment by the bagful during tryouts. Use a paint pen or vinyl labels.
+        <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.75rem', lineHeight: 1.6, background: 'rgba(200,16,46,0.05)', border: '1px solid rgba(200,16,46,0.12)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Pro tip:</strong> Label every piece — helmet, gloves, stick, pants, jock, water bottle. Rinks lose equipment by the bagful during tryouts. Use a paint pen or vinyl labels.
         </p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT COACHES LOOK FOR (RANKED)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Across every level — house through junior — coaches evaluate the same five things. The order shifts slightly by level, but the top three are universal.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Across every level — house through junior — coaches evaluate the same five things. The order shifts slightly by level, but the top three are universal.</p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {[
@@ -132,46 +132,46 @@ export default function HockeyTryoutGuide() {
               <div key={c.skill} style={{ display: 'grid', gridTemplateColumns: '40px 140px 70px 1fr', gap: '0.75rem', padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', alignItems: 'center' }}>
                 <p style={{ fontSize: '1.125rem', fontWeight: 800, color: '#C8102E', textAlign: 'center', margin: 0 }}>{c.rank}</p>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff' }}>{c.skill}</p>
-                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#888', textAlign: 'center' }}>{c.weight}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.5 }}>{c.detail}</p>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>{c.weight}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{c.detail}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ fontSize: '0.8125rem', color: '#555', marginTop: '0.75rem', lineHeight: 1.6, background: 'rgba(200,16,46,0.05)', border: '1px solid rgba(200,16,46,0.12)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
-          <strong style={{ color: '#999' }}>The 80/20 rule:</strong> Skating and compete level together account for 55% of the coach&apos;s evaluation. If you can only work on two things in the 6-8 week window, work on those.
+        <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.75rem', lineHeight: 1.6, background: 'rgba(200,16,46,0.05)', border: '1px solid rgba(200,16,46,0.12)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)' }}>The 80/20 rule:</strong> Skating and compete level together account for 55% of the coach&apos;s evaluation. If you can only work on two things in the 6-8 week window, work on those.
         </p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW TO FIND TRYOUTS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Tryouts are listed by the team or league. RinkStop&apos;s directory has 3,243+ teams across 240+ leagues — filter by level, country, and age to find tryouts near you.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Tryouts are listed by the team or league. RinkStop&apos;s directory has 3,243+ teams across 240+ leagues — filter by level, country, and age to find tryouts near you.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
           <Link href="/directory/teams?level=pro" style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '0.875rem 1rem', textDecoration: 'none' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Pro teams</p>
-            <p style={{ fontSize: '0.75rem', color: '#888', lineHeight: 1.4 }}>NHL, AHL, KHL, PWHL, top European leagues</p>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>NHL, AHL, KHL, PWHL, top European leagues</p>
           </Link>
           <Link href="/directory/teams?level=junior" style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '0.875rem 1rem', textDecoration: 'none' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Junior teams</p>
-            <p style={{ fontSize: '0.75rem', color: '#888', lineHeight: 1.4 }}>USHL, NAHL, OHL, WHL, QMJHL, USPHL</p>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>USHL, NAHL, OHL, WHL, QMJHL, USPHL</p>
           </Link>
           <Link href="/directory/teams?level=college" style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '0.875rem 1rem', textDecoration: 'none' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>College teams</p>
-            <p style={{ fontSize: '0.75rem', color: '#888', lineHeight: 1.4 }}>NCAA D1/D3, ACHA, U SPORTS, NAIA</p>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>NCAA D1/D3, ACHA, U SPORTS, NAIA</p>
           </Link>
           <Link href="/directory/teams?level=adult" style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '0.875rem 1rem', textDecoration: 'none' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Adult leagues</p>
-            <p style={{ fontSize: '0.75rem', color: '#888', lineHeight: 1.4 }}>Beer leagues, rec leagues, club hockey</p>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>Beer leagues, rec leagues, club hockey</p>
           </Link>
         </div>
-        <p style={{ fontSize: '0.8125rem', color: '#555', marginTop: '0.75rem', lineHeight: 1.6 }}>
+        <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.75rem', lineHeight: 1.6 }}>
           For youth players, browse the <Link href="/directory/youth-hockey" style={{ color: '#C8102E' }}>youth hockey directory</Link> for travel and house programs with tryouts in your area.
         </p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>AFTER THE TRYOUT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Whether you make the team or not, the tryout is a learning experience. Use it as data.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Whether you make the team or not, the tryout is a learning experience. Use it as data.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { scenario: 'If you make the team', action: 'Confirm your spot within the deadline. Pay any deposits. Add the schedule to your calendar. Reach out to incoming teammates via the team page. Begin the off-season training plan with your coach.' },
@@ -180,7 +180,7 @@ export default function HockeyTryoutGuide() {
           ].map(s => (
             <div key={s.scenario} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.125rem 1.25rem' }}>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>{s.scenario}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#aaa', lineHeight: 1.6 }}>{s.action}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>{s.action}</p>
             </div>
           ))}
         </div>
@@ -188,7 +188,7 @@ export default function HockeyTryoutGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.8, marginLeft: '1.5rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, marginLeft: '1.5rem' }}>
           <li><Link href="/guides/hockey-positions" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link> — know your role before the coach assigns it</li>
           <li><Link href="/guides/hockey-nutrition" style={{ color: '#C8102E' }}>Hockey Nutrition Guide</Link> — what to eat the day of tryouts</li>
           <li><Link href="/guides/off-ice-hockey-training" style={{ color: '#C8102E' }}>Off-Ice Hockey Training</Link> — the 6-8 week prep plan in detail</li>

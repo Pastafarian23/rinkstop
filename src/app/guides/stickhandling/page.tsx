@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function StickhandlingGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Stickhandling</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Stickhandling</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>HOCKEY STICKHANDLING GUIDE</h1>
@@ -31,8 +31,8 @@ export default function StickhandlingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE STICKHANDLING GRIP</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A proper grip is the foundation of all stickhandling. Most youth players grip the stick too tightly, which limits feel and touch. The correct grip allows the puck to roll across the blade with minimal effort.</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A proper grip is the foundation of all stickhandling. Most youth players grip the stick too tightly, which limits feel and touch. The correct grip allows the puck to roll across the blade with minimal effort.</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem', marginBottom: '1.5rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Top hand:</strong> placed about 6-12 inches down the shaft from the top of the stick. Loose grip so you can slide the hand up and down with the stick held vertically.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Bottom hand:</strong> placed at the top of the shaft where it meets the tape. The grip here is also loose; the bottom hand provides power, not control.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Knuckles:</strong> aligned so the top hand knuckles roughly face the ceiling when the stick is in front of the body. This gives the most wrist flexibility.</li>
@@ -42,7 +42,7 @@ export default function StickhandlingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>BASIC MOVES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Every hockey move is a combination of these basic stickhandling techniques. Master them in order:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Every hockey move is a combination of these basic stickhandling techniques. Master them in order:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Puck protection', desc: 'Using the body to shield the puck from a defender while keeping control on the stick. The most-used move in hockey. Used on the boards, in the corners, and in open ice.' },
@@ -64,8 +64,8 @@ export default function StickhandlingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SOFT HANDS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The phrase soft hands refers to the ability to handle the puck with minimal visible effort. Players with soft hands make difficult moves look effortless. The skill is built through thousands of small-hand repetitions:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The phrase soft hands refers to the ability to handle the puck with minimal visible effort. Players with soft hands make difficult moves look effortless. The skill is built through thousands of small-hand repetitions:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Light grip pressure:</strong> the stick should feel almost like an extension of the hand, not a tool you are holding. Pressure of 2-3 pounds is enough; gripping harder reduces feel.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Top-hand control:</strong> the top hand does most of the work in puck control. The bottom hand provides stability but not active movement.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Wrist flexibility:</strong> the wrists do the work, not the arms. Full-arm swings are slow; wrist movements are fast and precise.</li>
@@ -75,7 +75,7 @@ export default function StickhandlingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>STICKHANDLING DRILLS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A consistent stickhandling practice routine is the single most impactful off-ice activity for puck skills. The most effective drills:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>A consistent stickhandling practice routine is the single most impactful off-ice activity for puck skills. The most effective drills:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Forehand-backhand (static)', desc: 'Standing in place, roll the puck forehand to backhand across the blade. 100 reps per session. Builds the foundational feel.' },
@@ -97,8 +97,8 @@ export default function StickhandlingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>OFF-ICE EQUIPMENT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Effective off-ice stickhandle training requires the right equipment. The easiest entry point is a stickhandling mat, which simulates the puck on a flat surface:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Effective off-ice stickhandle training requires the right equipment. The easiest entry point is a stickhandling mat, which simulates the puck on a flat surface:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Stickhandling mats:</strong> plastic or fabric mats that simulate puck behavior. Available in 4-6 foot lengths. The standard tool for home practice. A typical session is 15-30 minutes per day.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Green Biscuit:</strong> a weighted puck that slides on most surfaces (not carpet). The added resistance builds strength; the irregular bounce builds soft hands.</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Synthetic ice tiles:</strong> small interlocking tiles that allow real puck handling at home. Higher cost but closest to ice feel.</li>
@@ -108,7 +108,7 @@ export default function StickhandlingGuide() {
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/players?skill=stickhandling" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find players with elite stickhandling skills →</Link><Link href="/directory/brands?category=sticks" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Browse hockey sticks used by the pros →</Link>
         </div>
@@ -116,7 +116,7 @@ export default function StickhandlingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-stick-guide" style={{ color: '#C8102E' }}>Hockey Stick Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/skating" style={{ color: '#C8102E' }}>Hockey Skating Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/shooting" style={{ color: '#C8102E' }}>Hockey Shooting Guide</Link></li>

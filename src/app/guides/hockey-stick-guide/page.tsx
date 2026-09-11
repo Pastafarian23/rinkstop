@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function HockeyStickGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>How to Choose a Hockey Stick</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>How to Choose a Hockey Stick</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -38,7 +38,7 @@ export default function HockeyStickGuide() {
         <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>In this guide:</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
           {['Flex', 'Blade Curve', 'Kickpoint', 'Length', 'Lie', 'Material', 'Price'].map(s => (
-            <span key={s} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '999px', fontSize: '0.75rem', color: '#888' }}>{s}</span>
+            <span key={s} style={{ padding: '0.25rem 0.75rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '999px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{s}</span>
           ))}
         </div>
       </div>
@@ -68,7 +68,7 @@ export default function HockeyStickGuide() {
       {/* Section 1: Flex */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>FLEX  --  The Most Important Factor</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Flex is how much the shaft bends under pressure, measured in flex points. It's the single most important factor in how a stick performs. Get it wrong and nothing else matters.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginBottom: '1rem' }}>
@@ -82,10 +82,10 @@ export default function HockeyStickGuide() {
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', lineHeight: 1.7, fontSize: '0.875rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.875rem' }}>
           <strong style={{ color: '#ccc' }}>Softer flex (75-85):</strong> Easier to load, better for players who rely on quick wrist shots and board play. Good for younger players, beginners, and players under 160lbs.
         </p>
-        <p style={{ color: '#999', lineHeight: 1.7, fontSize: '0.875rem', marginTop: '0.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.875rem', marginTop: '0.5rem' }}>
           <strong style={{ color: '#ccc' }}>Stiffer flex (90-110):</strong> More energy stored on hard shots, better for slap shots and one-timers. Better for stronger players, defensemen taking blue-line shots, and players over 190lbs.
         </p>
       </section>
@@ -93,21 +93,21 @@ export default function HockeyStickGuide() {
       {/* Section 2: Length */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>STICK LENGTH</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The most common mistake is buying a stick that's too long. Most players can play with a stick that's slightly short easier than one that's slightly long.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginBottom: '1rem' }}>
           <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>How to measure: Stand in skates, stick on ice</p>
-          <p style={{ color: '#999', lineHeight: 1.7, fontSize: '0.875rem' }}>The stick should reach between your <strong style={{ color: '#fff' }}>chin and nose</strong>. If you're in bare feet, add roughly 1-1.5 inches for the height of your skates.</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.875rem' }}>The stick should reach between your <strong style={{ color: '#fff' }}>chin and nose</strong>. If you're in bare feet, add roughly 1-1.5 inches for the height of your skates.</p>
         </div>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
           {[['Too short', 'Below chin', "Quick release, easy to handle. Can be restrictive for slap shots."], ['Right size', 'Chin to nose', "Ideal range. Versatile for all shots and situations."], ['Too long', 'Above nose', "Harder to handle, slower release. Can affect shot accuracy."]].map(([label, range, desc]) => (
             <div key={label} style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '1rem', padding: '0.875rem 1rem', background: 'rgba(255,255,255,0.025)', borderRadius: '8px', alignItems: 'center' }}>
               <div>
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, color: label === 'Right size' ? '#009650' : '#C8102E', marginBottom: '0.25rem' }}>{label}</p>
-                <p style={{ fontSize: '0.75rem', color: '#666' }}>{range}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{range}</p>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.5 }}>{desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{desc}</p>
             </div>
           ))}
         </div>
@@ -116,7 +116,7 @@ export default function HockeyStickGuide() {
       {/* Section 3: Kickpoint */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>KICKPOINT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Kickpoint is where the shaft flexes most when you load a shot. It determines what kind of shots the stick excels at.
         </p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -127,9 +127,9 @@ export default function HockeyStickGuide() {
           ].map(k => (
             <div key={k.name} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
               <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{k.name}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#666', marginBottom: '0.5rem' }}>{k.desc}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#999', marginBottom: '0.375rem' }}><strong style={{ color: '#ccc' }}>Best for:</strong> {k.best}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#555' }}><strong style={{ color: '#777' }}>Examples:</strong> {k.ex}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.5rem' }}>{k.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.375rem' }}><strong style={{ color: '#ccc' }}>Best for:</strong> {k.best}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)' }}><strong style={{ color: '#777' }}>Examples:</strong> {k.ex}</p>
             </div>
           ))}
         </div>
@@ -138,7 +138,7 @@ export default function HockeyStickGuide() {
       {/* Section 4: Blade Curve */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>BLADE CURVE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Blade curve affects where the puck goes when you shoot. There are three main types. Most players have a preference, and it develops with experience.
         </p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -149,9 +149,9 @@ export default function HockeyStickGuide() {
           ].map(c => (
             <div key={c.name} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
               <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{c.name}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#999', marginBottom: '0.5rem' }}>{c.desc}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#999', marginBottom: '0.25rem' }}><strong style={{ color: '#ccc' }}>Ideal for:</strong> {c.for}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#666' }}><strong style={{ color: '#888' }}>Watch for:</strong> {c.risk}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem' }}>{c.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.25rem' }}><strong style={{ color: '#ccc' }}>Ideal for:</strong> {c.for}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Watch for:</strong> {c.risk}</p>
             </div>
           ))}
         </div>
@@ -160,7 +160,7 @@ export default function HockeyStickGuide() {
       {/* Section 5: Lie */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>STICK LIE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Lie is the angle of the blade relative to the shaft  --  measured 1-6 (low to high). A higher lie means the blade sits flatter on the ice when you're in your natural stance. Getting the lie right means the whole blade contacts the ice evenly.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -179,7 +179,7 @@ export default function HockeyStickGuide() {
       {/* Section 6: Material */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>MATERIAL & PRICE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Most modern sticks are composite (carbon fiber / fiberglass / graphite). Entry-level sticks are often hybrid (composite shaft with binary blade). Ice hockey sticks come in three main constructions:
         </p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
@@ -193,8 +193,8 @@ export default function HockeyStickGuide() {
                 <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{m.name}</p>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)' }}>{m.price}</span>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#888', marginBottom: '0.25rem' }}>{m.pros}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#666' }}>{m.cons}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>{m.pros}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)' }}>{m.cons}</p>
             </div>
           ))}
         </div>
@@ -202,7 +202,7 @@ export default function HockeyStickGuide() {
 
       {/* CTA */}
       <div style={{ background: 'var(--s2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.75rem' }}>Ready to find your team?</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>Ready to find your team?</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/directory/players" style={{ padding: '0.625rem 1.25rem', background: '#C8102E', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Browse Players</Link>
           <Link href="/glossary/icing" style={{ padding: '0.625rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Glossary</Link>

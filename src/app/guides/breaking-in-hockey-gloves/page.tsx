@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 export default function BreakingInGloves() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Breaking In Hockey Gloves</span>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Breaking In Hockey Gloves</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Equipment</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>BREAKING IN NEW HOCKEY GLOVES</h1>
@@ -31,7 +31,7 @@ export default function BreakingInGloves() {
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT YOU&apos;RE BREAKING IN</h2>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginBottom: '1rem' }}>
-          <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>New gloves have three areas that need breaking in:</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>New gloves have three areas that need breaking in:</p>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {[
               { area: 'Palm & fingers', problem: 'Leather is flat and unworn. Grip surface feels slick. Can&apos;t feel the puck well.', goal: 'Palm molds to your grip, leather softens, grip surface develops texture.' },
@@ -41,11 +41,11 @@ export default function BreakingInGloves() {
               <div key={a.area} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px' }}>
                 <div>
                   <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E', marginBottom: '0.25rem' }}>{a.area}</p>
-                  <p style={{ fontSize: '0.8125rem', color: '#888' }}>{a.problem}</p>
+                  <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)' }}>{a.problem}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#009650', marginBottom: '0.25rem' }}>Goal</p>
-                  <p style={{ fontSize: '0.8125rem', color: '#888' }}>{a.goal}</p>
+                  <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)' }}>{a.goal}</p>
                 </div>
               </div>
             ))}
@@ -68,7 +68,7 @@ export default function BreakingInGloves() {
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(200,16,46,0.15)', border: '1px solid rgba(200,16,46,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: 800, color: '#C8102E', flexShrink: 0 }}>{s.step}</div>
               <div>
                 <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{s.title}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.65 }}>{s.desc}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.65 }}>{s.desc}</p>
               </div>
             </div>
           ))}
@@ -88,7 +88,7 @@ export default function BreakingInGloves() {
             ].map(n => (
               <div key={n.thing} style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '0.75rem', padding: '0.75rem', background: 'rgba(200,16,46,0.05)', borderRadius: '6px' }}>
                 <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#C8102E' }}>{n.thing}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.5 }}>{n.why}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{n.why}</p>
               </div>
             ))}
           </div>
@@ -96,7 +96,7 @@ export default function BreakingInGloves() {
       </section>
 
       <div style={{ background: 'var(--s2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.75rem' }}>More equipment guides</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>More equipment guides</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/guides/hockey-stick-guide" style={{ padding: '0.625rem 1.25rem', background: '#C8102E', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Stick Guide</Link>
           <Link href="/guides/skate-fitting-guide" style={{ padding: '0.625rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Skate Fitting Guide</Link>

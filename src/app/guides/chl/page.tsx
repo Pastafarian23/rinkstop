@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function CHLGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>CHL</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>CHL</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>CHL GUIDE</h1>
@@ -38,7 +38,7 @@ export default function CHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT IS THE CHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Canadian Hockey League is an umbrella organization that oversees the operations of three major junior hockey leagues in Canada and the United States. The CHL operates the Memorial Cup tournament, the CHL Top Prospects Game, the CHL Import Draft, and shared player welfare and education programs. Each member league runs its own season and playoffs independently.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Canadian Hockey League is an umbrella organization that oversees the operations of three major junior hockey leagues in Canada and the United States. The CHL operates the Memorial Cup tournament, the CHL Top Prospects Game, the CHL Import Draft, and shared player welfare and education programs. Each member league runs its own season and playoffs independently.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { label: 'Founded', value: '1975 (in current umbrella form)' },
@@ -58,7 +58,7 @@ export default function CHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE THREE MEMBER LEAGUES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Each CHL member league covers a distinct geographic region and operates its own season, playoffs, and trophy:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Each CHL member league covers a distinct geographic region and operates its own season, playoffs, and trophy:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'OHL', full: 'Ontario Hockey League', region: 'Ontario, Michigan, Pennsylvania', teams: '20 teams', trophy: 'J. Ross Robertson Cup' },
@@ -79,7 +79,7 @@ export default function CHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE MEMORIAL CUP</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Each spring, the Memorial Cup tournament brings together the champions of the OHL, WHL, and QMJHL along with the host team of the upcoming tournament. The four teams play a round-robin followed by a semifinal and final, with the winner awarded the Memorial Cup.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Each spring, the Memorial Cup tournament brings together the champions of the OHL, WHL, and QMJHL along with the host team of the upcoming tournament. The four teams play a round-robin followed by a semifinal and final, with the winner awarded the Memorial Cup.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { round: 'Round Robin', teams: '4 teams', format: 'Round robin', note: 'Each team plays the other three once. Top two advance directly to the semifinal.' },
@@ -95,12 +95,12 @@ export default function CHLGuide() {
             </div>
           ))}
         </div>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>The Memorial Cup has been awarded since 1919, originally as a tribute to Canadian soldiers who died in World War I. It is the oldest junior hockey trophy in North America.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>The Memorial Cup has been awarded since 1919, originally as a tribute to Canadian soldiers who died in World War I. It is the oldest junior hockey trophy in North America.</p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RECENT MEMORIAL CUP CHAMPIONS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent Memorial Cup champions:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent Memorial Cup champions:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { year: '2025', winner: 'London Knights', note: 'OHL' },
@@ -121,19 +121,19 @@ export default function CHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>CHL AS AN NHL FEEDER</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The CHL is the primary development path to the NHL. Roughly half of all NHL players come through the CHL, including:</p>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The CHL is the primary development path to the NHL. Roughly half of all NHL players come through the CHL, including:</p>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Connor McDavid</strong> — Erie Otters (OHL), drafted 1st overall 2015</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Sidney Crosby</strong> — Rimouski Océanic (QMJHL), drafted 1st overall 2005</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Connor Bedard</strong> — Regina Pats (WHL), drafted 1st overall 2023</li>
           <li style={{ marginBottom: '0.5rem' }}><strong style={{ color: '#fff' }}>Auston Matthews</strong> — ZSC Lions (Swiss, but CHL draft eligible), drafted 1st overall 2016</li>
         </ul>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Players who aren\'t ready for the NHL after their CHL careers typically transition to the AHL or ECHL for additional development. Most NHL first-round picks in any given draft year come from the CHL.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Players who aren\'t ready for the NHL after their CHL careers typically transition to the AHL or ECHL for additional development. Most NHL first-round picks in any given draft year come from the CHL.</p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FOLLOW THE CHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find CHL teams across the OHL, WHL, and QMJHL.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find CHL teams across the OHL, WHL, and QMJHL.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/teams?league=ohl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ All 20 OHL teams</Link>
           <Link href="/directory/teams?league=whl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ All 22 WHL teams</Link>
@@ -144,7 +144,7 @@ export default function CHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/nhl-draft" style={{ color: '#C8102E' }}>NHL Draft Guide</Link> — where most CHL players go next</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/ahl" style={{ color: '#C8102E' }}>AHL Guide</Link> — the next step after the CHL</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/stanley-cup" style={{ color: '#C8102E' }}>Stanley Cup Guide</Link> — the NHL\'s ultimate prize</li>

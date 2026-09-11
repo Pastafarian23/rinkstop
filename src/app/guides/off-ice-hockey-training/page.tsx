@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 export default function OffIceTraining() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Off-Ice Training</span>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Off-Ice Training</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Training</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>OFF-ICE TRAINING FOR HOCKEY PLAYERS</h1>
@@ -55,7 +55,7 @@ export default function OffIceTraining() {
       ].map(section => (
         <section key={section.title} style={{ marginBottom: '2.5rem' }}>
           <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.375rem' }}>{section.title}</h2>
-          <p style={{ fontSize: '0.8125rem', color: '#555', marginBottom: '1rem' }}>{section.subtitle}</p>
+          <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>{section.subtitle}</p>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {section.drills.map(d => (
               <div key={d.name} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.125rem 1.25rem' }}>
@@ -63,8 +63,8 @@ export default function OffIceTraining() {
                   <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{d.name}</p>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', background: 'rgba(200,16,46,0.08)', padding: '0.2rem 0.6rem', borderRadius: '4px', flexShrink: 0 }}>{d.sets}</span>
                 </div>
-                <p style={{ fontSize: '0.875rem', color: '#888', lineHeight: 1.65, marginBottom: '0.5rem' }}>{d.desc}</p>
-                <p style={{ fontSize: '0.75rem', color: '#555', fontStyle: 'italic' }}>💡 {d.tip}</p>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.65, marginBottom: '0.5rem' }}>{d.desc}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>💡 {d.tip}</p>
               </div>
             ))}
           </div>
@@ -72,7 +72,7 @@ export default function OffIceTraining() {
       ))}
 
       <div style={{ background: 'var(--s2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.75rem' }}>Explore more hockey guides</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>Explore more hockey guides</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/guides/hockey-stick-guide" style={{ padding: '0.625rem 1.25rem', background: '#C8102E', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Stick Guide</Link>
           <Link href="/guides/hockey-positions" style={{ padding: '0.625rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Positions</Link>

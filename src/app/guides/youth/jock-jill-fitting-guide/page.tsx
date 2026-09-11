@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function JockJillFittingGuideYouth() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/youth" style={{ color: '#555' }}>Youth</Link>
+        <Link href="/guides/youth" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Jock / Jill Fitting Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Jock / Jill Fitting Guide</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -60,17 +60,17 @@ export default function JockJillFittingGuideYouth() {
       {/* Jock vs Jill */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>JOCK VS. JILL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The jock (boys) and jill (girls) protect the pelvic region. The two pieces are different in design and construction — a jill is not a jock with the cup removed.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Jock (boys)</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>A hard protective cup held in place by a jock strap (traditional) or integrated compression short (modern). The cup is centered over the pelvic area. Most youth hockey today uses the integrated compression short style — easier to put on, less shifting during play.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>A hard protective cup held in place by a jock strap (traditional) or integrated compression short (modern). The cup is centered over the pelvic area. Most youth hockey today uses the integrated compression short style — easier to put on, less shifting during play.</p>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Jill (girls)</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>A pelvic shield designed for female anatomy, with different protective geometry than a cup. Modern jills are integrated into compression shorts that fit over the hips and contour to the body. Brands like Bauer, Sher-Wood, and McDavid make jill-specific designs.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>A pelvic shield designed for female anatomy, with different protective geometry than a cup. Modern jills are integrated into compression shorts that fit over the hips and contour to the body. Brands like Bauer, Sher-Wood, and McDavid make jill-specific designs.</p>
           </div>
         </div>
       </section>
@@ -78,7 +78,7 @@ export default function JockJillFittingGuideYouth() {
       {/* The fit test */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FIT TEST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Four checks. The jock/jill fails if any of them don&apos;t pass.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -101,7 +101,7 @@ export default function JockJillFittingGuideYouth() {
       {/* Sizing */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SIZING (YOUTH)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Measure the waist just above the hips. Match the measurement to the brand-specific youth chart. Brand sizing varies: Bauer, CCM, and Shock Doctor all size differently. The chart below is a typical youth size range; always check the actual product page.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -114,13 +114,13 @@ export default function JockJillFittingGuideYouth() {
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.waist}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.waist}</p>
                 <p style={{ fontSize: '0.8125rem', color: '#777', textAlign: 'right' }}>Ages {row.age}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           <strong style={{ color: '#ccc' }}>Cup sizing (boys):</strong> the cup is usually separate from the short. If a cup is included, it&apos;s typically a "Youth" size. If a replacement is needed, most youth players wear a standard youth cup sized by waist (not by the short size). Check the cup packaging for the sizing chart.
         </p>
       </section>
@@ -128,16 +128,16 @@ export default function JockJillFittingGuideYouth() {
       {/* When to size up */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO SIZE UP</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Size up when:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• The compression short is too tight at the waist or hips.</li>
           <li>• The cup or shield has shifted during play.</li>
           <li>• The sock tabs are stretched out and no longer hold the socks.</li>
           <li>• The kid has visibly grown between seasons.</li>
         </ul>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>
           Most parents replace jocks/jills every 1-2 seasons for kids 8-13. They&apos;re also one of the most common items to buy used, since the protective element rarely wears out and the fit is what matters.
         </p>
       </section>
@@ -145,10 +145,10 @@ export default function JockJillFittingGuideYouth() {
       {/* Used gear */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>USED JOCKS AND JILLS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Safe to buy used. For boys, replace the cup if it shows any cracks or has been heavily used. For girls, replace the pelvic shield if it has been compressed. The compression short itself is rarely the problem — it&apos;s the protective element that wears out.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           Used jocks/jills are a great way for new hockey families to save money, especially during the first season when a kid is still deciding whether they&apos;ll stick with the sport.
         </p>
       </section>

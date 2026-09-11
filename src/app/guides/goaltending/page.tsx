@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function GoaltendingGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Goaltending</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Goaltending</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>GOALTENDING GUIDE</h1>
@@ -31,7 +31,7 @@ export default function GoaltendingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE GOALTENDER POSITION</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The goaltender (often called goalie, netminder, or tender) is the player whose job is to prevent the puck from entering the net. Each team plays one goalie at a time; teams typically dress two goalies per game (a starter and a backup) and carry two or three on the active roster.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The goaltender (often called goalie, netminder, or tender) is the player whose job is to prevent the puck from entering the net. Each team plays one goalie at a time; teams typically dress two goalies per game (a starter and a backup) and carry two or three on the active roster.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { label: 'Players on ice', value: '1 per team at any time' },
@@ -50,7 +50,7 @@ export default function GoaltendingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EQUIPMENT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Goaltenders wear significantly more equipment than skaters, both for protection (pucks travel 80-100 mph in the NHL) and to provide a larger blocking surface.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Goaltenders wear significantly more equipment than skaters, both for protection (pucks travel 80-100 mph in the NHL) and to provide a larger blocking surface.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { piece: 'Leg pads', detail: 'Two large rectangular pads covering the front of the legs and knees. Modern pads are 11+ inches wide.' },
@@ -72,7 +72,7 @@ export default function GoaltendingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>CORE TECHNIQUES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Modern goaltending combines several distinct techniques. A goalie training focuses on positioning, recovery, and reading the play:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Modern goaltending combines several distinct techniques. A goalie training focuses on positioning, recovery, and reading the play:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'Butterfly', desc: 'Drop to both knees with pads flared to cover the bottom of the net. The dominant low-shot technique since the 1990s.' },
@@ -94,8 +94,8 @@ export default function GoaltendingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>DEVELOPMENT PATH</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Goalies develop differently than skaters. The position rewards mental composure and pattern recognition as much as raw athleticism, and most NHL starters don't reach their prime until their late 20s or 30s.</p>
-        <ol style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Goalies develop differently than skaters. The position rewards mental composure and pattern recognition as much as raw athleticism, and most NHL starters don't reach their prime until their late 20s or 30s.</p>
+        <ol style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li style={{ marginBottom: '0.5rem' }}>Play youth or minor hockey; goalies typically specialize in the position by age 10-12</li>
           <li style={{ marginBottom: '0.5rem' }}>Play 2-4 seasons in a junior league (CHL, USHL, NAHL, or European equivalents)</li>
           <li style={{ marginBottom: '0.5rem' }}>Get drafted by an NHL organization (goalies are typically drafted in the mid-to-late rounds)</li>
@@ -107,7 +107,7 @@ export default function GoaltendingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GREAT NHL GOALIES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The all-time leaders by regular-season wins:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The all-time leaders by regular-season wins:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { rank: 1, name: 'Martin Brodeur', wins: 691, cups: '3 Stanley Cups' },
@@ -128,7 +128,7 @@ export default function GoaltendingGuide() {
 
       <section style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EXPLORE THE DIRECTORY</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Take what you've learned into the RinkStop directory.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/players?position=goalie" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Find goalies in the directory →</Link><Link href="/directory/brands?category=protective_gear" style={{ display: "block", padding: "0.75rem 1rem", background: "var(--s2)", border: "1px solid var(--border)", borderRadius: "4px", color: "#C8102E", textDecoration: "none", fontSize: "0.9375rem" }}>Browse goalie equipment brands →</Link>
         </div>
@@ -136,7 +136,7 @@ export default function GoaltendingGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-positions" style={{ color: '#C8102E' }}>Hockey Positions Explained</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/hockey-rules" style={{ color: '#C8102E' }}>Hockey Rules for Beginners</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/nhl-draft" style={{ color: '#C8102E' }}>NHL Draft Guide</Link></li>

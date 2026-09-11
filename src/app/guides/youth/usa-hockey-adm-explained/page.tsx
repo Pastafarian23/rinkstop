@@ -16,14 +16,14 @@ export const metadata: Metadata = {
 export default function USAHockeyADMExplained() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/youth" style={{ color: '#555' }}>Youth</Link>
+        <Link href="/guides/youth" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>USA Hockey&apos;s ADM Explained</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>USA Hockey&apos;s ADM Explained</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -61,13 +61,13 @@ export default function USAHockeyADMExplained() {
       {/* Intro */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT IS THE ADM?</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The American Development Model (ADM) is USA Hockey&apos;s nationwide framework for how kids should be introduced to hockey and how they should progress through it. It was instituted in 2009 and adopted by the U.S. Olympic Committee before the 2014 Winter Games.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The core idea is simple: <strong style={{ color: '#fff' }}>most kids were being asked to specialize too early, in environments that were too competitive, and they were burning out or quitting by 13.</strong> The ADM was built on research showing that the opposite approach — fun-first, multi-sport, age-appropriate training — produces better hockey players <em>and</em> keeps more kids in the game.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           The ADM is built on <strong style={{ color: '#fff' }}>10 guiding principles</strong> and organized into <strong style={{ color: '#fff' }}>8 age-based stages</strong>. The two together form the roadmap most USA Hockey associations now follow when they design their programs.
         </p>
       </section>
@@ -75,7 +75,7 @@ export default function USAHockeyADMExplained() {
       {/* The 10 Principles */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE 10 GUIDING PRINCIPLES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The ADM is anchored in 10 principles derived from research in youth sports science, motor development, and coaching. They&apos;re not a checklist — they&apos;re a philosophy. When you read them, you&apos;ll notice a throughline: development, not winning, comes first.
         </p>
 
@@ -105,7 +105,7 @@ export default function USAHockeyADMExplained() {
       {/* The 8 Stages */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE 8 STAGES OF THE ADM</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The ADM organizes a player&apos;s journey from first steps on the ice to adulthood into 8 stages. Each stage has a specific focus, a recommended practice-to-game ratio, and a development goal.
         </p>
 
@@ -126,8 +126,8 @@ export default function USAHockeyADMExplained() {
                 <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>{s.code}</p>
                 <p style={{ fontSize: '0.75rem', color: '#777' }}>{s.age}</p>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#aaa', lineHeight: 1.6, marginBottom: '0.375rem' }}>{s.focus}</p>
-              <p style={{ fontSize: '0.75rem', color: '#666', fontStyle: 'italic' }}>{s.practices}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '0.375rem' }}>{s.focus}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>{s.practices}</p>
             </div>
           ))}
         </div>
@@ -136,7 +136,7 @@ export default function USAHockeyADMExplained() {
       {/* What it means for parents */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT THIS MEANS FOR YOU AS A PARENT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The ADM gives you a framework for making decisions that aren&apos;t obvious from the outside. Three takeaways that matter most:
         </p>
 
@@ -148,7 +148,7 @@ export default function USAHockeyADMExplained() {
           ].map(item => (
             <div key={item.title} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{item.title}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{item.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{item.desc}</p>
             </div>
           ))}
         </div>
@@ -157,13 +157,13 @@ export default function USAHockeyADMExplained() {
       {/* International note */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE INTERNATIONAL PICTURE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The ADM is the U.S. implementation of a broader international framework called Long-Term Athlete Development (LTAD), originally developed by Sport Canada. Hockey Canada runs a parallel model called the Long-Term Player Development (LTPD) framework. The IIHF (International Ice Hockey Federation) endorses the same principles.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The upshot: if you move between countries, or your kid plays in an international tournament, the underlying philosophy is the same. The age-group names differ (Hockey Canada uses FUNdamentals, Learn to Play, Learn to Train, Train to Train, etc.), but the principles — multi-sport sampling, age-appropriate training, fun-first, late specialization — are universal.
         </p>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6 }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6 }}>
           For parents, this means the ADM isn&apos;t a U.S.-only quirk. It&apos;s the global consensus on how kids should learn hockey, supported by research from the IOC, NHL, and IIHF.
         </p>
       </section>

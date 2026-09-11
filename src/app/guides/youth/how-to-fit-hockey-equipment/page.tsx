@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function HowToFitHockeyEquipmentYouth() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/youth" style={{ color: '#555' }}>Youth</Link>
+        <Link href="/guides/youth" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>How to Fit Hockey Equipment</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>How to Fit Hockey Equipment</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -62,13 +62,13 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Intro */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHY FIT MATTERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Hockey equipment is sized to fail. A shoulder pad that doesn&apos;t cover the collarbone doesn&apos;t protect the collarbone. A helmet that rocks on the head doesn&apos;t protect the brain. Shin guards that don&apos;t reach the top of the skate let a puck straight up the leg. Most youth hockey injuries from equipment aren&apos;t caused by the wrong brand — they&apos;re caused by the wrong size.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           On the other side, oversized gear is a problem too. A glove that&apos;s too big makes it impossible to feel the stick. Shoulder pads that hang off the shoulders block arm movement. Pants that gap at the waist slide down and expose the lower back. The right fit is the one that&apos;s snug enough to stay in place, but loose enough to allow full mobility.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           The rest of this guide walks through every piece of equipment, the fit test for each, what to measure, and the most common mistakes parents make.
         </p>
       </section>
@@ -76,7 +76,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* The Universal Fit Tests */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE UNIVERSAL FIT TESTS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Three tests work for almost every piece of equipment. If a piece fails any of them, it doesn&apos;t fit.
         </p>
 
@@ -88,7 +88,7 @@ export default function HowToFitHockeyEquipmentYouth() {
           ].map(t => (
             <div key={t.name} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{t.name}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{t.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{t.desc}</p>
             </div>
           ))}
         </div>
@@ -97,7 +97,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Helmet */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HELMET + CAGE / VISOR</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The helmet is the single most important piece of equipment your kid wears. Get this right above all else.
         </p>
 
@@ -127,7 +127,7 @@ export default function HowToFitHockeyEquipmentYouth() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>When to replace:</strong> Immediately after any significant impact. Helmets are single-use safety devices — even if a hit doesn&apos;t crack the shell, the foam is designed to absorb one major impact and is compromised afterward. Also replace if the helmet is more than 5-7 years old (check the manufacture date stamped on the sticker), if the inside is crumbling, or if the kid has outgrown the size.
         </p>
       </section>
@@ -135,7 +135,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Shoulder Pads */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SHOULDER PADS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Shoulder pads protect the shoulders, collarbone, upper chest, upper back, and the top of the biceps. They run from the base of the neck to the top of the bicep, and they wrap around the chest and back.
         </p>
 
@@ -157,7 +157,7 @@ export default function HowToFitHockeyEquipmentYouth() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure chest circumference at the widest point. Match the measurement to the manufacturer&apos;s youth sizing chart. Sizes typically run from XS (smallest youth) to XL (largest youth), then junior, then senior. If your kid is between sizes, size up — shoulder pads compress the chest on impact, and a too-small pad will limit their ability to breathe during play.
         </p>
       </section>
@@ -165,7 +165,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Elbow Pads */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>ELBOW PADS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Elbow pads protect the elbow joint and the forearm. The fit is straightforward — too tight and the kid can&apos;t bend the arm, too loose and the pad slides down the forearm and exposes the elbow.
         </p>
 
@@ -186,7 +186,7 @@ export default function HowToFitHockeyEquipmentYouth() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure from the center of the back of the elbow to the wrist. Match the measurement to the manufacturer&apos;s chart.
         </p>
       </section>
@@ -194,7 +194,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Hockey Pants */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOCKEY PANTS (BREEZERS)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Hockey pants (also called breezers) protect the lower back, kidneys, hips, thighs, and tailbone. They sit at the natural waist and extend down to the top of the shin guards.
         </p>
 
@@ -215,7 +215,7 @@ export default function HowToFitHockeyEquipmentYouth() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure waist circumference at the natural waist. Match the measurement to the manufacturer&apos;s chart. Hockey pants run large compared to street pants — a 24-inch waist kid typically wears Youth Small.
         </p>
       </section>
@@ -223,7 +223,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Shin Guards */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SHIN GUARDS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Shin guards protect the shin, the knee, and the lower thigh. The fit is the most-often-misjudged piece of equipment because the right length depends on the player&apos;s height and how they wear them (under the tongue of the skate or outside).
         </p>
 
@@ -244,7 +244,7 @@ export default function HowToFitHockeyEquipmentYouth() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure from the center of the kneecap straight down to the top of the skate, then add about 1 inch. Match the measurement to the manufacturer&apos;s chart. Shin guards are typically sized in inches (8", 9", 10", etc.).
         </p>
       </section>
@@ -252,7 +252,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Gloves */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GLOVES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Hockey gloves protect the hands, fingers, wrists, and forearms. The fit directly affects stick feel — a glove that&apos;s too big makes it impossible to grip the stick properly.
         </p>
 
@@ -273,7 +273,7 @@ export default function HowToFitHockeyEquipmentYouth() {
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0' }}>
           <strong style={{ color: '#ccc' }}>Sizing:</strong> Measure from the base of the palm to the tip of the middle finger. Youth gloves run 8&quot;-11&quot;, junior 11&quot;-12&quot;, senior 12&quot;-15&quot;. The fit is highly personal — some players prefer a tighter glove for better feel, others a looser one for mobility.
         </p>
       </section>
@@ -281,7 +281,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Jock / Jill */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>JOCK / JILL + BASE LAYER</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The jock (for boys) or jill (for girls) protects the pelvic region. Most modern versions integrate the protective cup or pelvic shield into compression shorts. Some players wear a traditional jock strap with a separate cup; the integrated compression short is more common in youth hockey.
         </p>
 
@@ -307,7 +307,7 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* Mouthguard */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>MOUTHGUARD</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           A mouthguard is required in all USA Hockey sanctioned play. It protects the teeth, jaw, and — most importantly — reduces the risk of concussion by absorbing and distributing impact forces.
         </p>
 
@@ -316,11 +316,11 @@ export default function HowToFitHockeyEquipmentYouth() {
           <div style={{ display: 'grid', gap: '0.625rem' }}>
             <div>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Boil-and-bite ($5-$20)</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>A thermoplastic mouthguard you soften in hot water, then bite into to mold it to your teeth. The standard for youth hockey. Replace every 6-12 months, or sooner if it shows wear or stops fitting.</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>A thermoplastic mouthguard you soften in hot water, then bite into to mold it to your teeth. The standard for youth hockey. Replace every 6-12 months, or sooner if it shows wear or stops fitting.</p>
             </div>
             <div>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Custom ($80-$300)</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>Made by a dentist from a mold of the player&apos;s teeth. Better fit, more comfortable, slightly better protection. Worth it for adult players or any player wearing braces.</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>Made by a dentist from a mold of the player&apos;s teeth. Better fit, more comfortable, slightly better protection. Worth it for adult players or any player wearing braces.</p>
             </div>
           </div>
         </div>
@@ -329,20 +329,20 @@ export default function HowToFitHockeyEquipmentYouth() {
       {/* When to Size Up */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO SIZE UP</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Kids grow. The trade-off is buying gear that fits today vs. gear that fits for two seasons. The general rule: fit for the season you&apos;re in, not the one after. A piece that&apos;s slightly too big is a safety hazard.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Signs it&apos;s time to replace or size up:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• The piece visibly constricts movement during play</li>
           <li>• Coverage gaps appear when the kid is in a hockey stance</li>
           <li>• The kid regularly complains of pain, numbness, or pinching</li>
           <li>• The helmet rocks on the head even after re-adjusting</li>
           <li>• Straps are maxed out and the piece still slides</li>
         </ul>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>
           Most parents size up between seasons rather than mid-season unless the fit becomes a safety issue. For growth-spurt years (typically 11-13 for boys, 9-11 for girls), plan to replace at least 2-3 pieces each season.
         </p>
       </section>

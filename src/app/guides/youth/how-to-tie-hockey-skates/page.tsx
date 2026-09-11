@@ -16,14 +16,14 @@ export const metadata: Metadata = {
 export default function HowToTieHockeySkates() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/youth" style={{ color: '#555' }}>Youth</Link>
+        <Link href="/guides/youth" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>How to Tie Hockey Skates</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>How to Tie Hockey Skates</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -69,10 +69,10 @@ export default function HowToTieHockeySkates() {
       {/* Why it matters */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHY PROPER LACING MATTERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Skates are the only piece of hockey equipment that&apos;s between the player and the ice for every stride, every turn, every stop. Laced properly, they lock your heel in place, support your ankle, and let you push hard without your foot sliding around. Laced poorly, they cause blisters, lace bite, ankle injuries, and lost power on every stride.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           For beginners especially, the right lacing is the difference between "hockey is fun" and "my feet hurt." Take three minutes to learn it right.
         </p>
       </section>
@@ -90,7 +90,7 @@ export default function HowToTieHockeySkates() {
             ].map((s, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: '1rem', padding: '0.625rem 0', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none', alignItems: 'center' }}>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff' }}>{s.step}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999', lineHeight: 1.5 }}>{s.desc}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{s.desc}</p>
               </div>
             ))}
           </div>
@@ -100,7 +100,7 @@ export default function HowToTieHockeySkates() {
       {/* The standard method */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE STANDARD CRISSCROSS METHOD</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           This is the lacing 90% of hockey players use. It&apos;s simple, secure, and works for almost everyone. Master this first; learn the advanced methods only if you have a specific problem to solve.
         </p>
 
@@ -120,7 +120,7 @@ export default function HowToTieHockeySkates() {
                 <p style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#C8102E', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Step {s.step}</p>
                 <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>{s.title}</p>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{s.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{s.desc}</p>
             </div>
           ))}
         </div>
@@ -129,7 +129,7 @@ export default function HowToTieHockeySkates() {
       {/* Fixing lace bite */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FIXING LACE BITE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Lace bite is a sharp pain on the front of the ankle, caused by the laces pressing into the tendon that runs across the top of the foot. It can ruin a game. Three reliable fixes:
         </p>
 
@@ -141,7 +141,7 @@ export default function HowToTieHockeySkates() {
           ].map(f => (
             <div key={f.title} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{f.title}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{f.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{f.desc}</p>
             </div>
           ))}
         </div>
@@ -150,37 +150,37 @@ export default function HowToTieHockeySkates() {
       {/* Advanced methods */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THREE ADVANCED METHODS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Most players stick with the standard crisscross. These three are worth knowing for specific problems.
         </p>
 
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>Lock lacing — for lace bite or extra ankle support</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6, marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '0.5rem' }}>
               <strong style={{ color: '#bbb' }}>How:</strong> Lace the skate normally up to the second-from-top eyelet. At the top, cross the laces, then thread each end through the top eyelet on the same side (don\'t cross at the very top). Pull snug, then tie normally.
             </p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
               <strong style={{ color: '#bbb' }}>Why:</strong> The pattern redirects pressure to the sides of the ankle, not the front. Excellent for players prone to lace bite or anyone wanting extra heel lock.
             </p>
           </div>
 
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>Double cross lacing — for laces that keep slipping</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6, marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '0.5rem' }}>
               <strong style={{ color: '#bbb' }}>How:</strong> Lace the skate normally. At the top eyelets, cross the laces over each other twice (instead of once) before making your bow.
             </p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
               <strong style={{ color: '#bbb' }}>Why:</strong> The double cross creates extra friction at the top, which keeps the laces from loosening during play. Trade-off: harder to untie at the end of a game.
             </p>
           </div>
 
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>Dropping an eyelet — for more ankle flex</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6, marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '0.5rem' }}>
               <strong style={{ color: '#bbb' }}>How:</strong> Lace the skate normally all the way up, but skip the very top eyelet pair. Tie off below the top.
             </p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
               <strong style={{ color: '#bbb' }}>Why:</strong> Skipping the top eyelet gives the ankle more forward flex — a deeper knee bend and a longer, more powerful stride. Many NHL players do this. Trade-off: less ankle support, so it\'s not ideal for beginners still building ankle strength.
             </p>
           </div>
@@ -199,13 +199,13 @@ export default function HowToTieHockeySkates() {
               { size: 'Senior (skate size 9+)', length: '108" – 120"' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.size}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.size}</p>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', textAlign: 'right', fontWeight: 600 }}>{row.length}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           When in doubt, bring the skates to a hockey shop and ask. Most shops will measure the eyelets and sell you the right length. Laces should be long enough for a comfortable double bow, but not so long that the extra lace dangles into the blade.
         </p>
       </section>

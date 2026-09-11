@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function JockJillFittingGuideAdult() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/adult" style={{ color: '#555' }}>Adult</Link>
+        <Link href="/guides/adult" style={{ color: 'rgba(255,255,255,0.4)' }}>Adult</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Jock / Jill Fitting Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Jock / Jill Fitting Guide</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -60,17 +60,17 @@ export default function JockJillFittingGuideAdult() {
       {/* Jock vs Jill */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>JOCK VS. JILL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           The two pieces protect different anatomy. A jill is not a jock with the cup removed — the design and protective geometry are different.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Jock (men)</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>A hard protective cup held in place by a jock strap (traditional) or integrated compression short (modern). Most adult men wear the integrated short style. The cup is sized separately from the short and can be replaced independently.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>A hard protective cup held in place by a jock strap (traditional) or integrated compression short (modern). Most adult men wear the integrated short style. The cup is sized separately from the short and can be replaced independently.</p>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Jill (women)</p>
-            <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>A pelvic shield designed for female anatomy. The shield is contoured for the lower abdomen and pelvic floor, with different protective geometry than a cup. Modern jills are integrated into compression shorts that fit over the hips. Brands like Bauer, Sher-Wood, and McDavid make jill-specific designs.</p>
+            <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>A pelvic shield designed for female anatomy. The shield is contoured for the lower abdomen and pelvic floor, with different protective geometry than a cup. Modern jills are integrated into compression shorts that fit over the hips. Brands like Bauer, Sher-Wood, and McDavid make jill-specific designs.</p>
           </div>
         </div>
       </section>
@@ -78,7 +78,7 @@ export default function JockJillFittingGuideAdult() {
       {/* The fit test */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FIT TEST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Four checks. The jock/jill fails if any of them don&apos;t pass.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -101,7 +101,7 @@ export default function JockJillFittingGuideAdult() {
       {/* Sizing */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SIZING (ADULT)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Measure the waist just above the hips. Match the measurement to the brand-specific chart. Brand sizing varies: Bauer, CCM, Shock Doctor, and McDavid all size slightly differently. The chart below is a typical adult size range; always check the actual product page.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -116,13 +116,13 @@ export default function JockJillFittingGuideAdult() {
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.4fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.waist}</p>
-                <p style={{ fontSize: '0.75rem', color: '#666', textAlign: 'right' }}>{row.note}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.waist}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textAlign: 'right' }}>{row.note}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           <strong style={{ color: '#ccc' }}>Cup sizing (men):</strong> the cup is usually separate from the short. If a cup is included, it&apos;s typically a "Standard" or "Large" adult size. If a replacement is needed, most men wear a cup sized by waist (not by the short size). Check the cup packaging for the sizing chart.
         </p>
       </section>
@@ -130,10 +130,10 @@ export default function JockJillFittingGuideAdult() {
       {/* Women-specific fit */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WOMEN-SPECIFIC FIT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Women-specific jills are designed with female anatomy in mind: the shield is contoured to the lower abdomen and pelvic floor, the compression short is cut for the female hip-to-waist ratio, and the fit doesn&apos;t gap at the waist. The standard jock shape is designed for male anatomy and won&apos;t fit women the same way.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           If women-specific jills aren&apos;t available in your size, junior jills are the next-best option — the geometry is similar and the cut is smaller. Avoid wearing a jock with the cup removed: it leaves the lower abdomen and pelvic floor unprotected.
         </p>
       </section>
@@ -141,16 +141,16 @@ export default function JockJillFittingGuideAdult() {
       {/* When to upgrade */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO UPGRADE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Jocks and jills don&apos;t have a hard "replace by" date. Most adult players replace them every 3-5 years, or sooner if:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• The cup or shield has cracked, has visible damage, or has compressed.</li>
           <li>• The compression short has lost elasticity and no longer stays snug.</li>
           <li>• The sock tabs are stretched out and no longer hold the socks.</li>
           <li>• You&apos;re moving up a competitive level and want better protection (higher-end jocks/jills add reinforced stitching, better ventilation, and segmented shields).</li>
         </ul>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>
           For men, you can replace the cup independently if the short is still in good condition. For women, the shield is usually integrated into the short and replaces as a unit.
         </p>
       </section>

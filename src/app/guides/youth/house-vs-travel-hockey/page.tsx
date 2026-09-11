@@ -16,14 +16,14 @@ export const metadata: Metadata = {
 export default function HouseVsTravelHockey() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/youth" style={{ color: '#555' }}>Youth</Link>
+        <Link href="/guides/youth" style={{ color: 'rgba(255,255,255,0.4)' }}>Youth</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>House vs Travel Hockey</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>House vs Travel Hockey</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -61,10 +61,10 @@ export default function HouseVsTravelHockey() {
       {/* Intro */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE SHORT VERSION</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           "House" and "travel" are the two main paths in USA Hockey. <strong style={{ color: '#fff' }}>House is recreational</strong> — no tryouts, teams are drafted locally, kids play against other teams in the same association or town, and the schedule is gentle. <strong style={{ color: '#fff' }}>Travel is competitive</strong> — tryouts determine placement, the team plays in leagues and tournaments outside the home association, and the schedule is intense.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           Neither is "better." They serve different goals. The right choice depends on your kid, your family, and what you want out of the sport. The rest of this guide walks through the system, the costs, the time, and how to think about it.
         </p>
       </section>
@@ -72,7 +72,7 @@ export default function HouseVsTravelHockey() {
       {/* USA Hockey Tier System */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE USA HOCKEY TIER SYSTEM</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           USA Hockey (the national governing body) organizes youth hockey into age divisions and four skill tiers. The terms "house" and "travel" don't appear in the official tier names, but they're how parents and coaches actually talk about the system.
         </p>
 
@@ -88,13 +88,13 @@ export default function HouseVsTravelHockey() {
               <div key={t.tier} style={{ display: 'grid', gridTemplateColumns: '110px 110px 1fr', gap: '1rem', padding: '0.75rem', background: 'rgba(255,255,255,0.035)', borderRadius: '6px', alignItems: 'center' }}>
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E' }}>{t.tier}</p>
                 <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff' }}>{t.name}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999', lineHeight: 1.5 }}>{t.desc}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>{t.desc}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6 }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6 }}>
           "Travel" is the umbrella term for anything above house. If a coach says "travel hockey," they could mean anything from B-level all the way up to AAA. The cost and time commitment scale with the tier.
         </p>
       </section>
@@ -102,7 +102,7 @@ export default function HouseVsTravelHockey() {
       {/* Age divisions */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>AGE DIVISIONS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           USA Hockey moved to numbered age divisions (8U, 10U, 12U, etc.) in 2016, but most people still use the old names (Mite, Squirt, Peewee, Bantam, Midget). Both refer to the same age groups.
         </p>
 
@@ -118,14 +118,14 @@ export default function HouseVsTravelHockey() {
             ].map(a => (
               <div key={a.code} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 1fr', gap: '0.75rem', padding: '0.625rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
                 <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#fff' }}>{a.code}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{a.old}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{a.old}</p>
                 <p style={{ fontSize: '0.75rem', color: '#777', textAlign: 'right' }}>{a.age}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6 }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6 }}>
           <strong style={{ color: '#ccc' }}>Body checking:</strong> Not allowed at 12U and below. Legal at 14U and up at competitive tiers. Most associations run 12U as non-contact regardless of tier.
         </p>
       </section>
@@ -136,7 +136,7 @@ export default function HouseVsTravelHockey() {
 
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginBottom: '1rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-            <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Factor</p>
+            <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Factor</p>
             <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#C8102E', textTransform: 'uppercase', letterSpacing: '0.08em' }}>House</p>
             <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Travel</p>
           </div>
@@ -152,7 +152,7 @@ export default function HouseVsTravelHockey() {
             ['Best for', 'New players, casual players, kids with other commitments', 'Committed players, kids aiming for high school/junior hockey'],
           ].map((row, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 8 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-              <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row[0]}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row[0]}</p>
               <p style={{ fontSize: '0.8125rem', color: '#bbb' }}>{row[1]}</p>
               <p style={{ fontSize: '0.8125rem', color: '#bbb' }}>{row[2]}</p>
             </div>
@@ -163,7 +163,7 @@ export default function HouseVsTravelHockey() {
       {/* How to Decide */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW TO DECIDE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           There's no universal right answer. These are the questions worth sitting with as a family:
         </p>
 
@@ -177,12 +177,12 @@ export default function HouseVsTravelHockey() {
           ].map(item => (
             <div key={item.q} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{item.q}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{item.a}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{item.a}</p>
             </div>
           ))}
         </div>
 
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6 }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6 }}>
           <strong style={{ color: '#ccc' }}>A note on pressure:</strong> Youth hockey has a culture where travel is treated as the "serious" path and house is treated as a way-station. That framing is backwards. Most NHL players touched a puck before they were five and had fun with it for years before anyone talked to them about tryouts. The kids who burn out at 13 are almost always the ones who were pushed into competitive hockey before they were ready. Let your kid lead.
         </p>
       </section>
@@ -190,7 +190,7 @@ export default function HouseVsTravelHockey() {
       {/* Canada note */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>A NOTE FOR CANADIAN FAMILIES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           Hockey Canada uses a parallel structure but with different terminology. "House" in Canada is the same recreational tier. "Rep" (short for "representative") is the equivalent of travel, and tiers run from A through AAA. The age groups also use old names: Novice (7-8), Atom (9-10), Peewee (11-12), Bantam (13-14), Midget (15-17), Juvenile (18-19). Hockey Canada runs a parallel development framework called LTPD (Long-Term Player Development) that's similar in spirit to USA Hockey's ADM.
         </p>
       </section>

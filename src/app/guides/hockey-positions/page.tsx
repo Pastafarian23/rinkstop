@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function HockeyPositions() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Understanding Hockey Positions</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Understanding Hockey Positions</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -77,13 +77,13 @@ export default function HockeyPositions() {
       {/* Forwards */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FORWARDS  --  3 PLAYERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1.25rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1.25rem', fontSize: '0.9375rem' }}>
           Three forwards play as a line  --  center flanked by left wing and right wing. Each line typically plays 30-60 seconds per shift before changing. The best lines have chemistry between all three players.
         </p>
 
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginBottom: '1.25rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>Center (C)  --  The Quarterback</h3>
-          <p style={{ fontSize: '0.875rem', color: '#999', lineHeight: 1.7, marginBottom: '0.75rem' }}>
+          <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '0.75rem' }}>
             The center is the most demanding forward position. They take faceoffs in all three zones  --  offensive, defensive, and neutral  --  and are expected to backcheck through the neutral zone when the other team has the puck. Centers are typically the leader of the line and often the best two-way player.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -96,17 +96,17 @@ export default function HockeyPositions() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>Left Wing (LW)  --  The Left Side</h3>
-            <p style={{ fontSize: '0.875rem', color: '#999', lineHeight: 1.7, marginBottom: '0.75rem' }}>
+            <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '0.75rem' }}>
               Plays on the left side of the ice. Typically responsible for covering the left lane defensively and forechecking along the left boards. Many elite left wing scorers play a perimeter game from the left circle.
             </p>
-            <p style={{ fontSize: '0.8125rem', color: '#777' }}><strong style={{ color: '#888' }}>Key skills:</strong> Board play, left-side shooting, forecheck</p>
+            <p style={{ fontSize: '0.8125rem', color: '#777' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Key skills:</strong> Board play, left-side shooting, forecheck</p>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>Right Wing (RW)  --  The Right Side</h3>
-            <p style={{ fontSize: '0.875rem', color: '#999', lineHeight: 1.7, marginBottom: '0.75rem' }}>
+            <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '0.75rem' }}>
               Plays on the right side of the ice. Tasked with forechecking and retrieving pucks along the right boards. In systems with a strong-side bias, right wing often rotates to cover the strong side as the third forward back.
             </p>
-            <p style={{ fontSize: '0.8125rem', color: '#777' }}><strong style={{ color: '#888' }}>Key skills:</strong> Right-side retrieval, net-front, forecheck</p>
+            <p style={{ fontSize: '0.8125rem', color: '#777' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Key skills:</strong> Right-side retrieval, net-front, forecheck</p>
           </div>
         </div>
       </section>
@@ -114,7 +114,7 @@ export default function HockeyPositions() {
       {/* Defensemen */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE DEFENSEMEN  --  2 PLAYERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1.25rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1.25rem', fontSize: '0.9375rem' }}>
           Two defensemen play as a pair  --  one left defenseman (LD) and one right defenseman (RD). They don't sub out on the fly during a shift the way forwards do; pairs stay together for the entire 30-60 second sequence.
         </p>
 
@@ -125,7 +125,7 @@ export default function HockeyPositions() {
           ].map(d => (
             <div key={d.title} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>{d.title}</h3>
-              <p style={{ fontSize: '0.875rem', color: '#999', lineHeight: 1.7, marginBottom: '0.75rem' }}>{d.desc}</p>
+              <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '0.75rem' }}>{d.desc}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {d.skills.map(s => <span key={s} style={{ padding: '0.2rem 0.625rem', background: 'rgba(0,130,200,0.08)', border: '1px solid rgba(0,130,200,0.2)', borderRadius: '999px', fontSize: '0.75rem', color: '#0082C8' }}>{s}</span>)}
               </div>
@@ -135,10 +135,10 @@ export default function HockeyPositions() {
 
         <div style={{ background: 'rgba(0,130,200,0.05)', border: '1px solid rgba(0,130,200,0.15)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginTop: '1rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>Defensive Pair Dynamics</h3>
-          <p style={{ fontSize: '0.875rem', color: '#999', lineHeight: 1.7, marginBottom: '0.5rem' }}>
+          <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: '0.5rem' }}>
             The best defensive pairs have complementary styles  --  one more offense-minded who joins the rush, one more conservative who stays back. This is called a "cover-one" system.
           </p>
-          <p style={{ fontSize: '0.875rem', color: '#999', lineHeight: 1.7 }}>
+          <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
             Some teams play a "contain" system where both defensemen are more conservative. Others use a "rotate" system where both jump into the play. The pair dynamic is one of the most important  --  and underrated  --  elements of a team's structure.
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function HockeyPositions() {
       {/* Goalie */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE GOALIE  --  THE LAST LINE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1.25rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1.25rem', fontSize: '0.9375rem' }}>
           The goalie is the only player with a catching glove and blocker, and the only one restricted to a specific area (the crease). Goalies are the most specialized position in all of sports  --  a good goalie can steal a game; a bad goalie can lose one no matter how well the team plays.
         </p>
 
@@ -174,7 +174,7 @@ export default function HockeyPositions() {
       {/* Line Combinations */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW SHIFTS WORK</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           A shift is 30-60 seconds of play. Forwards sub out "on the fly" at their bench. Defensemen stay together as a pair for the full shift. Goalies play the entire game (with relief from the backup in blowouts or back-to-backs).
         </p>
 
@@ -187,7 +187,7 @@ export default function HockeyPositions() {
             ].map(l => (
               <div key={l.label} style={{ padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px' }}>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{l.label}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{l.desc}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{l.desc}</p>
               </div>
             ))}
           </div>
@@ -196,7 +196,7 @@ export default function HockeyPositions() {
 
       {/* CTA */}
       <div style={{ background: 'var(--s2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.75rem' }}>Explore the player directory</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>Explore the player directory</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/directory/players" style={{ padding: '0.625rem 1.25rem', background: '#C8102E', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Browse All Players</Link>
           <Link href="/glossary" style={{ padding: '0.625rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Glossary</Link>

@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 export default function HockeyNutrition() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Eating for Performance</span>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Eating for Performance</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Training</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>EATING FOR HOCKEY PERFORMANCE</h1>
@@ -30,7 +30,7 @@ export default function HockeyNutrition() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW HOCKEY BURNS FUEL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Understanding how hockey uses energy helps you understand why nutrition matters for this sport specifically.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Understanding how hockey uses energy helps you understand why nutrition matters for this sport specifically.</p>
         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
           {[
             { system: 'ATP-PC (Immediate)', duration: '10-15 seconds', example: 'A single stride, a faceoff, a shot', color: '#C8102E', fill: 'High-sugar foods the day before. No carbs needed during game.' },
@@ -41,15 +41,15 @@ export default function HockeyNutrition() {
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <span style={{ width: 12, height: 12, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff' }}>{s.system}</p>
-                <span style={{ fontSize: '0.75rem', color: '#555', marginLeft: 'auto' }}>{s.duration}</span>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>{s.duration}</span>
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.375rem' }}>Example: {s.example}</p>
-              <p style={{ fontSize: '0.75rem', color: '#555' }}><strong style={{ color: '#777' }}>Fuel source:</strong> {s.fill}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.375rem' }}>Example: {s.example}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}><strong style={{ color: '#777' }}>Fuel source:</strong> {s.fill}</p>
             </div>
           ))}
         </div>
-        <p style={{ fontSize: '0.8125rem', color: '#666', lineHeight: 1.65, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
-          <strong style={{ color: '#999' }}>Key takeaway:</strong> Hockey is a sport of repeated anaerobic bursts with limited rest. Your nutrition strategy should prioritize carbohydrate fueling for game day (your primary energy system) and protein for muscle repair and recovery.
+        <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.65, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Key takeaway:</strong> Hockey is a sport of repeated anaerobic bursts with limited rest. Your nutrition strategy should prioritize carbohydrate fueling for game day (your primary energy system) and protein for muscle repair and recovery.
         </p>
       </section>
 
@@ -71,8 +71,8 @@ export default function HockeyNutrition() {
                   <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#fff' }}>{m.label}</p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '0.8125rem', color: '#888', marginBottom: '0.25rem' }}>{m.desc}</p>
-                  <p style={{ fontSize: '0.75rem', color: '#555' }}>{m.carb}</p>
+                  <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>{m.desc}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{m.carb}</p>
                 </div>
               </div>
             ))}
@@ -82,7 +82,7 @@ export default function HockeyNutrition() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HYDRATION</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Dehydration is the silent performance killer. Even 1-2% body weight loss through fluid loss impairs performance. Hockey players lose significant fluid through sweat, respiratory losses during high-intensity shifts, and arena heat. Most players start every game at least mildly dehydrated.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Dehydration is the silent performance killer. Even 1-2% body weight loss through fluid loss impairs performance. Hockey players lose significant fluid through sweat, respiratory losses during high-intensity shifts, and arena heat. Most players start every game at least mildly dehydrated.</p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {[
@@ -93,7 +93,7 @@ export default function HockeyNutrition() {
             ].map(t => (
               <div key={t.tip} style={{ padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px' }}>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{t.tip}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.5 }}>{t.result}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{t.result}</p>
               </div>
             ))}
           </div>
@@ -111,18 +111,18 @@ export default function HockeyNutrition() {
               { name: 'Vitamin D + Calcium', why: 'Supports bone health  --  hockey players are at risk for stress fractures. Most players are deficient in vitamin D.', evidence: 'Good evidence for bone density' },
             ].map(s => (
               <div key={s.name} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px', gap: '0.75rem', padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', alignItems: 'center' }}>
-                <div><p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{s.name}</p><p style={{ fontSize: '0.75rem', color: '#888' }}>{s.why}</p></div>
-                <p style={{ fontSize: '0.6875rem', color: '#555', textAlign: 'right' }}>Evidence:</p>
+                <div><p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{s.name}</p><p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{s.why}</p></div>
+                <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', textAlign: 'right' }}>Evidence:</p>
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#009650', textAlign: 'right' }}>{s.evidence}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ fontSize: '0.75rem', color: '#444', marginTop: '0.75rem', lineHeight: 1.6 }}>Always check with your doctor before starting supplements. WADA/USADA compliance is the athlete&apos;s responsibility  --  verify every product at globaldrogena.org.</p>
+        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', marginTop: '0.75rem', lineHeight: 1.6 }}>Always check with your doctor before starting supplements. WADA/USADA compliance is the athlete&apos;s responsibility  --  verify every product at globaldrogena.org.</p>
       </section>
 
       <div style={{ background: 'var(--s2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.75rem' }}>More guides</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>More guides</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/guides/off-ice-hockey-training" style={{ padding: '0.625rem 1.25rem', background: '#C8102E', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Off-Ice Training</Link>
           <Link href="/guides/hockey-parents-handbook" style={{ padding: '0.625rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Parent&apos;s Handbook</Link>

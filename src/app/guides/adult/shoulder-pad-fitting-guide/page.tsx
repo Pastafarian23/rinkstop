@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function ShoulderPadFittingGuideAdult() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/adult" style={{ color: '#555' }}>Adult</Link>
+        <Link href="/guides/adult" style={{ color: 'rgba(255,255,255,0.4)' }}>Adult</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Shoulder Pad Fitting Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Shoulder Pad Fitting Guide</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -60,7 +60,7 @@ export default function ShoulderPadFittingGuideAdult() {
       {/* Fit styles */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THREE FIT STYLES</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Adult shoulder pads come in three fits. The right one depends on your body shape and how you play:
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -71,7 +71,7 @@ export default function ShoulderPadFittingGuideAdult() {
           ].map(f => (
             <div key={f.style} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{f.style}</p>
-              <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.6 }}>{f.desc}</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{f.desc}</p>
             </div>
           ))}
         </div>
@@ -80,7 +80,7 @@ export default function ShoulderPadFittingGuideAdult() {
       {/* The fit test */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FIT TEST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Work through these checks. The pad fails if any of them don&apos;t pass.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -105,7 +105,7 @@ export default function ShoulderPadFittingGuideAdult() {
       {/* Sizing */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SIZING (ADULT)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Measure chest circumference at the widest point (across the nipples, relaxed). Match the measurement to the brand-specific chart — Bauer, CCM, and Warrior all size slightly differently.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -121,13 +121,13 @@ export default function ShoulderPadFittingGuideAdult() {
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.4fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 6 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.chest}</p>
-                <p style={{ fontSize: '0.75rem', color: '#666', textAlign: 'right' }}>{row.note}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.chest}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textAlign: 'right' }}>{row.note}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           <strong style={{ color: '#ccc' }}>For women:</strong> Many adult women wear Junior or Intermediate shoulder pads. Senior pads are often too wide through the chest, leaving the shoulder caps floating off the deltoid. Junior pads are shorter and narrower, providing a more secure fit. Women-specific pads (Bauer and CCM both have lines) add molded chest cups to address the anatomical fit issue.
         </p>
       </section>
@@ -135,10 +135,10 @@ export default function ShoulderPadFittingGuideAdult() {
       {/* When to upgrade */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO UPGRADE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Shoulder pads don&apos;t have a "replace by" date the way helmets do — they last until the foam compresses or the plastic cracks. Most adult players replace shoulder pads every 3-5 years with regular play, or sooner if:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• The foam has compressed and the pad feels noticeably thinner than when new.</li>
           <li>• The plastic caps are cracked or have visible damage.</li>
           <li>• The straps no longer hold the pad snugly to the body.</li>

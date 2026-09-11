@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 export default function YouthToJunior() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Youth to Junior Hockey</span>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link><span style={{ margin: '0 0.4rem' }}>›</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Youth to Junior Hockey</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Pathway</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>FROM YOUTH TO JUNIOR HOCKEY</h1>
@@ -30,7 +30,7 @@ export default function YouthToJunior() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE JUNIOR HOCKEY LANDSCAPE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Junior hockey is not a single thing  --  it\'s a system of leagues with different purposes, cost structures, and NCAA eligibility implications. Understanding the map before you commit to a path is critical.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Junior hockey is not a single thing  --  it\'s a system of leagues with different purposes, cost structures, and NCAA eligibility implications. Understanding the map before you commit to a path is critical.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { name: 'USHL (United States Hockey League)', tier: 'Tier I', pay: 'PAID  --  full scholarship', age: '16-20', ncaa: '✅ NCAA-eligible', note: 'Best developmental path for NCAA Div I. 25+ teams. Tryouts in spring.' },
@@ -44,25 +44,25 @@ export default function YouthToJunior() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{l.name}</p>
-                  <p style={{ fontSize: '0.75rem', color: '#555' }}>{l.note}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{l.note}</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: l.pay.includes('PAID') ? '#009650' : '#C8102E', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{l.pay}</span>
-                  <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#888', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{l.age}</span>
+                  <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{l.age}</span>
                   <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: l.ncaa.includes('✅') ? '#009650' : '#C8102E', background: 'rgba(255,255,255,0.04)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{l.ncaa}</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <p style={{ fontSize: '0.8125rem', color: '#555', marginTop: '0.75rem', lineHeight: 1.6, background: 'rgba(200,16,46,0.05)', border: '1px solid rgba(200,16,46,0.12)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
-          <strong style={{ color: '#999' }}>Critical NCAA rule:</strong> Playing in any CHL league (OHL, WHL, QMJHL)  --  even for one game  --  permanently forfeits NCAA Div I and II eligibility. USHL, NAHL, and USPHL are all NCAA-eligible as long as you don&apos;t exceed age and amateurism rules.
+        <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.75rem', lineHeight: 1.6, background: 'rgba(200,16,46,0.05)', border: '1px solid rgba(200,16,46,0.12)', borderRadius: '8px', padding: '0.875rem 1rem' }}>
+          <strong style={{ color: 'rgba(255,255,255,0.6)' }}>Critical NCAA rule:</strong> Playing in any CHL league (OHL, WHL, QMJHL)  --  even for one game  --  permanently forfeits NCAA Div I and II eligibility. USHL, NAHL, and USPHL are all NCAA-eligible as long as you don&apos;t exceed age and amateurism rules.
         </p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT IT TAKES  --  COMPETENCY CHECKLIST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Not every youth hockey player is ready for junior  --  and that\'s fine. Here\'s what junior coaches are looking for:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Not every youth hockey player is ready for junior  --  and that\'s fine. Here\'s what junior coaches are looking for:</p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {[
@@ -76,7 +76,7 @@ export default function YouthToJunior() {
               <div key={s.skill} style={{ display: 'grid', gridTemplateColumns: '150px 80px 1fr', gap: '0.75rem', padding: '0.875rem', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', alignItems: 'center' }}>
                 <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff' }}>{s.skill}</p>
                 <p style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#C8102E', textAlign: 'center' }}>{s.level}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.5 }}>{s.desc}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{s.desc}</p>
               </div>
             ))}
           </div>
@@ -99,7 +99,7 @@ export default function YouthToJunior() {
                 <p style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#C8102E', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.season}</p>
                 <div>
                   <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>{s.event}</p>
-                  <p style={{ fontSize: '0.8125rem', color: '#888', lineHeight: 1.55 }}>{s.detail}</p>
+                  <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>{s.detail}</p>
                 </div>
               </div>
             ))}
@@ -108,7 +108,7 @@ export default function YouthToJunior() {
       </section>
 
       <div style={{ background: 'var(--s2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', marginTop: '2rem' }}>
-        <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: '0.75rem' }}>More guides</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>More guides</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link href="/guides/hockey-parents-handbook" style={{ padding: '0.625rem 1.25rem', background: '#C8102E', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Parent&apos;s Handbook</Link>
           <Link href="/guides/hockey-positions" style={{ padding: '0.625rem 1.25rem', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: '#fff', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none' }}>Hockey Positions</Link>

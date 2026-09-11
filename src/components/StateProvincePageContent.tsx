@@ -105,7 +105,7 @@ export default function StateProvincePageContent({
           <span style={{ margin: '0 0.4rem' }}>›</span>
           <Link href={parentUrl} style={{ color: 'rgba(255,255,255,0.4)' }}>{parentLabel}</Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
-          <span style={{ color: '#A0A0A0' }}>{regionName}</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)' }}>{regionName}</span>
         </nav>
 
         {/* Hero */}
@@ -129,7 +129,7 @@ export default function StateProvincePageContent({
             <Stat label="Teams" value={teamCount} />
           </div>
 
-          <p style={{ color: '#666666', fontSize: '0.9375rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9375rem' }}>
             Browse by city below or{' '}
             <Link href="/add-listing" style={{ color: red, fontWeight: 600 }}>add a listing</Link>
             {' '}if you know a rink or team we&apos;re missing.
@@ -308,7 +308,7 @@ export default function StateProvincePageContent({
                   <span aria-hidden style={{ color: red, fontSize: '1.125rem', flexShrink: 0, lineHeight: 1 }}>+</span>
                 </summary>
                 <p
-                  style={{ color: '#aaa', fontSize: '0.875rem', lineHeight: 1.65, marginTop: '0.625rem', marginBottom: 0 }}
+                  style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.65, marginTop: '0.625rem', marginBottom: 0 }}
                   // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: q.answer }}
                 />
@@ -332,7 +332,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div style={{ background: '#0f0f0f', padding: '0.75rem 1.25rem', borderRadius: '8px', textAlign: 'center', minWidth: 90 }}>
       <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#C8102E' }}>{value}</div>
-      <div style={{ fontSize: '0.75rem', color: '#666' }}>{label}</div>
+      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>{label}</div>
     </div>
   );
 }

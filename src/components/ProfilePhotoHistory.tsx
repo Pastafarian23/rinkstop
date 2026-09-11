@@ -115,7 +115,7 @@ export default function ProfilePhotoHistory({
                     top: 2,
                     right: 2,
                     background: 'var(--gold)',
-                    color: '#041E42',
+                    color: '#C8102E',
                     fontSize: '0.5rem',
                     fontWeight: 800,
                     letterSpacing: '0.05em',

@@ -149,7 +149,7 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
         style={{
           fontFamily: '"Bebas Neue", "Arial Narrow", sans-serif',
           fontSize: 'clamp(1.75rem, 4vw, 2.25rem)',
-          color: '#041E42',
+          color: '#C8102E',
           margin: '0 0 0.75rem',
           letterSpacing: '0.02em',
           lineHeight: 1.15,
@@ -159,7 +159,7 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
       </h2>
       <p
         style={{
-          color: '#1a1a1a',
+          color: 'rgba(255,255,255,0.7)',
           fontSize: '1rem',
           maxWidth: '560px',
           margin: '0 auto 1.5rem',

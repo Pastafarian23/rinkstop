@@ -17,14 +17,14 @@ export const metadata: Metadata = {
 export default function ElbowPadFittingGuideAdult() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides/adult" style={{ color: '#555' }}>Adult</Link>
+        <Link href="/guides/adult" style={{ color: 'rgba(255,255,255,0.4)' }}>Adult</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Elbow Pad Fitting Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Elbow Pad Fitting Guide</span>
       </nav>
 
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>
@@ -60,7 +60,7 @@ export default function ElbowPadFittingGuideAdult() {
       {/* The fit test */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE FIT TEST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Three checks. If any fail, the size is wrong.
         </p>
         <div style={{ display: 'grid', gap: '0.625rem' }}>
@@ -82,10 +82,10 @@ export default function ElbowPadFittingGuideAdult() {
       {/* Strap order */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>STRAP ORDER: UPPER FIRST</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Always tighten the <strong style={{ color: '#fff' }}>upper strap first</strong>, then the lower. The upper strap holds the cup against the elbow joint. If you tighten the lower strap first, the upper strap pulls the cup down onto the forearm, away from the joint where protection is needed.
         </p>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '0', fontSize: '0.9375rem' }}>
           Both straps should be snug but not cutting off circulation. Numbness or tingling in the fingers means the lower strap is too tight.
         </p>
       </section>
@@ -93,7 +93,7 @@ export default function ElbowPadFittingGuideAdult() {
       {/* Sizing */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>SIZING (ADULT)</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Measure from the center of the back of the elbow to the wrist, with the arm slightly bent. Match the measurement to the brand-specific chart.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -108,13 +108,13 @@ export default function ElbowPadFittingGuideAdult() {
             ].map((row, i) => (
               <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.4fr', gap: '0.5rem', padding: '0.625rem 0', borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <p style={{ fontSize: '0.8125rem', color: '#bbb', fontWeight: 600 }}>{row.size}</p>
-                <p style={{ fontSize: '0.8125rem', color: '#999' }}>{row.length}</p>
-                <p style={{ fontSize: '0.75rem', color: '#666', textAlign: 'right' }}>{row.note}</p>
+                <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{row.length}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textAlign: 'right' }}>{row.note}</p>
               </div>
             ))}
           </div>
         </div>
-        <p style={{ color: '#999', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.6, marginTop: '1rem' }}>
           <strong style={{ color: '#ccc' }}>For women and smaller-framed men:</strong> intermediate or junior elbow pads are often a better fit than senior. Senior pads are sized for larger forearms; if the cup is centered on the elbow but the forearm guard is too wide, drop down a size.
         </p>
       </section>
@@ -122,10 +122,10 @@ export default function ElbowPadFittingGuideAdult() {
       {/* When to upgrade */}
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHEN TO UPGRADE</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Elbow pads don&apos;t have a hard "replace by" date. Most adult players replace them every 3-5 years with regular play, or sooner if:
         </p>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#aaa', fontSize: '0.875rem', lineHeight: 1.7 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
           <li>• The foam has compressed and the pad feels noticeably thinner than when new.</li>
           <li>• The elbow cup is cracked or has visible damage.</li>
           <li>• The straps no longer hold the pad snugly.</li>

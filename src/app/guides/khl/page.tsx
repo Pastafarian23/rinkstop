@@ -16,12 +16,12 @@ export const metadata: Metadata = {
 export default function KHLGuide() {
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/guides" style={{ color: '#555' }}>Guides</Link>
+        <Link href="/guides" style={{ color: 'rgba(255,255,255,0.4)' }}>Guides</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>KHL</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>KHL</span>
       </nav>
       <span style={{ display: 'inline-block', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '0.2rem 0.6rem', borderRadius: '4px', background: 'rgba(200,16,46,0.12)', color: '#C8102E', marginBottom: '0.75rem' }}>Guide</span>
       <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2rem, 5vw, 2.75rem)', color: '#fff', letterSpacing: '0.04em', lineHeight: 1, margin: '0 0 0.75rem' }}>KHL GUIDE</h1>
@@ -38,7 +38,7 @@ export default function KHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT IS THE KHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Kontinental Hockey League is a professional ice hockey league founded in 2008 as a merger of the Russian Superleague (RSL) and select clubs from Kazakhstan and Belarus. It is the largest professional hockey league outside the NHL by geography and roster size, and it operates as the top-level professional circuit in Russia and several neighboring countries.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The Kontinental Hockey League is a professional ice hockey league founded in 2008 as a merger of the Russian Superleague (RSL) and select clubs from Kazakhstan and Belarus. It is the largest professional hockey league outside the NHL by geography and roster size, and it operates as the top-level professional circuit in Russia and several neighboring countries.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { label: 'Founded', value: '2008 (current form)' },
@@ -58,7 +58,7 @@ export default function KHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>DIVISIONS AND FORMAT</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The KHL is split into two conferences and four divisions. The Western Conference contains the Bobrov and Tarasov divisions; the Eastern Conference contains the Kharlamov and Chernyshev divisions.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The KHL is split into two conferences and four divisions. The Western Conference contains the Bobrov and Tarasov divisions; the Eastern Conference contains the Kharlamov and Chernyshev divisions.</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { conference: 'Western Conference', divisions: 'Bobrov, Tarasov' },
@@ -72,12 +72,12 @@ export default function KHLGuide() {
             </div>
           ))}
         </div>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Teams play a balanced schedule against their own division opponents and a mix of cross-division and cross-conference games. The KHL has experimented with various playoff formats, including a divisional opening round before conference brackets.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginTop: '1rem', fontSize: '0.9375rem' }}>Teams play a balanced schedule against their own division opponents and a mix of cross-division and cross-conference games. The KHL has experimented with various playoff formats, including a divisional opening round before conference brackets.</p>
       </section>
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE GAGARIN CUP PLAYOFFS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>16 teams qualify (top 8 from each conference). The format has evolved over the league\'s history:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>16 teams qualify (top 8 from each conference). The format has evolved over the league\'s history:</p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { round: 'Conference Quarterfinals', teams: '8 → 4', format: 'Best-of-7', note: 'Top 8 teams in each conference play intra-conference matchups.' },
@@ -98,7 +98,7 @@ export default function KHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RECENT GAGARIN CUP CHAMPIONS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent champions:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Recent champions:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { year: '2025', winner: 'Metallurg Magnitogorsk', note: '3rd Gagarin Cup' },
@@ -119,7 +119,7 @@ export default function KHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FRANCHISE LEADERS</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most successful franchises in KHL history by Gagarin Cup titles:</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>The most successful franchises in KHL history by Gagarin Cup titles:</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           {[
             { rank: 1, team: 'Metallurg Magnitogorsk', cups: 3 },
@@ -139,7 +139,7 @@ export default function KHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>FOLLOW THE KHL</h2>
-        <p style={{ color: '#aaa', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find KHL teams, scores, and standings.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Browse the directory to find KHL teams, scores, and standings.</p>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <Link href="/directory/teams?league=khl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ All 22 KHL teams</Link>
           <Link href="/standings/khl" style={{ display: 'block', padding: '0.75rem 1rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '4px', color: '#C8102E', textDecoration: 'none', fontSize: '0.9375rem' }}>→ KHL standings and playoff bracket</Link>
@@ -150,7 +150,7 @@ export default function KHLGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>RELATED GUIDES</h2>
-        <ul style={{ color: '#aaa', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
+        <ul style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, fontSize: '0.9375rem', paddingLeft: '1.25rem' }}>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/iihf-world-championship" style={{ color: '#C8102E' }}>IIHF World Championship Guide</Link> — national-team tournament</li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/stanley-cup" style={{ color: '#C8102E' }}>Stanley Cup Guide</Link></li>
           <li style={{ marginBottom: '0.4rem' }}><Link href="/guides/ahl" style={{ color: '#C8102E' }}>AHL Guide</Link> — the NHL\'s primary developmental league</li>
