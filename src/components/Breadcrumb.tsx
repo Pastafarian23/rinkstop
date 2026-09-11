@@ -6,9 +6,15 @@ interface BreadcrumbItem {
   href?: string;
 }
 
-export default function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
+interface BreadcrumbProps {
+  items: BreadcrumbItem[];
+  theme?: 'light' | 'dark';
+}
+
+export default function Breadcrumb({ items, theme = 'dark' }: BreadcrumbProps) {
+  const wrapperClass = `${styles.breadcrumb} ${theme === 'light' ? styles.light : styles.dark}`;
   return (
-    <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+    <nav className={wrapperClass} aria-label="Breadcrumb">
       <Link href="/" className={styles.breadcrumbHome}>Home</Link>
       {items.map((item, index) => (
         <span key={index} className={styles.breadcrumbItem}>

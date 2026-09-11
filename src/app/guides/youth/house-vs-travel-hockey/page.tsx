@@ -119,7 +119,7 @@ export default function HouseVsTravelHockey() {
               <div key={a.code} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 1fr', gap: '0.75rem', padding: '0.625rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
                 <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#fff' }}>{a.code}</p>
                 <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)' }}>{a.old}</p>
-                <p style={{ fontSize: '0.75rem', color: '#777', textAlign: 'right' }}>{a.age}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textAlign: 'right' }}>{a.age}</p>
               </div>
             ))}
           </div>

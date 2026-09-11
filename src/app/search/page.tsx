@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function SearchPage() {
   return (
     <div className={styles.pageContainer}>
-      <Breadcrumb items={[{ label: 'Hockey Search' }]} />
+      <Breadcrumb items={[{ label: 'Hockey Search' }]} theme="light" />
 
       <div className={styles.hero}>
         <h1 className={styles.heroTitle}>Hockey Directory</h1>

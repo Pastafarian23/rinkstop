@@ -44,7 +44,7 @@ export default function HockeyNutrition() {
                 <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>{s.duration}</span>
               </div>
               <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.375rem' }}>Example: {s.example}</p>
-              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}><strong style={{ color: '#777' }}>Fuel source:</strong> {s.fill}</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}><strong style={{ color: 'rgba(255,255,255,0.5)' }}>Fuel source:</strong> {s.fill}</p>
             </div>
           ))}
         </div>

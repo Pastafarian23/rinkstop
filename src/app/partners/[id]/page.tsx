@@ -149,7 +149,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
             <h2
               style={{
                 fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1rem',
-                color: '#888', letterSpacing: '0.06em', margin: '0 0 0.75rem',
+                color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', margin: '0 0 0.75rem',
               }}
             >
               ABOUT
@@ -166,7 +166,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
           <h2
             style={{
               fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1rem',
-              color: '#888', letterSpacing: '0.06em', margin: '0 0 0.75rem',
+              color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', margin: '0 0 0.75rem',
             }}
           >
             CONTACT
@@ -207,7 +207,7 @@ export default async function PartnerDetailPage({ params }: PageProps) {
             <h2
               style={{
                 fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1rem',
-                color: '#888', letterSpacing: '0.06em', margin: '0 0 0.75rem',
+                color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', margin: '0 0 0.75rem',
               }}
             >
               HOURS

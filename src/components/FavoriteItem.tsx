@@ -41,7 +41,7 @@ export default function FavoriteItem({ favorite }: { favorite: Favorite }) {
       <span style={{ fontSize: '1.25rem' }}>{favorite.icon}</span>
       <div style={{ flex: 1 }}>
         <p style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>{favorite.name}</p>
-        <p style={{ color: '#555', fontSize: '0.75rem', margin: '0.2rem 0 0' }}>Saved {saved}</p>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: '0.2rem 0 0' }}>Saved {saved}</p>
       </div>
       <span style={{ color: '#333', fontSize: '1rem' }}>→</span>
     </Link>

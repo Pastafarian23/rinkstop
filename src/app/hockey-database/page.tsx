@@ -192,17 +192,17 @@ export default async function HockeyDatabasePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <nav aria-label="Breadcrumb" style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
-        <Link href="/" style={{ color: '#666', textDecoration: 'none' }}>Home</Link>
+      <nav aria-label="Breadcrumb" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', marginBottom: '20px' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Home</Link>
         <span style={{ margin: '0 6px' }}>›</span>
-        <Link href="/directory" style={{ color: '#666', textDecoration: 'none' }}>Directory</Link>
+        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Directory</Link>
         <span style={{ margin: '0 6px' }}>›</span>
-        <span style={{ color: '#222', fontWeight: 600 }}>Hockey Database</span>
+        <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Hockey Database</span>
       </nav>
       <h1 style={{ fontSize: '40px', fontWeight: 800, marginBottom: '12px', lineHeight: 1.15 }}>
         Hockey Database
       </h1>
-      <p style={{ fontSize: '20px', color: '#444', marginBottom: '32px', maxWidth: '720px' }}>
+      <p style={{ fontSize: '20px', color: 'rgba(255,255,255,0.55)', marginBottom: '32px', maxWidth: '720px' }}>
         The most comprehensive structured hockey database on the open web. Every rink, team,
         player, league, and federation — verifiable, queryable, and built for the AI era.
       </p>
@@ -319,7 +319,7 @@ export default async function HockeyDatabasePage() {
             </tbody>
           </table>
         </div>
-        <p style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
           External counts cited as the operators report them — EliteProspects (eliteprospects.com)
           and HockeyDB (hockeydb.com). RinkStop counts are live DB snapshots refreshed hourly.
         </p>
@@ -419,20 +419,20 @@ export default async function HockeyDatabasePage() {
         }}
       >
         <Link href="/directory" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Directory</div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Directory</div>
           <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>Browse all rinks, teams, players →</div>
         </Link>
         <Link href="/data-coverage" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Data Coverage</div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Data Coverage</div>
           <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>How our counts compare to IIHF →</div>
         </Link>
         <Link href="/data-methodology" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Methodology</div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Methodology</div>
           <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>How we source, verify, and update →</div>
         </Link>
       </section>
 
-      <footer style={{ fontSize: '13px', color: '#888', borderTop: '1px solid #eee', paddingTop: '16px' }}>
+      <footer style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', borderTop: '1px solid #eee', paddingTop: '16px' }}>
         Last updated {now}. Page re-rendered hourly via ISR. Counts are live database snapshots.
       </footer>
     </main>
@@ -453,7 +453,7 @@ function StatCard({ label, value, href }: { label: string; value: number; href: 
         color: 'inherit',
       }}
     >
-      <div style={{ fontSize: '13px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </div>
       <div style={{ fontSize: '28px', fontWeight: 800, marginTop: '4px' }}>
@@ -488,7 +488,7 @@ function BrowseCard({
       }}
     >
       <div style={{ fontSize: '16px', fontWeight: 700 }}>{title}</div>
-      <div style={{ fontSize: '13px', color: '#666', marginTop: '2px' }}>{sub}</div>
+      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{sub}</div>
       <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '8px' }}>
         {count.toLocaleString()}
       </div>

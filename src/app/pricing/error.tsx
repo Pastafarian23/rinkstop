@@ -56,7 +56,7 @@ export default function PricingError({
       >
         Pricing is unavailable right now
       </h1>
-      <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
+      <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
         We couldn&rsquo;t load the pricing page just now. Reach out and we&rsquo;ll
         send you current rates directly.
       </p>

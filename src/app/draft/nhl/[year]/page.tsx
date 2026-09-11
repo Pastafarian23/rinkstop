@@ -155,12 +155,12 @@ export default async function DraftArchivePage({ params }: { params: Promise<{ y
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
       {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href={`${DRAFT_NHL_BASE}/2026`} style={{ color: '#555' }}>Draft</Link>
+        <Link href={`${DRAFT_NHL_BASE}/2026`} style={{ color: 'rgba(255,255,255,0.4)' }}>Draft</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{year}</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{year}</span>
       </nav>
 
       {/* Header */}
@@ -284,12 +284,12 @@ function PriorYearStub({
 }) {
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href={`${DRAFT_NHL_BASE}/2026`} style={{ color: '#555' }}>Draft</Link>
+        <Link href={`${DRAFT_NHL_BASE}/2026`} style={{ color: 'rgba(255,255,255,0.4)' }}>Draft</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>{year}</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{year}</span>
       </nav>
 
       <header style={{ marginBottom: '2rem' }}>

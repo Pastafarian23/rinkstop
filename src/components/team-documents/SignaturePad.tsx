@@ -165,7 +165,7 @@ export default function SignaturePad({ width = 480, height = 160, onChange, disa
           type="button"
           onClick={clear}
           disabled={!hasInk || disabled}
-          style={{ background: 'transparent', border: 'none', color: '#041E42', cursor: hasInk ? 'pointer' : 'not-allowed', fontSize: '0.85rem', textDecoration: 'underline' }}
+          style={{ background: 'transparent', border: 'none', color: '#C8102E', cursor: hasInk ? 'pointer' : 'not-allowed', fontSize: '0.85rem', textDecoration: 'underline' }}
         >
           Clear
         </button>

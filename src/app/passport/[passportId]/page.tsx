@@ -403,7 +403,7 @@ function PassportHeader({
             fontSize: 22,
             fontWeight: 600,
             margin: '4px 0 0',
-            color: '#041E42',
+            color: '#C8102E',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -818,7 +818,7 @@ function StatCell({ label, value }: { label: string; value: number }) {
         style={{
           fontSize: 22,
           fontWeight: 700,
-          color: '#041E42',
+          color: '#C8102E',
           margin: '2px 0 0',
         }}
       >

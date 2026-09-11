@@ -86,12 +86,12 @@ export default function PoliciesIndex() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-        <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-          <Link href="/" style={{ color: '#555' }}>
+        <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+          <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Home
           </Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
-          <span style={{ color: '#A0A0A0' }}>Policies</span>
+          <span style={{ color: 'rgba(255,255,255,0.6)' }}>Policies</span>
         </nav>
 
         <h1

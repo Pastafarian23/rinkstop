@@ -141,7 +141,7 @@ export default function AddListingForm() {
           <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.5rem', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>
             LISTING SUBMITTED
           </h1>
-          <p style={{ color: '#888', fontSize: '1rem', marginBottom: '1.5rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', marginBottom: '1.5rem' }}>
             We received your submission and will review it within 1-2 business days. You&apos;ll hear from us at <strong style={{ color: '#fff' }}>{form.email}</strong>.
           </p>
           <a href="/add-listing" style={{ display: 'inline-block', padding: '0.75rem 1.5rem', background: '#C8102E', color: '#fff', borderRadius: '6px', textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem' }}>
@@ -159,14 +159,14 @@ export default function AddListingForm() {
           <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(2.5rem, 6vw, 3.5rem)', letterSpacing: '0.05em', color: '#fff', marginBottom: '0.5rem' }}>
             ADD A LISTING
           </h1>
-          <p style={{ fontSize: '1rem', color: '#888' }}>
+          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)' }}>
             Know a team, player, rink, or league that&apos;s missing from our directory? Submit it here and we&apos;ll review it.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem', background: '#111118', border: '1px solid #1e1e2e', borderRadius: '12px', padding: '2rem' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Listing Type <span style={{ color: '#C8102E' }}>*</span>
             </label>
             <select
@@ -184,7 +184,7 @@ export default function AddListingForm() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Name <span style={{ color: '#C8102E' }}>*</span>
             </label>
             <input
@@ -200,7 +200,7 @@ export default function AddListingForm() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 City
               </label>
               <input
@@ -213,7 +213,7 @@ export default function AddListingForm() {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 Country
               </label>
               <input
@@ -228,8 +228,8 @@ export default function AddListingForm() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Website <span style={{ color: '#555', fontWeight: 400 }}>(optional)</span>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Website <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>(optional)</span>
             </label>
             <input
               type="url"
@@ -242,7 +242,7 @@ export default function AddListingForm() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Description
             </label>
             <textarea
@@ -256,7 +256,7 @@ export default function AddListingForm() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#aaa', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Your Email <span style={{ color: '#C8102E' }}>*</span>
             </label>
             <input
@@ -268,7 +268,7 @@ export default function AddListingForm() {
               required
               style={{ width: '100%', padding: '0.75rem', background: '#0a0a0f', border: '1px solid #2a2a3e', borderRadius: '6px', color: '#fff', fontSize: '0.875rem', outline: 'none' }}
             />
-            <p style={{ fontSize: '0.75rem', color: '#555', marginTop: '0.4rem' }}>We&apos;ll only use this to follow up on your submission.</p>
+            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.4rem' }}>We&apos;ll only use this to follow up on your submission.</p>
           </div>
 
           {error && (
@@ -297,7 +297,7 @@ export default function AddListingForm() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', fontSize: '0.8125rem', color: '#555', marginTop: '1.5rem' }}>
+        <p style={{ textAlign: 'center', fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', marginTop: '1.5rem' }}>
           Listings are reviewed within 1-2 business days. Verified listings go live on RinkStop.
         </p>
       </div>

@@ -104,7 +104,7 @@ export default function FamilySearch() {
               {p.headshot_url ? (
                 <img src={p.headshot_url} alt="" style={{ width: 36, height: 36, borderRadius: '4px', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: '4px', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#444' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '4px', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.55)' }}>
                   {p.first_name?.[0]}{p.last_name?.[0]}
                 </div>
               )}

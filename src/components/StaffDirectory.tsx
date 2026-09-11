@@ -105,7 +105,7 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
       </div>
 
       {!loading && (
-        <p style={{ fontSize: '0.75rem', color: '#555555', letterSpacing: '0.04em', marginBottom: '1.25rem' }}>
+        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', marginBottom: '1.25rem' }}>
           {totalCount === 0
             ? `No ${roleLabel.plural.toLowerCase()} in directory yet`
             : `${totalCount} ${roleLabel.plural.toLowerCase()} in directory${search ? ` · ${filtered.length} matching search` : ''}`}
@@ -169,7 +169,7 @@ export default function StaffDirectory({ role }: { role: 'coach' | 'scout' | 'of
                     <div style={{
                       width: 44, height: 44, borderRadius: '4px', background: '#1a1a1a',
                       flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '1rem', fontWeight: 700, color: '#444',
+                      fontSize: '1rem', fontWeight: 700, color: 'rgba(255,255,255,0.55)',
                     }}>
                       {(m.first_name?.[0] || '') + (m.last_name?.[0] || '')}
                     </div>

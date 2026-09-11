@@ -79,7 +79,7 @@ export default function TryoutGuidePage() {
             Written by a coach with 20 years on the ice — in Chicago, the Philippines,
             and everywhere in between.
           </p>
-          <p style={{ color: '#666', fontSize: '0.9rem', margin: 0 }}>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', margin: 0 }}>
             By Coach Arnel Larracas · RinkStop.com
           </p>
         </div>

@@ -94,7 +94,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
       }}>
         <button onClick={() => setShowPopup(false)} style={{
           position: 'absolute', top: '0.75rem', right: '0.75rem',
-          background: 'none', border: 'none', color: '#555',
+          background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)',
           fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1,
         }}>×</button>
 
@@ -110,9 +110,9 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
           </h2>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.75rem' }}>
             <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
-            <span style={{ color: '#888', fontSize: '0.875rem' }}>/ year</span>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>/ year</span>
           </div>
-          <p style={{ fontSize: '0.9rem', color: '#888', margin: '0 auto', maxWidth: 360, lineHeight: 1.6 }}>
+          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', margin: '0 auto', maxWidth: 360, lineHeight: 1.6 }}>
             Claim your player profile, link unlimited roles under one identity, and unlock the only verified checkmark in hockey.
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               background: 'none',
               border: 'none',
               padding: '0.5rem',
-              color: '#555',
+              color: 'rgba(255,255,255,0.4)',
               fontSize: '0.8125rem',
               cursor: 'pointer',
               width: '100%',
@@ -194,7 +194,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
       }}>
         <button onClick={() => setShowPopup(false)} style={{
           position: 'absolute', top: '0.5rem', right: '0.5rem',
-          background: 'none', border: 'none', color: '#555',
+          background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)',
           fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1,
         }}>×</button>
 
@@ -209,9 +209,9 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
           </h2>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.625rem' }}>
             <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
-            <span style={{ color: '#888', fontSize: '0.75rem' }}>/ year</span>
+            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>/ year</span>
           </div>
-          <p style={{ fontSize: '0.8rem', color: '#888', lineHeight: 1.55 }}>
+          <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>
             Claim your profile, link unlimited roles, get verified.
           </p>
         </div>
@@ -265,7 +265,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
               background: 'none',
               border: 'none',
               padding: '0.5rem',
-              color: '#555',
+              color: 'rgba(255,255,255,0.4)',
               fontSize: '0.75rem',
               cursor: 'pointer',
               width: '100%',

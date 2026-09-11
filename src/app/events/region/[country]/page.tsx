@@ -41,7 +41,7 @@ export default async function EventsInCountryPage({ params }: { params: Promise<
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ marginBottom: '12px', fontSize: '13px', color: '#94a3b8' }}>
+      <nav style={{ marginBottom: '12px', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
         <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none' }}>Home</Link>
         <span style={{ margin: '0 6px' }}>/</span>
         <Link href="/events" style={{ color: '#38bdf8', textDecoration: 'none' }}>Events</Link>
@@ -55,7 +55,7 @@ export default async function EventsInCountryPage({ params }: { params: Promise<
         Upcoming tournaments, camps, clinics, and tryouts at hockey rinks across {name}. Check each event for venue details, registration deadlines, and age/skill divisions.
       </p>
       {events.length === 0 ? (
-        <div style={{ background: 'rgba(13,17,23,0.6)', padding: '32px', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ background: 'rgba(13,17,23,0.6)', padding: '32px', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
           No upcoming events in {name} yet. <Link href={`/events?country=${country}`} style={{ color: '#38bdf8', textDecoration: 'none' }}>View all events</Link>.
         </div>
       ) : (

@@ -45,7 +45,7 @@ export default function GlobalError({
           <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '2rem', color: '#fff', letterSpacing: '0.04em', margin: '0 0 0.5rem' }}>
             Something went wrong
           </h1>
-          <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', lineHeight: 1.5, margin: '0 0 1rem' }}>
             RinkStop hit an unexpected error. Your account and data are safe.
             Try again in a moment.
           </p>
@@ -58,7 +58,7 @@ export default function GlobalError({
             <summary style={{ color: '#fff', cursor: 'pointer', marginBottom: '0.5rem' }}>Error details</summary>
             <pre style={{ background: '#111', padding: '1rem', borderRadius: 6, overflow: 'auto', fontSize: '0.8rem', color: '#f87171' }}>{message}</pre>
             {stack ? (
-              <pre style={{ background: '#111', padding: '1rem', borderRadius: 6, marginTop: '0.5rem', overflow: 'auto', fontSize: '0.75rem', color: '#aaa' }}>{stack}</pre>
+              <pre style={{ background: '#111', padding: '1rem', borderRadius: 6, marginTop: '0.5rem', overflow: 'auto', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>{stack}</pre>
             ) : null}
           </details>
           <button

@@ -190,7 +190,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
         </div>
       )}
 
-      <nav style={{ marginBottom: '12px', fontSize: '13px', color: '#94a3b8' }}>
+      <nav style={{ marginBottom: '12px', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
         <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none' }}>Home</Link>
         <span style={{ margin: '0 6px' }}>/</span>
         <Link href="/events" style={{ color: '#38bdf8', textDecoration: 'none' }}>Events</Link>
@@ -205,7 +205,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
           )}
           <ActivityBadge activityType={e.event_type} />
           <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', margin: '12px 0' }}>{e.title}</h1>
-          {e.subtitle && <p style={{ color: '#94a3b8', fontSize: '15px', marginBottom: '16px' }}>{e.subtitle}</p>}
+          {e.subtitle && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '15px', marginBottom: '16px' }}>{e.subtitle}</p>}
 
           <div style={{ background: 'rgba(13,17,23,0.6)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', color: '#cbd5e1', fontSize: '15px' }}>
@@ -213,12 +213,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               {e.rink && (
                 <div>
                   📍 <Link href={`/directory/rinks/${e.rink.slug}`} style={{ color: '#38bdf8', textDecoration: 'none', fontWeight: 600 }}>{e.rink.name}</Link>
-                  {e.rink.city && <span style={{ color: '#94a3b8' }}> · {e.rink.city}{e.rink.province_state && `, ${e.rink.province_state}`}{e.rink.country && `, ${COUNTRY_MAP[e.rink.country] || e.rink.country}`}</span>}
+                  {e.rink.city && <span style={{ color: 'rgba(255,255,255,0.5)' }}> · {e.rink.city}{e.rink.province_state && `, ${e.rink.province_state}`}{e.rink.country && `, ${COUNTRY_MAP[e.rink.country] || e.rink.country}`}</span>}
                 </div>
               )}
-              {e.address && <div style={{ color: '#94a3b8', fontSize: '13px' }}>{e.address}</div>}
+              {e.address && <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>{e.address}</div>}
               {e.registration_opens_at && (
-                <div style={{ color: '#94a3b8', fontSize: '13px' }}>Registration opens: {new Date(e.registration_opens_at).toLocaleString('en-US')}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>Registration opens: {new Date(e.registration_opens_at).toLocaleString('en-US')}</div>
               )}
             </div>
           </div>
@@ -234,7 +234,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: 600, marginBottom: '12px' }}>Divisions</h2>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)', color: '#94a3b8', textAlign: 'left' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border)', color: 'rgba(255,255,255,0.5)', textAlign: 'left' }}>
                     <th style={{ padding: '8px 4px' }}>Division</th>
                     <th style={{ padding: '8px 4px' }}>Year</th>
                     <th style={{ padding: '8px 4px' }}>Skill</th>
@@ -275,7 +275,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
               <div style={{ marginBottom: '12px' }}>
                 <div style={{ color: '#86efac', fontSize: '13px', fontWeight: 600 }}>Early bird</div>
                 <div style={{ color: '#fff', fontSize: '24px', fontWeight: 700 }}>{fmtPrice(e.early_bird_price_cents, e.currency)}</div>
-                <div style={{ color: '#94a3b8', fontSize: '12px' }}>until {new Date(e.early_bird_until).toLocaleDateString('en-US')}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>until {new Date(e.early_bird_until).toLocaleDateString('en-US')}</div>
               </div>
             ) : (
               <div style={{ color: e.price_cents == null ? '#86efac' : '#fff', fontSize: '28px', fontWeight: 700, marginBottom: '12px' }}>

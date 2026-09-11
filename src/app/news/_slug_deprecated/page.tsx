@@ -362,12 +362,12 @@ export default async function BlogPostPage({ params }: Props) {
             {/* Main content */}
             <div style={{ minWidth: 0 }}>
               {/* Breadcrumb */}
-              <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-                <Link href="/" style={{ color: '#555' }}>Home</Link>
+              <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+                <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
                 <span style={{ margin: '0 0.4rem' }}>›</span>
-                <Link href="/news" style={{ color: '#555' }}>News</Link>
+                <Link href="/news" style={{ color: 'rgba(255,255,255,0.4)' }}>News</Link>
                 <span style={{ margin: '0 0.4rem' }}>›</span>
-                <span style={{ color: '#A0A0A0' }}>{post.title.substring(0, 40)}...</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)' }}>{post.title.substring(0, 40)}...</span>
               </nav>
 
               {/* Tags */}
@@ -408,7 +408,7 @@ export default async function BlogPostPage({ params }: Props) {
                   borderRadius: '0 4px 4px 0',
                   fontSize: '0.8125rem',
                   lineHeight: 1.6,
-                  color: '#555',
+                  color: 'rgba(255,255,255,0.4)',
                 }}
               >
                 <p style={{ margin: 0 }}>
@@ -443,7 +443,7 @@ export default async function BlogPostPage({ params }: Props) {
                 alignItems: 'center',
                 flexWrap: 'wrap'
               }}>
-                <span style={{ color: '#666', fontSize: '0.8125rem', fontWeight: 600 }}>Share:</span>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', fontWeight: 600 }}>Share:</span>
                 <ShareButton
                   payload={buildArticleShare({
                     title: post.title,
@@ -461,9 +461,9 @@ export default async function BlogPostPage({ params }: Props) {
                 padding: '1.5rem',
                 borderRadius: '4px'
               }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.25rem', color: '#1a1a1a' }}>Arnel Larracas</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.25rem', color: 'rgba(255,255,255,0.7)' }}>Arnel Larracas</div>
                 <div style={{ color: '#C8102E', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>{authorRole}</div>
-                <p style={{ color: '#555', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
                   Founder of RinkStop. Hockey coach with 20+ years of experience playing in Chicago and coaching internationally, including non-traditional markets like the Philippines. Bylined author on every RinkStop editorial article.
                 </p>
                 <a
@@ -491,7 +491,7 @@ export default async function BlogPostPage({ params }: Props) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.4rem',
-                  color: '#555',
+                  color: 'rgba(255,255,255,0.4)',
                   fontSize: '0.875rem',
                   textDecoration: 'none',
                   padding: '0.5rem 0'

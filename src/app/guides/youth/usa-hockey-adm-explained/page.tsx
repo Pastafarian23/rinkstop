@@ -124,7 +124,7 @@ export default function USAHockeyADMExplained() {
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                 <p style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#C8102E', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.stage}</p>
                 <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>{s.code}</p>
-                <p style={{ fontSize: '0.75rem', color: '#777' }}>{s.age}</p>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{s.age}</p>
               </div>
               <p style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '0.375rem' }}>{s.focus}</p>
               <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>{s.practices}</p>
