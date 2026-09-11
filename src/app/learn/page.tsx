@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Breadcrumb from '@/components/Breadcrumb';
 import { LEARN, LEARN_CATEGORIES, learnByCategory, LEARN_TOTAL } from '@/lib/learn-catalog';
+import ProgressWidget from '@/components/learn/ProgressWidget';
 
 export const metadata: Metadata = {
   title: 'Learn Hockey — Beginner Guide for Players, Parents, and Fans | RinkStop',
@@ -90,6 +91,9 @@ export default function LearnHubPage() {
         guide. If you just want to understand the game as a new fan, start with{' '}
         <Link href="/learn/hockey-terminology" style={{ color: '#FFB81C' }}>the glossary</Link>.
       </aside>
+
+      {/* Per-user progress + next step (Phase 5 PR2). Hidden when signed out. */}
+      <ProgressWidget />
 
       {/* Why Learn Hockey — quick motivational callout */}
       <section style={{ marginBottom: '2.5rem', background: 'var(--s2)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>

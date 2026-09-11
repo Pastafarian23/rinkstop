@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
+import MarkReadButton from '@/components/learn/MarkReadButton';
 
 export const metadata: Metadata = {
   title: 'How Much Does Hockey Cost? — A Complete Cost Guide for Parents and Players',
@@ -166,6 +167,9 @@ export default function HockeyCostExplainedPage() {
         </p>
       </div>
 
+            <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <MarkReadButton href="/learn/hockey-cost-explained" title="HOW MUCH DOES HOCKEY COST?" />
+      </div>
 
     <LearnJsonLd
       href={`/learn/hockey-cost-explained`}

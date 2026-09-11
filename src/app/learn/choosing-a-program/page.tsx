@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
+import MarkReadButton from '@/components/learn/MarkReadButton';
 
 export const metadata: Metadata = {
   title: 'How to Choose a Learn-to-Play Hockey Program — 7 Questions to Ask',
@@ -129,6 +130,9 @@ export default function ChoosingAProgramPage() {
         </p>
       </div>
 
+            <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <MarkReadButton href="/learn/choosing-a-program" title="HOW TO CHOOSE A LEARN-TO-PLAY PROGRAM" />
+      </div>
 
     <LearnJsonLd
       href={`/learn/choosing-a-program`}

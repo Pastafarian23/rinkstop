@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
+import MarkReadButton from '@/components/learn/MarkReadButton';
 
 export const metadata: Metadata = {
   title: 'How to Choose a Hockey Stick — Length, Flex, Curve, Lie',
@@ -131,6 +132,9 @@ export default function StickFittingPage() {
         </p>
       </div>
 
+            <div style={{ marginTop: "2.5rem", paddingTop: "1.5rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <MarkReadButton href="/learn/stick-fitting" title="HOW TO CHOOSE A HOCKEY STICK" />
+      </div>
 
     <LearnJsonLd
       href={`/learn/stick-fitting`}
