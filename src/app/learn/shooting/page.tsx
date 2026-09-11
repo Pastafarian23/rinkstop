@@ -164,11 +164,12 @@ export default function ShootingPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/shooting"}
+      href={`/learn/shooting`}
       title={`How to Shoot a Hockey Puck`}
       description={`Wrist, snap, slap, backhand. The right shot for every situation, where to aim, and how to practice.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={10}
     />
 </main>

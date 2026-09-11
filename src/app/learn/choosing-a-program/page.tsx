@@ -129,11 +129,12 @@ export default function ChoosingAProgramPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/choosing-a-program"}
+      href={`/learn/choosing-a-program`}
       title={`How to Choose a Learn-to-Play Program`}
       description={`The 7 questions to ask before signing your kid up. Cost, ice time, coach-to-player ratio, what to bring, red flags.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={8}
     />
 </main>

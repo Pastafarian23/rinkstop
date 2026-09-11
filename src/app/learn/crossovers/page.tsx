@@ -133,11 +133,12 @@ export default function CrossoversPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/crossovers"}
+      href={`/learn/crossovers`}
       title={`How to Do Crossovers`}
       description={`Forward and backward crossovers, the 5-step progression, when to use each, and the moves that let you turn at speed.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={8}
     />
 </main>

@@ -202,7 +202,7 @@ const sections: Array<{
       },
       {
         q: 'I am new to hockey. Where should I start?',
-        a: 'Read the free Hockey Parents Handbook at /guides/hockey-parents-handbook (or "How to Fit Hockey Equipment" if you are an adult player). For first-time parents, the First Day on the Ice walk-through and the age-to-start answer (both at /learn/) are good starting points. The Hockey Rules primer at /learn/hockey-rules/ (12 min read) is what new fans should read first. Visit /directory/youth-hockey for "Learn to Play" programs in your area. The Hockey Cost Calculator at /tools/hockey-cost-calculator will give you a realistic budget before you commit.',
+        a: 'It depends on whether you\'re a player, a parent, or a fan. If you\'re a parent putting your kid in hockey, start with the Hockey Parents Handbook at /guides/hockey-parents-handbook, the First Day on the Ice walk-through at /learn/first-day-on-ice, the age-to-start answer at /learn/age-to-start-hockey, the cost breakdown at /learn/cost-by-age, and the parent survival guide at /learn/parent-survival-guide. Then find a Learn to Play program at /directory/youth-hockey/learn-to-play. If you\'re an adult new to the sport, start with How to Skate at /learn/how-to-skate, then the Hockey Cost Calculator at /tools/hockey-cost-calculator for the budget. If you\'re a new fan who just wants to enjoy watching, start with the Hockey Rules primer at /learn/hockey-rules (12 min read) and How to Watch Hockey at /learn/how-to-watch-hockey. All three paths funnel into the same directory once you\'re ready to play.',
       },
     ],
   },

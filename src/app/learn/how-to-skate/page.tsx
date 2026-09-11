@@ -136,11 +136,12 @@ export default function HowToSkatePage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/how-to-skate"}
+      href={`/learn/how-to-skate`}
       title={`How to Skate`}
-      description={`A first-time skater\u2019s guide. Hockey stance, stride, balance, falling, getting up. Step-by-step for adults and kids who have never been on ice.`}
-      verified={"2026-09-10"}
+      description={`A first-time skater&apos;s guide. Hockey stance, stride, balance, falling, getting up. Step-by-step for adults and kids who have never been on ice.`}
+      verified={`2026-09-10`}
       readTime={15}
     />
 </main>

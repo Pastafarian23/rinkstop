@@ -129,11 +129,12 @@ export default function HowToWatchHockeyPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/how-to-watch-hockey"}
+      href={`/learn/how-to-watch-hockey`}
       title={`How to Watch Hockey`}
       description={`For new fans: how to follow the play, what the camera is missing, why possession matters, and how to enjoy a game without knowing every rule.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={7}
     />
 </main>

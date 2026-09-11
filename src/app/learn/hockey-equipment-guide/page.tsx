@@ -147,11 +147,12 @@ export default function HockeyEquipmentGuidePage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/hockey-equipment-guide"}
+      href={`/learn/hockey-equipment-guide`}
       title={`Hockey Equipment Guide`}
       description={`Every piece a hockey player needs: skates, sticks, helmets, pads, and the specialized gear goalies rely on. Head-to-toe for skaters and goalies.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={12}
     />
 </main>

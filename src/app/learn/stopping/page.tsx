@@ -125,11 +125,12 @@ export default function StoppingPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/stopping"}
+      href={`/learn/stopping`}
       title={`How to Stop on Ice Skates`}
       description={`Snowplow stop (beginner), one-foot snowplow stop, and the T-stop. The right way to stop without falling.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={10}
     />
 </main>

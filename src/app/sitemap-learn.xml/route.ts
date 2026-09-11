@@ -22,7 +22,7 @@ export async function GET() {
     // Index page
     { loc: `${baseUrl}/learn`, lastmod: today, priority: 0.85 },
     // Every individual learn page from the catalog
-    ...LEARN.map((l) => ({
+    ...LEARN.filter((l) => l && l.href).map((l) => ({
       loc: `${baseUrl}${l.href}`,
       lastmod: l.verified,
       priority: l.category === 'getting-started' ? 0.8 : 0.7,

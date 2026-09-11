@@ -153,11 +153,12 @@ export default function HockeyPositionsExplainedPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/hockey-positions-explained"}
+      href={`/learn/hockey-positions-explained`}
       title={`Hockey Positions Explained`}
       description={`Forwards, defensemen, and goalies — what each position does, how they work together, and the role each plays in a system.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={8}
     />
 </main>

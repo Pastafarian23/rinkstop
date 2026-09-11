@@ -194,11 +194,12 @@ export default function HockeyTerminologyPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/hockey-terminology"}
+      href={`/learn/hockey-terminology`}
       title={`Hockey Glossary`}
       description={`70+ hockey terms and slang words. From apple, biscuit, and barn to five-hole, tic-tac-toe, and bar down — every beginner hockey term explained.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={6}
     />
 </main>

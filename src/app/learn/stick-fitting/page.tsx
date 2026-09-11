@@ -131,11 +131,12 @@ export default function StickFittingPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/stick-fitting"}
+      href={`/learn/stick-fitting`}
       title={`How to Choose a Hockey Stick`}
       description={`Length by height, flex by weight, blade curves (P92, P88, P28), lie angle, and how to cut a stick to fit.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={9}
     />
 </main>

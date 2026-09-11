@@ -134,11 +134,12 @@ export default function AgeToStartHockeyPage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/age-to-start-hockey"}
+      href={`/learn/age-to-start-hockey`}
       title={`When Can My Kid Start Hockey?`}
       description={`The age-by-region answer (USA Hockey ADM, Hockey Canada, IIHF), when to specialize, and when to switch sports.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={7}
     />
 </main>

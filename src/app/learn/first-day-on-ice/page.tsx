@@ -139,11 +139,12 @@ export default function FirstDayOnIcePage() {
         </p>
       </div>
 
+
     <LearnJsonLd
-      href={"/learn/first-day-on-ice"}
+      href={`/learn/first-day-on-ice`}
       title={`Your First Day on the Ice`}
       description={`What to expect at your first learn-to-play session: the parking lot, the dressing room, the ice, and the other parents.`}
-      verified={"2026-09-10"}
+      verified={`2026-09-10`}
       readTime={6}
     />
 </main>
