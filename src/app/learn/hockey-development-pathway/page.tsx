@@ -140,19 +140,17 @@ export default function HockeyDevelopmentPathwayPage() {
         </ul>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
         <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
 
-
-
-    
     <LearnJsonLd
-      href='/learn/hockey-development-pathway'
-      title='Hockey Development Pathway'
-      description='The North American path: Learn to Play → House → Travel → High School → Junior → College → Pro. Each level, what to expect, what it costs.'
-      verified='2026-09-10'
+      href={"/learn/hockey-development-pathway"}
+      title={`Hockey Development Pathway`}
+      description={`The North American path: Learn to Play → House → Travel → High School → Junior → College → Pro. Each level, what to expect, what it costs.`}
+      verified={"2026-09-10"}
       readTime={12}
     />
 </main>

@@ -188,19 +188,17 @@ export default function HockeyTerminologyPage() {
         </ul>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Disclosure</h2>
+        <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
         <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
 
-
-
-    
     <LearnJsonLd
-      href='/learn/hockey-terminology'
-      title='Hockey Glossary'
-      description='70+ hockey terms and slang words. From apple, biscuit, and barn to five-hole, tic-tac-toe, and bar down — every beginner hockey term explained.'
-      verified='2026-09-10'
+      href={"/learn/hockey-terminology"}
+      title={`Hockey Glossary`}
+      description={`70+ hockey terms and slang words. From apple, biscuit, and barn to five-hole, tic-tac-toe, and bar down — every beginner hockey term explained.`}
+      verified={"2026-09-10"}
       readTime={6}
     />
 </main>

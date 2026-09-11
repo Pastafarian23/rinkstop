@@ -20,23 +20,24 @@ import Breadcrumb from '@/components/Breadcrumb';
 import { LEARN, LEARN_CATEGORIES, learnByCategory, LEARN_TOTAL } from '@/lib/learn-catalog';
 
 export const metadata: Metadata = {
-  title: 'Learn Hockey — Beginner Guide to Playing, Watching, and Coaching | RinkStop',
-  description: `${LEARN_TOTAL} free beginner-friendly explainers: how to skate, stop, pass, shoot, fit skates and sticks, and understand the rules. Plus position guides, terminology, and a parent-onboarding section.`,
+  title: 'Learn Hockey — Beginner Guide for Players, Parents, and Fans | RinkStop',
+  description: `${LEARN_TOTAL} free beginner-friendly explainers for new players, parents, and fans. When to start, what to expect, what it costs, how to skate and shoot, the rules, and a parent-onboarding section for first-time families.`,
   keywords: [
     'learn hockey',
     'hockey for beginners',
-    'how to play hockey',
+    'how to start playing hockey',
+    'when to start hockey',
+    'youth hockey for parents',
     'hockey rules for beginners',
     'how to skate',
     'how to shoot a hockey puck',
-    'youth hockey',
-    'hockey parents',
+    'hockey cost by age',
     'hockey for new fans',
   ],
   alternates: { canonical: 'https://rinkstop.com/learn' },
   openGraph: {
-    title: 'Learn Hockey — Beginner Guide',
-    description: `${LEARN_TOTAL} free beginner-friendly explainers. Skating, rules, equipment, terminology, and the parent onboarding section.`,
+    title: 'Learn Hockey — Beginner Guide for Players, Parents, and Fans',
+    description: `${LEARN_TOTAL} free beginner-friendly explainers. When to start, what to expect, what it costs, how to skate and shoot, and the rules.`,
     url: 'https://rinkstop.com/learn',
     siteName: 'RinkStop',
     images: [{ url: 'https://rinkstop.com/og-image.png', width: 1200, height: 630 }],
@@ -272,6 +273,7 @@ function LearnCard({ entry }: { entry: import('@/lib/learn-catalog').LearnEntry 
         {(entry.relatedGuides?.length ?? 0) > 0 && (
           <span style={{ fontSize: '0.65rem', color: '#FFB81C', fontWeight: 600, padding: '0.1rem 0.4rem', background: 'rgba(255,184,28,0.1)', borderRadius: '999px' }}>guides linked</span>
         )}
+        <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', fontWeight: 500 }}>· verified {entry.verified}</span>
       </div>
     </Link>
   );
