@@ -4,6 +4,19 @@
 #
 # Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 # Or run: ln -s ../../scripts/pre-commit .git/hooks/pre-commit
+#
+# IMPORTANT: This hook MUST NOT block legitimate Supabase primary key edits.
+# Supabase uses UUIDs for table IDs (`leagueId`, `teamId`, `playerId`, `rinkId`,
+# `userId`, etc.) that show up in TS code as `id="abc-123-..."`. These are
+# public knowledge (anyone with anon Supabase key can read them) and editing
+# files that contain them is normal feature work.
+#
+# Bug history (2026-09-11): previous version had a generic UUID regex
+# `[0-9a-f]{8}-[0-9a-f]{4}-...` that matched ANY UUID, forcing every commit
+# that touched a file with a Supabase ID to use `git commit --no-verify`.
+# Replaced with: a denylist of SPECIFIC secret UUIDs/values known to be
+# sensitive (Highlightly API key), and a denylist of files that should never
+# contain secrets at all (.env, credentials/, etc).
 
 set -e
 
@@ -33,10 +46,14 @@ PATTERNS=(
   'pk_live_[A-Za-z0-9]{20,}'
   # Maton (v2.6Ih... format)
   'v2\.[A-Za-z0-9_-]{40,}'
-  # Highlightly specific key value (literal UUID only — checked against actual key in CI separately)
-  '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+  # Specific known-secret UUIDs (denylist). Add new ones here as they leak.
+  # Highlightly API key — 2026-09-11: this specific UUID was the project key
+  # in .env. If it shows up in any source file, it's a leak.
+  '879d8462-6431-41fd-aa73-151223ff1562'
   # Supabase service role URL (host + service key)
   'https://[a-z]+\.supabase\.co.*sb_secret_'
+  # Generic private-key blocks (PEM format)
+  '-----BEGIN [A-Z ]+PRIVATE KEY-----'
 )
 
 # Files to ALWAYS skip (these are templates, helper files, or the script itself)
@@ -51,20 +68,48 @@ SKIP_FILES=(
   'pnpm-lock.yaml'
 )
 
+# File paths that should NEVER be committed at all (denylist of paths).
+# Files matching these patterns fail the commit regardless of content.
+DENY_PATH_PATTERNS=(
+  '\.env\.local$'
+  '\.env\.prod$'
+  '\.env\.production$'
+  '^\.env$'              # the actual .env file
+  '^credentials/'
+  '^secrets/'
+  '^_test_secrets\.json$'
+  'highlightly.*\.key$'
+)
+
 # Build a regex exclusion from skip files
 SKIP_REGEX="^($(IFS='|'; echo "${SKIP_FILES[*]}"))$"
 
 # Get staged files (added or modified)
-STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -vE "$SKIP_REGEX" || true)
-
-if [ -z "$STAGED" ]; then
-  exit 0
-fi
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
 
 FOUND=0
+
+# Check 1: deny-listed paths should not be staged at all
+for file in $STAGED; do
+  for deny_pattern in "${DENY_PATH_PATTERNS[@]}"; do
+    if echo "$file" | grep -qE "$deny_pattern"; then
+      echo "🚫 Sensitive file staged: $file"
+      echo "   This file path matches a deny pattern: $deny_pattern"
+      echo "   Move the file out of the repo or add it to .gitignore."
+      echo ""
+      FOUND=1
+    fi
+  done
+done
+
+# Check 2: secret patterns in non-skipped files
 for file in $STAGED; do
   # Skip binary files
   if file "$file" 2>/dev/null | grep -q "binary"; then
+    continue
+  fi
+  # Skip the file paths that are always skipped
+  if echo "$file" | grep -qE "$SKIP_REGEX"; then
     continue
   fi
   for pattern in "${PATTERNS[@]}"; do
@@ -80,12 +125,11 @@ for file in $STAGED; do
 done
 
 if [ $FOUND -eq 1 ]; then
-  echo "🚫 Commit blocked: hardcoded secrets detected."
+  echo "🚫 Commit blocked."
   echo ""
   echo "To fix:"
-  echo "  1. Move the secret to an env var (process.env.X)"
-  echo "  2. Add it to .env.local (gitignored)"
-  echo "  3. Reference it via the env var in code"
+  echo "  1. For secrets: move to env var (process.env.X) + .env.local (gitignored)"
+  echo "  2. For sensitive files: ensure they're in .gitignore and untracked"
   echo ""
   echo "To bypass this hook (NOT RECOMMENDED):"
   echo "  git commit --no-verify"
