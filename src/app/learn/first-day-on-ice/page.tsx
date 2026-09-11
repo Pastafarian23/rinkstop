@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function FirstDayOnIcePage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Your First Day on the Ice</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Your First Day on the Ice</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         YOUR FIRST DAY ON THE ICE
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         A walk-through for parents whose kid is starting hockey — the parking lot, the dressing room, the ice, and what to do (and not do) when you get home.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Before you leave the house</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Before you leave the house</h2>
         <p style={{ marginBottom: '1rem' }}>
           Get to the rink 20-30 minutes before the ice time. You'll need that buffer for parking, finding the right entrance (most rinks have a separate "rink" door vs. a "lobby" door), and the most time-consuming part: getting your kid dressed.
         </p>
@@ -45,7 +45,7 @@ export default function FirstDayOnIcePage() {
           If the program provides equipment (most learn-to-play programs do for the first session), your kid just needs base layers and a snack. If you bought equipment, dress them in it. Don't worry about shin guards being in the wrong spot or the helmet strap being twisted — the coaches will fix it. The first session is about your kid getting on the ice, not about you being perfect at equipment.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The dressing room</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The dressing room</h2>
         <p style={{ marginBottom: '1rem' }}>
           The dressing room is louder than you expect. Kids are excited, parents are nervous, and the floor is wet. Give yourself 15 minutes to get your kid in their gear. If you have a 4-6 year old, plan on 20-25 minutes the first time. They will resist the helmet, the shin guards, and probably the socks.
         </p>
@@ -53,7 +53,7 @@ export default function FirstDayOnIcePage() {
           If you don't have your own equipment yet, the rink will have rentals. The staff will help with sizing. Don't be afraid to ask for help. Rink staff have seen thousands of first-timers and they have a system.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first 10 minutes on the ice</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first 10 minutes on the ice</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most learn-to-play programs start with a warm-up that involves standing in a circle and following the coach's directions. The first time your kid steps on the ice, they may:
         </p>
@@ -68,7 +68,7 @@ export default function FirstDayOnIcePage() {
           All of these are normal. The coaches have seen them all. Your job is to stand in the bleachers and stay calm. If your kid is upset, wave at them and let the coach handle it. The coach is trained to comfort and redirect. If you rush to the ice, it usually makes things worse.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What the session looks like</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What the session looks like</h2>
         <p style={{ marginBottom: '1rem' }}>
           A typical 45-60 minute learn-to-play session breaks down like this:
         </p>
@@ -79,7 +79,7 @@ export default function FirstDayOnIcePage() {
           <li><strong>Scrimmage or game (10-15 min):</strong> Most learn-to-play programs end with a short cross-ice game. Your kid will probably just stand there for the first few games. That's also normal.</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What NOT to do in the bleachers</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What NOT to do in the bleachers</h2>
         <p style={{ marginBottom: '1rem' }}>
           The Hockey Parents Handbook has a whole section on this. The highlights:
         </p>
@@ -91,7 +91,7 @@ export default function FirstDayOnIcePage() {
           <li>Don't apologize for your kid's performance. They're four. They're learning to skate. That's enough.</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The car ride home</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The car ride home</h2>
         <p style={{ marginBottom: '1rem' }}>
           This is where most parents ruin the experience. Don't grill your kid about what they learned. Don't critique their skating. Don't ask "did you have fun?" in a way that makes them feel like the right answer matters.
         </p>
@@ -105,7 +105,7 @@ export default function FirstDayOnIcePage() {
           <li>"Are you going back next week?" (lets them opt in without pressure)</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>After the session: what to do with the equipment</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>After the session: what to do with the equipment</h2>
         <p style={{ marginBottom: '1rem' }}>
           Take everything home wet. That's normal — your kid has been on ice for an hour. Don't try to dry the gear in the car. Get it home, lay it out, and let it air-dry overnight. Don't put it in the dryer. Don't leave it in a heap in the bag.
         </p>
@@ -116,7 +116,7 @@ export default function FirstDayOnIcePage() {
           Helmet, pads, pants, gloves: hang them up or lay them on a drying rack. The smell that develops when you leave them in a sealed bag is unforgettable in a bad way.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to start shopping for your own equipment</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>When to start shopping for your own equipment</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most learn-to-play programs include equipment for the first 4-8 weeks. After that, you'll want to buy your own so the fit is right for your kid. Don't buy before the first session. Use the rentals to confirm your kid likes hockey.
         </p>
@@ -124,7 +124,7 @@ export default function FirstDayOnIcePage() {
           When you're ready to buy, see our <Link href="/learn/skate-fitting" style={{ color: '#C8102E' }}>skate fitting guide</Link> and the <Link href="/tools/hockey-cost-calculator" style={{ color: '#C8102E' }}>cost calculator</Link>. The first-year gear package for a 6U player runs $200-400 new or $80-150 used.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/age-to-start-hockey" style={{ color: '#C8102E' }}>When can my kid start hockey?</Link></li>
           <li><Link href="/learn/choosing-a-program" style={{ color: '#C8102E' }}>How to choose a learn-to-play program</Link></li>
@@ -132,9 +132,9 @@ export default function FirstDayOnIcePage() {
           <li><Link href="/directory/youth-hockey/learn-to-play" style={{ color: '#C8102E' }}>Find a learn-to-play program near you</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

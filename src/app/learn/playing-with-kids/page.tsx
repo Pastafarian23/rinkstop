@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function PlayingWithKidsPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Playing Hockey With Your Kid</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Playing Hockey With Your Kid</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         PLAYING HOCKEY WITH YOUR KID
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         How to start playing adult hockey as a parent. Gear, beginner-friendly leagues, what to expect, and how to balance playing with your kid's hockey schedule.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Why more parents are playing</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Why more parents are playing</h2>
         <p style={{ marginBottom: '1rem' }}>
           The number of adults playing recreational hockey in the US has roughly doubled over the last 15 years. Most of the growth is in the 30-50 age range. Two reasons:
         </p>
@@ -48,7 +48,7 @@ export default function PlayingWithKidsPage() {
           Second, adult hockey is a great way to stay in shape and meet people as an adult. Most adult leagues are friendly to beginners. The beer-after-the-game is real.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What you need to start</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What you need to start</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>Skates:</strong> The most important purchase. Get them fitted at a hockey store. Used is fine if the boot is still structurally sound. Don't buy box-store skates.
         </p>
@@ -71,7 +71,7 @@ export default function PlayingWithKidsPage() {
           Budget: $400-700 new for a basic adult set, $200-400 used.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Choosing a league</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Choosing a league</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most cities have a few adult league options. The categories:
         </p>
@@ -91,7 +91,7 @@ export default function PlayingWithKidsPage() {
           <strong>50+ leagues:</strong> For older players. Lower contact, more skill. Often a mix of beginners and former competitive players.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What your first year will look like</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What your first year will look like</h2>
         <p style={{ marginBottom: '1rem' }}>
           You'll be terrible. Everyone is terrible at first. Adults who have never skated before are the most common new players in adult hockey. You'll spend most of the first 6 months learning to skate well enough to play.
         </p>
@@ -102,7 +102,7 @@ export default function PlayingWithKidsPage() {
           You'll get knocked down. You'll fall. You'll take a puck to the foot or the shin. None of this is a big deal. Adult hockey players are a forgiving community. As long as you show up and try, you'll be welcome.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to learn fast</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How to learn fast</h2>
         <p style={{ marginBottom: '1rem' }}>
           <strong>Take a learn-to-skate-for-adults class.</strong> Most rinks offer these. They run 4-6 weeks. They focus on the things you actually need: balance, forward stride, stops, crossovers. After a class, your adult hockey career accelerates.
         </p>
@@ -116,7 +116,7 @@ export default function PlayingWithKidsPage() {
           <strong>Don't skip the gym.</strong> Adult hockey players over 30 need strength and conditioning. Core, hamstrings, hip mobility. The fitter you are off the ice, the more confident you are on it.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Balancing hockey and your kid's hockey</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Balancing hockey and your kid's hockey</h2>
         <p style={{ marginBottom: '1rem' }}>
           This is the part nobody talks about. If you and your kid are both playing, the schedule gets complex fast.
         </p>
@@ -133,7 +133,7 @@ export default function PlayingWithKidsPage() {
           <strong>Use your adult hockey to get better at understanding your kid's game.</strong> The skills transfer both ways. You'll stop yelling "skate harder!" because you'll know what it's like to try to skate harder.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/how-to-skate" style={{ color: '#C8102E' }}>How to skate</Link></li>
           <li><Link href="/learn/parent-survival-guide" style={{ color: '#C8102E' }}>Hockey parent survival guide</Link></li>
@@ -141,9 +141,9 @@ export default function PlayingWithKidsPage() {
           <li><Link href="/directory/youth-hockey/adult-leagues" style={{ color: '#C8102E' }}>Find an adult league</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

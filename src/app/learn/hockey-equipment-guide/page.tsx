@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function HockeyEquipmentGuidePage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Hockey Equipment Guide</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hockey Equipment Guide</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOCKEY EQUIPMENT GUIDE
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         A complete guide to every piece of equipment a hockey player needs — from skates and sticks to helmets, pads, and the specialized gear goalies rely on.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The basics: what every skater needs</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The basics: what every skater needs</h2>
         <p style={{ marginBottom: '1rem' }}>
           Every hockey player wears the same essential protective equipment, regardless of position or level. The list is longer than it looks — a full set of gear runs between $300 and $1,500 new, depending on the brand and level.
         </p>
@@ -56,7 +56,7 @@ export default function HockeyEquipmentGuidePage() {
           <li><strong>Athletic supporter and cup</strong></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Skates: the single most important piece</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Skates: the single most important piece</h2>
         <p style={{ marginBottom: '1rem' }}>
           Skates are the one piece of equipment that has the biggest impact on how a player skates. A $100 pair of skates from a big-box store is not the same as a properly fitted pair from a hockey shop. The fit matters more than the brand.
         </p>
@@ -67,7 +67,7 @@ export default function HockeyEquipmentGuidePage() {
           Sharpening matters too. A new pair of skates comes with a factory edge, but most players sharpen every 15–20 hours of ice time. Skipping sharpening leads to slipping on turns and poor edge work.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Sticks: flex, curve, and length</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Sticks: flex, curve, and length</h2>
         <p style={{ marginBottom: '1rem' }}>
           The three things that matter on a hockey stick are flex (how much it bends), curve (the shape of the blade), and length (cut to fit the player). Getting these right makes a noticeable difference in shooting and stickhandling.
         </p>
@@ -81,7 +81,7 @@ export default function HockeyEquipmentGuidePage() {
           <strong>Length:</strong> skates should be worn when measuring. With skates on, the stick should reach somewhere between the chin and the nose when held vertically. Cutting a stick too short is one of the most common beginner mistakes.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Helmets and safety</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Helmets and safety</h2>
         <p style={{ marginBottom: '1rem' }}>
           Hockey is the only major team sport where fighting is part of the game at the professional level, and concussions are a real risk at every level. A properly fitted helmet is non-negotiable.
         </p>
@@ -92,7 +92,7 @@ export default function HockeyEquipmentGuidePage() {
           Fit: the helmet should sit level on the head (not tilted back), with about one finger width between the eyebrows and the front edge. The chin strap should be snug. Most players size up if they&rsquo;re between two sizes.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Protective gear sizing</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Protective gear sizing</h2>
         <p style={{ marginBottom: '1rem' }}>
           Shoulder pads, elbow pads, shin guards, and hockey pants should fit snugly without restricting movement. The general test: bend over and touch your toes. If anything digs in, pinches, or shifts position, the fit is wrong.
         </p>
@@ -100,7 +100,7 @@ export default function HockeyEquipmentGuidePage() {
           For goalies, the gear is a different world — chest protectors, blocker and glove, leg pads that weigh 8–10 pounds each. Goalies wear 30+ pounds of equipment and the sizing is more specialized. Most serious goalies buy used leg pads to start, then upgrade as they grow into the position.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How much does hockey equipment cost?</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>How much does hockey equipment cost?</h2>
         <p style={{ marginBottom: '1rem' }}>
           New players often underestimate the cost. Here&rsquo;s a realistic range for a full set of gear at entry level (youth or adult novice):
         </p>
@@ -114,12 +114,12 @@ export default function HockeyEquipmentGuidePage() {
           Skates are usually the most expensive single piece. A new pair runs $150–$900. Sticks are the recurring cost: composite sticks are $80–$250 and typically last 6–18 months depending on use.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Where to buy</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Where to buy</h2>
         <p style={{ marginBottom: '1rem' }}>
           Local hockey shops are still the best place for skates and helmets — proper fit requires trying gear on. For sticks, shoulder pads, gloves, and most other equipment, online retailers (Pure Hockey, Hockey Monkey, Ice Warehouse) often have better prices and wider selection. Used gear marketplaces (SidelineSwap, Play It Again Sports) can save 50–70% on lightly used equipment.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to upgrade first</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to upgrade first</h2>
         <p style={{ marginBottom: '1rem' }}>
           If you have to prioritize, the equipment hierarchy by impact on play is roughly:
         </p>
@@ -132,7 +132,7 @@ export default function HockeyEquipmentGuidePage() {
           <li><strong>Shoulder pads and pants</strong> — fit and mobility</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Care and maintenance</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Care and maintenance</h2>
         <p style={{ marginBottom: '1rem' }}>
           Equipment lasts longer if you take care of it. Wipe down skates after each use, dry them with the guards off, and store them with blade covers on. Hang shoulder pads and pants to dry. Keep gloves loose so the padding isn&rsquo;t compressed. Replace laces when they show wear — a snapped lace mid-shift can mean a missed game.
         </p>
@@ -140,9 +140,9 @@ export default function HockeyEquipmentGuidePage() {
           Composite sticks should be stored in moderate temperature. Extreme cold or heat weakens the resin. Don&rsquo;t leave a stick in a hot car.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

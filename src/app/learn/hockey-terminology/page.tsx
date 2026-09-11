@@ -21,27 +21,27 @@ export const metadata: Metadata = {
 export default function HockeyTerminologyPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Hockey Glossary</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Hockey Glossary</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOCKEY GLOSSARY
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         70+ hockey terms and slang words. Bookmark this — you'll be hearing these for years.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.7, fontSize: '0.95rem' }}>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, fontSize: '0.95rem' }}>
         <p style={{ marginBottom: '1rem' }}>
           Hockey has its own language, and a lot of it sounds like nonsense to a new fan or player. This is the glossary you'd want on Day 1.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>The puck</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>The puck</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Puck</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The black rubber disc. Officially 1 inch thick, 3 inches in diameter, 6 ounces.</dd>
@@ -53,7 +53,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Upper part of the net. "Top shelf where mom keeps the peanut butter" is the classic goalie comment.</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>The rink</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>The rink</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Blue line</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The line that separates the offensive/defensive zones from the neutral zone. Offsides are called when a player crosses before the puck.</dd>
@@ -71,7 +71,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The blue-painted semicircle in front of the net. The goalie's space — opponents can't run into the goalie here.</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Positions</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Positions</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Forward</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>One of the three skaters responsible for offense. Includes center and two wings.</dd>
@@ -87,7 +87,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>More slang for defenceman. A "blueliner" plays at or near the blue line.</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Plays and moves</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Plays and moves</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Breakaway</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>When a player has the puck and no defender between them and the goalie except the goalie. Penalty shot if fouled.</dd>
@@ -105,7 +105,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Slang for the hands/gloves. "Top cheddar" is a goal scorer's hands. "Mitts" are the gloves.</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Goaltender slang</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Goaltender slang</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Pipe</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>The inside post of the goal. "Off the pipe and in" means a shot that hit the post and went in.</dd>
@@ -121,7 +121,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Slang for goalie. Especially common in the UK and parts of Europe.</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Equipment and arena</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Equipment and arena</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Bucket, bucket helmet</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Slang for helmet. "He got his bucket on" means he's playing safely.</dd>
@@ -135,7 +135,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Hockey stick. "He went to the lumber drawer" means a player grabbed a backup stick.</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Game situations</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Game situations</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>5-on-5</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>Even-strength play. Each team has 5 skaters + 1 goalie.</dd>
@@ -151,7 +151,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A team with the goalie pulled. Same as "extra attacker" or "empty net situation."</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Style and culture</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Style and culture</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>Bardown, BDN</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A hard, clean hit. Used as an exclamation: "Bardown!"</dd>
@@ -167,7 +167,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A pass that travels the full width of the ice, from one defenceman to the other, with no one touching it. Beautiful when it works.</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Stats terms</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Stats terms</h2>
         <dl style={{ marginBottom: '1.5rem' }}>
           <dt style={{ fontWeight: 700, marginTop: '0.5rem' }}>G, A, P (goals, assists, points)</dt>
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>A goal is a goal. An assist is one of the two passes that set up a goal. Points = goals + assists.</dd>
@@ -179,7 +179,7 @@ export default function HockeyTerminologyPage() {
           <dd style={{ marginLeft: '1rem', marginBottom: '0.5rem' }}>For goalies: the percentage of shots you stop. Modern NHL goalies save around 0.910 (91%).</dd>
         </dl>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/hockey-rules" style={{ color: '#C8102E' }}>Hockey rules explained</Link></li>
           <li><Link href="/learn/hockey-positions-explained" style={{ color: '#C8102E' }}>Hockey positions explained</Link></li>
@@ -187,9 +187,9 @@ export default function HockeyTerminologyPage() {
           <li><Link href="/glossary" style={{ color: '#C8102E' }}>Full hockey glossary (100+ terms)</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.4rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2rem', marginBottom: '0.75rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>

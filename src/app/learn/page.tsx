@@ -65,9 +65,9 @@ export default function LearnHubPage() {
       <aside
         aria-label="Quick answer"
         style={{
-          background: 'rgba(56,189,248,0.06)',
-          border: '1px solid rgba(56,189,248,0.18)',
-          borderLeft: '3px solid #38BDF8',
+          background: 'rgba(255,184,28,0.06)',
+          border: '1px solid rgba(255,184,28,0.18)',
+          borderLeft: '3px solid #FFB81C',
           borderRadius: '8px',
           padding: '1rem 1.25rem',
           marginBottom: '2rem',
@@ -76,19 +76,19 @@ export default function LearnHubPage() {
           lineHeight: 1.7,
         }}
       >
-        <strong style={{ color: '#38BDF8' }}>How do I start playing hockey?</strong>{' '}
+        <strong style={{ color: '#FFB81C' }}>How do I start playing hockey?</strong>{' '}
         If you\u2019re an adult with no experience, start with{' '}
-        <Link href="/learn/how-to-skate" style={{ color: '#38BDF8' }}>how to skate</Link>{' '}
+        <Link href="/learn/how-to-skate" style={{ color: '#FFB81C' }}>how to skate</Link>{' '}
         and the{' '}
-        <Link href="/learn/hockey-rules" style={{ color: '#38BDF8' }}>hockey rules primer</Link>.
+        <Link href="/learn/hockey-rules" style={{ color: '#FFB81C' }}>hockey rules primer</Link>.
         If you\u2019re a parent putting your kid in hockey, start with{' '}
-        <Link href="/directory/youth-hockey/learn-to-play" style={{ color: '#38BDF8' }}>find a learn-to-play program</Link>,{' '}
+        <Link href="/directory/youth-hockey/learn-to-play" style={{ color: '#FFB81C' }}>find a learn-to-play program</Link>,{' '}
         check the{' '}
-        <Link href="/tools/hockey-cost-calculator" style={{ color: '#38BDF8' }}>cost calculator</Link>,{' '}
+        <Link href="/tools/hockey-cost-calculator" style={{ color: '#FFB81C' }}>cost calculator</Link>,{' '}
         and read the{' '}
-        <Link href="/learn/age-to-start-hockey" style={{ color: '#38BDF8' }}>when can my kid start</Link>{' '}
+        <Link href="/learn/age-to-start-hockey" style={{ color: '#FFB81C' }}>when can my kid start</Link>{' '}
         guide. If you just want to understand the game as a new fan, start with{' '}
-        <Link href="/learn/hockey-terminology" style={{ color: '#38BDF8' }}>the glossary</Link>.
+        <Link href="/learn/hockey-terminology" style={{ color: '#FFB81C' }}>the glossary</Link>.
       </aside>
 
       {/* Why Learn Hockey — quick motivational callout */}
@@ -142,7 +142,7 @@ export default function LearnHubPage() {
         return (
           <section key={cat.id} id={cat.id} style={{ marginBottom: '3rem', scrollMarginTop: '1rem' }}>
             <div style={{ marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888' }}>
+              <span style={{ fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
                 {entries.length} {entries.length === 1 ? 'GUIDE' : 'GUIDES'}
               </span>
               <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -268,7 +268,7 @@ function LearnCard({ entry }: { entry: import('@/lib/learn-catalog').LearnEntry 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{entry.readTime} min read</span>
         {(entry.relatedTools?.length ?? 0) > 0 && (
-          <span style={{ fontSize: '0.65rem', color: '#38BDF8', fontWeight: 600, padding: '0.1rem 0.4rem', background: 'rgba(56,189,248,0.1)', borderRadius: '999px' }}>tools linked</span>
+          <span style={{ fontSize: '0.65rem', color: '#FFB81C', fontWeight: 600, padding: '0.1rem 0.4rem', background: 'rgba(255,184,28,0.1)', borderRadius: '999px' }}>tools linked</span>
         )}
         {(entry.relatedGuides?.length ?? 0) > 0 && (
           <span style={{ fontSize: '0.65rem', color: '#FFB81C', fontWeight: 600, padding: '0.1rem 0.4rem', background: 'rgba(255,184,28,0.1)', borderRadius: '999px' }}>guides linked</span>

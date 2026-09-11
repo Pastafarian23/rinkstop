@@ -21,23 +21,23 @@ export const metadata: Metadata = {
 export default function ChoosingAProgramPage() {
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: '#555', marginBottom: '1.5rem' }}>
-        <Link href="/" style={{ color: '#555' }}>Home</Link>
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
+        <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/learn" style={{ color: '#555' }}>Learn</Link>
+        <Link href="/learn" style={{ color: 'rgba(255,255,255,0.4)' }}>Learn</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <span style={{ color: '#A0A0A0' }}>Choosing a Program</span>
+        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Choosing a Program</span>
       </nav>
 
-      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#041E42', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+      <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
         HOW TO CHOOSE A LEARN-TO-PLAY PROGRAM
       </h1>
-      <p style={{ color: '#444', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
+      <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.05rem', marginBottom: '2rem', lineHeight: 1.5 }}>
         Seven questions to ask before signing up. The red flags. What to expect on day 1. And the difference between house, travel, and select programs.
       </p>
 
-      <div style={{ color: '#1a1a1a', lineHeight: 1.8, fontSize: '1rem' }}>
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Before you sign up: the 7 questions</h2>
+      <div style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.8, fontSize: '1rem' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Before you sign up: the 7 questions</h2>
         <p style={{ marginBottom: '1rem' }}>
           Email or call the program director. The good ones will answer all of these without hesitation.
         </p>
@@ -51,7 +51,7 @@ export default function ChoosingAProgramPage() {
           <li><strong>What's the drop-out rate at age 12?</strong> Programs that follow the ADM retain 80%+ of players through Bantam. Programs that burn kids out retain 30-40%. Ask the director directly.</li>
         </ol>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Red flags to walk away from</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Red flags to walk away from</h2>
         <p style={{ marginBottom: '1rem' }}>
           Some programs are better avoided. The signs:
         </p>
@@ -64,7 +64,7 @@ export default function ChoosingAProgramPage() {
           <li><strong>Win-focused culture at young ages.</strong> If a 10U program talks more about wins than development, they're optimizing for the wrong things.</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>House vs travel vs select</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>House vs travel vs select</h2>
         <p style={{ marginBottom: '1rem' }}>
           The three levels of youth hockey. Most kids stay in house for years before considering travel. That's correct.
         </p>
@@ -81,7 +81,7 @@ export default function ChoosingAProgramPage() {
           The right progression for most kids: house through 10U, select at 12U if interested, travel at 14U+ if the kid is serious. Some kids stay in house forever and play high school hockey. That's a legitimate path.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to bring on day 1</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>What to bring on day 1</h2>
         <p style={{ marginBottom: '1rem' }}>
           For the first session, the program will tell you. Most learn-to-play programs provide equipment for the first 4-8 weeks. After that, you need:
         </p>
@@ -99,7 +99,7 @@ export default function ChoosingAProgramPage() {
           <li>A hockey stick (senior stick cut to chin height is fine for kids 6U-10U)</li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first 4-8 weeks: rental vs. buy</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>The first 4-8 weeks: rental vs. buy</h2>
         <p style={{ marginBottom: '1rem' }}>
           Most programs include equipment for the first month. Use this time to confirm your kid likes hockey before you spend $300-500 on gear they'll outgrow by next year.
         </p>
@@ -113,7 +113,7 @@ export default function ChoosingAProgramPage() {
           What to buy used: pants, shoulder pads, elbow pads, shin guards, gloves, hockey socks. Look for used gear at your rink's pro shop, on sideline swap, or on Facebook marketplace.
         </p>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
           <li><Link href="/learn/first-day-on-ice" style={{ color: '#C8102E' }}>Your first day on the ice</Link></li>
           <li><Link href="/learn/cost-by-age" style={{ color: '#C8102E' }}>Hockey cost by age</Link></li>
@@ -122,9 +122,9 @@ export default function ChoosingAProgramPage() {
           <li><Link href="/directory/youth-hockey/learn-to-play" style={{ color: '#C8102E' }}>Find a learn-to-play program</Link></li>
         </ul>
 
-        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#041E42', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Disclosure</h2>
         <p style={{ marginBottom: "0.5rem", fontSize: "0.85rem", color: "#888" }}>Last updated 2026-09-10. AI-assisted, human-reviewed by RinkStop editorial.</p>
-        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)' }}>
           RinkStop is supported in part by advertising. Advertising does not influence our editorial content. See our <Link href="/advertise" style={{ color: '#C8102E' }}>advertising policy</Link> and <Link href="/editorial-policy" style={{ color: '#C8102E' }}>editorial policy</Link> for the full disclosure.
         </p>
       </div>
