@@ -13,15 +13,18 @@ import { LEARN } from '@/lib/learn-catalog';
 export const revalidate = 3600;
 
 export async function GET() {
-  const lastmod = '2026-09-10';
+  // Per-page lastmod from the catalog entry's `verified` date so that
+  // when a page is updated individually, the sitemap reflects it.
+  // The index page uses today's date (the most recently updated entry).
+  const today = '2026-09-10';
 
   const urls: { loc: string; lastmod: string; priority: number }[] = [
     // Index page
-    { loc: `${baseUrl}/learn`, lastmod, priority: 0.85 },
+    { loc: `${baseUrl}/learn`, lastmod: today, priority: 0.85 },
     // Every individual learn page from the catalog
     ...LEARN.map((l) => ({
       loc: `${baseUrl}${l.href}`,
-      lastmod,
+      lastmod: l.verified,
       priority: l.category === 'getting-started' ? 0.8 : 0.7,
     })),
   ];
