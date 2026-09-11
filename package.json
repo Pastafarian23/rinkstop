@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"supabase/migrations/**/*.sql\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "check": "./scripts/pre-deploy-gate.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
