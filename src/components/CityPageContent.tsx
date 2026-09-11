@@ -36,8 +36,8 @@ export default function CityPageContent({ data, faqs }: Props) {
   const border = '#1e1e1e';
   const red = '#C8102E';
   const textMain = '#fff';
-  const textMuted = '#aaa';
-  const textDim = '#666';
+  const textMuted = 'rgba(255,255,255,0.6)';
+  const textDim = 'rgba(255,255,255,0.4)';
   const gold = '#FFB81C';
   const ice = '#EEF5FF';
 
