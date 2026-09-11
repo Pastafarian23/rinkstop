@@ -22,6 +22,7 @@
 set -uo pipefail
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # CLI flag parsing
 SKIP_BUILD=0
@@ -119,8 +120,26 @@ if should_run 4; then
   # if we're on a branch — but the typical use is post-merge, so check HEAD).
   PAGES_CHANGED=$(git diff --name-only HEAD~1..HEAD 2>/dev/null | grep -E "^src/app/.*page\.tsx$" || true)
 
+  # Always run the canonical sweep (39 representative URLs across template types).
+  # Catches systemic bugs where shared components / variable-defined colors were
+  # missed by the per-page regex (e.g., CityPageContent textMuted/textDim).
+  CANONICAL_SWEEP_BAD=0
+  if [ -f "$SCRIPT_DIR/visual-qc-sweep.sh" ]; then
+    echo "  -- canonical sweep (visual-qc-sweep.sh) --"
+    SWEEP_OUT=$(bash "$SCRIPT_DIR/visual-qc-sweep.sh" 2>&1 || true)
+    echo "$SWEEP_OUT" | grep -E "OK|❌|⚠|Total" | head -50
+    if echo "$SWEEP_OUT" | grep -qE "Hits: [1-9]"; then
+      CANONICAL_SWEEP_BAD=1
+    fi
+    if [ "$CANONICAL_SWEEP_BAD" -eq 0 ]; then
+      ok "canonical sweep clean (39 representative URLs)"
+    fi
+  else
+    note "  visual-qc-sweep.sh not found — skipping canonical sweep"
+  fi
+
   if [ -z "$PAGES_CHANGED" ]; then
-    note "no page.tsx files changed in last commit — skipping live color audit"
+    note "no page.tsx files changed in last commit — skipping per-page color audit"
     ok "no page changes to audit"
   else
     COLOR_BAD=0
@@ -159,8 +178,13 @@ if should_run 4; then
       note "     #888 -> 'rgba(255,255,255,0.4)', #38BDF8 -> '#FFB81C' (or similar dark-theme value)"
       note "Reference template: src/app/guides/hockey-rules/page.tsx"
     else
-      ok "all changed pages pass color audit"
+      ok "all changed pages pass per-page color audit"
     fi
+  fi
+
+  if [ "$CANONICAL_SWEEP_BAD" -gt 0 ]; then
+    fail "canonical visual-qc sweep found light-mode hex on production URLs"
+    note "Run: bash scripts/visual-qc-sweep.sh — review flagged URLs above"
   fi
 fi
 
