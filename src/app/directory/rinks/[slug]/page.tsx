@@ -378,11 +378,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
   }
 
+  // 2026-09-12 WS26 followup: when the rink name lacks the words "ice",
+  // "rink", or "arena" — but every page in /directory/rinks/ IS an ice
+  // rink by URL definition — add a generic type differentiator so the
+  // title matches the query class "ice rink <city>" or "<name> arena".
+  // Top GSC query words on invisible rink pages: ice (4199 imp), arena
+  // (1666), rink (1151), skating (901), hockey (311). Most rink names
+  // already contain one of these (it's in the venue's actual name). For
+  // the ~15% that don't (e.g. "Lenovo Center", "Grant-Harvey Centre",
+  // "Rheinlandhalle"), append "ice rink" as a differentiator so the
+  // keyword appears in the title.
+  const nameLower = rink.name.toLowerCase();
+  const hasVenueWord = /\b(ice|rink|arena|garden|pavilion|centre|center|plex|palace|forum|hall|coliseum|colosseum)\b/.test(nameLower);
+  if (differentiators.length === 0 && !hasVenueWord) {
+    differentiators.push('ice rink');
+  }
+
   // Title priority: drop fields (in order: country, province, differentiator)
   // when total exceeds 60 chars rather than truncating with "..." — a partial
   // country name like "Pr..." reads as broken text in SERPs. Google will
   // also auto-truncate, so being explicit looks worse than just dropping the
-  // least-load-bearing field.
+  // least load-bearing field.
   const titleCityParts = [rink.city, provinceLabel].filter(Boolean).join(', ');
   const titleCityCountryParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
   let title: string;
