@@ -393,17 +393,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // too generic: "Lenovo Center", "Grant-Harvey Centre" don't signal ice)
   const hasVenueWord = /\b(ice|rink|arena|garden|pavilion|plex|palace|forum|hall|coliseum|colosseum|ice palace|ice arena|ice rink|ice garden|ice centre|ice center|dome|bowl|oval|stadium)\b/.test(nameLower);
   
-  // If no differentiators from notes, add fallback
+  // If rink name lacks venue words, prepend "Ice Rink" to the NAME (not
+  // differentiator) so it survives the smart-truncation chain.
+  // The name is the last component kept; differentiators get dropped first.
+  // This is accurate: every /directory/rinks/ page IS an ice rink.
+  let displayName = rink.name;
+  if (!hasVenueWord) {
+    displayName = 'Ice Rink ' + rink.name;
+  }
+  
+  // If no differentiators from notes and name had venue word, add fallback
   if (differentiators.length === 0 && !hasVenueWord) {
     differentiators.push('ice rink');
-  }
-  // If differentiator exists but lacks ice-type words AND rink name lacks them,
-  // prepend "ice rink" so the keyword appears in SERP title
-  if (differentiators.length > 0 && !hasVenueWord) {
-    const tag = differentiators[0].toLowerCase();
-    if (!/\b(ice|rink|arena|garden|pavilion|plex|palace|forum|hall|coliseum|dome|bowl|oval|stadium)\b/.test(tag)) {
-      differentiators[0] = 'ice rink | ' + differentiators[0];
-    }
   }
 
   // Title priority: drop fields (in order: country, province, differentiator)
