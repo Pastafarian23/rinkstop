@@ -55,7 +55,7 @@ export default function WorldChampionshipsPage() {
       <div style={{ background: 'linear-gradient(135deg, #041E42 0%, #0a2d5a 100%)', border: '1px solid rgba(200,16,46,0.3)', borderRadius: '8px', padding: '1.5rem 2rem', marginBottom: '2rem' }}>
         <p style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#C8102E', marginBottom: '0.5rem' }}>2025 World Champion</p>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2rem', color: '#fff', letterSpacing: '0.04em' }}>🇨🇦 CANADA</h2>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', marginTop: '0.5rem' }}>2025 Men\'s World Championship  --  Prague, Czech Republic</p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', marginTop: '0.5rem' }}>2025 Men\'s World Championship — Prague, Czech Republic</p>
       </div>
 
       {/* Tournament grid */}

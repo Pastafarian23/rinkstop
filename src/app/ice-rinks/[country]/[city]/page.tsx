@@ -49,16 +49,26 @@ export async function generateMetadata({
     uniquenessScore: hasListings ? 50 : 0,
   };
 
+  // 2026-09-12 WS26 GSC CTR pass: tighten title + add counts.
+  // Old: "${location} Hockey - Rinks & Teams" (no counts, no year, no "Ice" keyword).
+  // New: include team + rink counts when listings exist.
+  const cityTitle = hasListings
+    ? `Ice Hockey in ${location} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
+    : `${location} Hockey — RinkStop Directory`;
+  const cityDesc = hasListings
+    ? `Ice hockey in ${location} 2026: ${data.teamCount} teams across ${data.leaguesInCity?.length ?? 0} leagues and ${data.rinkCount} rinks. Browse youth programs and adult leagues near you.`
+    : `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs and adult leagues near you.`;
+
   return {
-    title: `${location} Hockey - Rinks & Teams`,
-    description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs and adult leagues near you.`,
+    title: cityTitle,
+    description: cityDesc,
     alternates: {
       canonical: `https://rinkstop.com/ice-rinks/${countrySlug}/${citySlug}`,
     },
     robots: robotsMeta(decision),
     openGraph: withDefaultOg({
-      title: `${location} Hockey`,
-      description: `Hockey in ${location}: ice rinks, teams, and leagues.`,
+      title: cityTitle,
+      description: cityDesc,
       type: 'website',
     }),
   };

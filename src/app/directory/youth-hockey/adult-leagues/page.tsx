@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Adult Hockey Leagues',
-  description: 'Find adult hockey leagues near you  --  from recreational beer leagues to competitive divisions. Playing hockey as an adult has never been more popular.',
+  description: 'Find adult hockey leagues near you — from recreational beer leagues to competitive divisions. Playing hockey as an adult has never been more popular.',
 };
 
 export default function AdultLeaguesPage() {
@@ -51,7 +51,7 @@ export default function AdultLeaguesPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {[
           { level: 'Recreational / D', desc: 'No experience required. Often called "beer league." Emphasis on fun, exercise, and social hockey. Typically weekly games.', color: 'var(--teal)' },
-          { level: 'Intermediate / C', desc: 'Some playing experience  --  often youth or junior backgrounds. Faster pace, more structured play. Multiple skill tiers within C-level.', color: '#4A90D9' },
+          { level: 'Intermediate / C', desc: 'Some playing experience — often youth or junior backgrounds. Faster pace, more structured play. Multiple skill tiers within C-level.', color: '#4A90D9' },
           { level: 'Advanced / B', desc: 'Former varsity or high-level club players. Competitive but still amateur. Local and regional league play.', color: 'var(--gold)' },
           { level: 'Elite / A', desc: 'Ex-college, former junior, or high-level amateur players. Very competitive. Some leagues have A-level as semi-pro feeder.', color: 'var(--red)' },
         ].map(l => (
@@ -69,7 +69,7 @@ export default function AdultLeaguesPage() {
             { title: 'Find a League', text: 'Contact your nearest rink and ask about adult hockey leagues. Most rinks run multiple adult divisions.' },
             { title: 'Gear Up', text: 'Adult amateur leagues require full equipment. Helmet, cage, shoulder pads, elbow, gloves, pants, shin guards, skates, stick.' },
             { title: 'Watch First', text: 'Most leagues let you watch a game or two before committing. Ask the rink or league commissioner.' },
-            { title: 'Join at Your Level', text: 'Be honest about your skill level  --  it keeps the game safe and fun for everyone in your division.' },
+            { title: 'Join at Your Level', text: 'Be honest about your skill level — it keeps the game safe and fun for everyone in your division.' },
           ].map(t => (
             <div key={t.title}>
               <h3 style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fff', marginBottom: '0.4rem' }}>{t.title}</h3>

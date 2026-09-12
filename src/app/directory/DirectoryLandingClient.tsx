@@ -56,7 +56,7 @@ const CATS = [
     label: 'Brands',
     href: '/directory/brands',
     count: '12',
-    desc: 'Equipment makers  --  Bauer, CCM, Warrior, and more',
+    desc: 'Equipment makers — Bauer, CCM, Warrior, and more',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -79,7 +79,7 @@ const CATS = [
     label: 'PWHL',
     href: '/directory/pwhl',
     count: '6',
-    desc: 'Professional Women\'s Hockey League  --  6 teams across North America',
+    desc: 'Professional Women\'s Hockey League — 6 teams across North America',
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2a5 5 0 0 1 5 5c0 2-1 3-2 4l-3 3-3-3c-1-1-2-2-2-4a5 5 0 0 1 5-5z"/>
@@ -148,7 +148,7 @@ function DirectoryLandingInner({ counts }: { counts: { rinks: number; teams: num
               HOCKEY DIRECTORY
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem', marginTop: '0.75rem', maxWidth: '480px' }}>
-              From NHL arenas to backyard rinks  --  find teams, players, leagues, rinks, and brands worldwide.
+              From NHL arenas to backyard rinks — find teams, players, leagues, rinks, and brands worldwide.
             </p>
           </>
         )}

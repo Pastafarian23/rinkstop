@@ -4,7 +4,7 @@ import TeamLogo from '@/components/TeamLogo';
 
 export const metadata: Metadata = {
   title: 'NHL Western Conference',
-  description: 'All 16 NHL Western Conference teams  --  Central and Pacific divisions.',
+  description: 'All 16 NHL Western Conference teams — Central and Pacific divisions.',
 };
 
 const CENTRAL_TEAMS = [

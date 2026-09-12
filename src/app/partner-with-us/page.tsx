@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Partner With RinkStop',
-  description: 'Partner with RinkStop  --  the world\'s hockey directory. Reach a global hockey audience through directory listings, content partnerships, and advertising.',
+  description: 'Partner with RinkStop — the world\'s hockey directory. Reach a global hockey audience through directory listings, content partnerships, and advertising.',
 };
 
 export default function PartnerPage() {
@@ -20,7 +20,7 @@ export default function PartnerPage() {
       </h1>
 
       <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '1.125rem', lineHeight: 1.7, marginBottom: '2.5rem', borderLeft: '4px solid #C8102E', paddingLeft: '1.25rem' }}>
-        RinkStop is the global hockey directory  --  connecting teams, players, leagues, rinks, and fans worldwide. Partner with us to reach an engaged, growing hockey audience.
+        RinkStop is the global hockey directory — connecting teams, players, leagues, rinks, and fans worldwide. Partner with us to reach an engaged, growing hockey audience.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '3rem' }}>

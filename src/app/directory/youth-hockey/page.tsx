@@ -49,24 +49,24 @@ const SECTIONS = [
           <p style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.3rem' }}>What age can kids start?</p>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.65 }}>
             Most kids lace up for the first time between ages 4 and 7. Many rinks offer{" "}
-            <strong style={{ color: '#fff' }}>"Learn to Play"</strong> programs designed specifically for complete beginners  --  no experience needed. Some even provide equipment so you don't have to buy anything upfront.
+            <strong style={{ color: '#fff' }}>"Learn to Play"</strong> programs designed specifically for complete beginners — no experience needed. Some even provide equipment so you don't have to buy anything upfront.
           </p>
         </div>
         <div>
           <p style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.3rem' }}>Basic gear checklist</p>
           <ul style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.8, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-            <li>Skates  --  get fitted at a local hockey shop, don't guess on size</li>
+            <li>Skates — get fitted at a local hockey shop, don't guess on size</li>
             <li>Helmet with cage or visor</li>
             <li>Shoulder pads, elbow pads, shin guards</li>
             <li>Hockey pants (breezers) + game socks</li>
             <li>Gloves, stick, and a mouthguard</li>
-            <li>Equipment bag  --  a hockey bag or a large duffel works fine</li>
+            <li>Equipment bag — a hockey bag or a large duffel works fine</li>
           </ul>
         </div>
         <div>
           <p style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.3rem' }}>What does first practice look like?</p>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.65 }}>
-            Chaos, mostly. Kids chase pucks, fall down a lot (it's part of learning), and have an absolute blast. Coaches expect zero skill  --  that's the point. Practices focus on getting comfortable on ice: how to stand up, how to fall safely, how to push, and eventually how to glide.
+            Chaos, mostly. Kids chase pucks, fall down a lot (it's part of learning), and have an absolute blast. Coaches expect zero skill — that's the point. Practices focus on getting comfortable on ice: how to stand up, how to fall safely, how to push, and eventually how to glide.
           </p>
         </div>
       </div>
@@ -109,7 +109,7 @@ const SECTIONS = [
           </tbody>
         </table>
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-          Age cutoffs vary by league and country  --  some use birth year, others use calendar year. Check with your local program.
+          Age cutoffs vary by league and country — some use birth year, others use calendar year. Check with your local program.
         </p>
       </div>
     ),
@@ -125,7 +125,7 @@ const SECTIONS = [
     content: (
       <div style={{ display: 'grid', gap: '0.875rem' }}>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.65 }}>
-          Youth hockey equipment is broadly made by a handful of major brands. We track them in our database  --  here are the ones worth knowing:
+          Youth hockey equipment is broadly made by a handful of major brands. We track them in our database — here are the ones worth knowing:
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.5rem' }}>
           {[
@@ -159,7 +159,7 @@ const SECTIONS = [
     content: (
       <div style={{ display: 'grid', gap: '0.75rem' }}>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.65 }}>
-          Youth hockey programs are organized at the local level  --  by city, not by country. We've started building a directory of programs worldwide, from Toronto to Manila.
+          Youth hockey programs are organized at the local level — by city, not by country. We've started building a directory of programs worldwide, from Toronto to Manila.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem' }}>
           <Link
@@ -207,19 +207,19 @@ const SECTIONS = [
         <div>
           <p style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.3rem' }}>Best drills for brand new players</p>
           <ul style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.8, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-            <li><strong style={{ color: '#fff' }}>Tunnel skating:</strong> Players skate through a corridor of cones  --  builds balance and edge control</li>
-            <li><strong style={{ color: '#fff' }}>Dot-to-dot:</strong> Skate to a face-off dot, stop, push to the next  --  teaches stopping and starting</li>
+            <li><strong style={{ color: '#fff' }}>Tunnel skating:</strong> Players skate through a corridor of cones — builds balance and edge control</li>
+            <li><strong style={{ color: '#fff' }}>Dot-to-dot:</strong> Skate to a face-off dot, stop, push to the next — teaches stopping and starting</li>
             <li><strong style={{ color: '#fff' }}>Cross-ice games:</strong> Small-area games on half or quarter ice keep everyone involved and engaged</li>
-            <li><strong style={{ color: '#fff' }}>Stickhandling relay:</strong> Dribble the puck through cones  --  fun, builds hand-eye coordination</li>
+            <li><strong style={{ color: '#fff' }}>Stickhandling relay:</strong> Dribble the puck through cones — fun, builds hand-eye coordination</li>
           </ul>
         </div>
         <div>
           <p style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '0.8125rem', marginBottom: '0.3rem' }}>Practice planning tips</p>
           <ul style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.8, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-            <li>Keep drills short (5-8 min) and cycle frequently  --  young kids lose focus fast</li>
-            <li>End every practice with a fun game  --  it's the thing they'll remember</li>
+            <li>Keep drills short (5-8 min) and cycle frequently — young kids lose focus fast</li>
+            <li>End every practice with a fun game — it's the thing they'll remember</li>
             <li>For Mites and Squirts, the ratio should be 60% games / 40% instruction</li>
-            <li>Let kids pick the drill sometimes  --  ownership keeps them coming back</li>
+            <li>Let kids pick the drill sometimes — ownership keeps them coming back</li>
           </ul>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
@@ -242,7 +242,7 @@ const SECTIONS = [
     content: (
       <div style={{ display: 'grid', gap: '0.875rem' }}>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', lineHeight: 1.7 }}>
-          Hockey is no longer just a North American and Northern European sport. Youth programs are taking root in places you'd least expect  --  and they're growing fast.
+          Hockey is no longer just a North American and Northern European sport. Youth programs are taking root in places you'd least expect — and they're growing fast.
         </p>
         {[
           { region: 'Philippines', flag: '🇵🇭', detail: 'With help from the Los Angeles Kings and NHL\'s Hockey Is For Everyone initiative, the Philippines has fielded youth teams in Manila and Cebu. A Filipino kid growing up in Cebu now has a local rink and a league to play in.' },
@@ -277,17 +277,17 @@ const SECTIONS = [
       <div style={{ display: 'grid', gap: '1rem' }}>
         {[
           {
-            name: 'Jesia "J.J." M.  --  Manila, Philippines',
+            name: 'Jesia "J.J." M. — Manila, Philippines',
             story: 'Started in a Learn to Play program sponsored by the LA Kings at 6 years old. By 12, she was competing in the Asian Winter Games youth exhibition. Today she coaches the Mite-level program she once started in, passing the game forward to the next generation of Filipino hockey players.',
             tag: 'Philippines',
           },
           {
             name: 'Sam T., born in Ghana, grew up in Toronto',
-            story: 'Moved to Canada at age 9, had never seen an ice rink until he arrived. Within three years he was playing rep hockey. He credits his start to a community center program that offered free equipment rental  --  removing the biggest barrier for newcomer families.',
+            story: 'Moved to Canada at age 9, had never seen an ice rink until he arrived. Within three years he was playing rep hockey. He credits his start to a community center program that offered free equipment rental — removing the biggest barrier for newcomer families.',
             tag: 'Ghana / Canada',
           },
           {
-            name: 'Miranda Chen  --  San Jose, California',
+            name: 'Miranda Chen — San Jose, California',
             story: 'Founded the first all-girls hockey program at her high school after being the only girl on her school\'s junior team for two seasons. Today she runs girls-only learn-to-play clinics across the Bay Area and consults for USA Hockey on inclusivity programming.',
             tag: "Girls' Hockey",
           },
@@ -336,7 +336,7 @@ export default function YouthHockeyPage() {
           YOUTH HOCKEY
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 'clamp(0.875rem, 2vw, 1rem)', maxWidth: '540px', lineHeight: 1.7, marginBottom: '1.25rem' }}>
-          Everything you need to know about getting kids on the ice  --  from the first stride to finding the right program, wherever you are in the world.
+          Everything you need to know about getting kids on the ice — from the first stride to finding the right program, wherever you are in the world.
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem' }}>
           <a href="#getting-started" style={{ background: 'var(--red)', color: '#fff', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.07em', textTransform: 'uppercase', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none' }}>
@@ -359,7 +359,7 @@ export default function YouthHockeyPage() {
         marginBottom: '2rem',
       }}>
         <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.9375rem', lineHeight: 1.75, fontStyle: 'italic' }}>
-          Hockey teaches kids things team sports rarely do  --  how to recover from a hard fall, how to read a play before it happens, how to trust a teammate you can't see behind you. It's fast, it's physical, and kids who play it tend to grow up knowing how to handle both. That's reason enough. But really, they just love it.
+          Hockey teaches kids things team sports rarely do — how to recover from a hard fall, how to read a play before it happens, how to trust a teammate you can't see behind you. It's fast, it's physical, and kids who play it tend to grow up knowing how to handle both. That's reason enough. But really, they just love it.
         </p>
       </div>
 
@@ -423,7 +423,7 @@ export default function YouthHockeyPage() {
           KNOW A YOUTH PROGRAM WE DON&apos;T?
         </h2>
         <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9375rem', maxWidth: '460px', lineHeight: 1.6 }}>
-          We&apos;re building the most complete global directory of youth hockey programs. If you know of one that should be listed, add it  --  it helps the next parent looking.
+          We&apos;re building the most complete global directory of youth hockey programs. If you know of one that should be listed, add it — it helps the next parent looking.
         </p>
         <Link href="/directory/youth-hockey/programs" className="btn btn-white" style={{ marginTop: '0.25rem' }}>
           Browse Programs

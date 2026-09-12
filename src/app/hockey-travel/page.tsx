@@ -27,7 +27,7 @@ export default function HockeyTravelPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {[
           { city: 'Toronto, ON', venues: 'Scotiabank Arena (Leafs), Coca-Cola Coliseum ( Marlies)', note: 'The hockey capital of North America. Two NHL arenas within walking distance downtown.', icon: '🏙️' },
-          { city: 'Montreal, QC', venues: 'Bell Centre (Canadiens)', note: 'Hockey history on every block. The Forum site is now a shopping complex  --  still worth a visit.', icon: '🏒' },
+          { city: 'Montreal, QC', venues: 'Bell Centre (Canadiens)', note: 'Hockey history on every block. The Forum site is now a shopping complex — still worth a visit.', icon: '🏒' },
           { city: 'Boston, MA', venues: 'TD Garden (Bruins)', note: 'College hockey rivalries run deep here. Catch a Harvard-Yale game at Matthews Arena.', icon: '🎓' },
           { city: 'Minneapolis-St. Paul, MN', venues: 'Xcel Energy Center (Wild)', note: 'The State of Hockey. Minnesota has produced more NHL players per capita than any US state.', icon: '❄️' },
           { city: 'Detroit, MI', venues: 'Little Caesars Arena (Red Wings)', note: 'Original Six. The old Joe Louis Arena site is now redeveloped. Little Caesars is the new home.', icon: '🏚️' },
@@ -50,7 +50,7 @@ export default function HockeyTravelPage() {
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.875rem' }}>ARENA TIPS</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
           {[
-            { tip: 'Book hotel blocks early', note: ' NHL arenas are in city centers  --  hotels fill fast on game nights.' },
+            { tip: 'Book hotel blocks early', note: ' NHL arenas are in city centers — hotels fill fast on game nights.' },
             { tip: 'Bring a jersey', note: ' You\'ll fit in better and might make friends in the concourse.' },
             { tip: 'Skip the standing-room only', note: ' If you\'re traveling for the experience, a real seat is worth the upgrade.' },
             { tip: 'Explore the neighborhood', note: ' Every arena has pre-game bars and restaurants worth trying.' },

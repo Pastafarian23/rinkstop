@@ -1,4 +1,4 @@
-// src/app/draft/page.tsx  --  Index for the draft archive.
+// src/app/draft/page.tsx — Index for the draft archive.
 //
 // Redirects to /draft/nhl/2026 (the only fully-indexed year so far).
 // Other leagues will eventually get their own landing pages here

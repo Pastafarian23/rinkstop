@@ -16,7 +16,11 @@ export const metadata: Metadata = {
   // (searchers want live scores, not archived) and league-anchored
   // keyword list to surface for both "hockey scores" and "hockey games
   // today" type queries.
-  title: 'Hockey Scores Today — Live Games, Schedule & Results',
+  //
+  // 2026-09-12 WS26 GSC CTR pass: added season year + games-today phrase.
+  // Top queries: "what hockey games are on tonight", "hockey games today".
+  // Old title missed the "today/tonight" hook; new version fronts it.
+  title: 'Hockey Games Today (2026-27) — Live Scores, Schedule & Results',
   description: _gamesMetaLong.slice(0, 240),
   alternates: {
     canonical: 'https://rinkstop.com/directory/games',

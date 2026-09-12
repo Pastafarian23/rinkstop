@@ -37,7 +37,7 @@ export default function IIHFPage() {
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          IIHF  --  INTERNATIONAL ICE HOCKEY FEDERATION
+          IIHF — INTERNATIONAL ICE HOCKEY FEDERATION
         </h1>
 
       <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.75rem' }}>
@@ -139,7 +139,7 @@ export default function IIHFPage() {
       <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.5rem 2rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>ABOUT THE IIHF</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: 1.8 }}>
-          The International Ice Hockey Federation (IIHF) is the governing body of ice hockey worldwide and is based in Zurich, Switzerland. Founded in 1908, it manages international tournaments and sets the rules of the sport. The IIHF currently has 60+ member nations across five continents and organizes world championships at various levels  --  senior, junior, and youth  --  for both men and women.
+          The International Ice Hockey Federation (IIHF) is the governing body of ice hockey worldwide and is based in Zurich, Switzerland. Founded in 1908, it manages international tournaments and sets the rules of the sport. The IIHF currently has 60+ member nations across five continents and organizes world championships at various levels — senior, junior, and youth — for both men and women.
         </p>
         <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <a href="https://www.iihf.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 600 }}>iihf.com →</a>

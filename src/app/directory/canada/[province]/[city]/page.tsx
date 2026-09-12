@@ -43,16 +43,26 @@ export async function generateMetadata({
   const hasListings = data.teamCount + data.rinkCount > 0;
   const decision = { indexable: hasListings, reason: hasListings ? 'has listings' : 'no listings', uniquenessScore: hasListings ? 50 : 0 };
 
+  // 2026-09-12 WS26 GSC CTR pass: tighten title + add counts.
+  // Old: "${location} Hockey - Rinks & Teams" (no counts, no year, no "Ice" keyword).
+  // New: include team + rink counts when listings exist.
+  const cityTitle = hasListings
+    ? `Ice Hockey in ${location} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
+    : `${location} Hockey — RinkStop Directory`;
+  const cityDesc = hasListings
+    ? `Ice hockey in ${location} 2026: ${data.teamCount} teams across ${data.leaguesInCity?.length ?? 0} leagues and ${data.rinkCount} rinks. Browse youth programs, junior clubs, and adult leagues across the province.`
+    : `Hockey teams, rinks, and youth programs in ${location}. Browse local hockey listings on RinkStop.`;
+
   return {
-    title: `${location} Hockey - Rinks & Teams`,
-    description: `Find hockey teams, ice rinks, and leagues in ${location}. Discover youth programs, junior clubs, and adult leagues across the province.`,
+    title: cityTitle,
+    description: cityDesc,
     alternates: {
       canonical: `https://rinkstop.com/directory/canada/${canonicalSlug}/${citySlug}`,
     },
     robots: robotsMeta(decision),
     openGraph: withDefaultOg({
-      title: `${location} Hockey`,
-      description: `Hockey in ${location}: teams, rinks, and leagues.`,
+      title: cityTitle,
+      description: cityDesc,
       type: 'website',
     }),
   };

@@ -55,7 +55,7 @@ export default function LearnToPlayPage() {
             title: 'First Time on Ice',
             color: 'var(--gold)',
             icon: '⛸',
-            desc: 'Most kids start between ages 4 and 8. Learn to Play programs require zero experience  --  coaches expect complete beginners.',
+            desc: 'Most kids start between ages 4 and 8. Learn to Play programs require zero experience — coaches expect complete beginners.',
           },
           {
             title: 'Gear for Beginners',
@@ -93,12 +93,12 @@ export default function LearnToPlayPage() {
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHAT HAPPENS AT FIRST PRACTICE</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
           {[
-            { step: '1', text: 'Get fitted for rental skates  --  half size up from street shoes' },
-            { step: '2', text: 'Step on ice with full gear  --  coaches help with balance' },
-            { step: '3', text: 'Learn to fall safely  --  hockey falls are different from normal falls' },
-            { step: '4', text: 'Push with both legs  --  building stride strength' },
-            { step: '5', text: 'Glide on one foot  --  the foundation of everything' },
-            { step: '6', text: 'Introduction to the stick  --  pushing the puck forward' },
+            { step: '1', text: 'Get fitted for rental skates — half size up from street shoes' },
+            { step: '2', text: 'Step on ice with full gear — coaches help with balance' },
+            { step: '3', text: 'Learn to fall safely — hockey falls are different from normal falls' },
+            { step: '4', text: 'Push with both legs — building stride strength' },
+            { step: '5', text: 'Glide on one foot — the foundation of everything' },
+            { step: '6', text: 'Introduction to the stick — pushing the puck forward' },
           ].map(s => (
             <div key={s.step} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
               <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--red)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8125rem', color: '#fff' }}>{s.step}</div>

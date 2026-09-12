@@ -1,4 +1,4 @@
-// src/app/draft/[year]/page.tsx  --  NHL Draft picks archive per year
+// src/app/draft/[year]/page.tsx — NHL Draft picks archive per year
 //
 // Server-component archive page for one NHL Entry Draft year. Renders all
 // picks grouped by round, with client-side search/filter/sort via the

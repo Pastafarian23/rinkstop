@@ -91,22 +91,32 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
   const hasContent = cityNames.length > 0 && (totalRinkCount + totalTeamCount) > 0;
   const decision = { indexable: hasContent, reason: hasContent ? 'has content' : 'empty', uniquenessScore: hasContent ? 50 : 0 };
 
+  // 2026-09-12 WS26 GSC CTR pass: tighten title + add counts.
+  // Old: "${stateName} Hockey - Ice Rinks, Teams & Leagues" (no counts, no year).
+  // New: include rink + team counts when state has content.
+  const stateTitle = hasContent
+    ? `Ice Hockey in ${stateName} 2026 — ${totalRinkCount} Rinks, ${totalTeamCount} Teams & Leagues`
+    : `${stateName} Hockey — RinkStop Directory`;
+  const stateDesc = hasContent
+    ? `Ice hockey in ${stateName} 2026: ${totalRinkCount} rinks, ${totalTeamCount} teams across ${cityNames.length} cities. Discover youth programs, adult leagues, and NCAA teams near you.`
+    : `Find every hockey rink, team, and league in ${stateName}. Discover youth programs, adult leagues, and NCAA teams near you.`;
+
   return {
-    title: `${stateName} Hockey - Ice Rinks, Teams & Leagues`,
-    description: `Find every hockey rink, team, and league in ${stateName}. Discover youth programs, adult leagues, and NCAA teams near you.`,
+    title: stateTitle,
+    description: stateDesc,
     alternates: {
       canonical: `https://rinkstop.com/directory/united-states/${stateSlug}`,
     },
     robots: robotsMeta(decision),
     openGraph: withDefaultOg({
-      title: `${stateName} Hockey`,
-      description: `Hockey in ${stateName}: ice rinks, teams, leagues, and youth programs.`,
+      title: stateTitle,
+      description: stateDesc,
       type: 'website',
     }),
     twitter: {
       card: 'summary_large_image',
-      title: `${stateName} Hockey`,
-      description: `Hockey in ${stateName}: ice rinks, teams, leagues, and youth programs.`,
+      title: stateTitle,
+      description: stateDesc,
     },
   };
 }

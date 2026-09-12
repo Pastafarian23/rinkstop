@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { LeagueTeams } from '@/components/LeagueTeams';
 
 export const metadata: Metadata = {
-  title: 'OHL  --  Ontario Hockey League',
-  description: 'Coverage of the OHL (Ontario Hockey League)  --  top junior hockey league with 20 teams across Ontario, Canada. Premier NHL draft prospect pipeline.',
+  title: 'OHL Hockey 2026-27 — 20 Teams, NHL Draft Pipeline',
+  description: 'OHL Hockey 2026-27: top junior hockey league with 20 teams across Ontario, Canada. Premier NHL draft prospect pipeline — track rosters, standings, and draft results.',
 };
 
 export default function OHLPage() {
@@ -38,7 +38,7 @@ export default function OHLPage() {
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          OHL  --  ONTARIO HOCKEY LEAGUE
+          OHL — ONTARIO HOCKEY LEAGUE
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
           Top junior hockey in Ontario, Canada. 20 teams. Major CHL league and NHL draft pipeline.
@@ -72,7 +72,7 @@ export default function OHLPage() {
       </div>
 
       <div style={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #1E3A8A 100%)', border: '1px solid rgba(30,58,138,0.3)', borderRadius: '8px', padding: '1.5rem 2rem', marginBottom: '2rem' }}>
-        <p style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#60A5FA', marginBottom: '0.5rem' }}>Ontario Hockey League  --  Major Junior</p>
+        <p style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#60A5FA', marginBottom: '0.5rem' }}>Ontario Hockey League — Major Junior</p>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em' }}>20 TEAMS • ONTARIO, CANADA</h2>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', marginTop: '0.5rem' }}>Founded 1980 • Part of Canadian Hockey League (CHL)</p>
       </div>
