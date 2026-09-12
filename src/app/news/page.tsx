@@ -1,4 +1,4 @@
-// src/app/news/page.tsx  --  Blog listing page (Server Component)
+// src/app/news/page.tsx — Blog listing page (Server Component)
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';

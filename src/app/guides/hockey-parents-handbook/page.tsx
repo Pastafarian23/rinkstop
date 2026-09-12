@@ -4,10 +4,10 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: "Hockey Parent's Handbook",
-  description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette. A parent's guide to navigating youth hockey from Mites to Midgets.",
+  description: "What to expect at your kid's first hockey season — from equipment to game day etiquette. A parent's guide to navigating youth hockey from Mites to Midgets.",
   openGraph: withDefaultOg({
     title: "Hockey Parent's Handbook",
-    description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette.",
+    description: "What to expect at your kid's first hockey season — from equipment to game day etiquette.",
     type: 'article',
   }),
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-parents-handbook' },
@@ -31,14 +31,14 @@ export default function HockeyParentsHandbook() {
         HOCKEY PARENT&apos;S HANDBOOK
       </h1>
       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9375rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-        What to expect at your kid&apos;s first hockey season  --  from buying equipment to knowing when to stay quiet at the glass. This guide is for every parent whose child just stepped on the ice for the first time.
+        What to expect at your kid&apos;s first hockey season — from buying equipment to knowing when to stay quiet at the glass. This guide is for every parent whose child just stepped on the ice for the first time.
       </p>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: "Hockey Parent's Handbook",
-        description: "What to expect at your kid's first hockey season  --  from equipment to game day etiquette.",
+        description: "What to expect at your kid's first hockey season — from equipment to game day etiquette.",
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },
         datePublished: '2026-05-16',
@@ -50,7 +50,7 @@ export default function HockeyParentsHandbook() {
         mainEntity: [
           { '@type': 'Question', name: 'How much does youth hockey cost per year?', acceptedAnswer: { '@type': 'Answer', text: 'Youth hockey costs vary widely by association and region. Learn to Play programs (first-timers) can cost $200-$500. Travel hockey typically runs $3,000-$10,000+ per year when you include registration, ice time, equipment, tournaments, and travel. Budget for 2-3x your association fee for total costs.' } },
           { '@type': 'Question', name: 'What equipment does a beginner hockey player need?', acceptedAnswer: { '@type': 'Answer', text: 'Beginners need: hockey skates, helmet (with cage), shoulder pads, elbow pads, shin guards (pants), gloves, a stick, and a bag. All of this can be purchased as a "beginner bundle" at most hockey shops. Budget $400-$800 for new gear. Buy skates and helmets new; other gear can often be bought used.' } },
-          { '@type': 'Question', name: 'What should parents say to their kid after a hockey game?', acceptedAnswer: { '@type': 'Answer', text: 'Ask one question: "Did you have fun?" That&apos;s it. Don&apos;t critique shifts, criticize the coach, or talk about winning or losing until your kid brings it up. The single biggest factor in kids staying in hockey past age 13 is whether it&apos;s fun  --  and parents have more influence on this than coaches.' } },
+          { '@type': 'Question', name: 'What should parents say to their kid after a hockey game?', acceptedAnswer: { '@type': 'Answer', text: 'Ask one question: "Did you have fun?" That&apos;s it. Don&apos;t critique shifts, criticize the coach, or talk about winning or losing until your kid brings it up. The single biggest factor in kids staying in hockey past age 13 is whether it&apos;s fun — and parents have more influence on this than coaches.' } },
           { '@type': 'Question', name: 'When should kids start hockey?', acceptedAnswer: { '@type': 'Answer', text: 'Most kids start between ages 4 and 7. Learn to Skate programs that incorporate hockey basics are ideal for first-timers under 5. Starting at 8-10 is still very normal. The key is readiness: can the child follow instructions, handle losing without melting down, and is the family ready for the commitment?' } },
         ],
       }) }} />
@@ -59,7 +59,7 @@ export default function HockeyParentsHandbook() {
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GETTING STARTED</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1.25rem', fontSize: '0.9375rem' }}>
-          Your first decision isn&apos;t about hockey  --  it&apos;s about skating. If your child can&apos;t skate, they can&apos;t play hockey. Most local associations run &quot;Learn to Play&quot; programs that teach skating first, then introduce hockey skills. These are the best entry point.
+          Your first decision isn&apos;t about hockey — it&apos;s about skating. If your child can&apos;t skate, they can&apos;t play hockey. Most local associations run &quot;Learn to Play&quot; programs that teach skating first, then introduce hockey skills. These are the best entry point.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginBottom: '1rem' }}>
           <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>Age guide by level</p>
@@ -86,15 +86,15 @@ export default function HockeyParentsHandbook() {
 
       {/* Equipment */}
       <section style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EQUIPMENT  --  WHAT YOU ACTUALLY NEED</h2>
+        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>EQUIPMENT — WHAT YOU ACTUALLY NEED</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
-          Hockey equipment is sold as individual pieces and in bundles. For beginners, bundles are almost always the better deal  --  you&apos;ll get everything you need for $400-$800 new. As your child grows, you&apos;ll replace individual pieces as they wear out or outgrow them.
+          Hockey equipment is sold as individual pieces and in bundles. For beginners, bundles are almost always the better deal — you&apos;ll get everything you need for $400-$800 new. As your child grows, you&apos;ll replace individual pieces as they wear out or outgrow them.
         </p>
 
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem', marginBottom: '1rem' }}>
           <div style={{ display: 'grid', gap: '0.75rem' }}>
             {[
-              { item: 'Hockey skates', buy: 'Buy new', why: 'Skates must fit precisely  --  used skates are molded to someone else\'s foot. A bad fit causes bad habits on the ice.', budget: '$100-$300' },
+              { item: 'Hockey skates', buy: 'Buy new', why: 'Skates must fit precisely — used skates are molded to someone else\'s foot. A bad fit causes bad habits on the ice.', budget: '$100-$300' },
               { item: 'Helmet + cage', buy: 'Buy new', why: 'Safety equipment. Ensure it fits properly and the cage has no rust or cracks.', budget: '$80-$200' },
               { item: 'Shoulder pads', buy: 'Used is fine', why: 'Protection doesn\'t degrade. Check for cracked plastic shells before buying.', budget: '$50-$150 used' },
               { item: 'Elbow pads', buy: 'Used is fine', why: 'Same as shoulder pads. Check straps and velcro.', budget: '$30-$80 used' },
@@ -146,7 +146,7 @@ export default function HockeyParentsHandbook() {
           ))}
         </div>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8125rem', lineHeight: 1.6 }}>
-          Learn to Play programs and in-town recreation leagues are at the lower end. Travel / AAA hockey is at the high end. Many associations offer scholarships  --  ask your association coordinator.
+          Learn to Play programs and in-town recreation leagues are at the lower end. Travel / AAA hockey is at the high end. Many associations offer scholarships — ask your association coordinator.
         </p>
       </section>
 
@@ -154,16 +154,16 @@ export default function HockeyParentsHandbook() {
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>GAME DAY ETIQUETTE</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
-          Youth hockey has a culture problem with parents  --  most of it at the rink. Here&apos;s what every parent needs to know:
+          Youth hockey has a culture problem with parents — most of it at the rink. Here&apos;s what every parent needs to know:
         </p>
 
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
             { title: 'Stay off the bench', desc: 'Unless you&apos;re a coach or a formally designated team manager, you are not allowed near the bench area. This is non-negotiable at every association.' },
             { title: 'Don&apos;t coach from the stands', desc: 'Kids can hear everything you say. If you&apos;re yelling instructions at your kid from the stands, you&apos;re undermining the coach and confusing your child.' },
-            { title: 'Don&apos;t talk about the refs', desc: 'Youth hockey referees are often kids themselves (or adults working their first games). Abusing them is the fastest way to get ejected  --  and your kid suspended.' },
-            { title: 'Save the car talk for after', desc: 'The ride home is where most parents ruin the experience. If you&apos;re going to talk about the game, ask "Did you have fun?" first  --  and mean it.' },
-            { title: 'Cheer for all the kids', desc: '"Good job!" and "Nice try!" apply to every kid on the ice  --  not just yours. Teams win together; teams lose together.' },
+            { title: 'Don&apos;t talk about the refs', desc: 'Youth hockey referees are often kids themselves (or adults working their first games). Abusing them is the fastest way to get ejected — and your kid suspended.' },
+            { title: 'Save the car talk for after', desc: 'The ride home is where most parents ruin the experience. If you&apos;re going to talk about the game, ask "Did you have fun?" first — and mean it.' },
+            { title: 'Cheer for all the kids', desc: '"Good job!" and "Nice try!" apply to every kid on the ice — not just yours. Teams win together; teams lose together.' },
           ].map(r => (
             <div key={r.title} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '1rem 1.25rem' }}>
               <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.375rem' }}>{r.title}</p>
@@ -177,7 +177,7 @@ export default function HockeyParentsHandbook() {
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>THE RIGHT THINGS TO SAY</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
-          Sports psychologists who study youth athlete dropout rates consistently find the same pattern: kids who stay in sports longest have parents who focus on effort, learning, and fun  --  not winning and performance metrics.
+          Sports psychologists who study youth athlete dropout rates consistently find the same pattern: kids who stay in sports longest have parents who focus on effort, learning, and fun — not winning and performance metrics.
         </p>
         <div style={{ background: 'rgba(0,150,80,0.06)', border: '1px solid rgba(0,150,80,0.2)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#009650', marginBottom: '0.75rem' }}>Say these instead:</p>
@@ -187,7 +187,7 @@ export default function HockeyParentsHandbook() {
               '"What was the best part of practice?"',
               '"You worked really hard out there."',
               '"I liked how you helped your teammate up."',
-              '"That was a great effort  --  I can see you improving."',
+              '"That was a great effort — I can see you improving."',
             ].map(s => (
               <p key={s} style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', paddingLeft: '1rem', borderLeft: '2px solid rgba(0,150,80,0.3)' }}>{s}</p>
             ))}

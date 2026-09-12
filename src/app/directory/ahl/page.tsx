@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 // PR #150 (2026-08-23) WS25 GSC Bucket-1: rewritten title + meta for
 // /directory/ahl which had 731 imps / 0 clicks / pos 35.1 in 28d GSC.
-// Old title used '  --  ' em-dash placeholder (broken formatting from
+// Old title used ' — ' em-dash placeholder (broken formatting from
 // a string-template bug). Replaced with a single em-dash, query-aligned
 // keyword first ("American Hockey League"), and concrete value props in
 // the meta.

@@ -48,7 +48,7 @@ export default function PWHLClient({ league, teams }: Props) {
           PWHL
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9375rem', marginTop: '0.625rem', maxWidth: '560px', lineHeight: 1.6 }}>
-          North America&apos;s premier professional women&apos;s hockey league  --  6 teams, elite competition, history in the making.
+          North America&apos;s premier professional women&apos;s hockey league — 6 teams, elite competition, history in the making.
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default function PWHLClient({ league, teams }: Props) {
         <div style={{ flex: '1 1 280px' }}>
           <h2 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: '1.125rem', color: PWHL_TEAL, letterSpacing: '0.06em', marginBottom: '0.5rem' }}>ABOUT THE PWHL</h2>
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.875rem', lineHeight: 1.7 }}>
-            The Professional Women&apos;s Hockey League launched in January 2024 as the first major professional women&apos;s hockey league in North America with six teams across the USA and Canada. Backed by a consortium of NHL owners, the PWHL set out to establish the first sustainable, standalone professional women&apos;s hockey league  --  paying players, building arenas, and creating a new standard for the sport.
+            The Professional Women&apos;s Hockey League launched in January 2024 as the first major professional women&apos;s hockey league in North America with six teams across the USA and Canada. Backed by a consortium of NHL owners, the PWHL set out to establish the first sustainable, standalone professional women&apos;s hockey league — paying players, building arenas, and creating a new standard for the sport.
           </p>
         </div>
         <div style={{ flex: '0 0 auto', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -178,7 +178,7 @@ export default function PWHLClient({ league, teams }: Props) {
       }}>
         <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>SEASON LEADERS</h2>
         <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.875rem' }}>
-          Stats integration coming soon  --  player scoring, goaltending, and team standings.
+          Stats integration coming soon — player scoring, goaltending, and team standings.
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem', marginTop: '1.25rem' }}>
           {['Points', 'Goals', 'Assists', 'GAA', 'Save %', 'Wins'].map(stat => (

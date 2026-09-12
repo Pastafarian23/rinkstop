@@ -82,7 +82,7 @@ export default async function CollegeHubPage({
           COLLEGE HOCKEY
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          The complete college hockey landscape  --  NCAA Division I and beyond.
+          The complete college hockey landscape — NCAA Division I and beyond.
         </p>
       </div>
 

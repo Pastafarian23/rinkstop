@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Pro Hockey Leagues',
-  description: 'Explore professional hockey leagues worldwide  --  NHL, PWHL, KHL, AHL, and more. The top professional hockey competitions from around the globe.',
+  description: 'Explore professional hockey leagues worldwide — NHL, PWHL, KHL, AHL, and more. The top professional hockey competitions from around the globe.',
 };
 
 const PRO_LEAGUES = [

@@ -4,10 +4,10 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'How to Choose a Hockey Stick',
-  description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick. The complete guide to finding the right stick for your shot, position, and budget.',
+  description: 'Blade curve, flex, kickpoint, and length — what actually matters when buying a hockey stick. The complete guide to finding the right stick for your shot, position, and budget.',
   openGraph: withDefaultOg({
     title: 'How to Choose a Hockey Stick',
-    description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick.',
+    description: 'Blade curve, flex, kickpoint, and length — what actually matters when buying a hockey stick.',
     type: 'article',
   }),
   alternates: { canonical: 'https://rinkstop.com/guides/hockey-stick-guide' },
@@ -31,7 +31,7 @@ export default function HockeyStickGuide() {
         HOW TO CHOOSE A HOCKEY STICK
       </h1>
       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9375rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-        Blade curve, flex, kickpoint, and length  --  what actually matters when buying your next stick.
+        Blade curve, flex, kickpoint, and length — what actually matters when buying your next stick.
       </p>
 
       <div style={{ background: 'var(--s2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.5rem 1.75rem', marginBottom: '1.5rem' }}>
@@ -47,7 +47,7 @@ export default function HockeyStickGuide() {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: 'How to Choose a Hockey Stick',
-        description: 'Blade curve, flex, kickpoint, and length  --  what actually matters when buying a hockey stick.',
+        description: 'Blade curve, flex, kickpoint, and length — what actually matters when buying a hockey stick.',
         author: { '@type': 'Organization', name: 'RinkStop' },
         publisher: { '@type': 'Organization', name: 'RinkStop', url: 'https://rinkstop.com' },
         datePublished: '2026-05-16',
@@ -59,15 +59,15 @@ export default function HockeyStickGuide() {
         '@type': 'FAQPage',
         mainEntity: [
           { '@type': 'Question', name: 'What flex hockey stick should I use?', acceptedAnswer: { '@type': 'Answer', text: 'Your stick flex should be about half your body weight in pounds. A 180lb player should use a 85-90 flex stick. If you倾向于 wrist shots and quick releases, go one flex stiffer. If you take hard slap shots, go one flex softer.' } },
-          { '@type': 'Question', name: 'How do I know if my hockey stick is the right length?', acceptedAnswer: { '@type': 'Answer', text: 'Stand barefoot in skates. The stick should reach between your chin and nose when the blade is flat on the ice. If it\'s below your chin, it\'s too short. Above your nose, it\'s too long. Most players err on the side of a stick that\'s slightly short  --  it\'s easier to handle and quicker to release.' } },
-          { '@type': 'Question', name: 'What is kickpoint in a hockey stick?', acceptedAnswer: { '@type': 'Answer', text: 'Kickpoint is the spot on the shaft where the stick flexes most when you load it for a shot. A low kickpoint (around the lower third) loads from the blade and is ideal for wrist shots and snap shots. A mid kickpoint loads from the middle and is the most versatile. A high kickpoint is at the hands  --  best for slap shots and one-timers from the blue line.' } },
+          { '@type': 'Question', name: 'How do I know if my hockey stick is the right length?', acceptedAnswer: { '@type': 'Answer', text: 'Stand barefoot in skates. The stick should reach between your chin and nose when the blade is flat on the ice. If it\'s below your chin, it\'s too short. Above your nose, it\'s too long. Most players err on the side of a stick that\'s slightly short — it\'s easier to handle and quicker to release.' } },
+          { '@type': 'Question', name: 'What is kickpoint in a hockey stick?', acceptedAnswer: { '@type': 'Answer', text: 'Kickpoint is the spot on the shaft where the stick flexes most when you load it for a shot. A low kickpoint (around the lower third) loads from the blade and is ideal for wrist shots and snap shots. A mid kickpoint loads from the middle and is the most versatile. A high kickpoint is at the hands — best for slap shots and one-timers from the blue line.' } },
           { '@type': 'Question', name: 'What blade curve should I get?', acceptedAnswer: { '@type': 'Answer', text: 'Blade curve is personal preference, but general rules: a open-faced curve (P02, P06) helps lift pucks and is good for goalies and players who shoot high. A closed-faced curve (P29, P88) is versatile and good for accurate wrist shots. A heel curve (P92) is great for forehand shots and board plays.' } },
         ],
       }) }} />
 
       {/* Section 1: Flex */}
       <section style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>FLEX  --  The Most Important Factor</h2>
+        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>FLEX — The Most Important Factor</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
           Flex is how much the shaft bends under pressure, measured in flex points. It's the single most important factor in how a stick performs. Get it wrong and nothing else matters.
         </p>
@@ -121,8 +121,8 @@ export default function HockeyStickGuide() {
         </p>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
           {[
-            { name: 'Low Kickpoint', desc: 'Flexes near the blade (lower third of shaft)', best: 'Wrist shots, snap shots, quick releases  --  ideal for players who shoot in close', ex: 'Bauer Vapor (low), CCM Ribcor (low)' },
-            { name: 'Mid Kickpoint', desc: 'Flexes at the center of the shaft', best: 'Most versatile  --  works for a wide range of shots and player styles', ex: 'Bauer Supreme (mid), Warrior Dynasty (mid)' },
+            { name: 'Low Kickpoint', desc: 'Flexes near the blade (lower third of shaft)', best: 'Wrist shots, snap shots, quick releases — ideal for players who shoot in close', ex: 'Bauer Vapor (low), CCM Ribcor (low)' },
+            { name: 'Mid Kickpoint', desc: 'Flexes at the center of the shaft', best: 'Most versatile — works for a wide range of shots and player styles', ex: 'Bauer Supreme (mid), Warrior Dynasty (mid)' },
             { name: 'High Kickpoint', desc: 'Flexes near the hands (top of shaft)', best: 'Slap shots and one-timers from distance, loads from full extension', ex: 'Bauer Nexus (high), CCM Tacks (high)' },
           ].map(k => (
             <div key={k.name} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -161,7 +161,7 @@ export default function HockeyStickGuide() {
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>STICK LIE</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>
-          Lie is the angle of the blade relative to the shaft  --  measured 1-6 (low to high). A higher lie means the blade sits flatter on the ice when you're in your natural stance. Getting the lie right means the whole blade contacts the ice evenly.
+          Lie is the angle of the blade relative to the shaft — measured 1-6 (low to high). A higher lie means the blade sits flatter on the ice when you're in your natural stance. Getting the lie right means the whole blade contacts the ice evenly.
         </p>
         <div style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.75rem' }}>Quick lie guide</p>

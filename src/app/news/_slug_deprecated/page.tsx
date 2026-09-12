@@ -1,4 +1,4 @@
-// src/app/news/[slug]/page.tsx  --  Individual blog post (public, SEO-optimized)
+// src/app/news/[slug]/page.tsx — Individual blog post (public, SEO-optimized)
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import BlogRelated from '@/components/BlogRelated';

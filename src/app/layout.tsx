@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     },
   },
   title: {
-    default: 'RinkStop  --  The World\'s Hockey Directory',
+    default: 'RinkStop — The World\'s Hockey Directory',
     template: '%s | RinkStop',
   },
   description: 'Find hockey teams, players, leagues, and rinks from every corner of the globe.',
@@ -305,7 +305,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   {/* Mobile profile button — visible only on mobile + only when signed in */}
                   <MobileProfileButton />
 
-                  {/* Mobile hamburger  --  label toggles checkbox */}
+                  {/* Mobile hamburger — label toggles checkbox */}
                   <label htmlFor="mob-nav" className="hamburger" aria-label="Open menu">
                     <span /><span /><span />
                   </label>

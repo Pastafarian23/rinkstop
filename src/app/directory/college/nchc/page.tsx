@@ -67,7 +67,7 @@ export default async function NCHCPage() {
           NCHC
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          National Collegiate Hockey Conference  --  {teams?.length || 0} programs
+          National Collegiate Hockey Conference — {teams?.length || 0} programs
         </p>
       </div>
 

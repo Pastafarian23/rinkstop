@@ -67,7 +67,7 @@ export default async function BigTenPage() {
           BIG TEN HOCKEY
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          Big Ten Conference  --  {teams?.length || 0} programs
+          Big Ten Conference — {teams?.length || 0} programs
         </p>
       </div>
 

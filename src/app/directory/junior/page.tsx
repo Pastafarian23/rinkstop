@@ -29,7 +29,7 @@ export default function JuniorPage() {
           JUNIOR HOCKEY
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
-          Top junior leagues  --  the world&apos;s best young talent and NHL draft pipeline.
+          Top junior leagues — the world&apos;s best young talent and NHL draft pipeline.
         </p>
       </div>
 

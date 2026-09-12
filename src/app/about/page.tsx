@@ -140,17 +140,17 @@ export default async function AboutPage() {
       </h1>
 
       <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.125rem', lineHeight: 1.7, marginBottom: '2.5rem', borderLeft: '4px solid #C8102E', paddingLeft: '1.25rem' }}>
-        RinkStop is a global hockey directory built to connect the hockey world  --  from NHL teams to youth programs in non-traditional markets, from professional leagues to local rinks, from established players to first-time lace-ups.
+        RinkStop is a global hockey directory built to connect the hockey world — from NHL teams to youth programs in non-traditional markets, from professional leagues to local rinks, from established players to first-time lace-ups.
       </p>
 
       {/* Mission */}
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>OUR MISSION</h2>
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
-          We believe hockey is more than a sport  --  it's a global community. Our mission is to make that community accessible to everyone, anywhere. Whether you're a parent looking for a youth program, a scout searching for talent in Southeast Asia, or a player exploring opportunities abroad, RinkStop is built to help you find what you need.
+          We believe hockey is more than a sport — it's a global community. Our mission is to make that community accessible to everyone, anywhere. Whether you're a parent looking for a youth program, a scout searching for talent in Southeast Asia, or a player exploring opportunities abroad, RinkStop is built to help you find what you need.
         </p>
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem' }}>
-          Hockey is growing faster than ever in non-traditional markets. China, the Philippines, Thailand, South Africa  --  the sport is reaching new places and new people. RinkStop exists to document that growth and serve the communities driving it.
+          Hockey is growing faster than ever in non-traditional markets. China, the Philippines, Thailand, South Africa — the sport is reaching new places and new people. RinkStop exists to document that growth and serve the communities driving it.
         </p>
       </div>
 
@@ -158,7 +158,7 @@ export default async function AboutPage() {
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>WHO WE ARE</h2>
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
-          RinkStop was founded by Arnel Larracas  --  a hockey enthusiast with over 20 years of experience in the sport, from playing in Chicago to coaching in the Philippines. Coming from a politics background and having lived and traveled across Africa, Asia, and the Philippines, Arnel saw firsthand how disconnected the global hockey community was.
+          RinkStop was founded by Arnel Larracas — a hockey enthusiast with over 20 years of experience in the sport, from playing in Chicago to coaching in the Philippines. Coming from a politics background and having lived and traveled across Africa, Asia, and the Philippines, Arnel saw firsthand how disconnected the global hockey community was.
         </p>
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
           That experience drove the creation of RinkStop: one place where anyone, anywhere, can find and share information about hockey at every level.

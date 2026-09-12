@@ -20,7 +20,7 @@ export default function AdvertisePage() {
       </h1>
 
       <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.125rem', lineHeight: 1.7, marginBottom: '2.5rem', borderLeft: '4px solid #C8102E', paddingLeft: '1.25rem' }}>
-        Reach a global hockey audience  --  from NHL fans to youth players, coaches, scouts, and the growing hockey community in non-traditional markets.
+        Reach a global hockey audience — from NHL fans to youth players, coaches, scouts, and the growing hockey community in non-traditional markets.
       </p>
 
       {/* Why advertise */}
@@ -30,7 +30,7 @@ export default function AdvertisePage() {
           {[
             { stat: 'Global Reach', desc: 'Audiences across North America, Europe, Asia, and non-traditional hockey markets.' },
             { stat: 'Deep Engagement', desc: 'Visitors spend meaningful time browsing directory listings, reading articles, and exploring team and player profiles.' },
-            { stat: 'Targeted Audience', desc: 'Hockey fans, players, coaches, scouts, and hockey-related businesses  --  a highly qualified audience.' },
+            { stat: 'Targeted Audience', desc: 'Hockey fans, players, coaches, scouts, and hockey-related businesses — a highly qualified audience.' },
             { stat: 'Contextually Relevant', desc: 'Your brand appears alongside hockey content, ensuring relevant placement for hockey enthusiasts.' },
           ].map(item => (
             <div key={item.stat} style={{ background: 'var(--s2)', padding: '1.25rem 1.5rem', borderRadius: '8px' }}>
@@ -48,7 +48,7 @@ export default function AdvertisePage() {
           {[
             {
               format: 'Display Advertising (Google AdSense)',
-              desc: 'Contextual display ads served through Google AdSense. Ads appear throughout the site  --  on directory pages, article pages, and the homepage. Pay-per-click or pay-per-impression depending on campaign type.',
+              desc: 'Contextual display ads served through Google AdSense. Ads appear throughout the site — on directory pages, article pages, and the homepage. Pay-per-click or pay-per-impression depending on campaign type.',
             },
             {
               format: 'Sponsored Content',

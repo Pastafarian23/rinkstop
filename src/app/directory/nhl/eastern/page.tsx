@@ -4,7 +4,7 @@ import TeamLogo from '@/components/TeamLogo';
 
 export const metadata: Metadata = {
   title: 'NHL Eastern Conference',
-  description: 'All 16 NHL Eastern Conference teams  --  Atlantic and Metropolitan divisions.',
+  description: 'All 16 NHL Eastern Conference teams — Atlantic and Metropolitan divisions.',
 };
 
 const ATLANTIC_TEAMS = [

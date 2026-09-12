@@ -70,29 +70,37 @@ export async function generateMetadata({
     branding.description ??
     `Hockey teams, rinks, and youth programs in ${displayCity}, ${displayCountry}. Browse local hockey listings on RinkStop.`;
 
+  // Pluralization helpers (PR #194 used raw count + "Teams/Rinks" which
+  // produces "1 Rinks" — looks broken in SERPs). 2026-09-12 WS26 CTR pass.
+  const teamLabel = `${data.teamCount} team${data.teamCount === 1 ? '' : 's'}`;
+  const rinkLabel = `${data.rinkCount} rink${data.rinkCount === 1 ? '' : 's'}`;
+  const leagueLabel = `${data.leaguesInCity.length} league${data.leaguesInCity.length === 1 ? '' : 's'}`;
+
   return {
     // 2026-09-03 PR #194: tightened + season-aware title + description.
     // Old: "Hockey in Birmingham - Teams, Rinks & Programs" (39 chars, no year, no count).
     // New: includes season year + team/rink count + value props.
-    // Title format: "Hockey in {City} 2026 — N Teams, M Rinks" — varies
+    // Title format: "Ice Hockey in {City} 2026 — N teams, M rinks" — varies
     // by listing count. Empty cities keep a generic "Hockey in {City} 2026".
+    // 2026-09-12 WS26: added "Ice" keyword (matches "ice hockey delhi" query
+    // class) and fixed pluralization (was "1 Rinks").
     title: hasListings
-      ? `Hockey in ${displayCity} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
-      : `Hockey in ${displayCity} 2026 — RinkStop Directory`,
+      ? `Ice Hockey in ${displayCity} 2026 — ${teamLabel}, ${rinkLabel}`
+      : `Ice Hockey in ${displayCity} 2026 — RinkStop Directory`,
     description: hasListings
-      ? `Hockey in ${displayCity}, ${displayCountry} 2026: ${data.teamCount} teams across ${data.leaguesInCity.length} leagues and ${data.rinkCount} rinks. Browse rosters, schedules, programs, and youth hockey on RinkStop.`
-      : `Hockey in ${displayCity}, ${displayCountry}: no teams or rinks currently listed on RinkStop. Submit a new listing or check nearby cities.`,
+      ? `Ice hockey in ${displayCity}, ${displayCountry} 2026: ${teamLabel} across ${leagueLabel} and ${rinkLabel}. Browse rosters, schedules, programs, and youth hockey on RinkStop.`
+      : `Ice hockey in ${displayCity}, ${displayCountry}: no teams or rinks currently listed on RinkStop. Submit a new listing or check nearby cities.`,
     alternates: {
       canonical: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
     },
     robots: robotsMeta(decision),
     openGraph: withDefaultOg({
       title: hasListings
-        ? `Hockey in ${displayCity} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
-        : `Hockey in ${displayCity} 2026`,
+        ? `Ice Hockey in ${displayCity} 2026 — ${teamLabel}, ${rinkLabel}`
+        : `Ice Hockey in ${displayCity} 2026`,
       description: hasListings
-        ? `${data.teamCount} teams, ${data.rinkCount} rinks in ${displayCity}, ${displayCountry}. 2026 directory.`
-        : `Hockey in ${displayCity}, ${displayCountry} — no current listings.`,
+        ? `${teamLabel}, ${rinkLabel} in ${displayCity}, ${displayCountry}. 2026 directory.`
+        : `Ice hockey in ${displayCity}, ${displayCountry} — no current listings.`,
       url: `https://rinkstop.com/directory/locations/${encodeURIComponent(countrySlug)}/${encodeURIComponent(citySlug)}`,
       siteName: 'RinkStop',
       type: 'website',
@@ -100,11 +108,11 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: hasListings
-        ? `Hockey in ${displayCity} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
-        : `Hockey in ${displayCity} 2026`,
+        ? `Ice Hockey in ${displayCity} 2026 — ${teamLabel}, ${rinkLabel}`
+        : `Ice Hockey in ${displayCity} 2026`,
       description: hasListings
-        ? `${data.teamCount} teams, ${data.rinkCount} rinks in ${displayCity}, ${displayCountry}.`
-        : `Hockey in ${displayCity}, ${displayCountry}.`,
+        ? `${teamLabel}, ${rinkLabel} in ${displayCity}, ${displayCountry}.`
+        : `Ice hockey in ${displayCity}, ${displayCountry}.`,
     },
   };
 }
