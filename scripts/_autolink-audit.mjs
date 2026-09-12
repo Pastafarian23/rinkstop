@@ -47,8 +47,7 @@ const STOPWORDS = new Set([
   'japan', 'china', 'kazakhstan', 'france', 'italy', 'poland', 'uk',
   'york', 'vermont', 'hampshire', 'windsor', 'moncton',
   'championship', 'classic',
-  'ahl', 'echl', 'shl', 'chl', 'whl', 'ohl', 'qmjhl', 'ushl', 'nahl',
-  'khl', 'del', 'mhl', 'vhl', 'nl', 'ncaa',
+  'ncaa',
 ]);
 
 const MIN_OCCURRENCES = 2;

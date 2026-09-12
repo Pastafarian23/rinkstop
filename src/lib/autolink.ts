@@ -39,6 +39,12 @@ export const AUTOLINK_VERSION = 'v2-2026-09-12';
 
 // 2026-09-12: stopword list. Every entry here is a known false positive that
 // the dry-run audit surfaced. Add new ones here as they're discovered.
+//
+// League acronyms (AHL, WHL, USHL, etc.) are NOT in the stopword list —
+// they're filtered by the MIN_OCCURRENCES threshold instead. An article
+// that uses "AHL" once in passing won't link (occurrence < 2); an article
+// that's actually about the AHL uses the acronym multiple times and DOES
+// link. This is the correct gate for acronym-vs-prose disambiguation.
 const STOPWORDS = new Set<string>([
   // Generic English words that happen to match DB team names
   'sport', 'gap', 'aware', 'stars', 'wild', 'panthers', 'kings',
@@ -52,9 +58,8 @@ const STOPWORDS = new Set<string>([
   'york', 'vermont', 'hampshire', 'windsor', 'moncton',
   // Generic hockey words that match league names
   'championship', 'classic',
-  // League acronyms — appear as prose ("the AHL playoffs"), not as entity refs
-  'ahl', 'echl', 'shl', 'chl', 'whl', 'ohl', 'qmjhl', 'ushl', 'nahl',
-  'khl', 'del', 'mhl', 'vhl', 'nl', 'ncaa',
+  // The lone country/region word that ALSO matches a league row exactly
+  'ncaa', // "Ncaa" is uncommon in prose, and 'ncaa-usa' is the only DB slug
 ]);
 
 // 2026-09-12: occurrence threshold per Arnel directive — "only auto-link
