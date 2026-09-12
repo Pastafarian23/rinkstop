@@ -54,11 +54,16 @@ export async function generateMetadata({
   // New: when listings exist, include team + rink counts so each city title
   // is distinct in SERPs and matches the query class "ice hockey <city>".
   // Empty cities keep the generic title (decision gates indexing separately).
+  // Pluralization fix: bare "${N} Teams" rendered "1 Teams" — looks broken.
+  const teamLabel = `${data.teamCount} team${data.teamCount === 1 ? '' : 's'}`;
+  const rinkLabel = `${data.rinkCount} rink${data.rinkCount === 1 ? '' : 's'}`;
+  const leagueCount = data.leaguesInCity?.length ?? 0;
+  const leagueLabel = `${leagueCount} league${leagueCount === 1 ? '' : 's'}`;
   const cityTitle = hasListings
-    ? `Ice Hockey in ${location} 2026 — ${data.teamCount} Teams, ${data.rinkCount} Rinks`
-    : `${location} Hockey — RinkStop Directory`;
+    ? `Ice Hockey in ${location} 2026 — ${teamLabel}, ${rinkLabel}`
+    : `Ice Hockey in ${location} 2026 — RinkStop Directory`;
   const cityDesc = hasListings
-    ? `Ice hockey in ${location} 2026: ${data.teamCount} teams across ${data.leaguesInCity?.length ?? 0} leagues and ${data.rinkCount} rinks. Browse youth programs, adult leagues, and ice rinks near ${cityName}.`
+    ? `Ice hockey in ${location} 2026: ${teamLabel} across ${leagueLabel} and ${rinkLabel}. Browse youth programs, adult leagues, and ice rinks near ${cityName}.`
     : `Hockey teams, rinks, and youth programs in ${location}. Browse local hockey listings on RinkStop.`;
 
   return {
