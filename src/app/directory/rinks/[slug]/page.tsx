@@ -389,7 +389,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // "Rheinlandhalle"), append "ice rink" as a differentiator so the
   // keyword appears in the title.
   const nameLower = rink.name.toLowerCase();
-  const hasVenueWord = /\b(ice|rink|arena|garden|pavilion|centre|center|plex|palace|forum|hall|coliseum|colosseum)\b/.test(nameLower);
+  // Venue words that clearly indicate ice rink / arena (center/centre excluded —
+  // too generic: "Lenovo Center", "Grant-Harvey Centre" don't signal ice)
+  const hasVenueWord = /\b(ice|rink|arena|garden|pavilion|plex|palace|forum|hall|coliseum|colosseum|ice palace|ice arena|ice rink|ice garden|ice centre|ice center|dome|bowl|oval|stadium)\b/.test(nameLower);
   if (differentiators.length === 0 && !hasVenueWord) {
     differentiators.push('ice rink');
   }
