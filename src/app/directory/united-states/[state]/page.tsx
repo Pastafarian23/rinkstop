@@ -94,11 +94,15 @@ export async function generateMetadata({ params }: { params: Promise<{ state: st
   // 2026-09-12 WS26 GSC CTR pass: tighten title + add counts.
   // Old: "${stateName} Hockey - Ice Rinks, Teams & Leagues" (no counts, no year).
   // New: include rink + team counts when state has content.
+  // Pluralization fix: bare "${N} Rinks" rendered "1 Rinks" — looks broken.
+  const rinkLabel = `${totalRinkCount} rink${totalRinkCount === 1 ? '' : 's'}`;
+  const teamLabel = `${totalTeamCount} team${totalTeamCount === 1 ? '' : 's'}`;
+  const cityLabel = `${cityNames.length} cit${cityNames.length === 1 ? 'y' : 'ies'}`;
   const stateTitle = hasContent
-    ? `Ice Hockey in ${stateName} 2026 — ${totalRinkCount} Rinks, ${totalTeamCount} Teams & Leagues`
-    : `${stateName} Hockey — RinkStop Directory`;
+    ? `Ice Hockey in ${stateName} 2026 — ${rinkLabel}, ${teamLabel} & Leagues`
+    : `Ice Hockey in ${stateName} 2026 — RinkStop Directory`;
   const stateDesc = hasContent
-    ? `Ice hockey in ${stateName} 2026: ${totalRinkCount} rinks, ${totalTeamCount} teams across ${cityNames.length} cities. Discover youth programs, adult leagues, and NCAA teams near you.`
+    ? `Ice hockey in ${stateName} 2026: ${rinkLabel}, ${teamLabel} across ${cityLabel}. Discover youth programs, adult leagues, and NCAA teams near you.`
     : `Find every hockey rink, team, and league in ${stateName}. Discover youth programs, adult leagues, and NCAA teams near you.`;
 
   return {
