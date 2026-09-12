@@ -419,22 +419,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const tag = differentiators[0];
     // Try: "name | tag — city, province, country" -> drop country -> drop province -> drop differentiator
     const candidates = [
-      `${rink.name} | ${tag} — ${titleCityCountryParts}`,
-      `${rink.name} | ${tag} — ${titleCityParts}`,
-      `${rink.name} — ${titleCityParts}`,
-      `${rink.name} — ${titleCityCountryParts}`,
-      rink.name,
+      `${displayName} | ${tag} — ${titleCityCountryParts}`,
+      `${displayName} | ${tag} — ${titleCityParts}`,
+      `${displayName} — ${titleCityParts}`,
+      `${displayName} — ${titleCityCountryParts}`,
+      displayName,
     ];
     title = candidates.find(c => c.length <= 60) || candidates[candidates.length - 1];
   } else if (titleCityCountryParts) {
     const candidates = [
-      `${rink.name} — ${titleCityCountryParts}`,
-      `${rink.name} — ${titleCityParts}`,
-      rink.name,
+      `${displayName} — ${titleCityCountryParts}`,
+      `${displayName} — ${titleCityParts}`,
+      displayName,
     ];
     title = candidates.find(c => c.length <= 60) || candidates[candidates.length - 1];
   } else {
-    title = rink.name;
+    title = displayName;
   }
 
   // Description (PR #180b, 2026-08-31): when meta_description is null, build
