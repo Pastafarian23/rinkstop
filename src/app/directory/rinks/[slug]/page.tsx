@@ -350,34 +350,60 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   // 30 chars so the title still fits in 60. If notes is null, fall through
   // to the location template. Skip the first clause if it starts with the
   // rink name — that's not a differentiator, just restating the title.
+  //
+  // 2026-09-12 WS26 followup: sanitize clauses to drop unclosed parentheses,
+  // trailing punctuation, and other noise. Old logic picked "(open-air natural
+  // ice, seasonal)" → first clause was "(open-air natural ice" (unclosed paren,
+  // shown to user), second clause was "seasonal)" (stray closing paren, shown
+  // as the differentiator). Both leaked broken punctuation into SERP titles.
   if (differentiators.length === 0 && (rink as any).notes) {
     const note = ((rink as any).notes as string).trim();
     const rinkNameLower = rink.name.toLowerCase();
-    // Find the first clause that doesn't restate the rink name.
+    // Split on common clause boundaries; filter to meaningful (≥8 chars).
     const clauses = note.split(/[.,;\u2014\u2013]/).map(c => c.trim()).filter(c => c.length >= 8);
-    for (const clause of clauses) {
+    for (const rawClause of clauses) {
+      // Strip unclosed parens or stray closing parens at the start/end.
+      // e.g. "(open-air natural ice" -> "open-air natural ice",
+      //       "seasonal)" -> "seasonal".
+      let clause = rawClause.replace(/^[\s()]+/, '').replace(/[\s()]+$/, '').trim();
+      if (clause.length < 8) continue;
       const clauseLower = clause.toLowerCase();
       // Skip clauses that start with the rink name (e.g. "Wentzville Ice Arena is a public...")
       if (clauseLower.startsWith(rinkNameLower) || clauseLower.startsWith(rinkNameLower.replace(/[^a-z0-9 ]/g, ''))) continue;
-      if (clause.length >= 8 && clause.length <= 40) {
+      if (clause.length <= 40) {
+        // Cap at 30 chars; replace trailing chars with ellipsis when truncated.
         differentiators.push(clause.length > 30 ? clause.slice(0, 27) + '...' : clause);
         break;
       }
     }
   }
 
-  const titleLocParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
-  // If we have a differentiator, use "name | differentiator — city" template
-  // (Google's title pipe convention for attributes). Otherwise fall back to
-  // the location template.
+  // Title priority: drop fields (in order: country, province, differentiator)
+  // when total exceeds 60 chars rather than truncating with "..." — a partial
+  // country name like "Pr..." reads as broken text in SERPs. Google will
+  // also auto-truncate, so being explicit looks worse than just dropping the
+  // least-load-bearing field.
+  const titleCityParts = [rink.city, provinceLabel].filter(Boolean).join(', ');
+  const titleCityCountryParts = [rink.city, provinceLabel, rink.country].filter(Boolean).join(', ');
   let title: string;
-  if (differentiators.length > 0 && titleLocParts) {
+  if (differentiators.length > 0) {
     const tag = differentiators[0];
-    const candidate = `${rink.name} | ${tag} — ${titleLocParts}`;
-    title = candidate.length > 60 ? candidate.slice(0, 57) + '...' : candidate;
-  } else if (titleLocParts) {
-    const candidate = `${rink.name} — ${titleLocParts}`;
-    title = candidate.length > 60 ? candidate.slice(0, 57) + '...' : candidate;
+    // Try: "name | tag — city, province, country" -> drop country -> drop province -> drop differentiator
+    const candidates = [
+      `${rink.name} | ${tag} — ${titleCityCountryParts}`,
+      `${rink.name} | ${tag} — ${titleCityParts}`,
+      `${rink.name} — ${titleCityParts}`,
+      `${rink.name} — ${titleCityCountryParts}`,
+      rink.name,
+    ];
+    title = candidates.find(c => c.length <= 60) || candidates[candidates.length - 1];
+  } else if (titleCityCountryParts) {
+    const candidates = [
+      `${rink.name} — ${titleCityCountryParts}`,
+      `${rink.name} — ${titleCityParts}`,
+      rink.name,
+    ];
+    title = candidates.find(c => c.length <= 60) || candidates[candidates.length - 1];
   } else {
     title = rink.name;
   }
