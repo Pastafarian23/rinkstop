@@ -37,9 +37,13 @@ async function getAhlTeamCount(): Promise<number> {
 export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getAhlTeamCount();
   return {
+    // 2026-09-12 WS26 followup: top GSC query is "american hockey league"
+    // (106 imp) — old title used the acronym "AHL Hockey" but searchers
+    // typed the full name. Front-load the full name so Google sees an exact
+    // match in the title.
     title: teamCount > 0
-      ? `AHL Hockey 2026-27 — ${teamCount} Teams, Calder Cup`
-      : 'AHL Hockey 2026-27 — Calder Cup',
+      ? `American Hockey League (AHL) 2026-27 — ${teamCount} Teams, Calder Cup`
+      : 'American Hockey League (AHL) 2026-27 — Calder Cup',
     description: teamCount > 0
       ? `American Hockey League 2026-27: ${teamCount} teams across U.S. and Canada. Calder Cup playoffs, scores, schedules, standings. All 32 NHL teams field at least one AHL affiliate — track the NHL pipeline.`
       : 'American Hockey League 2026-27. Calder Cup playoffs, scores, schedules, standings. Track the NHL pipeline.',
