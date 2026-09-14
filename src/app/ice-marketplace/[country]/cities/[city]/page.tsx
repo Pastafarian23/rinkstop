@@ -50,11 +50,39 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const cityName = titleCase(citySlug.replace(/-/g, ' '));
   const location = `${cityName}, ${countryName}`;
 
+  // WS27 PR5h (2026-09-14): noindex when the city has 0 active ice
+  // listings. Mirrors the [country]/[province]/[city] sibling route.
+  let listingsCount = 1; // default index on error so we don't accidentally noindex
+  try {
+    const { data: cityRinks } = await supabaseAdmin
+      .from('rinks')
+      .select('id')
+      .eq('is_active', true)
+      .ilike('city', cityName)
+      .ilike('country', countryName)
+      .limit(200);
+    const rinkIds = (cityRinks || []).map((r: { id: string }) => r.id);
+    if (rinkIds.length > 0) {
+      const { count } = await supabaseAdmin
+        .from('ice_listings')
+        .select('id', { count: 'exact', head: true })
+        .in('rink_id', rinkIds)
+        .eq('visibility', 'public')
+        .eq('status', 'available')
+        .gte('start_time', new Date().toISOString());
+      listingsCount = count || 0;
+    } else {
+      listingsCount = 0;
+    }
+  } catch {
+    listingsCount = 1;
+  }
+
   return {
     title: `Open Ice Time in ${location} | RinkStop`,
     description: `Find open ice time and hockey practice slots for sale or rent in ${location}. Browse practice ice, tournament slots, and clinic ice from local rinks and clubs.`,
     alternates: { canonical: `https://rinkstop.com/ice-marketplace/${countrySlug}/cities/${citySlug}` },
-    robots: { index: true, follow: true },
+    robots: { index: listingsCount > 0, follow: true },
   };
 }
 
