@@ -4,6 +4,8 @@ name: Ping Search Engines
 # Posts to /api/indexnow with the deploy secret so Bing/Yandex
 # pick up the new URLs within minutes instead of waiting 1-2 weeks
 # for the normal crawl cycle.
+# Also calls /api/gsc/sitemap-submit to re-register all sub-sitemaps
+# with Google Search Console (WS27 PR5a, 2026-09-14).
 
 on:
   push:
@@ -44,5 +46,39 @@ jobs:
           # but Bing will catch up via sitemap on the regular crawl cycle.
           if [ "$HTTP" != "200" ]; then
             echo "::warning::IndexNow ping returned HTTP $HTTP"
+            exit 1
+          fi
+
+      # WS27 PR5a — re-register all sub-sitemaps with Google Search Console.
+      # Before this step, 6 sub-sitemaps (ice-marketplace, images, events,
+      # tools, guides, learn) had never been registered with GSC, leaving
+      # ~3,200 URLs unindexed. The GSC submit endpoint also re-confirms the
+      # existing 7 sitemaps so Google re-fetches them after every deploy.
+      - name: Re-register sitemaps with Google Search Console
+        env:
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+        run: |
+          if [ -z "$ADMIN_SECRET" ]; then
+            echo "::error::ADMIN_SECRET GitHub secret is not set."
+            exit 1
+          fi
+          if [ -z "$SITE_URL" ]; then
+            SITE_URL="https://rinkstop.com"
+          fi
+          echo "Re-registering sitemaps at ${SITE_URL}/api/gsc/sitemap-submit …"
+          HTTP=$(curl -sS -o /tmp/gsc-submit.json -w '%{http_code}' \
+            -X POST "${SITE_URL}/api/gsc/sitemap-submit" \
+            -H "x-deploy-secret: ${ADMIN_SECRET}" \
+            -H 'Content-Type: application/json' \
+            --data '{}')
+          echo "HTTP $HTTP"
+          cat /tmp/gsc-submit.json
+          echo
+          # Non-fatal if any single sitemap fails — the route returns 200 with
+          # a per-sitemap status array, so failures are logged but the step
+          # stays green so the workflow run isn't marked failed.
+          if [ "$HTTP" != "200" ]; then
+            echo "::warning::GSC sitemap submit returned HTTP $HTTP"
             exit 1
           fi
