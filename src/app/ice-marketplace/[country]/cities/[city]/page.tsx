@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import CityMarketplaceClient from '../../../_components/CityMarketplaceClient';
+import { citySlugToVariants } from '@/lib/ice-marketplace-city-match';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,16 +51,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const cityName = titleCase(citySlug.replace(/-/g, ' '));
   const location = `${cityName}, ${countryName}`;
 
-  // WS27 PR5h (2026-09-14): noindex when the city has 0 active ice
-  // listings. Mirrors the [country]/[province]/[city] sibling route.
+  // WS27 PR5i (2026-09-14): try multiple name variants to handle slug↔name
+  // round-trip failure for cities with periods, accents, postal codes.
+  // WS27 PR5h: noindex when the city has 0 active ice listings.
   let listingsCount = 1; // default index on error so we don't accidentally noindex
   try {
+    const variants = citySlugToVariants(citySlug);
+    const cityOrFilter = variants.map((v) => `city.ilike.*${v}*`).join(',');
     const { data: cityRinks } = await supabaseAdmin
       .from('rinks')
       .select('id')
       .eq('is_active', true)
-      .ilike('city', cityName)
       .ilike('country', countryName)
+      .or(cityOrFilter)
       .limit(200);
     const rinkIds = (cityRinks || []).map((r: { id: string }) => r.id);
     if (rinkIds.length > 0) {
@@ -98,12 +102,17 @@ export default async function CountryCityIceMarketplacePage({ params }: PageProp
     notFound();
   }
 
+  // WS27 PR5i (2026-09-14): use name variants to handle slug↔name
+  // round-trip failures (same helper as in generateMetadata above).
+  const cityOrFilter = citySlugToVariants(citySlug)
+    .map((v) => `city.ilike.*${v}*`)
+    .join(',');
   const { data: cityRinks } = await supabaseAdmin
     .from('rinks')
     .select('id, name, slug')
     .eq('is_active', true)
-    .ilike('city', cityName)
     .ilike('country', countryName)
+    .or(cityOrFilter)
     .limit(50);
 
   if (!cityRinks || cityRinks.length === 0) {
