@@ -72,9 +72,10 @@ export async function generateMetadata({
   const rinkCount = (rinks || []).length;
   const teamCount = teamTotal || 0;
   const facts = getProvinceHockeyFacts(resolved.abbr);
-  const chlTeamsCount = facts?.chlTeams?.length || 0;
-  const leagueHint = chlTeamsCount > 0 ? 'CHL programs included' : 'local amateur and youth programs';
-  const enrichedDesc = `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamCount} active teams. Browse junior, college, and amateur leagues — ${leagueHint}.`;
+  const leagueHint = facts?.primaryLeague
+    ? `${facts.primaryLeague} programs included`
+    : 'junior, college, and amateur leagues';
+  const enrichedDesc = `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamCount} active teams. Browse ${leagueHint} plus youth and adult recreational play.`;
 
   return {
     title: `Hockey in ${provinceName}`,
