@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { LeagueTeams } from '@/components/LeagueTeams';
+import { KhlScoresBlock } from '@/components/KhlScoresBlock';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 const supabase = createClient(
@@ -68,9 +69,113 @@ async function fetchKhlTeams(): Promise<Array<{ name: string; city: string | nul
   }
 }
 
+// WS27 PR3: add standings + last result to address GSC intent-mismatch finding.
+// GSC 90d: /directory/khl had 1,783 impressions / 7 clicks (0.39% CTR).
+// Searchers want scores/standings; the page only had team list + history text.
+// Standings source: highlightly_standings table (league_id = '30569', season = '2025').
+async function fetchKhlStandings() {
+  try {
+    const { data } = await supabase
+      .from('highlightly_standings')
+      .select('rank, team_name, team_logo, played, wins, losses, overtime_losses, points, goals_for, goals_against')
+      .eq('league_id', '30569')
+      .order('rank', { ascending: true })
+      .limit(8);
+    return (data || []) as Array<{
+      rank: number;
+      team_name: string;
+      team_logo: string | null;
+      played: number;
+      wins: number;
+      losses: number;
+      overtime_losses: number | null;
+      points: number;
+      goals_for: number;
+      goals_against: number;
+    }>;
+  } catch {
+    return [];
+  }
+}
+
+// Last completed KHL result. Source: fixtures table, ordered by scheduled_at desc.
+// Off-season note: data ends May 2026 (2024-25 playoff). A "last result" with
+// a 2026-27 TBD note is better UX than an empty scores block.
+async function fetchLastKhlResult(): Promise<{
+  homeTeam: string;
+  homeScore: number;
+  awayTeam: string;
+  awayScore: number;
+  scheduledAt: string;
+  venue: string | null;
+  slug: string | null;
+} | null> {
+  try {
+    const { data } = await supabase
+      .from('fixtures')
+      .select(`
+        home_score,
+        away_score,
+        scheduled_at,
+        status,
+        game_data,
+        home_team_id,
+        away_team_id
+      `)
+      .eq('league_id', KHL_LEAGUE_ID)
+      .eq('status', 'completed')
+      .order('scheduled_at', { ascending: false })
+      .limit(1);
+    if (!data || data.length === 0) return null;
+    const row = data[0] as any;
+
+    // Resolve team names from team_workspaces.
+    let homeName = 'Home Team';
+    let homeSlug: string | null = null;
+    let awayName = 'Away Team';
+    let awaySlug: string | null = null;
+    try {
+      const { data: home } = await supabase
+        .from('team_workspaces')
+        .select('name, slug')
+        .eq('id', row.home_team_id)
+        .maybeSingle();
+      if (home) { homeName = home.name; homeSlug = home.slug; }
+    } catch { /* keep defaults */ }
+    try {
+      const { data: away } = await supabase
+        .from('team_workspaces')
+        .select('name, slug')
+        .eq('id', row.away_team_id)
+        .maybeSingle();
+      if (away) { awayName = away.name; awaySlug = away.slug; }
+    } catch { /* keep defaults */ }
+
+    // Parse venue from game_data JSON if present.
+    let venue: string | null = null;
+    try {
+      const gd = typeof row.game_data === 'string' ? JSON.parse(row.game_data) : (row.game_data || {});
+      venue = gd.location || null;
+    } catch { /* no venue */ }
+
+    return {
+      homeTeam: homeName,
+      homeScore: row.home_score ?? 0,
+      awayTeam: awayName,
+      awayScore: row.away_score ?? 0,
+      scheduledAt: row.scheduled_at,
+      venue,
+      slug: homeSlug,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default async function KHLPage() {
   const teamCount = await fetchKhlTeamCount();
   const teams = await fetchKhlTeams();
+  const [standings, lastResult] = await Promise.all([fetchKhlStandings(), fetchLastKhlResult()]);
 
   const faqs = [
     {
@@ -168,6 +273,14 @@ export default async function KHLPage() {
           KHL franchises include historic programs such as CSKA Moscow, SKA Saint Petersburg, and Dynamo Moscow, plus international entries like Barys Nur-Sultan and Kunlun Red Star. The league&apos;s junior development system — the MHL (Molodezhnaya Hokkeynaya Лига) — has produced a remarkable share of NHL draft picks, with Russian development paths accounting for roughly half of all NHL selections in recent years. Rosters, schedules, arena info, and standings for every KHL team are listed below.
         </p>
       </section>
+
+      {/* WS27 PR3: scores + standings — addresses GSC intent-mismatch finding.
+          GSC 90d: 1,783 impressions / 7 clicks (0.39% CTR). Searchers want
+          live scores/standings. This block adds both from Supabase data.
+          Standings are 2024-25 (last synced May 2026). Scores show last
+          completed game from fixtures table (through May 2026). CTA leads to
+          /directory/games?league=intl for the full KHL scores feed. */}
+      <KhlScoresBlock standings={standings} lastResult={lastResult} />
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
         {[
