@@ -616,7 +616,15 @@ export default async function Home() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
               {upcomingGames.map((g: any) => {
-                const d = new Date(g.date + 'T00:00:00');
+                // `g.date` comes from `fixtures.scheduled_at` as an ISO string
+                // like '2026-09-19T23:00:00+00:00'. The original code appended
+                // 'T00:00:00' producing an invalid ISO like
+                // '2026-09-19T23:00:00+00:00T00:00:00' which crashed the Date
+                // parser and rendered "Invalid Date". Use the ISO directly.
+                const d = new Date(g.date);
+                const timeText = !isNaN(d.getTime())
+                  ? d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+                  : 'Date TBD';
                 return (
                   <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
@@ -624,7 +632,7 @@ export default async function Home() {
                       <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                      <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{timeText}</div>
                     </div>
                   </div>
                 );
