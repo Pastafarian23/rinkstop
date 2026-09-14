@@ -82,3 +82,36 @@ jobs:
             echo "::warning::GSC sitemap submit returned HTTP $HTTP"
             exit 1
           fi
+
+      # WS27 PR8 — submit key URLs to Bing Webmaster Content API.
+      # The legacy POX/SOAP endpoints (SubmitSitemap, GetSitemaps) were
+      # retired 2026-08-31. The new JSON /webmaster/api.svc/json/SubmitUrlbatch
+      # is the only working programmatic path. We submit the index page + the
+      # 8 brand landing pages + a few key directory hubs (within the 500-url
+      # batch limit) so Bing indexes them directly. IndexNow still handles the
+      # bulk of URL discovery in parallel.
+      - name: Submit URLs to Bing Webmaster
+        env:
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+        run: |
+          if [ -z "$ADMIN_SECRET" ]; then
+            echo "::warning::ADMIN_SECRET GitHub secret is not set, skipping Bing."
+            exit 0
+          fi
+          if [ -z "$SITE_URL" ]; then
+            SITE_URL="https://rinkstop.com"
+          fi
+          echo "Submitting URLs to ${SITE_URL}/api/bing/submit-urls …"
+          HTTP=$(curl -sS -o /tmp/bing-submit.json -w '%{http_code}' \
+            -X POST "${SITE_URL}/api/bing/submit-urls" \
+            -H "x-deploy-secret: ${ADMIN_SECRET}" \
+            -H 'Content-Type: application/json' \
+            --data '{"urls":["https://rinkstop.com/","https://rinkstop.com/gear-brands/","https://rinkstop.com/gear-brands/bauer","https://rinkstop.com/gear-brands/ccm","https://rinkstop.com/gear-brands/true","https://rinkstop.com/gear-brands/warrior","https://rinkstop.com/gear-brands/easton","https://rinkstop.com/gear-brands/sherwood","https://rinkstop.com/gear-brands/brians","https://rinkstop.com/gear-brands/tour","https://rinkstop.com/directory/teams","https://rinkstop.com/directory/leagues","https://rinkstop.com/directory/rinks","https://rinkstop.com/directory/nhl","https://rinkstop.com/directory/khl","https://rinkstop.com/directory/pwhl","https://rinkstop.com/sitemap.xml"]}')
+          echo "HTTP $HTTP"
+          cat /tmp/bing-submit.json
+          echo
+          if [ "$HTTP" != "200" ]; then
+            echo "::warning::Bing URL submit returned HTTP $HTTP"
+            exit 1
+          fi
