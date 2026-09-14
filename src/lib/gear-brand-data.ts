@@ -120,7 +120,7 @@ export const BRANDS: GearBrand[] = [
     ],
     categoryRankings: [
       { category: 'Skates', rank: 3, notes: 'Strong third place; growing fast due to direct-to-consumer pricing.' },
-      { category: 'Sticks', rank: 4, notes: 'Top-5 in senior sticks but smaller player base than Bauer, CCM, Warrior.' },
+      { category: 'Sticks', rank: 3, notes: 'Top-5 in senior sticks but smaller player base than Bauer, CCM, Warrior.' },
     ],
     notableAthletes: ['Several high-end NHL players use True in junior/youth categories; growing list of senior endorsers'],
     comparison: [
