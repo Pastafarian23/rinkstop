@@ -73,6 +73,8 @@ export default async function CountryMarketplacePage({ params }: PageProps) {
   }
 
   // Fetch listings for the country
+  // Note: filter on the JOINED `rink.country` here would silently drop the rink
+  // (PostgREST returns the row with rink=null) — we filter in app code instead.
   const { data: listingsRaw } = await supabaseAdmin
     .from('ice_listings')
     .select(`
@@ -83,14 +85,15 @@ export default async function CountryMarketplacePage({ params }: PageProps) {
     .eq('visibility', 'public')
     .eq('status', 'available')
     .gte('start_time', new Date().toISOString())
-    .ilike('rink.country', countryName)
     .order('start_time', { ascending: true })
     .limit(200);
 
-  const listings = (listingsRaw || []).map((l: any) => ({
-    ...l,
-    rink: Array.isArray(l.rink) ? l.rink[0] ?? null : l.rink ?? null,
-  }));
+  const listings = (listingsRaw || [])
+    .map((l: any) => ({
+      ...l,
+      rink: Array.isArray(l.rink) ? l.rink[0] ?? null : l.rink ?? null,
+    }))
+    .filter((l: any) => l.rink && l.rink.country && l.rink.country.toLowerCase() === countryName.toLowerCase());
 
   // City count
   const { data: cityData } = await supabaseAdmin
