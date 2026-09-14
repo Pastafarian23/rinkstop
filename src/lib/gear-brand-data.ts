@@ -24,7 +24,7 @@ export interface GearBrand {
   tagline: string;
   categories: ('skates' | 'sticks' | 'helmets' | 'gloves' | 'protective' | 'apparel')[];
   flagshipProducts: { category: string; name: string; priceUsd: string; feature: string }[];
-  categoryRankings: { category: string; rank: 1 | 2 | 3; notes: string }[];
+  categoryRankings: { category: string; rank: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; notes: string }[];
   notableAthletes: string[];
   comparison: {
     vsSlug: string;
