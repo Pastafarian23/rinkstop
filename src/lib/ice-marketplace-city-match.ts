@@ -62,5 +62,24 @@ export function citySlugToVariants(citySlug: string): string[] {
     out.add(strippedRegion);
   }
 
+  // 6. WS27 PR5i follow-up: also try matching on the second and third words.
+  //    For accent-stripped slugs like 's-o-bernardo-do-campo-sp-09760-280'
+  //    (from 'São Bernardo do Campo – SP 09760-280'), the DB has 'São
+  //    Bernardo' but the variant matchers produce 'O Bernardo' (dropped
+  //    'S') or 'Bernardo' (via title-cased 'Bernardo' but that requires
+  //    the full match). As a fallback, match the longest substring word —
+  //    e.g. 'Bernardo' for the Brazil URL, 'Kozhukhovskaya' for Moscow.
+  const longestWord = parts.reduce((a, b) => (b.length > a.length ? b : a), '');
+  if (longestWord && longestWord.length >= 6) {
+    out.add(longestWord);
+  }
+
+  // 7. Pair of consecutive longest words (handles 'Bernardo Campo' for
+  //    'São Bernardo do Campo').
+  const sortedByLen = [...parts].sort((a, b) => b.length - a.length);
+  if (sortedByLen.length >= 2) {
+    out.add(`${sortedByLen[0]} ${sortedByLen[1]}`);
+  }
+
   return Array.from(out);
 }
