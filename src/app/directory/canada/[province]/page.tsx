@@ -70,7 +70,11 @@ export async function generateMetadata({
   // description reaches 150+ chars and matches the city/state pattern.
   const cityCount = citySet.size;
   const rinkCount = (rinks || []).length;
-  const enrichedDesc = `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamTotal ?? 0} active teams. Browse junior, college, and amateur leagues — including the ${getProvinceHockeyFacts(resolved.abbr)?.chlTeams?.length ? 'CHL' : 'local'} programs.`;
+  const teamCount = teamTotal || 0;
+  const facts = getProvinceHockeyFacts(resolved.abbr);
+  const chlTeamsCount = facts?.chlTeams?.length || 0;
+  const leagueHint = chlTeamsCount > 0 ? 'CHL programs included' : 'local amateur and youth programs';
+  const enrichedDesc = `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamCount} active teams. Browse junior, college, and amateur leagues — ${leagueHint}.`;
 
   return {
     title: `Hockey in ${provinceName}`,
@@ -81,7 +85,7 @@ export async function generateMetadata({
     robots: robotsMeta(decision),
     openGraph: withDefaultOg({
       title: `Hockey in ${provinceName}`,
-      description: `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamTotal ?? 0} active teams.`,
+      description: `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamCount} active teams.`,
       url: `https://rinkstop.com/directory/canada/${resolved.slug}`,
       siteName: 'RinkStop',
       type: 'website',
@@ -89,7 +93,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: `Hockey in ${provinceName}`,
-      description: `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamTotal ?? 0} active teams.`,
+      description: `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamCount} active teams.`,
     },
   };
 }
