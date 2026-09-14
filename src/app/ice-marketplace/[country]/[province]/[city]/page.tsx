@@ -118,7 +118,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .ilike('country', countryName)
       .limit(200);
     if (isUSorCA && provinceName) {
-      const stateAbbr = US_STATE_ABBR[provinceSlug.toLowerCase()] || '';
+      // WS27 PR5i (2026-09-14): include CA province abbreviation in the
+      // OR filter so pages like /ice-marketplace/canada/nova-scotia/sydney
+      // find rinks with province_state='NS' in the DB.
+      const stateAbbr = US_STATE_ABBR[provinceSlug.toLowerCase()] || CA_PROVINCE_ABBR[provinceName] || '';
       rinksForCity = rinksForCity.or(
         `province_state.eq.${provinceName},province_state.eq.${stateAbbr}`
       );
@@ -158,7 +161,14 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
     ? US_STATES[provinceSlug] || CA_PROVINCES[provinceSlug] || titleCase(provinceSlug.replace(/-/g, ' '))
     : null;
   const cityName = titleCase(citySlug.replace(/-/g, ' '));
-  const stateAbbr = isUSorCA && US_STATE_ABBR[provinceSlug.toLowerCase()] ? US_STATE_ABBR[provinceSlug.toLowerCase()] : '';
+  // WS27 PR5i (2026-09-14): include CA province abbreviations. Previously the
+  // page only matched US_STATE_ABBR[provinceSlug], causing all Canadian
+  // province pages to 404 when the DB stores the 2-letter abbr ('NS') but
+  // the URL slug uses the full name ('nova-scotia'). This was the #1 cause
+  // of the 101 404 URLs in sitemap-ice-marketplace.xml.
+  const stateAbbr = isUSorCA
+    ? (US_STATE_ABBR[provinceSlug.toLowerCase()] || CA_PROVINCE_ABBR[CA_PROVINCES[provinceSlug]] || '')
+    : '';
 
   // Lookup city in the rinks table to gate the page. If we have no rinks
   // for this city, the page noindexes itself (404-ish) so Google
