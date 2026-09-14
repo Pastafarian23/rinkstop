@@ -135,12 +135,12 @@ export default function ArticleCtaBlock(props: ArticleCtaBlockProps) {
       style={{
         margin: '2.5rem auto 2rem',
         maxWidth: '880px',
-        background: '#ffffff',
-        border: '2px solid #041E42',
+        background: 'rgba(4,30,66,0.45)',
+        border: '2px solid rgba(200,16,46,0.55)',
         borderRadius: '12px',
         padding: '2rem 1.5rem',
         textAlign: 'center',
-        boxShadow: '0 4px 16px rgba(4,30,66,0.12)',
+        boxShadow: '0 4px 16px rgba(4,30,66,0.4)',
       }}
       data-cta-variant={variant}
       data-article-slug={props.slug}

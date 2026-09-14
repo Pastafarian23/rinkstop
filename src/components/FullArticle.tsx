@@ -434,12 +434,12 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                 style={{
                   marginTop: '1.5rem',
                   padding: '1rem 1.25rem',
-                  background: '#fafafa',
-                  borderLeft: '3px solid #041E42',
+                  background: 'rgba(4,30,66,0.18)',
+                  borderLeft: '3px solid #FFB81C',
                   borderRadius: '0 4px 4px 0',
                   fontSize: '0.8125rem',
                   lineHeight: 1.6,
-                  color: 'rgba(255,255,255,0.4)',
+                  color: 'rgba(255,255,255,0.78)',
                 }}
               >
                 <p style={{ margin: 0 }}>
@@ -463,14 +463,14 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                 style={{
                   marginTop: '2.5rem',
                   paddingTop: '1.5rem',
-                  borderTop: '1px solid #eee',
+                  borderTop: '1px solid rgba(255,255,255,0.12)',
                   display: 'flex',
                   gap: '0.75rem',
                   alignItems: 'center',
                   flexWrap: 'wrap',
                 }}
               >
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', fontWeight: 600 }}>Share:</span>
+                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8125rem', fontWeight: 600 }}>Share:</span>
                 <ShareButton
                   payload={buildArticleShare({
                     title: post.title,
@@ -484,18 +484,19 @@ export default async function FullArticle({ post }: { post: FullPost }) {
               <div
                 style={{
                   marginTop: '2.5rem',
-                  background: '#f8f8f8',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
                   padding: '1.5rem',
                   borderRadius: '4px',
                 }}
               >
-                <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: '0.25rem', color: 'rgba(255,255,255,0.7)' }}>
+                <div style={{ fontWeight: 700, fontSize: '1.0625rem', marginBottom: '0.25rem', color: '#fff' }}>
                   {authorName}
                 </div>
                 <div style={{ color: '#C8102E', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
                   {authorRole}
                 </div>
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', lineHeight: 1.6, margin: '0 0 0.75rem' }}>
+                <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.65, margin: '0 0 0.875rem' }}>
                   Founder of RinkStop. Hockey coach with 20+ years of experience playing in Chicago and coaching internationally, including non-traditional markets like the Philippines. Bylined author on every RinkStop editorial article.
                 </p>
                 <a

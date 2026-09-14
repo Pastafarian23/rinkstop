@@ -203,8 +203,8 @@ export default async function DirectoryRelatedArticles({
             style={{
               display: 'flex',
               flexDirection: 'column',
-              background: '#fff',
-              border: '1px solid #e0e0e0',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.10)',
               borderRadius: '6px',
               padding: '1rem 1.125rem',
               textDecoration: 'none',
@@ -216,7 +216,7 @@ export default async function DirectoryRelatedArticles({
               <h3 style={{
                 fontSize: '0.9375rem',
                 fontWeight: 700,
-                color: '#C8102E',
+                color: '#fff',
                 margin: 0,
                 lineHeight: 1.25,
               }}>
@@ -224,7 +224,7 @@ export default async function DirectoryRelatedArticles({
               </h3>
             </div>
             <p style={{
-              color: 'rgba(255,255,255,0.4)',
+              color: 'rgba(255,255,255,0.78)',
               fontSize: '0.8125rem',
               lineHeight: 1.5,
               marginBottom: '0.75rem',
