@@ -6,6 +6,8 @@
 # added after the 2026-09-11 invisible-text + uuid-FK bug incidents:
 #   - HTML color audit on changed pages (catches light-mode hex on dark bg)
 #   - Migration sanity (catches uuid-vs-text FK, missing RLS, etc.)
+#   - Autolink drift check (catches when src/lib/autolink.ts drifts from
+#     scripts/_autolink-audit.mjs — added 2026-09-14 after Arnel QC audit)
 #
 # Usage:
 #   ./scripts/pre-deploy-gate.sh                  # run all gates
@@ -87,12 +89,28 @@ if should_run 2; then
   fi
 fi
 
-# ------------------------------------------------------------------ Gate 3
+# ------------------------------------------------------------------ Gate 3 (NEW 2026-09-14)
+# Autolink drift check. Catches when src/lib/autolink.ts drifts from
+# scripts/_autolink-audit.mjs — silent divergence is a class of bug that
+# makes the audit script a false ground-truth (passes while production is
+# broken, or vice versa). See scripts/autolink-drift-check.sh.
 if should_run 3; then
+  echo "[3/7] autolink drift check..."
+  if ! bash "$SCRIPT_DIR/autolink-drift-check.sh" 2>&1 | tail -30; then
+    fail "autolink drift detected"
+    note "src/lib/autolink.ts and scripts/_autolink-audit.mjs have diverged"
+    note "Update both files to keep STOPWORDS / MIN_OCCURRENCES / LONG_FORM_LEAGUES in sync"
+  else
+    ok "autolink drift check passed"
+  fi
+fi
+
+# ------------------------------------------------------------------ Gate 4
+if should_run 4; then
   if [ "$SKIP_BUILD" -eq 1 ]; then
     note "build skipped (--skip-build)"
   else
-    echo "[3/6] running pnpm build (this takes 60-120s)..."
+    echo "[4/7] running pnpm build (this takes 60-120s)..."
     # 2026-09-04: the 2 GiB default Node heap OOMs on this project's
     # full route compile; bump to 4 GiB to mirror the Vercel build image.
     if ! NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096" pnpm build 2>&1 | tail -30; then
@@ -104,7 +122,7 @@ if should_run 3; then
   fi
 fi
 
-# ------------------------------------------------------------------ Gate 4 (NEW 2026-09-11)
+# ------------------------------------------------------------------ Gate 5 (renumbered from Gate 4)
 # HTML color audit on changed pages. Catches the class of bug where
 # light-mode hex (#041E42 / #1a1a1a / #888 / etc.) is used as text color
 # on a dark-theme site (#0D1117 bg), making content invisible.
@@ -112,8 +130,8 @@ fi
 # Checks the LIVE HTML on the production site for the previous commit's
 # pages (which is what just got merged). If you want to check pages that
 # aren't on prod yet, run this manually with the file path.
-if should_run 4; then
-  echo "[4/6] HTML color audit (light-mode hex on dark bg)..."
+if should_run 5; then
+  echo "[5/7] HTML color audit (light-mode hex on dark bg)..."
   BASE="${BASE_URL:-https://rinkstop.com}"
 
   # Find all pages that were modified in the last commit (or against main
@@ -188,15 +206,15 @@ if should_run 4; then
   fi
 fi
 
-# ------------------------------------------------------------------ Gate 5 (NEW 2026-09-11)
+# ------------------------------------------------------------------ Gate 6 (renumbered from Gate 5)
 # Migration sanity. Catches:
 #   - uuid columns that should be text (Clerk user IDs are not UUIDs)
 #   - missing RLS on user-data tables
 #   - migrations that reference auth.users(id) FK (won't work with Clerk)
 #
 # Only runs if migrations were added in the last commit.
-if should_run 5; then
-  echo "[5/6] migration sanity..."
+if should_run 6; then
+  echo "[6/7] migration sanity..."
   NEW_MIGS=$(git diff --name-only HEAD~1..HEAD 2>/dev/null | grep -E "^supabase/migrations/.*\.sql$" || true)
 
   if [ -z "$NEW_MIGS" ]; then
@@ -234,11 +252,11 @@ if should_run 5; then
   fi
 fi
 
-# ------------------------------------------------------------------ Gate 6 (NEW 2026-09-11)
+# ------------------------------------------------------------------ Gate 7 (renumbered from Gate 6)
 # Optional live RLS sanity for tables that exist on dev. Only runs if
 # SUPABASE_LIVE_CHECK=1 (default off — it's a network call to dev DB).
-if should_run 6; then
-  echo "[6/6] live RLS sanity (dev DB)..."
+if should_run 7; then
+  echo "[7/7] live RLS sanity (dev DB)..."
   if [ "${SUPABASE_LIVE_CHECK:-0}" != "1" ]; then
     note "skipping live RLS check (set SUPABASE_LIVE_CHECK=1 to enable)"
     ok "live check skipped"
