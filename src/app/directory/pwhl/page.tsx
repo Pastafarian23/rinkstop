@@ -84,6 +84,25 @@ export default async function PWHLPage() {
             description: `Professional Women's Hockey League — premier women's pro league in North America, ${teams.length} teams across USA and Canada.`,
             foundingDate: '2023',
             sameAs: ['https://en.wikipedia.org/wiki/Professional_Women%27s_Hockey_League'],
+          }, {
+            '@type': 'FAQPage',
+            mainEntity: [{
+              '@type': 'Question',
+              name: 'How many teams are in the PWHL?',
+              acceptedAnswer: { '@type': 'Answer', text: `The Professional Women's Hockey League (PWHL) fields ${teams.length} teams across the United States and Canada in the 2026-27 season.` },
+            }, {
+              '@type': 'Question',
+              name: 'When was the PWHL founded?',
+              acceptedAnswer: { '@type': 'Answer', text: 'The PWHL was founded in 2023 and began play in January 2024. It is the third professional women\'s ice hockey league in North America, after the CWHL (2007-2019) and the PHF (2019-2023).' },
+            }, {
+              '@type': 'Question',
+              name: 'What is the PWHL championship trophy?',
+              acceptedAnswer: { '@type': 'Answer', text: 'The Walter Cup — named for the Walter family\'s founding investment in the league — is awarded annually to the PWHL playoff champion.' },
+            }, {
+              '@type': 'Question',
+              name: 'Where can I find PWHL rosters, schedules, and standings?',
+              acceptedAnswer: { '@type': 'Answer', text: `Browse all ${teams.length} PWHL team profiles on RinkStop, each with roster, schedule, arena info, and verified profiles.` },
+            }],
           }],
         }) }}
       />
