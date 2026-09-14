@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Editorial Policy — RinkStop',
+  // WS27 PR1: opt out of root layout's title template to prevent
+  // `Editorial Policy — RinkStop | RinkStop` (brand duplication in SERPs).
+  title: { absolute: 'Editorial Policy — RinkStop' },
   description: 'How RinkStop produces, reviews, and publishes editorial content. Our standards, sourcing rules, AI-use policy, and how we handle corrections.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://rinkstop.com/editorial-policy' },

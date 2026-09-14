@@ -3,7 +3,10 @@ import Link from 'next/link';
 import { getDirectoryCounts } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
-  title: 'About RinkStop | The World\'s Hockey Directory',
+  // WS27 PR1: opt out of root layout's title template (`%s | RinkStop`) to
+  // prevent the rendered title becoming
+  // `About RinkStop | The World's Hockey Directory | RinkStop` (triple-brand).
+  title: { absolute: 'About RinkStop | The World\'s Hockey Directory' },
   description: 'RinkStop is a global hockey directory connecting players, coaches, fans, and teams worldwide. Learn about our mission to organize and grow hockey at every level.',
   // AdSense reviewer reads the E-E-A-T signals on this page. Adding
   // alternates + explicit robots so the page is unambiguously indexable
