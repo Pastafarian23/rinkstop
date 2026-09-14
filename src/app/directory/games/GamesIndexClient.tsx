@@ -401,7 +401,7 @@ export default function GamesIndexClient({ initialData }: Props) {
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 background: active ? '#C8102E' : 'var(--s2)',
-                color: active ? '#fff' : '#A0A0A0',
+                color: active ? '#fff' : 'rgba(255,255,255,0.7)',
                 border: active ? '1px solid #C8102E' : '1px solid var(--border)',
               }}
             >

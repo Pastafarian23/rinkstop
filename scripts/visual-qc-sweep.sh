@@ -43,8 +43,12 @@ URLS=(
   "/glossary"
   "/about"
   "/contact"
+  "/contact"
   "/editorial-policy"
   "/faq"
+  "/news/nhl/analysis/nhl-shortened-preseason-2026-27"
+  "/nhl/preseason/2026-27"
+  "/directory/games"
 )
 
 TOTAL_HITS=0
@@ -60,7 +64,7 @@ for url in "${URLS[@]}"; do
     continue
   fi
   # Grep all color: patterns and flag forbidden hex.
-  HITS=$(echo "$HTML" | grep -oE 'color:#[0-9A-Fa-f]+|color:rgba\([^)]+\)' | sort | uniq -c | sort -rn | awk '$2 ~ /^color:(#041E42|#1a1a1a|#222|#444|#555|#666|#777|#888|#999|#AAA|#A0A0A0|#FFD700|#FFD800)/ {c+=$1} END {print c+0}')
+  HITS=$(echo "$HTML" | grep -oE 'color:#[0-9A-Fa-f]+|color:rgba\([^)]+\)|background:#[0-9A-Fa-f]+' | sort | uniq -c | sort -rn | awk '$2 ~ /^color:(#041E42|#1a1a1a|#222|#444|#555|#666|#777|#888|#999|#AAA|#A0A0A0|#FFD700|#FFD800)/ || $2 ~ /^background:(#fafafa|#f8f8f8|#ffffff|#f8f9fb|#eef2f7|#e0e0e0|#dde3ec|#eee)/ {c+=$1} END {print c+0}')
   if [ "$HITS" -gt 0 ]; then
     # Check if the URL is in the false-positive whitelist (semantic intentional hex)
     case "$url" in
