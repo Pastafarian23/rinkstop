@@ -139,7 +139,9 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
   const location = provinceName ? `${cityName}, ${provinceName}` : `${cityName}, ${countryName}`;
 
   // Now query ice listings for the city — same filter logic
-  let listingsQuery = supabaseAdmin
+  // Note: filter on the JOINED rink.* fields here silently drops the rink
+  // (PostgREST returns the row with rink=null) — we filter in app code instead.
+  const { data: listingsRaw } = await supabaseAdmin
     .from('ice_listings')
     .select(`
       id, rink_id, title, description, requested_price_cents, currency,
@@ -149,18 +151,24 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
     .eq('visibility', 'public')
     .eq('status', 'available')
     .gte('start_time', new Date().toISOString())
-    .ilike('rink.city', cityName);
-  if (countryName) listingsQuery = listingsQuery.ilike('rink.country', countryName);
-  if (isUSorCA && provinceName) {
-    listingsQuery = listingsQuery.or(`rink.province_state.eq.${provinceName},rink.province_state.eq.${stateAbbr}`);
-  }
-  const { data: listingsRaw } = await listingsQuery.order('start_time', { ascending: true }).limit(100);
+    .order('start_time', { ascending: true })
+    .limit(100);
 
-  // Supabase returns rink as array; flatten
-  const listings = (listingsRaw || []).map((l: any) => ({
-    ...l,
-    rink: Array.isArray(l.rink) ? l.rink[0] ?? null : l.rink ?? null,
-  }));
+  // Supabase returns rink as array; flatten + apply country/city/province filters in app code
+  const listings = (listingsRaw || [])
+    .map((l: any) => ({
+      ...l,
+      rink: Array.isArray(l.rink) ? l.rink[0] ?? null : l.rink ?? null,
+    }))
+    .filter((l: any) => {
+      if (!l.rink) return false;
+      if (countryName && l.rink.country && l.rink.country.toLowerCase() !== countryName.toLowerCase()) return false;
+      if (l.rink.city && l.rink.city.toLowerCase() !== cityName.toLowerCase()) return false;
+      if (isUSorCA && provinceName) {
+        if (l.rink.province_state !== provinceName && l.rink.province_state !== stateAbbr) return false;
+      }
+      return true;
+    });
 
   return (
     <CityMarketplaceClient

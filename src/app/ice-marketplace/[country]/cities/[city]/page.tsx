@@ -94,15 +94,21 @@ export default async function CountryCityIceMarketplacePage({ params }: PageProp
     .eq('visibility', 'public')
     .eq('status', 'available')
     .gte('start_time', new Date().toISOString())
-    .ilike('rink.city', cityName)
-    .ilike('rink.country', countryName)
     .order('start_time', { ascending: true })
     .limit(100);
 
-  const listings = (listingsRaw || []).map((l: any) => ({
-    ...l,
-    rink: Array.isArray(l.rink) ? l.rink[0] ?? null : l.rink ?? null,
-  }));
+  const listings = (listingsRaw || [])
+    .map((l: any) => ({
+      ...l,
+      rink: Array.isArray(l.rink) ? l.rink[0] ?? null : l.rink ?? null,
+    }))
+    .filter((l: any) =>
+      l.rink &&
+      l.rink.country &&
+      l.rink.country.toLowerCase() === countryName.toLowerCase() &&
+      l.rink.city &&
+      l.rink.city.toLowerCase() === cityName.toLowerCase()
+    );
 
   return (
     <CityMarketplaceClient
