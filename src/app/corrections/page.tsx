@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Corrections — RinkStop',
+  title: { absolute: 'Corrections — RinkStop' },
   description: 'How to report an error on RinkStop. Public log of corrections to editorial content and directory listings.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://rinkstop.com/corrections' },

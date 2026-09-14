@@ -10,8 +10,11 @@ import { ClaimAbandonTracker } from './ClaimAbandonTracker';
 import AddListingLink from './AddListingLink';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
+// WS27 PR5k (2026-09-14): absolute title to skip root layout's
+// '%s | RinkStop' template, which previously produced
+// 'Claim Your Listing on RinkStop | RinkStop' (brand duplication in SERPs).
 export const metadata: Metadata = {
-  title: 'Claim Your Listing on RinkStop',
+  title: { absolute: 'Claim Your Listing on RinkStop' },
   description:
     "Search for your rink or team's RinkStop listing and claim it. Verified listings get a checkmark, lead capture, and featured rotation.",
   alternates: { canonical: 'https://rinkstop.com/claim-your-listing' },

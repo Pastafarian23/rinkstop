@@ -23,7 +23,7 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
  *   - No auth, no user input, no mutations.
  */
 export const metadata: Metadata = {
-  title: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations | RinkStop',
+  title: { absolute: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations | RinkStop' },
   description:
     'The most comprehensive structured hockey database on the open web. 1,917+ rinks, 3,243+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked. Built for hockey people, queryable by AI.',
   keywords: [

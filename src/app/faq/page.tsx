@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'FAQ — RinkStop Hockey Directory | Accounts, Listings, Marketplace, Tools',
+  title: { absolute: 'FAQ — RinkStop Hockey Directory | Accounts, Listings, Marketplace, Tools' },
   description: 'Frequently asked questions about RinkStop — the world\'s hockey directory. Accounts, listings, memberships, claims, hockey passports, family hub, stamps & QR codes, referee tools, ice marketplace, events, programs, and 6 free hockey calculators.',
   keywords: [
     'hockey directory FAQ',
