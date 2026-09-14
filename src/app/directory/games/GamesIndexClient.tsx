@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SCORE_CHIPS, DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip } from '@/lib/score-chips';
+import { formatGameTime, timezoneForGame, tzAbbr } from '@/lib/game-time';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -15,7 +16,7 @@ interface Game {
   away_score: number | null;
   home_team: { id: string; name: string; slug: string | null; logo_url: string | null } | null;
   away_team: { id: string; name: string; slug: string | null; logo_url: string | null } | null;
-  league: { id: string; name: string; slug: string } | null;
+  league: { id: string; name: string; slug: string; level?: string; country?: string } | null;
 }
 
 interface Team {
@@ -52,13 +53,18 @@ const statusStyle: Record<string, { color: string; label: string }> = {
   postponed:  { color: '#fbbf24', label: 'Postponed'  },
 };
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+function formatDate(d: string, tz: string) {
+  // Use the centralized helper so every timezone rendering carries an
+  // explicit abbreviation (ET, CET, MSK, etc.). Without this, a global
+  // game list would silently mix timezones without disclosure.
+  return formatGameTime(d, tz);
 }
 
 function GameCard({ game }: { game: Game }) {
+  // Per-game timezone — pick from the league if known, else default to ET
+  // (most of the data is NHL/AHL/PWHL). The explicit abbreviation is what
+  // makes the time meaningful to a reader anywhere on earth.
+  const tz = timezoneForGame({ leagueSlug: game.league?.slug, countryCode: undefined });
   const s = statusStyle[game.status] || statusStyle.scheduled;
   const homeName = game.home_team?.name || 'Home';
   const awayName = game.away_team?.name || 'Away';
@@ -95,7 +101,10 @@ function GameCard({ game }: { game: Game }) {
           <span style={{ color: '#333', fontSize: '0.875rem' }}>@</span>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>{game.away_score ?? '-'}</span>
         </div>
-        <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>{formatDate(game.scheduled_at || game.date)}</p>
+        <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>
+          {formatDate(game.scheduled_at || game.date, tz)}
+          <span style={{ marginLeft: '0.375rem', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{tzAbbr(tz)}</span>
+        </p>
         <span style={{
           display: 'inline-block',
           marginTop: '0.25rem',
@@ -363,6 +372,15 @@ export default function GamesIndexClient({ initialData }: Props) {
       </div>
 
       <div style={{ height: '2px', background: 'linear-gradient(90deg, #C8102E 0%, #041E42 100%)', borderRadius: '2px', marginBottom: '1.5rem', width: '80px' }} />
+
+      {/* Timezone disclosure — 2026-09-14: times shown in explicit
+          ET/CT/MT/PT abbreviations. Per-league timezones will appear
+          inline on each card. */}
+      <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', marginBottom: '1rem', lineHeight: 1.5, fontStyle: 'italic' }}>
+        All start times are shown in Eastern Time (ET). For venues outside
+        the Eastern Time zone, each game card shows the timezone
+        abbreviation. Game times are local to each venue at puck drop.
+      </p>
 
       {/* Filter bar: chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
