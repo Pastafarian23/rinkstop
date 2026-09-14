@@ -14,13 +14,13 @@ import IceMarketplaceSEO from './_components/IceMarketplaceSEO';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Open Ice Time & Hockey Practice Slots for Sale | RinkStop',
+  title: { absolute: 'Open Ice Time & Hockey Practice Slots for Sale | RinkStop' },
   description:
     'Find open ice time, practice slots, and hockey rink rentals near you. Rinks, clubs, and teams list available ice on RinkStop — book by the hour, filtered by city, age group, and skill level.',
   alternates: { canonical: 'https://rinkstop.com/ice-marketplace' },
   robots: { index: true, follow: true, 'max-image-preview': 'large' },
   openGraph: withDefaultOg({
-    title: 'Open Ice Time & Hockey Practice Slots for Sale | RinkStop',
+    title: { absolute: 'Open Ice Time & Hockey Practice Slots for Sale | RinkStop' },
     description:
       'Browse open ice time across rinks. Practice ice, tournament slots, and clinic ice — filter by city, age group, and skill level.',
     url: 'https://rinkstop.com/ice-marketplace',

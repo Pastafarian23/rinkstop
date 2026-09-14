@@ -13,7 +13,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Free Hockey Tools & Calculators — RinkStop',
+  title: { absolute: 'Free Hockey Tools & Calculators — RinkStop' },
   description: 'Six free hockey calculators and tools: cost estimator (by age, level, state), skate size, glove size, stick size, goalie gear sizer, and junior hockey eligibility checker (CHL/USHL/NCAA). No sign-up required.',
   keywords: [
     'hockey tools',

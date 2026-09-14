@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Youth Content Policy — RinkStop',
+  title: { absolute: 'Youth Content Policy — RinkStop' },
   description: 'How RinkStop handles hockey content involving minors. Our COPPA and Treating Families as Third Parties compliance, what youth content we publish, how parent claims work, and how to request removal.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://rinkstop.com/policies/youth-content' },

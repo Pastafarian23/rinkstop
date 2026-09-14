@@ -15,7 +15,7 @@ export const dynamic = 'force-static';
 const SITE = 'https://rinkstop.com';
 
 export const metadata: Metadata = {
-  title: 'Rent Hockey Ice — Practice, Tournament, and Clinic Ice Rental | RinkStop',
+  title: { absolute: 'Rent Hockey Ice — Practice, Tournament, and Clinic Ice Rental | RinkStop' },
   description:
     'Rent hockey ice by the hour from rinks, clubs, and teams. Practice ice, tournament slots, and clinic ice for rent in the U.S., Canada, and 70+ countries. List yours free.',
   alternates: { canonical: `${SITE}/rent-hockey-ice` },

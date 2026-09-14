@@ -13,7 +13,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import EventSubmissionForm from './EventSubmissionForm';
 
 export const metadata: Metadata = {
-  title: 'Submit a Hockey Event | RinkStop',
+  title: { absolute: 'Submit a Hockey Event | RinkStop' },
   description:
     'Submit your hockey tournament, camp, tryout, or clinic for listing on RinkStop. The rink owner reviews and approves before it goes live.',
   alternates: { canonical: 'https://rinkstop.com/events/submit' },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   }),
   twitter: {
     card: 'summary',
-    title: 'Submit a Hockey Event | RinkStop',
+    title: { absolute: 'Submit a Hockey Event | RinkStop' },
     description: 'Tournaments, camps, tryouts, clinics — get listed on RinkStop.',
   },
 };

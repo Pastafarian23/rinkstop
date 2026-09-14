@@ -21,7 +21,7 @@ import { LEARN, LEARN_CATEGORIES, learnByCategory, LEARN_TOTAL } from '@/lib/lea
 import ProgressWidget from '@/components/learn/ProgressWidget';
 
 export const metadata: Metadata = {
-  title: 'Learn Hockey — Beginner Guide for Players, Parents, and Fans | RinkStop',
+  title: { absolute: 'Learn Hockey — Beginner Guide for Players, Parents, and Fans | RinkStop' },
   description: `${LEARN_TOTAL} free beginner-friendly explainers for new players, parents, and fans. When to start, what to expect, what it costs, how to skate and shoot, the rules, and a parent-onboarding section for first-time families.`,
   keywords: [
     'learn hockey',

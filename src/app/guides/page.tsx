@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { GUIDES, GUIDE_CATEGORIES, guidesByCategory, type GuideCategory } from '@/lib/guides-catalog';
 
 export const metadata: Metadata = {
-  title: 'Hockey Guides — RinkStop | Technique, Equipment, Leagues, Pathways',
+  title: { absolute: 'Hockey Guides — RinkStop | Technique, Equipment, Leagues, Pathways' },
   description: 'In-depth hockey guides covering technique (skating, shooting, stickhandling), training, equipment fitting (with separate guides for parents and adult players), every major league (NHL, AHL, KHL, PWHL, CHL, NCAA, USHL, IIHF), and player pathways. Updated 2026.',
   keywords: [
     'hockey guides',

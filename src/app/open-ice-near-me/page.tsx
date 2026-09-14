@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
 const SITE = 'https://rinkstop.com';
 
 export const metadata: Metadata = {
-  title: 'Open Ice Near Me — Find Hockey Practice Ice by the Hour | RinkStop',
+  title: { absolute: 'Open Ice Near Me — Find Hockey Practice Ice by the Hour | RinkStop' },
   description:
     'Find open ice time near you. Practice ice, tournament slots, and clinic ice from rinks, clubs, and teams across the U.S., Canada, and 70+ countries. Browse by city, age group, and skill level.',
   alternates: { canonical: `${SITE}/open-ice-near-me` },
