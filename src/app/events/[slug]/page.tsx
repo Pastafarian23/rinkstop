@@ -159,15 +159,31 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
       priceCurrency: e.currency,
       url: e.registration_url || `${CANONICAL_URL}/events/${e.slug}`,
       availability: e.spots_remaining != null && e.spots_remaining > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+      validFrom: e.registration_opens_at || e.starts_at,
     } : undefined,
     subEvent: divs.length > 0 ? divs.map((d) => ({
       '@type': 'Event',
       name: d.name,
+      startDate: e.starts_at,
+      endDate: e.ends_at,
       eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      eventStatus: e.status === 'cancelled' ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
+      location: {
+        '@type': 'Place',
+        name: e.venue_name || e.rink?.name || 'Rink',
+        address: e.rink ? {
+          '@type': 'PostalAddress',
+          addressLocality: e.rink.city,
+          addressRegion: e.rink.province_state,
+          addressCountry: e.rink.country,
+        } : undefined,
+      },
       offers: d.price_cents != null ? {
         '@type': 'Offer',
         price: (d.price_cents / 100).toFixed(2),
         priceCurrency: e.currency,
+        url: e.registration_url || `${CANONICAL_URL}/events/${e.slug}`,
+        validFrom: e.registration_opens_at || e.starts_at,
       } : undefined,
     })) : undefined,
   };

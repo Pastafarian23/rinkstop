@@ -10,6 +10,7 @@
 
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { buildIceListingItemList, type IceListingSchemaInput } from '@/lib/schema/event';
 
 interface ListingRow {
   id: string;
@@ -34,8 +35,6 @@ interface Props {
   listings: ListingRow[];
 }
 
-const SITE = 'https://rinkstop.com';
-
 function formatPrice(cents: number | null, currency: string): string {
   if (cents === null) return 'Free';
   return `${currency} ${(cents / 100).toFixed(2)}`;
@@ -48,32 +47,14 @@ function formatSlot(dateStr: string, tz: string): string {
 }
 
 export default function CountryMarketplaceClient({ countrySlug, countryName, countryRinkCount, cityCount, listings }: Props) {
-  const itemListElements = listings.slice(0, 50).map((l, i) => {
-    const r = l.rink;
-    return {
-      '@type': 'ListItem',
-      position: i + 1,
-      item: {
-        '@type': 'Event',
-        name: l.title,
-        description: l.description || undefined,
-        startDate: l.start_time,
-        endDate: l.end_time,
-        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        location: r ? { '@type': 'Place', name: r.name, address: [r.city, r.province_state, r.country].filter(Boolean).join(', ') || undefined } : undefined,
-        offers: l.requested_price_cents ? { '@type': 'Offer', price: (l.requested_price_cents / 100).toFixed(2), priceCurrency: l.currency || 'USD', url: `${SITE}/book-ice/${l.id}`, availability: 'https://schema.org/InStock' } : undefined,
-      },
-    };
-  });
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: `Open ice time in ${countryName}`,
-    description: `Ice time and practice slots for sale or rent in ${countryName}.`,
-    numberOfItems: listings.length,
-    itemListElement: itemListElements,
-  };
+  const jsonLd = buildIceListingItemList(
+    listings as IceListingSchemaInput[],
+    {
+      name: `Open ice time in ${countryName}`,
+      description: `Ice time and practice slots for sale or rent in ${countryName}.`,
+      total: listings.length,
+    },
+  );
 
   return (
     <main

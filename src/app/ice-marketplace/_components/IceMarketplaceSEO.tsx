@@ -16,6 +16,7 @@
  */
 
 import Link from 'next/link';
+import { buildIceListingItemList, type IceListingSchemaInput } from '@/lib/schema/event';
 
 interface ListingRow {
   id: string;
@@ -35,55 +36,15 @@ interface Props {
   listings?: ListingRow[];
 }
 
-const SITE = 'https://rinkstop.com';
-
 export default function IceMarketplaceSEO({ total, listings = [] }: Props) {
-  // JSON-LD ItemList of every listing rendered. cap at 50 to keep
-  // the schema payload reasonable; Google can crawl the page for the rest.
-  const itemListElements = listings.slice(0, 50).map((l, i) => {
-    const r = l.rink;
-    const location = r
-      ? [r.city, r.province_state, r.country].filter(Boolean).join(', ')
-      : '';
-    return {
-      '@type': 'ListItem',
-      position: i + 1,
-      item: {
-        '@type': 'Event',
-        name: l.title,
-        description: l.description || undefined,
-        startDate: l.start_time,
-        endDate: l.end_time,
-        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        location: r
-          ? {
-              '@type': 'Place',
-              name: r.name,
-              address: location || undefined,
-            }
-          : undefined,
-        offers: l.requested_price_cents
-          ? {
-              '@type': 'Offer',
-              price: (l.requested_price_cents / 100).toFixed(2),
-              priceCurrency: l.currency || 'USD',
-              url: `${SITE}/book-ice/${l.id}`,
-              availability: 'https://schema.org/InStock',
-            }
-          : undefined,
-      },
-    };
-  });
-
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: 'Open ice time on RinkStop',
-    description:
-      'Open ice time and hockey practice slots listed for sale or rent by rinks, clubs, and teams. Filter by city, age group, and skill level.',
-    numberOfItems: total,
-    itemListElement: itemListElements,
-  };
+  const jsonLd = buildIceListingItemList(
+    listings as IceListingSchemaInput[],
+    {
+      name: "Open ice time on RinkStop",
+      description: "Open ice time and hockey practice slots listed for sale or rent by rinks, clubs, and teams. Filter by city, age group, and skill level.",
+      total,
+    },
+  );
 
   return (
     <>
