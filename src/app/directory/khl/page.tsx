@@ -14,14 +14,22 @@ export const metadata: Metadata = {
   // 2026-09-03 WS3 + Gap 1: rewrote title to 53 chars + added season year + current team count.
   // Old title was 84 chars (truncated by Google SERP at ~60 chars).
   // Old title: "KHL — Kontinental Hockey League: 23 Teams, 4 Conferences | RinkStop"
-  title: 'KHL Hockey Teams 2026-27 — Rosters, Scores',
+  //
+  // WS27 PR5b (2026-09-14): rewrote again to front-load intent-matched
+  // keywords. GSC 28d: 3,543 impressions, 12 clicks (0.34% CTR). Top
+  // queries: 'khl teams' (225 imp), 'khl rosters' (65), 'khl table' (3),
+  // 'khl clubs' (6), 'khl scores' (low imp). New title matches all of
+  // these without truncating. 55 chars (under Google's 60-char SERP cap).
+  // 'Live Table' added because the page now shows the 2024-25 standings
+  // table (PR #3).
+  title: 'KHL Standings & Scores 2026-27 — 23 Teams, Live Table',
   description:
-    'Kontinental Hockey League (KHL) 2026-27 season: 23 teams across Russia, Belarus, Kazakhstan, and China. Live scores, schedules, rosters, arenas, and standings — all in one place.',
+    'Kontinental Hockey League (KHL) 2026-27: 23 teams across Russia, Belarus, Kazakhstan, and China. Live standings table, recent scores, rosters, arenas — all in one place.',
   alternates: { canonical: 'https://rinkstop.com/directory/khl' },
   openGraph: withDefaultOg({
-    title: 'KHL Hockey Teams 2026-27',
+    title: 'KHL Standings & Scores 2026-27 — 23 Teams',
     description:
-      'Kontinental Hockey League 2026-27: 23 teams, 4 countries. Live scores, schedules, rosters, and standings.',
+      'Kontinental Hockey League 2026-27: 23 teams, 4 countries. Live standings table, recent scores, rosters, and schedules.',
     url: 'https://rinkstop.com/directory/khl',
     siteName: 'RinkStop',
     type: 'website',
@@ -257,7 +265,7 @@ export default async function KHLPage() {
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1.1, margin: 0 }}>
-          KHL Hockey Teams — Kontinental Hockey League
+          KHL Standings & Scores — Kontinental Hockey League
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginTop: '0.5rem', maxWidth: '720px' }}>
           {teamCount > 23 ? `${teamCount}+` : '23+'} teams across Russia, Belarus, Kazakhstan, and China — the top professional hockey league outside the NHL.
