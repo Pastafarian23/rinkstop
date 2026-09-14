@@ -2,17 +2,24 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
+// WS27 PR5l (2026-09-14): rewrite title to lead with 'Best Hockey
+// Equipment Brands' — matches the GSC top-query pattern (best hockey
+// brand, best hockey equipment, all hockey brands) and fits Google's
+// 60-char SERP cap. Old title was 90 chars and rendered as 102 chars
+// including the '| RinkStop' template suffix — truncated mid-brand
+// name in SERPs. GSC 28d: 917 impressions, 0.33% CTR (mostly long-tail
+// 'best hockey X' queries at position 30+ with 0% CTR).
 export const metadata: Metadata = {
-  title: 'Hockey Equipment Brands — Bauer, CCM, Warrior, True & More (2026 Guide)',
+  title: 'Best Hockey Equipment Brands 2026 — Bauer, CCM & More',
   description:
-    'Hockey equipment brands directory. Reviews of Bauer, CCM, Warrior, True, and Easton for skates, sticks, pads, helmets, and protective gear. Buying guides and brand comparisons for 2026.',
+    'Best hockey equipment brands 2026: Bauer, CCM, Warrior, True, Easton. Reviews, comparisons, and buying guides for skates, sticks, pads, helmets, and protective gear.',
   alternates: {
     canonical: 'https://rinkstop.com/gear-brands',
   },
   openGraph: withDefaultOg({
-    title: 'Hockey Equipment Brands — Bauer, CCM, Warrior, True & More',
+    title: 'Best Hockey Equipment Brands 2026 — Bauer, CCM & More',
     description:
-      'Hockey equipment brand directory: reviews, comparisons, and buying guides for skates, sticks, pads, and protective gear.',
+      'Best hockey equipment brands 2026: Bauer, CCM, Warrior, True, Easton. Reviews, comparisons, and buying guides for skates, sticks, pads, helmets, and protective gear.',
     type: 'website',
     url: 'https://rinkstop.com/gear-brands',
   }),
@@ -72,7 +79,7 @@ export default function GearBrandsPage() {
 
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          HOCKEY EQUIPMENT BRANDS
+          BEST HOCKEY EQUIPMENT BRANDS 2026
         </h1>
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
           Equipment brands, reviews, comparisons, and what to buy — from skates to sticks.
