@@ -109,6 +109,77 @@ export default async function NHLHubPage() {
 
   return (
     <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
+      {/* WS27 PR5m (2026-09-14): add SportsOrganization + FAQPage + BreadcrumbList schema.
+          Previously this page had no JSON-LD at all. The KHL page (which has 3,543
+          imp on 28d) and AHL page both have these schemas. Adding them here
+          gives the NHL hub page the same content-understanding signal that
+          other league pages already get. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'SportsOrganization',
+                '@id': 'https://rinkstop.com/directory/nhl',
+                name: 'National Hockey League',
+                alternateName: 'NHL',
+                url: 'https://rinkstop.com/directory/nhl',
+                sport: 'Ice Hockey',
+                description: 'National Hockey League (NHL) — premier professional ice hockey league of North America, 32 teams across the United States and Canada.',
+                foundingDate: '1917',
+                sameAs: ['https://en.wikipedia.org/wiki/National_Hockey_League'],
+              },
+              {
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                  { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+                  { '@type': 'ListItem', position: 2, name: 'Directory', item: 'https://rinkstop.com/directory' },
+                  { '@type': 'ListItem', position: 3, name: 'NHL', item: 'https://rinkstop.com/directory/nhl' },
+                ],
+              },
+              {
+                '@type': 'FAQPage',
+                mainEntity: [
+                  {
+                    '@type': 'Question',
+                    name: 'How many teams are in the NHL?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'The NHL fields 32 teams across the United States and Canada, organized into 4 divisions: Atlantic, Metropolitan, Central, and Pacific. These divisions are grouped into 2 conferences (Eastern and Western).',
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: 'When does the 2026-27 NHL season start?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'The 2026-27 NHL regular season begins in early October 2026. The 2026-27 preseason runs from late September through early October. The Stanley Cup Playoffs begin in April 2027, with the Stanley Cup Final typically ending in June.',
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: 'What is the NHL championship trophy?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'The Stanley Cup — the oldest professional sports trophy in North America — has been awarded to the NHL playoff champion since 1893. The current format (best-of-7) has been in place since 1939.',
+                    },
+                  },
+                  {
+                    '@type': 'Question',
+                    name: 'Where can I find NHL scores, standings, and schedules?',
+                    acceptedAnswer: {
+                      '@type': 'Answer',
+                      text: 'Browse all 32 NHL team profiles on RinkStop, each with live scores, current standings, schedule, roster, and arena info. The hub page above shows today\'s games and current standings by division.',
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
       <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
         <Link href="/" style={{ color: 'rgba(255,255,255,0.5)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
