@@ -47,11 +47,11 @@ export const runtime = 'nodejs';
 export const revalidate = 3600; // 1 hour — data changes as users add listings
 
 const ENTITY_TABLES = {
-  rinks: { table: 'rinks', select: 'id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, status, is_active, qr_identifier, timezone, source, created_at, updated_at', filter: 'is_active' },
-  teams: { table: 'team_workspaces', select: 'id, name, slug, country_code, province_state, home_city, league_id, level, is_active, claimed_by_tier, avatar_url, created_at, updated_at', filter: 'is_active' },
-  leagues: { table: 'leagues', select: 'id, name, slug, country, level, website_url, is_active, claimed_by_tier, created_at, updated_at', filter: 'is_active' },
-  players: { table: 'players', select: 'id, full_name, slug, position, team_workspace_id, country_code, birthdate, height_cm, weight_kg, shoots, is_active, created_at, updated_at', filter: 'is_active' },
-  federations: { table: 'federations', select: 'id, name, slug, country, country_code, website_url, iihf_member_since, is_active, created_at, updated_at', filter: 'is_active' },
+  rinks: { table: 'rinks', select: 'id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, status, is_active, qr_identifier, timezone, source, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  teams: { table: 'team_workspaces', select: 'id, name, slug, country_code, province_state, home_city, league_id, level, is_active, claimed_by_tier, avatar_url, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  players: { table: 'players', select: 'id, full_name, slug, position, team_workspace_id, country_code, birthdate, height_cm, weight_kg, shoots, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  federations: { table: 'federations', select: 'id, name, slug, country, country_code, website_url, iihf_member_since, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
 } as const;
 
 type EntityKey = keyof typeof ENTITY_TABLES;
@@ -61,16 +61,26 @@ const ALL_ENTITIES: EntityKey[] = ['rinks', 'teams', 'leagues', 'players', 'fede
 async function fetchEntity(entity: EntityKey): Promise<any[]> {
   const config = ENTITY_TABLES[entity];
   const client: any = supabaseAdmin;
-  const baseQuery: any = client.from(config.table).select(config.select);
-  const filteredQuery: any = config.filter === 'is_active' ? baseQuery.eq('is_active', true) : baseQuery;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: any = await filteredQuery;
-  if (result?.error) {
-    console.error(`Failed to fetch ${entity}:`, result.error.message);
-    return [];
+  const pageSize = config.pageSize || 1000;
+  const allRows: any[] = [];
+  let offset = 0;
+  // Supabase REST caps at pageSize per request; paginate until empty page
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const baseQuery: any = client.from(config.table).select(config.select).range(offset, offset + pageSize - 1);
+    const filteredQuery: any = config.filter === 'is_active' ? baseQuery.eq('is_active', true) : baseQuery;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: any = await filteredQuery;
+    if (result?.error) {
+      console.error(`Failed to fetch ${entity}:`, result.error.message);
+      return allRows;
+    }
+    const rows: any[] = (result?.data as any[]) || [];
+    allRows.push(...rows);
+    if (rows.length < pageSize) break;
+    offset += pageSize;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (result?.data as any[]) || [];
+  return allRows;
 }
 
 function toCsv(rows: any[], entity: string): string {
