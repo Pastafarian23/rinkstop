@@ -10,6 +10,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
+import { citySlugToVariants } from '@/lib/ice-marketplace-city-match';
 import CityMarketplaceClient from '../../../_components/CityMarketplaceClient';
 
 export const dynamic = 'force-dynamic';
@@ -110,12 +111,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // ice_listings.status + start_time).
   let listingsCount = 1; // default to 1 (index) so error fallback doesn't noindex by accident
   try {
+    // WS27 PR5i (2026-09-14): try multiple city name variants to handle
+    // slug↔name round-trip failure (cities with periods, accents, postal codes).
+    const cityOrFilter = citySlugToVariants(citySlug)
+      .map((v) => `city.ilike.*${v}*`)
+      .join(',');
     let rinksForCity = supabaseAdmin
       .from('rinks')
       .select('id')
       .eq('is_active', true)
-      .ilike('city', cityName)
       .ilike('country', countryName)
+      .or(cityOrFilter)
       .limit(200);
     if (isUSorCA && provinceName) {
       // WS27 PR5i (2026-09-14): include CA province abbreviation in the
@@ -173,12 +179,17 @@ export default async function CityIceMarketplacePage({ params }: PageProps) {
   // Lookup city in the rinks table to gate the page. If we have no rinks
   // for this city, the page noindexes itself (404-ish) so Google
   // doesn't index empty marketplace pages.
+  // WS27 PR5i (2026-09-14): use name variants for the city filter so we
+  // match cities with periods, accents, postal codes in the original name.
+  const cityOrFilter = citySlugToVariants(citySlug)
+    .map((v) => `city.ilike.*${v}*`)
+    .join(',');
   let rinksQuery = supabaseAdmin
     .from('rinks')
     .select('id, name, slug')
     .eq('is_active', true)
-    .ilike('city', cityName);
-  if (countryName) rinksQuery = rinksQuery.ilike('country', countryName);
+    .ilike('country', countryName)
+    .or(cityOrFilter);
   if (isUSorCA && provinceName) {
     // rinks table may have full state name OR abbr; we look up the abbr from US_STATE_ABBR
     rinksQuery = rinksQuery.or(`province_state.eq.${provinceName},province_state.eq.${stateAbbr}`);
