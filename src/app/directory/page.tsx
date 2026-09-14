@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: withDefaultOg({
     title: 'Hockey Directory',
     description:
-      'Browse RinkStop's complete hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries.',
+      "Browse RinkStop's complete hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries.",
     url: 'https://rinkstop.com/directory',
     siteName: 'RinkStop',
     type: 'website',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Hockey Directory',
     description:
-      'Browse RinkStop's complete hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries.',
+      "Browse RinkStop's complete hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries.",
   },
 };
 
