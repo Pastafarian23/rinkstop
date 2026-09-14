@@ -20,6 +20,13 @@ import ConsentBanner from '@/components/ConsentBanner';
 // AdSense resubmit so reviewers see a live script integration gated
 // on a real choice record. Skipped on excluded prefixes even after consent.
 import AdSenseLoader from '@/components/AdSenseLoader';
+// WS25 (2026-09-14): Google Analytics 4 gtag.js loader. Renders the
+// gtag.js script + config snippet into the initial server HTML so the
+// GA4 property receives page_views. Measurement ID comes from
+// NEXT_PUBLIC_GA_MEASUREMENT_ID. When unset, the loader renders nothing
+// (fail-closed — same pattern as AdSenseLoader). CSP already permits
+// googletagmanager.com + google-analytics.com (verified 2026-09-14).
+import GtagLoader from '@/components/GtagLoader';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
@@ -515,6 +522,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             above. Mounted globally so a single record gates the same
             publisher ID across all eligible routes. */}
         <AdSenseLoader enabled={adsenseEligible} />
+        {/* WS25 (2026-09-14): GA4 gtag.js integration. Renders gtag.js
+            + the gtag('config', '<Measurement ID>') snippet into initial
+            HTML so the property receives page_views. Measurement ID is
+            read from NEXT_PUBLIC_GA_MEASUREMENT_ID at build time. When
+            the env var is unset (e.g. local dev), the component returns
+            null — no half-broken script ships to production. */}
+        <GtagLoader measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
         </body>
       </html>
     </ClerkProvider>
