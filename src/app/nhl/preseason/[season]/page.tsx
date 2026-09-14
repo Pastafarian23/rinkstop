@@ -30,6 +30,13 @@ import Link from 'next/link';
 import fs from 'node:fs';
 import path from 'node:path';
 import { NHL_TEAMS_CANONICAL } from '@/lib/nhl-teams-canonical';
+import {
+  formatGameTime,
+  formatGameHour,
+  disclaimerText,
+  tzAbbr,
+  tzFullName,
+} from '@/lib/game-time';
 
 // ---------- Types ----------
 
@@ -210,6 +217,41 @@ function isUSorCA(country: string): boolean {
 
 // ---------- Components ----------
 
+function TimezoneDisclosure() {
+  // The dataset’s start_time_et field is in Eastern Time, published by the
+  // NHL. We surface that fact explicitly so a reader in Calgary or Helsinki
+  // doesn’t convert in their head and miss a game start.
+  return (
+    <aside
+      aria-label="Timezone disclosure"
+      role="note"
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '0.5rem',
+        padding: '0.625rem 0.875rem',
+        marginBottom: '1.5rem',
+        background: 'rgba(56,189,248,0.06)',
+        border: '1px solid rgba(56,189,248,0.3)',
+        borderRadius: '6px',
+        fontSize: '0.75rem',
+        color: 'rgba(255,255,255,0.78)',
+        lineHeight: 1.45,
+      }}
+    >
+      <span aria-hidden="true" style={{ fontSize: '0.875rem', lineHeight: '1rem' }}>🕒</span>
+      <span>
+        <strong style={{ color: '#7DD3FC' }}>Times listed in {tzAbbr('America/New_York')} ({tzFullName(tzAbbr('America/New_York'))}).</strong>{' '}
+        The NHL publishes all preseason and regular-season start times in
+        {' '}{tzAbbr('America/New_York')} (Eastern Time) regardless of the
+        venue’s location. For venues in other time zones, the local start
+        time is shown alongside the ET on the affected games. Game times are
+        local to each venue at start; verify with your team before traveling.
+      </span>
+    </aside>
+  );
+}
+
 function QuickFacts({ ds }: { ds: PreseasonDataset }) {
   const facts: { label: string; value: string }[] = [
     { label: 'Total Games', value: String(ds.games_total) },
@@ -298,7 +340,7 @@ function GameRow({ g }: { g: PreseasonGame }) {
       }}
     >
       <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-        {g.start_time_et} <span style={{ opacity: 0.6 }}>ET</span>
+        {formatGameHour(`${g.date}T${g.start_time_et}:00-04:00`, 'America/New_York')}
       </div>
       <div style={{ textAlign: 'right' }}>
         {team1}
@@ -385,7 +427,7 @@ function NeutralSiteSpotlight({ games }: { games: PreseasonGame[] }) {
               }}
             >
               <div style={{ fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FFB81C', marginBottom: '0.375rem' }}>
-                {g.day}, {g.date} · {g.start_time_et} ET
+                {g.day}, {g.date} · {formatGameTime(`${g.date}T${g.start_time_et}:00-04:00`, 'America/New_York')}
               </div>
               <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>
                 {g.away_team} @ {g.home_team}
@@ -673,6 +715,8 @@ export default async function PreseasonSchedulePage({ params }: { params: Promis
         neutral-site venues in the United States and Canada. Filter by date, team, city,
         country, or venue type.
       </p>
+
+      <TimezoneDisclosure />
 
       <QuickFacts ds={ds} />
 

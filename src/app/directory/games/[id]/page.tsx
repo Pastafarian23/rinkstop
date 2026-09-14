@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { type SharePayload } from '@/lib/share';
+import { formatGameTime, timezoneForGame, disclaimerText } from '@/lib/game-time';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -18,9 +19,10 @@ interface Game {
   scheduled_at: string;
   home_team: { name: string; logo_url: string | null; slug: string } | null;
   away_team: { name: string; logo_url: string | null; slug: string } | null;
-  league: { name: string } | null;
+  league: { id: string; name: string; slug: string; level?: string; country?: string } | null;
   venue_details: any;
   period_scores: any;
+  // League enrichment fields (subset of /api/scores response)
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
@@ -31,10 +33,10 @@ const statusStyle: Record<string, { color: string; label: string }> = {
   postponed: { color: '#fbbf24', label: 'Postponed' },
 };
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+function formatDate(d: string, timezone: string) {
+  // Centralized wrapper around the helper that also renders the timezone
+  // abbreviation. Readers expect to see ET / CT / etc. on each time.
+  return formatGameTime(d, timezone);
 }
 
 export default function GamePage() {
@@ -109,7 +111,12 @@ export default function GamePage() {
       <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '2rem', textAlign: 'center', marginBottom: '1.5rem' }}>
         {/* Date */}
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.5rem' }}>
-          {formatDate(game.scheduled_at || game.date)}
+          {formatDate(game.scheduled_at || game.date, timezoneForGame({ leagueSlug: game.league?.slug, countryCode: game.league?.country }))}
+          {game.scheduled_at && (
+            <span style={{ display: 'block', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.375rem', fontStyle: 'italic' }}>
+              {disclaimerText(timezoneForGame({ leagueSlug: game.league?.slug, countryCode: game.league?.country }), 'compact')}
+            </span>
+          )}
         </p>
 
         {/* Teams */}

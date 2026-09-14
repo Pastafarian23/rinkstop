@@ -7,6 +7,7 @@ import HighlightsGrid from '@/components/HighlightsGrid';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
 import JustGettingStartedSection from '@/components/home/JustGettingStartedSection';
+import { formatGameTime, tzAbbr, disclaimerText } from '@/lib/game-time';
 
 // Home page is rendered statically with ISR (revalidate every 5 min).
 // The page runs 9 Supabase queries for the stats grid + recent sections;
@@ -616,14 +617,11 @@ export default async function Home() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
               {upcomingGames.map((g: any) => {
-                // `g.date` comes from `fixtures.scheduled_at` as an ISO string
-                // like '2026-09-19T23:00:00+00:00'. The original code appended
-                // 'T00:00:00' producing an invalid ISO like
-                // '2026-09-19T23:00:00+00:00T00:00:00' which crashed the Date
-                // parser and rendered "Invalid Date". Use the ISO directly.
-                const d = new Date(g.date);
-                const timeText = !isNaN(d.getTime())
-                  ? d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+                // `g.date` is fixtures.scheduled_at as ISO string.
+                // All NHL times are published in Eastern Time per the NHL.com
+                // public API convention; surface that fact to readers.
+                const timeText = g.date
+                  ? formatGameTime(g.date, 'America/New_York')
                   : 'Date TBD';
                 return (
                   <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -637,6 +635,9 @@ export default async function Home() {
                   </div>
                 );
               })}
+              <div style={{ gridColumn: '1 / -1', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                {disclaimerText('America/New_York', 'compact')}
+              </div>
             </div>
           </div>
         </section>
