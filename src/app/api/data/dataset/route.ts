@@ -60,14 +60,14 @@ const ALL_ENTITIES: EntityKey[] = ['rinks', 'teams', 'leagues', 'players', 'fede
 
 async function fetchEntity(entity: EntityKey): Promise<any[]> {
   const config = ENTITY_TABLES[entity];
-  let query = supabaseAdmin.from(config.table).select(config.select);
-  if (config.filter === 'is_active') query = query.eq('is_active', true);
-  const { data, error } = await query;
+  const baseQuery: any = supabaseAdmin.from(config.table).select(config.select);
+  const filteredQuery = config.filter === 'is_active' ? baseQuery.eq('is_active', true) : baseQuery;
+  const { data, error }: any = await filteredQuery;
   if (error) {
     console.error(`Failed to fetch ${entity}:`, error.message);
     return [];
   }
-  return data || [];
+  return (data as any[]) || [];
 }
 
 function toCsv(rows: any[], entity: string): string {
