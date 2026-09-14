@@ -134,6 +134,7 @@ export default async function NHLHubPage() {
           { label: 'Playoffs', href: '/directory/nhl/playoffs' },
           { label: 'Eastern', href: '/directory/nhl/eastern' },
           { label: 'Western', href: '/directory/nhl/western' },
+          { label: 'Preseason', href: '/nhl/preseason/2026-27' },
         ].map(n => (
           <Link key={n.href} href={n.href} style={{
             padding: '0.3rem 0.75rem',
