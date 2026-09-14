@@ -99,11 +99,54 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const cityName = titleCase(citySlug.replace(/-/g, ' '));
   const location = provinceName ? `${cityName}, ${provinceName}` : `${cityName}, ${countryName}`;
 
+  // WS27 PR5h (2026-09-14): noindex when the city has 0 active ice
+  // listings. Without this gate, the sitemap emits 1,479 city URLs and
+  // Google indexes 1,478 of them as 'No ice listings available' thin
+  // pages, diluting crawl budget and suppressing the rest of the site.
+  //
+  // We do the listings count lookup here rather than sharing state with
+  // the page component because Next.js runs generateMetadata and the
+  // page independently. The query is fast (PostgREST cache + index on
+  // ice_listings.status + start_time).
+  let listingsCount = 1; // default to 1 (index) so error fallback doesn't noindex by accident
+  try {
+    let rinksForCity = supabaseAdmin
+      .from('rinks')
+      .select('id')
+      .eq('is_active', true)
+      .ilike('city', cityName)
+      .ilike('country', countryName)
+      .limit(200);
+    if (isUSorCA && provinceName) {
+      const stateAbbr = US_STATE_ABBR[provinceSlug.toLowerCase()] || '';
+      rinksForCity = rinksForCity.or(
+        `province_state.eq.${provinceName},province_state.eq.${stateAbbr}`
+      );
+    }
+    const { data: cityRinks } = await rinksForCity;
+    const rinkIds = (cityRinks || []).map((r: { id: string }) => r.id);
+    if (rinkIds.length > 0) {
+      const { count } = await supabaseAdmin
+        .from('ice_listings')
+        .select('id', { count: 'exact', head: true })
+        .in('rink_id', rinkIds)
+        .eq('visibility', 'public')
+        .eq('status', 'available')
+        .gte('start_time', new Date().toISOString());
+      listingsCount = count || 0;
+    } else {
+      listingsCount = 0;
+    }
+  } catch {
+    // Default to index on error.
+    listingsCount = 1;
+  }
+
   return {
     title: `Open Ice Time in ${location} | RinkStop`,
     description: `Find open ice time and hockey practice slots for sale or rent in ${location}. Browse practice ice, tournament slots, and clinic ice from local rinks, clubs, and teams.`,
     alternates: { canonical: `https://rinkstop.com/ice-marketplace/${countrySlug}/${provinceSlug}/${citySlug}` },
-    robots: { index: true, follow: true },
+    robots: { index: listingsCount > 0, follow: true },
   };
 }
 
