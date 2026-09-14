@@ -9,7 +9,7 @@ const supabase = supabaseAdmin;
 export const metadata: Metadata = {
   title: 'Hockey News',
   description:
-    'Latest hockey news, trades, injuries, and scores from NHL and leagues worldwide.',
+    'Latest hockey news, trades, injuries, scores, and analysis from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF, and leagues worldwide — updated daily.',
   alternates: {
     canonical: 'https://rinkstop.com/news',
   },

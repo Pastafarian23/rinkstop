@@ -65,16 +65,23 @@ export async function generateMetadata({
   const hasContent = citySet.size > 0 && ((rinks || []).length + (teamTotal || 0)) > 0;
   const decision = { indexable: hasContent, reason: hasContent ? 'has content' : 'empty', uniquenessScore: hasContent ? 50 : 0 };
 
+  // WS27 PR8 (2026-09-14): Bing flagged short meta descriptions. Enriched
+  // to include real counts (rink_count, team_count, city_count) so the
+  // description reaches 150+ chars and matches the city/state pattern.
+  const cityCount = citySet.size;
+  const rinkCount = (rinks || []).length;
+  const enrichedDesc = `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamTotal ?? 0} active teams. Browse junior, college, and amateur leagues — including the ${getProvinceHockeyFacts(resolved.abbr)?.chlTeams?.length ? 'CHL' : 'local'} programs.`;
+
   return {
     title: `Hockey in ${provinceName}`,
-    description: `Hockey teams, rinks, and cities in ${provinceName}, Canada. Browse local hockey listings in this province.`,
+    description: enrichedDesc,
     alternates: {
       canonical: `https://rinkstop.com/directory/canada/${resolved.slug}`,
     },
     robots: robotsMeta(decision),
     openGraph: withDefaultOg({
       title: `Hockey in ${provinceName}`,
-      description: `Hockey teams, rinks, and cities in ${provinceName}, Canada.`,
+      description: `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamTotal ?? 0} active teams.`,
       url: `https://rinkstop.com/directory/canada/${resolved.slug}`,
       siteName: 'RinkStop',
       type: 'website',
@@ -82,7 +89,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: `Hockey in ${provinceName}`,
-      description: `Hockey teams, rinks, and cities in ${provinceName}, Canada.`,
+      description: `Hockey in ${provinceName}: ${rinkCount} rinks across ${cityCount} cities, ${teamTotal ?? 0} active teams.`,
     },
   };
 }

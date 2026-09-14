@@ -6,7 +6,7 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
 export const metadata: Metadata = {
   title: 'Hockey Directory',
   description:
-    'Find hockey teams, players, leagues, rinks, and more from every corner of the globe.',
+    'Browse RinkStop's complete hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries. Search by name, league, country, or city.',
   alternates: {
     canonical: 'https://rinkstop.com/directory',
   },
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: withDefaultOg({
     title: 'Hockey Directory',
     description:
-      'Find hockey teams, players, leagues, rinks, and more from every corner of the globe.',
+      'Browse RinkStop's complete hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries.',
     url: 'https://rinkstop.com/directory',
     siteName: 'RinkStop',
     type: 'website',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Hockey Directory',
     description:
-      'Find hockey teams, players, leagues, rinks, and more from every corner of the globe.',
+      'Browse RinkStop's complete hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries.',
   },
 };
 
