@@ -7,7 +7,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
-  title: 'Pricing — RinkStop',
+  // WS27 PR1: opt out of root layout's title template (`%s | RinkStop`) so the
+  // rendered <title> is just `Pricing — RinkStop` instead of the prior
+  // `Pricing — RinkStop | RinkStop` duplication. Per-page absolute titles also
+  // avoid brand-spam flags in SERPs.
+  title: { absolute: 'Pricing — RinkStop' },
   description:
     'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
   alternates: { canonical: 'https://rinkstop.com/pricing' },

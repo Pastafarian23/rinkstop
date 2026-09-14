@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Data Methodology — RinkStop',
+  // WS27 PR1: opt out of root layout's title template to prevent
+  // `Data Methodology — RinkStop | RinkStop` (brand duplication in SERPs).
+  title: { absolute: 'Data Methodology — RinkStop' },
   description: 'How RinkStop sources, verifies, updates, and corrects the directory data for rinks, teams, players, and leagues.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://rinkstop.com/data-methodology' },

@@ -43,9 +43,12 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     // fall through with zeros
   }
-  const desc = `RinkStop lists every public rink, arena, and ice facility we can verify -- searchable by city, country, and league. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues.`;
+  const desc = `RinkStop lists every public rink, arena, and ice facility we can verify — searchable by city, country, and league. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues.`;
   return {
-    title: 'RinkStop -- The Global Hockey Directory',
+    // WS27 PR2: em-dash instead of `--` in title (same anti-pattern WS26 fixed
+    // across city/state/league pages but missed on the homepage — the most
+    // visible page in SERPs).
+    title: 'RinkStop — The Global Hockey Directory',
     description: desc,
     keywords: [
       'hockey directory',
@@ -62,7 +65,7 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: 'https://rinkstop.com/' },
     robots: { index: true, follow: true },
     openGraph: {
-      title: 'RinkStop -- The World’s Hockey Directory',
+      title: 'RinkStop — The World’s Hockey Directory',
       description: desc,
       url: 'https://rinkstop.com/',
       siteName: 'RinkStop',
@@ -73,13 +76,13 @@ export async function generateMetadata(): Promise<Metadata> {
           url: 'https://rinkstop.com/og-image.png',
           width: 1200,
           height: 630,
-          alt: 'RinkStop -- The World’s Hockey Directory',
+          alt: 'RinkStop — The World’s Hockey Directory',
         },
       ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'RinkStop -- The World’s Hockey Directory',
+      title: 'RinkStop — The World’s Hockey Directory',
       description: desc,
       images: ['https://rinkstop.com/og-image.png'],
     },
