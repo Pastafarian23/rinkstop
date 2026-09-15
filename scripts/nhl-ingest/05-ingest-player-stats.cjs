@@ -53,6 +53,7 @@ function mapSkater(r) {
     plus_minus: r.plusMinus,
     penalty_minutes: r.penaltyMinutes,
     additional_stats: {
+      entity_type: 'skater',
       player_id: r.playerId,
       team_abbrevs: r.teamAbbrevs,
       position_code: r.positionCode,
@@ -102,6 +103,7 @@ function mapGoalie(r) {
     penalty_minutes: r.penaltyMinutes,
     points: r.points,
     additional_stats: {
+      entity_type: 'goalie',
       player_id: r.playerId,
       team_abbrevs: r.teamAbbrevs,
       shoots_catches: r.shootsCatches,
