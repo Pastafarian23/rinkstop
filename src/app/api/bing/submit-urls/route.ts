@@ -20,6 +20,7 @@
 // the GitHub Action ping-search-engines.yml after every push.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { trackEvent } from '@/lib/analytics';
 
 const BING_API_KEY = process.env.BING_API_KEY;
 const BING_SITE_URL = process.env.BING_SITE_URL || 'https://rinkstop.com';
@@ -97,6 +98,24 @@ export async function POST(request: NextRequest) {
     const result = await submitBatch(batch);
     totalSubmitted += result.submitted;
     results.push({ batchSize: batch.length, ...result });
+  }
+
+  // WS29 — track Bing submission results server-side for analytics.
+  // Best-effort; never throws.
+  try {
+    await trackEvent({
+      name: 'bing_submission_completed',
+      pathname: '/api/bing/submit-urls',
+      props: {
+        total_urls: uniqueUrls.length,
+        total_submitted: totalSubmitted,
+        batches_submitted: batches.length,
+        batch_results: JSON.stringify(results),
+        content_type: 'seo_automation',
+      },
+    });
+  } catch {
+    /* swallow — analytics is best-effort */
   }
 
   return NextResponse.json({

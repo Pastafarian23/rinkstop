@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getBrandBySlug, getBrandSlugs } from '@/lib/gear-brand-data';
+import { trackEvent } from '@/lib/analytics';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export function generateStaticParams() {
@@ -51,6 +52,24 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
   if (!brand) {
     notFound();
   }
+
+  // WS29 — track gear-brand page views for AI-citation measurement.
+  // Captures whether the visitor was an AI bot (most likely case for
+  // brand pages), plus content fingerprinting (categories covered,
+  // FAQ count) for funnel analysis.
+  await trackEvent({
+    name: 'gear_brand_page_viewed',
+    pathname: `/gear-brands/${slug}`,
+    props: {
+      brand_slug: slug,
+      brand_name: brand.name,
+      category_count: brand.categories.length,
+      flagship_product_count: brand.flagshipProducts.length,
+      notable_athlete_count: brand.notableAthletes.length,
+      faq_count: brand.faq.length,
+      content_type: 'brand',
+    },
+  });
 
   const faqSchema = {
     '@context': 'https://schema.org',

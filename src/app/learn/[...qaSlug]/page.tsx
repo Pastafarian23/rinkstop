@@ -20,8 +20,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { generateQAPages, findQAPage, type QAPageConfig } from '@/lib/qa-content-generator';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { trackEvent } from '@/lib/analytics';
+import QaEngagementTracker from '@/components/QaEngagementTracker';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -132,6 +135,40 @@ export default async function QAPage({ params }: { params: Promise<{ qaSlug: str
   const page = await findQAPage(slug);
   if (!page) notFound();
 
+  // WS29 GA — track Q&A page views + classify by type for GA4 funnel analysis.
+  // Server-side fire (not client) so the event captures the bot/AI crawler
+  // request that initiated the view, not a subsequent human navigation.
+  // Captures: content_type, page_purpose, has_faq_schema, has_image_object,
+  // data_provenance_shown, short_answer_words, page_type.
+  const h = await headers();
+  const referer = h.get('referer') ?? null;
+  const ua = h.get('user-agent') ?? null;
+  const isAiBot = /\b(GPTBot|ChatGPT-User|ClaudeBot|Claude-User|PerplexityBot|Perplexity-User|Google-Extended|Applebot-Extended|cohere-ai|Bytespider)\b/i.test(ua ?? '');
+  const shortAnsWords = page.short_answer.split(/\s+/).filter(Boolean).length;
+  await trackEvent({
+    name: 'qa_page_viewed',
+    pathname: page.url_path,
+    referrer: referer,
+    props: {
+      slug: page.slug,
+      page_type: page.slug.startsWith('hockey-in-')
+        ? (page.slug.includes('us-state') ? 'state' : page.slug.includes('canadian-province') ? 'province' : 'country')
+        : page.slug.endsWith('-teams')
+          ? 'league'
+          : page.slug.startsWith('hockey-rinks-in-')
+            ? 'city'
+            : 'other',
+      is_ai_bot: isAiBot,
+      short_answer_words: shortAnsWords,
+      has_faq_schema: true,
+      has_data_provenance: true,
+      data_source_count: page.data_sources.length,
+      faq_count: page.faqs.length,
+      related_url_count: page.related_urls.length,
+      content_type: 'qa',
+    },
+  });
+
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -162,6 +199,7 @@ export default async function QAPage({ params }: { params: Promise<{ qaSlug: str
       </h1>
 
       <div
+        data-qa-answer-capsule
         style={{
           background: 'linear-gradient(135deg, #0d2137 0%, #061424 100%)',
           border: '1px solid rgba(74,144,217,0.3)',
@@ -207,6 +245,7 @@ export default async function QAPage({ params }: { params: Promise<{ qaSlug: str
       </section>
 
       <section
+        data-qa-provenance
         style={{
           marginTop: '1.5rem',
           padding: '1rem 1.25rem',
@@ -234,7 +273,7 @@ export default async function QAPage({ params }: { params: Promise<{ qaSlug: str
         </div>
       </section>
 
-      <section style={{ marginTop: '2rem' }}>
+      <section data-qa-related style={{ marginTop: '2rem' }}>
         <h3 style={{ fontSize: '1rem', color: '#fff', fontWeight: 700, marginBottom: '0.75rem' }}>
           Continue exploring
         </h3>
@@ -259,6 +298,23 @@ export default async function QAPage({ params }: { params: Promise<{ qaSlug: str
           ))}
         </div>
       </section>
+
+      {/* WS29 — client-side engagement tracker. Fires GA4 + custom analytics
+          for: FAQ expand, answer copy, related-URL click, data-provenance
+          visibility. Server-side `qa_page_viewed` already fires above. */}
+      <QaEngagementTracker
+        slug={page.slug}
+        pageType={
+          page.slug.startsWith('hockey-in-')
+            ? (page.slug.includes('us-state') ? 'state' : page.slug.includes('canadian-province') ? 'province' : 'country')
+            : page.slug.endsWith('-teams')
+              ? 'league'
+              : page.slug.startsWith('hockey-rinks-in-')
+                ? 'city'
+                : 'other'
+        }
+        relatedUrls={page.related_urls.map((r) => r.url)}
+      />
     </main>
   );
 }

@@ -54,6 +54,22 @@ export async function POST(req: NextRequest) {
     'add_listing_submitted',
     'add_listing_no_match_cta_click',
     'search_query',
+    // WS29 — Q&A engagement events (PR1)
+    'qa_page_viewed',
+    'qa_faq_expanded',
+    'qa_answer_copied',
+    'qa_related_clicked',
+    'qa_data_prov_visible',
+    // WS29 — Dataset endpoint events (PR2)
+    'dataset_endpoint_hit',
+    'dataset_entity_queried',
+    // WS29 — Brand + gear page events (PR3)
+    'gear_brand_page_viewed',
+    'gear_brand_engaged',
+    // WS29 — Bing + indexnow + sitemap events (PR4)
+    'bing_submission_completed',
+    'indexnow_submission_completed',
+    'sitemap_submitted',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });
