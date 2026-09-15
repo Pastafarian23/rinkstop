@@ -150,6 +150,38 @@ function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+// US state abbrev → full name (for "Hockey in Minnesota" instead of "Hockey in MN")
+const US_STATE_ABBR_TO_NAME: Record<string, string> = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
+  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri',
+  MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio',
+  OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
+  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+};
+
+function displayStateName(s: string): string {
+  // If already a full name (no spaces after first word and length > 3), return as-is
+  // Otherwise look up abbreviation
+  return US_STATE_ABBR_TO_NAME[s] || s;
+}
+
+// Canadian province abbrev → full name (Ontario, not ON)
+const CA_PROVINCE_ABBR_TO_NAME: Record<string, string> = {
+  AB: 'Alberta', BC: 'British Columbia', MB: 'Manitoba', NB: 'New Brunswick',
+  NL: 'Newfoundland and Labrador', NS: 'Nova Scotia', NT: 'Northwest Territories',
+  NU: 'Nunavut', ON: 'Ontario', PE: 'Prince Edward Island', QC: 'Quebec',
+  SK: 'Saskatchewan', YT: 'Yukon',
+};
+
+function displayProvinceName(s: string): string {
+  return CA_PROVINCE_ABBR_TO_NAME[s] || s;
+}
+
 export async function generateQAPages(): Promise<QAPageConfig[]> {
   const data = await getCache();
   const pages: QAPageConfig[] = [];
@@ -306,31 +338,32 @@ Several hockey teams use ${city.city} rinks as home arenas. Browse the team dire
     const usStates = usCountry.states.filter((s) => s.rinkCount >= 3).slice(0, 60);
     for (const state of usStates) {
       const stateSlug = slugify(state.name);
+      const stateName = displayStateName(state.name);
       const pageSlug = `hockey-in-${stateSlug}-us-state`;
       const page: QAPageConfig = {
         slug: pageSlug,
         url_path: `/learn/hockey-in/${stateSlug}-us-state`,
-        question: `Hockey in ${state.name} — rinks, teams, and leagues`,
-        short_answer: `${state.name} has ${state.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop. The state fields professional, junior, college (NCAA D1/D3), high school, and youth hockey programs. NCAA programs include major college hockey teams; amateur leagues operate through USA Hockey affiliates.`,
-        full_answer_md: `Hockey in ${state.name} is played at every competitive level — from professional franchises down to youth leagues.
+        question: `Hockey in ${stateName} — rinks, teams, and leagues`,
+        short_answer: `${stateName} has ${state.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop. The state fields professional, junior, college (NCAA D1/D3), high school, and youth hockey programs. NCAA programs include major college hockey teams; amateur leagues operate through USA Hockey affiliates.`,
+        full_answer_md: `Hockey in ${stateName} is played at every competitive level — from professional franchises down to youth leagues.
 
-## Rinks in ${state.name}
+## Rinks in ${stateName}
 
-RinkStop tracks **${state.rinkCount.toLocaleString()} active ice rinks** in ${state.name}.
+RinkStop tracks **${state.rinkCount.toLocaleString()} active ice rinks** in ${stateName}.
 
-[Browse all ${state.name} rinks →](/directory/united-states/${stateSlug})
+[Browse all ${stateName} rinks →](/directory/united-states/${stateSlug})
 
 ## College + amateur hockey
 
-${state.name} hosts NCAA Division I and/or III programs (depending on the school). USA Hockey administers amateur hockey across the state through designated affiliates.
+${stateName} hosts NCAA Division I and/or III programs (depending on the school). USA Hockey administers amateur hockey across the state through designated affiliates.
 
-[Browse USA Hockey ${state.name} →](https://www.usahockey.com/)
+[Browse USA Hockey ${stateName} →](https://www.usahockey.com/)
 
 ## Youth + recreational
 
-Hockey at the youth level is organized through USA Hockey's affiliate in ${state.name}, plus local recreation departments.`,
+Hockey at the youth level is organized through USA Hockey's affiliate in ${stateName}, plus local recreation departments.`,
         related_urls: [
-          { label: `${state.name} rinks`, url: `/directory/united-states/${stateSlug}` },
+          { label: `${stateName} rinks`, url: `/directory/united-states/${stateSlug}` },
           { label: `US hockey directory`, url: '/directory/united-states' },
           { label: `Hockey leagues`, url: '/directory/leagues' },
         ],
@@ -338,12 +371,12 @@ Hockey at the youth level is organized through USA Hockey's affiliate in ${state
           { source: 'rinks table (province_state match, is_active=true)', count: state.rinkCount },
         ],
         faqs: [
-          { q: `How many ice rinks are in ${state.name}?`, a: `RinkStop tracks ${state.rinkCount.toLocaleString()} active ice rinks in ${state.name}.` },
-          { q: `Does ${state.name} have professional hockey?`, a: `${state.name} may host professional teams depending on NHL/AHL/ECHL affiliation. Browse the league directory at /directory/leagues for current affiliations.` },
-          { q: `Does ${state.name} have college hockey?`, a: `Most US states with multiple rinks have at least one NCAA hockey program. Browse /directory/college for NCAA D1/D3 programs.` },
+          { q: `How many ice rinks are in ${stateName}?`, a: `RinkStop tracks ${state.rinkCount.toLocaleString()} active ice rinks in ${stateName}.` },
+          { q: `Does ${stateName} have professional hockey?`, a: `${stateName} may host professional teams depending on NHL/AHL/ECHL affiliation. Browse the league directory at /directory/leagues for current affiliations.` },
+          { q: `Does ${stateName} have college hockey?`, a: `Most US states with multiple rinks have at least one NCAA hockey program. Browse /directory/college for NCAA D1/D3 programs.` },
         ],
-        meta_description: `Hockey in ${state.name}: ${state.rinkCount.toLocaleString()} ice rinks, NCAA + amateur + youth leagues. Data from RinkStop's directory.`,
-        og_title: `Hockey in ${state.name} — ${state.rinkCount.toLocaleString()} rinks, NCAA + amateur leagues`,
+        meta_description: `Hockey in ${stateName}: ${state.rinkCount.toLocaleString()} ice rinks, NCAA + amateur + youth leagues. Data from RinkStop's directory.`,
+        og_title: `Hockey in ${stateName} — ${state.rinkCount.toLocaleString()} rinks, NCAA + amateur leagues`,
       };
       pages.push(page);
     }
@@ -355,31 +388,32 @@ Hockey at the youth level is organized through USA Hockey's affiliate in ${state
     const caProvinces = caCountry.states.filter((s) => s.rinkCount >= 2).slice(0, 20);
     for (const province of caProvinces) {
       const provinceSlug = slugify(province.name);
+      const provinceName = displayProvinceName(province.name);
       const pageSlug = `hockey-in-${provinceSlug}-canadian-province`;
       const page: QAPageConfig = {
         slug: pageSlug,
         url_path: `/learn/hockey-in/${provinceSlug}-canadian-province`,
-        question: `Hockey in ${province.name}, Canada — rinks and leagues`,
-        short_answer: `${province.name} has ${province.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop. The province fields CHL major-junior teams, U Sports university programs, AAA minor hockey, and recreational leagues under Hockey Canada governance.`,
-        full_answer_md: `Hockey in ${province.name} operates under Hockey Canada governance with regional branch offices.
+        question: `Hockey in ${provinceName}, Canada — rinks and leagues`,
+        short_answer: `${provinceName} has ${province.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop. The province fields CHL major-junior teams, U Sports university programs, AAA minor hockey, and recreational leagues under Hockey Canada governance.`,
+        full_answer_md: `Hockey in ${provinceName} operates under Hockey Canada governance with regional branch offices.
 
-## Rinks in ${province.name}
+## Rinks in ${provinceName}
 
-RinkStop tracks **${province.rinkCount.toLocaleString()} active ice rinks** in ${province.name}.
+RinkStop tracks **${province.rinkCount.toLocaleString()} active ice rinks** in ${provinceName}.
 
-[Browse all ${province.name} rinks →](/directory/canada/${provinceSlug})
+[Browse all ${provinceName} rinks →](/directory/canada/${provinceSlug})
 
 ## Junior + university hockey
 
-${province.name} typically hosts CHL teams (OHL, WHL, or QMJHL depending on region) and U Sports university programs.
+${provinceName} typically hosts CHL teams (OHL, WHL, or QMJHL depending on region) and U Sports university programs.
 
 [Browse Canadian hockey leagues →](/directory/leagues)
 
 ## Minor hockey
 
-Hockey Canada runs minor hockey associations across ${province.name} at AAA, AA, A, B, and recreational tiers.`,
+Hockey Canada runs minor hockey associations across ${provinceName} at AAA, AA, A, B, and recreational tiers.`,
         related_urls: [
-          { label: `${province.name} rinks`, url: `/directory/canada/${provinceSlug}` },
+          { label: `${provinceName} rinks`, url: `/directory/canada/${provinceSlug}` },
           { label: `Canadian hockey directory`, url: '/directory/canada' },
           { label: `Hockey leagues`, url: '/directory/leagues' },
         ],
@@ -387,12 +421,12 @@ Hockey Canada runs minor hockey associations across ${province.name} at AAA, AA,
           { source: 'rinks table (province_state match, is_active=true)', count: province.rinkCount },
         ],
         faqs: [
-          { q: `How many ice rinks are in ${province.name}?`, a: `RinkStop tracks ${province.rinkCount.toLocaleString()} active ice rinks in ${province.name}, Canada.` },
-          { q: `Does ${province.name} have a CHL team?`, a: `${province.name} may host CHL teams depending on the region. Browse the leagues directory for current affiliations.` },
-          { q: `What is the main junior league in ${province.name}?`, a: `${province.name} typically has WHL (Western), OHL (Ontario), or QMJHL (Quebec) teams, plus U Sports university hockey.` },
+          { q: `How many ice rinks are in ${provinceName}?`, a: `RinkStop tracks ${province.rinkCount.toLocaleString()} active ice rinks in ${provinceName}, Canada.` },
+          { q: `Does ${provinceName} have a CHL team?`, a: `${provinceName} may host CHL teams depending on the region. Browse the leagues directory for current affiliations.` },
+          { q: `What is the main junior league in ${provinceName}?`, a: `${provinceName} typically has WHL (Western), OHL (Ontario), or QMJHL (Quebec) teams, plus U Sports university hockey.` },
         ],
-        meta_description: `Hockey in ${province.name}: ${province.rinkCount.toLocaleString()} ice rinks, CHL + U Sports + minor hockey. Data from RinkStop's directory.`,
-        og_title: `Hockey in ${province.name} — ${province.rinkCount.toLocaleString()} rinks, CHL + U Sports`,
+        meta_description: `Hockey in ${provinceName}: ${province.rinkCount.toLocaleString()} ice rinks, CHL + U Sports + minor hockey. Data from RinkStop's directory.`,
+        og_title: `Hockey in ${provinceName} — ${province.rinkCount.toLocaleString()} rinks, CHL + U Sports`,
       };
       pages.push(page);
     }
