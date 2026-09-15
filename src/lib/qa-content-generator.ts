@@ -281,9 +281,7 @@ You can follow ${l.name} on RinkStop to get notifications about scores, trades, 
 
 ## Local hockey teams
 
-Several hockey teams use ${city.city} rinks as home arenas. Browse the team directory to see which teams play where.
-
-[Browse all ${city.city} rinks →](/directory/${countrySlug}/cities/${citySlug})",
+Several hockey teams use ${city.city} rinks as home arenas. Browse the team directory to see which teams play where.`,
       related_urls: [
         { label: `${city.city} rinks`, url: `/directory/${countrySlug}/cities/${citySlug}` },
         { label: 'All hockey rinks', url: '/directory/rinks' },
