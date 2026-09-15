@@ -278,36 +278,12 @@ You can follow ${l.name} on RinkStop to get notifications about scores, trades, 
 ## List of rinks in ${city.city}
 
 [Browse all ${city.city} rinks →](/directory/${countrySlug}/cities/${citySlug})
-  for (const city of topCities) {
-    const citySlug = slugify(city.city);
-    const countrySlug = slugify(city.country);
-    // Slug matches URL /learn/hockey-rinks-in/{city-slug}-{country-slug},
-    // joined by the route as 'hockey-rinks-in-{city-slug}-{country-slug}'.
-    const pageSlug = `hockey-rinks-in-${citySlug}-${countrySlug}`;
-    const page: QAPageConfig = {
-      slug: pageSlug,
-      url_path: `/learn/hockey-rinks-in/${citySlug}-${countrySlug}`,
-      question: `Ice rinks in ${city.city}, ${city.country}`,
-      short_answer: `RinkStop tracks ${city.rinkCount.toLocaleString()} ice rinks in ${city.city}, ${city.country}. These include professional arenas, community rinks, and public skating facilities. Each rink has a profile with address, hours, programs, and contact info.`,
-      full_answer_md: `There are **${city.rinkCount.toLocaleString()} ice rinks** in ${city.city}, ${city.country} tracked by RinkStop.
-
-## List of rinks in ${city.city}
-
-[Browse all ${city.city} rinks →](/directory/${countrySlug}/cities/${citySlug})
-
-## Programs offered
-
-Rinks in ${city.city} typically offer:
-- Public skating sessions
-- Learn-to-skate and learn-to-play programs
-- Youth hockey leagues
-- Adult recreational hockey
-- Figure skating
-- Hockey schools and clinics
 
 ## Local hockey teams
 
-Several hockey teams use ${city.city} rinks as home arenas. Browse the team directory to see which teams play where.`,
+Several hockey teams use ${city.city} rinks as home arenas. Browse the team directory to see which teams play where.
+
+[Browse all ${city.city} rinks →](/directory/${countrySlug}/cities/${citySlug})",
       related_urls: [
         { label: `${city.city} rinks`, url: `/directory/${countrySlug}/cities/${citySlug}` },
         { label: 'All hockey rinks', url: '/directory/rinks' },
@@ -322,7 +298,7 @@ Several hockey teams use ${city.city} rinks as home arenas. Browse the team dire
       ],
       meta_description: `${city.rinkCount.toLocaleString()} ice rinks in ${city.city}, ${city.country} — addresses, hours, programs, and contact info.`,
       og_title: `Ice rinks in ${city.city} — ${city.rinkCount.toLocaleString()} active facilities`,
-    };
+    });
     pages.push(page);
   }
 
