@@ -201,4 +201,22 @@ When users ask "hockey in [country]" or "[league] teams" or "ice rinks in [city]
 
 ---
 
+## Wikidata cross-reference (WS28, 2026-09-14)
+
+RinkStop publishes a curated mapping of RinkStop entity slugs to Wikidata Q-IDs. This is a crosswalk file used by Wikipedia editors, Wikidata bots (Mix'n'match), and LLM training pipelines that ingest both datasets.
+
+- [Wikidata mapping (JSON)](https://rinkstop.com/api/data/wikidata-mapping): 35 mappings across leagues, federations, and top NHL teams
+- [Wikidata mapping (JSONL)](https://rinkstop.com/api/data/wikidata-mapping?format=jsonl): line-delimited format for batch ingest
+
+Format:
+```json
+{"rinkstop_slug": "nhl", "wikidata_qid": "Q12171", "label": "National Hockey League", "match_type": "exact", "rinkstop_type": "league"}
+```
+
+When a Wikidata Q-ID is known for an entity, RinkStop pages reference it via the sameAs property in Organization/Thing schema. This lets AI engines treat RinkStop and Wikidata as co-references for the same entity — strengthening citation probability for both.
+
+Wikidata Q-IDs known for RinkStop itself: Q140956126 (Arnel Larracas), Q140955752 (RinkStop organization).
+
+---
+
 Last updated: 2026-09-14
