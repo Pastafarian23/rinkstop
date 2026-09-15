@@ -41,6 +41,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { trackEvent } from '@/lib/analytics';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -225,6 +226,40 @@ export async function GET(request: NextRequest) {
     if (rows.length === 0) {
       console.warn(`[data/dataset] ${e} returned 0 rows`);
     }
+  }
+
+  // WS29 — fire GA4 + custom analytics events for dataset endpoint hits.
+  // Captures which entities + formats are most-requested by AI agents /
+  // researchers / journalists. Best-effort, never throws.
+  try {
+    const ua = request.headers.get('user-agent') ?? null;
+    const isLikelyAi = /\b(GPTBot|ClaudeBot|PerplexityBot|Perplexity-User|Google-Extended|Applebot-Extended|cohere-ai|HuggingFace-DataServer|datasets-server)\b/i.test(ua ?? '');
+    await trackEvent({
+      name: 'dataset_endpoint_hit',
+      pathname: '/api/data/dataset',
+      referrer: request.headers.get('referer'),
+      props: {
+        format,
+        entities: entities.join(','),
+        total_records: totalCount,
+        is_likely_ai_caller: isLikelyAi,
+        content_type: 'dataset_api',
+      },
+    });
+    for (const e of entities) {
+      await trackEvent({
+        name: 'dataset_entity_queried',
+        pathname: '/api/data/dataset',
+        props: {
+          entity: e,
+          format,
+          row_count: data[e].length,
+          content_type: 'dataset_api',
+        },
+      });
+    }
+  } catch {
+    /* swallow — analytics is best-effort */
   }
 
   const generatedAt = new Date().toISOString();

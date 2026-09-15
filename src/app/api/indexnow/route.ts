@@ -18,6 +18,7 @@
 import { NextResponse } from 'next/server';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { trackEvent } from '@/lib/analytics';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -162,6 +163,26 @@ export async function POST(request: Request) {
   }
 
   result.durationMs = Date.now() - start;
+
+  // WS29 — track IndexNow submission results server-side.
+  try {
+    await trackEvent({
+      name: 'indexnow_submission_completed',
+      pathname: '/api/indexnow',
+      props: {
+        total_urls: result.totalUrls,
+        batches_submitted: result.batchesSubmitted,
+        accepted: result.accepted,
+        failed: result.failed,
+        duration_ms: result.durationMs,
+        error_count: result.errors?.length ?? 0,
+        content_type: 'seo_automation',
+      },
+    });
+  } catch {
+    /* swallow */
+  }
+
   return NextResponse.json({ ok: result.failed === 0, ...result }, { status: 200 });
 }
 
