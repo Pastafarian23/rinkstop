@@ -296,7 +296,7 @@ Several hockey teams use ${city.city} rinks as home arenas. Browse the team dire
       ],
       meta_description: `${city.rinkCount.toLocaleString()} ice rinks in ${city.city}, ${city.country} — addresses, hours, programs, and contact info.`,
       og_title: `Ice rinks in ${city.city} — ${city.rinkCount.toLocaleString()} active facilities`,
-    });
+    };
     pages.push(page);
   }
 
