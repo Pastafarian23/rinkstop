@@ -477,7 +477,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       // a literal field on openGraph. Conditional spread loses the array
       // during Next.js 15 metadata serialization.
       images: (rink as any).cover_photo_url
-        ? [{ url: (rink as any).cover_photo_url, width: 1200, height: 800, alt: `${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}` }]
+        ? [
+            {
+              url: (rink as any).cover_photo_url,
+              width: 1200,
+              height: 800,
+              alt: `${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}`,
+              type: 'image/jpeg',
+            },
+          ]
         : [],
     },
     twitter: {
