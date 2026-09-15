@@ -85,8 +85,8 @@ async function fetchTeamRoster(triCode, seasonId = '20252026') {
   const url = `${NHL_COM_BASE}/roster/${triCode}/${seasonId}`;
   const data = await fetchWithBackoff(url);
   return {
-    forwards: data.forward || [],
-    defensemen: data.defense || [],
+    forwards: data.forwards || [],
+    defensemen: data.defensemen || [],
     goalies: data.goalies || [],
     bench: data.bench || [],
   };
