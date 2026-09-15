@@ -9,7 +9,7 @@ export async function GET() {
   // Just return slugs
   return NextResponse.json({
     total: pages.length,
-    sample: pages.slice(0, 20).map((p) => ({ slug: p.slug, url: p.url_path })),
+    sample: pages.map((p) => ({ slug: p.slug, url: p.url_path })),
     by_type: {
       country: pages.filter((p) => p.slug.startsWith('hockey-in-')).length,
       league: pages.filter((p) => p.slug.endsWith('-teams')).length,
