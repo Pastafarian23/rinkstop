@@ -47,11 +47,11 @@ export const runtime = 'nodejs';
 export const revalidate = 3600; // 1 hour — data changes as users add listings
 
 const ENTITY_TABLES = {
-  rinks: { table: 'rinks', select: 'id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, status, is_active, qr_identifier, timezone, source, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
-  teams: { table: 'team_workspaces', select: 'id, name, slug, country_code, province_state, home_city, league_id, level, is_active, claimed_by_tier, avatar_url, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
-  leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
-  players: { table: 'players', select: 'id, full_name, slug, position, team_workspace_id, country_code, birthdate, height_cm, weight_kg, shoots, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
-  federations: { table: 'federations', select: 'id, name, slug, country, country_code, website_url, iihf_member_since, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  rinks: { table: 'rinks', select: 'id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, status, timezone, source, verification_tier, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  players: { table: 'players', select: 'id, first_name, last_name, slug, position, primary_position_category, team_id, nationality, birth_date, height_cm, weight_kg, shoots, catches, jersey_number, headshot_url, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  federations: { table: 'federations', select: 'id, name, slug, country_code, kind, category, website_url, logo_url, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
 } as const;
 
 type EntityKey = keyof typeof ENTITY_TABLES;
