@@ -48,8 +48,8 @@ export const revalidate = 3600; // 1 hour — data changes as users add listings
 
 const ENTITY_TABLES = {
   rinks: { table: 'rinks', select: 'id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, status, timezone, source, verification_tier, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
-  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
-  leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  teams: { table: 'team_workspaces', select: 'id, name, slug, short_name, country_code, home_country, home_state, home_city, league_id, level, age_category, founded_on, visibility, website_url, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
+  leagues: { table: 'leagues', select: 'id, name, slug, description, country, level, logo_url, website_url, federation_id, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   players: { table: 'players', select: 'id, first_name, last_name, slug, position, primary_position_category, team_id, nationality, birth_date, height_cm, weight_kg, shoots, catches, jersey_number, headshot_url, claimable, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
   federations: { table: 'federations', select: 'id, name, slug, country_code, kind, category, website_url, logo_url, is_active, created_at, updated_at', filter: 'is_active', pageSize: 1000 },
 } as const;
@@ -219,8 +219,12 @@ export async function GET(request: NextRequest) {
   const data: Record<string, any[]> = {};
   let totalCount = 0;
   for (const e of entities) {
-    data[e] = await fetchEntity(e);
-    totalCount += data[e].length;
+    const rows = await fetchEntity(e);
+    data[e] = rows;
+    totalCount += rows.length;
+    if (rows.length === 0) {
+      console.warn(`[data/dataset] ${e} returned 0 rows`);
+    }
   }
 
   const generatedAt = new Date().toISOString();
