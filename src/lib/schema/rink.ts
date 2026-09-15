@@ -237,8 +237,21 @@ export function buildRinkSchema(
     name: rink.name,
     description,
     url: rink.slug ? `${BASE_URL}/directory/rinks/${rink.slug}` : undefined,
+    // WS28 PR9 (2026-09-14): upgrade bare image URL to ImageObject[].
+    // Bing Image Search + Google AI Overviews prefer structured image
+    // objects (with width/height/alt) over bare URLs.
     ...(rink.cover_photo_url || rink.logo_url
-      ? { image: rink.cover_photo_url || rink.logo_url }
+      ? {
+          image: [
+            {
+              '@type': 'ImageObject',
+              url: rink.cover_photo_url || rink.logo_url,
+              width: 1200,
+              height: 800,
+              caption: `${rink.name} — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}`,
+            },
+          ],
+        }
       : {}),
     ...(rink.address
       ? {
@@ -303,7 +316,17 @@ export function buildRinkSchema(
         eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
         eventStatus: mapEventStatus(e.status),
         url: `${BASE_URL}/events/${e.slug}`,
-        ...(e.banner_image_url ? { image: e.banner_image_url } : {}),
+        ...(e.banner_image_url
+          ? {
+              image: [
+                {
+                  '@type': 'ImageObject',
+                  url: e.banner_image_url,
+                  caption: e.title,
+                },
+              ],
+            }
+          : {}),
         ...(e.description ? { description: e.description } : {}),
         location: {
           '@type': 'Place',
