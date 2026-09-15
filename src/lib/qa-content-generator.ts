@@ -118,8 +118,12 @@ export async function generateQAPages(): Promise<QAPageConfig[]> {
   // 1. Per-country Q&A: "Hockey in {country}"
   for (const c of data.countries.sort((a, b) => b.rinkCount - a.rinkCount)) {
     const slug = slugify(c.country);
+    // Page URL: /learn/hockey-in/{slug}
+    // The route joins path segments with '-' so findQAPage is called with
+    // 'hockey-in-{slug}'. Generate the slug to match.
+    const pageSlug = `hockey-in-${slug}`;
     const page: QAPageConfig = {
-      slug: `hockey-in-${slug}`,
+      slug: pageSlug,
       url_path: `/learn/hockey-in/${slug}`,
       question: `Hockey in ${c.country} — rinks, teams, and leagues`,
       short_answer: `${c.country} has ${c.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop. ${c.country} participates in professional leagues, ${c.country} national team programs compete in IIHF events, and recreational/youth hockey is played at every level. The exact rink and team counts below are pulled live from RinkStop's directory.`,
@@ -170,10 +174,16 @@ Hockey Canada, USA Hockey, and equivalent federations run development programs a
   }
 
   // 2. Per-league Q&A: "{league_name} teams" — top leagues by team count
-  const topLeagues = data.leagues.filter((l) => l.teamCount >= 3).slice(0, 80);
+  // Threshold lowered to 1 (was 3) — even single-team leagues warrant a Q&A page
+  // because they have a canonical URL structure (/directory/{slug}/teams) and
+  // AI engines look for "X teams" queries even when X is small.
+  const topLeagues = data.leagues.filter((l) => l.teamCount >= 1).slice(0, 150);
   for (const l of topLeagues) {
+    // Slug matches URL /learn/{league-slug}-teams, joined as
+    // '{league-slug}-teams' by the catch-all route.
+    const pageSlug = `${l.slug}-teams`;
     const page: QAPageConfig = {
-      slug: `${l.slug}-teams`,
+      slug: pageSlug,
       url_path: `/learn/${l.slug}-teams`,
       question: `${l.name} teams — full roster and profiles`,
       short_answer: `${l.name} currently has ${l.teamCount.toLocaleString()} active teams tracked by RinkStop. ${l.name} is a ${l.level} league operating in ${l.country}. Each team has a verified profile with roster, arena, schedule, and contact information.`,
@@ -216,8 +226,11 @@ You can follow ${l.name} on RinkStop to get notifications about scores, trades, 
   for (const city of topCities) {
     const citySlug = slugify(city.city);
     const countrySlug = slugify(city.country);
+    // Slug matches URL /learn/hockey-rinks-in/{city-slug}-{country-slug},
+    // joined by the route as 'hockey-rinks-in-{city-slug}-{country-slug}'.
+    const pageSlug = `hockey-rinks-in-${citySlug}-${countrySlug}`;
     const page: QAPageConfig = {
-      slug: `hockey-rinks-in-${citySlug}`,
+      slug: pageSlug,
       url_path: `/learn/hockey-rinks-in/${citySlug}-${countrySlug}`,
       question: `Ice rinks in ${city.city}, ${city.country}`,
       short_answer: `RinkStop tracks ${city.rinkCount.toLocaleString()} ice rinks in ${city.city}, ${city.country}. These include professional arenas, community rinks, and public skating facilities. Each rink has a profile with address, hours, programs, and contact info.`,
