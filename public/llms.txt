@@ -61,6 +61,11 @@ For a longer, more descriptive version with editorial highlights, founder bio, a
 - [Pricing](https://rinkstop.com/pricing): Hockey Passport ($24.99/yr), Hockey Passport Plus ($59.99/yr), Club tiers ($149-999/yr), Business tiers ($99-299/yr), League ($1,999/yr)
 - [Claim your listing](https://rinkstop.com/claim-your-listing): free claim for rinks, teams, players, leagues
 
+- [Structured dataset (JSON / JSONL / CSV)](https://rinkstop.com/api/data/dataset): 11,000+ records — rinks, teams, leagues, players, federations. AI-native format for training and citation
+- [Per-country Q&A (78 pages)](https://rinkstop.com/learn/hockey-in/canada): direct-answer pages for "hockey in [country]" queries, with live rink/team counts
+- [Per-league Q&A (150 pages)](https://rinkstop.com/learn/nhl-teams): direct-answer pages for "[league] teams" queries, with rosters
+- [Per-city Q&A (21 pages)](https://rinkstop.com/learn/hockey-rinks-in/toronto-canada): direct-answer pages for "ice rinks in [city]" queries
+
 ## Optional
 
 - [Sitemap index](https://rinkstop.com/sitemap.xml): full sitemap for crawler discovery
