@@ -42,8 +42,25 @@ let cache: DatasetCache | null = null;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 async function buildCache(): Promise<DatasetCache> {
-  // Aggregate rinks by country
-  const { data: rinks } = await supabaseAdmin.from('rinks').select('country, city').eq('is_active', true);
+  // Aggregate rinks by country (paginate — Supabase caps at 1000 per query)
+  const allRinks: any[] = [];
+  let rinkOffset = 0;
+  const rinkPageSize = 1000;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const client: any = supabaseAdmin;
+    const query: any = client.from('rinks').select('country, city').eq('is_active', true).range(rinkOffset, rinkOffset + rinkPageSize - 1);
+    const result: any = await query;
+    if (result?.error) {
+      console.error('rinks query error:', result.error.message);
+      break;
+    }
+    const rows: any[] = result?.data || [];
+    allRinks.push(...rows);
+    if (rows.length < rinkPageSize) break;
+    rinkOffset += rinkPageSize;
+  }
+  const rinks = allRinks;
   const countryRinks = new Map<string, { rinkCount: number; cities: Map<string, number> }>();
   for (const r of rinks || []) {
     if (!r.country) continue;
@@ -53,8 +70,25 @@ async function buildCache(): Promise<DatasetCache> {
     if (r.city) c.cities.set(r.city, (c.cities.get(r.city) || 0) + 1);
   }
 
-  // Aggregate teams by country
-  const { data: teams } = await supabaseAdmin.from('team_workspaces').select('country_code, league_id').eq('is_active', true);
+  // Aggregate teams by country (paginate)
+  const allTeams: any[] = [];
+  let teamOffset = 0;
+  const teamPageSize = 1000;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const client: any = supabaseAdmin;
+    const query: any = client.from('team_workspaces').select('country_code, league_id').eq('is_active', true).range(teamOffset, teamOffset + teamPageSize - 1);
+    const result: any = await query;
+    if (result?.error) {
+      console.error('teams query error:', result.error.message);
+      break;
+    }
+    const rows: any[] = result?.data || [];
+    allTeams.push(...rows);
+    if (rows.length < teamPageSize) break;
+    teamOffset += teamPageSize;
+  }
+  const teams = allTeams;
   const countryTeams = new Map<string, number>();
   for (const t of teams || []) {
     if (!t.country_code) continue;
