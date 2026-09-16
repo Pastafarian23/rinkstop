@@ -249,7 +249,9 @@ function verifyClaims(claims, boxscore) {
 // --- boxscore fetchers ---
 
 async function fetchNhlBoxscore(slug) {
-  const m = slug?.match(/(\d{10})$/);
+  // Match 10-digit NHL game id, allowing for trailing hash suffix
+  // e.g. "...-2025030123-834ec0" → game_id = "2025030123"
+  const m = slug?.match(/-(\d{10})(?:-[a-f0-9]+)?\$/);
   if (!m) return null;
   const gameId = m[1];
   try {
@@ -267,13 +269,19 @@ async function fetchHockeyTechBoxscore(leagueId, gameDate, title) {
     'b05d6d26-d5d6-4cfd-a48b-f5646fa7d611': { clientCode: 'ahl',   key: '50c2cd9b5e18e390' },
     '46f49db9-e63d-407d-a99c-802f87576ab2': { clientCode: 'whl',   key: 'f1aa699db3d81487' },
     'deb6816a-ccaf-48bf-9f5e-5a7c3387f922': { clientCode: 'lhjmq', key: 'f1aa699db3d81487' },
+    'd767362d-c13b-4c7a-8c8c-27ec33990882': { clientCode: 'ohl',   key: 'f1aa699db3d81487' }, // OHL
+    '85e8e902-441c-4102-b111-5a37f0350484': { clientCode: 'echl',  key: '2c2b89ea7345cae8' }, // ECHL
+    'cf714ebc-0631-4ad9-b3e7-3822372be945': { clientCode: 'echl',  key: '2c2b89ea7345cae8' }, // ECHL (alt)
   };
   const cfg = leagueMap[leagueId];
   if (!cfg) return null;
 
-  // Fetch multiple seasons to cover playoffs
+  // Fetch multiple seasons to cover playoffs.
+  // WHL uses 3-digit season IDs (285-295); AHL/OHL/QMJHL/ECHL use 2-digit (76-95).
+  // Fetch both ranges to be safe across leagues.
   const allGames = new Map();
-  for (const sid of [285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295]) {
+  const seasonIds = [76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295];
+  for (const sid of seasonIds) {
     try {
       const r = await fetch(`https://lscluster.hockeytech.com/feed/?feed=modulekit&view=schedule&key=${cfg.key}&client_code=${cfg.clientCode}&fmt=json&lang=en&season_id=${sid}`);
       if (r.ok) {
@@ -330,8 +338,25 @@ function extractTeamsFromTitle(title) {
   return [m[1].replace(/^\*\*/, '').trim(), m[2].trim()];
 }
 
+// Cache for team→league lookups (avoids hitting DB for every article)
+const teamLeagueCache = new Map();
+async function lookupTeamLeague(teamId) {
+  if (teamLeagueCache.has(teamId)) return teamLeagueCache.get(teamId);
+  const { data } = await supabase
+    .from('teams')
+    .select('league_id, leagues(name)')
+    .eq('id', teamId)
+    .single();
+  const result = data?.league_id || null;
+  teamLeagueCache.set(teamId, result);
+  return result;
+}
+
 async function fetchBoxscore(article) {
-  const leagueId = article.league_id;
+  let leagueId = article.league_id;
+  if (!leagueId && article.team_home_id) {
+    leagueId = await lookupTeamLeague(article.team_home_id);
+  }
   if (leagueId === '2b5f2b9d-84b9-4edb-8373-a732b72f4e40') {
     return fetchNhlBoxscore(article.slug);
   }
