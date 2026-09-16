@@ -80,16 +80,29 @@ function extractClaims(article) {
   }
 
   // 2. Final score line in body
-  const fsMatch = content.match(/final\s+score[:\s]+(.+?)\s+(\d+)[,\s]+(.+?)\s+(\d+)/i);
-  if (fsMatch) {
-    claims.push({
-      type: 'final_score_line',
-      teamA: fsMatch[1].replace(/\*\*/g, '').trim(),
-      scoreA: parseInt(fsMatch[2], 10),
-      teamB: fsMatch[3].trim(),
-      scoreB: parseInt(fsMatch[4], 10),
-      source: 'body',
-    });
+  // Match: "Final score: Team A N, Team B M." (with apostrophes in team names OK)
+  // Approach: find the line containing "Final score", then split on ","
+  const fsLineMatch = content.match(/final\s+score[:\s]+([^\n]+)/i);
+  if (fsLineMatch) {
+    const line = fsLineMatch[1];
+    const halves = line.split(',');
+    if (halves.length >= 2) {
+      const left = halves[0].replace(/^\*+\s*/, '').trim();
+      const right = halves.slice(1).join(',').trim();
+      // Extract score from end of each half: text + space + digits
+      const lMatch = left.match(/^(.+?)\s+(\d+)\s*$/);
+      const rMatch = right.match(/^(.+?)\s+(\d+)\s*\.?\s*$/);
+      if (lMatch && rMatch) {
+        claims.push({
+          type: 'final_score_line',
+          teamA: lMatch[1].trim(),
+          scoreA: parseInt(lMatch[2], 10),
+          teamB: rMatch[1].trim(),
+          scoreB: parseInt(rMatch[2], 10),
+          source: 'body',
+        });
+      }
+    }
   }
 
   // 3. Lead line
@@ -352,6 +365,59 @@ async function lookupTeamLeague(teamId) {
   return result;
 }
 
+async function fetchIihfBoxscore(gameDate, title) {
+  // IIHF world championship data via fixturedownload.com
+  // For "Slovakia top Sweden 4-2" articles dated 2026-05-26, etc.
+  const year = gameDate ? parseInt(gameDate.slice(0, 4), 10) : 2026;
+  const yearsToTry = [year - 1, year, year + 1].filter(y => y >= 2015 && y <= 2030);
+  const tm = (title || '').match(/^(.+?)\s+(?:top|defeat|beat|edge|down)\s+(.+?)\s+\d+-\d+/i);
+  if (!tm) return null;
+  const articleTeams = [tm[1].replace(/^\*\*/, '').trim(), tm[2].trim()];
+  const articleTeamKeys = articleTeams.map(t => ({ full: t.toLowerCase(), last: t.toLowerCase().split(' ').pop() }));
+
+  for (const y of yearsToTry) {
+    try {
+      const r = await fetch(`https://fixturedownload.com/feed/json/iihf-ice-hockey-world-championship-${y}`);
+      if (!r.ok) continue;
+      const j = await r.json();
+      const games = Array.isArray(j) ? j : (j.games || []);
+      const d0 = new Date(gameDate + 'T00:00:00Z');
+      const dayBefore = new Date(d0); dayBefore.setUTCDate(d0.getUTCDate() - 1);
+      const dayAfter = new Date(d0); dayAfter.setUTCDate(d0.getUTCDate() + 1);
+      const dateKeys = [dayBefore.toISOString().slice(0,10), gameDate, dayAfter.toISOString().slice(0,10)];
+      // Prefer exact date
+      let match = games.find(g => {
+        if ((g.DateUtc || '').slice(0, 10) !== gameDate) return false;
+        if (g.HomeTeamScore === null || g.AwayTeamScore === null) return false;
+        const h = (g.HomeTeam || '').toLowerCase();
+        const a = (g.AwayTeam || '').toLowerCase();
+        return articleTeamKeys.some(k => h.includes(k.last)) && articleTeamKeys.some(k => a.includes(k.last));
+      });
+      if (!match) {
+        match = games.find(g => {
+          if (!dateKeys.includes((g.DateUtc || '').slice(0, 10))) return false;
+          if (g.HomeTeamScore === null || g.AwayTeamScore === null) return false;
+          const h = (g.HomeTeam || '').toLowerCase();
+          const a = (g.AwayTeam || '').toLowerCase();
+          return articleTeamKeys.some(k => h.includes(k.last)) && articleTeamKeys.some(k => a.includes(k.last));
+        });
+      }
+      if (match) {
+        return {
+          source: `fixturedownload iihf-${y}`,
+          data: {
+            homeTeam: { name: { default: match.HomeTeam }, score: match.HomeTeamScore },
+            awayTeam: { name: { default: match.AwayTeam }, score: match.AwayTeamScore },
+            periodDescriptor: { number: 3, periodType: 'REG' },
+            gameOutcome: { lastPeriodType: 'REG' },
+          }
+        };
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
 async function fetchBoxscore(article) {
   let leagueId = article.league_id;
   if (!leagueId && article.team_home_id) {
@@ -359,6 +425,12 @@ async function fetchBoxscore(article) {
   }
   if (leagueId === '2b5f2b9d-84b9-4edb-8373-a732b72f4e40') {
     return fetchNhlBoxscore(article.slug);
+  }
+  // Try IIHF for any article whose title contains IIHF-style country names
+  const iiTfCountries = /Slovakia|Sweden|Czechia|Czech|Slovenia|Switzerland|Germany|Austria|France|Norway|Finland|Denmark|Hungary|Latvia|Italy|Great Britain|Canada|United States/i;
+  if (iiTfCountries.test(article.title || '')) {
+    const iiBfBx = await fetchIihfBoxscore(article.game_date, article.title || '');
+    if (iiBfBx) return iiBfBx;
   }
   return fetchHockeyTechBoxscore(leagueId, article.game_date, article.title || '');
 }
