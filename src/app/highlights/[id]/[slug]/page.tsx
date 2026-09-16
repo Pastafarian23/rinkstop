@@ -92,6 +92,7 @@ export default async function HighlightPage({ params }: Props) {
         homeTeam: h.match?.homeTeam,
         awayTeam: h.match?.awayTeam,
       },
+      linkedPost: h.linkedPost || null,
     };
 
     // JSON-LD VideoObject schema

@@ -24,6 +24,14 @@ interface Highlight {
     homeTeam: { id: number; name: string; displayName: string; abbreviation: string; logo: string } | null;
     awayTeam: { id: number; name: string; displayName: string; abbreviation: string; logo: string } | null;
   };
+  linkedPost?: {
+    id: string;
+    slug: string;
+    title: string;
+    snippet: string;
+    path: string;
+    verified: boolean;
+  } | null;
 }
 
 function slugify(text: string): string {
@@ -198,6 +206,33 @@ export default function VideoPageClient({ highlight }: { highlight: Highlight })
                   </p>
                 )}
               </div>
+
+              {/* Linked article preview — shows snippet + Read Full Article button if highlight is linked to a news article */}
+              {highlight.linkedPost && (
+                <div style={{ marginTop: '1.5rem', background: '#161B22', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#fff', background: highlight.linkedPost.verified ? 'rgba(34,197,94,0.2)' : 'rgba(200,200,200,0.15)', padding: '0.25rem 0.625rem', borderRadius: '999px', border: highlight.linkedPost.verified ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.15)' }}>
+                      {highlight.linkedPost.verified ? '✓ Verified' : 'Recap'}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Game Recap</span>
+                  </div>
+                  <h2 style={{ color: '#fff', fontSize: '1.125rem', fontWeight: 700, margin: '0 0 0.75rem 0', lineHeight: 1.3 }}>
+                    {highlight.linkedPost.title}
+                  </h2>
+                  {highlight.linkedPost.snippet && (
+                    <p style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontSize: '0.9375rem', margin: '0 0 1.25rem 0' }}>
+                      {highlight.linkedPost.snippet}
+                    </p>
+                  )}
+                  <Link
+                    href={highlight.linkedPost.path}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.125rem', borderRadius: '8px', background: highlight.linkedPost.verified ? '#C8102E' : 'rgba(255,255,255,0.1)', color: '#fff', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600, border: highlight.linkedPost.verified ? 'none' : '1px solid rgba(255,255,255,0.2)' }}
+                  >
+                    Read Full Article
+                    <span style={{ fontSize: '1rem' }}>→</span>
+                  </Link>
+                </div>
+              )}
 
               {/* More highlights from same match */}
               <div style={{ marginTop: '2rem' }}>
