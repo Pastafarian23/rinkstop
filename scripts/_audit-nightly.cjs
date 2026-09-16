@@ -46,11 +46,20 @@ function log(msg) { process.stdout.write(`[${new Date().toISOString()}] ${msg}\n
         processAuditResult(data);
       } catch (e) {
         log(`Failed to parse audit JSON: ${e.message}`);
+        // Soft-error: still write to PREV_FAIL_FILE so we don't lose state
+        // Don't escalate to cron-level failure — Highlightly 429 etc. are transient.
         fs.writeFileSync(RESULT_FILE, JSON.stringify({
-          status: 'error',
+          status: 'warn',
           error: e.message,
-          message: `❌ Audit failed: ${e.message}`,
+          exitCode: code,
+          timestamp: new Date().toISOString(),
+          message: `⚠️ Audit run finished but JSON parse failed: ${e.message}\nLikely transient (Highlightly 429 / API rate-limit). Will retry at next cron tick.`,
         }, null, 2));
+        if (fs.existsSync(PREV_FAIL_FILE)) {
+          // Keep prev FAIL count unchanged
+        } else {
+          fs.writeFileSync(PREV_FAIL_FILE, '0');
+        }
       }
       resolve();
     });

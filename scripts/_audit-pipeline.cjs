@@ -311,7 +311,7 @@ async function findHighlightlyMatch(highLid, dateIso, homeHint, awayHint) {
       });
       if (!r.ok) continue;
       const j = await r.json();
-      const matches = j.data || j || [];
+      const matches = Array.isArray(j.data) ? j.data : (Array.isArray(j) ? j : []);
       for (const raw of matches) {
         const homeName = raw.home?.name || raw.homeTeam?.name || '';
         const awayName = raw.away?.name || raw.awayTeam?.name || '';
