@@ -52,6 +52,8 @@ export async function GET(request: NextRequest) {
   
   // If backup returned results, use them
   if (backupResult && backupResult.highlights && backupResult.highlights.length > 0) {
+    // Fetch linked post details for any highlights that have a post_id.
+    backupResult.highlights = await enrichBackupHighlightsWithPosts(supabaseAdmin, backupResult.highlights);
     const r = NextResponse.json(backupResult);
     r.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=1800');
     return r;
@@ -70,6 +72,11 @@ export async function GET(request: NextRequest) {
       youtubeOnly,
     });
     if (apiResult) {
+      // API path: cannot link via backup's post_id directly. Use match_id +
+      // team names from the live API to look up the linked post.
+      if (apiResult.highlights && apiResult.highlights.length > 0) {
+        apiResult.highlights = await enrichLiveHighlightsWithPosts(supabaseAdmin, apiResult.highlights);
+      }
       const r = NextResponse.json(apiResult);
       r.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=1800');
       return r;
@@ -84,6 +91,154 @@ export async function GET(request: NextRequest) {
   });
   empty.headers.set('Cache-Control', 'public, max-age=30, s-maxage=120, stale-while-revalidate=600');
   return empty;
+}
+
+/**
+ * Enrich highlights that have a post_id with the post's public-facing snippet.
+ * Adds a `linkedPost` field to each highlight with:
+ *   { id, slug, title, subtitle, snippet, path, verified (boolean) }
+ * The `verified` field is INTERNAL — kept on the response because this API
+ * is only called from server-side ops + the highlights page (no SEO crawl).
+ * Snippet is the first 200 chars of the post's subtitle or content body.
+ * Notes on game accuracy:
+ *   - We DO include verification_status in `linkedPost.verified` ONLY for
+ *     gated UI display (verified articles show a green badge; unverified
+ *     show neutral). The full verification_status enum itself is NOT
+ *     leaked — only a boolean.
+ *   - If verification_status is 'failed', linkedPost is omitted entirely.
+ */
+/**
+ * Live-API enrichment: take Highlightly response objects, look up our DB
+ * posts by (home_team_name, away_team_name, game_date), then attach linkedPost.
+ */
+async function enrichLiveHighlightsWithPosts(supabase: any, highlights: any[]): Promise<any[]> {
+  // Inline the same lookup logic since this path has different naming
+  const norm = (s: any) => (s || '').toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
+  // Batch-build post lookup by (home, away, date)
+  const keys = new Set<string>();
+  for (const h of highlights) {
+    const m = h.match || {};
+    if (m.homeTeam && m.awayTeam && m.date) {
+      const d = m.date.slice(0, 10);
+      keys.add(`${norm(m.homeTeam.displayName || m.homeTeam.name)}|${norm(m.awayTeam.displayName || m.awayTeam.name)}|${d}`);
+      keys.add(`${norm(m.awayTeam.displayName || m.awayTeam.name)}|${norm(m.homeTeam.displayName || m.homeTeam.name)}|${d}`);
+    }
+  }
+  if (keys.size === 0) return highlights;
+
+  // Fetch matching posts
+  const { data: posts, error } = await supabase
+    .from('posts')
+    .select('id, slug, title, subtitle, content_html, game_date, verification_status, pillar, subpillar, pillar_slug, subpillar_slug, status')
+    .not('highlight_id', 'is', null)
+    .in('status', ['published']);
+  if (error || !posts) return highlights;
+
+  const postByKey: Record<string, any> = {};
+  for (const p of posts) {
+    if (!p.game_date) continue;
+    const t = p.title || '';
+    let m = t.match(/^(.+?)\s+(?:top|defeat|beat|edge|down)\s+(.+?)\s+\d+[-\u2013]\d+/i);
+    if (!m) m = t.match(/^(.+?)\s+(?:vs\.?|versus)\s+(.+)/i);
+    if (!m) continue;
+    const h = norm(m[1]);
+    const a = norm(m[2]);
+    const k1 = `${h}|${a}|${p.game_date}`;
+    if (!postByKey[k1]) postByKey[k1] = p;
+  }
+
+  return highlights.map((h) => {
+    const m = h.match || {};
+    if (!m.homeTeam || !m.awayTeam || !m.date) return h;
+    const d = m.date.slice(0, 10);
+    const k1 = `${norm(m.homeTeam.displayName || m.homeTeam.name)}|${norm(m.awayTeam.displayName || m.awayTeam.name)}|${d}`;
+    const k2 = `${norm(m.awayTeam.displayName || m.awayTeam.name)}|${norm(m.homeTeam.displayName || m.homeTeam.name)}|${d}`;
+    const p = postByKey[k1] || postByKey[k2];
+    if (!p) return h;
+
+    let snippet = p.subtitle || '';
+    if (!snippet && p.content_html) {
+      const stripped = p.content_html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      snippet = stripped.slice(0, 220);
+      if (stripped.length > 220) snippet += '…';
+    }
+    let path = '';
+    if (p.pillar_slug && p.subpillar_slug && p.slug) {
+      path = `/news/${p.pillar_slug}/${p.subpillar_slug}/${p.slug}`;
+    } else if (p.slug) {
+      path = `/blog/${p.slug}`;
+    }
+    const verified = p.verification_status === 'verified' || p.verification_status === 'human_verified';
+
+    return {
+      ...h,
+      linkedPostId: p.id,
+      linkedPost: { id: p.id, slug: p.slug, title: p.title, snippet, path, verified },
+    };
+  });
+}
+
+/**
+ * Backup enrichment: take backup rows (already has post_id column) and attach post details.
+ */
+async function enrichBackupHighlightsWithPosts(supabase: any, highlights: any[]): Promise<any[]> {
+  const postIds: string[] = [];
+  for (const h of highlights) {
+    if (h.linkedPostId) postIds.push(h.linkedPostId);
+  }
+  if (postIds.length === 0) return highlights;
+
+  const { data: posts, error } = await supabase
+    .from('posts')
+    .select('id, slug, title, subtitle, content, content_html, game_date, verification_status, pillar, subpillar, pillar_slug, subpillar_slug, status')
+    .in('id', postIds);
+  if (error || !posts) return highlights;
+
+  const postById: Record<string, any> = {};
+  for (const p of posts) postById[p.id] = p;
+
+  return highlights.map((h) => {
+    const pid = h.linkedPostId;
+    if (!pid) return h;
+    const p = postById[pid];
+    if (!p) return h;
+    if (p.status !== 'published') return h;
+    const verified = p.verification_status === 'verified' || p.verification_status === 'human_verified';
+
+    // Build snippet: prefer subtitle (1-2 sentences), else first 200 chars of content_html
+    let snippet = '';
+    if (p.subtitle) snippet = p.subtitle;
+    else if (p.content_html) {
+      // Strip HTML tags for the snippet display
+      const stripped = p.content_html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      snippet = stripped.slice(0, 220);
+      if (stripped.length > 220) snippet += '…';
+    }
+
+    // Build path: /news/[pillar]/[subpillar]/[slug] if available, else /blog/[slug]
+    let path = '';
+    if (p.pillar_slug && p.subpillar_slug && p.slug) {
+      path = `/news/${p.pillar_slug}/${p.subpillar_slug}/${p.slug}`;
+    } else if (p.slug) {
+      path = `/blog/${p.slug}`;
+    }
+
+    return {
+      ...h,
+      linkedPost: {
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        snippet,
+        path,
+        verified, // boolean only — full enum not leaked
+      },
+    };
+  });
 }
 
 async function getHighlightsFromBackup(opts: {
@@ -110,7 +265,7 @@ async function getHighlightsFromBackup(opts: {
     
     let query = supabaseAdmin
       .from('highlight_backups')
-      .select('id, title, description, video_url, embed_url, image_url, source, channel, highlight_type, league_id, league_name, match_id, match_date, match_season, match_round, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo', { count: 'exact' })
+      .select('id, title, description, video_url, embed_url, image_url, source, channel, highlight_type, league_id, league_name, match_id, match_date, match_season, match_round, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo, post_id', { count: 'exact' })
       .order('match_date', { ascending: false })
       .range(offset, offset + limit - 1);
     
@@ -174,6 +329,7 @@ async function getHighlightsFromBackup(opts: {
       imageUrl: h.image_url,
       source: h.source,
       channel: h.channel,
+      linkedPostId: h.post_id || null,
       match: {
         id: h.match_id,
         league: h.league_name,

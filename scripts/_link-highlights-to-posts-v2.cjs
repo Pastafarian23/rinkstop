@@ -75,8 +75,11 @@ function normDate(s) {
   console.log('Unique post keys built:', Object.keys(postByKey).length);
 
   console.log('Step 3: Linking highlights...');
-  let linked = 0, unmatched = 0;
-  let batch = [];
+  let linked = 0, unmatched = 0, errors = 0;
+  const errorLog = [];
+  // Build batched updates using UPDATE (not upsert) so we don't have to
+  // supply every NOT NULL column.
+  const updates = [];
   for (const h of allHl) {
     const date = normDate(h.match_date);
     const hn = norm(h.home_team_name);
@@ -86,18 +89,26 @@ function normDate(s) {
     const k2 = `${an}|${hn}|${date}`;
     const postId = postByKey[k1] || postByKey[k2];
     if (!postId) { unmatched++; continue; }
-    batch.push({ id: h.id, post_id: postId, post_link_method: 'name+date' });
-    if (batch.length >= 200) {
-      // Flush batch using a single SQL upsert via upsert API
-      await sb.from('highlight_backups').upsert(batch, { onConflict: 'id' });
-      linked += batch.length;
-      batch = [];
-      process.stdout.write('.');
-    }
+    updates.push({ id: h.id, post_id: postId });
   }
-  if (batch.length > 0) {
-    await sb.from('highlight_backups').upsert(batch, { onConflict: 'id' });
-    linked += batch.length;
+  console.log('Updates to apply:', updates.length);
+
+  // Apply in batches via Promise.all
+  const BATCH = 100;
+  for (let i = 0; i < updates.length; i += BATCH) {
+    const chunk = updates.slice(i, i + BATCH);
+    const results = await Promise.all(chunk.map(async (u) => {
+      const { error } = await sb.from('highlight_backups')
+        .update({ post_id: u.post_id, post_link_method: 'name+date' })
+        .eq('id', u.id);
+      return error ? { id: u.id, error: error.message } : null;
+    }));
+    const errs = results.filter(Boolean);
+    if (errs.length > 0) {
+      errors += errs.length;
+      errorLog.push(...errs.slice(0, 3));
+    }
+    linked += chunk.length - errs.length;
     process.stdout.write('.');
   }
   console.log();
@@ -105,4 +116,9 @@ function normDate(s) {
   console.log('\n=== RESULTS ===');
   console.log('linked:    ' + linked);
   console.log('unmatched: ' + unmatched);
+  console.log('errors:    ' + errors);
+  if (errorLog.length > 0) {
+    console.log('Sample errors:');
+    for (const e of errorLog) console.log('  ', e);
+  }
 })().catch(e => { console.error('FATAL:', e.message); process.exit(1); });
