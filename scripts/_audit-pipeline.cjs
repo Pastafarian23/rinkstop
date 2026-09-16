@@ -277,6 +277,82 @@ async function fetchNhlBoxscore(slug) {
   }
 }
 
+// Highlightly league ID -> Highlightly numeric ID
+const HIGHLIGHTLY_LEAGUE_NAMES = {
+  '69d4de0c-b072-4f52-8950-eb728acdc7f9': '40781',     // SHL
+  '03e919d1-2180-443b-aba4-6719d25d2eff': '16953',     // DEL
+  'a08f6dac-eb1f-48b6-a11b-56fbb5642752': '30569',     // KHL
+  'e052d66a-6f63-42da-94fc-25a809203c2f': '32271',     // MHL
+  '30fef7f6-0054-4605-83b7-ec619b72f328': '31420',     // VHL
+  'dead3e40-9f79-4488-a50b-755eb9a8cee0': '51844',     // SPHL
+  '1ad37b08-894c-42dd-8583-2247bf927b6c': '32271',     // Friendly Intl → MHL proxy
+};
+const HIGHKEY = process.env.HIGHLIGHTLY_API_KEY;
+
+async function findHighlightlyMatch(highLid, dateIso, homeHint, awayHint) {
+  const dates = [dateIso];
+  const baseD = new Date((dateIso || '2026-01-01') + 'T00:00:00Z');
+  for (let i = 1; i <= 2; i++) {
+    dates.push(new Date(baseD.getTime() + i * 86400000).toISOString().slice(0, 10));
+    dates.push(new Date(baseD.getTime() - i * 86400000).toISOString().slice(0, 10));
+  }
+  for (const d of dates) {
+    try {
+      const r = await fetch('https://hockey.highlightly.net/matches?leagueId=' + highLid + '&date=' + d + '&limit=20', {
+        headers: { 'x-rapidapi-key': HIGHKEY, 'x-rapidapi-host': 'hockey-highlights-api.p.rapidapi.com' },
+      });
+      if (!r.ok) continue;
+      const j = await r.json();
+      const matches = j.data || j || [];
+      for (const raw of matches) {
+        const homeName = raw.home?.name || raw.homeTeam?.name || '';
+        const awayName = raw.away?.name || raw.awayTeam?.name || '';
+        const scoreRaw = raw.state?.score?.current;
+        if (!scoreRaw) continue;
+        const parts = scoreRaw.split('-').map(s => parseInt(s.trim(), 10));
+        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) continue;
+        // Try matching both directions (homeHint as either home or away)
+        const a = homeHint.toLowerCase().split(' ')[0];
+        const b = awayHint.toLowerCase().split(' ')[0];
+        const directMatch = (homeName.toLowerCase().includes(a) && awayName.toLowerCase().includes(b)) ||
+                            (awayName.toLowerCase().includes(a) && homeName.toLowerCase().includes(b));
+        if (directMatch) {
+          return {
+            homeTeamName: homeName, awayTeamName: awayName,
+            homeScore: parts[0], awayScore: parts[1],
+            date: d, state: raw.state?.description,
+          };
+        }
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
+async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
+  const highLid = HIGHLIGHTLY_LEAGUE_NAMES[leagueId];
+  if (!highLid) return null;
+  const tParts = (title || '').split(' top ');
+  if (tParts.length < 2) return null;
+  const homeHint = tParts[0].trim();
+  const restAfter = tParts[1];
+  const awayMatch = restAfter.match(/^(.+?)s+d/);
+  if (!awayMatch) return null;
+  const awayHint = awayMatch[1].trim();
+  const result = await findHighlightlyMatch(highLid, gameDate, homeHint, awayHint);
+  if (!result) return null;
+  return {
+    source: 'highlightly (' + highLid + ', ' + result.homeTeamName + ' vs ' + result.awayTeamName + ')',
+    data: {
+      home_team: { name: result.homeTeamName },
+      away_team: { name: result.awayTeamName },
+      home_score: result.homeScore,
+      away_score: result.awayScore,
+      state: result.state,
+    },
+  };
+}
+
 async function fetchHockeyTechBoxscore(leagueId, gameDate, title) {
   const leagueMap = {
     'b05d6d26-d5d6-4cfd-a48b-f5646fa7d611': { clientCode: 'ahl',   key: '50c2cd9b5e18e390' },
@@ -431,6 +507,11 @@ async function fetchBoxscore(article) {
   if (iiTfCountries.test(article.title || '')) {
     const iiBfBx = await fetchIihfBoxscore(article.game_date, article.title || '');
     if (iiBfBx) return iiBfBx;
+  }
+  // Highlightly has boxscore for SHL, DEL, KHL (key re-subscribed 2026-09-16)
+  if (HIGHLIGHTLY_LEAGUE_NAMES[leagueId]) {
+    const hlBx = await fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '');
+    if (hlBx) return hlBx;
   }
   return fetchHockeyTechBoxscore(leagueId, article.game_date, article.title || '');
 }
