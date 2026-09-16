@@ -17,6 +17,8 @@
 
 require('./load-secrets.cjs');
 const { createClient } = require('@supabase/supabase-js');
+const cache = require('./_games-cache.cjs');
+const xsource = require('./_verify-cross-source.cjs');
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -191,11 +193,13 @@ function verifyClaims(claims, boxscore) {
       // e.g. "Dallas" + " " + "Stars" = "Dallas Stars"
       const homeName = [data?.homeTeam?.placeName?.default, data?.homeTeam?.commonName?.default].filter(Boolean).join(' ')
         || data?.homeTeam?.name?.default
+        || data?.home_team_name
         || data?.home_team?.name
         || data?.home?.name
         || '';
       const awayName = [data?.awayTeam?.placeName?.default, data?.awayTeam?.commonName?.default].filter(Boolean).join(' ')
         || data?.awayTeam?.name?.default
+        || data?.away_team_name
         || data?.away_team?.name
         || data?.away?.name
         || '';
@@ -239,12 +243,12 @@ function verifyClaims(claims, boxscore) {
         continue;
       }
       const data = boxscore.data;
-      const periodDescriptor = data?.periodDescriptor || {};
-      const periodType = periodDescriptor.periodType || '';
-      const periodNumber = periodDescriptor.number || 0;
-      const lastPeriodType = data?.gameOutcome?.lastPeriodType || periodType;
-      const isOT = lastPeriodType === 'OT' || periodNumber === 4;
-      const isSO = lastPeriodType === 'SO' || periodNumber === 5;
+      // Cache format (new): data has period_type, period_number columns flattened
+      // Live fetch format: data has periodDescriptor, gameOutcome, etc.
+      const periodType = data?.period_type || data?.periodDescriptor?.periodType || data?.gameOutcome?.lastPeriodType || '';
+      const periodNumber = data?.period_number || data?.periodDescriptor?.number || 0;
+      const isOT = periodType === 'OT' || periodNumber === 4;
+      const isSO = periodType === 'SO' || periodNumber === 5;
       if (c.value === 'OT' && !isOT) {
         results.push({ claim: c, status: 'FAIL', reason: `article says OT but boxscore periodDescriptor is '${periodType}' (number ${periodNumber})` });
       } else if (c.value === 'SO' && !isSO) {
@@ -320,21 +324,98 @@ async function findHighlightlyMatch(highLid, dateIso, homeHint, awayHint) {
         const parts = scoreRaw.split('-').map(s => parseInt(s.trim(), 10));
         if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) continue;
         // Try matching both directions (homeHint as either home or away)
-        const a = homeHint.toLowerCase().split(' ')[0];
-        const b = awayHint.toLowerCase().split(' ')[0];
-        const directMatch = (homeName.toLowerCase().includes(a) && awayName.toLowerCase().includes(b)) ||
-                            (awayName.toLowerCase().includes(a) && homeName.toLowerCase().includes(b));
+        // Use cache.norm() to strip diacritics so "Eisbaren" matches "Eisbären"
+        const a = cache.norm(homeName) === cache.norm(homeHint.split(' ')[0])
+          ? cache.norm(homeName) : cache.norm(awayName) === cache.norm(homeHint.split(' ')[0]) ? cache.norm(awayName) : '';
+        const b = cache.norm(awayName) === cache.norm(awayHint.split(' ')[0])
+          ? cache.norm(awayName) : cache.norm(homeName) === cache.norm(awayHint.split(' ')[0]) ? cache.norm(homeName) : '';
+        // Better: just normalize both sides and compare
+        const homeN = cache.norm(homeName);
+        const awayN = cache.norm(awayName);
+        const articleHomeN = cache.norm(homeHint);
+        const articleAwayN = cache.norm(awayHint);
+        const directMatch = (homeN === articleHomeN && awayN === articleAwayN) ||
+                            (awayN === articleHomeN && homeN === articleAwayN) ||
+                            // Allow loose match on first word too (legacy fallback)
+                            (homeName.toLowerCase().includes(articleHomeN) && awayName.toLowerCase().includes(articleAwayN)) ||
+                            (awayName.toLowerCase().includes(articleHomeN) && homeName.toLowerCase().includes(articleAwayN));
         if (directMatch) {
           return {
             homeTeamName: homeName, awayTeamName: awayName,
             homeScore: parts[0], awayScore: parts[1],
-            date: d, state: raw.state?.description,
+            date: d,
+            state: raw.state?.description,
+            scoreOverTime: raw.state?.score?.overTime || null,
+            scorePenalties: raw.state?.score?.penalties || null,
+            scoreFirstPeriod: raw.state?.score?.firstPeriod || null,
+            scoreSecondPeriod: raw.state?.score?.secondPeriod || null,
+            scoreThirdPeriod: raw.state?.score?.thirdPeriod || null,
           };
         }
       }
     } catch (e) {}
   }
   return null;
+}
+
+
+// Wrap any boxscore fetch with cache-first logic.
+// liveFetch() should return { source, leagueName, boxscore: {home_team, away_team, home_score, away_score} } or null.
+// If cache hit: returns cached boxscore (0 API calls).
+// If cache miss: live fetch, write to cache, then return.
+async function fetchWithCache(source, sourceLeagueId, leagueName, dateIso, homeHint, awayHint, leagueId, liveFetch) {
+  // 1. Cache lookup
+  const cached = await cache.lookup({ date: dateIso, homeHint, awayHint });
+  let finishedRows = cached.filter(r => r.finished);
+  let liveRows = [];
+  if (finishedRows.length === 0) {
+    // 2. Live fetch
+    const result = await liveFetch();
+    if (process.env.DEBUG) console.error('DEBUG fetchWithCache', source, 'liveFetch result:', result ? 'OK' : 'NULL', 'boxscore:', result?.boxscore ? 'present' : 'MISSING');
+    if (!result || !result.boxscore) return null;
+    const bx = result.boxscore;
+    // 3. Write to cache (insert-only via upsert)
+    const hs = bx.home_team_name || bx.home_team?.name || bx.home?.name || null;
+    const as_ = bx.away_team_name || bx.away_team?.name || bx.away?.name || null;
+    const hn = cache.norm(hs);
+    const an = cache.norm(as_);
+    if (!hs || !as_ || !hn || !an) return result;
+    // Extract period info from various adapter schemas
+    const rawBoxscore = bx.raw || bx;
+    const periodDescriptor = rawBoxscore?.periodDescriptor || {};
+    const gameOutcome = rawBoxscore?.gameOutcome || {};
+    liveRows = [{
+      source,
+      source_league_id: sourceLeagueId,
+      league_name: leagueName,
+      league_id: leagueId,
+      game_date: dateIso,
+      home_team_name: hs, away_team_name: as_,
+      home_team_normalized: hn, away_team_normalized: an,
+      home_score: bx.home_score,
+      away_score: bx.away_score,
+      raw_score: (bx.raw_score || bx.raw?.state?.score?.current) || null,
+      finished: true,
+      raw: bx.raw !== undefined ? bx.raw : null,
+      period_type: periodDescriptor.periodType || gameOutcome.lastPeriodType || null,
+      period_number: periodDescriptor.number || null,
+    }];
+    if (process.env.DEBUG_CACHE) console.error('DEBUG cache.write', source, 'has_raw=', !!liveRows[0].raw);
+    await cache.write(liveRows[0]);
+    finishedRows = liveRows;
+  }
+  // 4. Use verifyFromCache to decide multi-source vs single-source
+  const v = xsource.verifyFromCache(finishedRows);
+  return v.boxscore ? { ...v.boxscore, xsource_meta: { status: v.status, sources: v.sources } } : null;
+}
+
+// Derive periodDescriptor from a Highlightly raw match.
+function derivePeriodDescriptor(highlightlyResult) {
+  const ot = highlightlyResult?.scoreOverTime;
+  const so = highlightlyResult?.scorePenalties;
+  if (so && /^\d/.test(so)) return { number: 5, periodType: 'SO' };
+  if (ot && /^\d/.test(ot)) return { number: 4, periodType: 'OT' };
+  return { number: 3, periodType: 'REG' };
 }
 
 async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
@@ -349,6 +430,8 @@ async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
   const awayHint = awayMatch[1].trim();
   const result = await findHighlightlyMatch(highLid, gameDate, homeHint, awayHint);
   if (!result) return null;
+  // Determine OT/SO from raw response (fetched inside the function via overTime/penalties fields)
+  // Note: findHighlightlyMatch currently doesn't expose the raw match — return raw=hit
   return {
     source: 'highlightly (' + highLid + ', ' + result.homeTeamName + ' vs ' + result.awayTeamName + ')',
     data: {
@@ -357,6 +440,9 @@ async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
       home_score: result.homeScore,
       away_score: result.awayScore,
       state: result.state,
+      // Period info extracted from overTime/penalties score components
+      periodDescriptor: derivePeriodDescriptor(result),
+      gameOutcome: derivePeriodDescriptor(result),
     },
   };
 }
@@ -507,19 +593,135 @@ async function fetchBoxscore(article) {
   if (!leagueId && article.team_home_id) {
     leagueId = await lookupTeamLeague(article.team_home_id);
   }
+
+  // Extract team hints from article title (for cache lookup keys)
+  const titleForHints = article.title || '';
+  const tm = titleForHints.match(/^(.+?)\s+(?:top|defeat|beat|edge|down)\s+(.+?)\s+\d+-\d+/i);
+  const articleHomeHint = tm ? tm[1].replace(/^\*\*/, '').trim() : null;
+  const articleAwayHint = tm ? tm[2].trim() : null;
+  if (!articleHomeHint || !articleAwayHint) {
+    // Can't cache without hints — fall back to existing per-adapter flow
+    return fetchBoxscoreNoCache(article, leagueId);
+  }
+
+  // NHL.com — cache first (source: nhl_com)
+  if (leagueId === '2b5f2b9d-84b9-4edb-8373-a732b72f4e40') {
+    return fetchWithCache(
+      'nhl_com', '', 'NHL',
+      article.game_date, articleHomeHint, articleAwayHint, leagueId,
+      () => fetchNhlBoxscore(article.slug).then(b => {
+        if (!b || !b.data) return null;
+        const d = b.data;
+        const homeName = d.homeTeam?.placeName?.default
+          ? (d.homeTeam.placeName.default + ' ' + (d.homeTeam.commonName?.default || '')).trim()
+          : (d.homeTeam?.name?.default || '');
+        const awayName = d.awayTeam?.placeName?.default
+          ? (d.awayTeam.placeName.default + ' ' + (d.awayTeam.commonName?.default || '')).trim()
+          : (d.awayTeam?.name?.default || '');
+        return {
+          source: 'nhl_com',
+          leagueName: 'NHL',
+          boxscore: {
+            home_team_name: homeName,
+            away_team_name: awayName,
+            home_score: d.homeTeam?.score,
+            away_score: d.awayTeam?.score,
+            raw_score: (d.homeTeam?.score ?? '?') + ' - ' + (d.awayTeam?.score ?? '?'),
+            raw: d,
+          },
+        };
+      })
+    );
+  }
+
+  // IIHF
+  const iiTfCountries = /Slovakia|Sweden|Czechia|Czech|Slovenia|Switzerland|Germany|Austria|France|Norway|Finland|Denmark|Hungary|Latvia|Italy|Great Britain|Canada|United States/i;
+  if (iiTfCountries.test(article.title || '')) {
+    return fetchWithCache(
+      'iihf_fixture', 'world', 'IIHF',
+      article.game_date, articleHomeHint, articleAwayHint, leagueId,
+      () => fetchIihfBoxscore(article.game_date, article.title || '').then(b => {
+        if (!b || !b.data) return null;
+        const d = b.data;
+        const homeName = d.homeTeam?.name?.default || d.home_team_name || '';
+        const awayName = d.awayTeam?.name?.default || d.away_team_name || '';
+        return {
+          source: 'iihf_fixture',
+          leagueName: 'IIHF',
+          boxscore: {
+            home_team_name: homeName,
+            away_team_name: awayName,
+            home_score: d.homeTeam?.score ?? d.home_score,
+            away_score: d.awayTeam?.score ?? d.away_score,
+            raw_score: (d.homeTeam?.score ?? '?') + ' - ' + (d.awayTeam?.score ?? '?'),
+            raw: d,
+          },
+        };
+      })
+    );
+  }
+
+  // Highlightly (other-hockey subscription)
+  if (HIGHLIGHTLY_LEAGUE_NAMES[leagueId]) {
+    const highLid = HIGHLIGHTLY_LEAGUE_NAMES[leagueId];
+    return fetchWithCache(
+      'highlightly_hockey', highLid, 'DEL/KHL/etc',
+      article.game_date, articleHomeHint, articleAwayHint, leagueId,
+      () => fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '').then(b => ({
+        source: 'highlightly_hockey',
+        leagueName: 'SHL/DEL/KHL/etc',
+        boxscore: b && b.data ? {
+          home_team_name: b.data.home_team?.name || b.data.home_team,
+          away_team_name: b.data.away_team?.name || b.data.away_team,
+          home_score: b.data.home_score, away_score: b.data.away_score,
+          raw_score: b.data.raw_score || (b.data.home_score + ' - ' + b.data.away_score),
+          raw: b.data,
+        } : null,
+      }))
+    );
+  }
+
+  // HockeyTech (default adapter)
+  return fetchWithCache(
+    'hockeytech', 'mixed', 'HockeyTech leagues',
+    article.game_date, articleHomeHint, articleAwayHint, leagueId,
+    () => fetchHockeyTechBoxscore(leagueId, article.game_date, article.title || '').then(b => {
+      if (!b || !b.data) return null;
+      // HockeyTech returns NHL.com-style schema: homeTeam.name.default + visitingTeam.name.default
+      const d = b.data;
+      const homeName = d.homeTeam?.placeName?.default
+        ? (d.homeTeam.placeName.default + ' ' + (d.homeTeam.commonName?.default || '')).trim()
+        : (d.homeTeam?.name?.default || d.home_team_name || '');
+      const awayName = d.awayTeam?.placeName?.default
+        ? (d.awayTeam.placeName.default + ' ' + (d.awayTeam.commonName?.default || '')).trim()
+        : (d.awayTeam?.name?.default || d.away_team_name || '');
+      return {
+        source: 'hockeytech',
+        leagueName: 'WHL/AHL/OHL/ECHL/QMJHL',
+        boxscore: {
+          home_team_name: homeName,
+          away_team_name: awayName,
+          home_score: d.homeTeam?.score ?? d.home_score,
+          away_score: d.awayTeam?.score ?? d.away_score,
+          raw_score: (d.homeTeam?.score ?? d.home_score) + ' - ' + (d.awayTeam?.score ?? d.away_score),
+          raw: d,
+        },
+      };
+    })
+  );
+}
+
+// Fallback for articles we can't extract team hints from (older titles without "top" pattern).
+async function fetchBoxscoreNoCache(article, leagueId) {
   if (leagueId === '2b5f2b9d-84b9-4edb-8373-a732b72f4e40') {
     return fetchNhlBoxscore(article.slug);
   }
-  // Try IIHF for any article whose title contains IIHF-style country names
   const iiTfCountries = /Slovakia|Sweden|Czechia|Czech|Slovenia|Switzerland|Germany|Austria|France|Norway|Finland|Denmark|Hungary|Latvia|Italy|Great Britain|Canada|United States/i;
   if (iiTfCountries.test(article.title || '')) {
-    const iiBfBx = await fetchIihfBoxscore(article.game_date, article.title || '');
-    if (iiBfBx) return iiBfBx;
+    return fetchIihfBoxscore(article.game_date, article.title || '');
   }
-  // Highlightly has boxscore for SHL, DEL, KHL (key re-subscribed 2026-09-16)
   if (HIGHLIGHTLY_LEAGUE_NAMES[leagueId]) {
-    const hlBx = await fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '');
-    if (hlBx) return hlBx;
+    return fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '');
   }
   return fetchHockeyTechBoxscore(leagueId, article.game_date, article.title || '');
 }

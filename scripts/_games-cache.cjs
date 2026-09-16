@@ -33,7 +33,7 @@ async function lookup({ date, homeHint, awayHint }) {
 
   const { data, error } = await sb
     .from('games_cache')
-    .select('source, source_league_id, league_id, league_name, game_date, home_team_name, away_team_name, home_score, away_score, raw_score, finished, fetched_at')
+    .select('source, source_league_id, league_id, league_name, game_date, home_team_name, away_team_name, home_score, away_score, raw_score, finished, fetched_at, period_type, period_number')
     .eq('game_date', date)
     .or(`and(home_team_normalized.eq.${a},away_team_normalized.eq.${b}),and(home_team_normalized.eq.${b},away_team_normalized.eq.${a})`);
 
@@ -58,6 +58,8 @@ async function write(entry) {
     raw_score: entry.raw_score,
     finished: entry.finished !== false,
     raw: entry.raw || null,
+    period_type: entry.period_type || null,
+    period_number: entry.period_number || null,
   };
   // Upsert via on_conflict resolved by idx_games_cache_dedup if present, else by best-effort
   const { data, error } = await sb

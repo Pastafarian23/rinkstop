@@ -66,6 +66,8 @@ function verifyFromCache(rows) {
           home_score: r.home_score,
           away_score: r.away_score,
           raw: r.raw,
+          period_type: r.period_type || null,
+          period_number: r.period_number || null,
         },
       },
     };
@@ -88,6 +90,8 @@ function verifyFromCache(rows) {
           home_score: firstRow.home_score,
           away_score: firstRow.away_score,
           raw: firstRow.raw,
+          period_type: firstRow.period_type || null,
+          period_number: firstRow.period_number || null,
         },
       },
     };
