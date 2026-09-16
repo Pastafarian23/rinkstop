@@ -189,12 +189,20 @@ function verifyClaims(claims, boxscore) {
       const data = boxscore.data;
       // NHL.com: placeName.default + commonName.default = full team name
       // e.g. "Dallas" + " " + "Stars" = "Dallas Stars"
-      const homeName = [data?.homeTeam?.placeName?.default, data?.homeTeam?.commonName?.default].filter(Boolean).join(' ') || data?.homeTeam?.name?.default || '';
-      const awayName = [data?.awayTeam?.placeName?.default, data?.awayTeam?.commonName?.default].filter(Boolean).join(' ') || data?.awayTeam?.name?.default || '';
-      const homeTri = data?.homeTeam?.abbrev || '';
-      const awayTri = data?.awayTeam?.abbrev || '';
-      const homeScore = data?.homeTeam?.score;
-      const awayScore = data?.awayTeam?.score;
+      const homeName = [data?.homeTeam?.placeName?.default, data?.homeTeam?.commonName?.default].filter(Boolean).join(' ')
+        || data?.homeTeam?.name?.default
+        || data?.home_team?.name
+        || data?.home?.name
+        || '';
+      const awayName = [data?.awayTeam?.placeName?.default, data?.awayTeam?.commonName?.default].filter(Boolean).join(' ')
+        || data?.awayTeam?.name?.default
+        || data?.away_team?.name
+        || data?.away?.name
+        || '';
+      const homeTri = data?.homeTeam?.abbrev || data?.home_team?.abbrev || '';
+      const awayTri = data?.awayTeam?.abbrev || data?.away_team?.abbrev || '';
+      const homeScore = data?.homeTeam?.score ?? data?.home_team?.score ?? data?.home_score;
+      const awayScore = data?.awayTeam?.score ?? data?.away_team?.score ?? data?.away_score;
 
       const articleWinner = c.winner || c.teamA;
       const articleLoser = c.loser || c.teamB;
@@ -336,7 +344,7 @@ async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
   if (tParts.length < 2) return null;
   const homeHint = tParts[0].trim();
   const restAfter = tParts[1];
-  const awayMatch = restAfter.match(/^(.+?)s+d/);
+  const awayMatch = restAfter.match(/^(.+?)\s+\d/);
   if (!awayMatch) return null;
   const awayHint = awayMatch[1].trim();
   const result = await findHighlightlyMatch(highLid, gameDate, homeHint, awayHint);
