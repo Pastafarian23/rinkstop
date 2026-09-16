@@ -76,19 +76,22 @@ async function main() {
   const nhlComFixtures = allFixtures.filter(f => /^20[0-9]{8}$/.test(String(f.game_data?.nhl_game_id)));
   console.log(`[sync] Pulled ${allFixtures.length} fixtures; ${nhlComFixtures.length} have NHL.com-format nhl_game_id`);
 
-  // Filter to ones with valid game_data (have homeTeam.abbr and awayTeam.abbr)
-  const validFixtures = nhlComFixtures.filter(f =>
-    f.game_data?.homeTeam?.abbr &&
-    f.game_data?.awayTeam?.abbr &&
-    TEAM_FULL[f.game_data.homeTeam.abbr] &&
-    TEAM_FULL[f.game_data.awayTeam.abbr]
-  );
+  // Filter to ones with valid game_data. Accept BOTH formats:
+  //   - NHL.com format: homeTeam.abbrev (full word)
+  //   - Highlightly format (legacy): homeTeam.abbr (3-letter code)
+  // Both must have valid team abbreviation that maps to TEAM_FULL.
+  const validFixtures = nhlComFixtures.filter(f => {
+    const homeTri = f.game_data?.homeTeam?.abbrev || f.game_data?.homeTeam?.abbr;
+    const awayTri = f.game_data?.awayTeam?.abbrev || f.game_data?.awayTeam?.abbr;
+    return homeTri && awayTri && TEAM_FULL[homeTri] && TEAM_FULL[awayTri];
+  });
   console.log(`[sync] Valid fixtures with full team names: ${validFixtures.length}`);
 
   // 2. Build nhl_matches rows
   const nhlMatchesRows = validFixtures.map(f => {
-    const homeTri = f.game_data.homeTeam.abbr;
-    const awayTri = f.game_data.awayTeam.abbr;
+    // Accept both formats: NHL.com (abbrev) and Highlightly legacy (abbr)
+    const homeTri = f.game_data.homeTeam?.abbrev || f.game_data.homeTeam?.abbr;
+    const awayTri = f.game_data.awayTeam?.abbrev || f.game_data.awayTeam?.abbr;
     const round = f.game_data.round;
     const roundPrefix = round === 'preseason' ? 'PR' :
                        round === 'postseason' ? 'PO' : '';
