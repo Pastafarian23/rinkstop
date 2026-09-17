@@ -68,31 +68,39 @@ function GameCard({ game }: { game: Game }) {
   const s = statusStyle[game.status] || statusStyle.scheduled;
   const homeName = game.home_team?.name || 'Home';
   const awayName = game.away_team?.name || 'Away';
-  const homeSlug = game.home_team?.slug;
-  const awaySlug = game.away_team?.slug;
 
   return (
-    <div style={{
-      background: 'var(--s2)',
-      border: '1px solid var(--border)',
-      borderRadius: '8px',
-      padding: '1rem 1.25rem',
-      display: 'grid',
-      gridTemplateColumns: '1fr auto 1fr',
-      alignItems: 'center',
-      gap: '1rem',
-    }}>
+    <Link
+      href={`/directory/games/${game.id}`}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center',
+        gap: '1rem',
+        background: 'var(--s2)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        padding: '1rem 1.25rem',
+        textDecoration: 'none',
+        color: 'inherit',
+        transition: 'border-color 0.15s, background 0.15s',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+        e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = 'var(--border)';
+        e.currentTarget.style.background = 'var(--s2)';
+      }}
+    >
       <div style={{ textAlign: 'left' }}>
-        {homeSlug ? (
-          <Link href={`/directory/teams/${homeSlug}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {game.home_team?.logo_url && (
-              <img src={game.home_team.logo_url} alt={`${homeName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-            )}
-            <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{homeName}</p>
-          </Link>
-        ) : (
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{homeName}</p>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {game.home_team?.logo_url && (
+            <img src={game.home_team.logo_url} alt={`${homeName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+          )}
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{homeName}</p>
+        </div>
       </div>
 
       <div style={{ textAlign: 'center', minWidth: '80px' }}>
@@ -122,16 +130,12 @@ function GameCard({ game }: { game: Game }) {
       </div>
 
       <div style={{ textAlign: 'right' }}>
-        {awaySlug ? (
-          <Link href={`/directory/teams/${awaySlug}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{awayName}</p>
-            {game.away_team?.logo_url && (
-              <img src={game.away_team.logo_url} alt={`${awayName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-            )}
-          </Link>
-        ) : (
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{awayName}</p>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{awayName}</p>
+          {game.away_team?.logo_url && (
+            <img src={game.away_team.logo_url} alt={`${awayName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+          )}
+        </div>
       </div>
 
       {game.league?.name && (
@@ -139,7 +143,7 @@ function GameCard({ game }: { game: Game }) {
           <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{game.league.name}</span>
         </div>
       )}
-    </div>
+    </Link>
   );
 }
 
