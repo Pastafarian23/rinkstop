@@ -53,9 +53,17 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   }
 
   // Fetch boxscore + play-by-play in parallel
+  const fetchBox = async (): Promise<any | null> => {
+    const r = await fetch(`${NHL_BASE}/v1/gamecenter/${nhlGameId}/boxscore`);
+    return r.ok ? r.json() : null;
+  };
+  const fetchPbp = async (): Promise<any | null> => {
+    const r = await fetch(`${NHL_BASE}/v1/gamecenter/${nhlGameId}/play-by-play`);
+    return r.ok ? r.json() : null;
+  };
   const [boxRes, pbpRes] = await Promise.all([
-    fetch(`${NHL_BASE}/v1/gamecenter/${nhlGameId}/boxscore`).then<any>((r) => r.ok ? r.json() : null).catch(() => null),
-    fetch(`${NHL_BASE}/v1/gamecenter/${nhlGameId}/play-by-play`).then<any>((r) => r.ok ? r.json() : null).catch(() => null),
+    fetchBox().catch(() => null),
+    fetchPbp().catch(() => null),
   ]);
 
   if (!boxRes) {
