@@ -81,6 +81,24 @@ interface SeasonRecord {
   total: number;
 }
 
+// 2026-09-17: public roster. Same shape as PlayerRow in page.tsx —
+// duplicated here to keep this client component self-contained.
+interface RosterPlayer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  position: string | null;
+  jersey_number: number | null;
+  shoots: string | null;
+  catches: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  birth_date: string | null;
+  headshot_url: string | null;
+  primary_position_category: string | null;
+  nationality: string | null;
+}
+
 interface Props {
   team: Team;
   news: NewsRow[];
@@ -95,6 +113,7 @@ interface Props {
   claimantDisplayName?: string | null;
   claimantRole?: string | null;
   teamTimezone?: string;
+  roster?: RosterPlayer[];
   /**
    * PR3 (2026-07-08): other public team_workspaces in the same home_city.
    * Empty array (the default) hides the section entirely. Fires when
@@ -322,6 +341,7 @@ export default function PublicTeamProfile({
   teamTimezone,
   cityTeams = [],
   cityRinks = [],
+  roster = [],
 }: Props) {
   const flag = countryFlag(team.country_code);
   const levelLabel = team.level ? (LEVEL_LABELS[team.level] ?? team.level) : null;
@@ -757,6 +777,33 @@ export default function PublicTeamProfile({
             )}
           </section>
 
+          {/* 2026-09-17: Public roster. Groups players by position category
+              (Forwards / Defensemen / Goalies / Unknown) so the reader can
+              scan the section quickly. Falls back to a flat grid when no
+              categories are present. */}
+          {roster.length > 0 && (
+            <section style={{ marginTop: '2rem' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  marginBottom: '0.875rem',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                }}
+              >
+                <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
+                  ROSTER — {roster.length} PLAYERS
+                </h2>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                  Click a player to view their profile
+                </span>
+              </div>
+              <RosterGrid roster={roster} />
+            </section>
+          )}
+
           {/* Contact + team info */}
           <section>
             <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '0.75rem' }}>
@@ -1140,6 +1187,93 @@ function InfoRow({ label, value, linkHref, linkLabel }: { label: string; value: 
       <span style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'right' }}>
         {linkHref ? <Link href={linkHref} style={{ color: '#FFB81C', textDecoration: 'none' }}>{linkLabel ?? value}</Link> : value}
       </span>
+    </div>
+  );
+}
+// 2026-09-17: Roster renderer. Groups by primary_position_category so
+// the user sees Forwards / Defensemen / Goalies separately. Players
+// with no position land in an "Other" bucket.
+function RosterGrid({ roster }: { roster: RosterPlayer[] }) {
+  const groups: { label: string; items: RosterPlayer[] }[] = [
+    { label: 'Goalies', items: [] },
+    { label: 'Defensemen', items: [] },
+    { label: 'Forwards', items: [] },
+    { label: 'Other', items: [] },
+  ];
+  for (const p of roster) {
+    const cat = (p.primary_position_category || '').toLowerCase();
+    if (cat === 'goaltender') groups[0].items.push(p);
+    else if (cat === 'defenseman') groups[1].items.push(p);
+    else if (cat === 'forward') groups[2].items.push(p);
+    else groups[3].items.push(p);
+  }
+  const visibleGroups = groups.filter(g => g.items.length > 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {visibleGroups.map(group => (
+        <div key={group.label}>
+          <div
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#C8102E',
+              marginBottom: '0.5rem',
+            }}
+          >
+            {group.label}
+            <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginLeft: '0.5rem' }}>
+              {group.items.length}
+            </span>
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: '0.5rem',
+            }}
+          >
+            {group.items.map(p => (
+              <Link
+                key={p.id}
+                href={`/directory/players/${p.id}`}
+                style={{
+                  background: 'var(--s2)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  padding: '0.75rem 0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.625rem',
+                  textDecoration: 'none',
+                }}
+              >
+                {p.headshot_url ? (
+                  <img
+                    src={p.headshot_url}
+                    alt={`${p.first_name} ${p.last_name}`}
+                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, background: '#1a2D45' }}
+                  />
+                ) : (
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#1a2D45', flexShrink: 0 }} />
+                )}
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.first_name} {p.last_name}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
+                    {p.position?.replace(/_/g, ' ') ?? '—'}
+                    {p.jersey_number != null ? ` · #${p.jersey_number}` : ''}
+                    {p.shoots ? ` · ${p.shoots === 'L' ? 'L' : p.shoots === 'R' ? 'R' : ''}` : ''}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
