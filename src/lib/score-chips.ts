@@ -9,14 +9,18 @@ export interface ScoreChip {
   label: string;           // Display label on the chip
   type: ChipType;          // 'league' = shows team dropdown; 'category' = shows sub-league dropdown
   leagueSlugs: string[];   // Slugs of leagues that belong to this chip (in `leagues.slug`)
+  popular?: boolean;       // If true, shown in the 'Most Popular' section above the chip bar
 }
 
 // Order matters — this is the display order of chips left-to-right.
+// "popular" tag marks chips shown in the 'Most Popular' section above
+// the chip bar — only the leagues that drive the bulk of traffic.
 export const SCORE_CHIPS: ScoreChip[] = [
-  { slug: 'nhl',     label: 'NHL',     type: 'league',   leagueSlugs: ['nhl'] },
+  { slug: 'nhl',     label: 'NHL',     type: 'league',   popular: true, leagueSlugs: ['nhl'] },
+  { slug: 'khl',     label: 'KHL',     type: 'league',   popular: true, leagueSlugs: ['khl-russia'] },
+  { slug: 'pwhl',    label: 'PWHL',    type: 'league',   popular: true, leagueSlugs: ['pwhl'] },
   { slug: 'ahl',     label: 'AHL',     type: 'league',   leagueSlugs: ['ahl'] },
-  { slug: 'pwhl',    label: 'PWHL',    type: 'league',   leagueSlugs: ['pwhl'] },
-  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['khl', 'shl-sweden', 'del-germany'] },
+  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['shl-sweden', 'del-germany'] },
   { slug: 'college', label: 'NCAA',    type: 'category', leagueSlugs: ['ncaa-division-1-hockey'] },
   { slug: 'junior',  label: 'Junior',  type: 'category', leagueSlugs: ['whl', 'ohl', 'qmjhl'] },
 ];

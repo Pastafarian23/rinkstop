@@ -387,8 +387,41 @@ export default function GamesIndexClient({ initialData }: Props) {
       </p>
 
       {/* Filter bar: chips */}
+      {/* 2026-09-17: split chips into 'Most Popular' (NHL/KHL/PWHL — the
+          leagues that drive the bulk of traffic) and the rest. Per
+          Arnel's 07:20 CDT message: 'Why is there no khl in most popular
+          leagues?'. KHL is now its own top-level chip (moved out of INTL). */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '0.4rem' }}>
+        <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginRight: '0.25rem', minWidth: '5.5rem' }}>Most Popular</span>
+        {SCORE_CHIPS.filter(c => c.popular).map(c => {
+          const active = c.slug === league;
+          return (
+            <button
+              key={c.slug}
+              onClick={() => setLeague(c.slug)}
+              data-testid={`chip-${c.slug}`}
+              style={{
+                padding: '0.4rem 0.9rem',
+                borderRadius: '99px',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                background: active ? '#C8102E' : 'var(--s2)',
+                color: active ? '#fff' : 'rgba(255,255,255,0.7)',
+                border: active ? '1px solid #C8102E' : '1px solid var(--border)',
+              }}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
-        {SCORE_CHIPS.map(c => {
+        <span style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginRight: '0.25rem', minWidth: '5.5rem' }}>More</span>
+        {SCORE_CHIPS.filter(c => !c.popular).map(c => {
           const active = c.slug === league;
           return (
             <button
@@ -436,45 +469,37 @@ export default function GamesIndexClient({ initialData }: Props) {
         )}
       </div>
 
-      {/* Filter bar: dropdowns (conditional by chip type) */}
+      {/* Filter bar: dropdowns */}
+      {/* 2026-09-17: every chip now shows both a 'League' dropdown (so the
+          user can jump leagues without clicking chips) and 'Time'. The
+          'Team' dropdown only renders for league-type chips where teams
+          have been loaded. Per Arnel's 07:20 CDT: 'drop down filtering
+          similar to other pages that narrows down exactly to specific
+          league'. */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', marginBottom: '1.25rem' }}>
-        {isLeagueChip ? (
-          <>
-            <Dropdown
-              label="Team"
-              value={team}
-              onChange={v => updateParam('team', v)}
-              options={[{ value: '', label: 'All Teams' }, ...teams.map(t => ({ value: t.slug, label: t.name }))]}
-            />
-            <Dropdown
-              label="Time"
-              value={time}
-              onChange={v => updateParam('time', v)}
-              options={[
-                { value: 'current', label: 'Current' },
-                { value: 'historical', label: 'Historical' },
-              ]}
-            />
-          </>
-        ) : (
-          <>
-            <Dropdown
-              label="Time"
-              value={time}
-              onChange={v => updateParam('time', v)}
-              options={[
-                { value: 'current', label: 'Current' },
-                { value: 'historical', label: 'Historical' },
-              ]}
-            />
-            <Dropdown
-              label="League"
-              value={subleague}
-              onChange={v => updateParam('subleague', v)}
-              options={[{ value: '', label: 'All' }, ...subleagueOptions]}
-            />
-          </>
+        <Dropdown
+          label="League"
+          value={league}
+          onChange={v => setLeague(v)}
+          options={SCORE_CHIPS.map(c => ({ value: c.slug, label: c.label }))}
+        />
+        {isLeagueChip && (
+          <Dropdown
+            label="Team"
+            value={team}
+            onChange={v => updateParam('team', v)}
+            options={[{ value: '', label: 'All Teams' }, ...teams.map(t => ({ value: t.slug, label: t.name }))]}
+          />
         )}
+        <Dropdown
+          label="Time"
+          value={time}
+          onChange={v => updateParam('time', v)}
+          options={[
+            { value: 'current', label: 'Current' },
+            { value: 'historical', label: 'Historical' },
+          ]}
+        />
       </div>
 
       {/* Ticketmaster NHL Banner - 468x60 */}

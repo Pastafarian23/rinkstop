@@ -287,7 +287,7 @@ export default async function KHLPage() {
           live scores/standings. This block adds both from Supabase data.
           Standings are 2024-25 (last synced May 2026). Scores show last
           completed game from fixtures table (through May 2026). CTA leads to
-          /directory/games?league=intl for the full KHL scores feed. */}
+          /directory/games?league=khl for the full KHL scores feed. */}
       <KhlScoresBlock standings={standings} lastResult={lastResult} />
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
