@@ -490,9 +490,38 @@ export default function GamesIndexClient({ initialData }: Props) {
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
-            {games.map(g => <GameCard key={g.id} game={g} />)}
-          </div>
+          {/* 2026-09-17: group games by status so upcoming appear on top
+              and recently-completed appear below, each in their own section.
+              Previously this was a flat list — completed games mixed in
+              with upcoming and pushed preseason out of view. */}
+          {(() => {
+            const upcoming = games.filter(g => g.status === 'scheduled' || g.status === 'in_progress');
+            const completed = games.filter(g => g.status === 'completed');
+            return (
+              <>
+                {upcoming.length > 0 && (
+                  <section style={{ marginTop: '1.25rem' }}>
+                    <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
+                      Upcoming ({upcoming.length})
+                    </h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {upcoming.map(g => <GameCard key={g.id} game={g} />)}
+                    </div>
+                  </section>
+                )}
+                {completed.length > 0 && (
+                  <section style={{ marginTop: '1.75rem' }}>
+                    <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
+                      Recently Completed ({completed.length})
+                    </h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      {completed.map(g => <GameCard key={g.id} game={g} />)}
+                    </div>
+                  </section>
+                )}
+              </>
+            );
+          })()}
           {hasMore && (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
               <button
