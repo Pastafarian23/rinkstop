@@ -118,13 +118,13 @@ export async function GET(request: NextRequest) {
   }
 
   // Free-text team search. Searches home_team.name OR away_team.name.
-  // Works regardless of chip type (NHL/AHL/PWHL/INTL/NCAA/JUNIOR all support it).
-  // PostgREST embeds the filter into the joined relation via the foreign-key
-  // hint syntax: home_team:teams!home_team_id(...).ilike.
+  // PostgREST syntax for filtering on an embedded relation column uses
+  // the `relation.column` form inside an .or() filter. We OR across both
+  // sides so games show up whether the team is home OR away.
   if (q) {
     // Escape % and _ which have special meaning in LIKE
     const safe = q.replace(/[%_\\]/g, '\\$&');
-    query = query.or(`home_team.name.ilike.%${safe}%,away_team.name.ilike.%${safe}%`, { foreignTable: 'teams' });
+    query = query.or(`home_team.name.ilike.%${safe}%,away_team.name.ilike.%${safe}%`);
   }
 
   // Time filter (status + date)
