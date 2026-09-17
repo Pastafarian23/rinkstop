@@ -118,13 +118,22 @@ export async function GET(request: NextRequest) {
   }
 
   // Free-text team search. Searches home_team.name OR away_team.name.
-  // PostgREST syntax for filtering on an embedded relation column uses
-  // the `relation.column` form inside an .or() filter. We OR across both
-  // sides so games show up whether the team is home OR away.
+  // PostgREST embedded relation filters don't support ilike on joined columns.
+  // Instead: query teams table for matching names, then filter fixtures by
+  // those IDs. This is two round-trips but reliable and correct.
   if (q) {
-    // Escape % and _ which have special meaning in LIKE
     const safe = q.replace(/[%_\\]/g, '\\$&');
-    query = query.or(`home_team.name.ilike.%${safe}%,away_team.name.ilike.%${safe}%`);
+    const { data: matchingTeams } = await supabase
+      .from('teams')
+      .select('id')
+      .ilike('name', `%${safe}%`);
+    if (matchingTeams && matchingTeams.length > 0) {
+      const teamIds = matchingTeams.map(t => t.id).join(',');
+      query = query.or(`home_team_id.in.(${teamIds}),away_team_id.in.(${teamIds})`);
+    } else {
+      // No matching teams → return empty result
+      query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+    }
   }
 
   // Time filter (status + date)
