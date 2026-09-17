@@ -25,7 +25,7 @@ export async function GET(
     .from('fixtures')
     .select(`
       id, scheduled_at, status, home_score, away_score, league_id,
-      home_team_id, away_team_id, season, game_data, period_scores, venue_details,
+      home_team_id, away_team_id, season, game_data,
       home_team:teams!fixtures_home_team_id_fkey(id, name, slug, logo_url, city, country),
       away_team:teams!fixtures_away_team_id_fkey(id, name, slug, logo_url, city, country),
       league:leagues!fixtures_league_id_fkey(id, name, slug, level, country)
@@ -54,7 +54,5 @@ export async function GET(
     league: f.league,
     season: f.season,
     game_data: f.game_data,
-    period_scores: f.period_scores,
-    venue_details: f.venue_details,
   });
 }
