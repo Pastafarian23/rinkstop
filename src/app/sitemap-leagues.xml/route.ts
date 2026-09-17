@@ -4,7 +4,10 @@ import { baseUrl, isHighQualityLeague } from '@/lib/sitemap-shared';
 // Sub-sitemap for league detail pages. Same URLs as the main /sitemap.xml
 // for leagues — split out for dedicated crawl pipeline.
 
-export const revalidate = 3600;
+// 2026-09-17: reduced from 3600 → 300 so deprecation / canonical changes
+// show up in Google Search Console within 5 minutes instead of an hour.
+// Sitemaps are cheap to regenerate.
+export const revalidate = 300;
 
 export async function GET() {
   if (!supabaseAdmin) {
@@ -31,7 +34,7 @@ ${filtered.map(l => `  <url>
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      'Cache-Control': 'public, max-age=300, s-maxage=300',
     },
   });
 }
