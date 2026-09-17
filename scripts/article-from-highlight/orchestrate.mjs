@@ -549,8 +549,11 @@ async function insertDraft(highlight, meta, body) {
 
   // Append a source-cite footer to the body so the article is self-citing.
   // Strip any existing trailing *Source:* line from the LLM, then add ours.
+  // 2026-09-17: Arnel directed us to drop the "Verified via YouTube
+  // transcript..." boilerplate — the standard AI disclaimer lives in
+  // the editorial footer on every article, so this line is redundant.
   const bodyClean = body.replace(/\n*\*Source:.*\*\s*$/m, '').trim();
-  const contentWithFooter = `${bodyClean}\n\n*Source: ${source_cite} | Verified via YouTube transcript, source-channel metadata, and web search. Compiled by the RinkStop article pipeline.*`;
+  const contentWithFooter = `${bodyClean}\n\n*Source: ${source_cite}*`;
 
   const { data, error } = await sb.from('posts').insert({
     slug,
