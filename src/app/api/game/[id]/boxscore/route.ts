@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
 const cache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const ip = getClientIP(request);
   const result = await checkRateLimit(`gamebox:${ip}`, RATE_LIMIT);
   if (!result.allowed) {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return response;
   }
 
-  const gameId = params.id;
+  const { id: gameId } = await ctx.params;
   if (!gameId) {
     return NextResponse.json({ error: 'Missing game id' }, { status: 400 });
   }
