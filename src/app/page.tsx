@@ -33,13 +33,15 @@ export async function generateMetadata(): Promise<Metadata> {
   let rinks = 0, teams = 0, players = 0, leagues = 0, cities = 0, countries = 0;
   try {
     const { data } = await supabase.rpc('get_directory_stats');
-    const s = (data || {}) as { rinks?: number; teams?: number; players?: number; leagues?: number; cities?: number; countries?: number };
-    rinks = s.rinks || 0;
-    teams = s.teams || 0;
-    players = s.players || 0;
-    leagues = s.leagues || 0;
-    cities = s.cities || 0;
-    countries = s.countries || 0;
+    // 2026-09-17: the migration 2026-09-17_fix_upcoming_games_filter.sql
+    // renamed the RPC keys to *_count. Update the readers to match.
+    const s = (data || {}) as { rink_count?: number; team_count?: number; player_count?: number; league_count?: number; city_count?: number; country_count?: number };
+    rinks = s.rink_count || 0;
+    teams = s.team_count || 0;
+    players = s.player_count || 0;
+    leagues = s.league_count || 0;
+    cities = s.city_count || 0;
+    countries = s.country_count || 0;
   } catch {
     // fall through with zeros
   }
@@ -128,8 +130,13 @@ export default async function Home() {
   // home page TTFB from ~1s to ~50ms after warmup.
   const { data: statsData, error: statsError } = await supabase.rpc('get_directory_stats');
   const stats = (statsData || {}) as {
-    rinks: number; teams: number; players: number; leagues: number;
-    cities: number; countries: number;
+    // 2026-09-17: migration renamed RPC keys to *_count. The interface
+    // keeps both old (for backward-compat in case of partial migration)
+    // and new fields. The counts reader uses the new ones.
+    rink_count?: number; team_count?: number; player_count?: number; league_count?: number;
+    city_count?: number; country_count?: number;
+    rinks?: number; teams?: number; players?: number; leagues?: number;
+    cities?: number; countries?: number;
     recent_rinks: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null }>;
     recent_teams: Array<{ id: string; name: string; slug: string; city: string | null; league_id: string | null; league_name: string | null }>;
     upcoming_games: Array<{ id: string; date: string; home_team_name: string | null; away_team_name: string | null; venue_name: string | null }>;
@@ -166,12 +173,12 @@ export default async function Home() {
   const currentUserTier: string = 'free';
 
   const counts = {
-    rinks: stats.rinks || 0,
-    teams: stats.teams || 0,
-    players: stats.players || 0,
-    leagues: stats.leagues || 0,
-    cities: stats.cities || 0,
-    countries: stats.countries || 0,
+    rinks: stats.rink_count || 0,
+    teams: stats.team_count || 0,
+    players: stats.player_count || 0,
+    leagues: stats.league_count || 0,
+    cities: stats.city_count || 0,
+    countries: stats.country_count || 0,
   };
 
   const recentRinks = stats.recent_rinks || [];
@@ -450,13 +457,6 @@ export default async function Home() {
           </p>
         </div>
       </section>
-
-      {/* ---- JUST GETTING STARTED? (cross-link to /learn) ---------------------------- */}
-      {/* Moved EARLIER on the home page in 2026-09-11 phase 6A — first-time */}
-      {/* visitors land here, see the on-ramp to /learn BEFORE the tools / */}
-      {/* guides / directory traffic, so they have context for what they're looking at. */}
-      <JustGettingStartedSection />
-
 
       {/* ---- TOP HOCKEY CITIES ----------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -821,6 +821,13 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ---- JUST GETTING STARTED? (cross-link to /learn) ---------------------------- */}
+      {/* 2026-09-17 Arnel directive: moved here from line 465 (was right */}
+      {/* after the hero). New placement: AFTER pricing (Membership) AND */}
+      {/* after Plan Your Season (Free Tools + Guides), so the home page */}
+      {/* reads top-to-bottom: directory → browse → pricing → tools → on-ramp. */}
+      <JustGettingStartedSection />
     </>
   );
 }
