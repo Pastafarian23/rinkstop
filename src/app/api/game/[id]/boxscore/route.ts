@@ -62,8 +62,8 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
     return r.ok ? r.json() : null;
   };
   const [boxRes, pbpRes] = await Promise.all([
-    fetchBox().catch(() => null),
-    fetchPbp().catch(() => null),
+    fetchBox().catch<any>(() => null),
+    fetchPbp().catch<any>(() => null),
   ]);
 
   if (!boxRes) {
