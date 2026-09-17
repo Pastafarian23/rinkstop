@@ -5,7 +5,7 @@
  * Strategy:
  *   1. NHL.com `/v1/schedule/{date}` for the NHL league (source of truth)
  *   2. Highlightly `/matches?date=...` for SHL/DEL/KHL/MHL/VHL/SPHL/Liiga/IIHF/etc
- *   3. Upsert into `fixtures` keyed by `nhl_game_id` (NHL) or `(league_id, scheduled_at, home_team_name, away_team_name)` (others)
+ *   3. Upsert into `fixtures` keyed by deterministic UUID derived from game_id (NHL + HL)
  *   4. Update status (`scheduled`/`in_progress`/`completed`/`cancelled`) and scores as they change
  *
  * Run modes:
@@ -111,18 +111,23 @@ async function upsertNhlGame(g) {
   // Skip games without team assignments
   if (!ht.id || !at.id) return null;
 
+  // Generate deterministic UUID from NHL game id (e.g. "2026010024")
+  // Format: 8-4-4-4-12 using NHL_LEAGUE_ID prefix + 10-digit id
+  const id = `${NHL_LEAGUE_ID.slice(0, 8)}-0000-0000-0000-${String(g.id).padStart(12, '0')}`.slice(0, 36);
+
   const record = {
+    id,
     league_id: NHL_LEAGUE_ID,
-    nhl_game_id: g.id,
+    nhl_game_id: g.id,  // stored in game_data JSONB for downstream consumers
     scheduled_at: g.startTimeUTC,
-    home_team_id: null,  // resolved below via team_workspaces lookup by tri
+    home_team_id: null,  // resolved below via teams lookup by tri
     away_team_id: null,
     home_score: homeScore,
     away_score: awayScore,
     status,
     season: mapNhlSeason(g.season, g.gameType),
     // game_data: full NHL.com payload for downstream consumers
-    game_data: g,
+    game_data: { ...g, nhl_game_id: g.id },  // keep id inside JSON too
     updated_at: new Date().toISOString(),
   };
 
@@ -201,21 +206,20 @@ async function upsertHighlightlyGame(g, hlLeagueId, hlLeagueName) {
   };
 }
 
-async function upsertFixture(record, key) {
+async function upsertFixture(record) {
   if (DRY_RUN) {
-    console.log(`  [DRY] would upsert: ${key} → status=${record.status} score=${record.home_score}-${record.away_score}`);
+    console.log(`  [DRY] would upsert: ${record.id?.slice(0, 8)} → status=${record.status} score=${record.home_score}-${record.away_score}`);
     return null;
   }
   const { data, error } = await supabase
     .from('fixtures')
-    .upsert(record, { onConflict: key, ignoreDuplicates: false })
-    .select('id')
-    .single();
+    .upsert(record, { onConflict: 'id', ignoreDuplicates: false })
+    .select('id');
   if (error) {
-    console.log(`  ✗ upsert ${key}: ${error.message}`);
+    console.log(`  ✗ upsert ${record.id?.slice(0, 8)}: ${error.message}`);
     return null;
   }
-  return data?.id;
+  return data?.[0]?.id ?? record.id;  // upsert returns array; fall back to record.id when single() returns null
 }
 
 async function resolveTeamIds(record) {
@@ -279,8 +283,7 @@ async function main() {
       const record = await upsertNhlGame(g);
       if (!record) continue;
       await resolveTeamIds(record);
-      const key = 'nhl_game_id';
-      const id = await upsertFixture(record, key);
+      const id = await upsertFixture(record);
       if (id) totalNhl++;
 
       // Also write to nhl_matches for the NHL schedule page
@@ -356,7 +359,7 @@ async function main() {
           // Format: 8-4-4-4-12 using league_id prefix + match_id padding
           const id = `${leagueId.slice(0, 8)}-0000-0000-0000-${String(g.id).padStart(12, '0')}`.slice(0, 36);
           record.id = id;
-          await upsertFixture(record, 'id');
+          await upsertFixture(record);
           totalHl++;
         }
       }
