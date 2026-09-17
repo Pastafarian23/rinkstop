@@ -73,6 +73,7 @@ type SearchParams = Promise<{
   team?: string;
   time?: string;
   subleague?: string;
+  q?: string;
 }>;
 
 async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
@@ -83,16 +84,18 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
   time: string;
   team: string;
   subleague: string;
+  q: string;
 }> {
   const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
   const league = searchParams.league || 'nhl';
   const team = searchParams.team || '';
   const time = searchParams.time || 'current';
   const subleague = searchParams.subleague || '';
+  const q = searchParams.q || '';
   const limit = 50;
   const offset = 0;
   try {
-    const url = `${base}/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}&limit=${limit}&offset=${offset}`;
+    const url = `${base}/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${limit}&offset=${offset}`;
     const res = await fetch(url, { cache: 'no-store' });
     const json: ApiResponse = await res.json();
     return {
@@ -103,10 +106,11 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
       time,
       team,
       subleague,
+      q,
     };
   } catch (err) {
     console.error('Games initial fetch failed:', err);
-    return { games: [], hasMore: false, totalShown: 0, league, time, team, subleague };
+    return { games: [], hasMore: false, totalShown: 0, league, time, team, subleague, q };
   }
 }
 

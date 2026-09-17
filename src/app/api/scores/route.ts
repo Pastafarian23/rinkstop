@@ -69,6 +69,7 @@ export async function GET(request: NextRequest) {
   const team = searchParams.get('team');
   const subleague = searchParams.get('subleague');
   const time = searchParams.get('time') || DEFAULT_TIME;
+  const q = searchParams.get('q')?.trim() || '';  // 2026-09-17: free-text team search
   const limit = Math.min(parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10), 200);
 
   const chip = getChip(league);
@@ -116,11 +117,30 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Free-text team search. Searches home_team.name OR away_team.name.
+  // Works regardless of chip type (NHL/AHL/PWHL/INTL/NCAA/JUNIOR all support it).
+  // PostgREST embeds the filter into the joined relation via the foreign-key
+  // hint syntax: home_team:teams!home_team_id(...).ilike.
+  if (q) {
+    // Escape % and _ which have special meaning in LIKE
+    const safe = q.replace(/[%_\\]/g, '\\$&');
+    query = query.or(`home_team.name.ilike.%${safe}%,away_team.name.ilike.%${safe}%`, { foreignTable: 'teams' });
+  }
+
   // Time filter (status + date)
+  // recent     = completed games from the last 7 days (DESC by date)
   // historical = anything older than the recent cutoff EXCEPT in-progress games
-  // (old 'scheduled' rows count as historical — some leagues never got status backfilled)
+  // current    = scheduled/in_progress (any date) OR recently completed
   if (time === 'historical') {
     query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoffISO);
+  } else if (time === 'recent') {
+    // 2026-09-17: new mode for the /scores Recent Results section.
+    // Completed games from the last 7 days, ordered most recent first.
+    // Excludes in-progress (those belong on 'Current').
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    query = query.eq('status', 'completed').gte('scheduled_at', sevenDaysAgo);
+    // Override the default ASC sort from the upstream builder
+    query = query.order('scheduled_at', { ascending: false });
   } else {
     // current: scheduled/in_progress (any date) OR recently completed
     query = query.or(
