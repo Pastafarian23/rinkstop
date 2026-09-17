@@ -487,7 +487,8 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                 />
               </div>
 
-              {isArnelByline && (
+              {isArnelByline ? (
+                // Personal byline (Arnel) → show founder sidebar with bio + CTAs.
               <div
                 style={{
                   marginTop: '2.5rem',
@@ -539,6 +540,68 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                     </svg>
                     Connect on LinkedIn
                   </a>
+                </div>
+              </div>
+              ) : (
+                // 2026-09-17: Highlight Desk byline (or any non-Arnel) →
+                // show the editorial team sidebar. No personal bio, no
+                // personal social links — just the team name + a short
+                // editorial-process blurb + links to /editorial-policy
+                // and /about so readers can dig deeper.
+              <div
+                style={{
+                  marginTop: '2.5rem',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  padding: '1.5rem',
+                  borderRadius: '4px',
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: '1.0625rem', marginBottom: '0.25rem', color: '#fff' }}>
+                  RinkStop Editorial Team
+                </div>
+                <div style={{ color: '#C8102E', fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
+                  {authorRole || 'Highlight Desk'}
+                </div>
+                <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.65, margin: '0 0 0.875rem' }}>
+                  This recap was produced by the RinkStop editorial desk and reviewed before publication. We use a documented human-in-the-loop process so every article that goes live on RinkStop meets our standards for accuracy and clarity.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', alignItems: 'center' }}>
+                  <Link
+                    href="/editorial-policy"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      padding: '0.5rem 0.875rem',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#fff',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }} aria-hidden="true">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                    </svg>
+                    Editorial Policy
+                  </Link>
+                  <Link
+                    href="/about"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      color: '#FFB81C',
+                      fontSize: '0.875rem',
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    About RinkStop →
+                  </Link>
                 </div>
               </div>
               )}
