@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SCORE_CHIPS, DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip } from '@/lib/score-chips';
@@ -43,6 +43,7 @@ interface InitialData {
   time: string;
   team: string;
   subleague: string;
+  q: string;
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
@@ -220,6 +221,8 @@ export default function GamesIndexClient({ initialData }: Props) {
   const team = searchParams.get('team') ?? initialData.team ?? '';
   const time = searchParams.get('time') || initialData.time || DEFAULT_TIME;
   const subleague = searchParams.get('subleague') ?? initialData.subleague ?? '';
+  const q = searchParams.get('q') ?? '';
+  const searchTimer = useRef<NodeJS.Timeout | null>(null);
 
   const chip = useMemo(() => getChip(league), [league]);
   const isLeagueChip = chip.type === 'league';
@@ -263,7 +266,7 @@ export default function GamesIndexClient({ initialData }: Props) {
     setGames([]);
     setTotalShown(0);
     setHasMore(false);
-    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=0`)
+    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=0`)
       .then(r => r.json())
       .then((d: ApiResponse) => {
         setGames(d?.data || []);
@@ -272,12 +275,12 @@ export default function GamesIndexClient({ initialData }: Props) {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [league, time, team, subleague]);
+  }, [league, time, team, subleague, q]);
 
   const loadMore = () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=${games.length}`)
+    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=${games.length}`)
       .then(r => r.json())
       .then((d: ApiResponse) => {
         setGames(prev => [...prev, ...(d?.data || [])]);
@@ -309,7 +312,7 @@ export default function GamesIndexClient({ initialData }: Props) {
   };
 
   // Clear is visible only if any filter diverges from defaults
-  const isDefault = league === DEFAULT_CHIP && time === DEFAULT_TIME && !team && !subleague;
+  const isDefault = league === DEFAULT_CHIP && time === DEFAULT_TIME && !team && !subleague && !q;
 
   // JSON-LD structured data
   useEffect(() => {
@@ -469,6 +472,34 @@ export default function GamesIndexClient({ initialData }: Props) {
         )}
       </div>
 
+      {/* Search bar — free-text team search. Filters across the active
+          league chip; debounces input by 300ms before pushing to URL
+          to avoid hitting the API on every keystroke. */}
+      <div style={{ marginBottom: '1rem' }}>
+        <input
+          type="search"
+          placeholder={`Search teams in ${chip.label}…`}
+          defaultValue={q}
+          onChange={e => {
+            const v = e.target.value;
+            if (searchTimer.current) clearTimeout(searchTimer.current);
+            searchTimer.current = setTimeout(() => updateParam('q', v), 300);
+          }}
+          style={{
+            width: '100%',
+            maxWidth: '420px',
+            padding: '0.625rem 0.875rem',
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            color: '#fff',
+            fontSize: '0.9375rem',
+            outline: 'none',
+          }}
+          data-testid="team-search"
+        />
+      </div>
+
       {/* Filter bar: dropdowns */}
       {/* 2026-09-17: every chip now shows both a 'League' dropdown (so the
           user can jump leagues without clicking chips) and 'Time'. The
@@ -497,6 +528,7 @@ export default function GamesIndexClient({ initialData }: Props) {
           onChange={v => updateParam('time', v)}
           options={[
             { value: 'current', label: 'Current' },
+            { value: 'recent', label: 'Recent Results' },
             { value: 'historical', label: 'Historical' },
           ]}
         />
@@ -520,6 +552,22 @@ export default function GamesIndexClient({ initialData }: Props) {
               Previously this was a flat list — completed games mixed in
               with upcoming and pushed preseason out of view. */}
           {(() => {
+            // 2026-09-17: when the user picks the 'Recent Results' time filter,
+            // the API returns only completed games from the last 7 days
+            // ordered most-recent-first. Render them in a single section.
+            // Otherwise split into Upcoming + Recently Completed.
+            if (time === 'recent') {
+              return (
+                <section style={{ marginTop: '1.25rem' }}>
+                  <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
+                    Recent Results ({games.length})
+                  </h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {games.map(g => <GameCard key={g.id} game={g} />)}
+                  </div>
+                </section>
+              );
+            }
             const upcoming = games.filter(g => g.status === 'scheduled' || g.status === 'in_progress');
             const completed = games.filter(g => g.status === 'completed');
             return (
