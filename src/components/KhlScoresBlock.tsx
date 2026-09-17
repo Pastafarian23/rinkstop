@@ -95,7 +95,7 @@ export function KhlScoresBlock({ standings, lastResult }: KhlScoresBlockProps) {
             Full 2026-27 KHL schedule, live scores, and recent results — updated daily.
           </p>
           <Link
-            href="/directory/games?league=intl"
+            href="/directory/games?league=khl"
             style={{
               display: 'inline-block',
               background: '#C8102E',
@@ -118,7 +118,7 @@ export function KhlScoresBlock({ standings, lastResult }: KhlScoresBlockProps) {
         <section style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem' }}>
             <h2 style={{ fontSize: '1rem', color: '#fff', fontWeight: 700, margin: 0 }}>2024-25 Standings</h2>
-            <Link href="/directory/games?league=intl" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
+            <Link href="/directory/games?league=khl" style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>
               Full standings ›
             </Link>
           </div>
