@@ -207,9 +207,11 @@ export default async function Home() {
   // page renders together (no client-side loading flash on the
   // LATEST HIGHLIGHTS section). Mirrors the logic in
   // /api/highlights?youtubeOnly=true&limit=5 (backup table query).
+  // NOTE: highlight_backups is RLS-locked to service_role only — the
+  // anon `supabase` client below returns 0 rows. We use supabaseAdmin.
   let initialHighlights: any[] = [];
   try {
-    const { data: hlRows } = await supabase
+    const { data: hlRows } = await supabaseAdmin
       .from('highlight_backups')
       .select('id, title, description, highlight_type, video_url, embed_url, image_url, source, channel, post_id, match_id, match_date, match_season, match_round, league_id, league_name, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo')
       .not('video_url', 'is', null)
