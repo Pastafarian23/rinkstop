@@ -57,10 +57,40 @@ export async function GET(request: NextRequest) {
       .limit(1);
     if (error) return jsonResponse({ error: error.message }, 500);
     const post = (data || [])[0] || null;
+    // 2026-09-17: build a clean excerpt for the highlight popup snippet.
+    // Priority: explicit subtitle > first paragraph of body content.
+    // The previous version used the first 280 chars of content verbatim,
+    // which included frontmatter (---, title:, # heading, video URL) and
+    // showed up raw in the popup. Now we:
+    //   1. Drop the leading --- frontmatter block if present.
+    //   2. Strip markdown (# heading, **bold**, [link](url), <iframe>, etc).
+    //   3. Find the first non-empty paragraph and use its first 240 chars.
+    function buildExcerpt(rawContent: string, subtitle: string | null): string {
+      if (subtitle && subtitle.trim().length > 30) return subtitle.trim();
+      if (!rawContent) return '';
+      // Drop frontmatter
+      let text = rawContent.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
+      // Find first paragraph (skipping the first # heading line and video URL)
+      const paragraphs = text.split(/\n\s*\n/);
+      let firstPara = '';
+      for (const p of paragraphs) {
+        const stripped = p.replace(/^#+\s+.*$/m, '')        // strip heading lines
+                          .replace(/^https?:\/\/\S+$/m, '') // strip standalone URLs
+                          .replace(/[*_`>#\[\]()]/g, '')    // strip markdown formatting
+                          .replace(/<[^>]*>/g, '')          // strip HTML tags
+                          .trim();
+        if (stripped.length > 60) {
+          firstPara = stripped;
+          break;
+        }
+      }
+      if (!firstPara) firstPara = text.replace(/[*_`>#\[\]()]/g, '').replace(/<[^>]*>/g, '').trim();
+      return (firstPara.substring(0, 240).trim() + (firstPara.length > 240 ? '…' : ''));
+    }
     return jsonResponse({
       data: post ? [{
         ...post,
-        excerpt: post.subtitle || (post.content ? post.content.replace(/<[^>]*>/g, '').substring(0, 280).trim() + '…' : ''),
+        excerpt: buildExcerpt(post.content || '', post.subtitle),
       }] : [],
     });
   }
