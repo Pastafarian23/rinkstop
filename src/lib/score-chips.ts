@@ -16,7 +16,7 @@ export const SCORE_CHIPS: ScoreChip[] = [
   { slug: 'nhl',     label: 'NHL',     type: 'league',   leagueSlugs: ['nhl'] },
   { slug: 'ahl',     label: 'AHL',     type: 'league',   leagueSlugs: ['ahl'] },
   { slug: 'pwhl',    label: 'PWHL',    type: 'league',   leagueSlugs: ['pwhl'] },
-  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['khl'] },
+  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['khl', 'shl-sweden', 'del-germany'] },
   { slug: 'college', label: 'NCAA',    type: 'category', leagueSlugs: ['ncaa-division-1-hockey'] },
   { slug: 'junior',  label: 'Junior',  type: 'category', leagueSlugs: ['whl', 'ohl', 'qmjhl'] },
 ];
