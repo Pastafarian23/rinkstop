@@ -44,6 +44,12 @@ interface HighlightsGridProps {
   matchId?: string;
   title?: string;
   columns?: 2 | 3 | 4;
+  // 2026-09-17: server-rendered initial data. When provided, the
+  // component hydrates with these highlights already on screen — no
+  // client-side fetch, no loading flash. Used by the home page so
+  // the page renders together. The /highlights page doesn't pass
+  // this and continues to fetch on the client as before.
+  initialData?: Highlight[];
 }
 
 export default function HighlightsGrid({
@@ -52,9 +58,12 @@ export default function HighlightsGrid({
   teamName,
   matchId,
   title = 'Latest Highlights',
+  initialData,
 }: HighlightsGridProps) {
-  const [highlights, setHighlights] = useState<Highlight[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [highlights, setHighlights] = useState<Highlight[]>(initialData || []);
+  // 2026-09-17: if we have initialData, no loading flash. Otherwise
+  // the SSR shows the section empty and the client populates later.
+  const [loading, setLoading] = useState<boolean>(!initialData);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Highlight | null>(null);
@@ -66,6 +75,10 @@ export default function HighlightsGrid({
 
   useEffect(() => {
     setMounted(true);
+    // 2026-09-17: skip the client fetch entirely when the parent
+    // (home page) already supplied initialData via SSR. We still set
+    // mounted=true so the gating below lets the section render.
+    if (initialData) return;
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
@@ -91,7 +104,7 @@ export default function HighlightsGrid({
     }
 
     fetchHighlights();
-  }, [limit, teamFilter, teamName, matchId]);
+  }, [limit, teamFilter, teamName, matchId, initialData]);
 
   // When a highlight is opened, try to find a companion published article
   // linked via highlight_id. If found, show a snippet + "View full article"
@@ -125,11 +138,11 @@ export default function HighlightsGrid({
     return () => { cancelled = true; };
   }, [selected]);
 
-  // Suppress the section entirely during SSR — the prior version baked 8 light-gray
-  // `bg-gray-200` skeleton boxes into the SSR HTML which clashed horribly with the
-  // dark site theme. Now SSR sends nothing; the client renders the heading + real
-  // (or dark-skeleton) content after mount.
-  if (!mounted) return null;
+  // 2026-09-17: when the parent passes initialData, render the section
+  // immediately on the server — no client-mount wait, no loading flash.
+  // When initialData is absent (e.g. /highlights page), keep the old
+  // mounted-gate so SSR still sends nothing (matches the dark theme).
+  if (!initialData && !mounted) return null;
   if (loading) {
     return (
       <div style={{ padding: '2rem 0' }}>

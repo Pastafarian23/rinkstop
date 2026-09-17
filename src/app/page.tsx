@@ -203,6 +203,56 @@ export default async function Home() {
     homeNewest.players.length > 0 ||
     homeNewest.articles.length > 0;
 
+  // 2026-09-17: server-fetch the 5 latest YouTube highlights so the
+  // page renders together (no client-side loading flash on the
+  // LATEST HIGHLIGHTS section). Mirrors the logic in
+  // /api/highlights?youtubeOnly=true&limit=5 (backup table query).
+  let initialHighlights: any[] = [];
+  try {
+    const { data: hlRows } = await supabase
+      .from('highlight_backups')
+      .select('id, title, description, highlight_type, video_url, embed_url, image_url, source, channel, post_id, match_id, match_date, match_season, match_round, league_id, league_name, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo')
+      .not('video_url', 'is', null)
+      .ilike('video_url', '%youtube.com%')
+      .order('match_date', { ascending: false })
+      .limit(5);
+    initialHighlights = (hlRows || []).map((h: any) => ({
+      id: h.id,
+      title: h.title,
+      description: h.description || '',
+      type: h.highlight_type,
+      url: h.video_url,
+      embedUrl: h.embed_url,
+      imageUrl: h.image_url,
+      source: h.source,
+      channel: h.channel,
+      match: {
+        id: h.match_id,
+        league: h.league_name,
+        leagueId: h.league_id,
+        season: h.match_season,
+        date: h.match_date,
+        round: h.match_round,
+        homeTeam: h.home_team_name ? {
+          id: h.home_team_id,
+          name: h.home_team_name,
+          displayName: h.home_team_name,
+          abbreviation: '',
+          logo: h.home_team_logo,
+        } : null,
+        awayTeam: h.away_team_name ? {
+          id: h.away_team_id,
+          name: h.away_team_name,
+          displayName: h.away_team_name,
+          abbreviation: '',
+          logo: h.away_team_logo,
+        } : null,
+      },
+    }));
+  } catch (err) {
+    console.error('[home] initialHighlights fetch failed:', err);
+  }
+
   const ldJson = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -500,7 +550,7 @@ export default async function Home() {
       {/* ---- LATEST HIGHLIGHTS ----------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
-          <HighlightsGrid limit={5} columns={4} title="LATEST HIGHLIGHTS" />
+          <HighlightsGrid limit={5} columns={4} title="LATEST HIGHLIGHTS" initialData={initialHighlights} />
         </div>
       </section>
 
