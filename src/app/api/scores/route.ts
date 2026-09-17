@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     `)
     .not('home_team_id', 'is', null)
     .not('away_team_id', 'is', null)
-    .order('scheduled_at', { ascending: false });
+    .order('scheduled_at', { ascending: true });
 
   // League filter
   if (leagueIds.length === 0) {

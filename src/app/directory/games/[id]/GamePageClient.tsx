@@ -70,13 +70,17 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!gameId) return;
-    fetch(`/api/scores?limit=100`)
-      .then(r => r.json())
-      .then(allGames => {
-        const found = Array.isArray(allGames) ? allGames.find((g: any) => g.id === gameId) : null;
-        if (found) { setGame(found); setLoading(false); return; }
+    // 2026-09-17: switched from /api/scores?limit=100 to /api/game/[id].
+    // The old approach fetched all current/recent games ordered DESC by
+    // scheduled_at and searched by ID — if the game was outside the first
+    // 100 (e.g. a preseason game in September), the detail page showed
+    // "Game Not Found" even though the row existed in fixtures.
+    fetch(`/api/game/${gameId}`)
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then((g: any) => {
+        if (g?.error) { setLoading(false); setError(g.error); return; }
+        setGame(g);
         setLoading(false);
-        setError('Game not found in database');
       })
       .catch(err => { setLoading(false); setError(err.message); });
   }, [gameId]);

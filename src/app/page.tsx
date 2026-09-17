@@ -627,7 +627,7 @@ export default async function Home() {
                   ? formatGameTime(g.date, 'America/New_York')
                   : 'Date TBD';
                 return (
-                  <div key={g.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <Link key={g.id} href={`/directory/games/${g.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none', transition: 'background 0.15s' }}>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{g.away_team_name} @ {g.home_team_name}</div>
                       <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
@@ -635,7 +635,7 @@ export default async function Home() {
                     <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{timeText}</div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
               <div style={{ gridColumn: '1 / -1', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.5rem', fontStyle: 'italic' }}>
