@@ -182,7 +182,10 @@ const LEAGUE_SLUG_REDIRECTS: Record<string, string> = {
   'del-germany': 'del',
   'sm-liiga': 'liiga',
   'asia-league': 'asia-league-ice-hockey',
+  'asia-league-ice-hockey-world': 'asia-league-ice-hockey',
   'echl-usa': 'echl',
+  'khl-russia': 'khl',
+  'liiga-finland': 'liiga',
 };
 
 const ENTITY_UUID_PREFIXES: Array<{
