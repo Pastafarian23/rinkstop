@@ -43,8 +43,10 @@ else
 fi
 
 # Gate 3: TypeScript compile
+# 2026-09-17: default 2 GiB Node heap OOMs on this project's full type check
+# (measured 72s with abort, vs 60s clean with 4 GiB). Bump to match Vercel.
 echo "[3/4] running npx tsc --noEmit..."
-if ! npx tsc --noEmit 2>&1 | tail -50; then
+if ! NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096" npx tsc --noEmit 2>&1 | tail -50; then
   echo "FAIL: TypeScript compile errors"
   exit 1
 fi
