@@ -29,6 +29,7 @@ const subSitemaps = [
   'sitemap-tools.xml',
   'sitemap-guides.xml',
   'sitemap-learn.xml',
+  'sitemap-games.xml',
 ];
 
 export async function GET() {
