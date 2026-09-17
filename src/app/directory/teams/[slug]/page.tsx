@@ -117,6 +117,24 @@ interface NewsRow {
   published_at: string;
 }
 
+// 2026-09-17: Public roster surfaced from the existing players table.
+// We only return fields that are safe to display publicly (no PII).
+interface PlayerRow {
+  id: string;
+  first_name: string;
+  last_name: string;
+  position: string | null;
+  jersey_number: number | null;
+  shoots: string | null;
+  catches: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  birth_date: string | null;
+  headshot_url: string | null;
+  primary_position_category: string | null;
+  nationality: string | null;
+}
+
 interface ResultRow {
   id: string;
   game_date: string;
@@ -261,7 +279,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   const seasonStart = new Date();
   seasonStart.setMonth(seasonStart.getMonth() - 18);
 
-  const [newsRes, resultsRes, upcomingEventsRes, adminsRes] = await Promise.all([
+  const [newsRes, resultsRes, upcomingEventsRes, adminsRes, playersRes] = await Promise.all([
     supabase
       .from('team_news')
       .select('id, title, body, author_user_id, published_at')
@@ -293,10 +311,22 @@ export default async function PublicTeamPage({ params }: PageProps) {
       .is('left_at', null)
       .in('role', ['head_coach', 'assistant_coach', 'manager', 'team_staff'])
       .order('joined_at'),
+    // 2026-09-17: public roster. anon-readable, capped at 80 to keep the
+    // page snappy; teams with more players still get the full count from
+    // the `players.length` shown in the heading.
+    supabase
+      .from('players')
+      .select('id, first_name, last_name, position, jersey_number, shoots, catches, height_cm, weight_kg, birth_date, headshot_url, primary_position_category, nationality')
+      .eq('team_id', team.id)
+      .eq('is_active', true)
+      .order('jersey_number', { ascending: true })
+      .limit(80)
+      .returns<PlayerRow[]>(),
   ]);
 
   const news: NewsRow[] = newsRes.data || [];
   const results: ResultRow[] = resultsRes.data || [];
+  const roster: PlayerRow[] = playersRes.data || [];
   // Normalize team_events rows into ScheduleRow shape so the rest of the page works unchanged
   const teamEventsRows = (upcomingEventsRes.data || []) as Array<{
     id: string;
@@ -576,6 +606,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
         news={news}
         results={results}
         upcoming={mergedUpcoming}
+        roster={roster}
         admins={admins}
         claimed={isVerifiedClaim}
         claimedByUserId={claimRow?.user_id ?? null}
