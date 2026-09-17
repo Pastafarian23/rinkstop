@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import GamesIndexClient from './GamesIndexClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
+const BASE_URL = 'https://rinkstop.com';
+
 // PR #146 (2026-08-22) WS24 thin-content sweep: expand the /directory/games
 // meta description so the index page clears the AdSense ~150-word
 // threshold. Anchor pools: league chips (NHL, AHL, PWHL, KHL/SHL/Liiga/DEL/NL/
@@ -118,6 +120,32 @@ export default async function GamesPage(props: { searchParams: SearchParams }) {
   // and leagues pages.
   return (
     <Suspense fallback={<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><div className="skeleton" style={{ height: '200px', borderRadius: '8px' }} /></div>}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
+                { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/games` },
+              ],
+            },
+            ...initialData.games.map((g: Game) => ({
+              '@type': 'SportsEvent',
+              name: `${g.home_team?.name || 'Home'} vs ${g.away_team?.name || 'Away'}`,
+              startDate: g.scheduled_at,
+              url: `${BASE_URL}/directory/games/${g.id}`,
+              sport: 'Ice Hockey',
+              competitor: [
+                g.home_team ? { '@type': 'SportsTeam', name: g.home_team.name } : undefined,
+                g.away_team ? { '@type': 'SportsTeam', name: g.away_team.name } : undefined,
+              ].filter(Boolean),
+            })),
+          ]),
+        }}
+      />
       <GamesIndexClient initialData={initialData} />
       <section style={{ maxWidth: '80rem', margin: '1.5rem auto', padding: '0 1rem', color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7 }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
