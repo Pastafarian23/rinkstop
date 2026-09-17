@@ -17,10 +17,10 @@ export interface ScoreChip {
 // the chip bar — only the leagues that drive the bulk of traffic.
 export const SCORE_CHIPS: ScoreChip[] = [
   { slug: 'nhl',     label: 'NHL',     type: 'league',   popular: true, leagueSlugs: ['nhl'] },
-  { slug: 'khl',     label: 'KHL',     type: 'league',   popular: true, leagueSlugs: ['khl-russia'] },
+  { slug: 'khl',     label: 'KHL',     type: 'league',   popular: true, leagueSlugs: ['khl'] },
   { slug: 'pwhl',    label: 'PWHL',    type: 'league',   popular: true, leagueSlugs: ['pwhl'] },
   { slug: 'ahl',     label: 'AHL',     type: 'league',   leagueSlugs: ['ahl'] },
-  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['shl-sweden', 'del-germany'] },
+  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['shl', 'del'] },
   { slug: 'college', label: 'NCAA',    type: 'category', leagueSlugs: ['ncaa-division-1-hockey'] },
   { slug: 'junior',  label: 'Junior',  type: 'category', leagueSlugs: ['whl', 'ohl', 'qmjhl'] },
 ];
