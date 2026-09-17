@@ -244,6 +244,12 @@ export default async function FullArticle({ post }: { post: FullPost }) {
 
   const authorName = post.author_name || 'Arnel Larracas';
   const authorRole = post.author_role || 'Founder';
+  // 2026-09-17: pipeline-generated articles use author_name='RinkStop'
+  // and author_role='Highlight Desk'. The old sidebar hardcoded Arnel's
+  // personal bio + Connect-on-RinkStop/LinkedIn CTAs, which is wrong
+  // for those posts. Hide the personal sidebar unless the byline is
+  // actually Arnel's.
+  const isArnelByline = !post.author_name || /^Arnel/i.test(post.author_name.trim());
   const date = formatDate(post.published_at);
   const isoPublished = post.published_at ? new Date(post.published_at).toISOString() : '';
   const isoModified = post.updated_at ? new Date(post.updated_at).toISOString() : isoPublished;
@@ -481,6 +487,7 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                 />
               </div>
 
+              {isArnelByline && (
               <div
                 style={{
                   marginTop: '2.5rem',
@@ -534,6 +541,7 @@ export default async function FullArticle({ post }: { post: FullPost }) {
                   </a>
                 </div>
               </div>
+              )}
             </div>
 
             <aside style={{ position: 'sticky', top: '1rem' }}>
