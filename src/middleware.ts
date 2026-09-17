@@ -166,6 +166,25 @@ export default clerkMiddleware(async (auth, request) => {
 // defensive — if a future refactor of the page handler drops the redirect,
 // this middleware catches it.
 const UUID_SEGMENT_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// 2026-09-17: deprecated league slugs → canonical slug. Hardcoded
+// map (not a DB lookup) because the set is small and stable. When the
+// source-of-truth row is set to is_active=false, this redirect catches
+// any inbound Google traffic pointing at the old URL and sends it to
+// the canonical slug with a 308 (permanent) — preserves PageRank and
+// avoids the duplicate-content penalty.
+//
+// Add new entries here when deprecating a league slug. Pairs are derived
+// from scripts/_audit_dup_leagues.cjs (only safe pairs, with 0 refs on
+// the deprecated side).
+const LEAGUE_SLUG_REDIRECTS: Record<string, string> = {
+  'shl-sweden': 'shl',
+  'del-germany': 'del',
+  'sm-liiga': 'liiga',
+  'asia-league': 'asia-league-ice-hockey',
+  'echl-usa': 'echl',
+};
+
 const ENTITY_UUID_PREFIXES: Array<{
   prefix: string;
   table: 'players' | 'leagues' | 'team_workspaces' | 'rinks';
@@ -185,6 +204,18 @@ for (const { prefix, table } of ENTITY_UUID_PREFIXES) {
         return NextResponse.redirect(dest, 308);
       }
     }
+  }
+}
+
+// Deprecated league slug → canonical slug redirect. Runs after UUID
+// redirects so any UUID pointing at the deprecated row still resolves
+// to the canonical slug (UUID lookup hits the DB and would otherwise
+// 404 once we deprecate the row).
+if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/'.length) {
+  const slug = path.slice('/directory/leagues/'.length).split('/')[0];
+  if (slug && !slug.includes('.') && LEAGUE_SLUG_REDIRECTS[slug]) {
+    const dest = new URL(`/directory/leagues/${LEAGUE_SLUG_REDIRECTS[slug]}`, request.url);
+    return NextResponse.redirect(dest, 308);
   }
 }
 
