@@ -228,6 +228,12 @@ export default async function Home() {
       imageUrl: h.image_url,
       source: h.source,
       channel: h.channel,
+      // 2026-09-19: forward post_id to the popup so it can resolve the
+      // companion article via /api/blog/posts?highlight_id=X. Without
+      // this, the popup's article-lookup effect falls back to a separate
+      // blog endpoint and the linked article is invisible on home-page
+      // modals.
+      linkedPostId: h.post_id,
       match: {
         id: h.match_id,
         league: h.league_name,
