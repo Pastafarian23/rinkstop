@@ -115,7 +115,7 @@ function extractYouTubeId(url) {
           .update({
             status: 'published',
             published_at: new Date().toISOString(),
-            source_data_status: 'verified',
+            source_data_status: 'has_source',
             last_issue_summary: `Audit verified ${passCount}/${claimCount} claims at ${new Date().toISOString()}`,
           })
           .eq('id', d.id);
