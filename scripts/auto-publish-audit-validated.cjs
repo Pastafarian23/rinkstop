@@ -129,10 +129,18 @@ function extractYouTubeId(url) {
     await new Promise(r => setTimeout(r, 100));
   }
 
-  console.log(`\n=== SUMMARY ===`);
-  console.log(`Published: ${published}`);
-  console.log(`Flagged (audit FAIL): ${flagged}`);
-  console.log(`Unverifiable (no source): ${unverifiable}`);
-  console.log(`Errors: ${errors}`);
-  if (dryRun) console.log('(DRY RUN — nothing written to DB)');
+  const total = drafts.length;
+  const result = { timestamp: new Date().toISOString(), total, published, flagged, unverifiable, errors };
+  // Only emit a notice when something actually happened.
+  // Quiet cycles = 0 drafts, 0 errors. Save noise.
+  if (total > 0 || published > 0 || flagged > 0 || errors > 0) {
+    console.log(`\n=== SUMMARY ===`);
+    console.log(`Found ${total} draft(s) | Published: ${published} | Flagged: ${flagged} | Unverifiable: ${unverifiable} | Errors: ${errors}`);
+    if (dryRun) console.log('(DRY RUN — nothing written to DB)');
+  }
+  // Always write the JSON result file so the cron wrapper can detect "did anything happen"
+  try {
+    const fs = require('fs');
+    fs.writeFileSync(process.env.PUBLISH_RESULT_FILE || '/tmp/auto-publish-result.json', JSON.stringify(result, null, 2));
+  } catch (e) { /* non-fatal */ }
 })().catch(e => { console.error('FATAL:', e.message, e.stack); process.exit(1); });

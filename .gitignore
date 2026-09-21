@@ -67,3 +67,4 @@ tsconfig.tsbuildinfo
 /scripts/backfill-rink-meta-longtail.mjs
 _backup_2026-06-18/
 supabase/.temp/
+__pycache__/
