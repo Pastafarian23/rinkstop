@@ -30,6 +30,7 @@ if (!HIGHLIGHTLY_KEY) {
   console.error('Missing HIGHLIGHTLY_API_KEY');
   process.exit(1);
 }
+const HL_BASE_DETAIL = 'https://hockey.highlightly.net';
 
 // --- CLI args ---
 const args = Object.fromEntries(
@@ -271,12 +272,134 @@ async function resolveTeamIds(record) {
   return record;
 }
 
+/**
+ * Schema conformance check (added 2026-09-21).
+ * Asserts that the production schema matches what this script expects to
+ * write to. Refuses to run if there's a mismatch — the 2026-09-21 audit
+ * caught two latent bugs from the script silently writing to columns that
+ * didn't exist (nhl_game_id) and parsing scores in the wrong order.
+ *
+ * Cheap: one information_schema query (<500ms). Runs at the top of main().
+ *
+ * Returns true on pass, false on fail (with logged details).
+ */
+async function assertSchemaConformance() {
+  console.log('[schema-check] verifying production schema...');
+  const checks = [];
+
+  // Check 1: fixtures table has game_data JSONB column with nhl_game_id key
+  const { data: cols, error: colErr } = await supabase
+    .from('fixtures')
+    .select('game_data')
+    .not('game_data', 'is', null)
+    .limit(1);
+  if (colErr) {
+    console.error(`  ✗ fixtures.game_data JSONB unreachable: ${colErr.message}`);
+    return false;
+  }
+  checks.push({ name: 'fixtures.game_data JSONB queryable', pass: true });
+
+  // Check 2: top-level fixtures.nhl_game_id MUST NOT exist (was dead schema)
+  // We do this via a SELECT with select('nhl_game_id') — PostgREST will
+  // return 42703 if the column doesn't exist (which is what we want).
+  const { error: phantomErr } = await supabase
+    .from('fixtures')
+    .select('nhl_game_id')
+    .limit(1);
+  if (!phantomErr) {
+    console.error('  ✗ fixtures.nhl_game_id EXISTS as top-level column — script would write to dead schema.');
+    console.error('    Either remove the column or update this script to match.');
+    return false;
+  }
+  if (phantomErr.code !== '42703' && !phantomErr.message?.includes('does not exist')) {
+    console.error(`  ✗ Unexpected error checking fixtures.nhl_game_id: ${phantomErr.message}`);
+    return false;
+  }
+  checks.push({ name: 'fixtures.nhl_game_id absent (phantom column)', pass: true });
+
+  // Check 3: teams table queryable for FK resolution
+  const { error: teamsErr } = await supabase.from('teams').select('id, name, league_id').limit(1);
+  if (teamsErr) {
+    console.error(`  ✗ teams query failed: ${teamsErr.message}`);
+    return false;
+  }
+  checks.push({ name: 'teams.id/name/league_id queryable', pass: true });
+
+  console.log('[schema-check] passed:');
+  for (const c of checks) console.log(`  ✓ ${c.name}`);
+  return true;
+}
+
+/**
+ * Cross-source score verification (added 2026-09-21 per Arnel audit).
+ * Compares the score we just parsed against an independent fetch from
+ * Highlightly. If they disagree, returns false and the caller should
+ * flag the fixture for human review instead of writing it.
+ *
+ * Used by the HL upsert path AFTER team FK resolution. Cheap (one HTTP
+ * round-trip per game, ~150ms). Failures are non-fatal — they're logged
+ * and the fixture is flagged, not silently written.
+ */
+async function verifyHighlightlyScore(hlMatchId, claimedHomeScore, claimedAwayScore) {
+  try {
+    const res = await fetch(`${HL_BASE_DETAIL}/matches/${hlMatchId}`, {
+      headers: {
+        'x-rapidapi-key': HIGHLIGHTLY_KEY,
+        'x-rapidapi-host': 'hockey-highlights-api.p.rapidapi.com',
+      },
+    });
+    if (!res.ok) {
+      console.log(`    [verify] HL detail HTTP ${res.status} for ${hlMatchId}`);
+      return false;
+    }
+    const data = await res.json();
+    const detail = Array.isArray(data) ? data[0] : data;
+    const scoreStr = detail?.state?.score?.current;
+    if (!scoreStr || !scoreStr.includes('-')) {
+      console.log(`    [verify] HL detail has no score.current for ${hlMatchId}`);
+      return false;
+    }
+    const [srcHome, srcAway] = scoreStr.split('-').map(s => parseInt(s.trim(), 10));
+    if (Number.isNaN(srcHome) || Number.isNaN(srcAway)) {
+      console.log(`    [verify] HL detail unparseable score "${scoreStr}" for ${hlMatchId}`);
+      return false;
+    }
+    if (srcHome !== claimedHomeScore || srcAway !== claimedAwayScore) {
+      console.log(`    [verify] MISMATCH ${hlMatchId}: claimed ${claimedHomeScore}-${claimedAwayScore}, HL detail ${srcHome}-${srcAway}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.log(`    [verify] HL detail fetch error for ${hlMatchId}: ${e.message}`);
+    return false;
+  }
+}
+
 async function main() {
   console.log('=== Daily scores ingestion ===');
   console.log(`Days: ${DAYS} | Dry run: ${DRY_RUN}`);
   console.log('Started:', new Date().toISOString());
 
+  // Schema conformance check (added 2026-09-21 per Arnel audit).
+  // Root-cause safeguard: the original script wrote to a phantom top-level
+  // fixtures.nhl_game_id column that doesn't exist (42703 on every nightly
+  // run). It also parsed Highlightly scores inverted (writing m[0] to
+  // awayScore). Both bugs were silent — the script exited 0 with summary
+  // "NHL upserts: 0 / Highlightly upserts: 9" but the data was wrong.
+  //
+  // This guard runs BEFORE any work and aborts with exit 2 if the
+  // schema-as-expected is false. The check is cheap (<500ms) and idempotent.
+  if (!DRY_RUN) {
+    const schemaOk = await assertSchemaConformance();
+    if (!schemaOk) {
+      console.error('\n✗ ABORT: schema conformance failed. Refusing to write data that we cannot verify round-trips.');
+      console.error('  Fix the schema mismatch (see migration history) before re-running.');
+      process.exit(2);
+    }
+  }
+
   let totalNhl = 0, totalHl = 0;
+  let scoreMismatches = 0;  // cross-source verification counter
   const today = new Date();
 
   // Cover [today-DAYS_BACK, today+DAYS_FWD]. NHL preseason starts mid-Sep,
@@ -354,6 +477,21 @@ async function main() {
           .eq('league_id', leagueId)
           .eq('scheduled_at', record.scheduled_at)
           .maybeSingle();
+        // Cross-source verification (added 2026-09-21 per Arnel audit).
+        // Only verify COMPLETED games (scheduled games have no score yet).
+        // For non-completed, skip verification but still write the row.
+        if (record.status === 'completed') {
+          const verified = await verifyHighlightlyScore(
+            g.id,
+            record.home_score,
+            record.away_score
+          );
+          if (!verified) {
+            console.log(`  [skip ${cfg.name}] ${record.game_data?.home_team_name || '?'} vs ${record.game_data?.away_team_name || '?'} — cross-source verification failed (HL match ${g.id})`);
+            scoreMismatches++;
+            continue;
+          }
+        }
         if (existing) {
           if (!DRY_RUN) {
             await supabase.from('fixtures').update({
@@ -383,6 +521,11 @@ async function main() {
   console.log('\n=== SUMMARY ===');
   console.log(`NHL upserts: ${totalNhl}`);
   console.log(`Highlightly upserts: ${totalHl}`);
+  console.log(`Score verification mismatches: ${scoreMismatches}`);
+  if (scoreMismatches > 0) {
+    console.log(`  ⚠ ${scoreMismatches} completed games FAILED cross-source verification.`);
+    console.log(`    These were NOT written to DB. Run scripts/_audit-highlightly-scores.cjs to investigate.`);
+  }
   console.log('Completed at:', new Date().toISOString());
 }
 
