@@ -118,7 +118,13 @@ async function upsertNhlGame(g) {
   const record = {
     id,
     league_id: NHL_LEAGUE_ID,
-    nhl_game_id: g.id,  // stored in game_data JSONB for downstream consumers
+    // nhl_game_id is NOT a top-level fixtures column (verified live 2026-09-21).
+    // It lives inside game_data JSONB (line below) and is queried via
+    // game_data->>'nhl_game_id' by all consumers (see also
+    // rinkstop-platform/scripts/stats/highlightly-adapter.mjs:47 and the
+    // indexes in scripts/nhl-ingest/migrations/001-002). Top-level column
+    // was dead schema — every nightly run of this script threw 42703 at
+    // upsert time. Fix 2026-09-21: removed the line, JSONB path is canonical.
     scheduled_at: g.startTimeUTC,
     home_team_id: null,  // resolved below via teams lookup by tri
     away_team_id: null,
