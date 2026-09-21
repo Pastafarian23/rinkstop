@@ -58,6 +58,23 @@ const HIGHLIGHTLY_HOCKEY_LEAGUES = {
   // IIHF: no single HL id; we use date-based search and detect by team names
 };
 
+// TheSportsDB mapping for cross-source verification (added 2026-09-21).
+// Free tier with API key '3' — no auth needed. Coverage: DEL, SHL, KHL, VHL,
+// NL, OHL, QMJHL, WHL, SPHL, Liiga. Used as secondary source to confirm HL
+// scores. Probe live 2026-09-21: DEL=3 events, KHL=3 events, SHL/NL empty
+// for that date (seasonal gap or mapping issue, not script bug).
+const THESPORTSDB_BASE = 'https://www.thesportsdb.com/api/v1/json/3';
+const THESPORTSDB_LEAGUE_IDS = {
+  SHL: '4419',
+  DEL: '4925',
+  KHL: '4920',
+  VHL: '4919',
+  // Note: TheSportsDB doesn't have great coverage for MHL/SPHL/Liiga.
+  // SHL/NL returned empty for 2026-09-20 — may be seasonal. We'll skip
+  // gracefully when the API returns 0 events.
+};
+const THESPORTSDB_KEY = process.env.SPORTSDB_API_KEY || '3';
+
 // Map NHL.com gameState → our fixtures.status
 const NHL_STATE_TO_STATUS = {
   FUT: 'scheduled',
@@ -429,6 +446,63 @@ async function verifyAgainstCache(dateIso, homeTeamName, awayTeamName, claimedHo
   return { verified: true, conflictingSources: [], matched };
 }
 
+/**
+ * Cross-source verification via TheSportsDB (added 2026-09-21 per Arnel's
+ * 'cross source information especially amongst official sources' directive).
+ *
+ * TheSportsDB has free coverage for European leagues (DEL, KHL, SHL, VHL,
+ * NL). Used as a SECONDARY source to confirm Highlightly scores before
+ * we trust them enough to write to DB.
+ *
+ * Strategy: for completed HL games in leagues that TheSportsDB covers,
+ * fetch the same date + league from TheSportsDB. If a matching game is
+ * found and the scores DISAGREE with HL's claim, skip the fixture.
+ *
+ * If TheSportsDB has no game for that date+league (seasonal gap, missing
+ * league mapping), we treat it as 'not verified' but don't reject —
+ * HL remains authoritative in the absence of any other source.
+ *
+ * Returns { verified: bool, conflictingSources: [], reason: string }.
+ */
+async function verifyAgainstTheSportsDB(dateIso, leagueName, homeTeamName, awayTeamName, claimedHomeScore, claimedAwayScore) {
+  const tsdbLeagueId = THESPORTSDB_LEAGUE_IDS[leagueName];
+  if (!tsdbLeagueId) return { verified: false, reason: 'league not in TSDB coverage' };
+
+  try {
+    const res = await fetch(`${THESPORTSDB_BASE}/eventsday.php?d=${dateIso}&l=${tsdbLeagueId}`);
+    if (!res.ok) return { verified: false, reason: `TSDB HTTP ${res.status}` };
+    const data = await res.json();
+    const events = data?.events || [];
+    if (events.length === 0) return { verified: false, reason: 'TSDB has no events for date' };
+
+    const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    const claimedHomeKey = norm(homeTeamName);
+    const claimedAwayKey = norm(awayTeamName);
+
+    for (const e of events) {
+      const eHome = norm(e.strHomeTeam);
+      const eAway = norm(e.strAwayTeam);
+      const same = eHome.includes(claimedHomeKey) && eAway.includes(claimedAwayKey);
+      const flipped = eHome.includes(claimedAwayKey) && eAway.includes(claimedHomeKey);
+      if (!same && !flipped) continue;
+      const eHomeScore = e.intHomeScore != null ? parseInt(e.intHomeScore, 10) : null;
+      const eAwayScore = e.intAwayScore != null ? parseInt(e.intAwayScore, 10) : null;
+      if (eHomeScore == null || eAwayScore == null) {
+        return { verified: false, reason: 'TSDB game has no score yet' };
+      }
+      const tsdbHome = same ? eHomeScore : eAwayScore;
+      const tsdbAway = same ? eAwayScore : eHomeScore;
+      if (tsdbHome === claimedHomeScore && tsdbAway === claimedAwayScore) {
+        return { verified: true };
+      }
+      return { verified: false, reason: `TSDB disagrees: claimed ${claimedHomeScore}-${claimedAwayScore} TSDB ${tsdbHome}-${tsdbAway}` };
+    }
+    return { verified: false, reason: 'TSDB has no matching game for teams' };
+  } catch (e) {
+    return { verified: false, reason: `TSDB fetch error: ${e.message}` };
+  }
+}
+
 async function main() {
   console.log('=== Daily scores ingestion ===');
   console.log(`Days: ${DAYS} | Dry run: ${DRY_RUN}`);
@@ -557,18 +631,49 @@ async function main() {
           .eq('scheduled_at', record.scheduled_at)
           .maybeSingle();
         // Cross-source verification (added 2026-09-21 per Arnel audit).
+        // Two layers, both must pass:
+        //   1. verifyHighlightlyScore: re-fetch HL detail endpoint and assert
+        //      the parsed score matches the API's authoritative value.
+        //      Catches parser drift + HL format changes.
+        //   2. verifyAgainstTheSportsDB: fetch TheSportsDB's free multi-
+        //      league feed and assert independent agreement.
+        //      Catches HL having bad data for that specific game.
         // Only verify COMPLETED games (scheduled games have no score yet).
         // For non-completed, skip verification but still write the row.
         if (record.status === 'completed') {
-          const verified = await verifyHighlightlyScore(
+          const hlOk = await verifyHighlightlyScore(
             g.id,
             record.home_score,
             record.away_score
           );
-          if (!verified) {
-            console.log(`  [skip ${cfg.name}] ${record.game_data?.home_team_name || '?'} vs ${record.game_data?.away_team_name || '?'} — cross-source verification failed (HL match ${g.id})`);
+          if (!hlOk) {
+            console.log(`  [skip ${cfg.name}] ${record.game_data?.home_team_name || '?'} vs ${record.game_data?.away_team_name || '?'} — HL self-verify failed (HL match ${g.id})`);
             scoreMismatches++;
             continue;
+          }
+          // Second source (TheSportsDB) — only for leagues it covers.
+          // If it has the game and DISAGREES, reject. If absent, accept
+          // (HL remains authoritative in absence of disagreement).
+          const tsdbResult = await verifyAgainstTheSportsDB(
+            dateIso,
+            cfg.name,
+            record.game_data?.home_team_name || '',
+            record.game_data?.away_team_name || '',
+            record.home_score,
+            record.away_score
+          );
+          if (!tsdbResult.verified && tsdbResult.reason?.includes('disagrees')) {
+            console.log(`  [skip ${cfg.name}] ${record.game_data?.home_team_name || '?'} vs ${record.game_data?.away_team_name || '?'} — ${tsdbResult.reason}`);
+            scoreMismatches++;
+            continue;
+          }
+          // Note: silent acceptance when TSDB has no event for date/league.
+          // That means we have no second source — accept HL but log.
+          if (!tsdbResult.verified && tsdbResult.reason && tsdbResult.reason !== 'TSDB has no events for date' && tsdbResult.reason !== 'TSDB has no matching game for teams') {
+            // Only log unusual failures, not the expected 'no coverage' cases
+            if (tsdbResult.reason.startsWith('TSDB HTTP') || tsdbResult.reason.startsWith('TSDB fetch error')) {
+              console.log(`  [tsdb-warn ${cfg.name}] ${tsdbResult.reason}`);
+            }
           }
         }
         if (existing) {
