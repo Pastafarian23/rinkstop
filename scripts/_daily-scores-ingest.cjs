@@ -75,6 +75,47 @@ const THESPORTSDB_LEAGUE_IDS = {
 };
 const THESPORTSDB_KEY = process.env.SPORTSDB_API_KEY || '3';
 
+// NHL.com team abbrev → our teams.id UUID mapping (added 2026-09-21 per
+// Arnel's 'all verified, no gaps' directive — was the root cause of the
+// scores-page 'no completed games' bug). The mapping was previously inline
+// in scripts/nhl-ingest/08-sync-nhl-matches.cjs; this duplicates it here so
+// the daily ingest can resolve NHL.com team IDs without depending on the
+// nhl-ingest pipeline.
+const NHL_ABBREV_TO_TEAMS_ID = {
+  ANA: '219a6bb2-1103-4e27-931e-5de440e59f84',
+  BOS: 'ae6d0878-1ac2-4c13-afc8-890c6647b668',
+  BUF: '5a510c0e-1058-460d-8237-09855dfa98f4',
+  CGY: '626458da-d2d4-4a4f-816b-f3796b84cfc4',
+  CAR: 'e4977c12-28b3-4756-a788-cf86b40fc237',
+  CHI: '553a6b7b-6416-4b74-a9b3-fa15d06d52ab',
+  COL: 'f453fd29-12e4-4897-8f8a-ecf23d6a4122',
+  CBJ: '6ca5c5f0-3c27-4cd5-8457-78fc3ba45344',
+  DAL: '4c61f05e-8d34-40be-b0a8-adf37e14435c',
+  DET: 'f3fa0794-ee39-4991-af45-961cb3e8f404',
+  EDM: '5b487d74-5e9c-43c8-b104-35185fc93350',
+  FLA: '7772070c-6c9b-4ca0-a442-dfe5b8beabcb',
+  LAK: 'df9b5d1e-c5d9-46af-a524-99de500e95bf',
+  MIN: 'd3947cbf-8b3c-4c16-8ab6-b8f8d0f5a1fe',
+  MTL: 'dfa8a4b4-01b9-4f53-9a5d-6ca34302d074',
+  NSH: '2d3d8a64-c0d7-4b8e-a327-a1201cc92f72',
+  NJD: '486e6592-5873-48a0-8cdd-8411c8eb1105',
+  NYI: 'acc8b466-ef9b-4d81-8ea5-6f13fc180d9e',
+  NYR: '2869d1cd-d8f4-4ffb-9726-30bdfdbc14d3',
+  OTT: 'a1f8b7f1-f7ea-42ee-9861-0eb0addf437d',
+  PHI: 'cf53124a-dbb5-4588-9cb2-2f6054918f99',
+  PIT: '4b75202e-b11b-4574-8ae6-7447f962cb55',
+  SJS: '16c9d078-ecc9-4e7c-8bf3-e1b6e9a6ae10',
+  SEA: 'bf324536-424b-4a3d-b486-1347aa735aae',
+  STL: '7efc04e6-6a75-4b1f-a0da-3966d6e7359c',
+  TBL: '2f4c6364-2139-4e57-97ad-e01dc55418fa',
+  TOR: 'bac49d62-fd43-48f5-8811-090ec8f4c76d',
+  UTA: '82a53679-b1e9-4221-b58e-a7b89f45c638',
+  VAN: 'dc828fd7-65ae-4c1d-92ea-66975eb38fce',
+  VGK: 'cf05f5b0-6605-465f-86f3-a6f1710afc20',
+  WPG: '88d85b2b-7a91-4679-b1d4-e45d73e3838f',
+  WSH: '2df72ff0-5a54-4663-91eb-13bb2a2830aa',
+};
+
 // Map NHL.com gameState → our fixtures.status
 const NHL_STATE_TO_STATUS = {
   FUT: 'scheduled',
@@ -144,14 +185,17 @@ async function upsertNhlGame(g) {
     // was dead schema — every nightly run of this script threw 42703 at
     // upsert time. Fix 2026-09-21: removed the line, JSONB path is canonical.
     scheduled_at: g.startTimeUTC,
-    home_team_id: null,  // resolved below via teams lookup by tri
+    home_team_id: null,  // resolved below via NHL_ABBREV_TO_TEAMS_ID lookup
     away_team_id: null,
     home_score: homeScore,
     away_score: awayScore,
     status,
     season: mapNhlSeason(g.season, g.gameType),
-    // game_data: full NHL.com payload for downstream consumers
-    game_data: { ...g, nhl_game_id: g.id },  // keep id inside JSON too
+    // game_data: full NHL.com payload + abbreviations for resolveTeamIds().
+    // Was previously broken because home_team_abbrev / away_team_abbrev
+    // were phantom columns (verified live 2026-09-21 via PostgREST 42703).
+    // They live inside game_data JSONB only — same pattern as nhl_game_id.
+    game_data: { ...g, nhl_game_id: g.id, home_team_abbrev: ht.abbrev || null, away_team_abbrev: at.abbrev || null },
     updated_at: new Date().toISOString(),
   };
 
@@ -242,9 +286,15 @@ async function upsertFixture(record) {
     console.log(`  [DRY] would upsert: ${record.id?.slice(0, 8)} → status=${record.status} score=${record.home_score}-${record.away_score}`);
     return null;
   }
+  // Use natural key (league_id, scheduled_at, home_team_id, away_team_id) for
+  // conflict resolution so that existing rows with different id UUIDs still
+  // get updated to the correct values (added 2026-09-21 — was previously
+  // onConflict:'id' which only matched deterministic-id rows and tried to
+  // insert duplicates for non-deterministic ones, hitting the natural-key
+  // unique constraint).
   const { data, error } = await supabase
     .from('fixtures')
-    .upsert(record, { onConflict: 'id', ignoreDuplicates: false })
+    .upsert(record, { onConflict: 'league_id,scheduled_at,home_team_id,away_team_id', ignoreDuplicates: false })
     .select('id');
   if (error) {
     console.log(`  ✗ upsert ${record.id?.slice(0, 8)}: ${error.message}`);
@@ -254,22 +304,35 @@ async function upsertFixture(record) {
 }
 
 async function resolveTeamIds(record) {
-  // Resolve teams.id (legacy table per WS12, FK target of fixtures.home_team_id)
-  // For NHL: by tri_code in teams table
-  // For other leagues: by displayName in teams table
-  if (!record.home_team_id && record.home_team_abbrev) {
-    const { data } = await supabase.from('teams')
-      .select('id')
-      .eq('tri_code', record.home_team_abbrev)
-      .maybeSingle();
-    if (data) record.home_team_id = data.id;
+  // Resolve teams.id (FK target of fixtures.home_team_id / away_team_id).
+  // Strategy: try local abbreviation map FIRST (fast, no DB round-trip),
+  // fall back to teams-table lookup by name. The abbrev can come from
+  // top-level field (HL path) or game_data JSONB (NHL.com path).
+  const homeAbbrev = record.home_team_abbrev || record.game_data?.home_team_abbrev;
+  const awayAbbrev = record.away_team_abbrev || record.game_data?.away_team_abbrev;
+  if (!record.home_team_id && homeAbbrev) {
+    const mapped = NHL_ABBREV_TO_TEAMS_ID[String(homeAbbrev).toUpperCase()];
+    if (mapped) {
+      record.home_team_id = mapped;
+    } else {
+      const { data } = await supabase.from('teams')
+        .select('id')
+        .eq('tri_code', homeAbbrev)
+        .maybeSingle();
+      if (data) record.home_team_id = data.id;
+    }
   }
-  if (!record.away_team_id && record.away_team_abbrev) {
-    const { data } = await supabase.from('teams')
-      .select('id')
-      .eq('tri_code', record.away_team_abbrev)
-      .maybeSingle();
-    if (data) record.away_team_id = data.id;
+  if (!record.away_team_id && awayAbbrev) {
+    const mapped = NHL_ABBREV_TO_TEAMS_ID[String(awayAbbrev).toUpperCase()];
+    if (mapped) {
+      record.away_team_id = mapped;
+    } else {
+      const { data } = await supabase.from('teams')
+        .select('id')
+        .eq('tri_code', awayAbbrev)
+        .maybeSingle();
+      if (data) record.away_team_id = data.id;
+    }
   }
   // For HL games without tri_code, try by name
   if (!record.home_team_id && record.game_data?.home_team_name) {
