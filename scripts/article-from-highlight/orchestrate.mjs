@@ -155,9 +155,13 @@ async function fixturesForHighlight(h) {
   // game_data->>nhl_game_id pattern. Try to find by team names + date instead.
   const matchDay = (h.match_date || '').slice(0, 10);
   if (!matchDay) return null;
+  // NOTE: fixtures table does NOT have home_team_name / away_team_name columns
+  // (verified live 2026-09-21 via PostgREST 42703). Team names live in the
+  // `teams` table and must be looked up by FK when needed. See
+  // lookupTeamNamesByIds() below.
   const { data, error } = await sb
     .from('fixtures')
-    .select('id, league_id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, game_data, home_team_name, away_team_name')
+    .select('id, league_id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, game_data')
     .gte('scheduled_at', `${matchDay}T00:00:00Z`)
     .lt('scheduled_at', `${matchDay}T23:59:59Z`)
     .limit(50);
@@ -165,6 +169,37 @@ async function fixturesForHighlight(h) {
   // No team name lookup in this query — caller does the matching. For now
   // return all games that day for the caller to filter.
   return data;
+}
+
+/**
+ * Resolve team display names from FKs in a single query.
+ * Returns { [teamId]: name } for the IDs found in the `teams` table.
+ * Missing IDs are silently omitted from the result.
+ *
+ * Why this exists: the fixtures table does NOT have home_team_name /
+ * away_team_name columns (verified live 2026-09-21). To inject the
+ * "Final Score: Team A N, Team B M" line in the article body — which
+ * the audit pipeline's extractClaims() parses to verify the score — we
+ * need the team names. The audit pipeline's regex looks for
+ * `final\s+score[:\s]+...(\d+)\s*\.?\s*$`, so we need both the name and
+ * the score from the fixture row.
+ */
+async function lookupTeamNamesByIds(teamIds) {
+  const ids = Array.from(new Set((teamIds || []).filter(Boolean)));
+  if (ids.length === 0) return {};
+  try {
+    const { data, error } = await sb
+      .from('teams')
+      .select('id, name')
+      .in('id', ids);
+    if (error || !data) return {};
+    const map = {};
+    for (const row of data) map[row.id] = row.name;
+    return map;
+  } catch (e) {
+    console.error('[lookupTeamNamesByIds] failed:', e);
+    return {};
+  }
 }
 
 /**
@@ -193,27 +228,29 @@ async function findFixtureForHighlight(h) {
   const homeTeamId = await lookupTeamIdByName(sb, h.home_team_name);
   const awayTeamId = await lookupTeamIdByName(sb, h.away_team_name);
 
-  // Score each candidate by how well its FKs and names align.
+  // Score each candidate by how well its FKs align with the highlight's
+  // resolved team IDs. FK matching is the primary signal — name matching
+  // would require a JOIN on teams, which we don't need here because the
+  // highlight row already has team NAMES and lookupTeamIdByName converts
+  // those to IDs.
   function score(c) {
     let s = 0;
     if (homeTeamId && c.home_team_id === homeTeamId) s += 4;
     if (awayTeamId && c.away_team_id === awayTeamId) s += 4;
     if (homeTeamId && c.away_team_id === homeTeamId) s += 2; // home/away could be swapped in highlights
     if (awayTeamId && c.home_team_id === awayTeamId) s += 2;
-    // Name fallback — only count if the FKs didn't match strongly.
-    if (s < 4) {
-      const cHome = (c.home_team_name || '').toLowerCase();
-      const cAway = (c.away_team_name || '').toLowerCase();
-      const hHome = (h.home_team_name || '').toLowerCase();
-      const hAway = (h.away_team_name || '').toLowerCase();
-      if (cHome && hHome && (cHome.includes(hHome) || hHome.includes(cHome))) s += 1;
-      if (cAway && hAway && (cAway.includes(hAway) || hAway.includes(cAway))) s += 1;
-    }
     return s;
   }
   candidates.sort((a, b) => score(b) - score(a));
   const best = candidates[0];
   if (score(best) < 2) return null; // No reliable match
+  // Look up display names for the matched FKs. The fixtures table does NOT
+  // store home_team_name/away_team_name (verified live 2026-09-21), so we
+  // fetch them from the teams table here. Failure is non-fatal — insertDraft
+  // will fall back to the highlight's own home_team_name/away_team_name.
+  const nameMap = await lookupTeamNamesByIds([best.home_team_id, best.away_team_id]);
+  best.home_team_name = nameMap[best.home_team_id] || h.home_team_name || null;
+  best.away_team_name = nameMap[best.away_team_id] || h.away_team_name || null;
   return best;
 }
 
