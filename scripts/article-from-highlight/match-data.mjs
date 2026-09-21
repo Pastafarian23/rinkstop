@@ -40,6 +40,27 @@ if (existsSync(ENV_FILE) && !process.env.HIGHLIGHTLY_API_KEY) {
 }
 
 /**
+ * Best-effort league detection from team names. Returns canonical league
+ * code ('NHL', 'KHL', 'SHL', etc.) or null if ambiguous.
+ * Added 2026-09-21 per Arnel's 'every league must produce verified articles'
+ * directive — Highlightly's unfiltered date search returns <50 games across
+ * ~20 leagues and silently OMITS KHL/SHL/DEL/etc., so we must pass leagueId.
+ */
+function guessLeagueFromTeams(teams) {
+  const joined = teams.join(' ').toLowerCase();
+  // Strong-typed league signals (specific team names)
+  if (/(salavat yulaev ufa|ak bars|metallurg magnitogorsk|avangard omsk|cska moscow|dynamo moscow|locomotiv yaroslavl|torpedo nn|kunlun red star|severstal|admiral|amur|khabarovsk|avtomobilist|avangard|barys|traktor|shanghai dragons|sibir|sochi|spartak|yunost|avangard omsk|red star|akbars|kunlun)/i.test(joined)) return 'KHL';
+  if (/(frölunda|färjestad|skellefteå|växjö Lakers|djurgården|hc sport|Modo Hockey|Linköping|Rögle Brynäs|Luleå|HV71|malmo|hockeytre kronor)/i.test(joined)) return 'SHL';
+  if (/(adler mannheim|eisbären|köln|münchen|berlin|nürnberg|ingolstadt|bremerhaven|straubing|schwenningen|augsburger|krefeld|i Fischtown|iserlohn)/i.test(joined)) return 'DEL';
+  if (/(tps|tappara|hifk|jokerit|hockey eagles|kärpät|älhlet|äsä|ilves|saipa|kalpa|jyp|pelicans|sport vaasa|hp|hpk)/i.test(joined)) return 'Liiga';
+  if (/(belleville senators|laval rocket|manitoba moose|hartford wolf pack|springfield thunderbirds|wilkes-barre|lehigh valley|grand rapids|charlotte|syracuse crunch|texas stars|san jose barrage|san diego gulls|ontario reign|bakersfield|colorado eagles)/i.test(joined)) return 'AHL';
+  if (/(oshawa|ottawa 67|barrie colts|kingston|brampton battalion|hamilton bulldogs|north bay|mississauga sudbury|erie otters|kitchener|london knights|oshawa generals|niagara iceDogs|owen sound|peterborough petes|saginaw spirit|sault ste. marie|windsor spitfires)/i.test(joined)) return 'OHL';
+  if (/(red deer rebels|swift current|brandon wheat kings|medicine hat tigers|edmonton oil kings|calgary hitmen|lethbridge hurricanes|moose jaw warriors|regina pats|saskatoon blades|swift current broncos|tri-city americans|spokane chiefs|wenatchee wild|kamloops blazers|kelowna rockets|portland winterhawks|seattle thunderbirds|everett silvertips|vancouver giants| prince george cougars|victoria royals)/i.test(joined)) return 'WHL';
+  if (/(armada|drakkar|foreurs|remparts|phoenix|huskies|wildcats|tigres|cataractes|saguenéens|olympiques|armada blainville|riverains|celtique|chicoutimi)/i.test(joined)) return 'QMJHL';
+  return null;
+}
+
+/**
  * Normalize league_name from highlight_backups, which can be:
  *  - a string like 'NHL'
  *  - a JSON string like '{"id":49291,"name":"NHL","logo":"..."}'
@@ -72,6 +93,30 @@ async function highlightlyMatch(teams, date, apiKey) {
     { base: 'https://hockey.highlightly.net', host: 'hockey-highlights-api.p.rapidapi.com' },
     { base: 'https://nhl.highlightly.net', host: 'nhl-ncaah-api.p.rapidapi.com' },
   ];
+  // Per-league HL ID map (verified live 2026-09-21). Highlightly's unfiltered
+  // date search returns <50 games across ~20 leagues and silently omits leagues
+  // like KHL/SHL/DEL/etc. So when the article pipeline needs a specific league,
+  // we must pass leagueId explicitly. Added 2026-09-21 per Arnel's 'every league
+  // must produce verified articles' directive.
+  const LEAGUE_HL_IDS = {
+    'NHL': 0,             // NHL endpoint is separate (nhl.highlightly.net)
+    'AHL': 50142,
+    'OHL': 3337,
+    'WHL': 4188,
+    'QMJHL': 5161,
+    'SHL': 40781,
+    'DEL': 16953,
+    'KHL': 30569,
+    'MHL': 32271,
+    'VHL': 31420,
+    'SPHL': 51844,
+    'Liiga': 14400,
+  };
+  // Determine the HL league ID from the team names (best-effort). If we can't
+  // determine, fall back to unfiltered date search.
+  const guessedLeague = guessLeagueFromTeams(teams);
+  const leagueHlId = guessedLeague ? LEAGUE_HL_IDS[guessedLeague] : null;
+
   const d0 = new Date(date + 'T00:00:00Z');
   const dayBefore = new Date(d0); dayBefore.setUTCDate(d0.getUTCDate() - 1);
   const dayAfter = new Date(d0); dayAfter.setUTCDate(d0.getUTCDate() + 1);
@@ -79,7 +124,13 @@ async function highlightlyMatch(teams, date, apiKey) {
   for (const ep of endpoints) {
     for (const d of dates) {
       try {
-        const res = await fetch(`${ep.base}/matches?date=${d}&limit=20`, {
+        // If we know the league, only query the appropriate endpoint with leagueId
+        const queryLeague = ep.base.includes('nhl.') ? 'NHL' : (guessedLeague === 'NHL' ? null : guessedLeague);
+        let url = `${ep.base}/matches?date=${d}&limit=50`;
+        if (queryLeague && LEAGUE_HL_IDS[queryLeague] && LEAGUE_HL_IDS[queryLeague] !== 0) {
+          url += `&leagueId=${LEAGUE_HL_IDS[queryLeague]}`;
+        }
+        const res = await fetch(url, {
           headers: {
             'x-rapidapi-key': apiKey,
             'x-rapidapi-host': ep.host,
