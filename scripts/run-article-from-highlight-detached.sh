@@ -88,7 +88,7 @@ cd /root/.openclaw/workspace/rinkstop-platform
 setsid nohup bash -c "
   echo '=== Article-from-highlight orchestrator ==='
   echo 'mode=${MODE_FLAG:-dry-run}  since-hours=${SINCE_HOURS}'
-  node scripts/article-from-highlight/orchestrate.mjs --auto --since-hours=${SINCE_HOURS} --limit=20 ${MODE_FLAG} 2>&1
+  node scripts/article-from-highlight/orchestrate.mjs --auto --since-hours=${SINCE_HOURS} --limit=20 --use-web-recap ${MODE_FLAG} 2>&1
   echo '=== Done ==='
 " > "$LOG_FILE" 2>&1 </dev/null &
 PID=$!

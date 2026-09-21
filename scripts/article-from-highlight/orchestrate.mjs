@@ -41,6 +41,27 @@ const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!URL || !KEY) { console.error('Missing Supabase env'); process.exit(1); }
 const sb = createClient(URL, KEY, { auth: { autoRefreshToken: false, persistSession: false } });
 
+// --- League UUID mapping for cross-source verification ---
+// Map league NAME (from HL/NHL.com) to our fixtures.league_id UUID.
+// Used by the web-recap fallback path to stamp posts.league_id when no
+// fixtures row exists. Only leagues the audit pipeline can route to.
+// Add new leagues as we verify their fixtures.league_id UUIDs against
+// the live fixtures table — DO NOT guess (added 2026-09-21 per Arnel
+// 'no fabricated data' directive).
+const LEAGUE_NAME_TO_UUID = {
+  'NHL': '2b5f2b9d-84b9-4edb-8373-a732b72f4e40',
+  'AHL': 'b05d6d26-d5d6-4cfd-a48b-f5646fa7d611',
+  'SHL': '69d4de0c-b072-4f52-8950-eb728acdc7f9',
+  'DEL': '03e919d1-2180-443b-aba4-6719d25d2eff',
+  'KHL': 'a08f6dac-eb1f-48b6-a11b-56fbb5642752',
+  'MHL': 'e052d66a-6f63-42da-94fc-25a809203c2f',
+  'VHL': '30fef7f6-0054-4605-83b7-ec619b72f328',
+  'SPHL': 'dead3e40-9f79-4488-a50b-755eb9a8cee0',
+  'Liiga': 'dc212fdb-98bd-4fd5-842c-598ba34565b5',
+  // OHL/WHL/QMJHL/ECHL/USHL — UUIDs not yet verified against the live
+  // fixtures table. Add after verification to prevent silent misroutes.
+};
+
 // --- CLI args ---
 const args = Object.fromEntries(
   process.argv.slice(2).map(a => {
@@ -513,7 +534,15 @@ async function llmWebRecapDraft(highlight) {
   const llmResult = await llmDraft(factsBlock, {
     noTranscript: true,
   });
-  return llmResult.markdown;
+  // Return both the markdown AND the match data so insertDraft can inject
+  // a "Final Score:" line even when the fixtures table hasn't been updated
+  // yet (added 2026-09-21 per Arnel's 'articles must be published, not held
+  // in drafts' directive — without the Final Score line, the audit pipeline
+  // returns CANNOT_VERIFY and the article is held indefinitely).
+  return {
+    markdown: llmResult.markdown,
+    matchData: hlData,  // { score, home_team_name, away_team_name, source, ... }
+  };
 }
 
 async function highlightlyMatchData({ teams, date, league }) {
@@ -581,7 +610,7 @@ async function highlightlyMatchData({ teams, date, league }) {
   return null;
 }
 
-async function insertDraft(highlight, meta, body, fixtureRow) {
+async function insertDraft(highlight, meta, body, fixtureRow, webRecapData = null) {
   // Fall back to extracting title from body if frontmatter didn't have one.
   const title = meta.title || extractTitleFromBody(body) || highlight.title;
   const subtitle = meta.subtitle || '';
@@ -650,9 +679,30 @@ async function insertDraft(highlight, meta, body, fixtureRow) {
   // the body. We use the fixture's ground-truth score, not the LLM's,
   // so the article is verifiable as-written.
   let finalScoreLine = '';
-  if (fixtureRow && typeof fixtureRow.home_score === 'number' && typeof fixtureRow.away_score === 'number'
-      && fixtureRow.home_team_name && fixtureRow.away_team_name) {
-    finalScoreLine = `\n\n**Final Score:** ${fixtureRow.home_team_name} ${fixtureRow.home_score}, ${fixtureRow.away_team_name} ${fixtureRow.away_score}.`;
+  // Resolve score data with a 3-tier fallback:
+  //   1. fixtureRow (from fixtures table) — most reliable, has been cross-verified
+  //   2. webRecapData (from live NHL.com/HL fetch) — used when no fixtures row exists
+  //   3. none — no score injection, article will be CANNOT_VERIFY at audit time
+  let resolvedHomeScore = fixtureRow?.home_score;
+  let resolvedAwayScore = fixtureRow?.away_score;
+  let resolvedHomeName = fixtureRow?.home_team_name;
+  let resolvedAwayName = fixtureRow?.away_team_name;
+  if ((typeof resolvedHomeScore !== 'number' || typeof resolvedAwayScore !== 'number'
+       || !resolvedHomeName || !resolvedAwayName)
+      && webRecapData && webRecapData.score) {
+    // webRecapData.score format: "N - M" (home - away) from getMatchData
+    const scoreParts = String(webRecapData.score).split('-').map(s => parseInt(s.trim(), 10));
+    if (scoreParts.length === 2 && !Number.isNaN(scoreParts[0]) && !Number.isNaN(scoreParts[1])) {
+      resolvedHomeScore = scoreParts[0];
+      resolvedAwayScore = scoreParts[1];
+      resolvedHomeName = resolvedHomeName || webRecapData.home || webRecapData.home_team_name || '';
+      resolvedAwayName = resolvedAwayName || webRecapData.away || webRecapData.away_team_name || '';
+      console.log(`  ℹ Final Score from web-recap fallback (no fixtures row): ${resolvedHomeName} ${resolvedHomeScore}, ${resolvedAwayName} ${resolvedAwayScore}`);
+    }
+  }
+  if (typeof resolvedHomeScore === 'number' && typeof resolvedAwayScore === 'number'
+      && resolvedHomeName && resolvedAwayName) {
+    finalScoreLine = `\n\n**Final Score:** ${resolvedHomeName} ${resolvedHomeScore}, ${resolvedAwayName} ${resolvedAwayScore}.`;
   }
   const contentWithFooter = `${bodyClean}${finalScoreLine}\n\n*Source: ${source_cite}*`;
 
@@ -685,6 +735,27 @@ async function insertDraft(highlight, meta, body, fixtureRow) {
     insertPayload.league_id = fixtureRow.league_id;
     if (fixtureRow.home_team_id) insertPayload.team_home_id = fixtureRow.home_team_id;
     if (fixtureRow.away_team_id) insertPayload.team_away_id = fixtureRow.away_team_id;
+  } else if (webRecapData && webRecapData.league) {
+    // Web-recap fallback (added 2026-09-21 per Arnel's directive that
+    // articles must be published, not held in drafts). When we don't have
+    // a fixtures row but we DO have verified match data from NHL.com/Highlightly,
+    // stamp league_id + game_date + team FKs so the audit pipeline can pick
+    // the right adapter and actually verify the article.
+    const leagueName = String(webRecapData.league).trim();
+    const leagueUuid = LEAGUE_NAME_TO_UUID[leagueName] || LEAGUE_NAME_TO_UUID[leagueName.toUpperCase()];
+    if (leagueUuid) {
+      insertPayload.league_id = leagueUuid;
+    }
+    if (highlight.match_date) insertPayload.game_date = highlight.match_date.slice(0, 10);
+    // Try to resolve team FKs by name from webRecapData
+    if (webRecapData.home) {
+      const { data: htRow } = await sb.from('teams').select('id').ilike('name', String(webRecapData.home).replace(/\s+\(.+?\)/, '')).maybeSingle();
+      if (htRow) insertPayload.team_home_id = htRow.id;
+    }
+    if (webRecapData.away) {
+      const { data: atRow } = await sb.from('teams').select('id').ilike('name', String(webRecapData.away).replace(/\s+\(.+?\)/, '')).maybeSingle();
+      if (atRow) insertPayload.team_away_id = atRow.id;
+    }
   } else if (highlight.match_date) {
     // No fixture match (e.g. NCAA, Swiss NL — leagues we don't sync).
     // Still stamp the game_date so the audit at least knows when.
@@ -783,12 +854,15 @@ async function processHighlight(h) {
   }
 
   let llmArticle;
+  let webRecapData = null;
   try {
     if (!videoData.transcript?.ok && USE_WEB_RECAP) {
       // Web-search recap fallback (used when YouTube is rate-limiting us).
       // The kilo agent has web_search built in via Exa.
       const t0 = Date.now();
-      llmArticle = await llmWebRecapDraft(h);
+      const wr = await llmWebRecapDraft(h);
+      llmArticle = wr.markdown;
+      webRecapData = wr.matchData; // { score, home_team_name, away_team_name, source }
       result.steps.llm = { source: 'web_recap', elapsed_ms: Date.now() - t0 };
     } else {
       const llmResult = await llmDraft(factsBlock);
@@ -827,7 +901,11 @@ async function processHighlight(h) {
       result.steps.fixture_match = fixtureRow.id;
       console.log(`  ✓ fixture match: ${fixtureRow.id} (league ${fixtureRow.league_id?.slice(0,8)}...)`);
     }
-    const post = await insertDraft(h, meta, body, fixtureRow);
+    // Web-recap fallback: pass the live match data so insertDraft can inject
+    // a Final Score line even when the fixtures table hasn't been updated yet
+    // (added 2026-09-21 per Arnel's directive that articles must be published,
+    // not held in drafts forever).
+    const post = await insertDraft(h, meta, body, fixtureRow, webRecapData);
     result.post = post;
     result.steps.insert = { id: post.id, slug: post.slug };
     console.log(`  ✓ inserted draft: ${post.slug}`);
