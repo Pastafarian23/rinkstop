@@ -22,6 +22,29 @@ interface Game {
   league: { id: string; name: string; slug: string; level?: string; country?: string } | null;
   venue_details: any;
   period_scores: any;
+  linked_articles?: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    subtitle?: string;
+    category?: string;
+    reading_time_minutes?: number;
+    author_name?: string;
+    published_at?: string;
+    path: string;
+  }>;
+  linked_highlights?: Array<{
+    id: number;
+    title: string;
+    video_url: string;
+    embed_url?: string | null;
+    source?: string;
+    channel?: string | null;
+    league_name?: string;
+    image_url?: string | null;
+    home_team_name?: string;
+    away_team_name?: string;
+  }>;
 }
 
 interface Boxscore {
@@ -368,6 +391,87 @@ export default function GamePage() {
              game.league?.name?.toLowerCase().includes('liiga') ? 'liiga.fi' :
              'the league\'s official site'}.
           </p>
+        </div>
+      )}
+
+      {/* Companion articles (added 2026-09-21 per Arnel's cross-link directive) */}
+      {game.linked_articles && game.linked_articles.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+            Related Articles
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {game.linked_articles.map((a: any) => (
+              <Link
+                key={a.id}
+                href={a.path}
+                style={{
+                  display: 'block',
+                  padding: '1rem',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', color: '#FFB81C', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', fontWeight: 700 }}>
+                  {a.category || 'Article'}
+                  {a.reading_time_minutes ? ` · ${a.reading_time_minutes} min read` : ''}
+                </div>
+                <h3 style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 700, lineHeight: 1.3, marginBottom: '0.4rem' }}>
+                  {a.title}
+                </h3>
+                {a.subtitle && (
+                  <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, margin: 0 }}>
+                    {a.subtitle}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Companion highlight videos (added 2026-09-21 per Arnel's cross-link directive) */}
+      {game.linked_highlights && game.linked_highlights.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+            Game Highlights
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {game.linked_highlights.map((h: any) => (
+              <Link
+                key={h.id}
+                href={`/highlights/${h.id}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.75rem',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <div style={{ flex: '0 0 auto', width: '40px', height: '40px', borderRadius: '50%', background: '#C8102E', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <polygon points="5,3 19,12 5,21" fill="#fff" />
+                  </svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3 style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 600, lineHeight: 1.3, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {h.title}
+                  </h3>
+                  <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', margin: '0.2rem 0 0 0' }}>
+                    {h.league_name || h.source} · {h.home_team_name} vs {h.away_team_name}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
