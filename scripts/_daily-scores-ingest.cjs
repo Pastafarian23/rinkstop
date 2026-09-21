@@ -185,7 +185,14 @@ async function upsertHighlightlyGame(g, hlLeagueId, hlLeagueName) {
   const ht = g.homeTeam || {};
   const at = g.awayTeam || {};
   const scoreStr = g.state?.score?.current || '0 - 0';
-  const [awayScore, homeScore] = scoreStr.split('-').map(s => parseInt(s.trim(), 10));
+  // Highlightly returns score as `current: "<home> - <away>"` (verified live
+  // 2026-09-21: HL Kolner vs Frankfurt Löwen returns "4 - 3" where Kolner
+  // is the home team and scored 4). Earlier code wrote m[0] to awayScore,
+  // inverting every completed game (DEL/KHL all had wrong winners).
+  // Fix 2026-09-21: assign m[0] to homeScore, m[1] to awayScore.
+  // Note: period scores (firstPeriod/secondPeriod/thirdPeriod) follow the
+  // SAME home-away order, so any consumer parsing those needs the same fix.
+  const [homeScore, awayScore] = scoreStr.split('-').map(s => parseInt(s.trim(), 10));
   const description = g.state?.description || 'Scheduled';
   // Highlightly returns these description strings: 'Finished' | 'Final' | 'Final/OT' | 'Final/SO'
   // | 'Live' | 'Scheduled' | 'Cancelled' | 'Postponed' | 'Suspended' | 'Awarded'
