@@ -375,6 +375,60 @@ async function verifyHighlightlyScore(hlMatchId, claimedHomeScore, claimedAwaySc
   }
 }
 
+/**
+ * Cross-source verification against games_cache (added 2026-09-21 per
+ * Arnel audit). For NHL games, our primary source is NHL.com (from
+ * fetchNhlSchedule above), but we ALSO want to compare against any
+ * other cached source (Highlightly NHL, HockeyTech, etc.) to detect
+ * disagreements.
+ *
+ * Direction-agnostic: cache rows that record the same game with
+ * opposite home/away order still agree if scores match when flipped.
+ *
+ * Returns { verified: true|false, conflictingSources: [...] }.
+ * verified=true means at least one cached source agrees with us.
+ * verified=false means a cached source DISAGREES with our parsed score.
+ */
+async function verifyAgainstCache(dateIso, homeTeamName, awayTeamName, claimedHomeScore, claimedAwayScore) {
+  const { data: rows, error } = await supabase
+    .from('games_cache')
+    .select('source, home_team_name, away_team_name, home_score, away_score')
+    .eq('game_date', dateIso);
+  if (error || !rows) return { verified: false, conflictingSources: [], reason: 'cache query failed' };
+
+  const norm = (s) => (s || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ')[0];
+  const claimedHomeKey = norm(homeTeamName);
+  const claimedAwayKey = norm(awayTeamName);
+
+  let matched = 0;
+  const conflictingSources = [];
+  for (const r of rows) {
+    const cHomeKey = norm(r.home_team_name);
+    const cAwayKey = norm(r.away_team_name);
+    // Match if (home, away) align OR if (home, away) are swapped (direction-agnostic)
+    const same = cHomeKey === claimedHomeKey && cAwayKey === claimedAwayKey;
+    const flipped = cHomeKey === claimedAwayKey && cAwayKey === claimedHomeKey;
+    if (!same && !flipped) continue;
+    matched++;
+    // Compare scores in the same direction (apply flip if needed)
+    const cHome = same ? r.home_score : r.away_score;
+    const cAway = same ? r.away_score : r.home_score;
+    if (cHome === claimedHomeScore && cAway === claimedAwayScore) {
+      // Agree
+    } else {
+      conflictingSources.push({ source: r.source, claimed: `${cHome}-${cAway}` });
+    }
+  }
+
+  if (matched === 0) {
+    return { verified: false, conflictingSources: [], reason: 'no cached source' };
+  }
+  if (conflictingSources.length > 0) {
+    return { verified: false, conflictingSources, reason: 'cached source disagrees' };
+  }
+  return { verified: true, conflictingSources: [], matched };
+}
+
 async function main() {
   console.log('=== Daily scores ingestion ===');
   console.log(`Days: ${DAYS} | Dry run: ${DRY_RUN}`);
@@ -419,6 +473,31 @@ async function main() {
       const record = await upsertNhlGame(g);
       if (!record) continue;
       await resolveTeamIds(record);
+
+      // Cross-source verification via games_cache (added 2026-09-21 per
+      // Arnel audit). For completed NHL games, verify the NHL.com score
+      // matches any cached source (Highlightly NHL, HockeyTech, etc.).
+      // Only completed games are checked (scheduled games have no score).
+      if (record.status === 'completed') {
+        const homeAbbr = g.homeTeam?.abbrev || '';
+        const awayAbbr = g.awayTeam?.abbrev || '';
+        const cacheResult = await verifyAgainstCache(
+          dateIso,
+          homeAbbr,
+          awayAbbr,
+          record.home_score,
+          record.away_score
+        );
+        if (!cacheResult.verified && cacheResult.reason === 'cached source disagrees') {
+          const sources = cacheResult.conflictingSources.map(s => `${s.source}:${s.claimed}`).join(', ');
+          console.log(`  [skip NHL] ${g.id}: cached sources disagree (${sources})`);
+          scoreMismatches++;
+          continue;
+        }
+        // matched=0 (no cached source) → accept NHL.com as authoritative; we
+        // are NHL.com. Only REJECT if a cached source disagrees.
+      }
+
       const id = await upsertFixture(record);
       if (id) totalNhl++;
 
