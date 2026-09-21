@@ -289,6 +289,52 @@ async function fetchNhlBoxscore(slug) {
   }
 }
 
+// Fallback for articles whose slug doesn't carry a 10-digit NHL game ID
+// (added 2026-09-21 per Arnel's 'articles must be published' directive).
+// Uses NHL.com /v1/schedule/{game_date} to find the game by team FKs.
+// Returns the same shape as fetchNhlBoxscore or null if no match.
+async function fetchNhlBoxscoreByDate(gameDate, teamHomeId, teamAwayId) {
+  if (!gameDate || !teamHomeId || !teamAwayId) return null;
+  try {
+    // Look up team abbreviations from our teams table
+    const { data: teams } = await supabase
+      .from('teams')
+      .select('id, name, slug')
+      .in('id', [teamHomeId, teamAwayId]);
+    if (!teams || teams.length < 2) return null;
+    const homeTeam = teams.find(t => t.id === teamHomeId);
+    const awayTeam = teams.find(t => t.id === teamAwayId);
+    if (!homeTeam || !awayTeam) return null;
+
+    // Fetch NHL.com schedule for the date
+    const r = await fetch(`https://api-web.nhle.com/v1/schedule/${gameDate}`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    const gameWeek = data.gameWeek || [];
+    const dayData = gameWeek.find(d => d.date === gameDate);
+    if (!dayData) return null;
+    const games = dayData.games || [];
+
+    // Match by team name (NHL.com returns "Pittsburgh" / "Penguins"; we need fuzzy)
+    const homeKey = (homeTeam.name || '').toLowerCase().split(/\s+/)[0];
+    const awayKey = (awayTeam.name || '').toLowerCase().split(/\s+/)[0];
+    for (const g of games) {
+      const hName = ((g.homeTeam?.placeName?.default || '') + ' ' + (g.homeTeam?.commonName?.default || '')).trim().toLowerCase();
+      const aName = ((g.awayTeam?.placeName?.default || '') + ' ' + (g.awayTeam?.commonName?.default || '')).trim().toLowerCase();
+      if ((hName.includes(homeKey) || hName.includes(awayKey)) && (aName.includes(awayKey) || aName.includes(homeKey))) {
+        // Found the game — fetch its boxscore
+        const boxRes = await fetch(`https://api-web.nhle.com/v1/gamecenter/${g.id}/boxscore`);
+        if (!boxRes.ok) return null;
+        const boxData = await boxRes.json();
+        return { source: `nhl.com (date-match, game ${g.id})`, data: boxData };
+      }
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Highlightly league ID -> Highlightly numeric ID
 const HIGHLIGHTLY_LEAGUE_NAMES = {
   '69d4de0c-b072-4f52-8950-eb728acdc7f9': '40781',     // SHL
@@ -609,7 +655,17 @@ async function fetchBoxscore(article) {
     return fetchWithCache(
       'nhl_com', '', 'NHL',
       article.game_date, articleHomeHint, articleAwayHint, leagueId,
-      () => fetchNhlBoxscore(article.slug).then(b => {
+      async () => {
+        // Try slug-based game ID first (fast path). If that fails AND
+        // the post has team FKs + game_date stamped, fall back to
+        // date-based NHL.com schedule lookup (added 2026-09-21 per
+        // Arnel's 'articles must be published, not held in drafts' directive).
+        let b = await fetchNhlBoxscore(article.slug);
+        if (!b || !b.data) {
+          if (article.team_home_id && article.team_away_id && article.game_date) {
+            b = await fetchNhlBoxscoreByDate(article.game_date, article.team_home_id, article.team_away_id);
+          }
+        }
         if (!b || !b.data) return null;
         const d = b.data;
         const homeName = d.homeTeam?.placeName?.default
@@ -630,7 +686,7 @@ async function fetchBoxscore(article) {
             raw: d,
           },
         };
-      })
+      }
     );
   }
 
@@ -714,7 +770,15 @@ async function fetchBoxscore(article) {
 // Fallback for articles we can't extract team hints from (older titles without "top" pattern).
 async function fetchBoxscoreNoCache(article, leagueId) {
   if (leagueId === '2b5f2b9d-84b9-4edb-8373-a732b72f4e40') {
-    return fetchNhlBoxscore(article.slug);
+    // Try slug-based game ID first (faster path). Fall back to date-based
+    // lookup using stamped posts.team_home_id / team_away_id + game_date
+    // (added 2026-09-21 per Arnel's 'articles must be published' directive).
+    const slugResult = await fetchNhlBoxscore(article.slug);
+    if (slugResult) return slugResult;
+    if (article.team_home_id && article.team_away_id && article.game_date) {
+      return fetchNhlBoxscoreByDate(article.game_date, article.team_home_id, article.team_away_id);
+    }
+    return null;
   }
   const iiTfCountries = /Slovakia|Sweden|Czechia|Czech|Slovenia|Switzerland|Germany|Austria|France|Norway|Finland|Denmark|Hungary|Latvia|Italy|Great Britain|Canada|United States/i;
   if (iiTfCountries.test(article.title || '')) {
