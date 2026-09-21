@@ -237,12 +237,36 @@ async function upsertHockeytechGame(g, leagueKey, leagueUuid) {
 
 async function lookupTeamByName(name, leagueUuid) {
   if (!name) return null;
-  const { data } = await supabase.from('teams')
-    .select('id')
-    .ilike('name', name.replace(/'/g, ''))
+  const cleaned = name.replace(/'/g, '').trim();
+  // Try exact match first (fast path)
+  let { data } = await supabase.from('teams')
+    .select('id, name')
+    .ilike('name', cleaned)
     .eq('league_id', leagueUuid)
     .maybeSingle();
-  return data?.id || null;
+  if (data) return data.id;
+  // Fuzzy: try multiple variants. Highlightly often returns short names
+  // ('Yekaterinburg') while our DB has full names ('Avtomobilist Yekaterinburg').
+  // Try: starts-with match, contains match, word-prefix match.
+  const firstWord = cleaned.split(/\s+/)[0];
+  if (firstWord && firstWord.length >= 4) {
+    // Try teams whose name STARTS WITH the first word (covers 'Yekaterinburg' → 'Avtomobilist Yekaterinburg')
+    // or contains the full name as a substring
+    const { data: fuzzyRows } = await supabase.from('teams')
+      .select('id, name')
+      .eq('league_id', leagueUuid)
+      .or(`name.ilike.${firstWord}%,name.ilike.%${cleaned}%`)
+      .limit(5);
+    if (fuzzyRows && fuzzyRows.length > 0) {
+      // Prefer exact-word match first
+      const exact = fuzzyRows.find(r => r.name.toLowerCase().split(/\s+/).includes(cleaned.toLowerCase()));
+      if (exact) return exact.id;
+      // Otherwise take the shortest matching name (most likely the canonical short form)
+      const sorted = fuzzyRows.sort((a, b) => a.name.length - b.name.length);
+      return sorted[0].id;
+    }
+  }
+  return null;
 }
 
 async function getLeagueUuidBySlug(slug) {
