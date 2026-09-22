@@ -48,15 +48,20 @@ if (existsSync(ENV_FILE) && !process.env.HIGHLIGHTLY_API_KEY) {
  */
 function guessLeagueFromTeams(teams) {
   const joined = teams.join(' ').toLowerCase();
-  // Strong-typed league signals (specific team names)
-  if (/(salavat yulaev ufa|ak bars|metallurg magnitogorsk|avangard omsk|cska moscow|dynamo moscow|locomotiv yaroslavl|torpedo nn|kunlun red star|severstal|admiral|amur|khabarovsk|avtomobilist|avangard|barys|traktor|shanghai dragons|sibir|sochi|spartak|yunost|avangard omsk|red star|akbars|kunlun)/i.test(joined)) return 'KHL';
-  if (/(frölunda|färjestad|skellefteå|växjö Lakers|djurgården|hc sport|Modo Hockey|Linköping|Rögle Brynäs|Luleå|HV71|malmo|hockeytre kronor)/i.test(joined)) return 'SHL';
-  if (/(adler mannheim|eisbären|köln|münchen|berlin|nürnberg|ingolstadt|bremerhaven|straubing|schwenningen|augsburger|krefeld|i Fischtown|iserlohn)/i.test(joined)) return 'DEL';
-  if (/(tps|tappara|hifk|jokerit|hockey eagles|kärpät|älhlet|äsä|ilves|saipa|kalpa|jyp|pelicans|sport vaasa|hp|hpk)/i.test(joined)) return 'Liiga';
+  // Strong-typed league signals (specific team names).
+  // Verified live 2026-09-21: HL returns SHORT names ("Magnitogorsk" not
+  // "Metallurg Magnitogorsk"), so we list both forms.
+  // 2026-09-21: added missing team names that the original regex missed
+  // (Magnitogorsk, Nizhnekamsk, Karpat, Ässät, etc.) — these caused
+  // getMatchData to return null and articles to fail at LLM step.
+  if (/(salavat yulaev|ak bars|akbars|metallurg magnitogorsk|magnitogorsk|nizhnekamsk|avangard omsk|avangard|cska moscow|cska|dynamo moscow|dynamo msk|locomotiv|torpedo nn|kunlun|severstal|admiral|amur|khabarovsk|avtomobilist|avangard|barys|traktor|shanghai dragons|sibir|sochi|spartak|yunost|red star|kunlun|sk a|ska|hc sochi|hc spartak|amur khabarovsk|tambov|metallurg|niznekamsk)/i.test(joined)) return 'KHL';
+  if (/(frölunda|frölunda hc|färjestad|skellefteå|växjö Lakers|växjö|djurgården|if björklöven|hc sport|Modo Hockey|Linköping|Rögle Brynäs|Luleå|HV71|malmo|tre kronor|brynas|skelleftea|vaxjo Lakers|farjestad|frolunda hc|rogle|bjorkloven|rogle bjorkloven)/i.test(joined)) return 'SHL';
+  if (/(adler mannheim|adler|eisbären|eisbaren|köln|koln|münchen|munchen|red bull münchen|berlin|nürnberg|nurnberg|ingolstadt|bremerhaven|straubing|schwenningen|augsburger|krefeld|i Fischtown|fischtown|iserlohn|iserlohn roosters|deggendorf|lowen|lowen frankfurt)/i.test(joined)) return 'DEL';
+  if (/(tps|tappara|hifk|jokerit|hockey eagles|kärpät|karpät|karpat|älhlet|allas|äsä|assa|ilves|saipa|kalpa|jyp|pelicans|pelicans lahti|sport vaasa|hp|hpk|hämeenlinna|hameenlinna|lukko|ässät|jäähonka|assat|honka|aesätaeäsaeaetääs|jyp|hpk|kookoo|saipa|Ässät|Ässäät|Jäähonka|Ässät Ässäät|Jäähonka)/i.test(joined)) return 'Liiga';
   if (/(belleville senators|laval rocket|manitoba moose|hartford wolf pack|springfield thunderbirds|wilkes-barre|lehigh valley|grand rapids|charlotte|syracuse crunch|texas stars|san jose barrage|san diego gulls|ontario reign|bakersfield|colorado eagles)/i.test(joined)) return 'AHL';
-  if (/(oshawa|ottawa 67|barrie colts|kingston|brampton battalion|hamilton bulldogs|north bay|mississauga sudbury|erie otters|kitchener|london knights|oshawa generals|niagara iceDogs|owen sound|peterborough petes|saginaw spirit|sault ste. marie|windsor spitfires)/i.test(joined)) return 'OHL';
-  if (/(red deer rebels|swift current|brandon wheat kings|medicine hat tigers|edmonton oil kings|calgary hitmen|lethbridge hurricanes|moose jaw warriors|regina pats|saskatoon blades|swift current broncos|tri-city americans|spokane chiefs|wenatchee wild|kamloops blazers|kelowna rockets|portland winterhawks|seattle thunderbirds|everett silvertips|vancouver giants| prince george cougars|victoria royals)/i.test(joined)) return 'WHL';
-  if (/(armada|drakkar|foreurs|remparts|phoenix|huskies|wildcats|tigres|cataractes|saguenéens|olympiques|armada blainville|riverains|celtique|chicoutimi)/i.test(joined)) return 'QMJHL';
+  if (/(oshawa|ottawa 67|barrie colts|kingston|brampton battalion|hamilton bulldogs|north bay|mississauga|erie otters|kitchener|london knights|oshawa generals|niagara iceDogs|owen sound|peterborough|saginaw spirit|sault ste. marie|windsor spitfires|generals|67's|67s|ottawa 67s|kingston frontenacs)/i.test(joined)) return 'OHL';
+  if (/(red deer rebels|swift current|brandon wheat kings|medicine hat tigers|edmonton oil kings|calgary hitmen|lethbridge|moose jaw|regina pats|saskatoon blades|tri-city americans|spokane chiefs|wenatchee wild|kamloops blazers|kelowna rockets|portland winterhawks|seattle thunderbirds|everett silvertips|vancouver giants|prince george cougars|victoria royals|cougars|blades|warriors|rebels|tigers|wheat kings|wild|chiefs|giants|broncos|hurricanes|pats|americans|oilers|hitmen)/i.test(joined)) return 'WHL';
+  if (/(armada|drakkar|foreurs|remparts|phoenix|huskies|wildcats|tigres|cataractes|saguenéens|sagueneens|olympiques|riverains|celtique|chicoutimi|val-d'or|rouyn-noranda|baie-comeau|gatineau|quebec|chicoutimi|sagueneens|oceanic|armada blainville|phoenix de sherbrooke)/i.test(joined)) return 'QMJHL';
   return null;
 }
 
