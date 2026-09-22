@@ -53,12 +53,38 @@ export async function GET(request: Request) {
 
   try {
     // Run the multi-league orchestrator for yesterday + today (--days=2).
-    // The script writes /tmp/daily-scores-all-leagues-result.json on completion.
+    // On Vercel the deployed bundle is at /var/task and the script lives at
+    // /var/task/scripts/_daily-scores-all-leagues.cjs. Try several paths
+    // from process.cwd() since Vercel's runtime cwd varies.
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const possiblePaths = [
+      SCRIPT_PATH,
+      path.join(process.cwd(), SCRIPT_PATH),
+      path.join(process.cwd(), '..', SCRIPT_PATH),
+      path.join(process.cwd(), '..', '..', SCRIPT_PATH),
+    ];
+    let scriptPath: string | null = null;
+    let lastErr = '';
+    for (const p of possiblePaths) {
+      try {
+        await fs.access(p);
+        scriptPath = p;
+        break;
+      } catch (e) {
+        lastErr = (e as Error).message;
+      }
+    }
+    if (!scriptPath) {
+      throw new Error(
+        `Could not locate ${SCRIPT_PATH} from ${process.cwd()}. Tried: ${possiblePaths.join(', ')}. Last error: ${lastErr}`
+      );
+    }
     const { stdout, stderr } = await execAsync(
-      `node ${SCRIPT_PATH} --days=2`,
+      `node ${scriptPath} --days=2`,
       {
-        cwd: process.cwd(),
-        timeout: 110_000, // 110s — under Vercel's 120s function limit
+        cwd: path.dirname(scriptPath),
+        timeout: 110_000,
         maxBuffer: 4 * 1024 * 1024,
       }
     );
