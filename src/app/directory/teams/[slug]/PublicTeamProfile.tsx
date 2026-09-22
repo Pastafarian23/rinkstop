@@ -43,6 +43,7 @@ interface NewsRow {
   body: string;
   author_user_id: string;
   published_at: string;
+  slug?: string | null;
 }
 
 interface ResultRow {
@@ -1143,17 +1144,22 @@ function ScheduleCard({ game, timeZone }: { game: ScheduleRow; timeZone?: string
 }
 
 function NewsCard({ item }: { item: NewsRow }) {
-  return (
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: 8,
-        padding: '0.875rem 1rem',
-      }}
-    >
+  // 2026-09-22 per Arnel 05:33 CDT: 'all team pages should be well
+  // populated and accurate' — surface published articles as cross-links
+  // when item.slug is present (auto-fallback in page.tsx attaches posts
+  // linked to fixtures where this team is home or away).
+  const cardStyle: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: 8,
+    padding: '0.875rem 1rem',
+    display: 'block',
+    color: 'inherit',
+  };
+  const inner = (
+    <>
       <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.3rem' }}>
-        {formatDate(item.published_at)}
+        {formatDate(item.published_at)}{item.slug ? <span style={{ color: '#C8102E', marginLeft: '0.5rem' }}>↗ read</span> : null}
       </div>
       <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff', marginBottom: '0.4rem', lineHeight: 1.3 }}>
         {item.title}
@@ -1171,8 +1177,20 @@ function NewsCard({ item }: { item: NewsRow }) {
       >
         {item.body}
       </div>
-    </div>
+    </>
   );
+  if (item.slug) {
+    return (
+      <Link
+        href={`/news/${item.slug}`}
+        style={{ ...cardStyle, textDecoration: 'none' }}
+        className="news-card-link"
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div style={cardStyle}>{inner}</div>;
 }
 
 function InfoRow({ label, value, linkHref, linkLabel }: { label: string; value: React.ReactNode; linkHref?: string | null; linkLabel?: string }) {
