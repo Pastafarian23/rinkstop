@@ -1,30 +1,26 @@
 // /api/cron/scores-refresh
 //
 // Runs every 30 minutes during NHL game hours (15:00-04:00 UTC = NHL evening window)
-// and hourly otherwise. Invokes scripts/_daily-scores-all-leagues.cjs with --days=2
-// so yesterday's games get marked completed and today's games get scores pushed.
+// and hourly otherwise. Invokes the multi-league orchestrator in-process via
+// direct require() — runs the script synchronously without spawning a child
+// process. Vercel bundles the orchestrator source because it's imported here.
 //
-// Why this exists:
-// - Per Arnel 2026-09-22 01:39 CDT directive: "How can we guarantee that games are
-//   continuously updated with scores and moved to recent/past games if necessary?
-//   We should have protocols in place in case there are any cron issues."
-// - The OpenClaw crons `0411a0d9` (NHL Live, 4hr) and `aa525db4` (Daily Scores —
-//   All Leagues) both rely on agentTurn delivery and have been failing for days
-//   with rate-limit errors. Direct script invocation works fine.
-// - This Vercel cron is the *always-on* backstop. Vercel cron doesn't depend on
-//   any LLM model — it just runs the script in the function runtime.
+// Why in-process and not exec: Vercel's function bundle does NOT include
+// /scripts/ — exec('node scripts/...') returns ENOENT. Importing via
+// require() pulls the file into the bundle, so it works on Vercel.
 //
-// Output: writes /tmp/scores-refresh-result.json with the script's summary so the
-// health endpoint can read it.
+// Per Arnel 2026-09-22 01:39 CDT directive: "How can we guarantee that games
+// are continuously updated with scores and moved to recent/past games if
+// necessary? We should have protocols in place in case there are any cron
+// issues."
 
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { readFile, writeFile } from 'fs/promises';
-
-const execAsync = promisify(exec);
-
-const SCRIPT_PATH = 'scripts/_daily-scores-all-leagues.cjs';
+// Use eval to bypass Next.js bundler analysis of the .cjs file (which it
+// doesn't natively support as a module). The orchestrator's exports become
+// accessible via the module.exports object the .cjs file sets.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const orchestrator = require('../../../server/scores/daily-scores-orchestrator.cjs');
 
 interface RefreshResult {
   ok: boolean;
@@ -36,6 +32,27 @@ interface RefreshResult {
   totalErrors: number;
   error?: string;
   warnings: string[];
+}
+
+async function runOrchestrator(): Promise<{ upserts: number; leagues: string[]; error?: string }> {
+  // Set CWD to repo root so load-secrets.cjs finds .env.local if present
+  // (no-op on Vercel where env vars are set by the platform).
+  const path = await import('path');
+  const fs = await import('fs/promises');
+  // process.cwd() on Vercel is /var/task which is the repo root in the bundle.
+  // load-secrets.cjs will find .env.local if it exists, otherwise no-op.
+  try {
+    const result = await orchestrator.main();
+    // The orchestrator writes /tmp/daily-scores-all-leagues-result.json
+    const raw = await fs.readFile('/tmp/daily-scores-all-leagues-result.json', 'utf8');
+    const report = JSON.parse(raw);
+    return {
+      upserts: report.total_upserts || 0,
+      leagues: Object.keys(report.results || {}),
+    };
+  } catch (e) {
+    return { upserts: 0, leagues: [], error: (e as Error).message };
+  }
 }
 
 export async function GET(request: Request) {
@@ -51,90 +68,46 @@ export async function GET(request: Request) {
   const startedAt = new Date().toISOString();
   const startMs = Date.now();
 
-  try {
-    // Run the multi-league orchestrator for yesterday + today (--days=2).
-    // Use Node's module resolution from this file's directory (which is in
-    // the deployed bundle at /var/task/src/app/api/cron/scores-refresh/).
-    // The script lives at ../../../scripts/_daily-scores-all-leagues.cjs
-    // in the source repo, which becomes /var/task/scripts/_daily-scores-all-leagues.cjs
-    // in the Vercel deployment (scripts/ folder is included by Next.js for
-    // any project that has it). We require() it — main() auto-runs and
-    // writes /tmp/daily-scores-all-leagues-result.json.
-    let stdout = '';
-    let stderr = '';
-    try {
-      // Resolve the script via require.resolve from this file's dir.
-      // ../../../../scripts/_daily-scores-all-leagues.cjs goes up 4 levels
-      // from src/app/api/cron/scores-refresh/ to repo root.
-      const path = await import('path');
-      const scriptPath = path.join(process.cwd(), 'scripts', '_daily-scores-all-leagues.cjs');
-      const fs = await import('fs/promises');
-      await fs.access(scriptPath);
-      // exec via node from the script's directory so require('./load-secrets.cjs')
-      // resolves correctly and load-secrets uses process.cwd() for .env.local.
-      const result = await execAsync(
-        `node "${scriptPath}" --days=2`,
-        {
-          cwd: path.dirname(scriptPath),
-          timeout: 110_000,
-          maxBuffer: 4 * 1024 * 1024,
-        }
-      );
-      stdout = result.stdout;
-      stderr = result.stderr;
-    } catch (e) {
-      throw new Error(`exec failed: ${(e as Error).message}`);
-    }
+  // Enforce 110s timeout (Vercel function limit is 120s)
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Orchestrator timeout after 110s')), 110_000)
+  );
 
-    // Read the script's own report file
-    let scriptReport: any = null;
-    try {
-      const raw = await readFile('/tmp/daily-scores-all-leagues-result.json', 'utf8');
-      scriptReport = JSON.parse(raw);
-    } catch {
-      // Script may not have written the file — fall through
-    }
+  try {
+    const { upserts, leagues, error } = await Promise.race([
+      runOrchestrator(),
+      timeoutPromise,
+    ]);
 
     const finishedAt = new Date().toISOString();
     const result: RefreshResult = {
-      ok: true,
+      ok: !error,
       startedAt,
       finishedAt,
       durationMs: Date.now() - startMs,
-      leaguesProcessed: Object.keys(scriptReport?.results || {}),
-      totalUpserts: Object.values(scriptReport?.results || {}).reduce<number>(
-        (sum, v) => sum + (typeof v === 'number' ? v : 0),
-        0
-      ),
-      totalErrors: 0,
+      leaguesProcessed: leagues,
+      totalUpserts: upserts,
+      totalErrors: error ? 1 : 0,
+      error,
       warnings: [],
     };
 
-    // Persist our own result for /api/health/scores
     await writeFile(
       '/tmp/scores-refresh-result.json',
       JSON.stringify(result, null, 2)
     ).catch(() => {});
 
-    return NextResponse.json({ ...result, stdout_tail: stdout.slice(-500), scriptReport });
+    return NextResponse.json(result);
   } catch (e) {
     const finishedAt = new Date().toISOString();
     const errorMsg = (e as Error).message || 'Unknown error';
-
-    // Try to extract upsert count from stdout even on failure
-    let partialUpserts = 0;
-    if ((e as any).stdout) {
-      const m = (e as any).stdout.match(/Total upserts: (\d+)/);
-      if (m) partialUpserts = parseInt(m[1], 10);
-    }
-
     const result: RefreshResult = {
       ok: false,
       startedAt,
       finishedAt,
       durationMs: Date.now() - startMs,
       leaguesProcessed: [],
-      totalUpserts: partialUpserts,
+      totalUpserts: 0,
       totalErrors: 1,
       error: errorMsg,
       warnings: [],
@@ -149,7 +122,6 @@ export async function GET(request: Request) {
   }
 }
 
-// Also expose POST for manual triggering from /api/health/scores
 export async function POST(request: Request) {
   return GET(request);
 }
