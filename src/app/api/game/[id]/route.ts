@@ -126,6 +126,9 @@ export async function GET(
     league: f.league,
     season: f.season,
     game_data: f.game_data,
+    // 2026-09-22: HL stores period scores in game_data; surface them so
+    // the page can render period-by-period without an extra HL fetch.
+    period_scores: f.game_data?.period_scores || null,
     linked_articles: linkedArticles,
     linked_highlights: linkedHighlights,
   });

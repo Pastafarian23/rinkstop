@@ -49,11 +49,14 @@ interface Game {
 
 interface Boxscore {
   source: string;
+  leagueName?: string;
   gameInfo?: any;
   teamStats?: any;
   goals?: any[];
   goalies?: any;
   playerStats?: any;
+  periodScores?: { first?: number[]; second?: number[]; third?: number[]; overtime?: number[]; shootout?: number[] };
+  scoreDiscrepancy?: { home: { db: number; hl: number }; away: { db: number; hl: number } };
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
@@ -108,13 +111,19 @@ export default function GamePage() {
       .catch(err => { setLoading(false); setError(err.message); });
   }, [gameId]);
 
-  // Fetch rich boxscore (NHL games only — others gracefully no-op)
+  // Fetch rich boxscore (NHL.com for NHL games, Highlightly for others).
+  // Per Arnel 2026-09-22 02:49 CDT: non-NHL games used to fall through to
+  // 'detailed stats on the league's official site' which was a dead end.
+  // The /api/game/[id]/boxscore endpoint now returns HL period scores for
+  // non-NHL leagues (KHL/SHL/DEL/MHL/VHL/SPHL/Liiga).
   useEffect(() => {
     if (!gameId) return;
     setBoxLoading(true);
     fetch(`/api/game/${gameId}/boxscore`)
       .then(r => r.json())
-      .then(d => { if (d?.source === 'nhl.com') setBoxscore(d); })
+      .then(d => {
+        if (d?.source === 'nhl.com' || d?.source === 'highlightly') setBoxscore(d);
+      })
       .catch(() => {})
       .finally(() => setBoxLoading(false));
   }, [gameId]);
@@ -246,20 +255,35 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* Period Scores */}
-      {game.period_scores && Array.isArray(game.period_scores) && game.period_scores.length > 0 && (
-        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Period Scores</h3>
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {game.period_scores.map((p: any, i: number) => (
-              <div key={i} style={{ background: 'var(--s1)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem 1rem', textAlign: 'center', minWidth: '70px' }}>
-                <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>{periodLabel(i + 1, boxscore?.gameInfo?.periodDescriptor)}</p>
-                <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{p.home} - {p.away}</p>
-              </div>
-            ))}
+      {/* Period Scores — prefer game.period_scores (DB-stored from HL ingest),
+          fall back to boxscore.periodScores (live HL fetch) when null.
+          Per Arnel 2026-09-22 02:49 CDT: enhance scores pages to include
+          actual information rather than 'see the league's site'. */}
+      {(() => {
+        const ps = (game.period_scores && game.period_scores.length > 0)
+          ? game.period_scores.map((p: any) => ({ period: p.period, home: p.home, away: p.away }))
+          : (boxscore?.periodScores ? [
+              { period: 'P1', home: boxscore.periodScores.first?.[0], away: boxscore.periodScores.first?.[1] },
+              { period: 'P2', home: boxscore.periodScores.second?.[0], away: boxscore.periodScores.second?.[1] },
+              { period: 'P3', home: boxscore.periodScores.third?.[0], away: boxscore.periodScores.third?.[1] },
+              { period: 'OT', home: boxscore.periodScores.overtime?.[0], away: boxscore.periodScores.overtime?.[1] },
+              { period: 'SO', home: boxscore.periodScores.shootout?.[0], away: boxscore.periodScores.shootout?.[1] },
+            ].filter((p) => p.home != null && p.away != null) : []);
+        if (ps.length === 0) return null;
+        return (
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+            <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Period Scores</h3>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {ps.map((p: any, i: number) => (
+                <div key={i} style={{ background: 'var(--s1)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem 1rem', textAlign: 'center', minWidth: '70px' }}>
+                  <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>{p.period || periodLabel(i + 1, boxscore?.gameInfo?.periodDescriptor)}</p>
+                  <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{p.home} - {p.away}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Three Stars (NHL) */}
       {boxscore?.gameInfo?.threeStars && boxscore.gameInfo.threeStars.length > 0 && (
@@ -391,6 +415,40 @@ export default function GamePage() {
              game.league?.name?.toLowerCase().includes('liiga') ? 'liiga.fi' :
              'the league\'s official site'}.
           </p>
+        </div>
+      )}
+
+      {/* HL non-NHL games: show game state + venue (more useful than nothing)
+          since HL doesn't expose goal events for KHL/SHL/DEL/etc. */}
+      {boxscore?.source === 'highlightly' && boxscore?.gameInfo && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Game Details</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1.5rem', fontSize: '0.875rem' }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>Status</span>
+            <span style={{ color: '#fff', fontWeight: 600 }}>{boxscore.gameInfo.gameState || '—'}</span>
+            {boxscore.gameInfo.venue && (
+              <>
+                <span style={{ color: 'rgba(255,255,255,0.5)' }}>Venue</span>
+                <span style={{ color: '#fff' }}>{boxscore.gameInfo.venue}{boxscore.gameInfo.venueLocation ? ` (${boxscore.gameInfo.venueLocation})` : ''}</span>
+              </>
+            )}
+            {boxscore.leagueName && (
+              <>
+                <span style={{ color: 'rgba(255,255,255,0.5)' }}>Source</span>
+                <span style={{ color: 'rgba(255,255,255,0.7)' }}>Highlightly match API · {boxscore.leagueName}</span>
+              </>
+            )}
+            {boxscore.scoreDiscrepancy && (
+              <>
+                <span style={{ color: 'rgba(255,255,255,0.5)' }}>Score note</span>
+                <span style={{ color: '#FFB81C' }}>
+                  DB has {boxscore.scoreDiscrepancy.home.db}-{boxscore.scoreDiscrepancy.away.db};
+                  HL has {boxscore.scoreDiscrepancy.home.hl}-{boxscore.scoreDiscrepancy.away.hl}.
+                  Showing HL value.
+                </span>
+              </>
+            )}
+          </div>
         </div>
       )}
 

@@ -306,6 +306,31 @@ function hlToStatus(desc) {
   return 'scheduled';
 }
 
+// 2026-09-22: parse HL's score object into period-by-period array.
+// Returns [{period:'P1',home:1,away:2},{period:'P2',home:2,away:1},...]
+// omits periods where both values are 0/NaN.
+function hlPeriodScoresToArray(score) {
+  if (!score) return [];
+  const out = [];
+  const map = [
+    ['firstPeriod', 'P1'],
+    ['secondPeriod', 'P2'],
+    ['thirdPeriod', 'P3'],
+    ['overTime', 'OT'],
+    ['penalties', 'SO'],
+  ];
+  for (const [key, label] of map) {
+    const raw = score[key];
+    if (!raw) continue;
+    const parts = String(raw).split('-').map((s) => Number(s.trim()));
+    if (parts.length !== 2 || parts.some((n) => Number.isNaN(n))) continue;
+    // Skip empty 0-0 periods (HL sometimes returns 0-0 for periods that didn't happen)
+    if (parts[0] === 0 && parts[1] === 0) continue;
+    out.push({ period: label, home: parts[0], away: parts[1] });
+  }
+  return out;
+}
+
 async function upsertHighlightlyGame(g, leagueId, leagueName, leagueUuid) {
   const ht = g.homeTeam || {};
   const at = g.awayTeam || {};
@@ -324,7 +349,21 @@ async function upsertHighlightlyGame(g, leagueId, leagueName, leagueUuid) {
     away_score: score[1],
     status: hlToStatus(g.state?.description),
     season: null,
-    game_data: { hl_match_id: g.id, hl_league_name: leagueName, home_team_name: ht.name, away_team_name: at.name, home_team_abbrev: ht.abbreviation, away_team_abbrev: at.abbreviation, source: 'highlightly' },
+    game_data: {
+      hl_match_id: g.id,
+      hl_league_name: leagueName,
+      home_team_name: ht.name,
+      away_team_name: at.name,
+      home_team_abbrev: ht.abbreviation,
+      away_team_abbrev: at.abbreviation,
+      source: 'highlightly',
+      // 2026-09-22: store HL period scores so the /directory/games/[id]
+      // page can render period-by-period without an extra API call.
+      // Format: [{period: 'P1', home: 2, away: 1}, ...]
+      period_scores: hlPeriodScoresToArray(g.state?.score),
+      hl_game_state: g.state?.description || null,
+      hl_venue: g.venue?.name || null,
+    },
     updated_at: new Date().toISOString(),
   };
   return await upsertFixture(record);
