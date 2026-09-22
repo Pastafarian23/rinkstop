@@ -14,7 +14,6 @@ export async function GET() {
     .select('slug, updated_at')
     .eq('status', 'published')
     .eq('visibility', 'public')
-    .gte('starts_at', new Date().toISOString())
     .order('starts_at', { ascending: true })
     .limit(5000);
 
