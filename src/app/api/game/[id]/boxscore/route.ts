@@ -10,6 +10,30 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const HL_KEY = process.env.HIGHLIGHTLY_API_KEY;
+const HL_HOST = 'hockey-highlights-api.p.rapidapi.com';
+
+// League UUID → Highlightly numeric league ID. Mirrors the map in
+// scripts/_audit-pipeline.cjs (HIGHLIGHTLY_LEAGUE_NAMES) and
+// scripts/_daily-scores-all-leagues.cjs (HL_LEAGUE_UUIDS). Keep in lockstep
+// or HL feeding for three weeks will break.
+// Per Arnel 2026-09-22 02:49 CDT: /scores page clicks showed
+// 'Detailed box score on the league's official site' for KHL/SHL/DEL/etc.
+// because the API only handled NHL. This adds HL as the canonical source
+// for non-NHL leagues, returning at least period scores + final score +
+// game state description. Much better UX than a blank fallback.
+const LEAGUE_UUID_TO_HL_ID: Record<string, string | number> = {
+  // NHL handled separately (nhl.highlightly.net)
+  '2b5f2b9d-84b9-4edb-8373-a732b72f4e40': 'NHL',
+  '69d4de0c-b072-4f52-8950-eb728acdc7f9': '40781',     // SHL
+  '03e919d1-2180-443b-aba4-6719d25d2eff': '16953',     // DEL
+  'a08f6dac-eb1f-48b6-a11b-56fbb5642752': '30569',     // KHL
+  'e052d66a-6f63-42da-94***': '32271',     // MHL
+  '30fef7f6-0054-4605-83b7-ec619b72f328': '31420',     // VHL
+  'dead3e40-9f79-4488-a50b-755eb9a8cee0': '51844',     // SPHL
+  'dc212fdb-98bd-4fd5-842c-598ba34565b5': '14400',     // Liiga
+};
+
 // Cache: gameId → { boxscore + pbp, expiresAt }
 const cache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -39,13 +63,25 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   if (/^\d{10}$/.test(gameId)) {
     nhlGameId = gameId;
   } else {
-    // Look up the fixture by uuid → nhl_game_id
+    // Look up the fixture by uuid → nhl_game_id (column OR game_data JSONB)
+    // Per Arnel 2026-09-22 02:49 CDT: /scores page clicks were hitting
+    // 'Detailed box score on the league's official site' because the API
+    // only checked fixtures.nhl_game_id (column doesn't exist in prod).
+    // The canonical location is fixtures.game_data->>'nhl_game_id' JSONB.
     const { data: fx } = await supabaseAdmin.from('fixtures')
-      .select('nhl_game_id, league_id')
+      .select('nhl_game_id, game_data, league_id, scheduled_at, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name), away_team:teams!fixtures_away_team_id_fkey(name)')
       .eq('id', gameId)
       .maybeSingle();
     if (fx?.nhl_game_id) {
       nhlGameId = fx.nhl_game_id;
+    } else if (fx?.game_data?.nhl_game_id) {
+      nhlGameId = String(fx.game_data.nhl_game_id);
+    } else if (fx?.game_data?.hl_match_id && fx.league_id) {
+      // Non-NHL: fall back to Highlightly boxscore (period scores + final score)
+      const hlResp = await fetchHighlightlyBoxscore(fx);
+      if (hlResp) return hlResp;
+      // Fall through to NHL.com path or "non-nhl" response
+      return NextResponse.json({ source: 'none', reason: 'non-nhl' });
     } else {
       // Not an NHL game — return null gracefully (page shows "detailed stats on league.com")
       return NextResponse.json({ source: 'none', reason: 'non-nhl' });
@@ -196,5 +232,85 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   const out = NextResponse.json(response);
   out.headers.set('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
   applyRateLimitHeaders(out, result);
+  return out;
+}
+// fetchHighlightlyBoxscore — 2026-09-22 fallback for non-NHL leagues.
+// HL's matches list endpoint returns period scores, final score, and game
+// state description. Not as rich as NHL.com (no player stats, no goal log)
+// but still 10x better UX than 'go check the league's site'.
+async function fetchHighlightlyBoxscore(fx: any): Promise<NextResponse | null> {
+  if (!HL_KEY) return null;
+  const hlLeagueId = LEAGUE_UUID_TO_HL_ID[fx.league_id];
+  if (!hlLeagueId) return null;
+  const hlMatchId = fx.game_data?.hl_match_id;
+  if (!hlMatchId) return null;
+
+  // HL uses nhl.highlightly.net for NHL (handled above) and
+  // hockey.highlightly.net for everything else. Liiga/AHL/etc live on
+  // hockey.highlightly.net with the league id.
+  const url = (hlLeagueId === 'NHL')
+    ? `https://nhl.highlightly.net/matches?date=${(fx.scheduled_at || '').slice(0,10)}&limit=50`
+    : `https://hockey.highlightly.net/matches?leagueId=${hlLeagueId}&date=${(fx.scheduled_at || '').slice(0,10)}&limit=20`;
+  const host = (hlLeagueId === 'NHL') ? 'nhl.highlightly.net' : HL_HOST;
+  let j: any;
+  try {
+    const res = await fetch(url, { headers: { 'x-rapidapi-key': HL_KEY, 'x-rapidapi-host': host } });
+    if (!res.ok) return null;
+    j = await res.json();
+  } catch {
+    return null;
+  }
+  const matches: any[] = Array.isArray(j.data) ? j.data : Array.isArray(j) ? j : [];
+  const match = matches.find(m => String(m.id) === String(hlMatchId));
+  if (!match) return null;
+
+  const score = match.state?.score || {};
+  const current = (score.current || '').split('-').map((n: string) => Number(n.trim()));
+  const parsePeriod = (s?: string) => (s || '').split('-').map((n: string) => Number(n.trim()));
+  const homeScore = current[0] ?? fx.home_score ?? null;
+  const awayScore = current[1] ?? fx.away_score ?? null;
+  const response: any = {
+    source: 'highlightly',
+    leagueName: match.league?.name || null,
+    gameInfo: {
+      id: String(match.id),
+      gameDate: (match.date || '').slice(0, 10),
+      gameState: match.state?.description || 'Final',
+      venue: match.venue?.name || null,
+      venueLocation: match.venue?.city ? `${match.venue.city}, ${match.venue.country || ''}`.trim() : null,
+      threeStars: [],
+    },
+    teamStats: {
+      home: {
+        abbrev: match.homeTeam?.abbreviation || null,
+        name: match.homeTeam?.name || null,
+        score: homeScore,
+        sog: null, // HL doesn't expose SOG for non-NHL
+      },
+      away: {
+        abbrev: match.awayTeam?.abbreviation || null,
+        name: match.awayTeam?.name || null,
+        score: awayScore,
+        sog: null,
+      },
+    },
+    periodScores: {
+      first: parsePeriod(score.firstPeriod),
+      second: parsePeriod(score.secondPeriod),
+      third: parsePeriod(score.thirdPeriod),
+      overtime: parsePeriod(score.overTime),
+      shootout: parsePeriod(score.penalties),
+    },
+    goals: [], // HL doesn't expose goal log via this endpoint
+    goalies: { home: null, away: null },
+    playerStats: { home: { forwards: [], defense: [], goalies: [] }, away: { forwards: [], defense: [], goalies: [] } },
+    cachedAt: new Date().toISOString(),
+  };
+  // Final score echo from DB to verify HL agrees
+  if (fx.home_score != null && homeScore != null && Number(fx.home_score) !== Number(homeScore)) {
+    response.scoreDiscrepancy = { home: { db: fx.home_score, hl: homeScore }, away: { db: fx.away_score, hl: awayScore } };
+  }
+  const out = NextResponse.json(response);
+  out.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=1800');
   return out;
 }
