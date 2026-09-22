@@ -351,6 +351,19 @@ export default async function PublicTeamPage({ params }: PageProps) {
       }));
     }
   }
+
+  // 2026-09-22 Per Arnel 06:22 CDT: 'There should also be a section
+  // for highlights for the team'. highlight_backups.home_team_id /
+  // away_team_id are Highlightly numeric IDs (not our Supabase UUIDs),
+  // so we match by team name OR common aliases (city, abbrev).
+  const teamAliases = [team.name, team.short_name, team.home_city].filter(Boolean).map(s => String(s).replace(/[%_\\]/g, '\\$&'));
+  const orClauses = teamAliases.flatMap(a => [`home_team_name.ilike.%${a}%`, `away_team_name.ilike.%${a}%`]).join(',');
+  const { data: teamHighlights } = await supabase
+    .from('highlight_backups')
+    .select('id, title, description, video_url, embed_url, image_url, match_date, home_team_name, away_team_name, league_name, source, channel')
+    .or(orClauses)
+    .order('match_date', { ascending: false })
+    .limit(8);
   // Normalize team_events rows into ScheduleRow shape so the rest of the page works unchanged
   const teamEventsRows = (upcomingEventsRes.data || []) as Array<{
     id: string;
@@ -688,54 +701,6 @@ export default async function PublicTeamPage({ params }: PageProps) {
           narrow screens via max-height + overflow:hidden, and let
           the user tap to expand via a details/summary element. */}
       <style>{`details[open] > summary > .about-arrow { transform: rotate(90deg); }`}</style>
-      <section
-        aria-label={`About ${team.name}`}
-        style={{ maxWidth: '1280px', margin: '0 auto 1.5rem', padding: '0 1rem' }}
-      >
-        <details
-          style={{
-            background: 'var(--s2)',
-            border: '1px solid var(--border)',
-            borderRadius: 10,
-            padding: '1rem 1.25rem',
-          }}
-        >
-          {/* 2026-09-22: hide the default disclosure triangle, render an
-              explicit arrow + label that swaps between '▸ About' and
-              '▾ About' depending on the open state. CSS-only via
-              details[open] selector. Per Arnel 05:33 CDT: 'the about
-              section is better now that its collapsed and expandable.
-              But it's not intuitive. Please add an arrow or expand so
-              user is aware.' */}
-          <summary style={{
-            fontFamily: '"Bebas Neue", sans-serif',
-            fontSize: '1.5rem',
-            letterSpacing: '0.04em',
-            color: '#fff',
-            cursor: 'pointer',
-            listStyle: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            userSelect: 'none',
-            marginBottom: 0,
-          }}>
-            <span aria-hidden="true" style={{
-              display: 'inline-block',
-              width: '1em',
-              transition: 'transform 150ms ease',
-              color: '#FFB81C',
-              fontWeight: 700,
-            }} className="about-arrow">▸</span>
-            <span>About {team.name}</span>
-          </summary>
-          <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem', paddingTop: '0.75rem' }}>
-            {introParts.map((p, i) => (
-              <p key={i} style={{ marginBottom: i < introParts.length - 1 ? '0.75rem' : 0 }}>{p}</p>
-            ))}
-          </div>
-        </details>
-      </section>
       <PublicTeamProfile
         team={team}
         news={news}
@@ -753,6 +718,8 @@ export default async function PublicTeamPage({ params }: PageProps) {
         teamTimezone={await deriveTeamTimezone(team, teamEventsRows)}
         cityTeams={cityTeams}
         cityRinks={cityRinks}
+        aboutParts={introParts}
+        highlights={teamHighlights || []}
       />
 
       {/* 2026-09-03 PR #197: trust-signal footer (AdSense compliance hard gate).
