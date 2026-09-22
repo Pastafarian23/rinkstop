@@ -183,11 +183,24 @@ export function autolinkContent(
 // points at the same slug as its parent entity. Generated at
 // autolink-time from the teams[] input — no separate config.
 //
-// The returned aliases have an extra `_fullNameLength` field so the
-// matching logic later can prefer the more-specific (longer full name)
-// entity when multiple aliases collide (e.g. "Flyers" could match
-// Philadelphia or Nazareth — pick the one with the longer full name).
+// 2026-09-22 audit fix: only generate aliases when the last word is
+// UNIQUE across the active team list. Without this guard, "Flyers"
+// became an alias for all 4 Flyers-named teams (Philadelphia,
+// Nazareth, Pensacola, Fife) and the alphabetical-first-match picked
+// Fife Flyers. "Capitals" aliased to all 6 Capitals teams and picked
+// Cowichan Valley Capitals. Both wrong for the actual article context.
+// After this guard, only unambiguous last-words get aliases.
 function buildShortNameAliases(teams: NamedEntity[]): NamedEntity[] {
+  // First pass: count how many teams have each last word.
+  const lastWordCount = new Map<string, number>();
+  for (const t of teams) {
+    const parts = t.name.split(/\s+/);
+    if (parts.length < 2) continue;
+    const last = parts[parts.length - 1];
+    if (last.length < 4) continue;
+    const key = last.toLowerCase();
+    lastWordCount.set(key, (lastWordCount.get(key) || 0) + 1);
+  }
   const out: any[] = [];
   const seen = new Set<string>();
   for (const t of teams) {
@@ -195,6 +208,8 @@ function buildShortNameAliases(teams: NamedEntity[]): NamedEntity[] {
     if (parts.length < 2) continue;
     const last = parts[parts.length - 1];
     if (last.length < 4) continue;
+    // Only emit alias when this last word is UNIQUE among active teams.
+    if ((lastWordCount.get(last.toLowerCase()) || 0) > 1) continue;
     const alias = last;
     const key = alias.toLowerCase() + '|' + t.slug;
     if (seen.has(key)) continue;
