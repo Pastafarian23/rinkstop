@@ -59,6 +59,7 @@ function guessLeagueFromTeams(teams) {
   if (/(adler mannheim|adler|eisbären|eisbaren|köln|koln|münchen|munchen|red bull münchen|berlin|nürnberg|nurnberg|ingolstadt|bremerhaven|straubing|schwenningen|augsburger|krefeld|i Fischtown|fischtown|iserlohn|iserlohn roosters|deggendorf|lowen|lowen frankfurt)/i.test(joined)) return 'DEL';
   if (/(tps|tappara|hifk|jokerit|hockey eagles|kärpät|karpät|karpat|älhlet|allas|äsä|assa|ilves|saipa|kalpa|jyp|pelicans|pelicans lahti|sport vaasa|hp|hpk|hämeenlinna|hameenlinna|lukko|ässät|jäähonka|assat|honka|aesätaeäsaeaetääs|jyp|hpk|kookoo|saipa|Ässät|Ässäät|Jäähonka|Ässät Ässäät|Jäähonka)/i.test(joined)) return 'Liiga';
   if (/(belleville senators|laval rocket|manitoba moose|hartford wolf pack|springfield thunderbirds|wilkes-barre|lehigh valley|grand rapids|charlotte|syracuse crunch|texas stars|san jose barrage|san diego gulls|ontario reign|bakersfield|colorado eagles)/i.test(joined)) return 'AHL';
+  if (/(langnau|zürich lions|zuerich lions|bern|davos|fribourg|lausanne|lugano|biel|servette|geneve-servette|rapperswil|scl tigers|hc davos|hc bern|hc lugano|hc fribourg|hc lausanne|hc biel|swiss|swiss national)/i.test(joined)) return 'NL';
   if (/(oshawa|ottawa 67|barrie colts|kingston|brampton battalion|hamilton bulldogs|north bay|mississauga|erie otters|kitchener|london knights|oshawa generals|niagara iceDogs|owen sound|peterborough|saginaw spirit|sault ste. marie|windsor spitfires|generals|67's|67s|ottawa 67s|kingston frontenacs)/i.test(joined)) return 'OHL';
   if (/(red deer rebels|swift current|brandon wheat kings|medicine hat tigers|edmonton oil kings|calgary hitmen|lethbridge|moose jaw|regina pats|saskatoon blades|tri-city americans|spokane chiefs|wenatchee wild|kamloops blazers|kelowna rockets|portland winterhawks|seattle thunderbirds|everett silvertips|vancouver giants|prince george cougars|victoria royals|cougars|blades|warriors|rebels|tigers|wheat kings|wild|chiefs|giants|broncos|hurricanes|pats|americans|oilers|hitmen)/i.test(joined)) return 'WHL';
   if (/(armada|drakkar|foreurs|remparts|phoenix|huskies|wildcats|tigres|cataractes|saguenéens|sagueneens|olympiques|riverains|celtique|chicoutimi|val-d'or|rouyn-noranda|baie-comeau|gatineau|quebec|chicoutimi|sagueneens|oceanic|armada blainville|phoenix de sherbrooke)/i.test(joined)) return 'QMJHL';
@@ -116,6 +117,7 @@ async function highlightlyMatch(teams, date, apiKey) {
     'VHL': 31420,
     'SPHL': 51844,
     'Liiga': 14400,
+    'NL': 4934,  // Swiss National League (added 2026-09-21)
   };
   // Determine the HL league ID from the team names (best-effort). If we can't
   // determine, fall back to unfiltered date search.

@@ -79,13 +79,13 @@ const HL_LEAGUE_UUIDS = {
   'Liiga': 'dc212fdb-98bd-4fd5-842c-598ba34565b5',
 };
 
-// HL league ID → league name (verified live 2026-09-21 — AHL/OHL/WHL IDs
-// were 3337/4188 NOT 5159/5157 as the audit-pipeline had documented)
+// HL league ID → league name (verified live 2026-09-21)
+// QMJHL not reachable via HL hockey endpoint (verified — IDs 5161, 50068,
+// 50069, 50158-50162, 5067-5070 all return 0 for 2026-09-19).
 const HL_LEAGUE_IDS = {
   '50142': 'AHL',
   '3337': 'OHL',
   '4188': 'WHL',
-  '5161': 'QMJHL',
   '40781': 'SHL',
   '16953': 'DEL',
   '30569': 'KHL',
