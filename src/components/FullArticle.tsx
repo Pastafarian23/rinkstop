@@ -20,7 +20,7 @@ import TagChips from '@/components/TagChips';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
-import { autolinkContent } from '@/lib/autolink';
+import { autolinkContent, AUTOLINK_VERSION } from '@/lib/autolink';
 
 const _RAW_SITE = process.env.NEXT_PUBLIC_SITE_URL || '';
 export const FULL_ARTICLE_BASE_URL =
@@ -88,6 +88,11 @@ interface RelatedPost {
  * and re-uses the result across the same server-instance lifetime, capped
  * at 1h via the TTL. Refresh on next request after expiry.
  *
+ * 2026-09-22: cache key now includes AUTOLINK_VERSION so an algorithm
+ * change (e.g. the unique-only alias guard) forces a fresh fetch
+ * without waiting for the 1h TTL to expire. This avoids stale autolink
+ * behavior when the fix ships within the TTL window.
+ *
  * Why module-level (vs per-request): 720 articles × 5 req/s ≈ 3,600 calls/min.
  * Without cache that's 3,600 Supabase round-trips for the same entity list.
  * With cache, it's 1 per hour.
@@ -97,13 +102,16 @@ interface AutolinkEntityCache {
   leagues: { name: string; slug: string }[];
   rinks: { name: string; slug: string }[];
   fetchedAt: number;
+  // 2026-09-22: include version so cache key change forces fresh fetch
+  version: string;
 }
 let _autolinkCache: AutolinkEntityCache | null = null;
 const AUTOLINK_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const AUTOLINK_CACHE_KEY = `autolink-entities-${AUTOLINK_VERSION}`;
 
 async function getAutolinkEntities(): Promise<AutolinkEntityCache> {
   const now = Date.now();
-  if (_autolinkCache && now - _autolinkCache.fetchedAt < AUTOLINK_CACHE_TTL_MS) {
+  if (_autolinkCache && _autolinkCache.version === AUTOLINK_VERSION && now - _autolinkCache.fetchedAt < AUTOLINK_CACHE_TTL_MS) {
     return _autolinkCache;
   }
   const [teamsRes, leaguesRes, rinksRes] = await Promise.all([
@@ -128,6 +136,7 @@ async function getAutolinkEntities(): Promise<AutolinkEntityCache> {
     leagues: ((leaguesRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
     rinks: ((rinksRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
     fetchedAt: now,
+    version: AUTOLINK_VERSION,
   };
   return _autolinkCache;
 }
