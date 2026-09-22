@@ -93,7 +93,13 @@ export async function GET(request: NextRequest) {
     `)
     .not('home_team_id', 'is', null)
     .not('away_team_id', 'is', null)
-    .order('scheduled_at', { ascending: true });
+    // 2026-09-22 audit fix (bug #22): default sort was ASC, but the
+    // 'current' tab is the default and ASC showed oldest games first.
+    // PostgREST chains orderings as primary+secondary so a later
+    // .order(ascending: false) wouldn't override. Switching default
+    // to DESC. 'recent' mode explicitly overrides to DESC anyway.
+    // 'historical' keeps its natural order (oldest first).
+    .order('scheduled_at', { ascending: false });
 
   // League filter
   if (leagueIds.length === 0) {
@@ -152,11 +158,9 @@ export async function GET(request: NextRequest) {
     query = query.order('scheduled_at', { ascending: false });
   } else if (time === 'current' || !time) {
     // 2026-09-22 audit fix (bug #22): 'current' is the default tab on
-    // /scores. Oldest-ASC was surfacing completed games from days ago
-    // at the top because they're older than scheduled games in the
-    // future. Override to DESC so today's games + upcoming appear
-    // first, with recently-completed games trailing.
-    query = query.order('scheduled_at', { ascending: false });
+    // /scores. The upstream builder now defaults to DESC (see line 96
+    // comment), so today's games + upcoming appear first, with
+    // recently-completed games trailing. No explicit override needed.
   } else {
     // 2026-09-22 fix: 'scheduled' rows with a past scheduled_at are stale
     // (the game already happened but the daily-scores cron didn't update
