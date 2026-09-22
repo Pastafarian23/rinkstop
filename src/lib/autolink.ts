@@ -36,7 +36,7 @@ interface AutolinkOptions {
 type EntityWithType = NamedEntity & { type: 'team' | 'rink' | 'league' };
 
 // Bump this when changing the algorithm — FullArticle's cache key includes it.
-export const AUTOLINK_VERSION = 'v4-2026-09-22-unique-aliases-only';
+export const AUTOLINK_VERSION = 'v5-2026-09-22-paginated-entity-fetch';
 
 // 2026-09-12: stopword list. Every entry here is a known false positive that
 // the dry-run audit surfaced. Add new ones here as they're discovered.
