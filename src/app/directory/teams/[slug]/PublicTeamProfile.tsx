@@ -166,6 +166,15 @@ interface Props {
     source: string | null;
     channel: string | null;
   }>;
+  /**
+   * 2026-09-22 per Arnel 10:47 CDT: professional/junior teams should
+   * not show the 'Claim this team' button (it can only be abused —
+   * only amateur/community teams should be claimable by admins). The
+   * level comes from leagues.level (professional | amateur | junior | NULL).
+   * NULL falls through to the old behavior (claimable) so national-team
+   * programmes remain claimable.
+   */
+  teamLeagueLevel?: string | null;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -283,6 +292,7 @@ function ClaimBadge({
   teamName,
   claimantDisplayName,
   claimantRole,
+  teamLeagueLevel,
 }: {
   claimed: boolean;
   admins: AdminJoin[];
@@ -290,7 +300,33 @@ function ClaimBadge({
   teamName: string;
   claimantDisplayName?: string | null;
   claimantRole?: string | null;
+  teamLeagueLevel?: string | null;
 }) {
+  // 2026-09-22 per Arnel 10:47 CDT: professional + junior teams can't
+  // be claimed (only abuse surface — these are real orgs with staff).
+  // Show a 'Professional Team' badge instead. Amateur + NULL
+  // (national-team programmes) keep the claim button.
+  if (teamLeagueLevel === 'professional' || teamLeagueLevel === 'junior') {
+    const label = teamLeagueLevel === 'professional' ? 'Professional Team' : 'Junior Team';
+    return (
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          background: 'rgba(120,120,140,0.08)',
+          border: '1px solid rgba(120,120,140,0.3)',
+          borderRadius: 6,
+          padding: '0.25rem 0.75rem',
+          fontSize: '0.78rem',
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.7)',
+        }}
+      >
+        🏆 {label}
+      </div>
+    );
+  }
   if (claimed) {
     // Per Arnel (2026-06-24 14:32): "the badge should show whoever it is claimed by,
     // since they would have a profile with their role on team, or in organization."
@@ -371,6 +407,7 @@ export default function PublicTeamProfile({
   cityRinks = [],
   aboutParts = [],
   highlights = [],
+  teamLeagueLevel = null,
   roster = [],
 }: Props) {
   const flag = countryFlag(team.country_code);
@@ -556,6 +593,7 @@ export default function PublicTeamProfile({
               teamName={team.name}
               claimantDisplayName={claimantDisplayName}
               claimantRole={claimantRole}
+              teamLeagueLevel={teamLeagueLevel}
             />
             <ShareButton
               payload={buildTeamShare({

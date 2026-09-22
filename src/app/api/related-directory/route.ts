@@ -34,20 +34,29 @@ export async function GET(request: NextRequest) {
     return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
-  // Build OR clause: name ILIKE '%term%' OR city ILIKE '%term%' OR country ILIKE '%term%'
-  const orSegments: string[] = [];
-  for (const term of terms) {
-    const escaped = term.replace(/'/g, "''");
-    orSegments.push(
-      `name.ilike.%${escaped}%,city.ilike.%${escaped}%,country.ilike.%${escaped}%`
-    );
-  }
-  const orClause = orSegments.join(',');
+  // Build OR clauses per-table because columns differ across tables.
+  // 2026-09-22 audit fix: previously used one combined clause referencing
+  // 'city' and 'country' for all 3 tables — but team_workspaces uses
+  // home_city + country_code, so the OR clause 42703'd the whole query
+  // and silently returned 0 teams. Now each table gets its own clause.
+  const buildOrForColumns = (columns: string[]) => {
+    const segs: string[] = [];
+    for (const term of terms) {
+      const escaped = term.replace(/'/g, "''");
+      for (const col of columns) {
+        segs.push(`${col}.ilike.%${escaped}%`);
+      }
+    }
+    return segs.join(',');
+  };
+  const rinkOrClause = buildOrForColumns(['name', 'city', 'country']);
+  const teamOrClause = buildOrForColumns(['name', 'home_city', 'country_code']);
+  const leagueOrClause = buildOrForColumns(['name', 'city', 'country']);
 
   const [rinkRes, teamRes, leagueRes] = await Promise.all([
-    supabaseAdmin.from('rinks').select('id, slug, name, city, country').or(orClause).eq('is_active', true).limit(limit),
-    supabaseAdmin.from('team_workspaces').select('id, slug, name, home_city, country_code').or(orClause).limit(limit),
-    supabaseAdmin.from('leagues').select('id, slug, name, city, country').or(orClause).limit(limit),
+    supabaseAdmin.from('rinks').select('id, slug, name, city, country').or(rinkOrClause).eq('is_active', true).limit(limit),
+    supabaseAdmin.from('team_workspaces').select('id, slug, name, home_city, country_code').or(teamOrClause).limit(limit),
+    supabaseAdmin.from('leagues').select('id, slug, name, city, country').or(leagueOrClause).limit(limit),
   ]);
 
   const items: (EntityRow & { type: 'rink' | 'team' | 'league' })[] = [];
