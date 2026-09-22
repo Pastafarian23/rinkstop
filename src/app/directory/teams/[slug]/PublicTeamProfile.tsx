@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildTeamShare } from '@/lib/share';
@@ -393,6 +393,43 @@ export default function PublicTeamProfile({
   const [newsBody, setNewsBody] = useState('');
   const [newsSaving, setNewsSaving] = useState(false);
 
+  // 2026-09-22 per Arnel 07:34 CDT: team-page highlight cards should
+  // open an in-page modal (iframe embed + companion article snippet),
+  // matching the home-page HighlightsGrid UX. Previous behavior linked
+  // straight to YouTube embed URL via target="_blank", which on mobile
+  // shows "Video player configuration error 153" because YouTube
+  // refuses to play an /embed/ URL when navigated to as a top-level page.
+  const [selectedHighlight, setSelectedHighlight] = useState<typeof highlights[number] | null>(null);
+  const [companionArticle, setCompanionArticle] = useState<{
+    slug: string; title: string; excerpt: string; subtitle?: string; og_image_url?: string; reading_time_minutes?: number;
+  } | null>(null);
+  const [companionLoading, setCompanionLoading] = useState(false);
+  useEffect(() => {
+    if (!selectedHighlight) { setCompanionArticle(null); return; }
+    let cancelled = false;
+    setCompanionArticle(null);
+    setCompanionLoading(true);
+    fetch(`/api/blog/posts?highlight_id=${selectedHighlight.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        const found = d?.data?.[0] || null;
+        if (found) {
+          setCompanionArticle({
+            slug: found.slug,
+            title: found.title,
+            excerpt: found.subtitle || found.excerpt || '',
+            subtitle: found.subtitle,
+            og_image_url: found.og_image_url,
+            reading_time_minutes: found.reading_time_minutes,
+          });
+        }
+        setCompanionLoading(false);
+      })
+      .catch(() => { if (!cancelled) setCompanionLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedHighlight]);
+
   async function submitNews(e: React.FormEvent) {
     e.preventDefault();
     if (!teamSlug) return;
@@ -689,15 +726,14 @@ export default function PublicTeamProfile({
             gap: '0.75rem',
           }}>
             {highlights.map((h) => {
-              const linkHref = h.embed_url || h.video_url || `/directory/highlights/${h.id}`;
               const homeTeam = h.home_team_name || 'Home';
               const awayTeam = h.away_team_name || 'Away';
               return (
-                <a
+                <button
                   key={h.id}
-                  href={linkHref}
-                  target={linkHref.startsWith('http') ? '_blank' : undefined}
-                  rel={linkHref.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  type="button"
+                  onClick={() => setSelectedHighlight(h)}
+                  aria-label={`Play highlight: ${h.title}`}
                   style={{
                     background: 'var(--s2)',
                     border: '1px solid var(--border)',
@@ -708,6 +744,10 @@ export default function PublicTeamProfile({
                     display: 'flex',
                     flexDirection: 'column',
                     transition: 'border-color 150ms ease',
+                    cursor: 'pointer',
+                    padding: 0,
+                    textAlign: 'left',
+                    font: 'inherit',
                   }}
                 >
                   <div style={{
@@ -735,11 +775,126 @@ export default function PublicTeamProfile({
                       {awayTeam} @ {homeTeam} · {(h.match_date || '').slice(0, 10)}{h.league_name ? ` · ${h.league_name}` : ''}
                     </div>
                   </div>
-                </a>
+                </button>
               );
             })}
           </div>
         </section>
+      )}
+
+      {/* 2026-09-22 Per Arnel 07:34 CDT: highlight modal matching the
+          home-page HighlightsGrid UX. Iframe embeds the video so mobile
+          users don't see "Video player configuration error 153" (which
+          happens when /embed/ URLs are navigated to as top-level pages).
+          Companion article (when published) shows a snippet + View Full
+          Article link below the video. Close on backdrop click or X. */}
+      {selectedHighlight && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedHighlight.title}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
+            overflowY: 'auto',
+          }}
+          onClick={() => setSelectedHighlight(null)}
+        >
+          <div
+            style={{ width: '100%', maxWidth: '900px' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
+              <h3 style={{ color: '#fff', fontSize: '1rem', fontWeight: 700, margin: 0 }}>{selectedHighlight.title}</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedHighlight(null)}
+                aria-label="Close"
+                style={{
+                  background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px',
+                  color: '#fff', padding: '0.5rem 1rem', cursor: 'pointer',
+                  fontSize: '0.9rem',
+                }}
+              >
+                Close
+              </button>
+            </div>
+            {selectedHighlight.embed_url ? (
+              <iframe
+                src={selectedHighlight.embed_url}
+                style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', border: 0 }}
+                allowFullScreen
+                title={selectedHighlight.title}
+              />
+            ) : selectedHighlight.video_url ? (
+              <a
+                href={selectedHighlight.video_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block', background: '#C8102E', color: '#fff',
+                  padding: '1rem', borderRadius: '8px', textAlign: 'center',
+                  textDecoration: 'none', fontWeight: 700,
+                }}
+              >
+                Watch on {selectedHighlight.source || 'external site'}
+              </a>
+            ) : (
+              <div style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', padding: '2rem', borderRadius: '8px', textAlign: 'center' }}>
+                Video unavailable. <a href={`/directory/highlights/${selectedHighlight.id}`} style={{ color: '#FFB81C' }}>View highlight page →</a>
+              </div>
+            )}
+
+            {companionArticle && (
+              <div
+                style={{
+                  marginTop: '1.25rem',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <span style={{
+                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em',
+                    color: '#FFB81C', textTransform: 'uppercase',
+                  }}>MATCH STORY</span>
+                  {companionArticle.reading_time_minutes ? (
+                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                      · {companionArticle.reading_time_minutes} min read
+                    </span>
+                  ) : null}
+                </div>
+                <h4 style={{ color: '#fff', fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.5rem', lineHeight: 1.3 }}>
+                  {companionArticle.title}
+                </h4>
+                {companionArticle.excerpt && (
+                  <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.9rem', lineHeight: 1.5, margin: 0 }}>
+                    {companionArticle.excerpt}
+                  </p>
+                )}
+                <a
+                  href={`/news/${companionArticle.slug}`}
+                  style={{
+                    display: 'inline-block', marginTop: '0.85rem',
+                    color: '#FFB81C', fontWeight: 700, fontSize: '0.85rem',
+                    textDecoration: 'none', letterSpacing: '0.04em',
+                  }}
+                >
+                  View full article →
+                </a>
+              </div>
+            )}
+            {companionLoading && !companionArticle && (
+              <div style={{ marginTop: '1.25rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>
+                Checking for match story…
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* ── Two-column layout (stacks on narrow screens) ──────────────────────
