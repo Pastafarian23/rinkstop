@@ -772,7 +772,21 @@ export default function PublicTeamProfile({
                       {h.title}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
-                      {awayTeam} @ {homeTeam} · {(h.match_date || '').slice(0, 10)}{h.league_name ? ` · ${h.league_name}` : ''}
+                      {awayTeam} @ {homeTeam} · {(h.match_date || '').slice(0, 10)}{(() => {
+                        // 2026-09-22 per Arnel 07:57 CDT: highlight_backups.league_name
+                        // is stored as a JSON object string (e.g. '{"id":49291,"logo":"...","name":"NHL","season":2026}')
+                        // because the sync script wrote the whole match.league object
+                        // instead of just match.league.name. Parse defensively — fall back
+                        // to the raw string if it's not JSON so we don't crash on legacy rows.
+                        const ln = h.league_name;
+                        if (!ln) return '';
+                        try {
+                          const parsed = JSON.parse(ln);
+                          return parsed?.name ? ` · ${parsed.name}` : '';
+                        } catch {
+                          return ` · ${ln}`;
+                        }
+                      })()}
                     </div>
                   </div>
                 </button>

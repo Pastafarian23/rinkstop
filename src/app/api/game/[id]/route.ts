@@ -103,7 +103,21 @@ export async function GET(
         embed_url: h.embed_url,
         source: h.source,
         channel: h.channel,
-        league_name: h.league_name,
+        // 2026-09-22 per Arnel 07:57 CDT: highlight_backups.league_name
+        // is sometimes stored as a JSON object string
+        // ('{"id":49291,"logo":"...","name":"NHL","season":2026}')
+        // because the sync script wrote the whole match.league object.
+        // Normalize to a plain name string at the API boundary so
+        // consumers don't have to defensively parse.
+        league_name: (() => {
+          if (!h.league_name) return null;
+          try {
+            const parsed = JSON.parse(h.league_name);
+            return parsed?.name || h.league_name;
+          } catch {
+            return h.league_name;
+          }
+        })(),
         image_url: h.image_url,
         match_id: h.match_id,
         home_team_name: h.home_team_name,
