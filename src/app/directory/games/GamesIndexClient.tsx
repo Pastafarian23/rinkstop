@@ -568,7 +568,17 @@ export default function GamesIndexClient({ initialData }: Props) {
                 </section>
               );
             }
-            const upcoming = games.filter(g => g.status === 'scheduled' || g.status === 'in_progress');
+            const upcoming = games.filter(g => {
+              if (g.status !== 'scheduled' && g.status !== 'in_progress') return false;
+              // 2026-09-22: defense in depth — server should exclude stale
+              // scheduled rows whose scheduled_at is past, and stale
+              // in_progress rows whose scheduled_at is >4h ago, but skip
+              // them client-side too in case the API response is cached.
+              const t = new Date(g.scheduled_at || g.date).getTime();
+              if (g.status === 'scheduled' && t < Date.now()) return false;
+              if (g.status === 'in_progress' && t < Date.now() - 4 * 60 * 60 * 1000) return false;
+              return true;
+            });
             const completed = games.filter(g => g.status === 'completed');
             return (
               <>

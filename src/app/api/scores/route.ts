@@ -151,9 +151,17 @@ export async function GET(request: NextRequest) {
     // Override the default ASC sort from the upstream builder
     query = query.order('scheduled_at', { ascending: false });
   } else {
-    // current: scheduled/in_progress (any date) OR recently completed
+    // 2026-09-22 fix: 'scheduled' rows with a past scheduled_at are stale
+    // (the game already happened but the daily-scores cron didn't update
+    // its status). Only include scheduled games in the future. in_progress
+    // games are also stale-prone — exclude any whose scheduled_at is more
+    // than 4 hours in the past (NHL game duration ~2.5h + buffer; anything
+    // past that without status=completed is a missed update). recently-
+    // completed shows as before.
+    const nowISO = new Date().toISOString();
+    const fourHoursAgoISO = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
     query = query.or(
-      `status.in.(scheduled,in_progress),and(status.eq.completed,scheduled_at.gte.${recentCutoffISO})`
+      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${recentCutoffISO})`
     );
   }
 
