@@ -27,6 +27,23 @@ export async function resolveTeamRedirect(
   const slug = segments[0];
   if (!slug) return { kind: 'notFound' };
 
+  // If we have multiple segments (e.g. /news/nhl/draft/{slug}), try the
+  // LAST segment as a news article slug first. This catches deep links
+  // like /news/nhl/draft/article-slug that the catch-all [[...teamSlug]]
+  // would otherwise 404.
+  if (segments.length >= 2) {
+    const lastSlug = segments[segments.length - 1];
+    const { data: post } = await supabaseAdmin
+      .from('posts')
+      .select('slug')
+      .eq('slug', lastSlug)
+      .eq('status', 'published')
+      .maybeSingle();
+    if (post?.slug) {
+      return { kind: 'redirect', target: `/news/${post.slug}` };
+    }
+  }
+
   const { data } = await supabaseAdmin
     .from('team_workspaces')
     .select('slug')
