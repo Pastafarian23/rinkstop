@@ -36,5 +36,18 @@ export async function resolveTeamRedirect(
   if (data?.slug) {
     return { kind: 'redirect', target: `/directory/teams/${data.slug}` };
   }
+  // 2026-09-21 GSC fix: if no team matched, check if the slug is actually a
+  // news article. /news/{league}/{article-slug} URLs were 404'ing and
+  // showing up in GSC as 'Blocked due to other 4xx issue'. Redirect to
+  // the canonical 3-segment /news/{article-slug} form instead.
+  const { data: post } = await supabaseAdmin
+    .from('posts')
+    .select('slug')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .maybeSingle();
+  if (post?.slug) {
+    return { kind: 'redirect', target: `/news/${post.slug}` };
+  }
   return { kind: 'notFound' };
 }
