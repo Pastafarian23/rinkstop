@@ -309,6 +309,13 @@ async function fetchHighlightlyBoxscore(fx: any): Promise<NextResponse | null> {
       second: parsePeriod(score.secondPeriod),
       third: parsePeriod(score.thirdPeriod),
       overtime: parsePeriod(score.overTime),
+      // 2026-09-22 audit fix (bug #16): HL's `score.penalties` field is
+      // the PENALTY-SHOOTOUT period score (e.g. 1-0 after shootout).
+      // We previously labelled this `shootout` which is technically
+      // accurate but ambiguous. Keep both names so consumers can use
+      // either, but document the source. Note: there is no separate
+      // "main shootout" field — HL conflates it under penalties.
+      penalties: parsePeriod(score.penalties),
       shootout: parsePeriod(score.penalties),
     },
     goals: [], // HL doesn't expose goal log via this endpoint
@@ -335,32 +342,50 @@ async function fetchHighlightlyBoxscore(fx: any): Promise<NextResponse | null> {
 // the boxscore API).
 async function fetchWikipediaBoxscore(fx: any): Promise<NextResponse | null> {
   const leagueSlug = (fx as any)?.game_data?.wikipedia_page || null;
-  // Map known leagues to Wikipedia season pages. Extend as we add
-  // more IIHF / playoff content.
-  const WIKI_PAGE_BY_LEAGUE_SLUG: Record<string, string> = {
-    'iihf-worlds': '2024 IIHF World Championship',
-    'iihf-world-championships': '2024 IIHF World Championship',
-    'olympic-games-world': '2026 Winter Olympics',
-    'olympic-games-women-world': '2026 Winter Olympics',
+  // 2026-09-22 audit fix (bug #12): year was hardcoded to 2024.
+  // Build the Wikipedia page slug from the actual scheduled_at year
+  // so 2025 and 2026 events also resolve. Fallback chain:
+  //   1) explicit game_data.wikipedia_page override
+  //   2) per-league known pages for the year of the game
+  //   3) generic most-recent page
+  const eventYear = (fx?.scheduled_at || '').slice(0, 4) || String(new Date().getFullYear());
+  const WIKI_PAGE_BY_LEAGUE_YEAR: Record<string, (year: string) => string> = {
+    'iihf-worlds': (y) => `${y} IIHF World Championship`,
+    'iihf-world-championships': (y) => `${y} IIHF World Championship`,
+    'olympic-games-world': (y) => (y === '2026' ? '2026 Winter Olympics' : `${y} Winter Olympics`),
+    'olympic-games-women-world': (y) => (y === '2026' ? '2026 Winter Olympics' : `${y} Winter Olympics`),
+    'stanley-cup-final': (y) => `${y} Stanley Cup Final`,
+    'stanley-cup-playoffs': (y) => `${y} Stanley Cup playoffs`,
   };
-  const pageSlug = leagueSlug || WIKI_PAGE_BY_LEAGUE_SLUG[fx?.league?.slug];
+  const pageSlug =
+    leagueSlug ||
+    (WIKI_PAGE_BY_LEAGUE_YEAR[fx?.league?.slug] && WIKI_PAGE_BY_LEAGUE_YEAR[fx?.league?.slug](eventYear)) ||
+    null;
   if (!pageSlug) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { lookupWikipediaBoxscore } = require('../../../server/cross-source/wikipedia-boxscore.cjs');
     const dateIso = (fx.scheduled_at || '').slice(0, 10);
-    const visitorHint = fx?.home_team?.name || (fx as any)?.game_data?.away_team_name || '';
-    const homeHint = (fx as any)?.game_data?.home_team_name || fx?.away_team?.name || '';
-    // Swap: home_team in fixtures = home arena team, but Wikipedia
-    // schema is {{ih-rt|visitor}} vs {{ih|home}}. Our fixtures schema
-    // has home_team_id/away_team_id; the page expects visitor-first.
-    // Determine which fixture side is the home team by team count
-    // fallback. Default assumption: fixtures.home_team_id = Wikipedia home.
+    // 2026-09-22 audit fix (bug #13): previous code declared
+    // visitorHint/homeHint from team FK joins then OVERWROTE them
+    // with potentially-empty game_data values, falling through to
+    // empty strings. Now use the FX joins as the authoritative
+    // source, with game_data as fallback (FX joins always resolve
+    // when fixtures.home_team_id/away_team_id are set; game_data
+    // fields are only populated by HL fallback path).
+    const homeName = fx?.home_team?.name || (fx as any)?.game_data?.home_team_name || '';
+    const awayName = fx?.away_team?.name || (fx as any)?.game_data?.away_team_name || '';
+    // The Wikipedia IIHF template order is {{ih-rt|visitor}} vs {{ih|home}}
+    // — i.e., the visiting team (away) is listed first in the table.
+    // In our fixtures schema, home_team_id = the home arena team, and
+    // away_team_id = the visitor. So:
+    //   visitorHint = away team name
+    //   homeHint    = home team name
     const result = await lookupWikipediaBoxscore({
       pageSlug,
       dateIso,
-      visitorHint: (fx as any)?.game_data?.away_team_name || '',
-      homeHint: (fx as any)?.game_data?.home_team_name || '',
+      visitorHint: awayName,
+      homeHint: homeName,
     });
     if (!result) return null;
     const response: any = {

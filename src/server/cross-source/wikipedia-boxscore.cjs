@@ -95,14 +95,57 @@ function parseAllTables(wikitext) {
   let m;
   while ((m = tableRe.exec(wikitext)) !== null) {
     const body = m[1];
-    // Skip pure header tables (Scoring summary may be small)
     tables.push({
       index: tables.length,
       body,
-      hasGameRows: SCORE_RE.test(body) && /\[\[/m.test(body),
+      // 2026-09-22 audit fix (bug #11): drop the /\[\[/m requirement.
+      // IIHF tables use {{ih-rt|XXX}} which doesn't have [[wiki-links]],
+      // so hasGameRows was rejecting every actual IIHF table. Now any
+      // table with a numeric score pattern is considered.
+      hasGameRows: SCORE_RE.test(body),
     });
   }
   return tables;
+}
+
+// 2026-09-22 audit fix (bug #11): added Stanley Cup Final-style parser.
+// Stanley Cup Final Wikipedia tables use plain [[Team]] wiki-links
+// instead of {{ih-rt|XXX}} markers, with the score in the middle of
+// the row. Returns the same {visitor, home, date, scoreA, scoreB,
+// ot_so} shape as parseIihfTableRows.
+function parseStanleyCupRows(tableBody) {
+  const rows = [];
+  const lines = tableBody.split('\n');
+  let currentDate = null;
+  // Stanley Cup Final row format example:
+  //   |Game 1||May 30|| [[Boston Bruins]] || 4–1 || [[St. Louis Blues]] || ...
+  //   |Game 2||June 1|| [[St. Louis Blues]] || 3–2 (OT) || [[Boston Bruins]] || ...
+  // Capture: link1 + score + link2 (direction-agnostic).
+  const SC_LINK_RE = /\[\[([^\]|]+)(?:\|[^\]]+)?\]\][^|]*?(\d+\s*[-–—]\s*\d+(?:\s*\((OT|GWS|GWSO|SO|OTW)\))?)[^|]*?\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/i;
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    // Date-only row like "|May 30" or "|June 1, 2024"
+    const dm = line.match(DATE_RE);
+    if (dm && !line.includes('||')) {
+      currentDate = isoDate(dm);
+      continue;
+    }
+    if (!line.startsWith('|')) continue;
+    const m = line.match(SC_LINK_RE);
+    if (!m) continue;
+    const visitor = m[1].trim();
+    const scoreStr = m[2];
+    const home = m[4].trim();
+    const scoreMatch = scoreStr.match(SCORE_RE);
+    if (!scoreMatch) continue;
+    const scoreA = parseInt(scoreMatch[1], 10);
+    const scoreB = parseInt(scoreMatch[2], 10);
+    const otSo = scoreMatch[3] ? scoreMatch[3].toUpperCase() : null;
+    if (Number.isNaN(scoreA) || Number.isNaN(scoreB)) continue;
+    rows.push({ date: currentDate, visitor, home, scoreA, scoreB, ot_so: otSo });
+  }
+  return rows;
 }
 
 // Parse game rows from an IIHF-style table. Returns array of
@@ -214,10 +257,17 @@ async function lookupWikipediaBoxscore({ pageSlug, dateIso, visitorHint, homeHin
     cacheSet(pageSlug, 0, { wikitext });
   }
   const parsed = parseAllTables(wikitext);
-  // Find the first table with game rows
+  // Try IIHF-style tables first, then Stanley Cup Final-style tables.
+  // Each parser produces {visitor, home, scoreA, scoreB, ot_so} rows.
   for (const t of parsed) {
     if (!t.hasGameRows) continue;
-    const rows = parseIihfTableRows(t.body);
+    // Try IIHF first
+    let rows = parseIihfTableRows(t.body);
+    let parser = 'iihf';
+    if (rows.length === 0) {
+      rows = parseStanleyCupRows(t.body);
+      parser = 'stanley-cup';
+    }
     if (rows.length === 0) continue;
     const match = findGame(rows, dateIso, visitorHint, homeHint);
     if (match) {
@@ -225,6 +275,7 @@ async function lookupWikipediaBoxscore({ pageSlug, dateIso, visitorHint, homeHin
         source: 'wikipedia',
         pageSlug,
         tableIndex: t.index,
+        parser,
         ...match,
       };
     }
