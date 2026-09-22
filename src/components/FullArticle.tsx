@@ -16,6 +16,7 @@ import ShareButton from '@/components/ShareButton';
 import ArticleCtaBlock from '@/components/ArticleCtaBlock';
 import RelatedDirectorySection from '@/components/RelatedDirectorySection';
 import LocationHeader from '@/components/LocationHeader';
+import TagChips from '@/components/TagChips';
 import { supabaseAdmin } from '@/lib/supabase';
 import { contentToHtml } from '@/lib/markdown';
 import { buildArticleShare } from '@/lib/share';
@@ -407,24 +408,7 @@ export default async function FullArticle({ post }: { post: FullPost }) {
               </nav>
 
               {tags.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                  {tags.map(tag => (
-                    <Link
-                      key={tag}
-                      href={`/news?tag=${tag}`}
-                      style={{
-                        background: 'rgba(200,16,46,0.08)',
-                        color: '#C8102E',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '2px',
-                        fontSize: '0.75rem',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      {tag}
-                    </Link>
-                  ))}
-                </div>
+                <TagChips tags={tags} />
               )}
 
               <div

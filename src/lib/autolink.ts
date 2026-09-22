@@ -24,6 +24,7 @@
 interface NamedEntity {
   name: string;
   slug: string;
+  _fullNameLength?: number; // 2026-09-22: populated for short-name aliases so colliders pick the more-specific match
 }
 
 interface AutolinkOptions {
@@ -35,7 +36,7 @@ interface AutolinkOptions {
 type EntityWithType = NamedEntity & { type: 'team' | 'rink' | 'league' };
 
 // Bump this when changing the algorithm — FullArticle's cache key includes it.
-export const AUTOLINK_VERSION = 'v2-2026-09-12';
+export const AUTOLINK_VERSION = 'v3-2026-09-22-shortname-aliases';
 
 // 2026-09-12: stopword list. Every entry here is a known false positive that
 // the dry-run audit surfaced. Add new ones here as they're discovered.
@@ -93,9 +94,19 @@ export function autolinkContent(
   leagues: NamedEntity[],
   rinks: NamedEntity[],
 ): string {
+  // 2026-09-22: add short-name aliases for teams (e.g. 'Flyers' for
+  // 'Philadelphia Flyers'). Only added when the last word of the full
+  // name is unique enough not to collide with single-word teams. The
+  // aliases are duplicates in the sense they point at the same slug,
+  // but they let 'Philadelphia' or 'Washington' in prose resolve to
+  // their full team. NOTE: this changes matching for ALL teams, so
+  // MIN_OCCURRENCES still gates per-entity (per Arnel's prior
+  // directive). Without that gate, 'the' would link everywhere.
+  const teamsWithAliases = [...teams, ...buildShortNameAliases(teams)];
+
   // Combine and tag all entities with their type
   const entities: EntityWithType[] = [
-    ...teams.map(t => ({ ...t, type: 'team' as const })),
+    ...teamsWithAliases.map(t => ({ ...t, type: 'team' as const })),
     ...leagues.map(l => ({ ...l, type: 'league' as const })),
     ...rinks.map(r => ({ ...r, type: 'rink' as const })),
   ];
@@ -150,8 +161,13 @@ export function autolinkContent(
     if (i % 2 === 1) return part;
 
     return part.replace(combinedPattern, match => {
-      // Find the first entity whose name matches (case-insensitive)
-      const entity = thresholdFiltered.find(e => e.name.localeCompare(match, undefined, { sensitivity: 'base' }) === 0);
+      // 2026-09-22: when multiple entities match (e.g. short-name alias
+      // collision — 'Flyers' matches both Philadelphia and Nazareth),
+      // prefer the one whose full entity name is longer / more specific.
+      const candidates = thresholdFiltered.filter(e => e.name.localeCompare(match, undefined, { sensitivity: 'base' }) === 0);
+      const entity = candidates.length > 1
+        ? candidates.reduce((a, b) => ((b._fullNameLength || b.name.length) > (a._fullNameLength || a.name.length) ? b : a))
+        : candidates[0];
       if (!entity) return match;
 
       const href = `/directory/${entity.type}s/${entity.slug}`;
@@ -160,7 +176,34 @@ export function autolinkContent(
   }).join('');
 }
 
-// Escape special regex chars in a string
+// 2026-09-22 per Arnel 10:47 CDT: article body uses short forms
+// ("Philadelphia", "Washington") but entities are full names
+// ("Philadelphia Flyers", "Washington Capitals"). Add short-name
+// aliases for teams so common prose mentions resolve. Each alias
+// points at the same slug as its parent entity. Generated at
+// autolink-time from the teams[] input — no separate config.
+//
+// The returned aliases have an extra `_fullNameLength` field so the
+// matching logic later can prefer the more-specific (longer full name)
+// entity when multiple aliases collide (e.g. "Flyers" could match
+// Philadelphia or Nazareth — pick the one with the longer full name).
+function buildShortNameAliases(teams: NamedEntity[]): NamedEntity[] {
+  const out: any[] = [];
+  const seen = new Set<string>();
+  for (const t of teams) {
+    const parts = t.name.split(/\s+/);
+    if (parts.length < 2) continue;
+    const last = parts[parts.length - 1];
+    if (last.length < 4) continue;
+    const alias = last;
+    const key = alias.toLowerCase() + '|' + t.slug;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ name: alias, slug: t.slug, _fullNameLength: t.name.length });
+  }
+  return out as NamedEntity[];
+}
+
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

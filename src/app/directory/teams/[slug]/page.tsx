@@ -75,7 +75,7 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-interface HierarchyRef { id: string; name: string; slug: string | null }
+interface HierarchyRef { id: string; name: string; slug: string | null; level?: string | null }
 
 interface TeamRow {
   id: string;
@@ -267,7 +267,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // this is a server-rendered page that only exposes public-profile fields.)
   const { data: teamData } = await supabaseAdmin
     .from('team_workspaces')
-    .select('*, federation:federations(id,name,slug), organization:organizations(id,name,slug), league:leagues(id,name,slug)')
+    .select('*, federation:federations(id,name,slug), organization:organizations(id,name,slug), league:leagues(id,name,slug,level)')
     .eq('slug', normalizedSlug)
     .eq('is_active', true)
     .maybeSingle<TeamRow>();
@@ -732,6 +732,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
         cityRinks={cityRinks}
         aboutParts={introParts}
         highlights={teamHighlights || []}
+        teamLeagueLevel={team.league?.level ?? null}
       />
 
       {/* 2026-09-03 PR #197: trust-signal footer (AdSense compliance hard gate).
