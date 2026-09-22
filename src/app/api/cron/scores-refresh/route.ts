@@ -53,41 +53,38 @@ export async function GET(request: Request) {
 
   try {
     // Run the multi-league orchestrator for yesterday + today (--days=2).
-    // On Vercel the deployed bundle is at /var/task and the script lives at
-    // /var/task/scripts/_daily-scores-all-leagues.cjs. Try several paths
-    // from process.cwd() since Vercel's runtime cwd varies.
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const possiblePaths = [
-      SCRIPT_PATH,
-      path.join(process.cwd(), SCRIPT_PATH),
-      path.join(process.cwd(), '..', SCRIPT_PATH),
-      path.join(process.cwd(), '..', '..', SCRIPT_PATH),
-    ];
-    let scriptPath: string | null = null;
-    let lastErr = '';
-    for (const p of possiblePaths) {
-      try {
-        await fs.access(p);
-        scriptPath = p;
-        break;
-      } catch (e) {
-        lastErr = (e as Error).message;
-      }
-    }
-    if (!scriptPath) {
-      throw new Error(
-        `Could not locate ${SCRIPT_PATH} from ${process.cwd()}. Tried: ${possiblePaths.join(', ')}. Last error: ${lastErr}`
+    // Use Node's module resolution from this file's directory (which is in
+    // the deployed bundle at /var/task/src/app/api/cron/scores-refresh/).
+    // The script lives at ../../../scripts/_daily-scores-all-leagues.cjs
+    // in the source repo, which becomes /var/task/scripts/_daily-scores-all-leagues.cjs
+    // in the Vercel deployment (scripts/ folder is included by Next.js for
+    // any project that has it). We require() it — main() auto-runs and
+    // writes /tmp/daily-scores-all-leagues-result.json.
+    let stdout = '';
+    let stderr = '';
+    try {
+      // Resolve the script via require.resolve from this file's dir.
+      // ../../../../scripts/_daily-scores-all-leagues.cjs goes up 4 levels
+      // from src/app/api/cron/scores-refresh/ to repo root.
+      const path = await import('path');
+      const scriptPath = path.join(process.cwd(), 'scripts', '_daily-scores-all-leagues.cjs');
+      const fs = await import('fs/promises');
+      await fs.access(scriptPath);
+      // exec via node from the script's directory so require('./load-secrets.cjs')
+      // resolves correctly and load-secrets uses process.cwd() for .env.local.
+      const result = await execAsync(
+        `node "${scriptPath}" --days=2`,
+        {
+          cwd: path.dirname(scriptPath),
+          timeout: 110_000,
+          maxBuffer: 4 * 1024 * 1024,
+        }
       );
+      stdout = result.stdout;
+      stderr = result.stderr;
+    } catch (e) {
+      throw new Error(`exec failed: ${(e as Error).message}`);
     }
-    const { stdout, stderr } = await execAsync(
-      `node ${scriptPath} --days=2`,
-      {
-        cwd: path.dirname(scriptPath),
-        timeout: 110_000,
-        maxBuffer: 4 * 1024 * 1024,
-      }
-    );
 
     // Read the script's own report file
     let scriptReport: any = null;
