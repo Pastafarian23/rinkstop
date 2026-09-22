@@ -36,7 +36,7 @@ interface AutolinkOptions {
 type EntityWithType = NamedEntity & { type: 'team' | 'rink' | 'league' };
 
 // Bump this when changing the algorithm — FullArticle's cache key includes it.
-export const AUTOLINK_VERSION = 'v5-2026-09-22-paginated-entity-fetch';
+export const AUTOLINK_VERSION = 'v6-2026-09-22-last-word-stopwords';
 
 // 2026-09-12: stopword list. Every entry here is a known false positive that
 // the dry-run audit surfaced. Add new ones here as they're discovered.
@@ -67,6 +67,22 @@ const STOPWORDS = new Set<string>([
 // entities that appear ≥2 times in the article". Catches the "1-time
 // mention" false positive class (Canada appearing once in a long article).
 const MIN_OCCURRENCES = 2;
+
+// 2026-09-22: words that look like team last-words but are common
+// English prose. When a team's last word matches one of these, the
+// short-name alias for that team is suppressed. Example: 'Point'
+// in 'Army West Point' was being aliased to 'Point' (unique), then
+// matched against prose like 'overtime point' or 'no point' and
+// linked incorrectly. Adding 'point' here suppresses the alias.
+//
+// Note: this only affects SHORT-NAME alias generation. The full
+// entity name 'Army West Point' still appears in the regex pattern,
+// but word boundaries (\b) prevent 'Point' alone from matching it
+// in prose. So this filter only blocks the alias path.
+const LAST_WORD_STOPWORDS = new Set<string>([
+  'point', 'club', 'university', 'college', 'state', 'city', 'team',
+  'national', 'ice', 'hockey', 'stars', 'islanders', // 'stars' is a common team suffix and a common English word
+]);
 
 // 2026-09-12: long-form league names that should be dropped when the short
 // form is also present. Articles using "AHL" 5 times and "American Hockey
@@ -210,6 +226,11 @@ function buildShortNameAliases(teams: NamedEntity[]): NamedEntity[] {
     if (last.length < 4) continue;
     // Only emit alias when this last word is UNIQUE among active teams.
     if ((lastWordCount.get(last.toLowerCase()) || 0) > 1) continue;
+    // 2026-09-22: skip when the last word is a common English word that
+    // appears in prose. 'Point' / 'Club' / 'University' / etc. — linking
+    // these would create false positives on every article that uses
+    // those words.
+    if (LAST_WORD_STOPWORDS.has(last.toLowerCase())) continue;
     const alias = last;
     const key = alias.toLowerCase() + '|' + t.slug;
     if (seen.has(key)) continue;
