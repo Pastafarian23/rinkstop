@@ -150,6 +150,13 @@ export async function GET(request: NextRequest) {
     query = query.eq('status', 'completed').gte('scheduled_at', sevenDaysAgo);
     // Override the default ASC sort from the upstream builder
     query = query.order('scheduled_at', { ascending: false });
+  } else if (time === 'current' || !time) {
+    // 2026-09-22 audit fix (bug #22): 'current' is the default tab on
+    // /scores. Oldest-ASC was surfacing completed games from days ago
+    // at the top because they're older than scheduled games in the
+    // future. Override to DESC so today's games + upcoming appear
+    // first, with recently-completed games trailing.
+    query = query.order('scheduled_at', { ascending: false });
   } else {
     // 2026-09-22 fix: 'scheduled' rows with a past scheduled_at are stale
     // (the game already happened but the daily-scores cron didn't update

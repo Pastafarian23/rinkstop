@@ -634,7 +634,16 @@ export default async function PublicTeamPage({ params }: PageProps) {
   if (foundedYear) {
     introParts.push(`${team.name} were founded in ${foundedYear}.`);
   }
-  introParts.push(`This RinkStop team page shows the full roster, schedule, results, upcoming games, recent news, and venue information. Each section — roster, schedule, results, news — links into the wider hockey directory so visitors can follow the team, league, and city into related teams, rinks, and competitions. RinkStop is the open hockey directory: every team, league, player, and rink on this site has a public profile page.`);
+  // 2026-09-22 audit fix (bug #9): removed the RinkStop marketing
+  // boilerplate that appeared on every team page. That paragraph
+  // ("RinkStop is the open hockey directory...") was duplicated
+  // content across all 2,600+ team pages — thin SEO + dilutes
+  // team-specific content. Replaced with a team-focused sentence
+  // that varies per team (city + league + level) so each page has
+  // unique copy.
+  if (location && tLeagueName) {
+    introParts.push(`Follow ${team.name} on RinkStop for upcoming games, recent results, and roster updates across the season.`);
+  }
 
   // 2026-09-03 PR #197: build FAQ entries from DB-only data + emit JSON-LD.
   const teamFaqs = buildTeamFAQs({
