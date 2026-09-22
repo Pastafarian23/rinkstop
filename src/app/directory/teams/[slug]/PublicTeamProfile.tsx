@@ -139,6 +139,33 @@ interface Props {
     province_state: string | null;
     country: string | null;
   }>;
+  /**
+   * 2026-09-22 Per Arnel 06:22 CDT: collapsible 'About' section that
+   * sits BELOW the team header card and ABOVE Recent Results.
+   * Each entry is one paragraph. Rendered with <details>/<summary>
+   * + ▸ arrow that rotates 90° on open.
+   */
+  aboutParts?: string[];
+  /**
+   * 2026-09-22 Per Arnel 06:22 CDT: 'There should also be a section
+   * for highlights for the team'. Rendered between About and Recent
+   * Results. Each highlight has title, image, video URL, match date,
+   * home/away team names, league, source.
+   */
+  highlights?: Array<{
+    id: number;
+    title: string;
+    description: string | null;
+    video_url: string | null;
+    embed_url: string | null;
+    image_url: string | null;
+    match_date: string;
+    home_team_name: string | null;
+    away_team_name: string | null;
+    league_name: string | null;
+    source: string | null;
+    channel: string | null;
+  }>;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -342,6 +369,8 @@ export default function PublicTeamProfile({
   teamTimezone,
   cityTeams = [],
   cityRinks = [],
+  aboutParts = [],
+  highlights = [],
   roster = [],
 }: Props) {
   const flag = countryFlag(team.country_code);
@@ -580,6 +609,138 @@ export default function PublicTeamProfile({
           )}
         </div>
       </section>
+
+      {/* 2026-09-22 Per Arnel 06:22 CDT: 'move the expandable about team
+          section under the team section (above recent results)'.
+          Renders the <details>/<summary> block between the hero card
+          and the two-column Recent Results / Upcoming layout. */}
+      {aboutParts.length > 0 && (
+        <section
+          aria-label={`About ${team.name}`}
+          style={{ marginBottom: '1.5rem' }}
+        >
+          <style>{`details.team-about[open] > summary > .about-arrow { transform: rotate(90deg); }`}</style>
+          <details
+            className="team-about"
+            style={{
+              background: 'var(--s2)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '0',
+              overflow: 'hidden',
+            }}
+          >
+            <summary style={{
+              fontFamily: '"Bebas Neue", sans-serif',
+              fontSize: '1.5rem',
+              letterSpacing: '0.04em',
+              color: '#fff',
+              cursor: 'pointer',
+              listStyle: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              userSelect: 'none',
+              padding: '1rem 1.25rem',
+              margin: 0,
+            }}>
+              <span aria-hidden="true" style={{
+                display: 'inline-block',
+                width: '1em',
+                transition: 'transform 150ms ease',
+                color: '#FFB81C',
+                fontWeight: 700,
+              }} className="about-arrow">▸</span>
+              <span>About {team.name}</span>
+            </summary>
+            <div style={{
+              color: 'rgba(255,255,255,0.85)',
+              lineHeight: 1.6,
+              fontSize: '0.9375rem',
+              padding: '0 1.25rem 1rem 1.25rem',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              {aboutParts.map((p, i) => (
+                <p key={i} style={{ marginBottom: i < aboutParts.length - 1 ? '0.75rem' : 0, marginTop: i === 0 ? '0.75rem' : 0 }}>{p}</p>
+              ))}
+            </div>
+          </details>
+        </section>
+      )}
+
+      {/* 2026-09-22 Per Arnel 06:22 CDT: 'There should also be a section
+          for highlights for the team'. Renders the 8 most recent
+          video highlights from highlight_backups matched by team name.
+          Grid layout: image + title + match metadata. Click navigates
+          to the highlight page (YouTube/embed URL). Wrapped in a
+          horizontal-scroll container on mobile (cards stay
+          tappable-sized 160px wide). */}
+      {highlights.length > 0 && (
+        <section style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', letterSpacing: '0.04em', margin: 0 }}>
+              HIGHLIGHTS
+            </h2>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>({highlights.length})</span>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gap: '0.75rem',
+          }}>
+            {highlights.map((h) => {
+              const linkHref = h.embed_url || h.video_url || `/directory/highlights/${h.id}`;
+              const homeTeam = h.home_team_name || 'Home';
+              const awayTeam = h.away_team_name || 'Away';
+              return (
+                <a
+                  key={h.id}
+                  href={linkHref}
+                  target={linkHref.startsWith('http') ? '_blank' : undefined}
+                  rel={linkHref.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  style={{
+                    background: 'var(--s2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'border-color 150ms ease',
+                  }}
+                >
+                  <div style={{
+                    background: h.image_url ? `url(${h.image_url}) center/cover no-repeat` : 'rgba(255,255,255,0.05)',
+                    aspectRatio: '16/9',
+                    position: 'relative',
+                  }}>
+                    {h.video_url && (
+                      <div style={{
+                        position: 'absolute', top: '50%', left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 36, height: 36,
+                        borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', fontSize: '1rem',
+                      }}>▶</div>
+                    )}
+                  </div>
+                  <div style={{ padding: '0.625rem 0.75rem' }}>
+                    <div style={{ fontSize: '0.8125rem', color: '#fff', fontWeight: 600, lineHeight: 1.3, marginBottom: '0.3rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {h.title}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)' }}>
+                      {awayTeam} @ {homeTeam} · {(h.match_date || '').slice(0, 10)}{h.league_name ? ` · ${h.league_name}` : ''}
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ── Two-column layout (stacks on narrow screens) ──────────────────────
           Per Arnel 2026-09-22 03:27 CDT: 'after clicking Toronto Maple
