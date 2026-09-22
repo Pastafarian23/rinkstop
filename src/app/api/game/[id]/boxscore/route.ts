@@ -63,18 +63,20 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
   if (/^\d{10}$/.test(gameId)) {
     nhlGameId = gameId;
   } else {
-    // Look up the fixture by uuid → nhl_game_id (column OR game_data JSONB)
-    // Per Arnel 2026-09-22 02:49 CDT: /scores page clicks were hitting
-    // 'Detailed box score on the league's official site' because the API
-    // only checked fixtures.nhl_game_id (column doesn't exist in prod).
-    // The canonical location is fixtures.game_data->>'nhl_game_id' JSONB.
+    // Look up the fixture by uuid → nhl_game_id (game_data JSONB only)
+// Per Arnel 2026-09-22 02:49 CDT: /scores page clicks were hitting
+// 'Detailed box score on the league's official site' because the API
+// only checked fixtures.nhl_game_id (column doesn't exist in prod).
+// The canonical location is fixtures.game_data->>'nhl_game_id' JSONB.
+// 2026-09-22 fix: SELECTING the missing column causes a 42703 error and
+// returns null for the whole row — so nhl_game_id (column), game_data
+// (JSONB), AND the joined teams all come back undefined. Use only the
+// JSONB path; skip the column reference entirely.
     const { data: fx } = await supabaseAdmin.from('fixtures')
-      .select('nhl_game_id, game_data, league_id, scheduled_at, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name), away_team:teams!fixtures_away_team_id_fkey(name)')
+      .select('game_data, league_id, scheduled_at, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name), away_team:teams!fixtures_away_team_id_fkey(name)')
       .eq('id', gameId)
       .maybeSingle();
-    if (fx?.nhl_game_id) {
-      nhlGameId = fx.nhl_game_id;
-    } else if (fx?.game_data?.nhl_game_id) {
+    if (fx?.game_data?.nhl_game_id) {
       nhlGameId = String(fx.game_data.nhl_game_id);
     } else if (fx?.game_data?.hl_match_id && fx.league_id) {
       // Non-NHL: fall back to Highlightly boxscore (period scores + final score)
