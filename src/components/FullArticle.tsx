@@ -109,32 +109,49 @@ let _autolinkCache: AutolinkEntityCache | null = null;
 const AUTOLINK_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 const AUTOLINK_CACHE_KEY = `autolink-entities-${AUTOLINK_VERSION}`;
 
+// 2026-09-22: paginate PostgREST fetches because the default page size
+// is 1000 — we have ~2605 active teams, ~300 leagues, ~1900 rinks.
+// Without pagination, autolink aliases for short-name collisions
+// ('Flyers' etc.) get computed from only the first 1000 entities,
+// making 'Flyers' appear to be unique when it's not. Symptom:
+// 'Flyers' in article body linked to 'Fife Flyers' instead of
+// 'Philadelphia Flyers' (the actual subject of the article).
+const PAGE_SIZE = 1000;
+
+async function fetchAllPaginated(table: string, select: string): Promise<any[]> {
+  const out: any[] = [];
+  let from = 0;
+  // Loop until a partial page comes back
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+    const { data } = await supabaseAdmin
+      .from(table)
+      .select(select)
+      .eq('is_active', true)
+      .not('slug', 'is', null)
+      .range(from, to);
+    if (!data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return out;
+}
+
 async function getAutolinkEntities(): Promise<AutolinkEntityCache> {
   const now = Date.now();
   if (_autolinkCache && _autolinkCache.version === AUTOLINK_VERSION && now - _autolinkCache.fetchedAt < AUTOLINK_CACHE_TTL_MS) {
     return _autolinkCache;
   }
-  const [teamsRes, leaguesRes, rinksRes] = await Promise.all([
-    supabaseAdmin
-      .from('teams')
-      .select('name, slug')
-      .eq('is_active', true)
-      .not('slug', 'is', null),
-    supabaseAdmin
-      .from('leagues')
-      .select('name, slug')
-      .eq('is_active', true)
-      .not('slug', 'is', null),
-    supabaseAdmin
-      .from('rinks')
-      .select('name, slug')
-      .eq('is_active', true)
-      .not('slug', 'is', null),
+  const [teams, leagues, rinks] = await Promise.all([
+    fetchAllPaginated('teams', 'name, slug'),
+    fetchAllPaginated('leagues', 'name, slug'),
+    fetchAllPaginated('rinks', 'name, slug'),
   ]);
   _autolinkCache = {
-    teams: ((teamsRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
-    leagues: ((leaguesRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
-    rinks: ((rinksRes.data as any[]) || []).filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
+    teams: teams.filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
+    leagues: leagues.filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
+    rinks: rinks.filter(r => r.slug).map(r => ({ name: r.name, slug: r.slug })),
     fetchedAt: now,
     version: AUTOLINK_VERSION,
   };
