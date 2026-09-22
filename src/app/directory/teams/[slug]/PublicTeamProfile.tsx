@@ -580,8 +580,13 @@ export default function PublicTeamProfile({
         </div>
       </section>
 
-      {/* ── Two-column layout ───────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '1.5rem', alignItems: 'start' }}>
+      {/* ── Two-column layout (stacks on narrow screens) ──────────────────────
+          Per Arnel 2026-09-22 03:27 CDT: 'after clicking Toronto Maple
+          Leafs it goes to proper page, but it is visually unappealing...
+          not optimized for mobile, exceeding margins'. Fix: use
+          auto-fit so the grid stacks below 700px (covers iPhone 14 Pro
+          Max at 430px and tablet portrait at 768px naturally). */}
+      <div className="team-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: '1.5rem', alignItems: 'start' }}>
 
         {/* ── Left column ─────────────────────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

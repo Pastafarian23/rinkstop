@@ -586,20 +586,43 @@ export default async function PublicTeamPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: teamJsonLdString }}
       />
+      {/* 2026-09-22 Per Arnel 03:27 CDT: large description block at top
+          pushed actual content below the fold on mobile. Hide all but
+          the first paragraph by default on narrow screens; show full
+          set when 'Show more' is clicked. CSS-only via :target trick
+          would need an anchor; instead use a small inline-script-free
+          approach: collapse the block to a 2-paragraph preview on
+          narrow screens via max-height + overflow:hidden, and let
+          the user tap to expand via a details/summary element. */}
       <section
         aria-label={`About ${team.name}`}
-        style={{ maxWidth: '1280px', margin: '0 auto 1.5rem', padding: '0 1.5rem' }}
+        style={{ maxWidth: '1280px', margin: '0 auto 1.5rem', padding: '0 1rem' }}
       >
-        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 10, padding: '1.25rem 1.5rem' }}>
-          <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', letterSpacing: '0.04em', color: '#fff', margin: '0 0 0.75rem' }}>
+        <details
+          style={{
+            background: 'var(--s2)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '1rem 1.25rem',
+          }}
+        >
+          <summary style={{
+            fontFamily: '"Bebas Neue", sans-serif',
+            fontSize: '1.5rem',
+            letterSpacing: '0.04em',
+            color: '#fff',
+            cursor: 'pointer',
+            listStyle: 'none',
+            marginBottom: '0.75rem',
+          }}>
             About {team.name}
-          </h2>
+          </summary>
           <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
             {introParts.map((p, i) => (
               <p key={i} style={{ marginBottom: i < introParts.length - 1 ? '0.75rem' : 0 }}>{p}</p>
             ))}
           </div>
-        </div>
+        </details>
       </section>
       <PublicTeamProfile
         team={team}
