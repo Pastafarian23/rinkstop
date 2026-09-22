@@ -277,6 +277,50 @@ export default function GamesIndexClient({ initialData }: Props) {
       .catch(() => setLoading(false));
   }, [league, time, team, subleague, q]);
 
+  // 2026-09-22 self-heal: poll /api/health/scores every 5 min. If staleness
+  // is red/yellow, trigger /api/cron/scores-refresh (which runs the multi-
+  // league ingest in the background). Then refetch our games list. This is
+  // the user-facing safety net for when the Vercel cron fails (rate limit,
+  // cold start, etc.). Per Arnel 01:39 CDT: 'protocols in case there are
+  // any cron issues'.
+  useEffect(() => {
+    let cancelled = false;
+    let triggerInFlight = false;
+    const tick = async () => {
+      if (cancelled || triggerInFlight) return;
+      try {
+        const r = await fetch('/api/health/scores', { cache: 'no-store' });
+        if (!r.ok || cancelled) return;
+        const report = await r.json();
+        const staleTotal = (report?.staleness?.stale_in_progress || 0) + (report?.staleness?.stale_scheduled || 0);
+        if (staleTotal > 5) {
+          triggerInFlight = true;
+          // Trigger background refresh; we don't await it (it can take 60s+)
+          fetch('/api/cron/scores-refresh', {
+            method: 'POST',
+            headers: { 'x-internal-self-heal': '1' },
+          }).catch(() => {});
+          // Wait a few seconds then refetch our games list
+          setTimeout(() => {
+            if (cancelled) return;
+            fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=0`, { cache: 'no-store' })
+              .then(r => r.json())
+              .then((d: ApiResponse) => {
+                if (cancelled) return;
+                setGames(d?.data || []);
+                setHasMore(!!d?.hasMore);
+                setTotalShown(d?.count || 0);
+              })
+              .catch(() => {});
+            triggerInFlight = false;
+          }, 8000);
+        }
+      } catch {}
+    };
+    const interval = setInterval(tick, 5 * 60 * 1000); // every 5 minutes
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [league, time, team, subleague, q]);
+
   const loadMore = () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
