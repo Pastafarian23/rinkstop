@@ -17,7 +17,7 @@
  *   announcement: post summary to RinkStop Ops
  */
 
-require('fs').readFileSync('/root/.openclaw/workspace/rinkstop-platform/.env', 'utf8').split('\n').forEach(l => {
+require('fs').readFileSync('.env', 'utf8').split('\n').forEach(l => {
   const m = l.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
 });
@@ -25,12 +25,12 @@ const { createClient } = require('@supabase/supabase-js');
 const { spawnSync } = require('child_process');
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-const AUDIT_SCRIPT = '/root/.openclaw/workspace/rinkstop-platform/scripts/_audit-pipeline.cjs';
+const AUDIT_SCRIPT = 'scripts/_audit-pipeline.cjs';
 
 // --- Audit pipeline call ---
 function runAuditForArticle(slug) {
   const result = spawnSync('node', [AUDIT_SCRIPT, '--limit=1', `--slug=${slug}`, '--json'], {
-    cwd: '/root/.openclaw/workspace/rinkstop-platform',
+    cwd: process.cwd(),
     encoding: 'utf8',
     timeout: 60000,
   });
