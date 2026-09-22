@@ -407,11 +407,24 @@ async function findHighlightlyMatch(highLid, dateIso, homeHint, awayHint) {
         const awayN = cache.norm(awayName);
         const articleHomeN = cache.norm(homeHint);
         const articleAwayN = cache.norm(awayHint);
-        const directMatch = (homeN === articleHomeN && awayN === articleAwayN) ||
-                            (awayN === articleHomeN && homeN === articleAwayN) ||
-                            // Allow loose match on first word too (legacy fallback)
-                            (homeName.toLowerCase().includes(articleHomeN) && awayName.toLowerCase().includes(articleAwayN)) ||
-                            (awayName.toLowerCase().includes(articleHomeN) && homeName.toLowerCase().includes(articleAwayN));
+        // 2026-09-22 fix: cache.norm() strips to first-word for cache keys,
+        // but HL NHL API returns short names ("Kraken") while articles use
+        // full names ("Seattle Kraken"). For the match check we need to
+        // compare FULL lowercase names — "seattle kraken".includes("kraken")
+        // is true, but cache.norm makes both "seattle" and "kraken" lose
+        // the distinguishing word. Use raw lowercase for directMatch.
+        const homeFull = (homeName || '').toLowerCase();
+        const awayFull = (awayName || '').toLowerCase();
+        const articleHomeFull = (homeHint || '').toLowerCase();
+        const articleAwayFull = (awayHint || '').toLowerCase();
+        const directMatch = (homeFull === articleHomeFull && awayFull === articleAwayFull) ||
+                            (awayFull === articleHomeFull && homeFull === articleAwayFull) ||
+                            // Bidirectional substring (article names often
+                            // longer than HL short names)
+                            (homeFull.includes(articleHomeFull) && awayFull.includes(articleAwayFull)) ||
+                            (awayFull.includes(articleHomeFull) && homeFull.includes(articleAwayFull)) ||
+                            (articleHomeFull.includes(homeFull) && articleAwayFull.includes(awayFull)) ||
+                            (articleAwayFull.includes(homeFull) && articleHomeFull.includes(awayFull));
         if (process.env.DEBUG_HL_AUDIT) {
           console.error(`[HL audit] date=${d} hl_home=${homeN} hl_away=${awayN} article_home=${articleHomeN} article_away=${articleAwayN} directMatch=${directMatch}`);
         }
@@ -494,25 +507,35 @@ function derivePeriodDescriptor(highlightlyResult) {
   return { number: 3, periodType: 'REG' };
 }
 
-async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
+async function fetchHighlightlyBoxscore(leagueId, gameDate, title, providedHints) {
   const highLid = HIGHLIGHTLY_LEAGUE_NAMES[leagueId];
-  if (process.env.DEBUG_HL_AUDIT) console.error(`[HL] leagueId=${leagueId} highLid=${highLid} gameDate=${gameDate} title=${title}`);
+  if (process.env.DEBUG_HL_AUDIT) console.error(`[HL] leagueId=${leagueId} highLid=${highLid} gameDate=${gameDate} title=${title} providedHints=${JSON.stringify(providedHints||{})}`);
   if (!highLid) return null;
   // NHL is on a different HL subdomain (nhl.highlightly.net) than other hockey leagues
   const highHost = (highLid === 'NHL') ? 'nhl-ncaah-api.p.rapidapi.com' : 'hockey-highlights-api.p.rapidapi.com';
   const highUrl = (highLid === 'NHL')
     ? `https://nhl.highlightly.net/matches?date=${gameDate}&limit=50`
     : `https://hockey.highlightly.net/matches?leagueId=${highLid}&date=${gameDate}&limit=20`;
-  // Match all known article title patterns: 'X top Y', 'X beats Y', 'X blanks Y',
-  // 'X tops Y', 'X defeats Y', 'X edges Y', 'X down Y', 'X rallies past Y', etc.
-  // 2026-09-21: two regexes (with/without preposition) since LLM uses
-  // verbs like "rallies past", "edges in overtime", etc.
-  const tm1 = (title || '').match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+([\w'’\- ]+?)\s+\d/i);
-  const tm2 = (title || '').match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+(?:past|over|in\s+\w+|to|at\s+\w+|with|after)\s+([\w'’\- ]+?)\s*,?\s*\d/i);
-  const tm = tm1 || tm2;
-  if (!tm) return null;
-  const homeHint = tm[1].replace(/^\*\*/, '').trim();
-  const awayHint = tm[2].trim();
+  // 2026-09-22 fix: caller may pass hints derived from body claims when title
+  // regex misses (e.g. "Kraken Open Preseason With 4-2 Win"). Accept them so
+  // HL fallback works for FK-stamped articles whose title lacks a verb pattern.
+  let homeHint = null, awayHint = null;
+  if (providedHints && providedHints.homeHint && providedHints.awayHint) {
+    homeHint = providedHints.homeHint;
+    awayHint = providedHints.awayHint;
+  } else {
+    // Match all known article title patterns: 'X top Y', 'X beats Y', 'X blanks Y',
+    // 'X tops Y', 'X defeats Y', 'X edges Y', 'X down Y', 'X rallies past Y', etc.
+    // 2026-09-21: two regexes (with/without preposition) since LLM uses
+    // verbs like "rallies past", "edges in overtime", etc.
+    const tm1 = (title || '').match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+([\w'’\- ]+?)\s+\d/i);
+    const tm2 = (title || '').match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+(?:past|over|in\s+\w+|to|at\s+\w+|with|after)\s+([\w'’\- ]+?)\s*,?\s*\d/i);
+    const tm = tm1 || tm2;
+    if (!tm) return null;
+    homeHint = tm[1].replace(/^\*\*/, '').trim();
+    awayHint = tm[2].trim();
+  }
+  if (!homeHint || !awayHint) return null;
   const result = await findHighlightlyMatch(highLid, gameDate, homeHint, awayHint);
   if (!result) return null;
   // Determine OT/SO from raw response (fetched inside the function via overTime/penalties fields)
@@ -690,8 +713,20 @@ async function fetchBoxscore(article) {
   const tm1 = titleForHints.match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+([\w'’\- ]+?)\s+\d/i);
   const tm2 = titleForHints.match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+(?:past|over|in\s+\w+|to|at\s+\w+|with|after)\s+([\w'’\- ]+?)\s*,?\s*\d/i);
   const tm = tm1 || tm2;
-  const articleHomeHint = tm ? tm[1].replace(/^\*\*/, '').trim() : null;
-  const articleAwayHint = tm ? tm[2].trim() : null;
+  let articleHomeHint = tm ? tm[1].replace(/^\*\*/, '').trim() : null;
+  let articleAwayHint = tm ? tm[2].trim() : null;
+  // 2026-09-22 fix: prefer the body's structured 'Final Score:' line over the
+  // title regex. The title regex can match garbage like "Kraken Open Preseason With 4"
+  // (it greedily consumes the score digit) — giving "Kraken" + "Preseason With" as
+  // hints, which never matches HL. The orchestrator injects a reliable
+  // '**Final Score:** Team A N, Team B M.' line into every draft body, so use that
+  // whenever present (titles like "Raiders Pull Away From Pats in 7-4 Win" have it too).
+  const bodyClaims = extractClaims(article);
+  const fsClaim = bodyClaims.find(c => c.type === 'final_score_line');
+  if (fsClaim && fsClaim.teamA && fsClaim.teamB) {
+    articleHomeHint = fsClaim.teamA;
+    articleAwayHint = fsClaim.teamB;
+  }
   if (!articleHomeHint || !articleAwayHint) {
     // Can't cache without hints — fall back to existing per-adapter flow
     return fetchBoxscoreNoCache(article, leagueId);
@@ -742,7 +777,7 @@ async function fetchBoxscore(article) {
     return fetchWithCache(
       'highlightly_hockey', 'NHL', 'NHL (via HL preseason fallback)',
       article.game_date, articleHomeHint, articleAwayHint, leagueId,
-      () => fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '').then(b => ({
+      () => fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '', { homeHint: articleHomeHint, awayHint: articleAwayHint }).then(b => ({
         source: 'highlightly_hockey',
         leagueName: 'NHL',
         boxscore: b && b.data ? {
@@ -789,7 +824,7 @@ async function fetchBoxscore(article) {
     return fetchWithCache(
       'highlightly_hockey', highLid, 'DEL/KHL/etc',
       article.game_date, articleHomeHint, articleAwayHint, leagueId,
-      () => fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '').then(b => ({
+      () => fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '', { homeHint: articleHomeHint, awayHint: articleAwayHint }).then(b => ({
         source: 'highlightly_hockey',
         leagueName: 'SHL/DEL/KHL/etc',
         boxscore: b && b.data ? {
@@ -835,6 +870,14 @@ async function fetchBoxscore(article) {
 
 // Fallback for articles we can't extract team hints from (older titles without "top" pattern).
 async function fetchBoxscoreNoCache(article, leagueId) {
+  // 2026-09-22 fix: when title regex fails, derive hints from body's Final Score line
+  // so HL / HockeyTech / NHL.com date-lookup can still find the game.
+  let claimHints = null;
+  const bodyClaims = extractClaims(article);
+  const fs = bodyClaims.find(c => c.type === 'final_score_line');
+  if (fs && fs.teamA && fs.teamB) {
+    claimHints = { homeHint: fs.teamA, awayHint: fs.teamB };
+  }
   if (leagueId === '2b5f2b9d-84b9-4edb-8373-a732b72f4e40') {
     // Try slug-based game ID first (faster path). Fall back to date-based
     // lookup using stamped posts.team_home_id / team_away_id + game_date
@@ -842,7 +885,14 @@ async function fetchBoxscoreNoCache(article, leagueId) {
     const slugResult = await fetchNhlBoxscore(article.slug);
     if (slugResult) return slugResult;
     if (article.team_home_id && article.team_away_id && article.game_date) {
-      return fetchNhlBoxscoreByDate(article.game_date, article.team_home_id, article.team_away_id);
+      const byDate = await fetchNhlBoxscoreByDate(article.game_date, article.team_home_id, article.team_away_id);
+      if (byDate) return byDate;
+    }
+    // 2026-09-22 fix: NHL.com preseason may not have the game. Try HL preseason
+    // endpoint with body-claim-derived hints as final fallback for NHL FK-stamped
+    // articles whose title regex didn't match.
+    if (claimHints) {
+      return fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '', claimHints);
     }
     return null;
   }
@@ -851,7 +901,7 @@ async function fetchBoxscoreNoCache(article, leagueId) {
     return fetchIihfBoxscore(article.game_date, article.title || '');
   }
   if (HIGHLIGHTLY_LEAGUE_NAMES[leagueId]) {
-    return fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '');
+    return fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '', claimHints);
   }
   return fetchHockeyTechBoxscore(leagueId, article.game_date, article.title || '');
 }
