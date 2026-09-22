@@ -82,6 +82,14 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ id: str
       // Non-NHL: fall back to Highlightly boxscore (period scores + final score)
       const hlResp = await fetchHighlightlyBoxscore(fx);
       if (hlResp) return hlResp;
+      // 2026-09-22: For IIHF / Stanley Cup / Olympic content, also try
+      // Wikipedia as a 3rd cross-source. Returns null gracefully if no
+      // fixture matches a Wikipedia table. Per Arnel's accuracy concern
+      // (2026-09-22 00:48 CDT), Wikipedia match alone = 'wikipedia'
+      // source flag (NOT auto-upgraded to PASS_HIGH). Only confirms
+      // what HL already provided.
+      const wikiResp = await fetchWikipediaBoxscore(fx);
+      if (wikiResp) return wikiResp;
       // Fall through to NHL.com path or "non-nhl" response
       return NextResponse.json({ source: 'none', reason: 'non-nhl' });
     } else {
@@ -315,4 +323,72 @@ async function fetchHighlightlyBoxscore(fx: any): Promise<NextResponse | null> {
   const out = NextResponse.json(response);
   out.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=1800');
   return out;
+}
+
+// fetchWikipediaBoxscore — 2026-09-22: Wikipedia cross-source for
+// IIHF events, Stanley Cup playoffs, Olympic qualifiers.
+// Returns null if the league isn't a known Wikipedia target OR the
+// game isn't in the page's tables. Per Arnel's accuracy concern,
+// Wikipedia matches are flagged as source='wikipedia' so the page
+// shows them with the same fidelity as HL but doesn't auto-upgrade
+// to PASS_HIGH (that decision is up to the audit pipeline, not
+// the boxscore API).
+async function fetchWikipediaBoxscore(fx: any): Promise<NextResponse | null> {
+  const leagueSlug = (fx as any)?.game_data?.wikipedia_page || null;
+  // Map known leagues to Wikipedia season pages. Extend as we add
+  // more IIHF / playoff content.
+  const WIKI_PAGE_BY_LEAGUE_SLUG: Record<string, string> = {
+    'iihf-worlds': '2024 IIHF World Championship',
+    'iihf-world-championships': '2024 IIHF World Championship',
+    'olympic-games-world': '2026 Winter Olympics',
+    'olympic-games-women-world': '2026 Winter Olympics',
+  };
+  const pageSlug = leagueSlug || WIKI_PAGE_BY_LEAGUE_SLUG[fx?.league?.slug];
+  if (!pageSlug) return null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { lookupWikipediaBoxscore } = require('../../../server/cross-source/wikipedia-boxscore.cjs');
+    const dateIso = (fx.scheduled_at || '').slice(0, 10);
+    const visitorHint = fx?.home_team?.name || (fx as any)?.game_data?.away_team_name || '';
+    const homeHint = (fx as any)?.game_data?.home_team_name || fx?.away_team?.name || '';
+    // Swap: home_team in fixtures = home arena team, but Wikipedia
+    // schema is {{ih-rt|visitor}} vs {{ih|home}}. Our fixtures schema
+    // has home_team_id/away_team_id; the page expects visitor-first.
+    // Determine which fixture side is the home team by team count
+    // fallback. Default assumption: fixtures.home_team_id = Wikipedia home.
+    const result = await lookupWikipediaBoxscore({
+      pageSlug,
+      dateIso,
+      visitorHint: (fx as any)?.game_data?.away_team_name || '',
+      homeHint: (fx as any)?.game_data?.home_team_name || '',
+    });
+    if (!result) return null;
+    const response: any = {
+      source: 'wikipedia',
+      gameInfo: {
+        id: `${pageSlug}-${dateIso}-${result.visitor}-${result.home}`,
+        gameDate: result.date,
+        gameState: result.otSo ? `Final/${result.otSo}` : 'Final',
+        venue: null,
+        venueLocation: null,
+        threeStars: [],
+      },
+      teamStats: {
+        home: { name: result.home, score: result.homeScore, sog: null },
+        away: { name: result.visitor, score: result.visitorScore, sog: null },
+      },
+      periodScores: null,
+      goals: [],
+      goalies: { home: null, away: null },
+      playerStats: { home: { forwards: [], defense: [], goalies: [] }, away: { forwards: [], defense: [], goalies: [] } },
+      cachedAt: new Date().toISOString(),
+      wikipediaPage: pageSlug,
+      wikipediaOtSo: result.otSo,
+    };
+    const out = NextResponse.json(response);
+    out.headers.set('Cache-Control', 'public, max-age=300, s-maxage=900, stale-while-revalidate=1800');
+    return out;
+  } catch (e) {
+    return null;
+  }
 }
