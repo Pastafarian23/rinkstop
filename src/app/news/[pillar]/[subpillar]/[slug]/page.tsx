@@ -66,10 +66,15 @@ async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
   // silently falls through to notFound() — which is what caused the 4-segment
   // article URLs to return 404 in production. See also getPostsBySubpillar
   // below for the same fix.
+  // 2026-09-22: added team_home_id / team_away_id / league_id so the
+  // TagChips component can resolve tags via canonical FKs (which is
+  // more reliable than substring matching — e.g. tag 'flyers' resolves
+  // to Philadelphia Flyers for a Philadelphia-vs-Washington article,
+  // not Nazareth University Golden Flyers or Thunder Bay Flyers).
   const { data, error } = await supabaseAdmin
     .from('posts')
     .select(
-      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug',
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, team_home_id, team_away_id, league_id',
     )
     .eq('status', 'published')
     .eq('slug', slug)
@@ -82,7 +87,7 @@ async function getFullPostBySlug(slug: string): Promise<FullPost | null> {
   const { data: alt, error: altError } = await supabase
     .from('posts')
     .select(
-      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug',
+      'id, slug, title, subtitle, content, content_html, author_name, author_role, published_at, category, tags, reading_time_minutes, seo_title, seo_description, og_image_url, updated_at, view_count, country_slug, state_slug, city_slug, team_home_id, team_away_id, league_id',
     )
     .eq('status', 'published')
     .eq('slug', slug)

@@ -49,6 +49,11 @@ export interface FullPost {
   country_slug?: string | null;
   state_slug?: string | null;
   city_slug?: string | null;
+  // 2026-09-22: FKs from posts to teams/leagues. Used by TagChips to
+  // resolve tags via canonical FKs instead of substring matching.
+  team_home_id?: string | null;
+  team_away_id?: string | null;
+  league_id?: string | null;
   country_label?: string | null;
   state_label?: string | null;
   city_label?: string | null;
@@ -408,7 +413,12 @@ export default async function FullArticle({ post }: { post: FullPost }) {
               </nav>
 
               {tags.length > 0 && (
-                <TagChips tags={tags} />
+                <TagChips
+                  tags={tags}
+                  teamHomeId={post.team_home_id}
+                  teamAwayId={post.team_away_id}
+                  leagueId={post.league_id}
+                />
               )}
 
               <div
