@@ -332,7 +332,17 @@ async function getHighlightsFromBackup(opts: {
       linkedPostId: h.post_id || null,
       match: {
         id: h.match_id,
-        league: h.league_name,
+        // 2026-09-22 per Arnel 07:57 CDT: highlight_backups.league_name
+        // is sometimes stored as a JSON object string. Normalize here.
+        league: (() => {
+          if (!h.league_name) return null;
+          try {
+            const parsed = JSON.parse(h.league_name);
+            return parsed?.name || h.league_name;
+          } catch {
+            return h.league_name;
+          }
+        })(),
         leagueId: h.league_id,
         season: h.match_season,
         date: h.match_date,

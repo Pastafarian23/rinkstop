@@ -524,7 +524,18 @@ export default function GamePage() {
                     {h.title}
                   </h3>
                   <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', margin: '0.2rem 0 0 0' }}>
-                    {h.league_name || h.source} · {h.home_team_name} vs {h.away_team_name}
+                    {(() => {
+                      // 2026-09-22 per Arnel 07:57 CDT: highlight_backups.league_name
+                      // is stored as a JSON object string in some rows. Parse defensively.
+                      const ln = h.league_name;
+                      if (!ln) return h.source || '';
+                      try {
+                        const parsed = JSON.parse(ln);
+                        return parsed?.name || h.source || '';
+                      } catch {
+                        return ln;
+                      }
+                    })()} · {h.home_team_name} vs {h.away_team_name}
                   </p>
                 </div>
               </Link>
