@@ -14,7 +14,7 @@ import { readFile, writeFile } from 'fs/promises';
 // Direct require — pulls the orchestrator source into the Next.js bundle
 // so Vercel deploys it as part of the function.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const orchestrator = require('../../../server/scores/daily-scores-orchestrator.cjs');
+const orchestrator = require('../../../../server/scores/daily-scores-orchestrator.cjs');
 
 async function runOrchestrator(): Promise<{ upserts: number; leagues: string[]; error?: string }> {
   const fs = await import('fs/promises');
