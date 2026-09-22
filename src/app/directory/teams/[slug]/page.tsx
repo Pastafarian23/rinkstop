@@ -358,7 +358,10 @@ export default async function PublicTeamPage({ params }: PageProps) {
   // so we match by team name OR common aliases (city, abbrev).
   const teamAliases = [team.name, team.short_name, team.home_city].filter(Boolean).map(s => String(s).replace(/[%_\\]/g, '\\$&'));
   const orClauses = teamAliases.flatMap(a => [`home_team_name.ilike.%${a}%`, `away_team_name.ilike.%${a}%`]).join(',');
-  const { data: teamHighlights } = await supabase
+  // 2026-09-22: use supabaseAdmin (service role) because RLS on
+  // highlight_backups blocks anon reads. The page only exposes
+  // public fields anyway (no auth tokens, no PII).
+  const { data: teamHighlights } = await supabaseAdmin
     .from('highlight_backups')
     .select('id, title, description, video_url, embed_url, image_url, match_date, home_team_name, away_team_name, league_name, source, channel')
     .or(orClauses)
