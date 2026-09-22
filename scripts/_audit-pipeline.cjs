@@ -84,7 +84,24 @@ function extractClaims(article) {
   // 2. Final score line in body
   // Match: "Final score: Team A N, Team B M." (with apostrophes in team names OK)
   // Approach: find the line containing "Final score", then split on ","
-  const fsLineMatch = content.match(/final\s+score[:\s]+([^\n]+)/i);
+  // 2026-09-21 fix: search for the LAST "Final Score" line — LLM prose
+  // mentions "Final Score" in the body too, but our orchestrator's
+  // injected structured line is always at the END before the footer.
+  // Also require the line to contain a comma + numeric score suffix
+  // (prose-style mentions won't match the rest of the regex below).
+  const fsMatches = [...content.matchAll(/final\s+score[:\s]+([^\n]+)/gi)];
+  let fsLineMatch = null;
+  for (let i = fsMatches.length - 1; i >= 0; i--) {
+    const candidate = fsMatches[i][1];
+    // Only accept lines that look like "Team A N, Team B M"
+    if (/,\s*\S+\s+\d+/.test(candidate) && /\d+\s*\.?\s*$/.test(candidate.trim())) {
+      fsLineMatch = [fsMatches[i][0], candidate];
+      break;
+    }
+  }
+  if (!fsLineMatch && fsMatches.length > 0) {
+    fsLineMatch = [fsMatches[fsMatches.length - 1][0], fsMatches[fsMatches.length - 1][1]];
+  }
   if (fsLineMatch) {
     const line = fsLineMatch[1];
     const halves = line.split(',');
@@ -385,6 +402,9 @@ async function findHighlightlyMatch(highLid, dateIso, homeHint, awayHint) {
                             // Allow loose match on first word too (legacy fallback)
                             (homeName.toLowerCase().includes(articleHomeN) && awayName.toLowerCase().includes(articleAwayN)) ||
                             (awayName.toLowerCase().includes(articleHomeN) && homeName.toLowerCase().includes(articleAwayN));
+        if (process.env.DEBUG_HL_AUDIT) {
+          console.error(`[HL audit] date=${d} hl_home=${homeN} hl_away=${awayN} article_home=${articleHomeN} article_away=${articleAwayN} directMatch=${directMatch}`);
+        }
         if (directMatch) {
           return {
             homeTeamName: homeName, awayTeamName: awayName,
@@ -466,14 +486,18 @@ function derivePeriodDescriptor(highlightlyResult) {
 
 async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
   const highLid = HIGHLIGHTLY_LEAGUE_NAMES[leagueId];
+  if (process.env.DEBUG_HL_AUDIT) console.error(`[HL] leagueId=${leagueId} highLid=${highLid} gameDate=${gameDate} title=${title}`);
   if (!highLid) return null;
-  const tParts = (title || '').split(' top ');
-  if (tParts.length < 2) return null;
-  const homeHint = tParts[0].trim();
-  const restAfter = tParts[1];
-  const awayMatch = restAfter.match(/^(.+?)\s+\d/);
-  if (!awayMatch) return null;
-  const awayHint = awayMatch[1].trim();
+  // Match all known article title patterns: 'X top Y', 'X beats Y', 'X blanks Y',
+  // 'X tops Y', 'X defeats Y', 'X edges Y', 'X down Y', 'X rallies past Y', etc.
+  // 2026-09-21: two regexes (with/without preposition) since LLM uses
+  // verbs like "rallies past", "edges in overtime", etc.
+  const tm1 = (title || '').match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+([\w'’\- ]+?)\s+\d/i);
+  const tm2 = (title || '').match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+(?:past|over|in\s+\w+|to|at\s+\w+|with|after)\s+([\w'’\- ]+?)\s*,?\s*\d/i);
+  const tm = tm1 || tm2;
+  if (!tm) return null;
+  const homeHint = tm[1].replace(/^\*\*/, '').trim();
+  const awayHint = tm[2].trim();
   const result = await findHighlightlyMatch(highLid, gameDate, homeHint, awayHint);
   if (!result) return null;
   // Determine OT/SO from raw response (fetched inside the function via overTime/penalties fields)
@@ -642,7 +666,15 @@ async function fetchBoxscore(article) {
 
   // Extract team hints from article title (for cache lookup keys)
   const titleForHints = article.title || '';
-  const tm = titleForHints.match(/^(.+?)\s+(?:top|defeat|beat|edge|down)\s+(.+?)\s+\d+-\d+/i);
+  // 2026-09-21 fix: be permissive — many LLM verbs not in the original list.
+  // Two patterns:
+  //   1. "Team A <verb> Team B <score>" — explicit verb between teams
+  //   2. "Team A <verb> <preposition?> Team B[,]? <score>" — with prepositions
+  //      like "past", "to", "over", "in Shootout to", etc.
+  // We try a fallback to just "Team A <words> Team B \d" if no verb matches.
+  const tm1 = titleForHints.match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+([\w'’\- ]+?)\s+\d/i);
+  const tm2 = titleForHints.match(/^([A-Z][\w'’\- ]+?)\s+(?:top|defeat|defeats|beat|beats|edge|edges|down|blank|blanks|topped|rallies|rolls|stuns|handles|survives|rides|holds|strike|strikes|outlasts|outs|fall|falls|stop|stops|tops|outduel|trade|trades|open|opens|pull|pulls|survive|ride|hold|sink|sinks|shut|shuts|stung|blanked)\s+(?:past|over|in\s+\w+|to|at\s+\w+|with|after)\s+([\w'’\- ]+?)\s*,?\s*\d/i);
+  const tm = tm1 || tm2;
   const articleHomeHint = tm ? tm[1].replace(/^\*\*/, '').trim() : null;
   const articleAwayHint = tm ? tm[2].trim() : null;
   if (!articleHomeHint || !articleAwayHint) {

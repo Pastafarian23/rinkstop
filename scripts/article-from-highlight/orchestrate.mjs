@@ -668,7 +668,14 @@ async function insertDraft(highlight, meta, body, fixtureRow, webRecapData = nul
   // 2026-09-17: Arnel directed us to drop the "Verified via YouTube
   // transcript..." boilerplate — the standard AI disclaimer lives in
   // the editorial footer on every article, so this line is redundant.
-  const bodyClean = body.replace(/\n*\*Source:.*\*\s*$/m, '').trim();
+  // 2026-09-21 safeguard: also strip any LLM-written "Final Score:" prose
+  // lines — the audit pipeline parses the FIRST "Final Score:" match, and
+  // LLM prose ("Final Score: final score and period breakdown...") pre-empts
+  // our structured injection, breaking audit verification.
+  const bodyClean = body
+    .replace(/\n*\*Source:.*\*\s*$/m, '')
+    .replace(/^\*?Final Score:[^\n]*(?!\d+-\d+\.)[^\n]*\n+/gim, '')
+    .trim();
 
   // 2026-09-21 safeguard: when the fixture row has a canonical score,
   // inject a structured "Final Score" line right before the Source footer.
