@@ -115,6 +115,7 @@ interface NewsRow {
   body: string;
   author_user_id: string;
   published_at: string;
+  slug?: string | null;
 }
 
 // 2026-09-17: Public roster surfaced from the existing players table.
@@ -324,9 +325,32 @@ export default async function PublicTeamPage({ params }: PageProps) {
       .returns<PlayerRow[]>(),
   ]);
 
-  const news: NewsRow[] = newsRes.data || [];
-  const results: ResultRow[] = resultsRes.data || [];
+  let news: NewsRow[] = newsRes.data || [];
+  let results: ResultRow[] = resultsRes.data || [];
   const roster: PlayerRow[] = playersRes.data || [];
+  // 2026-09-22 per Arnel 05:33 CDT: 'all team pages should be well
+  // populated and accurate'. team_news is user-entered; for leagues
+  // with automated ingest, fall back to published posts linked to
+  // this team's fixtures. Cross-link article titles + bodies.
+  if (news.length === 0) {
+    const { data: teamPosts } = await supabase
+      .from('posts')
+      .select('id, slug, title, subtitle, body, category, reading_time_minutes, author_name, published_at, team_home_id, team_away_id')
+      .or(`team_home_id.eq.${team.id},team_away_id.eq.${team.id}`)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(10);
+    if (teamPosts && teamPosts.length > 0) {
+      news = teamPosts.map((p: any): NewsRow => ({
+        id: p.id,
+        title: p.title,
+        body: p.body || '',
+        author_user_id: '',
+        published_at: p.published_at,
+        slug: p.slug,
+      }));
+    }
+  }
   // Normalize team_events rows into ScheduleRow shape so the rest of the page works unchanged
   const teamEventsRows = (upcomingEventsRes.data || []) as Array<{
     id: string;
@@ -338,7 +362,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
     rink_id?: string | null;
     timezone?: string | null;
   }>;
-  const upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e): ScheduleRow => ({
+  let upcomingFromEvents: ScheduleRow[] = teamEventsRows.map((e): ScheduleRow => ({
     id: `evt_${e.id}`, // prefix to avoid ID collision with team_schedule rows
     scheduled_at: e.starts_at,
     opponent: e.opposing_team,
@@ -349,6 +373,75 @@ export default async function PublicTeamPage({ params }: PageProps) {
     is_cancelled: false,
     timezone: e.timezone ?? null,
   }));
+
+  // 2026-09-22 per Arnel 05:33 CDT: 'all team pages should be well
+  // populated and accurate'. The team_results + team_events tables
+  // are user-entered (coaches/managers post their own scores). For
+  // leagues with automated data ingest (NHL, KHL, SHL, DEL, etc.),
+  // the real data lives in the `fixtures` table. So if results is
+  // empty, fall back to fixtures (recent completed games) and if
+  // upcomingFromEvents is empty, fall back to fixtures (next 10
+  // scheduled/in-progress games). Direction-agnostic (home OR away).
+  // This is the highest-impact single change for team-page completeness.
+  if (results.length === 0) {
+    const { data: fixtureResults } = await supabaseAdmin
+      .from('fixtures')
+      .select('id, scheduled_at, status, home_team_id, away_team_id, home_score, away_score, season, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+      .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
+      .eq('status', 'completed')
+      .order('scheduled_at', { ascending: false })
+      .limit(20);
+    if (fixtureResults && fixtureResults.length > 0) {
+      results = fixtureResults.map((f: any): ResultRow => {
+        const isHome = f.home_team_id === team.id;
+        const ourScore = isHome ? f.home_score : f.away_score;
+        const theirScore = isHome ? f.away_score : f.home_score;
+        const oppTeam = isHome ? f.away_team : f.home_team;
+        let outcome: 'W' | 'L' | 'T' = 'T';
+        if (ourScore != null && theirScore != null) {
+          if (ourScore > theirScore) outcome = 'W';
+          else if (ourScore < theirScore) outcome = 'L';
+        }
+        return {
+          id: f.id,
+          game_date: (f.scheduled_at || '').slice(0, 10),
+          opponent: oppTeam?.name || 'TBD',
+          home_away: isHome ? 'home' : 'away',
+          our_score: ourScore ?? 0,
+          their_score: theirScore ?? 0,
+          outcome,
+          notes: null,
+        };
+      });
+    }
+  }
+
+  if (upcomingFromEvents.length === 0) {
+    const { data: fixtureUpcoming } = await supabaseAdmin
+      .from('fixtures')
+      .select('id, scheduled_at, status, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+      .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
+      .in('status', ['scheduled', 'in_progress'])
+      .order('scheduled_at', { ascending: true })
+      .limit(10);
+    if (fixtureUpcoming && fixtureUpcoming.length > 0) {
+      upcomingFromEvents = fixtureUpcoming.map((f: any): ScheduleRow => {
+        const isHome = f.home_team_id === team.id;
+        const oppTeam = isHome ? f.away_team : f.home_team;
+        return {
+          id: `fx_${f.id}`,
+          scheduled_at: f.scheduled_at,
+          opponent: oppTeam?.name || 'TBD',
+          kind: 'game',
+          venue: null,
+          home_away: isHome ? 'home' : 'away',
+          notes: null,
+          is_cancelled: f.status === 'cancelled',
+        };
+      });
+    }
+  }
+
   // team_events is the canonical source (team_schedule was dropped). Sort by
   // scheduled_at ascending, take top 10.
   const mergedUpcoming: ScheduleRow[] = [...upcomingFromEvents]
@@ -594,6 +687,7 @@ export default async function PublicTeamPage({ params }: PageProps) {
           approach: collapse the block to a 2-paragraph preview on
           narrow screens via max-height + overflow:hidden, and let
           the user tap to expand via a details/summary element. */}
+      <style>{`details[open] > summary > .about-arrow { transform: rotate(90deg); }`}</style>
       <section
         aria-label={`About ${team.name}`}
         style={{ maxWidth: '1280px', margin: '0 auto 1.5rem', padding: '0 1rem' }}
@@ -606,6 +700,13 @@ export default async function PublicTeamPage({ params }: PageProps) {
             padding: '1rem 1.25rem',
           }}
         >
+          {/* 2026-09-22: hide the default disclosure triangle, render an
+              explicit arrow + label that swaps between '▸ About' and
+              '▾ About' depending on the open state. CSS-only via
+              details[open] selector. Per Arnel 05:33 CDT: 'the about
+              section is better now that its collapsed and expandable.
+              But it's not intuitive. Please add an arrow or expand so
+              user is aware.' */}
           <summary style={{
             fontFamily: '"Bebas Neue", sans-serif',
             fontSize: '1.5rem',
@@ -613,11 +714,22 @@ export default async function PublicTeamPage({ params }: PageProps) {
             color: '#fff',
             cursor: 'pointer',
             listStyle: 'none',
-            marginBottom: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            userSelect: 'none',
+            marginBottom: 0,
           }}>
-            About {team.name}
+            <span aria-hidden="true" style={{
+              display: 'inline-block',
+              width: '1em',
+              transition: 'transform 150ms ease',
+              color: '#FFB81C',
+              fontWeight: 700,
+            }} className="about-arrow">▸</span>
+            <span>About {team.name}</span>
           </summary>
-          <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
+          <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem', paddingTop: '0.75rem' }}>
             {introParts.map((p, i) => (
               <p key={i} style={{ marginBottom: i < introParts.length - 1 ? '0.75rem' : 0 }}>{p}</p>
             ))}
