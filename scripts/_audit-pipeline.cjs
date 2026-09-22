@@ -354,6 +354,7 @@ async function fetchNhlBoxscoreByDate(gameDate, teamHomeId, teamAwayId) {
 
 // Highlightly league ID -> Highlightly numeric ID
 const HIGHLIGHTLY_LEAGUE_NAMES = {
+  '2b5f2b9d-84b9-4edb-8373-a732b72f4e40': 'NHL',     // NHL (uses nhl.highlightly.net subdomain)
   '69d4de0c-b072-4f52-8950-eb728acdc7f9': '40781',     // SHL
   '03e919d1-2180-443b-aba4-6719d25d2eff': '16953',     // DEL
   'a08f6dac-eb1f-48b6-a11b-56fbb5642752': '30569',     // KHL
@@ -371,10 +372,19 @@ async function findHighlightlyMatch(highLid, dateIso, homeHint, awayHint) {
     dates.push(new Date(baseD.getTime() + i * 86400000).toISOString().slice(0, 10));
     dates.push(new Date(baseD.getTime() - i * 86400000).toISOString().slice(0, 10));
   }
+  // NHL uses nhl.highlightly.net subdomain; other leagues use hockey.highlightly.net
+  const isNhl = highLid === 'NHL';
+  const host = isNhl ? 'nhl-ncaah-api.p.rapidapi.com' : 'hockey-highlights-api.p.rapidapi.com';
+  const urlBase = isNhl
+    ? `https://nhl.highlightly.net/matches?date=\${d}&limit=50`
+    : `https://hockey.highlightly.net/matches?leagueId=\${highLid}&date=\${d}&limit=20`;
   for (const d of dates) {
     try {
-      const r = await fetch('https://hockey.highlightly.net/matches?leagueId=' + highLid + '&date=' + d + '&limit=20', {
-        headers: { 'x-rapidapi-key': HIGHKEY, 'x-rapidapi-host': 'hockey-highlights-api.p.rapidapi.com' },
+      const url = isNhl
+        ? `https://nhl.highlightly.net/matches?date=${d}&limit=50`
+        : `https://hockey.highlightly.net/matches?leagueId=${highLid}&date=${d}&limit=20`;
+      const r = await fetch(url, {
+        headers: { 'x-rapidapi-key': HIGHKEY, 'x-rapidapi-host': host },
       });
       if (!r.ok) continue;
       const j = await r.json();
@@ -488,6 +498,11 @@ async function fetchHighlightlyBoxscore(leagueId, gameDate, title) {
   const highLid = HIGHLIGHTLY_LEAGUE_NAMES[leagueId];
   if (process.env.DEBUG_HL_AUDIT) console.error(`[HL] leagueId=${leagueId} highLid=${highLid} gameDate=${gameDate} title=${title}`);
   if (!highLid) return null;
+  // NHL is on a different HL subdomain (nhl.highlightly.net) than other hockey leagues
+  const highHost = (highLid === 'NHL') ? 'nhl-ncaah-api.p.rapidapi.com' : 'hockey-highlights-api.p.rapidapi.com';
+  const highUrl = (highLid === 'NHL')
+    ? `https://nhl.highlightly.net/matches?date=${gameDate}&limit=50`
+    : `https://hockey.highlightly.net/matches?leagueId=${highLid}&date=${gameDate}&limit=20`;
   // Match all known article title patterns: 'X top Y', 'X beats Y', 'X blanks Y',
   // 'X tops Y', 'X defeats Y', 'X edges Y', 'X down Y', 'X rallies past Y', etc.
   // 2026-09-21: two regexes (with/without preposition) since LLM uses
@@ -684,7 +699,9 @@ async function fetchBoxscore(article) {
 
   // NHL.com — cache first (source: nhl_com)
   if (leagueId === '2b5f2b9d-84b9-4edb-8373-a732b72f4e40') {
-    return fetchWithCache(
+    // Try NHL.com first; if that fails (preseason games not always on NHL.com),
+    // fall back to nhl.highlightly.net (preseason data verified 2026-09-21).
+    const nhlComBoxscore = await fetchWithCache(
       'nhl_com', '', 'NHL',
       article.game_date, articleHomeHint, articleAwayHint, leagueId,
       async () => {
@@ -719,6 +736,23 @@ async function fetchBoxscore(article) {
           },
         };
       }
+    );
+    // If NHL.com didn't return data, try nhl.highlightly.net (preseason fix)
+    if (nhlComBoxscore && nhlComBoxscore.boxscore) return nhlComBoxscore;
+    return fetchWithCache(
+      'highlightly_hockey', 'NHL', 'NHL (via HL preseason fallback)',
+      article.game_date, articleHomeHint, articleAwayHint, leagueId,
+      () => fetchHighlightlyBoxscore(leagueId, article.game_date, article.title || '').then(b => ({
+        source: 'highlightly_hockey',
+        leagueName: 'NHL',
+        boxscore: b && b.data ? {
+          home_team_name: b.data.home_team?.name || b.data.home_team,
+          away_team_name: b.data.away_team?.name || b.data.away_team,
+          home_score: b.data.home_score, away_score: b.data.away_score,
+          raw_score: b.data.raw_score || (b.data.home_score + ' - ' + b.data.away_score),
+          raw: b.data,
+        } : null,
+      }))
     );
   }
 
