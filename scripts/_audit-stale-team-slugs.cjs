@@ -84,6 +84,25 @@ function findRedirects(inactive, actives) {
       }
     }
   }
+  // Strategy 4 (2026-09-22): same home_city + same first-word + unique active sibling.
+  // Catches cases like 'Moose Jaw Canucks' → 'Moose Jaw Warriors' where the
+  // team names don't overlap but the first word + city match identifies them
+  // as the same franchise (rename with no shared name substring).
+  if (inactive.home_city) {
+    const cityMatches = actives.filter(a =>
+      a.home_city && a.home_city.toLowerCase() === inactive.home_city.toLowerCase() &&
+      a.name !== inactive.name
+    );
+    // Filter to those with the same first word (e.g. 'Moose Jaw')
+    const firstWordMatches = cityMatches.filter(a =>
+      a.name.split(/\s+/)[0] === inactiveFirstWord
+    );
+    // If exactly 1 such match, use it (unambiguous rename)
+    if (firstWordMatches.length === 1) {
+      const a = firstWordMatches[0];
+      return { to: a.slug, reason: 'same-city-same-first-word-rename' };
+    }
+  }
   return null;
 }
 
