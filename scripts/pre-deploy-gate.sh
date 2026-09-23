@@ -232,9 +232,22 @@ if should_run 6; then
      Use 'text' type and skip the FK (Clerk is the source of truth externally).
      Reference: profile_account_types.user_id (text) is the project standard."
       fi
-      # Pattern 2: CREATE TABLE without RLS (informational warning, not fail)
-      if grep -qE 'CREATE TABLE IF NOT EXISTS' "$mig" && ! grep -qE 'ENABLE ROW LEVEL SECURITY' "$mig"; then
-        note "  ! $mig: CREATE TABLE without ENABLE ROW LEVEL SECURITY (verify this is intentional)"
+      # Pattern 2: CREATE TABLE without RLS — 2026-09-23 upgrade from note to fail
+      # The Supabase advisor 2026-09-23 caught 5 user-tables that were publicly
+      # accessible because they had CREATE TABLE but no ENABLE ROW LEVEL SECURITY.
+      # To prevent recurrence, missing RLS now FAILS the deploy gate. Operators
+      # can add --rls-skip=N for emergency overrides (with justification).
+      if grep -qE 'CREATE TABLE' "$mig" && ! grep -qE 'ENABLE ROW LEVEL SECURITY' "$mig"; then
+        bad_reasons="$bad_reasons
+   - CREATE TABLE without ENABLE ROW LEVEL SECURITY: per 2026-09-23 Supabase
+     advisor incident, every new user-data table MUST enable RLS in the same
+     migration. For service_role-only tables, also add REVOKE ALL FROM anon,
+     authenticated. See supabase/migrations/2026-09-23_enable_rls_5_op_tables.sql
+     for the canonical pattern."
+      fi
+      # Pattern 3: GRANT TO anon on new tables (likely mistake)
+      if grep -qE 'GRANT.*TO anon' "$mig"; then
+        note "  ! $mig: GRANT TO anon present. Verify this is intentional (most user-tables should NOT grant to anon)."
       fi
       if [ -n "$bad_reasons" ]; then
         echo "  ✗ $mig:$bad_reasons"
