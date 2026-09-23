@@ -142,9 +142,13 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Fetch fixtures for cross-verification of the final score. We use
-    // team_home_id + team_away_id + match_date to look up the row. This
-    // catches the case where the orchestrator injected a wrong score
-    // (e.g. swapped home/away) before we put it in front of humans.
+    // team_home_id + team_away_id to look up the row, then pick the
+    // fixture whose scheduled_at is closest to the post's published_at.
+    //
+    // Why the closest-date filter matters (caught 2026-09-23):
+    // A team-pair can have 10+ historical fixtures (every season they
+    // played). Picking the first row from PostgREST would return an
+    // arbitrary old game. We need the row whose date matches the article.
     const fixtureLookups = todo
       .filter((p) => p.team_home_id && p.team_away_id)
       .map((p) => ({
@@ -164,10 +168,13 @@ export async function GET(request: NextRequest) {
       // Non-fatal: log but continue with content-only scoring.
       console.warn('[cron/social-draft] fixtures fetch warning:', fixturesRes.error.message);
     }
-    const fixturesByPair = new Map<string, any>();
+    // Index all fixtures for all team-pairs, then in the loop pick the
+    // one with the smallest |scheduled_at - post.published_at| delta.
+    const fixturesByPair = new Map<string, any[]>();
     for (const f of (fixturesRes.data ?? []) as any[]) {
       const key = `${f.home_team_id}|${f.away_team_id}`;
-      if (!fixturesByPair.has(key)) fixturesByPair.set(key, f);
+      if (!fixturesByPair.has(key)) fixturesByPair.set(key, []);
+      fixturesByPair.get(key)!.push(f);
     }
 
     if (highlightsRes.error) throw new Error(`fetch highlights: ${highlightsRes.error.message}`);
@@ -224,10 +231,20 @@ export async function GET(request: NextRequest) {
         const contentScore = pickFinalScore(post.content, highlight);
         // Cross-verify against fixtures table (ground truth from highlightly).
         // If they disagree, fall back to fixtures and flag the mismatch.
-        const fixtureRow = post.team_home_id && post.team_away_id
-          ? fixturesByPair.get(`${post.team_home_id}|${post.team_away_id}`)
-          : null;
-        const fixtureScore = fixtureRow && typeof fixtureRow.home_score === 'number' && typeof fixtureRow.away_score === 'number'
+        // Pick the fixture whose scheduled_at is closest to the post's
+        // published_at — a team-pair can have many historical rows.
+        const candidateFixtures = post.team_home_id && post.team_away_id
+          ? fixturesByPair.get(`${post.team_home_id}|${post.team_away_id}`) ?? []
+          : [];
+        const postTime = new Date(post.published_at).getTime();
+        const fixtureRow = candidateFixtures
+          .filter((f) => f.scheduled_at && typeof f.home_score === 'number' && typeof f.away_score === 'number')
+          .sort((a, b) => {
+            const da = Math.abs(new Date(a.scheduled_at).getTime() - postTime);
+            const db = Math.abs(new Date(b.scheduled_at).getTime() - postTime);
+            return da - db;
+          })[0] ?? null;
+        const fixtureScore = fixtureRow
           ? { home: fixtureRow.home_score, away: fixtureRow.away_score }
           : null;
         const finalScore = crossVerifyScore(contentScore, fixtureScore, post.id);
