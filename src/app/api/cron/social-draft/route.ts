@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
     const fixturesRes = fixtureLookups.length
       ? await supabaseAdmin
           .from('fixtures')
-          .select('id, home_team_id, away_team_id, home_score, away_score, match_date')
+          .select('id, home_team_id, away_team_id, home_score, away_score, scheduled_at, status')
           .in('home_team_id', fixtureLookups.map((l) => l.home!))
           .in('away_team_id', fixtureLookups.map((l) => l.away!))
       : { data: [] as any[], error: null as any };
