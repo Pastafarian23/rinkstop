@@ -248,6 +248,24 @@ export async function GET(request: NextRequest) {
           ? { home: fixtureRow.home_score, away: fixtureRow.away_score }
           : null;
         const finalScore = crossVerifyScore(contentScore, fixtureScore, post.id);
+
+        // Title-vs-score consistency check (added 2026-09-23 per Arnel directive).
+        // If the post title says one team won but the Final Score line + fixture
+        // say the other team won, the article is internally inconsistent.
+        // REFUSE to draft a social post from an inconsistent article — better
+        // to skip than to put wrong information on social media.
+        const titleInconsistency = detectTitleScoreMismatch(post.title, post.content, finalScore);
+        if (titleInconsistency) {
+          console.warn(
+            `[cron/social-draft] skipping post ${post.id} — title-vs-score inconsistency: ${titleInconsistency.reason}`,
+          );
+          // We don't insert a draft row, but we DO post a Telegram alert so
+          // Arnel can fix the article upstream.
+          await sendTelegramAlert(telegramToken, chatId, post, titleInconsistency);
+          result.errors += 1;
+          result.errorDetails.push(`${post.id}: skipped — ${titleInconsistency.reason}`);
+          continue;
+        }
         // Build scoreLine in conventional home-first order: "Home 2 – 1 Away".
         // Convention in hockey broadcasts: home team first, then away team.
         const homeTeamLabel = homeTeam?.name ?? highlight?.home_team_name ?? 'Home';
@@ -443,6 +461,159 @@ function slugifyHighlight(s: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .trim();
+}
+
+/**
+ * Detect when the post title says one team won but the body Final Score
+ * line says the other team won. Returns null if no mismatch detected.
+ *
+ * Same heuristics as scripts/article-from-highlight/orchestrate.mjs
+ * extractWinnerFromTitle() — kept in sync intentionally. If we add a new
+ * win-verb here, add it there too.
+ */
+function detectTitleScoreMismatch(
+  title: string | null,
+  content: string | null,
+  finalScore: { home: number; away: number } | null,
+): { reason: string; titleWinner: string; scoreWinner: string } | null {
+  if (!title || !content || !finalScore) return null;
+
+  const WIN_VERBS = 'edge[sd]?|beat(?:en)?|top[s]?|handle[sd]?|down(?:ed)?|roll[s]? past|blank(?:ed)?|shut[s]? out|stun(?:ned)?|knock[s]? off';
+  const LOSS_VERBS = 'falls? to|drops? to|loses? to|surrenders? to';
+
+  let titleWinner: 'home' | 'away' | 'tie' | null = null;
+  const lower = title.toLowerCase();
+
+  if (/\btied\b/.test(lower)) {
+    titleWinner = 'tie';
+  } else if (/\broad win\b/.test(lower)) {
+    // "X earn N-N road win" — winner is whichever team is mentioned first.
+    // Without a clear home/away signal, skip.
+    return null;
+  } else {
+    const winRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${WIN_VERBS})\\s+([\\w'\\-\\.]+)`, 'i');
+    const wm = winRe.exec(title);
+    if (wm) {
+      const beforeVerb = wm[1].toLowerCase().trim();
+      // We don't have team names here — use Final Score's winner instead.
+      // The body Final Score line tells us which team is which (Team A, Team B).
+      // We can't map "beforeVerb" to home/away without names, so instead we
+      // compare the SCORE inferred from the title vs the finalScore.
+      // Title says "<team> <verb> <team> N - M" → winner scored N.
+      // Look for a score pattern in the title.
+      const scoreInTitle = title.match(/\b(\d+)\s*[-–]\s*(\d+)\b/);
+      if (scoreInTitle) {
+        const a = parseInt(scoreInTitle[1], 10);
+        const b = parseInt(scoreInTitle[2], 10);
+        // The "beforeVerb" team won. If beforeVerb contains a team name that
+        // also appears in the body's Final Score Team A or Team B, we know
+        // which slot.
+        const bodyTeamA = extractBodyTeamA(content);
+        const bodyTeamB = extractBodyTeamB(content);
+        if (bodyTeamA && bodyTeamB) {
+          if (teamInString(beforeVerb, bodyTeamA)) {
+            titleWinner = 'home'; // bodyTeamA is the home team per orchestrator format
+            // Check: title says Team A won with score a-b, but finalScore has home-=b
+            if (a !== finalScore.home || b !== finalScore.away) {
+              return {
+                reason: `Title says ${bodyTeamA} ${a}-${b} won but Final Score line shows ${finalScore.home}-${finalScore.away}`,
+                titleWinner: `${bodyTeamA} (${a}-${b})`,
+                scoreWinner: `${finalScore.home}-${finalScore.away}`,
+              };
+            }
+          } else if (teamInString(beforeVerb, bodyTeamB)) {
+            titleWinner = 'away';
+            if (a !== finalScore.away || b !== finalScore.home) {
+              return {
+                reason: `Title says ${bodyTeamB} ${a}-${b} won but Final Score line shows ${finalScore.home}-${finalScore.away}`,
+                titleWinner: `${bodyTeamB} (${a}-${b})`,
+                scoreWinner: `${finalScore.home}-${finalScore.away}`,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Loss-verb check
+    if (!titleWinner) {
+      const lossRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${LOSS_VERBS})\\s+([\\w'\\-\\.]+)`, 'i');
+      const lm = lossRe.exec(title);
+      if (lm) {
+        const subject = lm[1].toLowerCase().trim();
+        const bodyTeamA = extractBodyTeamA(content);
+        const bodyTeamB = extractBodyTeamB(content);
+        if (bodyTeamA && bodyTeamB) {
+          if (teamInString(subject, bodyTeamA)) {
+            // Team A lost → Team B won → scoreWinner should have away > home
+            if (finalScore.away <= finalScore.home) {
+              return {
+                reason: `Title says ${bodyTeamA} lost to ${bodyTeamB} but Final Score line shows ${finalScore.home}-${finalScore.away} (home won)`,
+                titleWinner: `${bodyTeamB} (winner per title)`,
+                scoreWinner: `${finalScore.home}-${finalScore.away} (home winner)`,
+              };
+            }
+          } else if (teamInString(subject, bodyTeamB)) {
+            if (finalScore.home <= finalScore.away) {
+              return {
+                reason: `Title says ${bodyTeamB} lost to ${bodyTeamA} but Final Score line shows ${finalScore.home}-${finalScore.away} (away won)`,
+                titleWinner: `${bodyTeamA} (winner per title)`,
+                scoreWinner: `${finalScore.home}-${finalScore.away} (away winner)`,
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractBodyTeamA(content: string): string | null {
+  const m = content.match(/\*\*Final Score:\*\*\s+([^\d]+?)\s+\d+/);
+  return m ? m[1].trim() : null;
+}
+
+function extractBodyTeamB(content: string): string | null {
+  const m = content.match(/\*\*Final Score:\*\*\s+[^\d]+?\s+\d+\s*,\s+([^\d]+?)\s+\d+/);
+  return m ? m[1].trim() : null;
+}
+
+function teamInString(short: string, longer: string): boolean {
+  if (!short || !longer) return false;
+  const s = short.toLowerCase();
+  const l = longer.toLowerCase();
+  // Check if any 3+ char word from `short` appears in `longer`
+  return s.split(/\s+/).some((w) => w.length >= 3 && l.includes(w));
+}
+
+async function sendTelegramAlert(
+  token: string,
+  chatId: string,
+  post: IncomingPost,
+  mismatch: { reason: string; titleWinner: string; scoreWinner: string },
+): Promise<void> {
+  const text = [
+    `⚠️ *Skipped social draft — title/score mismatch*`,
+    ``,
+    `Article: ${post.title}`,
+    `URL: https://rinkstop.com/news/${post.slug}`,
+    ``,
+    `Reason: ${mismatch.reason}`,
+    ``,
+    `Title winner: ${mismatch.titleWinner}`,
+    `Score winner: ${mismatch.scoreWinner}`,
+    ``,
+    `Action needed: fix the article body or fixture row, then re-run /api/cron/social-draft.`,
+  ].join('\n');
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+    });
+  } catch (_e) { /* best-effort */ }
 }
 
 async function sendTelegramWithImage(args: {
