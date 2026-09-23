@@ -487,10 +487,46 @@ function detectTitleScoreMismatch(
   if (/\btied\b/.test(lower)) {
     titleWinner = 'tie';
   } else if (/\broad win\b/.test(lower)) {
-    // "X earn N-N road win" — winner is whichever team is mentioned first.
-    // Without a clear home/away signal, skip.
-    return null;
-  } else {
+    // "X earn N-N road win" — we need to detect which team won.
+    // The "road win" team is the winner. Find the team name that appears
+    // BEFORE the "earn" verb.
+    const earnMatch = title.match(/([\w'\-\.]+?)\s+\w+\s+\d+\s*[-–]\s*\d+\s+road win/i);
+    if (earnMatch) {
+      const winnerName = earnMatch[1].toLowerCase().trim();
+      const bodyTeamA = extractBodyTeamA(content);
+      const bodyTeamB = extractBodyTeamB(content);
+      if (bodyTeamA && bodyTeamB) {
+        // Winner is bodyTeamA or bodyTeamB depending on which one is
+        // named first in the title.
+        const titleLower = title.toLowerCase();
+        const homeLast = bodyTeamA.toLowerCase().split(/\s+/).filter((w) => w.length > 3).pop() || bodyTeamA.toLowerCase();
+        const awayLast = bodyTeamB.toLowerCase().split(/\s+/).filter((w) => w.length > 3).pop() || bodyTeamB.toLowerCase();
+        const homeIdx = titleLower.indexOf(homeLast);
+        const awayIdx = titleLower.indexOf(awayLast);
+        if (homeIdx >= 0 && (awayIdx < 0 || homeIdx < awayIdx)) {
+          // bodyTeamA is named first = "X earn ... road win" winner
+          // Cross-check: finalScore.home should be > finalScore.away
+          if (finalScore.home <= finalScore.away) {
+            return {
+              reason: `Title says ${bodyTeamA} earned a road win but Final Score line shows ${finalScore.home}-${finalScore.away} (${bodyTeamB} won)`,
+              titleWinner: `${bodyTeamA} (road win per title)`,
+              scoreWinner: `${finalScore.home}-${finalScore.away} (${bodyTeamB} winner)`,
+            };
+          }
+        } else if (awayIdx >= 0) {
+          if (finalScore.away <= finalScore.home) {
+            return {
+              reason: `Title says ${bodyTeamB} earned a road win but Final Score line shows ${finalScore.home}-${finalScore.away} (${bodyTeamA} won)`,
+              titleWinner: `${bodyTeamB} (road win per title)`,
+              scoreWinner: `${finalScore.home}-${finalScore.away} (${bodyTeamA} winner)`,
+            };
+          }
+        }
+      }
+    }
+    // Couldn't resolve — fall through to other checks
+  }
+  if (!titleWinner) {
     const winRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${WIN_VERBS})\\s+([\\w'\\-\\.]+)`, 'i');
     const wm = winRe.exec(title);
     if (wm) {
