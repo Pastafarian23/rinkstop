@@ -32,6 +32,10 @@ import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from
 const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
 const ADMIN_KEY = process.env.ADMIN_API_KEY;
 
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
 async function authOk(request: NextRequest): Promise<{ ok: true; who: string } | { ok: false }> {
   if (ADMIN_KEY) {
     const headerKey = request.headers.get('x-admin-key');
@@ -67,7 +71,7 @@ interface ReviewResponse {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: Props,
 ) {
   const ip = getClientIP(request);
   const rateResult = await checkRateLimit(`admin-article-review:${ip}`, RATE_LIMIT);
@@ -109,7 +113,7 @@ export async function POST(
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
-  const postId = params.id;
+  const { id: postId } = await params;
   const reviewerLabel = authResult.who;
 
   // Build the update payload
@@ -152,7 +156,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: Props,
 ) {
   const authResult = await authOk(request);
   if (!authResult.ok) {
@@ -167,7 +171,7 @@ export async function GET(
   const { data: post, error } = await supabase
     .from('posts')
     .select('id, slug, title, subtitle, content, status, human_review_status, reviewed_at, reviewed_by, review_note, audit_status, last_audit_check_at, last_audit_status, created_at, updated_at, published_at')
-    .eq('id', params.id)
+    .eq('id', (await params).id)
     .maybeSingle();
 
   if (error) {
