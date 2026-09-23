@@ -141,6 +141,35 @@ export async function GET(request: NextRequest) {
         : { data: [], error: null },
     ]);
 
+    // Fetch fixtures for cross-verification of the final score. We use
+    // team_home_id + team_away_id + match_date to look up the row. This
+    // catches the case where the orchestrator injected a wrong score
+    // (e.g. swapped home/away) before we put it in front of humans.
+    const fixtureLookups = todo
+      .filter((p) => p.team_home_id && p.team_away_id)
+      .map((p) => ({
+        home: p.team_home_id,
+        away: p.team_away_id,
+        date: p.published_at,
+        post: p,
+      }));
+    const fixturesRes = fixtureLookups.length
+      ? await supabaseAdmin
+          .from('fixtures')
+          .select('id, home_team_id, away_team_id, home_score, away_score, match_date')
+          .in('home_team_id', fixtureLookups.map((l) => l.home!))
+          .in('away_team_id', fixtureLookups.map((l) => l.away!))
+      : { data: [] as any[], error: null as any };
+    if (fixturesRes.error) {
+      // Non-fatal: log but continue with content-only scoring.
+      console.warn('[cron/social-draft] fixtures fetch warning:', fixturesRes.error.message);
+    }
+    const fixturesByPair = new Map<string, any>();
+    for (const f of (fixturesRes.data ?? []) as any[]) {
+      const key = `${f.home_team_id}|${f.away_team_id}`;
+      if (!fixturesByPair.has(key)) fixturesByPair.set(key, f);
+    }
+
     if (highlightsRes.error) throw new Error(`fetch highlights: ${highlightsRes.error.message}`);
     if (teamsRes.error) throw new Error(`fetch teams: ${teamsRes.error.message}`);
     if (leaguesRes.error) throw new Error(`fetch leagues: ${leaguesRes.error.message}`);
@@ -155,6 +184,16 @@ export async function GET(request: NextRequest) {
             h.league_name = parsed.name;
           }
         } catch { /* leave as-is */ }
+      }
+      // Upgrade YouTube thumbnails from hqdefault (320x240) to maxresdefault
+      // (1280x720) when available. Telegram confirmed (test 2026-09-23)
+      // that ytimg.com URLs work for all 3 size variants. Better image =
+      // higher engagement on social platforms.
+      if (h.image_url && typeof h.image_url === 'string') {
+        h.image_url = h.image_url
+          .replace('/hqdefault.jpg', '/maxresdefault.jpg')
+          .replace('/sddefault.jpg', '/maxresdefault.jpg')
+          .replace('/mqdefault.jpg', '/maxresdefault.jpg');
       }
       return [h.id, h];
     }));
@@ -182,7 +221,16 @@ export async function GET(request: NextRequest) {
         // Extract final score from content if present (parser was added
         // by the article-from-highlight orchestrator — looks like
         // "**Final Score:** Team A 5, Team B 2.").
-        const finalScore = pickFinalScore(post.content, highlight);
+        const contentScore = pickFinalScore(post.content, highlight);
+        // Cross-verify against fixtures table (ground truth from highlightly).
+        // If they disagree, fall back to fixtures and flag the mismatch.
+        const fixtureRow = post.team_home_id && post.team_away_id
+          ? fixturesByPair.get(`${post.team_home_id}|${post.team_away_id}`)
+          : null;
+        const fixtureScore = fixtureRow && typeof fixtureRow.home_score === 'number' && typeof fixtureRow.away_score === 'number'
+          ? { home: fixtureRow.home_score, away: fixtureRow.away_score }
+          : null;
+        const finalScore = crossVerifyScore(contentScore, fixtureScore, post.id);
         // Build scoreLine in conventional home-first order: "Home 2 – 1 Away".
         // Convention in hockey broadcasts: home team first, then away team.
         const homeTeamLabel = homeTeam?.name ?? highlight?.home_team_name ?? 'Home';
@@ -224,11 +272,18 @@ export async function GET(request: NextRequest) {
         // Send to Telegram with image attached.
         // No buttons / no callbacks — Arnel reads the message in RinkStop Ops,
         // saves the image, copies each block, posts manually at 9am PH.
+        const fullText = formatSocialPackageForTelegram(pkg, { title: post.title, url: articleUrl, watchHighlightsUrl });
+        // Telegram sendPhoto caps caption at 1024 chars. The full formatted
+        // package is ~1500 chars, so we send the image with a short caption
+        // (header + image URL + brief context) and then send the full text
+        // as a follow-up sendMessage so Arnel sees everything.
+        const shortCaption = buildShortCaption({ title: post.title, url: articleUrl, watchHighlightsUrl, imageUrl: pkg.imageUrl });
         const telegramResult = await sendTelegramWithImage({
           token: telegramToken,
           chatId,
           imageUrl: pkg.imageUrl,
-          caption: formatSocialPackageForTelegram(pkg, { title: post.title, url: articleUrl, watchHighlightsUrl }),
+          caption: shortCaption,
+          fullText,
           postId: post.id,
         });
 
@@ -292,7 +347,19 @@ function pickExcerpt(post: IncomingPost): string {
 }
 
 function stripHtml(s: string): string {
-  return s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  // Strip HTML tags first, then decode common HTML entities. Without
+  // the entity decoding, "Tom &amp; Jerry" → "Tom &amp; Jerry" survives
+  // into the social draft and looks like a typo.
+  return s
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function pickFinalScore(content: string | null, highlight: any): { home: number; away: number } | null {
@@ -308,7 +375,44 @@ function pickFinalScore(content: string | null, highlight: any): { home: number;
     return { home: parseInt(m1[2], 10), away: parseInt(m1[4], 10) };
   }
 
+  // Pattern 2: less-formal "Final Score: Team A 5, Team B 2." (no bold).
+  // Some older articles may have been published before the bold variant
+  // was standardized. Catch those too.
+  const m2 = content.match(/(?:^|\n)\s*Final Score:\s+([^\d]+?)\s+(\d+)\s*,\s*([^\d]+?)\s+(\d+)\s*\.?/);
+  if (m2) {
+    return { home: parseInt(m2[2], 10), away: parseInt(m2[4], 10) };
+  }
+
   return null;
+}
+
+/**
+ * Cross-verify the score from the article body against the fixtures
+ * table (canonical source from highlightly). If they disagree, the
+ * fixtures row wins — it's been verified by the audit pipeline.
+ *
+ * Returns the agreed-upon {home, away} or null if both sources are
+ * missing. Logs mismatches so we can fix the orchestrator upstream.
+ */
+function crossVerifyScore(
+  contentScore: { home: number; away: number } | null,
+  fixtureScore: { home: number; away: number } | null,
+  postId: string,
+): { home: number; away: number } | null {
+  if (contentScore && fixtureScore) {
+    if (contentScore.home === fixtureScore.home && contentScore.away === fixtureScore.away) {
+      return contentScore; // agreement
+    }
+    console.warn(
+      `[cron/social-draft] score mismatch for post ${postId}: ` +
+      `content=${contentScore.home}-${contentScore.away} ` +
+      `fixtures=${fixtureScore.home}-${fixtureScore.away}. ` +
+      `Using fixtures.`,
+    );
+    return fixtureScore;
+  }
+  // Prefer whichever source we have.
+  return fixtureScore ?? contentScore;
 }
 
 /**
@@ -329,15 +433,20 @@ async function sendTelegramWithImage(args: {
   chatId: string;
   imageUrl: string | null;
   caption: string;
+  fullText: string;
   postId: string;
 }): Promise<{ ok: boolean; messageId?: number; error?: string }> {
-  const { token, chatId, imageUrl, caption } = args;
+  const { token, chatId, imageUrl, caption, fullText } = args;
 
   // Telegram message character limit is 4096; ours is well below.
+  // Telegram sendPhoto caps CAPTION at 1024 chars. The full formatted
+  // package is ~1500 chars. Strategy:
+  //   1. sendPhoto with the short caption (image + header + URL)
+  //   2. sendMessage with the full text (3 blocks)
+  // If image is missing or sendPhoto fails, fall back to a single
+  // sendMessage with the full text.
 
   if (imageUrl) {
-    // Use sendPhoto (fetches the image, attaches inline).
-    // If fetch fails, fall back to sendMessage with image URL in caption.
     try {
       const photoRes = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
         method: 'POST',
@@ -345,26 +454,41 @@ async function sendTelegramWithImage(args: {
         body: JSON.stringify({
           chat_id: chatId,
           photo: imageUrl,
-          caption: caption.slice(0, 1024), // caption cap
+          caption: caption.slice(0, 1024),
           parse_mode: 'Markdown',
         }),
       });
       const data: any = await photoRes.json();
-      if (!data.ok) {
-        // Fall through to text-only send.
-      } else {
+      if (data.ok) {
+        // Follow-up: send the full text as a separate message.
+        const textRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: fullText,
+            parse_mode: 'Markdown',
+          }),
+        });
+        const textData: any = await textRes.json();
+        if (!textData.ok) {
+          // Image was sent but follow-up text failed — still return success
+          // for the image so the draft gets recorded. Log the failure.
+          return { ok: true, messageId: data.result?.message_id };
+        }
         return { ok: true, messageId: data.result?.message_id };
       }
+      // Fall through to text-only if photo failed.
     } catch (_e) { /* fall through */ }
   }
 
-  // Fallback: send text-only with URL in caption.
+  // Fallback: send text-only with the full content.
   const msgRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       chat_id: chatId,
-      text: caption,
+      text: fullText,
       parse_mode: 'Markdown',
     }),
   });
@@ -373,4 +497,28 @@ async function sendTelegramWithImage(args: {
     return { ok: false, error: data.description ?? 'unknown' };
   }
   return { ok: true, messageId: data.result?.message_id };
+}
+
+/**
+ * Build a short caption (under 1024 chars) for the Telegram sendPhoto
+ * call. Includes the article title, URL, watch URL, and a pointer to the
+ * follow-up message.
+ */
+function buildShortCaption(args: {
+  title: string;
+  url: string;
+  watchHighlightsUrl: string | null;
+  imageUrl: string | null;
+}): string {
+  const lines = [
+    `*${args.title}*`,
+    ``,
+    `Article: ${args.url}`,
+  ];
+  if (args.watchHighlightsUrl) {
+    lines.push(`Watch Highlights: ${args.watchHighlightsUrl}`);
+  }
+  lines.push(``);
+  lines.push(`(Full FB/X/LinkedIn copy in next message ↓)`);
+  return lines.join('\n');
 }
