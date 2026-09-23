@@ -421,6 +421,87 @@ function extractTitleFromBody(body) {
   return title;
 }
 
+/**
+ * Extract the winner (and only the winner) from a title.
+ * Returns 'home' | 'away' | 'tie' | null.
+ *
+ * Heuristic: which team name appears first (and in a winning context)?
+ * Win-verbs: edges, beats, tops, handles, downs, rolls past, blanks,
+ * shuts out, stuns, knocks off, earns (road win), fall to, drop to,
+ * surrender to, lose to.
+ *
+ * Tie-verbs: tied, draw (rare in hockey articles).
+ *
+ * Does NOT parse scores from the title — that's separately handled in
+ * the social-draft pipeline. We just need the winner.
+ */
+function extractWinnerFromTitle(title, homeName, awayName) {
+  if (!title) return null;
+  const lower = title.toLowerCase();
+  const homeLow = (homeName || '').toLowerCase();
+  const awayLow = (awayName || '').toLowerCase();
+
+  // Build "last word" versions for fuzzy matching (e.g. "Pittsburgh Penguins" → "penguins")
+  const homeLast = homeLow.split(/\s+/).filter(w => w.length > 2).pop() || '';
+  const awayLast = awayLow.split(/\s+/).filter(w => w.length > 2).pop() || '';
+
+  // Tie phrases
+  if (/\btied\b/.test(lower)) return 'tie';
+  // "earn N-N road win" — the team named first (typically away) won
+  if (/\broad win\b/.test(lower)) {
+    // Identify which team is mentioned first
+    const homeIdx = lower.indexOf(homeLast);
+    const awayIdx = lower.indexOf(awayLast);
+    if (homeIdx >= 0 && (awayIdx < 0 || homeIdx < awayIdx)) return 'home';
+    if (awayIdx >= 0) return 'away';
+    return null;
+  }
+
+  // Win verbs (subject of verb is the winner)
+  const WIN_VERBS = 'edge[sd]?|beat(?:en)?|top[s]?|handle[sd]?|down(?:ed)?|roll[s]? past|blank(?:ed)?|shut[s]? out|stun(?:ned)?|knock[s]?? off|stuns?';
+  const LOSS_VERBS = 'falls? to|drops? to|loses? to|surrenders? to|lose to|fall to|drop to';
+
+  // Try win verbs: "<winner> <verb> <loser>"
+  const winRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${WIN_VERBS})\\s+([\\w'\\-\\.]+)`, 'i');
+  const wm = winRe.exec(title);
+  if (wm) {
+    const beforeVerb = wm[1].toLowerCase().trim();
+    const afterVerb = wm[2].toLowerCase().trim();
+    // Determine which team the "before" subject is
+    if (beforeVerb.includes(homeLast) || homeLast.includes(beforeVerb.split(/\s+/).pop() || '')) {
+      return 'home';
+    }
+    if (beforeVerb.includes(awayLast) || awayLast.includes(beforeVerb.split(/\s+/).pop() || '')) {
+      return 'away';
+    }
+    // "before" matched the loser's name? Then winner is the OTHER team.
+    if (afterVerb.includes(homeLast) || homeLast.includes(afterVerb.split(/\s+/).pop() || '')) {
+      return 'away';
+    }
+    if (afterVerb.includes(awayLast) || awayLast.includes(afterVerb.split(/\s+/).pop() || '')) {
+      return 'home';
+    }
+  }
+
+  // Try loss verbs: "<loser> <loss-verb> <winner>"
+  const lossRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${LOSS_VERBS})\\s+([\\w'\\-\\.]+)`, 'i');
+  const lm = lossRe.exec(title);
+  if (lm) {
+    const subject = lm[1].toLowerCase().trim();
+    const target = lm[2].toLowerCase().trim();
+    if (subject.includes(homeLast) || homeLast.includes(subject.split(/\s+/).pop() || '')) {
+      return 'away'; // home lost
+    }
+    if (subject.includes(awayLast) || awayLast.includes(subject.split(/\s+/).pop() || '')) {
+      return 'home'; // away lost
+    }
+    if (target.includes(homeLast)) return 'home';
+    if (target.includes(awayLast)) return 'away';
+  }
+
+  return null;
+}
+
 function buildLlmPrompt(factsBlock, options = {}) {
   const noTranscript = options.noTranscript === true;
   // Trim the transcript to the most relevant bits for the LLM context.
@@ -720,11 +801,40 @@ async function insertDraft(highlight, meta, body, fixtureRow, webRecapData = nul
   }
   const contentWithFooter = `${bodyClean}${finalScoreLine}\n\n*Source: ${source_cite}*`;
 
+  // Title-vs-score consistency check (added 2026-09-23 per Arnel directive
+  // 'Why are you not just drafting posts and preparing them with image in
+  // rinkstop ops'). If the LLM-generated title says one team won but the
+  // fixture data says the other team won, the article is internally
+  // inconsistent. This was happening because highlightly's fixtures import
+  // sometimes flips home/away scores. We detect this BEFORE inserting and
+  // force the article to draft status (so it doesn't auto-publish) plus
+  // append a review note. Audit pipeline + nightly cron should also catch
+  // these (see scripts/_audit-pipeline.cjs) but this is the fast-path.
+  let titleScoreMismatch = false;
+  let titleScoreMismatchNote = '';
+  if (fixtureRow && typeof resolvedHomeScore === 'number' && typeof resolvedAwayScore === 'number'
+      && title && resolvedHomeName && resolvedAwayName) {
+    const titleWinner = extractWinnerFromTitle(title, resolvedHomeName, resolvedAwayName);
+    if (titleWinner === 'home' && resolvedHomeScore < resolvedAwayScore) {
+      titleScoreMismatch = true;
+      titleScoreMismatchNote = `[REVIEW: Title says "${resolvedHomeName} won" but fixture shows ${resolvedHomeScore}-${resolvedAwayScore} (${resolvedAwayName} won). Fixture data may be wrong.]`;
+    } else if (titleWinner === 'away' && resolvedAwayScore < resolvedHomeScore) {
+      titleScoreMismatch = true;
+      titleScoreMismatchNote = `[REVIEW: Title says "${resolvedAwayName} won" but fixture shows ${resolvedHomeScore}-${resolvedAwayScore} (${resolvedHomeName} won). Fixture data may be wrong.]`;
+    } else if (titleWinner === 'tie' && resolvedHomeScore !== resolvedAwayScore) {
+      titleScoreMismatch = true;
+      titleScoreMismatchNote = `[REVIEW: Title says tied but fixture shows ${resolvedHomeScore}-${resolvedAwayScore}. Fixture data may be wrong.]`;
+    }
+  }
+  const finalContent = titleScoreMismatch
+    ? `${contentWithFooter}\n\n---\n\n${titleScoreMismatchNote}\n`
+    : contentWithFooter;
+
   const insertPayload = {
     slug,
     title,
     subtitle,
-    content: contentWithFooter,
+    content: finalContent,
     author_name: 'RinkStop',
     author_role: 'Highlight Desk',
     status: 'draft',
