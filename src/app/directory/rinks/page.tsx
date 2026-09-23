@@ -29,10 +29,10 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const n = await getRinkCount(country);
   const desc = country
     ? `Browse ${n.toLocaleString()} ice rinks and arenas in ${country}. Find public skating, hockey, and curling facilities — with addresses, capacity, and ice size.`
-    : `Browse 1,917 ice rinks and arenas across 57 countries and 833 cities. Find public skating, hockey, and curling facilities worldwide — searchable by city, state, or country.`;
+    : `Browse 1,856 ice rinks and arenas across 78 countries and 833 cities. Find public skating, hockey, and curling facilities worldwide — searchable by city, state, or country.`;
   const title = country
     ? `Ice Rinks in ${country} — ${n.toLocaleString()} Arenas & Facilities`
-    : '1,917 Ice Rinks Across 57 Countries — Find One Near You';
+    : '1,856 Ice Rinks Across 78 Countries — Find One Near You';
   return {
     title,
     description: desc,

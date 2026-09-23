@@ -20,12 +20,12 @@ export const metadata: Metadata = {
   // impressions (Google gave up showing it) and CTR.
   title: 'Hockey Leagues Worldwide — Pro, Junior, College',
   description:
-    'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.',
+    'Browse 240+ hockey leagues across 78 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.',
   alternates: { canonical: 'https://rinkstop.com/directory/leagues' },
   openGraph: withDefaultOg({
     title: 'Hockey Leagues Worldwide — Pro, Junior, College',
     description:
-      'Browse 240+ hockey leagues across 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.',
+      'Browse 240+ hockey leagues across 78 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.',
     url: 'https://rinkstop.com/directory/leagues',
     siteName: 'RinkStop',
     type: 'website',
@@ -156,7 +156,7 @@ export default async function LeaguesPage() {
             Hockey Leagues Worldwide
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginTop: '0.5rem', maxWidth: '720px' }}>
-            240+ leagues across 57 countries — professional, junior, college, international, and amateur tiers.
+            305+ leagues across 78 countries — professional, junior, college, international, and amateur tiers.
           </p>
         </div>
 

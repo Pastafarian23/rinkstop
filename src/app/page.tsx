@@ -320,7 +320,7 @@ export default async function Home() {
         knowsAbout: [
           // Discipline
           'Ice Hockey',
-          // Entity types we cover (verified 2026-09-02: 1,917 rinks, 3,243 teams, 6,351 players, 303 leagues, 85 federations)
+          // Entity types we cover (verified 2026-09-02: 1,856 rinks, 2,601 teams, 6,351 players, 305 leagues, 85 federations)
           'Hockey Rinks', 'Ice Rinks', 'Hockey Teams', 'Hockey Players', 'Hockey Leagues', 'Hockey Federations',
           // Major North American leagues
           'NHL', 'AHL', 'ECHL', 'PWHL', 'NCAA Hockey', 'USports Hockey',

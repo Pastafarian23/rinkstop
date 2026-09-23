@@ -599,7 +599,7 @@ export default function FAQPage() {
         }}
       >
         <strong style={{ color: '#38BDF8' }}>What is RinkStop?</strong>{' '}
-        RinkStop is the world’s hockey directory: 1,800+ rinks, 3,200+ teams, 6,300+ players, 240+ leagues, and 140+ countries in one searchable index. It is free to browse, free to claim your own listing, and includes six free hockey calculators (cost, skate size, glove size, stick size, goalie gear, junior eligibility). RinkStop also brokers ice-time bookings through its <Link href="/ice-marketplace" style={{ color: '#38BDF8' }}>ice marketplace</Link> and tracks verified career data via <Link href="/dashboard/passport" style={{ color: '#38BDF8' }}>Hockey Passport</Link>.
+        RinkStop is the world’s hockey directory: 1,800+ rinks, 3,200+ teams, 6,300+ players, 305+ leagues, and 140+ countries in one searchable index. It is free to browse, free to claim your own listing, and includes six free hockey calculators (cost, skate size, glove size, stick size, goalie gear, junior eligibility). RinkStop also brokers ice-time bookings through its <Link href="/ice-marketplace" style={{ color: '#38BDF8' }}>ice marketplace</Link> and tracks verified career data via <Link href="/dashboard/passport" style={{ color: '#38BDF8' }}>Hockey Passport</Link>.
       </aside>
 
       {/* Quick jump links to each section */}

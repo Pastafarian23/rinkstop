@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     default: 'RinkStop — The World\'s Hockey Directory',
     template: '%s | RinkStop',
   },
-  description: "RinkStop is the world's hockey directory — 3,243+ teams, 240+ leagues, 6,350+ players, and 1,917 ice rinks across 57 countries. Search by name, league, country, or city.",
+  description: "RinkStop is the world's hockey directory — 2,601+ teams, 305+ leagues, 6,350+ players, and 1,856 ice rinks across 78 countries. Search by name, league, country, or city.",
   // WebSite schema — homepage only. Helps Google understand
   openGraph: {
     siteName: 'RinkStop',

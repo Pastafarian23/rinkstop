@@ -31,7 +31,7 @@ export default async function NewBookingPage() {
   await requireAdmin();
 
   // Load rinks (active only) + team_workspaces for the dropdowns.
-  // 1000-row cap is fine — pilot has 1,917 rinks but most are inactive.
+  // 1000-row cap is fine — pilot has 1,856 rinks but most are inactive.
   const [{ data: rinks }, { data: teams }] = await Promise.all([
     supabaseAdmin
       .from('rinks')

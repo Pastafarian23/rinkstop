@@ -54,7 +54,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     if (country) {
       return `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info — searchable by league tier and city.`;
     }
-    return `Find any hockey team in the world. ${teamCount.toLocaleString()}+ active teams across 240 leagues and 57 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
+    return `Find any hockey team in the world. ${teamCount.toLocaleString()}+ active teams across 305 leagues and 78 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
   })();
   const canonicalParams = new URLSearchParams();
   if (country) canonicalParams.set('country', country);
