@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { identityResolver, isPassportInternalApiEnabled } from '@/lib/passport';
+import { requireInternalAuth } from '@/lib/internal-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,9 @@ interface ResolveBody {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = requireInternalAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   if (!isPassportInternalApiEnabled()) {
     return NextResponse.json(
       { error: 'Passport functionality is disabled' },

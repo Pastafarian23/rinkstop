@@ -1,7 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireInternalAuth } from '@/lib/internal-auth';
 
-export async function POST() {
+// SECURITY: one-time migration route. Was previously unauthenticated.
+// Triggered via x-internal-key header (INTERNAL_API_KEY env var) or service_role.
+// After the index is created in production, this route can be deleted.
+export async function POST(request: NextRequest) {
+  const auth = requireInternalAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
   const sql = `
     DO $$
     BEGIN
