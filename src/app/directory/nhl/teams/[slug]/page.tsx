@@ -182,7 +182,7 @@ export default async function TeamPage({ params }: Props) {
     teamId ? getCurrentStandingForTeam(teamId, team.name) : Promise.resolve(null),
     teamId ? getTeamRecentGames(teamId, 8) : Promise.resolve([]),
     teamId ? getTeamUpcomingGames(teamId, 5) : Promise.resolve([]),
-    teamId ? getTeamPlayers(teamId, team.name, 20) : Promise.resolve([]),
+    teamId ? getTeamPlayers(teamId, team.name, 50) : Promise.resolve([]),
     teamId ? getTeamCoachingStaff(teamId, '2025-26') : Promise.resolve([]),
   ]);
 

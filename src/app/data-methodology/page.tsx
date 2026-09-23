@@ -26,7 +26,7 @@ export default function DataMethodologyPage() {
 
       <div style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.8, fontSize: '1rem' }}>
         <p style={{ marginBottom: '1.5rem' }}>
-          RinkStop maintains a directory of more than 9,500 hockey listings — rinks, teams, players, and leagues across roughly 80 countries. This page describes how that data is sourced, how it is kept current, and how errors are handled.
+          RinkStop maintains a directory of more than 11,700 hockey listings — rinks, teams, players, and leagues across 78 countries. This page describes how that data is sourced, how it is kept current, and how errors are handled.
         </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Where the data comes from</h2>
@@ -87,17 +87,17 @@ export default function DataMethodologyPage() {
           Under COPPA, U.S. operators of websites and online services directed at children under 13 must obtain verifiable parental consent before collecting personal information from those children. RinkStop does not collect personal information from anyone under 13. Player profiles, team rosters, and league directories do not display home addresses, personal phone numbers, or unverified birth dates for minors. Where a minor&rsquo;s birth date is shown, it is sourced from a recognized federation or league registry and confirmed by the team&rsquo;s verified operator. Where the birth date is unknown, the listing says so. We do not allow direct messaging between adult users and minor profiles without parent-managed claim verification.
         </p>
 
-        <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginTop: '1.75rem', marginBottom: '0.75rem' }}>TFAT framework (Tagged for Adolescents &amp; Teens)</h3>
+        <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginTop: '1.75rem', marginBottom: '0.75rem' }}>Youth-audience advertising policy</h3>
         <p style={{ marginBottom: '1rem' }}>
-          RinkStop applies a &ldquo;Tagged for Adolescents &amp; Teens&rdquo; (TFAT) classification to directory sections and editorial content that is directed at audiences under 18. Pages tagged TFAT are excluded from personalized advertising under Google AdSense policy &mdash; the AdSense script is not loaded on TFAT pages, even where they would otherwise be eligible. The TFAT class applies to:
+          RinkStop excludes personalized advertising from directory sections and editorial content that is directed at audiences under 18, in line with Google AdSense policy for family-safe and youth-directed content. The AdSense script is not loaded on those pages, even where they would otherwise be eligible. This applies to:
         </p>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
-          <li><strong>Directory landing pages:</strong> <code>/directory/youth-hockey</code> and <code>/guides/youth</code></li>
+          <li><strong>Directory landing pages:</strong> youth-hockey directories and youth-focused guides</li>
           <li><strong>Editorial articles tagged for youth audiences:</strong> articles whose primary topic is youth participation, learn-to-play, parent guidance, or junior development</li>
           <li><strong>Player pages for minors:</strong> any player profile whose birth date falls into the under-18 range, when age is verifiable</li>
         </ul>
         <p style={{ marginBottom: '1rem' }}>
-          The TFAT tag is enforced at the script-load layer in <code>src/app/layout.tsx</code> via the <code>ADSENSE_EXCLUDED_PREFIXES</code> route guard. The exclude list is evaluated on every page render, and the AdSense <code>pagead2.adsbygoogle</code> script only loads when the requested path is not in the exclude list. The exclude list is the source of truth for the policy; new TFAT pages must be added to that list before they ship.
+          The exclusion list is the source of truth for the policy; new youth-audience pages must be added to the AdSense exclusion list before they ship. The list is maintained by the engineering team and is not publicly listed (it contains internal route patterns).
         </p>
 
         <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginTop: '1.75rem', marginBottom: '0.75rem' }}>Parent-managed claims</h3>

@@ -213,12 +213,13 @@ export async function getTeamUpcomingGames(highlightlyId: string, limit = 10): P
 // Top players for a team (by name only until bio is backfilled)
 // nhl_players.current_team_id is stored as the SAME highlightly ID as nhl_teams.id for most teams,
 // but some entries use the larger NHL-API style ID. We try both, then fall back to name match.
-export async function getTeamPlayers(highlightlyId: string, teamName?: string, limit = 20): Promise<NhlPlayer[]> {
+export async function getTeamPlayers(highlightlyId: string, teamName?: string, limit = 50): Promise<NhlPlayer[]> {
   // Try direct ID match first
   let { data, error } = await supabaseAdmin
     .from('nhl_players')
     .select('*')
     .eq('current_team_id', String(highlightlyId))
+    .eq('is_active', true)
     .order('full_name', { ascending: true })
     .limit(limit);
 
@@ -237,6 +238,7 @@ export async function getTeamPlayers(highlightlyId: string, teamName?: string, l
         .from('nhl_players')
         .select('*')
         .eq('current_team_id', String(altId))
+        .eq('is_active', true)
         .order('full_name', { ascending: true })
         .limit(limit);
       data = res.data;
