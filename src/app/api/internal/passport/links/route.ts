@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { passportRepository, isPassportInternalApiEnabled } from '@/lib/passport';
 import type { PassportEntityType } from '@/lib/passport';
+import { requireInternalAuth } from '@/lib/internal-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,9 @@ const VALID_ENTITY_TYPES: PassportEntityType[] = [
 ];
 
 export async function POST(req: NextRequest) {
+  const auth = requireInternalAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   if (!isPassportInternalApiEnabled()) {
     return NextResponse.json(
       { error: 'Passport functionality is disabled' },

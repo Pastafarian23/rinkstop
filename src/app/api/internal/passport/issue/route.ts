@@ -8,12 +8,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { passportService, PassportDisabledError } from '@/lib/passport';
 import { isPassportInternalApiEnabled } from '@/lib/passport';
+import { requireInternalAuth } from '@/lib/internal-auth';
 
 export const dynamic = 'force-dynamic';
 
 const VALID_SOURCES = ['migration', 'signup', 'admin', 'system'] as const;
 
 export async function POST(req: NextRequest) {
+  // Shared-secret auth: x-internal-key header must match INTERNAL_API_KEY env var
+  // (or request must come from service_role apikey). Feature flag is NOT auth.
+  const auth = requireInternalAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   if (!isPassportInternalApiEnabled()) {
     return NextResponse.json(
       { error: 'Passport functionality is disabled' },

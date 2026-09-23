@@ -1,15 +1,23 @@
 // POST /api/highlightly/players/roster-sync
 // Syncs NHL player rosters from highlightly API into Supabase players table
 // Query params: batch=N (which 1000-player page to process), dryRun=true
+//
+// SECURITY: requires x-internal-key header (INTERNAL_API_KEY env var) or
+// service_role apikey. Without this gate, anyone could trigger expensive
+// sync operations and exhaust Highlightly API quota.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
+import { requireInternalAuth } from '@/lib/internal-auth';
 
 const HIGHLIGHTLY_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
 const NHL_BASE_URL = 'https://nhl.highlightly.net';
 const RAPIDAPI_HOST = 'nhl-ncaah-api.p.rapidapi.com';
 
 export async function POST(request: NextRequest) {
+  const auth = requireInternalAuth(request);
+  if (auth instanceof NextResponse) return auth;
+
   const { searchParams } = new URL(request.url);
   const dryRun = searchParams.get('dryRun') === 'true';
   const batchNum = parseInt(searchParams.get('batch') || '0', 10);

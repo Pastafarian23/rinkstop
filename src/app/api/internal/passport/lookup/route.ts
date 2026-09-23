@@ -8,10 +8,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { passportLookupService } from '@/lib/passport';
 import { isPassportInternalApiEnabled } from '@/lib/passport';
+import { requireInternalAuth } from '@/lib/internal-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
+  const auth = requireInternalAuth(req);
+  if (auth instanceof NextResponse) return auth;
+
   if (!isPassportInternalApiEnabled()) {
     return NextResponse.json(
       { error: 'Passport functionality is disabled' },
