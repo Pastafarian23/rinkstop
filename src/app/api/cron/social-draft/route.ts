@@ -192,14 +192,15 @@ export async function GET(request: NextRequest) {
           pullQuote: null,
         });
 
-        // Send to Telegram with image + inline buttons.
+        // Send to Telegram with image attached.
+        // No buttons / no callbacks — Arnel reads the message in RinkStop Ops,
+        // saves the image, copies each block, posts manually at 9am PH.
         const telegramResult = await sendTelegramWithImage({
           token: telegramToken,
           chatId,
           imageUrl: pkg.imageUrl,
           caption: formatSocialPackageForTelegram(pkg, { title: post.title, url: articleUrl }),
           postId: post.id,
-          draftId: null,
         });
 
         if (!telegramResult.ok) {
@@ -287,20 +288,10 @@ async function sendTelegramWithImage(args: {
   imageUrl: string | null;
   caption: string;
   postId: string;
-  draftId: string | null;
 }): Promise<{ ok: boolean; messageId?: number; error?: string }> {
-  const { token, chatId, imageUrl, caption, postId } = args;
+  const { token, chatId, imageUrl, caption } = args;
 
   // Telegram message character limit is 4096; ours is well below.
-  const inlineKeyboard = {
-    inline_keyboard: [
-      [
-        { text: '✅ Approve', callback_data: `social:approve:${postId}` },
-        { text: '❌ Reject', callback_data: `social:reject:${postId}` },
-        { text: '✏ Edit', callback_data: `social:edit:${postId}` },
-      ],
-    ],
-  };
 
   if (imageUrl) {
     // Use sendPhoto (fetches the image, attaches inline).
@@ -314,7 +305,6 @@ async function sendTelegramWithImage(args: {
           photo: imageUrl,
           caption: caption.slice(0, 1024), // caption cap
           parse_mode: 'Markdown',
-          reply_markup: inlineKeyboard,
         }),
       });
       const data: any = await photoRes.json();
@@ -334,7 +324,6 @@ async function sendTelegramWithImage(args: {
       chat_id: chatId,
       text: caption,
       parse_mode: 'Markdown',
-      reply_markup: inlineKeyboard,
     }),
   });
   const data: any = await msgRes.json();
