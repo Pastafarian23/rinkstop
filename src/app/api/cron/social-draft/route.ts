@@ -249,12 +249,17 @@ export async function GET(request: NextRequest) {
           : null;
         const finalScore = crossVerifyScore(contentScore, fixtureScore, post.id);
 
+        // Build scoreLine in conventional home-first order: "Home 2 – 1 Away".
+        // Convention in hockey broadcasts: home team first, then away team.
+        const homeTeamLabel = homeTeam?.name ?? highlight?.home_team_name ?? 'Home';
+        const awayTeamLabel = awayTeam?.name ?? highlight?.away_team_name ?? 'Away';
+
         // Title-vs-score consistency check (added 2026-09-23 per Arnel directive).
         // If the post title says one team won but the Final Score line + fixture
         // say the other team won, the article is internally inconsistent.
         // REFUSE to draft a social post from an inconsistent article — better
         // to skip than to put wrong information on social media.
-        const titleInconsistency = detectTitleScoreMismatch(post.title, post.content, finalScore);
+        const titleInconsistency = detectTitleScoreMismatch(post.title, post.content, finalScore, homeTeamLabel, awayTeamLabel);
         if (titleInconsistency) {
           console.warn(
             `[cron/social-draft] skipping post ${post.id} — title-vs-score inconsistency: ${titleInconsistency.reason}`,
@@ -266,10 +271,7 @@ export async function GET(request: NextRequest) {
           result.errorDetails.push(`${post.id}: skipped — ${titleInconsistency.reason}`);
           continue;
         }
-        // Build scoreLine in conventional home-first order: "Home 2 – 1 Away".
-        // Convention in hockey broadcasts: home team first, then away team.
-        const homeTeamLabel = homeTeam?.name ?? highlight?.home_team_name ?? 'Home';
-        const awayTeamLabel = awayTeam?.name ?? highlight?.away_team_name ?? 'Away';
+
         const scoreLine = finalScore
           ? `${homeTeamLabel} ${finalScore.home} – ${finalScore.away} ${awayTeamLabel}`
           : null;
@@ -475,135 +477,72 @@ function detectTitleScoreMismatch(
   title: string | null,
   content: string | null,
   finalScore: { home: number; away: number } | null,
+  homeTeamName: string | null,
+  awayTeamName: string | null,
 ): { reason: string; titleWinner: string; scoreWinner: string } | null {
-  if (!title || !content || !finalScore) return null;
+  if (!title || !content || !finalScore || !homeTeamName || !awayTeamName) return null;
 
-  const WIN_VERBS = 'edge[sd]?|beat(?:en)?|top[s]?|handle[sd]?|down(?:ed)?|roll[s]? past|blank(?:ed)?|shut[s]? out|stun(?:ned)?|knock[s]? off';
-  const LOSS_VERBS = 'falls? to|drops? to|loses? to|surrenders? to';
+  // Parse Final Score line: "<winnerName> <winnerScore>, <loserName> <loserScore>"
+  const bodyScoreMatch = content.match(/\*\*Final Score:\*\*\s+([^\d]+?)\s+(\d+)\s*,\s+([^\d]+?)\s+(\d+)/);
+  if (!bodyScoreMatch) return null;
+  const bodyTeamA = bodyScoreMatch[1].trim();
+  const bodyScoreA = parseInt(bodyScoreMatch[2], 10);
+  const bodyTeamB = bodyScoreMatch[3].trim();
+  const bodyScoreB = parseInt(bodyScoreMatch[4], 10);
 
-  let titleWinner: 'home' | 'away' | 'tie' | null = null;
+  // Determine winner's team from the title
   const lower = title.toLowerCase();
+  let titleWinnerName: string | null = null;
 
-  if (/\btied\b/.test(lower)) {
-    titleWinner = 'tie';
-  } else if (/\broad win\b/.test(lower)) {
-    // "X earn N-N road win" — we need to detect which team won.
-    // The "road win" team is the winner. Find the team name that appears
-    // BEFORE the "earn" verb.
+  if (/\broad win\b/.test(lower)) {
+    // "X earn N-N road win" — winner is X
     const earnMatch = title.match(/([\w'\-\.]+?)\s+\w+\s+\d+\s*[-–]\s*\d+\s+road win/i);
-    if (earnMatch) {
-      const winnerName = earnMatch[1].toLowerCase().trim();
-      const bodyTeamA = extractBodyTeamA(content);
-      const bodyTeamB = extractBodyTeamB(content);
-      if (bodyTeamA && bodyTeamB) {
-        // Winner is bodyTeamA or bodyTeamB depending on which one is
-        // named first in the title.
-        const titleLower = title.toLowerCase();
-        const homeLast = bodyTeamA.toLowerCase().split(/\s+/).filter((w) => w.length > 3).pop() || bodyTeamA.toLowerCase();
-        const awayLast = bodyTeamB.toLowerCase().split(/\s+/).filter((w) => w.length > 3).pop() || bodyTeamB.toLowerCase();
-        const homeIdx = titleLower.indexOf(homeLast);
-        const awayIdx = titleLower.indexOf(awayLast);
-        if (homeIdx >= 0 && (awayIdx < 0 || homeIdx < awayIdx)) {
-          // bodyTeamA is named first = "X earn ... road win" winner
-          // Cross-check: finalScore.home should be > finalScore.away
-          if (finalScore.home <= finalScore.away) {
-            return {
-              reason: `Title says ${bodyTeamA} earned a road win but Final Score line shows ${finalScore.home}-${finalScore.away} (${bodyTeamB} won)`,
-              titleWinner: `${bodyTeamA} (road win per title)`,
-              scoreWinner: `${finalScore.home}-${finalScore.away} (${bodyTeamB} winner)`,
-            };
-          }
-        } else if (awayIdx >= 0) {
-          if (finalScore.away <= finalScore.home) {
-            return {
-              reason: `Title says ${bodyTeamB} earned a road win but Final Score line shows ${finalScore.home}-${finalScore.away} (${bodyTeamA} won)`,
-              titleWinner: `${bodyTeamB} (road win per title)`,
-              scoreWinner: `${finalScore.home}-${finalScore.away} (${bodyTeamA} winner)`,
-            };
-          }
-        }
-      }
+    if (earnMatch) titleWinnerName = earnMatch[1].toLowerCase().trim();
+  } else if (/\btied\b/.test(lower)) {
+    if (finalScore.home !== finalScore.away) {
+      return {
+        reason: `Title says tied but Final Score line shows ${bodyScoreA}-${bodyScoreB}`,
+        titleWinner: 'tie',
+        scoreWinner: `${bodyScoreA}-${bodyScoreB}`,
+      };
     }
-    // Couldn't resolve — fall through to other checks
-  }
-  if (!titleWinner) {
-    const winRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${WIN_VERBS})\\s+([\\w'\\-\\.]+)`, 'i');
+    return null;
+  } else {
+    // Win-verb patterns
+    const WIN_VERBS = 'edge[sd]?|beat(?:en)?|top[s]?|handle[sd]?|down(?:ed)?|roll[s]? past|blank(?:ed)?|shut[s]? out|stun(?:ned)?|knock[s]? off';
+    const winRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${WIN_VERBS})\\s+`, 'i');
     const wm = winRe.exec(title);
-    if (wm) {
-      const beforeVerb = wm[1].toLowerCase().trim();
-      // We don't have team names here — use Final Score's winner instead.
-      // The body Final Score line tells us which team is which (Team A, Team B).
-      // We can't map "beforeVerb" to home/away without names, so instead we
-      // compare the SCORE inferred from the title vs the finalScore.
-      // Title says "<team> <verb> <team> N - M" → winner scored N.
-      // Look for a score pattern in the title.
-      const scoreInTitle = title.match(/\b(\d+)\s*[-–]\s*(\d+)\b/);
-      if (scoreInTitle) {
-        const a = parseInt(scoreInTitle[1], 10);
-        const b = parseInt(scoreInTitle[2], 10);
-        // The "beforeVerb" team won. If beforeVerb contains a team name that
-        // also appears in the body's Final Score Team A or Team B, we know
-        // which slot.
-        const bodyTeamA = extractBodyTeamA(content);
-        const bodyTeamB = extractBodyTeamB(content);
-        if (bodyTeamA && bodyTeamB) {
-          if (teamInString(beforeVerb, bodyTeamA)) {
-            titleWinner = 'home'; // bodyTeamA is the home team per orchestrator format
-            // Check: title says Team A won with score a-b, but finalScore has home-=b
-            if (a !== finalScore.home || b !== finalScore.away) {
-              return {
-                reason: `Title says ${bodyTeamA} ${a}-${b} won but Final Score line shows ${finalScore.home}-${finalScore.away}`,
-                titleWinner: `${bodyTeamA} (${a}-${b})`,
-                scoreWinner: `${finalScore.home}-${finalScore.away}`,
-              };
-            }
-          } else if (teamInString(beforeVerb, bodyTeamB)) {
-            titleWinner = 'away';
-            if (a !== finalScore.away || b !== finalScore.home) {
-              return {
-                reason: `Title says ${bodyTeamB} ${a}-${b} won but Final Score line shows ${finalScore.home}-${finalScore.away}`,
-                titleWinner: `${bodyTeamB} (${a}-${b})`,
-                scoreWinner: `${finalScore.home}-${finalScore.away}`,
-              };
-            }
-          }
-        }
-      }
-    }
+    if (wm) titleWinnerName = wm[1].toLowerCase().trim();
 
-    // Loss-verb check
-    if (!titleWinner) {
+    if (!titleWinnerName) {
+      const LOSS_VERBS = 'falls? to|drops? to|loses? to|surrenders? to';
       const lossRe = new RegExp(`([\\w'\\-\\.]+)\\s+(?:${LOSS_VERBS})\\s+([\\w'\\-\\.]+)`, 'i');
       const lm = lossRe.exec(title);
-      if (lm) {
-        const subject = lm[1].toLowerCase().trim();
-        const bodyTeamA = extractBodyTeamA(content);
-        const bodyTeamB = extractBodyTeamB(content);
-        if (bodyTeamA && bodyTeamB) {
-          if (teamInString(subject, bodyTeamA)) {
-            // Team A lost → Team B won → scoreWinner should have away > home
-            if (finalScore.away <= finalScore.home) {
-              return {
-                reason: `Title says ${bodyTeamA} lost to ${bodyTeamB} but Final Score line shows ${finalScore.home}-${finalScore.away} (home won)`,
-                titleWinner: `${bodyTeamB} (winner per title)`,
-                scoreWinner: `${finalScore.home}-${finalScore.away} (home winner)`,
-              };
-            }
-          } else if (teamInString(subject, bodyTeamB)) {
-            if (finalScore.home <= finalScore.away) {
-              return {
-                reason: `Title says ${bodyTeamB} lost to ${bodyTeamA} but Final Score line shows ${finalScore.home}-${finalScore.away} (away won)`,
-                titleWinner: `${bodyTeamA} (winner per title)`,
-                scoreWinner: `${finalScore.home}-${finalScore.away} (away winner)`,
-              };
-            }
-          }
-        }
-      }
+      if (lm) titleWinnerName = lm[2].toLowerCase().trim();  // winner is the team AFTER the verb
     }
   }
 
-  return null;
+  if (!titleWinnerName) return null;
+
+  // Map winner name to home or away team
+  const winnerIsHome = teamInString(titleWinnerName, homeTeamName);
+  const winnerIsAway = teamInString(titleWinnerName, awayTeamName);
+  if (!winnerIsHome && !winnerIsAway) return null;
+
+  // Check: winner's score (from finalScore) should be > loser's score
+  const winnerSlotScore = winnerIsHome ? finalScore.home : finalScore.away;
+  const loserSlotScore = winnerIsHome ? finalScore.away : finalScore.home;
+  const winnerName = winnerIsHome ? homeTeamName : awayTeamName;
+  const loserName = winnerIsHome ? awayTeamName : homeTeamName;
+
+  if (winnerSlotScore <= loserSlotScore) {
+    return {
+      reason: `Title says ${titleWinnerName} won but Final Score line shows ${finalScore.home}-${finalScore.away} (${loserName} scored ${loserSlotScore})`,
+      titleWinner: `${winnerName} won ${winnerSlotScore}-${loserSlotScore} per title`,
+      scoreWinner: `${finalScore.home}-${finalScore.away} (${loserName} actually won)`,
+    };
+  }
+
 }
 
 function extractBodyTeamA(content: string): string | null {
