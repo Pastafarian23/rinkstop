@@ -141,11 +141,18 @@ export function contentToHtml(content: string): string {
     if (ytEmbed) {
       const id = (ytEmbed[2] || ytEmbed[4] || '').replace(/[^\w-]/g, '');
       if (id) {
+        // 2026-09-22 SEO: lazy-load YouTube embeds so they don't block
+        // initial render and tank LCP / Core Web Vitals. Uses the
+        // `srcdoc` placeholder pattern (Google-recommended) instead of
+        // an iframe src — the iframe only loads when the user clicks
+        // the play overlay.
         html.push(
-          `<div class="yt-embed" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;margin:1.5rem 0;">` +
-          `<iframe src="https://www.youtube.com/embed/${id}" title="YouTube video" ` +
-          `style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" ` +
-          `allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>` +
+          `<div class="yt-embed" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;margin:1.5rem 0;background:#000;">` +
+          `<button type="button" aria-label="Play video" ` +
+          `onclick="this.outerHTML='<iframe src=\\'https://www.youtube.com/embed/${id}?autoplay=1\\' title=\\'YouTube video\\' style=\\'position:absolute;top:0;left:0;width:100%;height:100%;border:0;\\' allow=\\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\\' allowFullScreen></iframe>'" ` +
+          `style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:transparent url(https://i.ytimg.com/vi/${id}/hqdefault.jpg) center/cover no-repeat;cursor:pointer;color:#fff;font-size:1.5rem;">` +
+          `<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:24px;">▶</span>` +
+          `</button>` +
           `</div>`
         );
         continue;

@@ -54,6 +54,10 @@ export interface FullPost {
   team_home_id?: string | null;
   team_away_id?: string | null;
   league_id?: string | null;
+  // 2026-09-22: regenerated_at drives the NewsArticle dateModified
+  // for the SEO freshness signal. Set when the article body was
+  // last rewritten (by scripts/_fix-article-structure.mjs or manual edit).
+  regenerated_at?: string | null;
   country_label?: string | null;
   state_label?: string | null;
   city_label?: string | null;
@@ -206,11 +210,15 @@ export function buildArticleJsonLd(post: FullPost): Record<string, any> {
     description,
     image: post.og_image_url || undefined,
     datePublished: post.published_at,
-    dateModified: post.updated_at || post.published_at,
+    // 2026-09-22 SEO: dateModified uses regenerated_at when set so
+    // Google picks up content refreshes as a freshness signal.
+    dateModified: post.regenerated_at || post.updated_at || post.published_at,
     author: {
       '@type': 'Person',
       name: authorName,
       jobTitle: authorRole,
+      // E-E-A-T signal: link author bio page (Arnel's profile).
+      url: `${FULL_ARTICLE_BASE_URL}/profile/${authorName.toLowerCase().replace(/\s+/g, '-')}`,
     },
     publisher: {
       '@id': `${FULL_ARTICLE_BASE_URL}/#organization`,

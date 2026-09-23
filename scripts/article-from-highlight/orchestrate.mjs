@@ -449,42 +449,48 @@ ${JSON.stringify(compactFacts, null, 2)}
 REQUIRED STRUCTURE (return this EXACT shape, no preamble, no commentary):
 
 ---
-title: <60 chars max>
-subtitle: <1-2 sentences>
-seo_title: <60 chars max>
-seo_description: <140-160 chars>
-tags: [4-7 lowercase tags]
+title: <60 chars max; must include BOTH team names + score or key fact>
+subtitle: <1-2 sentences; include venue + final score>
+seo_title: <60 chars max; optimized for Google search — include team names + score>
+seo_description: <140-160 chars; include both team names, score, venue, and 1 hook word like "shootout" or "overtime">
+tags: [4-7 lowercase tags; include both team-name-slugs in lowercase]
 category: highlights
 reading_time_minutes: <5-8>
-source_cite: <where transcript came from, e.g. "NHL YouTube broadcast">
+source_cite: <where data came from, e.g. "NHL.com boxscore" or "NHL.com + Highlightly match API">
 ---
 
 # <title>
 
 https://www.youtube.com/watch?v=${videoId}
 
-<opening paragraph, 2-3 sentences>
+<opening paragraph, 2-3 sentences — lead with the most interesting fact, not the basics. For example: "Five different Flyers scored" or "Strome broke a 2-2 tie with 4:31 left in the second." NEVER lead with generic phrases like "In a game between..." or "On Monday night...">
 
 ## How the Game Played Out
 
-<body — describe the flow of the game, key moments, goal scorers, periods. Pull everything from the transcript.>
+<2-3 paragraphs covering period-by-period flow (P1/P2/P3), key moments, goal scorers when known. Pull everything from the transcript. Use specific timestamps and player names when available.>
 
 ## What the Result Means
 
-<body — what this game means for the standings, the series, both teams.>
+<1-2 paragraphs: standings implication, both teams' trajectory, momentum. End with a forward-looking sentence — not a summary.>
 
 ## Watch the Highlights
 
 <short paragraph + embed call-to-action>
 
+**Final Score:** <Team A> <score>, <Team B> <score>.
+
 *Source: <source_cite>*
 
 CRITICAL:
 - The article body (everything from "# <title>" onward) MUST be 500-800 words. Do NOT stop after the frontmatter.
-- Do NOT invent stats, scores, goal scorers, or sequences.
+- DO NOT invent stats, scores, goal scorers, or sequences. If a fact is not in the block, omit it — do not hedge or apologize.
 - Use only verified facts from the block.
 - Tone: confident hockey journalist, not a fact dump.
+- ALWAYS include 3 H2 sections (How the Game Played Out, What the Result Means, Watch the Highlights) with substantive body content under each.
+- ALWAYS include the "**Final Score:**" line right before the Source footer — this is required for the audit pipeline to verify your claims.
+- seo_title and seo_description must include both team names.
 - ${noTranscript ? `When no transcript is available, write like a beat reporter covering a game from the boxscore: lead with the final score and venue, walk through the period flow (P1/P2/P3 from the facts block), explain what the result means in context. NEVER use phrases like "no transcript is available", "the safest read", "we cannot know", "without transcript support" — these are meta-commentary about data limitations and have no place in a published article. If the period breakdown is in the facts block, write about it; if it's not, simply omit the period narrative.` : ''}
+- BANNED phrases (any of these in your output = auto-fail): "Because no transcript", "the safest read", "we cannot know", "without transcript support", "broader recap should stay", "the most reliable takeaway", "winning goal is listed as", "winning goalie is listed as", "comfortable Flyers win", "without late drama".
 
 Begin your response with the "---" line. No preamble text.`;
 }
