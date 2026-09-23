@@ -71,6 +71,15 @@ export default function NHLPlayoffsClient({ initialRounds, initialUpdates }: Pro
   const loading = false;
   const lastUpdated = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
 
+  // Determine if playoffs are complete: check the Stanley Cup Final (round 4) series.
+  // When a series has a winner (4 wins), the playoffs are final.
+  const finals = rounds.find((r) => r.round === 4);
+  const finalsSeries = finals?.series?.[0];
+  const isComplete = !!(finalsSeries && (finalsSeries.homeWins === 4 || finalsSeries.awayWins === 4));
+  const championAbbr = isComplete
+    ? (finalsSeries!.homeWins === 4 ? finalsSeries!.homeAbbr : finalsSeries!.awayAbbr)
+    : null;
+
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
       <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
@@ -82,14 +91,25 @@ export default function NHLPlayoffsClient({ initialRounds, initialUpdates }: Pro
       </nav>
 
       <div style={{ marginBottom: '1rem' }}>
-        <div className="label">2026 Stanley Cup Playoffs</div>
+        <div className="label">2025-26 Stanley Cup Playoffs</div>
         <h1 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
-          2026 NHL PLAYOFFS — LIVE
+          {isComplete ? '2026 STANLEY CUP PLAYOFFS — FINAL' : '2026 NHL PLAYOFFS — LIVE'}
         </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', boxShadow: '0 0 6px #C8102E', animation: 'pulse 2s infinite' }} />
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Live Coverage</span>
-          {lastUpdated && <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.6875rem' }}>· Updated {lastUpdated}</span>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+          {isComplete ? (
+            <>
+              <span style={{ color: '#C8102E', fontSize: '0.875rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                🏆 {championAbbr === 'CAR' ? 'Carolina Hurricanes' : championAbbr === 'VGK' ? 'Vegas Golden Knights' : championAbbr} are the 2025-26 Stanley Cup Champions
+              </span>
+              {lastUpdated && <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.6875rem' }}>· Final</span>}
+            </>
+          ) : (
+            <>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8102E', boxShadow: '0 0 6px #C8102E', animation: 'pulse 2s infinite' }} />
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Live Coverage</span>
+              {lastUpdated && <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.6875rem' }}>· Updated {lastUpdated}</span>}
+            </>
+          )}
         </div>
       </div>
 

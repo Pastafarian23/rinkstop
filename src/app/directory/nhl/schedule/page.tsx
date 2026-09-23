@@ -41,11 +41,16 @@ async function getGamesForDateRange(fromIso: string, toIso: string): Promise<Nhl
 }
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  // NHL games are scheduled in the venue's local time, but DB stores UTC.
+  // Display in ET (America/New_York) which is the canonical NHL broadcast zone.
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' });
 }
 
 function fmtDateLong(d: Date): string {
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  // Display date in ET to match the time zone used above. Without this, an evening
+  // game stored as 2026-05-14T00:30:00Z would render as "May 13" in UTC but
+  // "May 13 8:30 PM ET" on the page — confusing date/time mismatch.
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
 }
 
 function GameRow({ game }: { game: NhlMatch }) {
@@ -135,11 +140,15 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
 
   const games = await getGamesForDateRange(fromDate.toISOString(), toDate.toISOString());
 
-  // Group by date
+  // Group by date in ET (America/New_York), matching fmtDateLong display.
+  // Late-night games stored as early-morning UTC must group under their ET date,
+  // not the next calendar day in UTC.
   const groups: DayGroup[] = [];
   for (const g of games) {
     const d = new Date(g.date);
-    const key = d.toISOString().slice(0, 10);
+    // Convert UTC date to ET date string (YYYY-MM-DD) for correct grouping
+    const etDate = new Date(d.getTime() - 5 * 3600 * 1000); // ET = UTC-5
+    const key = etDate.toISOString().slice(0, 10);
     let grp = groups.find(x => x.dateKey === key);
     if (!grp) {
       grp = { dateKey: key, dateObj: d, games: [] };

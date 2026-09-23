@@ -88,7 +88,7 @@ async function fetchKhlStandings() {
       .select('rank, team_name, team_logo, played, wins, losses, overtime_losses, points, goals_for, goals_against')
       .eq('league_id', '30569')
       .order('rank', { ascending: true })
-      .limit(8);
+      .limit(30);
     return (data || []) as Array<{
       rank: number;
       team_name: string;
@@ -188,7 +188,7 @@ export default async function KHLPage() {
   const faqs = [
     {
       q: 'How many teams are in the KHL?',
-      a: `The KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China, organized into 4 divisions (Bobrov, Tarasov, Kharkiv, Trofey).`,
+      a: `The KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China, organized into 4 divisions (Bobrov, Tarasov, Kharlamov, Chernyshev).`,
     },
     {
       q: 'When was the KHL founded?',
@@ -275,10 +275,10 @@ export default async function KHLPage() {
       {/* Search-term-aligned intro (≥150 words) */}
       <section style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '820px', marginBottom: '1.75rem' }}>
         <p style={{ margin: 0 }}>
-          The <strong>Kontinental Hockey League (KHL)</strong> is the premier professional ice hockey league of Russia and Eurasia, founded in 2008 as the successor to the Russian Superleague. Widely regarded as the strongest professional league outside the NHL, the KHL fields 23 teams across four countries — Russia, Belarus, Kazakhstan, and China — organized into four divisions (Bobrov, Tarasov, Kharkiv, Trofey). The league&apos;s top prize is the Gagarin Cup, named for cosmonaut Yuri Gagarin and contested each spring since the 2008-09 season.
+          The <strong>Kontinental Hockey League (KHL)</strong> is the premier professional ice hockey league of Russia and Eurasia, founded in 2008 as the successor to the Russian Superleague. Widely regarded as the strongest professional league outside the NHL, the KHL fields 23 teams across four countries — Russia, Belarus, Kazakhstan, and China — organized into four divisions (Bobrov, Tarasov, Kharlamov, Chernyshev). The league&apos;s top prize is the Gagarin Cup, named for cosmonaut Yuri Gagarin and contested each spring since the 2008-09 season.
         </p>
         <p style={{ marginTop: '0.75rem' }}>
-          KHL franchises include historic programs such as CSKA Moscow, SKA Saint Petersburg, and Dynamo Moscow, plus international entries like Barys Nur-Sultan and Kunlun Red Star. The league&apos;s junior development system — the MHL (Molodezhnaya Hokkeynaya Лига) — has produced a remarkable share of NHL draft picks, with Russian development paths accounting for roughly half of all NHL selections in recent years. Rosters, schedules, arena info, and standings for every KHL team are listed below.
+          KHL franchises include historic programs such as CSKA Moscow, SKA Saint Petersburg, and Dynamo Moscow, plus international entries like Barys Astana and Kunlun Red Star. The league&apos;s junior development system — the MHL (Molodezhnaya Hokkeynaya Лига) — has produced a remarkable share of NHL draft picks, though Russians are about 8-15% of NHL selections in recent drafts (the 2005 draft was the peak at ~52%). Rosters, schedules, arena info, and standings for every KHL team are listed below.
         </p>
       </section>
 
@@ -377,10 +377,10 @@ export default async function KHLPage() {
             The Kontinental Hockey League was founded in <strong style={{ color: '#fff' }}>2008</strong> as the successor to the Russian Superleague (RSL), the top professional ice hockey league in Russia since 1996. The KHL was created with a broader Eurasian ambition: to bring together the best professional clubs from Russia, Belarus, Kazakhstan, and other former Soviet states into a single top-flight competition, modeled on the NHL's structure but operating across multiple time zones and languages.
           </p>
           <p style={{ marginBottom: '1rem' }}>
-            The first KHL season (2008-09) featured 24 teams across four divisions: Bobrov, Tarasov, Kharkiv, and Trofey. The league has since contracted — the Kharkiv division was eliminated in 2014-15 as Ukrainian clubs were withdrawn amid the political crisis; the Kunlun Red Star (China) was added in 2016-17; and a number of Russian regional clubs have rotated in and out of the league as the structure has stabilized. Today the KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China.
+            The first KHL season (2008-09) featured 24 teams across four divisions: Bobrov, Tarasov, Kharlamov, and Chernyshev. The league has since contracted — the Kharlamov division was reorganized in 2014-15 as Ukrainian clubs were withdrawn amid the political crisis; the Kunlun Red Star (China) was added in 2016-17; and a number of Russian regional clubs have rotated in and out of the league as the structure has stabilized. Today the KHL fields 23 teams across Russia, Belarus, Kazakhstan, and China.
           </p>
           <p>
-            The <strong style={{ color: '#fff' }}>Gagarin Cup</strong>, named after cosmonaut Yuri Gagarin, has been awarded to the KHL playoff champion since the 2008-09 season. Metallurg Magnitogorsk has won the Gagarin Cup three times (2014, 2016, 2024); SKA Saint Petersburg has won twice (2015, 2017); CSKA Moscow has won twice (2019, 2022); Ak Bars Kazan has won twice (2009, 2018); and Salavat Yulaev Ufa (2011), Dynamo Moscow (2012), and Lokomotiv Yaroslavl are also past champions. The KHL is widely considered the second-strongest professional league in the world after the NHL.
+            The <strong style={{ color: '#fff' }}>Gagarin Cup</strong>, named after cosmonaut Yuri Gagarin, has been awarded to the KHL playoff champion since the 2008-09 season. Metallurg Magnitogorsk has won three times (2014, 2016, 2024); CSKA Moscow has won three times (2019, 2022, 2023); SKA Saint Petersburg has won twice (2015, 2017); Ak Bars Kazan has won three times (2009, 2010, 2018); Dynamo Moscow has won twice (2012, 2013); Salavat Yulaev Ufa (2011) and Avangard Omsk (2021) are also past champions. Lokomotiv Yaroslavl won the 2025 Gagarin Cup, defeating Traktor Chelyabinsk 4-1 in the final. The 2020 playoffs were cancelled due to the COVID-19 pandemic. The KHL is widely considered the second-strongest professional league in the world after the NHL.
           </p>
         </div>
       </section>

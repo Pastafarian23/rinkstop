@@ -33,9 +33,9 @@ interface StoredRound {
 }
 
 export const metadata: Metadata = {
-  title: '2026 NHL Playoffs Bracket & Live Coverage',
+  title: '2025-26 NHL Playoffs Bracket — Stanley Cup Final Results',
   description:
-    'Live coverage of the 2026 NHL Playoffs and Stanley Cup bracket. Real-time scores, series updates, and postseason news for every round.',
+    '2025-26 NHL Playoffs and Stanley Cup Final results. Series scores and postseason bracket for every round of the 2025-26 Stanley Cup Playoffs.',
   alternates: {
     canonical: 'https://rinkstop.com/directory/nhl/playoffs',
   },
@@ -44,18 +44,18 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: withDefaultOg({
-    title: '2026 NHL Playoffs Bracket & Live Coverage',
+    title: '2025-26 NHL Playoffs Bracket — Stanley Cup Final Results',
     description:
-      'Live coverage of the 2026 NHL Playoffs and Stanley Cup bracket.',
+      '2025-26 NHL Playoffs and Stanley Cup Final results.',
     url: 'https://rinkstop.com/directory/nhl/playoffs',
     siteName: 'RinkStop',
     type: 'website',
   }),
   twitter: {
     card: 'summary_large_image',
-    title: '2026 NHL Playoffs Bracket & Live Coverage',
+    title: '2025-26 NHL Playoffs Bracket — Stanley Cup Final Results',
     description:
-      'Live coverage of the 2026 NHL Playoffs and Stanley Cup bracket.',
+      '2025-26 NHL Playoffs and Stanley Cup Final results.',
   },
 };
 
@@ -94,7 +94,7 @@ export default async function PlayoffsPage() {
       <section style={{ background: 'rgba(13,17,23,0.6)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '24px', maxWidth: '1280px', margin: '1.5rem auto 0' }}>
         <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '20px', marginBottom: '12px' }}>About the NHL Playoffs</h2>
         <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: '0.9375rem', lineHeight: 1.7, marginTop: '0.5rem' }}>
-          The National Hockey League (NHL) postseason is a single-elimination tournament crowning the league&apos;s annual champion. Founded in 1917, the NHL playoffs bring together the top 16 teams from the regular season to compete for the Stanley Cup. RinkStop provides live coverage of every playoff round — series scores, schedules, and postgame updates — alongside the year-round directory of teams, rinks, and leagues that feed into this tournament.
+          The National Hockey League (NHL) postseason is a best-of-seven series tournament crowning the league&apos;s annual champion. Founded in 1917, the NHL playoffs bring together the top 16 teams from the regular season to compete for the Stanley Cup through four rounds of playoff hockey. RinkStop provides series-by-series coverage of every playoff round — final scores, game dates, and series outcomes — alongside the year-round directory of teams, rinks, and leagues that feed into this tournament.
         </p>
       </section>
       <NHLPlayoffsClient initialRounds={rounds} initialUpdates={updates} />
