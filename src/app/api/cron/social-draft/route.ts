@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
 
     const [highlightsRes, teamsRes, leaguesRes] = await Promise.all([
       highlightIds.length
-        ? supabaseAdmin.from('highlight_backups').select('id, title, image_url, video_url, home_team_name, away_team_name, league_name, match_id').in('id', highlightIds)
+        ? supabaseAdmin.from('highlight_backups').select('id, title, image_url, video_url, embed_url, home_team_name, away_team_name, league_name, match_id').in('id', highlightIds)
         : { data: [], error: null },
       teamIds.length
         ? supabaseAdmin.from('teams').select('id, name, display_name').in('id', teamIds)
@@ -176,6 +176,13 @@ export async function GET(request: NextRequest) {
 
         const articleUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com'}/news/${post.slug}`;
 
+        // Build the canonical Watch Highlights URL on rinkstop.com.
+        // Pattern: /highlights/{id}/{slug-from-title}. Slug uses the
+        // same slugify as src/app/highlights/[id]/[slug]/page.tsx.
+        const watchHighlightsUrl = highlight
+          ? `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com'}/highlights/${highlight.id}/${slugifyHighlight(highlight.title ?? post.title)}`
+          : null;
+
         const pkg = buildSocialPackage({
           title: post.title,
           subtitle: post.subtitle,
@@ -189,6 +196,7 @@ export async function GET(request: NextRequest) {
           category: post.category,
           ogImageUrl: post.og_image_url,
           youtubeThumbnailUrl: highlight?.image_url ?? null,
+          watchHighlightsUrl,
           pullQuote: null,
         });
 
@@ -199,7 +207,7 @@ export async function GET(request: NextRequest) {
           token: telegramToken,
           chatId,
           imageUrl: pkg.imageUrl,
-          caption: formatSocialPackageForTelegram(pkg, { title: post.title, url: articleUrl }),
+          caption: formatSocialPackageForTelegram(pkg, { title: post.title, url: articleUrl, watchHighlightsUrl }),
           postId: post.id,
         });
 
@@ -280,6 +288,19 @@ function pickFinalScore(content: string | null, highlight: any): { home: number;
   // Skip — too fragile.
 
   return null;
+}
+
+/**
+ * Slugify a highlight title for the /highlights/[id]/[slug] route.
+ * Mirrors the helper in src/app/highlights/[id]/[slug]/page.tsx.
+ */
+function slugifyHighlight(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
 }
 
 async function sendTelegramWithImage(args: {

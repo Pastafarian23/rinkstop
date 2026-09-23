@@ -64,6 +64,8 @@ export interface SocialPackageInput {
   // Image
   ogImageUrl: string | null;
   youtubeThumbnailUrl: string | null;
+  // Watch Highlights link (canonical URL on rinkstop.com)
+  watchHighlightsUrl: string | null;
   // Sentiment / pull quote (optional)
   pullQuote?: string | null;
 }
@@ -145,6 +147,7 @@ export function buildSocialPackage(input: SocialPackageInput): SocialPackage {
     leagueName: input.leagueName,
     scoreLine,
     siteName: SITE_NAME,
+    watchHighlightsUrl: input.watchHighlightsUrl,
   });
 
   // ───── X (Twitter) ──────────────────────────────────────────
@@ -158,6 +161,7 @@ export function buildSocialPackage(input: SocialPackageInput): SocialPackage {
     leagueName: input.leagueName,
     scoreLine,
     url: input.url,
+    watchHighlightsUrl: input.watchHighlightsUrl,
     tags: xCombo.tags,
   });
 
@@ -174,6 +178,7 @@ export function buildSocialPackage(input: SocialPackageInput): SocialPackage {
     excerpt,
     leagueName: input.leagueName,
     scoreLine,
+    watchHighlightsUrl: input.watchHighlightsUrl,
     pullQuote: input.pullQuote ?? null,
     siteName: SITE_NAME,
   });
@@ -195,8 +200,9 @@ function buildFacebookBody(args: {
   leagueName: string | null;
   scoreLine: string | null;
   siteName: string;
+  watchHighlightsUrl: string | null;
 }): string {
-  const { title, excerpt, leagueName, scoreLine, siteName } = args;
+  const { title, excerpt, leagueName, scoreLine, siteName, watchHighlightsUrl } = args;
   const opener = scoreLine
     ? `Final: ${scoreLine}.\n\n`
     : leagueName
@@ -205,6 +211,9 @@ function buildFacebookBody(args: {
   const value = excerpt
     ? `${excerpt}\n\n`
     : `Full breakdown on ${siteName}.\n\n`;
+  const watchLine = watchHighlightsUrl
+    ? `Watch the highlights here: ${watchHighlightsUrl}\n\n`
+    : '';
   // 280-400 words target. Keep conversational, no first-person.
   return [
     opener,
@@ -212,6 +221,7 @@ function buildFacebookBody(args: {
     title,
     ``,
     value,
+    watchLine,
     `Quick context, key plays, and the takeaway — all in one read.`,
     ``,
     `Link in comments.`,
@@ -223,9 +233,13 @@ function buildXBody(args: {
   leagueName: string | null;
   scoreLine: string | null;
   url: string;
+  watchHighlightsUrl: string | null;
   tags: string[];
 }): string {
-  const { title, scoreLine, url, tags } = args;
+  const { title, scoreLine, url, watchHighlightsUrl, tags } = args;
+  // We point X to the watchHighlightsUrl (canonical highlight page on
+  // rinkstop.com) so clicks land on the player, not the article shell.
+  const linkUrl = watchHighlightsUrl ?? url;
   // Hard cap at 260 chars (URL counts toward 280 in t.co).
   const tagLine = tags.join(' ');
   let body: string;
@@ -235,18 +249,16 @@ function buildXBody(args: {
     // Truncate title if needed.
     body = title;
   }
-  const candidate = `${body} ${url} ${tagLine}`.trim();
-  // If too long, trim title to leave room for URL + tags.
   // Twitter counts t.co as 23 chars regardless of actual length.
   const T_CO_LEN = 23;
   const maxTotal = 280 - 5; // tiny buffer
-  let b = body, u = url, t = tagLine;
-  const totalLen = b.length + 1 + T_CO_LEN + 2 + t.length;
+  let b = body;
+  const totalLen = b.length + 1 + T_CO_LEN + 2 + tagLine.length;
   if (totalLen > maxTotal) {
-    const allowed = maxTotal - T_CO_LEN - 5 - t.length;
+    const allowed = maxTotal - T_CO_LEN - 5 - tagLine.length;
     b = b.slice(0, Math.max(20, allowed - 1)).trimEnd() + '…';
   }
-  return `${b} ${u} ${t}`.trim();
+  return `${b} ${linkUrl} ${tagLine}`.trim();
 }
 
 function buildLinkedInBody(args: {
@@ -254,10 +266,11 @@ function buildLinkedInBody(args: {
   excerpt: string;
   leagueName: string | null;
   scoreLine: string | null;
+  watchHighlightsUrl: string | null;
   pullQuote: string | null;
   siteName: string;
 }): string {
-  const { title, excerpt, leagueName, scoreLine, pullQuote, siteName } = args;
+  const { title, excerpt, leagueName, scoreLine, watchHighlightsUrl, pullQuote, siteName } = args;
   const opener = scoreLine
     ? `Result from ${leagueName ?? 'last night'}: ${scoreLine}.\n\n`
     : `${leagueName ?? 'Hockey'} — a quick read from the rink:\n\n`;
@@ -267,11 +280,15 @@ function buildLinkedInBody(args: {
   const closer = pullQuote
     ? `One line that stood out: "${pullQuote}"\n\n`
     : '';
+  const watchLine = watchHighlightsUrl
+    ? `Watch the highlights: ${watchHighlightsUrl}\n\n`
+    : '';
   // 100-180 words.
   return [
     opener,
     middle,
     closer,
+    watchLine,
     `Full breakdown on ${siteName}: ${args.title}`,
   ].join('').trim();
 }
@@ -295,12 +312,16 @@ function titleHash(s: string): number {
  *   - 3 blocks (FB / X / LI) each labeled
  *   - Hashtag line per block
  */
-export function formatSocialPackageForTelegram(pkg: SocialPackage, article: { title: string; url: string }): string {
+export function formatSocialPackageForTelegram(pkg: SocialPackage, article: { title: string; url: string; watchHighlightsUrl?: string | null }): string {
+  const watchLine = article.watchHighlightsUrl
+    ? `Watch Highlights: ${article.watchHighlightsUrl}`
+    : null;
   return [
     `*Social Package — ${new Date().toISOString().slice(0, 10)}*`,
     `─────────────────────────────`,
     `Article: ${article.title}`,
     `URL: ${article.url}`,
+    watchLine ? watchLine : null,
     ``,
     `*Facebook*`,
     `─────────`,
@@ -318,5 +339,5 @@ export function formatSocialPackageForTelegram(pkg: SocialPackage, article: { ti
     pkg.li.hashtags.join(' '),
     ``,
     `Image: ${pkg.imageUrl ? pkg.imageUrl : '(no image available)'}`,
-  ].join('\n');
+  ].filter((line) => line !== null).join('\n');
 }
