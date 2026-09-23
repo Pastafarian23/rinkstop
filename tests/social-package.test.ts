@@ -18,6 +18,7 @@ describe('buildSocialPackage', () => {
     category: 'news',
     ogImageUrl: 'https://rinkstop.com/og/maple.jpg',
     youtubeThumbnailUrl: 'https://img.youtube.com/vi/abc123/maxresdefault.jpg',
+    watchHighlightsUrl: 'https://rinkstop.com/highlights/12345/maple-leafs-edge-bruins-4-3',
     pullQuote: null,
   };
 
@@ -52,6 +53,32 @@ describe('buildSocialPackage', () => {
     // The actual text body may exceed 260 slightly; the test is informational.
     expect(pkg.x.text.length).toBeGreaterThan(0);
     expect(pkg.x.hashtags.length).toBeGreaterThan(0);
+  });
+
+  it('points X URL at watchHighlightsUrl when available', () => {
+    const pkg = buildSocialPackage(BASE);
+    expect(pkg.x.text).toContain('rinkstop.com/highlights/12345');
+  });
+
+  it('includes Watch the highlights line on fb and li when URL provided', () => {
+    const pkg = buildSocialPackage(BASE);
+    expect(pkg.fb.text).toContain('Watch the highlights');
+    expect(pkg.fb.text).toContain('rinkstop.com/highlights/12345');
+    expect(pkg.li.text).toContain('Watch the highlights');
+    expect(pkg.li.text).toContain('rinkstop.com/highlights/12345');
+  });
+
+  it('falls back to article URL on X when watchHighlightsUrl is null', () => {
+    const pkg = buildSocialPackage({ ...BASE, watchHighlightsUrl: null });
+    // X URL should be article URL.
+    expect(pkg.x.text).toContain(BASE.url);
+    expect(pkg.x.text).not.toContain('rinkstop.com/highlights/');
+  });
+
+  it('omits Watch the highlights line when URL is null', () => {
+    const pkg = buildSocialPackage({ ...BASE, watchHighlightsUrl: null });
+    expect(pkg.fb.text).not.toContain('Watch the highlights');
+    expect(pkg.li.text).not.toContain('Watch the highlights');
   });
 
   it('produces li block with league and score context', () => {
@@ -110,6 +137,7 @@ describe('buildSocialPackage — null safety', () => {
       category: null,
       ogImageUrl: null,
       youtubeThumbnailUrl: null,
+      watchHighlightsUrl: null,
     });
     expect(pkg.fb.text).toContain('Test Article');
     expect(pkg.li.text).toContain('Test Article');
@@ -129,6 +157,7 @@ describe('buildSocialPackage — null safety', () => {
       category: 'news',
       ogImageUrl: null,
       youtubeThumbnailUrl: null,
+      watchHighlightsUrl: null,
     });
     // fb body should contain the title (no excerpt to show)
     expect(pkg.fb.text).toContain('Only Title');
