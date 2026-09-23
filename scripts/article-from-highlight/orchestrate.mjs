@@ -438,7 +438,7 @@ function buildLlmPrompt(factsBlock, options = {}) {
   }
   const videoId = compactFacts.video?.id || '';
   const noTranscriptNote = noTranscript
-    ? `NO TRANSCRIPT AVAILABLE. You are writing from a score + period breakdown ONLY. DO NOT invent goal scorers, play-by-play, or specific stats. You may write about the final score, period-by-period flow as shown, what the result means in context of standings/series, and the value of the highlight video. Keep the article more conservative (400-600 words) since the play-by-play is unknown.`
+    ? `NO TRANSCRIPT AVAILABLE. You are writing a brief news recap from a score + period breakdown ONLY. DO NOT invent goal scorers, goalies, play-by-play sequences, or stats. If a specific fact is not in your facts block, do not mention it. DO NOT hedge, qualify, or add disclaimers about missing data — the score, teams, venue, and period flow are confirmed. Write a confident, factual news brief in the voice of a beat reporter who watched the boxscore update. The 400-600 word target is for substance (period-by-period flow, what the result means, venue context, series/standings implication if relevant). No meta-commentary about the article's own limitations.`
     : '';
   return `Write a hockey game recap article. Facts block below is your ONLY source of truth. If a name/number/score isn't in the block, you cannot use it.
 ${noTranscriptNote}
@@ -484,6 +484,7 @@ CRITICAL:
 - Do NOT invent stats, scores, goal scorers, or sequences.
 - Use only verified facts from the block.
 - Tone: confident hockey journalist, not a fact dump.
+- ${noTranscript ? `When no transcript is available, write like a beat reporter covering a game from the boxscore: lead with the final score and venue, walk through the period flow (P1/P2/P3 from the facts block), explain what the result means in context. NEVER use phrases like "no transcript is available", "the safest read", "we cannot know", "without transcript support" — these are meta-commentary about data limitations and have no place in a published article. If the period breakdown is in the facts block, write about it; if it's not, simply omit the period narrative.` : ''}
 
 Begin your response with the "---" line. No preamble text.`;
 }
