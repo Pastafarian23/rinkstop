@@ -48,11 +48,16 @@ function log(msg) { process.stdout.write(`[${new Date().toISOString()}] ${msg}\n
     });
     let stdout = '';
     child.stdout.on('data', (d) => { stdout += d.toString(); });
-    child.on('close', (code) => {
+    child.on('close', async (code) => {
       try {
         // Audit-pipeline writes to stdout when --json is set
         const data = JSON.parse(stdout);
-        processAuditResult(data);
+        await processAuditResult(data);
+        // 2026-09-22: stamp each post's last_audit_check_at + last_audit_status.
+        // Per Arnel: 'Game result recaps should also be monitored for accuracy.'
+        // The nightly audit already runs on all posts; this just persists the
+        // result on each post row so the admin UI can show freshness.
+        await stampPostAuditResults(data);
       } catch (e) {
         log(`Failed to parse audit JSON: ${e.message}`);
         // Soft-error: still write to PREV_FAIL_FILE so we don't lose state
@@ -170,6 +175,53 @@ function processAuditResult(data) {
  *   propagates to articles.
  * - Both layers needed for defense in depth.
  */
+async function stampPostAuditResults(data) {
+  // 2026-09-22: per Arnel Open Protocol Gap 3: persist the audit result
+  // on each post row. last_audit_status captures the worst claim
+  // status (FAIL > CANNOT_VERIFY > PASS), last_audit_check_at is the
+  // timestamp. This is read-only from the audit pipeline's perspective;
+  // it does NOT change post.status. The admin UI shows these columns
+  // so Arnel can see which posts haven't been re-checked recently.
+  if (!data || !Array.isArray(data.reports)) return;
+  const { createClient } = require('@supabase/supabase-js');
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+  const now = new Date().toISOString();
+  let stamped = 0;
+  let newFailures = 0;
+  const newFailureTitles = [];
+  for (const report of data.reports) {
+    if (!report.slug) continue;
+    const results = report.results || [];
+    let worst = 'PASS';
+    if (results.some(r => r.status === 'FAIL' || r.status === 'FAIL_DISAGREE' || r.status === 'FAIL_CONFIDENCE')) worst = 'FAIL';
+    else if (results.some(r => r.status === 'CANNOT_VERIFY')) worst = 'CANNOT_VERIFY';
+    // Single-update per post (slug is unique in posts table).
+    const { error } = await supabase
+      .from('posts')
+      .update({ last_audit_check_at: now, last_audit_status: worst })
+      .eq('slug', report.slug);
+    if (!error) stamped++;
+    // 2026-09-22: detect newly-failing published articles. If a post was
+    // previously passing (no flag) and is now FAIL, it could mean the
+    // upstream source has changed (e.g. score correction, game result
+    // reversed). Surface these so Arnel can decide: edit + re-publish,
+    // or leave alone. Conservative: just log the count + titles; don't
+    // auto-edit or auto-draft a correction yet (per Q2 unanswered).
+    if (worst === 'FAIL' && report.published && !report.previouslyPassing) {
+      newFailures++;
+      newFailureTitles.push(report.title || report.slug);
+    }
+  }
+  log(`Stamped last_audit_* on ${stamped} post(s)`);
+  if (newFailures > 0) {
+    log(`⚠ ${newFailures} newly-failing published article(s):`);
+    for (const t of newFailureTitles.slice(0, 5)) log(`  - ${t}`);
+  }
+}
+
 async function runScoreSanityCheck() {
   const issues = [];
   let suspicious = 0;
