@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
         ? supabaseAdmin.from('highlight_backups').select('id, title, image_url, video_url, embed_url, home_team_name, away_team_name, league_name, match_id').in('id', highlightIds)
         : { data: [], error: null },
       teamIds.length
-        ? supabaseAdmin.from('teams').select('id, name, display_name').in('id', teamIds)
+        ? supabaseAdmin.from('teams').select('id, name, city').in('id', teamIds)
         : { data: [], error: null },
       leagueIds.length
         ? supabaseAdmin.from('leagues').select('id, name, slug').in('id', leagueIds)
@@ -185,8 +185,8 @@ export async function GET(request: NextRequest) {
         const finalScore = pickFinalScore(post.content, highlight);
         // Build scoreLine in conventional home-first order: "Home 2 – 1 Away".
         // Convention in hockey broadcasts: home team first, then away team.
-        const homeTeamLabel = homeTeam?.display_name ?? homeTeam?.name ?? highlight?.home_team_name ?? 'Home';
-        const awayTeamLabel = awayTeam?.display_name ?? awayTeam?.name ?? highlight?.away_team_name ?? 'Away';
+        const homeTeamLabel = homeTeam?.name ?? highlight?.home_team_name ?? 'Home';
+        const awayTeamLabel = awayTeam?.name ?? highlight?.away_team_name ?? 'Away';
         const scoreLine = finalScore
           ? `${homeTeamLabel} ${finalScore.home} – ${finalScore.away} ${awayTeamLabel}`
           : null;
