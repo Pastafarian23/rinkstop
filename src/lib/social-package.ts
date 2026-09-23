@@ -266,7 +266,12 @@ function buildXBody(args: {
     const allowed = maxTotal - T_CO_LEN - 5 - tagLine.length;
     b = b.slice(0, Math.max(20, allowed - 1)).trimEnd() + '…';
   }
-  return `${b} ${linkUrl} ${tagLine}`.trim();
+  const out = `${b} ${linkUrl} ${tagLine}`.trim();
+  // Defensive: if for any reason the assembled string still exceeds the
+  // 280-char hard cap (e.g. scoreLine very long), hard-truncate. We do
+  // this AFTER composing so the original t.co + tag count assumptions
+  // remain valid for the in-loop adjustment.
+  return out.length > 280 ? out.slice(0, 277) + '…' : out;
 }
 
 function buildLinkedInBody(args: {
