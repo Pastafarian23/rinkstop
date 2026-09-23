@@ -299,14 +299,14 @@ function pickFinalScore(content: string | null, highlight: any): { home: number;
   if (!content) return null;
 
   // Pattern 1: orchestrator-injected "**Final Score:** Team A 5, Team B 2."
+  // The article-from-highlight pipeline formats home team first, then
+  // away team (per the orchestrator code path). So:
+  //   m1[1] = home team name, m1[2] = home score
+  //   m1[3] = away team name, m1[4] = away score
   const m1 = content.match(/\*\*Final Score:\*\*\s+([^\d]+?)\s+(\d+)\s*,\s*([^\d]+?)\s+(\d+)\s*\.?/);
   if (m1) {
-    // away team score, home team score
-    return { home: parseInt(m1[4], 10), away: parseInt(m1[2], 10) };
+    return { home: parseInt(m1[2], 10), away: parseInt(m1[4], 10) };
   }
-
-  // Pattern 2: highlight.league_name-like is JSON (may have score)
-  // Skip — too fragile.
 
   return null;
 }
