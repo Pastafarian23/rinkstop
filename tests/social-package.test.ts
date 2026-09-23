@@ -47,6 +47,22 @@ describe('buildSocialPackage', () => {
     expect(pkg.fb.text).toContain('3');
   });
 
+  it('formats scoreLine in home-first order from finalScore when not provided', () => {
+    const pkg = buildSocialPackage({ ...BASE, scoreLine: undefined });
+    // base has homeTeamName=Boston, awayTeamName=Toronto, finalScore home=3 away=4
+    // So the line should be "Boston Bruins 3 – 4 Toronto Maple Leafs"
+    expect(pkg.fb.text).toContain('Boston Bruins 3');
+    expect(pkg.fb.text).toContain('4 Toronto');
+    // Ensure away-first is NOT used
+    expect(pkg.fb.text).not.toMatch(/Toronto.*3.*Boston/);
+  });
+
+  it('honors caller-supplied scoreLine when provided', () => {
+    const pkg = buildSocialPackage({ ...BASE, scoreLine: 'CUSTOM: 7-0 wipeout' });
+    expect(pkg.fb.text).toContain('CUSTOM: 7-0 wipeout');
+    expect(pkg.fb.text).not.toContain('Boston Bruins 3');
+  });
+
   it('produces x block within ~260 chars', () => {
     const pkg = buildSocialPackage(BASE);
     // Twitter hard cap 280; we aim for 260 with t.co URL.

@@ -60,6 +60,10 @@ export interface SocialPackageInput {
   homeTeamName: string | null;
   awayTeamName: string | null;
   finalScore: { home: number; away: number } | null;
+  // Pre-formatted score line ("Boston Bruins 3 – 4 Toronto Maple Leafs").
+  // If omitted, the builder will compose one from finalScore + team names
+  // in home-first order.
+  scoreLine?: string | null;
   category: string | null;            // "blog" | "news" | "guides" | "opinion"
   // Image
   ogImageUrl: string | null;
@@ -127,9 +131,13 @@ export function buildSocialPackage(input: SocialPackageInput): SocialPackage {
     : 'none';
 
   const lTag = leagueTag(input.leagueName);
-  const scoreLine = input.finalScore
-    ? `${input.awayTeamName ?? 'Away'} ${input.finalScore.away} – ${input.finalScore.home} ${input.homeTeamName ?? 'Home'}`
-    : null;
+  // Use caller-supplied scoreLine if provided; otherwise compose from
+  // finalScore + team names in home-first order (hockey broadcast convention).
+  const scoreLine = input.scoreLine ?? (
+    input.finalScore
+      ? `${input.homeTeamName ?? 'Home'} ${input.finalScore.home} – ${input.finalScore.away} ${input.awayTeamName ?? 'Away'}`
+      : null
+  );
 
   const excerpt = (input.excerpt || input.subtitle || '').trim().slice(0, 320);
 

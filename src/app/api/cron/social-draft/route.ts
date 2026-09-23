@@ -145,7 +145,19 @@ export async function GET(request: NextRequest) {
     if (teamsRes.error) throw new Error(`fetch teams: ${teamsRes.error.message}`);
     if (leaguesRes.error) throw new Error(`fetch leagues: ${leaguesRes.error.message}`);
 
-    const highlightsById = new Map((highlightsRes.data ?? []).map((h: any) => [h.id, h]));
+    const highlightsById = new Map((highlightsRes.data ?? []).map((h: any) => {
+      // highlight_backups.league_name is sometimes a JSON-stringified
+      // object (per 2026-09-22 07:57 CDT audit). Normalize to plain string.
+      if (h.league_name && typeof h.league_name === 'string') {
+        try {
+          const parsed = JSON.parse(h.league_name);
+          if (parsed && typeof parsed === 'object' && parsed.name) {
+            h.league_name = parsed.name;
+          }
+        } catch { /* leave as-is */ }
+      }
+      return [h.id, h];
+    }));
     const teamsById = new Map((teamsRes.data ?? []).map((t: any) => [t.id, t]));
     const leaguesById = new Map((leaguesRes.data ?? []).map((l: any) => [l.id, l]));
 
@@ -171,10 +183,18 @@ export async function GET(request: NextRequest) {
         // by the article-from-highlight orchestrator — looks like
         // "**Final Score:** Team A 5, Team B 2.").
         const finalScore = pickFinalScore(post.content, highlight);
+        // Build scoreLine in conventional home-first order: "Home 2 – 1 Away".
+        // Convention in hockey broadcasts: home team first, then away team.
+        const homeTeamLabel = homeTeam?.display_name ?? homeTeam?.name ?? highlight?.home_team_name ?? 'Home';
+        const awayTeamLabel = awayTeam?.display_name ?? awayTeam?.name ?? highlight?.away_team_name ?? 'Away';
+        const scoreLine = finalScore
+          ? `${homeTeamLabel} ${finalScore.home} – ${finalScore.away} ${awayTeamLabel}`
+          : null;
 
         const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com'}/news/${league?.slug ?? 'news'}/${post.slug}`;
 
         const articleUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com'}/news/${post.slug}`;
+        const scoreLineFinal = scoreLine; // capture for use in builder below
 
         // Build the canonical Watch Highlights URL on rinkstop.com.
         // Pattern: /highlights/{id}/{slug-from-title}. Slug uses the
@@ -190,9 +210,10 @@ export async function GET(request: NextRequest) {
           excerpt,
           leagueName: league?.name ?? highlight?.league_name ?? null,
           leagueSlug: league?.slug ?? null,
-          homeTeamName: homeTeam?.display_name ?? homeTeam?.name ?? highlight?.home_team_name ?? null,
-          awayTeamName: awayTeam?.display_name ?? awayTeam?.name ?? highlight?.away_team_name ?? null,
+          homeTeamName: homeTeamLabel,
+          awayTeamName: awayTeamLabel,
           finalScore,
+          scoreLine: scoreLineFinal,
           category: post.category,
           ogImageUrl: post.og_image_url,
           youtubeThumbnailUrl: highlight?.image_url ?? null,
