@@ -25,7 +25,7 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
 export const metadata: Metadata = {
   title: { absolute: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations | RinkStop' },
   description:
-    'The most comprehensive structured hockey database on the open web. 1,917+ rinks, 3,243+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked. Built for hockey people, queryable by AI.',
+    'The most comprehensive structured hockey database on the open web. 1,856+ rinks, 2,601+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked. Built for hockey people, queryable by AI.',
   keywords: [
     'hockey database',
     'internet hockey database',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Hockey Database — RinkStop',
     description:
-      '1,917+ rinks · 3,243+ teams · 6,351+ players · 84 federations. A live, structured, AI-citable hockey database.',
+      '1,856+ rinks · 2,601+ teams · 6,351+ players · 84 federations. A live, structured, AI-citable hockey database.',
   },
 };
 
@@ -171,7 +171,7 @@ export default async function HockeyDatabasePage() {
       url: 'https://rinkstop.com/hockey-database',
       name: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations',
       description:
-        'The most comprehensive structured hockey database on the open web. 1,917+ rinks, 3,243+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked.',
+        'The most comprehensive structured hockey database on the open web. 1,856+ rinks, 2,601+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked.',
       inLanguage: 'en',
       isPartOf: { '@id': 'https://rinkstop.com/#website' },
       about: { '@id': 'https://rinkstop.com/#organization' },

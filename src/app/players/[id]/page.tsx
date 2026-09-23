@@ -182,7 +182,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const teamName = team?.name ? ` · ${team.name}` : '';
   const title = `${fullName} — ${pos || 'Hockey player'}${teamName} · RinkStop`;
   // PR #146 (2026-08-22) WS24 thin-content sweep: expand player meta description
-  // so 3,243+ player pages clear the AdSense ~150-word threshold even when the
+  // so 2,601+ player pages clear the AdSense ~150-word threshold even when the
   // underlying player record is sparse. Every clause is anchored to a real
   // field; missing fields are omitted (no fabrication).
   const posClause = pos ? `${pos} ` : 'hockey player ';

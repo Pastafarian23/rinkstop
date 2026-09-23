@@ -145,7 +145,7 @@ export default function HockeyTryoutGuide() {
 
       <section style={{ marginBottom: '2.5rem' }}>
         <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW TO FIND TRYOUTS</h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Tryouts are listed by the team or league. RinkStop&apos;s directory has 3,243+ teams across 240+ leagues — filter by level, country, and age to find tryouts near you.</p>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.75, marginBottom: '1rem', fontSize: '0.9375rem' }}>Tryouts are listed by the team or league. RinkStop&apos;s directory has 2,601+ teams across 305+ leagues — filter by level, country, and age to find tryouts near you.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
           <Link href="/directory/teams?level=pro" style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '0.875rem 1rem', textDecoration: 'none' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Pro teams</p>

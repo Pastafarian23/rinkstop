@@ -457,7 +457,7 @@ export default async function LaunchPage() {
             lineHeight: 1.6,
           }}
         >
-          <strong style={{ color: '#FFB81C' }}>Why we built this:</strong> RinkStop already lists 1,857 rinks, 3,243 teams, and 303 leagues
+          <strong style={{ color: '#FFB81C' }}>Why we built this:</strong> RinkStop already lists 1,857 rinks, 2,601 teams, and 305 leagues
           in 78 countries. The directory brings traffic. The marketplace turns that traffic into transactions between
           rinks with open ice and teams that need it. We take a 20% cut of every booking — same model as Airbnb, Vrbo,
           and Classpass.

@@ -5,7 +5,7 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
   title: 'Data Coverage — How RinkStop Compares to the Global Hockey Universe',
-  description: 'How RinkStop\'s indexed directory (1,917 rinks, 3,243 teams, 6,351 players, 84 IIHF federations) compares to authoritative external counts from IIHF, national federations, and league registries.',
+  description: 'How RinkStop\'s indexed directory (1,856 rinks, 2,601 teams, 6,351 players, 84 IIHF federations) compares to authoritative external counts from IIHF, national federations, and league registries.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://rinkstop.com/data-coverage' },
   openGraph: withDefaultOg({
