@@ -106,8 +106,38 @@ function extractYouTubeId(url) {
       console.log(`${progress} ${d.title} — unverifiable (no canonical source), keeping as draft`);
       unverifiable++;
     } else {
-      // Audit passes
-      console.log(`${progress} ${d.title} — ✓ verified, publishing`);
+      // Audit passes. 2026-09-22: also run the quality rubric (same
+      // as src/lib/article-quality.ts, inlined here for portability).
+      // If quality_score < 60, hold for review instead of publishing —
+      // prevents future AI slop from shipping.
+      const banned = [
+        'Because no transcript', 'the safest read', 'we cannot know',
+        'without transcript support', 'broader recap should stay',
+        'the most reliable takeaway', 'winning goal is listed as',
+        'winning goalie is listed as', 'comfortable Flyers win',
+        'without late drama',
+      ];
+      const content = d.content || '';
+      const bodyLower = content.toLowerCase();
+      let qScore = 100;
+      const qIssues = [];
+      for (const phrase of banned) {
+        if (bodyLower.includes(phrase.toLowerCase())) { qIssues.push(`banned:${phrase}`); qScore -= 15; }
+      }
+      const wc = content.split(/\s+/).filter(Boolean).length;
+      if (wc === 0) { qIssues.push('empty'); qScore -= 50; }
+      else if (wc < 200) { qIssues.push(`short:${wc}`); qScore -= 20; }
+      const h2 = (content.match(/^##\s+.+$/gm) || []).length;
+      if (h2 === 0) { qIssues.push('no-h2'); qScore -= 10; }
+      else if (h2 < 2) { qIssues.push(`few-h2:${h2}`); qScore -= 5; }
+      if (!/\*\*Final Score:\*\*/i.test(content)) { qIssues.push('no-final-score'); qScore -= 20; }
+      qScore = Math.max(0, Math.min(100, qScore));
+      if (qScore < 60) {
+        console.log(`${progress} ${d.title} — ⛔ quality_score=${qScore} (slop), holding for review`);
+        flagged++;
+        continue; // skip publish
+      }
+      console.log(`${progress} ${d.title} — ✓ verified (q=${qScore}), publishing`);
       published++;
       if (!dryRun) {
         const { error: pubErr } = await sb
@@ -117,6 +147,9 @@ function extractYouTubeId(url) {
             published_at: new Date().toISOString(),
             source_data_status: 'has_source',
             last_issue_summary: `Audit verified ${passCount}/${claimCount} claims at ${new Date().toISOString()}`,
+            quality_score: qScore,
+            quality_issues: qIssues.length > 0 ? qIssues : null,
+            regenerated_at: new Date().toISOString(),
           })
           .eq('id', d.id);
         if (pubErr) {

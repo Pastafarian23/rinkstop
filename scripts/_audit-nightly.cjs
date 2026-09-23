@@ -153,6 +153,14 @@ function processAuditResult(data) {
 
   log(`Audit done. PASS=${pass} FAIL=${failCount} CANNOT_VERIFY=${cannotVerify}`);
   log(`Message: ${message}`);
+
+  // 2026-09-22: also report quality-drift count from stampPostAuditResults
+  // (set on the closure variable). If qualityDropped > 0, the cron
+  // summary will include it so Arnel sees both factual and quality
+  // regressions in the same daily digest.
+  if (typeof qualityDropped === 'number' && qualityDropped > 0) {
+    log(`⚠ ${qualityDropped} published article(s) have quality_score<60 (slop drift)`);
+  }
 }
 
 /**
@@ -190,6 +198,7 @@ async function stampPostAuditResults(data) {
   );
   const now = new Date().toISOString();
   let stamped = 0;
+  let qualityDropped = 0;
   let newFailures = 0;
   const newFailureTitles = [];
   for (const report of data.reports) {
@@ -198,10 +207,54 @@ async function stampPostAuditResults(data) {
     let worst = 'PASS';
     if (results.some(r => r.status === 'FAIL' || r.status === 'FAIL_DISAGREE' || r.status === 'FAIL_CONFIDENCE')) worst = 'FAIL';
     else if (results.some(r => r.status === 'CANNOT_VERIFY')) worst = 'CANNOT_VERIFY';
+    // 2026-09-22 per Arnel: also run the quality rubric on each
+    // published article so we catch SLOP drift over time (LLM changes,
+    // prompt tweaks, content updates). Inline copy of the rubric from
+    // src/lib/article-quality.ts — kept in sync manually. The rubric
+    // is small enough that duplication is cheaper than a require() call.
+    const articleBody = report.body || report.content || '';
+    const articleTitle = report.title || '';
+    let qualityScore = null;
+    let qualityIssues = null;
+    if (articleBody) {
+      const banned = [
+        'Because no transcript', 'the safest read', 'we cannot know',
+        'without transcript support', 'broader recap should stay',
+        'the most reliable takeaway', 'winning goal is listed as',
+        'winning goalie is listed as', 'comfortable Flyers win',
+        'without late drama',
+      ];
+      const issues = [];
+      let score = 100;
+      const wc = articleBody.split(/\s+/).filter(Boolean).length;
+      if (wc === 0) { issues.push('empty'); score -= 50; }
+      else if (wc < 200) { issues.push(`short:${wc}`); score -= 20; }
+      const bodyLower = articleBody.toLowerCase();
+      for (const phrase of banned) {
+        if (bodyLower.includes(phrase.toLowerCase())) { issues.push(`banned:${phrase}`); score -= 15; }
+      }
+      const h2 = (articleBody.match(/^##\s+.+$/gm) || []).length;
+      if (h2 === 0) { issues.push('no-h2'); score -= 10; }
+      else if (h2 < 2) { issues.push(`few-h2:${h2}`); score -= 5; }
+      if (!/\*\*Final Score:\*\*/i.test(articleBody)) { issues.push('no-final-score'); score -= 20; }
+      score = Math.max(0, Math.min(100, score));
+      qualityScore = score;
+      qualityIssues = issues;
+      // Alert if quality dropped below 60 (slop-heavy)
+      if (score < 60 && (report.published || report.status === 'published')) qualityDropped++;
+    }
     // Single-update per post (slug is unique in posts table).
+    const updatePayload = {
+      last_audit_check_at: now,
+      last_audit_status: worst,
+    };
+    if (qualityScore !== null) {
+      updatePayload.quality_score = qualityScore;
+      updatePayload.quality_issues = qualityIssues;
+    }
     const { error } = await supabase
       .from('posts')
-      .update({ last_audit_check_at: now, last_audit_status: worst })
+      .update(updatePayload)
       .eq('slug', report.slug);
     if (!error) stamped++;
     // 2026-09-22: detect newly-failing published articles. If a post was
