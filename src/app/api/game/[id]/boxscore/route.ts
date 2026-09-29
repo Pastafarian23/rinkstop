@@ -364,7 +364,7 @@ async function fetchWikipediaBoxscore(fx: any): Promise<NextResponse | null> {
   if (!pageSlug) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { lookupWikipediaBoxscore } = require('../../../server/cross-source/wikipedia-boxscore.cjs');
+    const { lookupWikipediaBoxscore } = require('../../../../../server/cross-source/wikipedia-boxscore.cjs');
     const dateIso = (fx.scheduled_at || '').slice(0, 10);
     // 2026-09-22 audit fix (bug #13): previous code declared
     // visitorHint/homeHint from team FK joins then OVERWROTE them

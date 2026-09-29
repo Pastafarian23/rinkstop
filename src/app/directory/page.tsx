@@ -40,19 +40,19 @@ export default function DirectoryPage() {
       <section style={{ background: 'rgba(56,189,248,0.06)', borderBottom: '1px solid rgba(56,189,248,0.18)', padding: '1rem 0' }}>
         <div className="container" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.5rem', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.875rem' }}>
-            <strong style={{ color: '#38BDF8' }}>Planning a season?</strong>{' '}
+            <strong style={{ color: '#FFB81C' }}>Planning a season?</strong>{' '}
             See costs by age, state, and level with the{' '}
-            <Link href="/tools/hockey-cost-calculator" style={{ color: '#38BDF8', textDecoration: 'underline' }}>Hockey Cost Calculator</Link>,
+            <Link href="/tools/hockey-cost-calculator" style={{ color: '#FFB81C', textDecoration: 'underline' }}>Hockey Cost Calculator</Link>,
             read the{' '}
-            <Link href="/guides/hockey-parents-handbook" style={{ color: '#38BDF8', textDecoration: 'underline' }}>Hockey Parents Handbook</Link>,
+            <Link href="/guides/hockey-parents-handbook" style={{ color: '#FFB81C', textDecoration: 'underline' }}>Hockey Parents Handbook</Link>,
             or browse{' '}
-            <Link href="/learn" style={{ color: '#38BDF8', textDecoration: 'underline' }}>Learn Hockey</Link>
+            <Link href="/learn" style={{ color: '#FFB81C', textDecoration: 'underline' }}>Learn Hockey</Link>
             {' '}— 24 beginner-friendly explainers.
           </div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Link href="/tools" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All tools →</Link>
-            <Link href="/guides" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All guides →</Link>
-            <Link href="/learn" style={{ color: '#38BDF8', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All learn →</Link>
+            <Link href="/tools" style={{ color: '#FFB81C', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All tools →</Link>
+            <Link href="/guides" style={{ color: '#FFB81C', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All guides →</Link>
+            <Link href="/learn" style={{ color: '#FFB81C', fontSize: '0.8125rem', fontWeight: 600, textDecoration: 'none' }}>All learn →</Link>
           </div>
         </div>
       </section>

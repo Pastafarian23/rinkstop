@@ -93,18 +93,32 @@ function extractYouTubeId(url) {
     const passCount = (report.results || []).filter(r => r.status === 'PASS').length;
     const cannotVerifyCount = (report.results || []).filter(r => r.status === 'CANNOT_VERIFY').length;
 
-    if (hasFail) {
-      console.log(`${progress} ${d.title} — FAIL detected, keeping as draft`);
+    // 2026-09-29 STRICT POLICY (per Arnel directive):
+    //   - ANY FAIL on critical claim (final_score, title_score) → draft + flag
+    //   - ANY CANNOT_VERIFY on critical claim → draft + flag (NEVER publish unverified)
+    //   - Partial verification ("verified 1/2") is NO LONGER acceptable for publication
+    const criticalTypes = ['final_score_line', 'title_score', 'lead_score'];
+    const criticalResults = (report.results || []).filter(r => criticalTypes.includes(r.claim?.type));
+    const criticalFail = criticalResults.some(r => r.status === 'FAIL');
+    const criticalUnverified = criticalResults.some(r => r.status === 'CANNOT_VERIFY');
+
+    if (hasFail || criticalFail || criticalUnverified) {
+      const reasons = [];
+      if (hasFail) reasons.push('FAIL');
+      if (criticalFail) reasons.push('CRITICAL_FAIL');
+      if (criticalUnverified) reasons.push('CRITICAL_UNVERIFIED');
+      console.log(`${progress} ${d.title} — ⛔ ${reasons.join('+')} (${passCount}/${claimCount} pass), holding as draft`);
       flagged++;
-      // Append review note
-      const note = `\n\n*Pre-publish audit (${new Date().toISOString().slice(0,10)}): ${claimCount} claims, ${passCount} pass, ${flagged} fail. Check audit-result.json for details.*`;
+      const note = `\n\n*Pre-publish audit (${new Date().toISOString().slice(0,10)}): ⛔ HELD — ${reasons.join('+')}. ${passCount}/${claimCount} claims passed. Critical claims unverified: ${criticalUnverified ? 'YES' : 'no'}. Requires human review before publication.*`;
       if (!dryRun) {
         await sb.from('posts').update({ content: d.content + note, status: 'draft' }).eq('id', d.id);
       }
-    } else if (claimCount === 0 || claimCount === cannotVerifyCount) {
-      // All claims could not be verified (no source available) — keep as draft for manual review
-      console.log(`${progress} ${d.title} — unverifiable (no canonical source), keeping as draft`);
+      continue;
+    } else if (claimCount === 0) {
+      // No claims extracted at all — cannot verify anything. Hold.
+      console.log(`${progress} ${d.title} — no claims extracted, holding for review`);
       unverifiable++;
+      continue;
     } else {
       // Audit passes. 2026-09-22: also run the quality rubric (same
       // as src/lib/article-quality.ts, inlined here for portability).
