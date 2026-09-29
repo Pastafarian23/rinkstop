@@ -294,15 +294,15 @@ function fetchVideoData(videoUrl) {
 }
 
 /**
- * Spawn `kilo run --auto` for the LLM draft step. Uses a fast model
- * (gpt-mini-latest) by default to stay within the 110s exec budget.
+ * Spawn `kilo run --auto` for the LLM draft step. Uses the credit-backed GPT-6 Luna model
+ * by default to avoid the exhausted gpt-mini free tier.
  * Returns the generated markdown. Force-kills at 100s with SIGKILL if SIGTERM
  * doesn't close the process within 5s.
  */
 function llmDraft(factsBlock, options = {}) {
   return new Promise((resolve, reject) => {
     const prompt = buildLlmPrompt(factsBlock, options);
-    const model = process.env.LLM_MODEL || 'kilo/~openai/gpt-mini-latest';
+    const model = process.env.LLM_MODEL || 'kilo/openai/gpt-6-luna';
     const proc = spawn('kilo', ['run', '--auto', '--model', model, prompt], {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, KILOCODE_API_KEY: process.env.KILOCODE_API_KEY },
@@ -884,6 +884,20 @@ async function insertDraft(highlight, meta, body, fixtureRow, webRecapData = nul
     // No fixture match (e.g. NCAA, Swiss NL — leagues we don't sync).
     // Still stamp the game_date so the audit at least knows when.
     insertPayload.game_date = highlight.match_date.slice(0, 10);
+  }
+
+  // ── GATE: refuse to draft articles for games not yet played ─────────
+  // Added 2026-09-29 per Leafs/Senators incident: an article was created
+  // (created_at 2026-09-27) for a game played 2026-09-23, meaning the
+  // highlight was a pre-game preview highlight. Body was fabricated from
+  // pre-game transcript data. The score happened to be right; the player
+  // names and play-by-play were wrong. This gate prevents the pipeline from
+  // ever creating a draft for a future game.
+  const today = new Date().toISOString().slice(0, 10);
+  const gameDate = (fixtureRow?.scheduled_at || highlight.match_date || '').slice(0, 10);
+  if (gameDate && gameDate > today) {
+    console.error(`  ⛔ game ${gameDate} is in the future — skipping draft insert for highlight ${highlight.id}`);
+    return null;
   }
 
   const { data, error } = await sb.from('posts').insert(insertPayload).select('id, slug, title, status');
