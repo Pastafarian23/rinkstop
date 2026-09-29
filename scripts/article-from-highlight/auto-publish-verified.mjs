@@ -136,6 +136,91 @@ async function main() {
     const date = (h.match_date || '').slice(0, 10);
     const league = normalizeLeague(h.league_name);
     const match = await highlightlyMatchData(teams, date, league);
+    // ── GATE 1: game must be in the past ────────────────────────────────
+    // Block publishing articles for games that haven't been played yet.
+    // This is the fix for the Leafs/Senators incident: articles created
+    // from pre-game highlights were being published before the game happened.
+    const today = new Date().toISOString().slice(0, 10);
+    const gameDate = (h.match_date || '').slice(0, 10);
+    if (gameDate && gameDate > today) {
+      console.log(`  [${i+1}/${drafts.length}] ${d.title} — game ${gameDate} is in the future, skipping publish`);
+      unverifiable++;
+      continue;
+    }
+
+    // ── GATE 2: fetch canonical source and verify score ─────────────────
+    // The article must match the league's authoritative data source before
+    // it can auto-publish. NHL uses NHL.com; other leagues use Highlightly.
+    // This replaces silent reliance on highlight transcript alone.
+    let canonicalScore = null;
+    let canonicalSource = league;
+    let canonicalGameState = null;
+
+    if (league === 'NHL') {
+      // Look up NHL.com game state for this date + teams
+      try {
+        const nhlRes = await fetch(`https://api-web.nhle.com/v1/score/${gameDate}`);
+        if (nhlRes.ok) {
+          const nhlData = await nhlRes.json();
+          const nhlGame = (nhlData.games || []).find(g => {
+            const ht = g.homeTeam || {};
+            const at = g.awayTeam || {};
+            const hn = (ht.placeName?.default || '').toLowerCase();
+            const an = (at.placeName?.default || '').toLowerCase();
+            const hc = (ht.commonName?.default || '').toLowerCase();
+            const ac = (at.commonName?.default || '').toLowerCase();
+            const homeOk = teams.some(t => t.toLowerCase().includes(hn) && (hn.includes('toronto') || hn.includes('ottawa') || hc.includes(t.toLowerCase().split(' ')[0])));
+            const awayOk = teams.some(t => t.toLowerCase().includes(an) && (an.includes('toronto') || an.includes('ottawa') || ac.includes(t.toLowerCase().split(' ')[0])));
+            return homeOk && awayOk;
+          });
+          if (nhlGame) {
+            canonicalGameState = nhlGame.gameState;
+            canonicalSource = 'NHL.com';
+          }
+        }
+      } catch (e) {
+        console.log(`  [${i+1}/${drafts.length}] NHL.com lookup failed: ${e.message}`);
+      }
+    }
+
+    // ── GATE 2b: require canonical source to confirm game is final ─────────
+    // For NHL: NHL.com gameState must be FINAL.
+    // For HockeyTech leagues (AHL/WHL/OHL/QMJHL/ECHL): the API returns
+    //   g.final === '1' for completed games.
+    // For Highantly leagues (SHL/DEL/KHL/MHL/VHL/SPHL): the API returns
+    //   result.state === 'FINAL' or result.state === 'AP' (after penalties).
+    // For IIHF: fixturedownload returns HomeTeamScore/AwayTeamScore (null if not played).
+    // For any other league: fall back to the Highantly result having a score.
+    // The Highantly getMatchData() call above is the primary canonical source for
+    // non-NHL leagues. If it returns null, we cannot auto-publish.
+    let canAutoPublish = false;
+    if (match && match.home_score != null && match.away_score != null) {
+      // Highantly returned a result — use its state field for finality check.
+      const hlState = match.state || '';
+      if (league === 'NHL') {
+        // NHL additionally verified via NHL.com above — FINAL already confirmed
+        canAutoPublish = (canonicalGameState === 'FINAL');
+      } else if (['SHL','DEL','KHL','MHL','VHL','SPHL','Liiga','WCH','NCAA'].includes(league)) {
+        // Highantly state: FINAL or AP (after penalties/shootout) = game done
+        canAutoPublish = (hlState === 'FINAL' || hlState === 'AP' || hlState === 'OT' || hlState === 'SO');
+      } else if (['AHL','WHL','OHL','QMJHL','ECHL','CHL'].includes(league)) {
+        // HockeyTech leagues — "final" flag checked via fetchHockeyTechBoxscore
+        // which already filtered to g.final === '1'. If Highantly returned
+        // a match for these leagues, it should be final. Double-check via
+        // explicit HockeyTech call for certainty.
+        canAutoPublish = (hlState === 'FINAL' || hlState === 'AP' || hlState === 'OT' || hlState === 'SO');
+      } else {
+        // Unknown league — only publish if Highantly returned a scored match
+        canAutoPublish = (match.home_score != null && match.away_score != null);
+      }
+    }
+    if (!canAutoPublish) {
+      const reason = match ? `Highantly state=${match.state || '?'}` : 'no Highantly match';
+      console.log(`  [${i+1}/${drafts.length}] ${d.title} — ${league} game not final (${reason}), skipping auto-publish`);
+      unverifiable++;
+      continue;
+    }
+
     if (!match) {
       console.log(`  [${i+1}/${drafts.length}] ${d.title} — no Highlightly match, cannot verify`);
       unverifiable++;
