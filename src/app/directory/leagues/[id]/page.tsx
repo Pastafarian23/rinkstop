@@ -7,6 +7,7 @@ import { getFollowersCount } from '@/lib/ownership';
 import { buildLeagueFAQs, countryContextFor, LEVEL_DESCRIPTION } from '@/lib/league-context';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import PassportStampsBanner from '@/components/PassportStampsBanner';
 
 const RAW_BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || '';
 const BASE_URL = RAW_BASE_URL.includes('localhost') || RAW_BASE_URL.includes('127.0.0.1')
@@ -235,6 +236,17 @@ export default async function LeaguePage({
       {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
       <div style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
         <ClaimThisListingMount entityType="league" entityId={id} />
+      </div>
+
+      {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). League pages
+          are the natural anchor for the "League Circuit" challenge — every rink
+          in the league can become a stamp. */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <PassportStampsBanner
+          variant="league"
+          contextName={league?.name}
+          contextHint={teamCount ? `${teamCount} teams competing this season.` : undefined}
+        />
       </div>
 
       {/* 2026-09-03 PR #195: trust-signal footer (AdSense compliance hard gate).

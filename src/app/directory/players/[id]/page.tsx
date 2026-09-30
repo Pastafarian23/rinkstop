@@ -9,6 +9,7 @@ import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildPlayerFAQs } from '@/lib/player-context';
 import { supabaseAdmin } from '@/lib/supabase';
+import PassportStampsBanner from '@/components/PassportStampsBanner';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -314,6 +315,16 @@ export default async function PlayerPage({ params }: Props) {
       <PlayerSEOCopy player={playerTyped} career={{}} />
       <div style={{ maxWidth: '800px', margin: '2rem auto 0' }}>
         <ClaimThisListingMount entityType="player" entityId={id} />
+      </div>
+
+      {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). Players are
+          the natural anchor for the Passport pitch — every player page implicitly
+          shows what a populated Hockey Passport looks like. */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <PassportStampsBanner
+          variant="player"
+          contextName={playerTyped?.first_name ? `${playerTyped.first_name} ${playerTyped.last_name ?? ''}`.trim() : undefined}
+        />
       </div>
 
       {/* 2026-09-04 Layer 5 (aggressive growth plan) trust footer.

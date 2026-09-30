@@ -39,6 +39,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import ChallengesSection from '@/components/passport/ChallengesSection';
 import {
   isPublicPassportLookupEnabled,
   passportLookupService,
@@ -235,6 +236,11 @@ async function ActivePassportCard({
         />
         <FederationAffiliationsSection internalUserId={record.internalUserId} />
         <AttendanceSection holderUserId={record.internalUserId} />
+        {/* Challenges (2026-09-29 WS-48h-pricing-passport). Public progress on
+            lifetime challenges — league circuits, geographic, career milestones.
+            Drives the marketing angle of the Hockey Passport: every stamp is
+            progress on a shareable badge. */}
+        <ChallengesSectionWrapper holderUserId={record.internalUserId} />
         <PassportFooter username={username} />
       </div>
     </main>
@@ -665,6 +671,20 @@ async function FederationAffiliationsSection({
  * Empty data → no section (per the "no empty state copy" rule used by
  * FederationAffiliationsSection above).
  */
+/**
+ * Wrapper around ChallengesSection — kept in this file so the page renders
+ * the section inline with the existing Passport card layout instead of
+ * having the consumer import a new component from elsewhere. Pure
+ * pass-through to the challenges component.
+ */
+async function ChallengesSectionWrapper({
+  holderUserId,
+}: {
+  holderUserId: string;
+}): Promise<React.ReactElement | null> {
+  return <ChallengesSection holderUserId={holderUserId} />;
+}
+
 async function AttendanceSection({
   holderUserId,
 }: {
