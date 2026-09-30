@@ -3,14 +3,13 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import NewsletterSignup from '@/components/NewsletterSignup';
-import SocialProof from '@/components/SocialProof';
 
 const supabase = supabaseAdmin;
 
 export const metadata: Metadata = {
-  title: { absolute: 'Hockey News Today — Scores, Highlights & Stories | RinkStop' },
+  title: { absolute: 'Hockey News — Scores, Highlights & Stories | RinkStop' },
   description:
-    'Hockey news today: live NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF scores and game recaps. Updated daily from the global hockey directory covering 1,857 rinks, 2,601 teams, 78 countries.',
+    'Hockey news today: NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF scores and game recaps. Updated daily from the global hockey directory covering 1,857 rinks, 2,601 teams, 78 countries.',
   keywords: [
     'hockey news', 'hockey news today', 'hockey scores', 'hockey game recap',
     'NHL news', 'AHL news', 'KHL news', 'PWHL news', 'CHL news', 'NCAA hockey news',
@@ -19,22 +18,21 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://rinkstop.com/news' },
   robots: { index: true, follow: true },
   openGraph: withDefaultOg({
-    title: 'Hockey News Today — Scores, Highlights & Stories',
+    title: 'Hockey News — Scores, Highlights & Stories',
     description:
-      'Hockey news from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF. Updated daily from the global hockey directory.',
+      'Hockey news from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF. Updated daily.',
     url: 'https://rinkstop.com/news',
     siteName: 'RinkStop',
     type: 'website',
   }),
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey News Today',
+    title: 'Hockey News',
     description:
       'Hockey news from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF — all from one global hockey directory.',
   },
 };
 
-// ISR-cached for 30 minutes — news moves fast but not every minute.
 export const revalidate = 1800;
 export const dynamicParams = true;
 
@@ -43,12 +41,31 @@ interface Post {
   slug: string;
   title: string;
   subtitle?: string | null;
-  excerpt?: string | null;
   published_at?: string | null;
   category?: string | null;
+  pillar?: string | null;
+  league_id?: string | null;
+  team_home_id?: string | null;
+  team_away_id?: string | null;
+  game_date?: string | null;
   reading_time_minutes?: number | null;
   author_name?: string | null;
-  og_image_url?: string | null;
+}
+
+interface League {
+  id: string;
+  name: string;
+  slug: string;
+  country: string | null;
+  level: string | null;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  home_city: string | null;
+  home_country: string | null;
+  league_id: string | null;
 }
 
 function formatDate(date?: string | null) {
@@ -63,47 +80,121 @@ function decodeEntities(s: string | null | undefined): string {
   return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 }
 
+function relativeTime(dateStr?: string | null): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  return formatDate(dateStr);
+}
+
 /**
- * /news — Hockey News Today landing page.
+ * /news — Hockey news landing page.
  *
- * Why this page exists (and the value here is real, not invented):
- *   - "Hockey news today" / "hockey scores" type queries are some of the
- *     highest-volume commercial-intent hockey searches.
- *   - AI Overview / Featured Snippet answers cite sources with recent
- *     dated content + clear "what happened today" structure.
- *   - Hockey parents, coaches, and fans check scores daily. Even with
- *     0% conversion rate, traffic compounds because every visitor who
- *     shares an article drives SEO.
+ * Information architecture (top to bottom):
+ *   1. Hero with date stamp + tagline
+ *   2. Filter chips (by league, country, level)
+ *   3. Featured story (today's #1, large card)
+ *   4. Latest stories list (chronological, last 14 days highlighted)
+ *   5. Browse by league (large clickable tiles for top leagues)
+ *   6. Weekly digest signup
+ *   7. Browse the directory (related surfaces)
+ *   8. Older archive
  *
- * Layout:
- *   1. Hero: "Today's Hockey" + email capture (weekly digest signup)
- *   2. "Today's Highlights" rail (top 5 most recent)
- *   3. Full post list (latest 30) grouped by category
- *   4. Related surfaces: directory, passport, dataset license
- *
- * Page has zero manual SEO work. The structure (hero + "today" + clear
- * dates + breadcrumbs) is what gets picked up.
+ * Why this structure:
+ *   - Filter chips at the top match how news sites are organized (NYT, ESPN).
+ *   - Featured story surfaces the most recent publication prominently.
+ *   - "Browse by league" lets hockey fans go straight to NHL / AHL / KHL etc.
+ *   - Chronological list satisfies "what happened recently" queries.
  */
 export default async function NewsPage() {
-  // Pull latest published posts, ordered by date desc.
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('id, slug, title, subtitle, published_at, category, reading_time_minutes, author_name, og_image_url')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(60);
+  // 1. Pull posts + leagues + teams in parallel.
+  const [postsRes, leaguesRes, teamsRes] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(80),
+    supabase
+      .from('leagues')
+      .select('id, name, slug, country, level')
+      .eq('is_active', true),
+    supabase
+      .from('team_workspaces')
+      .select('id, name, home_city, home_country, league_id')
+      .eq('is_active', true)
+      .in('visibility', ['public', 'unlisted']),
+  ]);
 
-  const list: Post[] = posts || [];
-  const todays = list.slice(0, 5);
-  const rest = list.slice(5);
+  const posts: Post[] = postsRes.data || [];
+  const allLeagues: League[] = leaguesRes.data || [];
+  const allTeams: Team[] = teamsRes.data || [];
 
-  // Group remaining posts by category for the lower section.
-  const byCategory: Record<string, Post[]> = {};
-  for (const p of rest) {
-    const c = p.category || 'Other';
-    if (!byCategory[c]) byCategory[c] = [];
-    byCategory[c].push(p);
+  // Build lookup maps.
+  const leagueById = new Map<string, League>();
+  for (const l of allLeagues) leagueById.set(l.id, l);
+  const teamById = new Map<string, Team>();
+  for (const t of allTeams) teamById.set(t.id, t);
+
+  // 2. Derive league counts from posts (every post has a league_id).
+  const leaguePostCounts = new Map<string, { league: League; count: number; latestPost: Post | null }>();
+  for (const post of posts) {
+    if (!post.league_id) continue;
+    const league = leagueById.get(post.league_id);
+    if (!league) continue;
+    const existing = leaguePostCounts.get(post.league_id);
+    if (!existing) {
+      leaguePostCounts.set(post.league_id, { league, count: 1, latestPost: post });
+    } else {
+      existing.count++;
+      if (!existing.latestPost || new Date(post.published_at || 0) > new Date(existing.latestPost.published_at || 0)) {
+        existing.latestPost = post;
+      }
+    }
   }
+
+  // Top leagues by post count (filter to ones with at least 1 post).
+  const topLeagues = Array.from(leaguePostCounts.values())
+    .filter((lp) => lp.count >= 1)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 12);
+
+  // 3. Today's stories (last 3 days).
+  const todayMs = Date.now();
+  const threeDaysAgo = todayMs - 3 * 24 * 60 * 60 * 1000;
+  const recent = posts.filter((p) => new Date(p.published_at || 0).getTime() > threeDaysAgo);
+  const featured = recent[0];
+  const restOfRecent = recent.slice(1, 12);
+  const older = posts.slice(recent.length, 50);
+
+  // 4. Group recent by date for date labels.
+  const byDateGroup: Record<string, Post[]> = {};
+  for (const post of restOfRecent) {
+    const label = relativeTime(post.published_at);
+    if (!byDateGroup[label]) byDateGroup[label] = [];
+    byDateGroup[label].push(post);
+  }
+
+  // Country aggregation from team home_country, when team_home_id is present.
+  const countryCounts = new Map<string, number>();
+  for (const post of posts) {
+    const homeId = post.team_home_id;
+    if (!homeId) continue;
+    const team = teamById.get(homeId);
+    if (team?.home_country) {
+      countryCounts.set(team.home_country, (countryCounts.get(team.home_country) || 0) + 1);
+    }
+  }
+  const topCountries = Array.from(countryCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([code, count]) => ({ code, count }));
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
@@ -115,7 +206,7 @@ export default async function NewsPage() {
         <span style={{ color: 'rgba(255,255,255,0.6)' }}>News</span>
       </nav>
 
-      {/* Hero + email capture */}
+      {/* 1. Hero */}
       <section
         data-news-hero
         style={{
@@ -128,7 +219,6 @@ export default async function NewsPage() {
           overflow: 'hidden',
         }}
       >
-        {/* Gold accent stripe */}
         <div
           aria-hidden
           style={{
@@ -140,56 +230,461 @@ export default async function NewsPage() {
             background: 'linear-gradient(90deg, transparent 0%, #FFB81C 50%, transparent 100%)',
           }}
         />
-        <div style={{
-          fontSize: '0.7rem',
-          fontWeight: 800,
-          letterSpacing: '0.22em',
-          color: '#FFB81C',
-          textTransform: 'uppercase',
-          marginBottom: '0.5rem',
-        }}>
-          Hockey news today
+        <div
+          style={{
+            fontSize: '0.7rem',
+            fontWeight: 800,
+            letterSpacing: '0.22em',
+            color: '#FFB81C',
+            textTransform: 'uppercase',
+            marginBottom: '0.5rem',
+          }}
+        >
+          Hockey news
         </div>
-        <h1 style={{
-          fontSize: 'clamp(2rem, 5vw, 2.75rem)',
-          fontWeight: 900,
-          color: '#fff',
-          letterSpacing: '-0.01em',
-          lineHeight: 1.05,
-          margin: '0 0 0.5rem',
-        }}>
+        <h1
+          style={{
+            fontSize: 'clamp(2rem, 5vw, 2.75rem)',
+            fontWeight: 900,
+            color: '#fff',
+            letterSpacing: '-0.01em',
+            lineHeight: 1.05,
+            margin: '0 0 0.5rem',
+          }}
+        >
           Every hockey game. Every league. <span style={{ color: '#C8102E' }}>One feed.</span>
         </h1>
-        <p style={{
-          color: 'rgba(255,255,255,0.7)',
-          fontSize: '1.0625rem',
-          maxWidth: 720,
-          margin: '0 0 1.5rem',
-          lineHeight: 1.55,
-        }}>
-          Scores, highlights, and analysis from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF, and leagues worldwide — pulled from the global hockey directory covering 1,857 rinks across 78 countries.
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '1.0625rem',
+            maxWidth: 720,
+            margin: '0 0 1rem',
+            lineHeight: 1.55,
+          }}
+        >
+          Scores, highlights, and analysis from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF, and leagues worldwide.
         </p>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.4rem 0.85rem',
-          background: 'rgba(255,184,28,0.12)',
-          border: '1px solid rgba(255,184,28,0.3)',
-          borderRadius: 999,
-          fontSize: '0.75rem',
-          fontWeight: 700,
-          color: '#FFB81C',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          marginBottom: '1.25rem',
-        }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.4rem 0.85rem',
+            background: 'rgba(255,184,28,0.12)',
+            border: '1px solid rgba(255,184,28,0.3)',
+            borderRadius: 999,
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            color: '#FFB81C',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}
+        >
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', display: 'inline-block' }} aria-hidden />
-          Updated {todays[0]?.published_at ? formatDate(todays[0].published_at) : 'recently'}
+          Updated {featured?.published_at ? relativeTime(featured.published_at) : 'recently'}
         </div>
       </section>
 
-      {/* Email capture — weekly digest */}
+      {/* 2. Filter chips — by league and country */}
+      <section
+        data-news-filters
+        aria-label="Filter news by league or country"
+        style={{ marginBottom: '2rem' }}
+      >
+        <div
+          style={{
+            fontSize: '0.7rem',
+            fontWeight: 800,
+            letterSpacing: '0.22em',
+            color: 'rgba(255,255,255,0.5)',
+            textTransform: 'uppercase',
+            marginBottom: '0.75rem',
+          }}
+        >
+          Browse by league
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+          }}
+        >
+          <Link
+            href="/news"
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'rgba(255,184,28,0.15)',
+              border: '1.5px solid rgba(255,184,28,0.5)',
+              borderRadius: 999,
+              color: '#FFB81C',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            All leagues
+          </Link>
+          {topLeagues.map(({ league, count }) => (
+            <Link
+              key={league.id}
+              href={`/directory/leagues/${league.slug}`}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 999,
+                color: 'rgba(255,255,255,0.85)',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {league.name} <span style={{ opacity: 0.5, marginLeft: 4 }}>· {count}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 3. Featured story */}
+      {featured && (
+        <section
+          data-featured-story
+          aria-label="Featured story"
+          style={{ marginBottom: '2.5rem' }}
+        >
+          <h2
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              letterSpacing: '0.22em',
+              color: 'rgba(255,184,28,0.7)',
+              textTransform: 'uppercase',
+              margin: '0 0 1rem',
+            }}
+          >
+            ⭐ Featured
+          </h2>
+          <Link
+            href={`/news/${featured.slug}`}
+            style={{
+              display: 'block',
+              padding: '2rem 2rem',
+              background: 'linear-gradient(135deg, rgba(200,16,46,0.18) 0%, rgba(11,30,63,0.6) 100%)',
+              border: '2px solid rgba(200,16,46,0.5)',
+              borderRadius: 14,
+              textDecoration: 'none',
+              color: '#fff',
+              transition: 'transform 0.15s, border-color 0.15s',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                marginBottom: '0.75rem',
+              }}
+            >
+              {featured.category && (
+                <span
+                  style={{
+                    fontSize: '0.625rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    padding: '0.2rem 0.55rem',
+                    borderRadius: 4,
+                    background: '#C8102E',
+                    color: '#fff',
+                  }}
+                >
+                  {featured.category}
+                </span>
+              )}
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>
+                {relativeTime(featured.published_at)} · {formatDate(featured.published_at)}
+              </span>
+              {featured.league_id && leagueById.get(featured.league_id) && (
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,184,28,0.8)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {leagueById.get(featured.league_id)!.name}
+                </span>
+              )}
+            </div>
+            <h3
+              style={{
+                fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+                fontWeight: 800,
+                lineHeight: 1.15,
+                margin: '0 0 0.6rem',
+                color: '#fff',
+              }}
+            >
+              {decodeEntities(featured.title)}
+            </h3>
+            {featured.subtitle && (
+              <p
+                style={{
+                  fontSize: '1rem',
+                  color: 'rgba(255,255,255,0.7)',
+                  lineHeight: 1.5,
+                  margin: 0,
+                  maxWidth: 700,
+                }}
+              >
+                {decodeEntities(featured.subtitle)}
+              </p>
+            )}
+            <div style={{ marginTop: '1.25rem', fontSize: '0.8125rem', fontWeight: 700, color: '#FFB81C', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Read full story →
+            </div>
+          </Link>
+        </section>
+      )}
+
+      {/* 4. Latest stories — chronological, grouped by date */}
+      {restOfRecent.length > 0 && (
+        <section
+          data-latest-stories
+          aria-label="Latest stories"
+          style={{ marginBottom: '2.5rem' }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: '1rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '1px solid rgba(255,184,28,0.25)',
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: 'Bebas Neue, Impact, sans-serif',
+                fontSize: '1.5rem',
+                color: '#fff',
+                letterSpacing: '0.04em',
+                margin: 0,
+              }}
+            >
+              LATEST STORIES
+            </h2>
+            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Last 7 days
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {Object.entries(byDateGroup).map(([dateLabel, datePosts]) => (
+              <div key={dateLabel}>
+                <h3
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.18em',
+                    color: dateLabel === 'Today' ? '#FFB81C' : 'rgba(255,255,255,0.45)',
+                    textTransform: 'uppercase',
+                    margin: '0 0 0.5rem',
+                  }}
+                >
+                  {dateLabel}
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {datePosts.map((post) => {
+                    const league = post.league_id ? leagueById.get(post.league_id) : null;
+                    return (
+                      <Link
+                        key={post.id}
+                        href={`/news/${post.slug}`}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '1rem',
+                          padding: '0.875rem 1.125rem',
+                          background: 'rgba(255,255,255,0.025)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          borderRadius: 6,
+                          textDecoration: 'none',
+                          color: 'rgba(255,255,255,0.85)',
+                          transition: 'background 0.15s, border-color 0.15s',
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {league && (
+                              <span style={{
+                                fontSize: '0.5625rem',
+                                fontWeight: 800,
+                                letterSpacing: '0.12em',
+                                textTransform: 'uppercase',
+                                padding: '0.1rem 0.4rem',
+                                borderRadius: 3,
+                                background: 'rgba(255,184,28,0.15)',
+                                color: '#FFB81C',
+                              }}>
+                                {league.name}
+                              </span>
+                            )}
+                            <span style={{
+                              fontSize: '0.875rem',
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              color: '#fff',
+                            }}>
+                              {decodeEntities(post.title)}
+                            </span>
+                          </div>
+                          {post.subtitle && (
+                            <span style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {decodeEntities(post.subtitle)}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ flexShrink: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
+                          {formatDate(post.published_at)}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 5. Browse by league — large tiles */}
+      {topLeagues.length > 0 && (
+        <section
+          data-browse-by-league
+          aria-label="Browse by league"
+          style={{ marginBottom: '2.5rem' }}
+        >
+          <h2
+            style={{
+              fontFamily: 'Bebas Neue, Impact, sans-serif',
+              fontSize: '1.5rem',
+              color: '#fff',
+              letterSpacing: '0.04em',
+              margin: '0 0 1rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '1px solid rgba(255,184,28,0.25)',
+            }}
+          >
+            BROWSE BY LEAGUE
+          </h2>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: '0.75rem',
+            }}
+          >
+            {topLeagues.map(({ league, count }) => (
+              <Link
+                key={league.id}
+                href={`/directory/leagues/${league.slug}`}
+                data-league-tile={league.slug}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.3rem',
+                  padding: '1rem 1.125rem',
+                  background: league.level === 'professional'
+                    ? 'rgba(200,16,46,0.08)'
+                    : 'rgba(255,184,28,0.06)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8,
+                  textDecoration: 'none',
+                  color: '#fff',
+                  transition: 'border-color 0.15s, transform 0.15s',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                  <span style={{ fontWeight: 800, fontSize: '1rem', lineHeight: 1.2 }}>
+                    {league.name}
+                  </span>
+                  <span style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 800,
+                    padding: '0.15rem 0.45rem',
+                    borderRadius: 999,
+                    background: 'rgba(255,184,28,0.15)',
+                    color: '#FFB81C',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {count}
+                  </span>
+                </div>
+                {league.country && (
+                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)' }}>
+                    {league.country} · {league.level || 'amateur'}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 6. Browse by country */}
+      {topCountries.length > 0 && (
+        <section
+          data-browse-by-country
+          aria-label="Browse news by country"
+          style={{ marginBottom: '2.5rem' }}
+        >
+          <h2
+            style={{
+              fontFamily: 'Bebas Neue, Impact, sans-serif',
+              fontSize: '1.5rem',
+              color: '#fff',
+              letterSpacing: '0.04em',
+              margin: '0 0 1rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '1px solid rgba(255,184,28,0.25)',
+            }}
+          >
+            BROWSE BY COUNTRY
+          </h2>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
+            }}
+          >
+            {topCountries.map(({ code, count }) => (
+              <Link
+                key={code}
+                href={`/directory/${code.toLowerCase()}`}
+                style={{
+                  padding: '0.5rem 0.85rem',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 999,
+                  color: 'rgba(255,255,255,0.85)',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {code} <span style={{ opacity: 0.5, marginLeft: 4 }}>· {count}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 7. Weekly digest signup */}
       <section
         data-newsletter
         aria-label="Weekly Hockey Digest"
@@ -217,7 +712,6 @@ export default async function NewsPage() {
           fontWeight: 800,
           color: '#fff',
           margin: '0 0 0.5rem',
-          letterSpacing: '0.01em',
         }}>
           Get the weekly hockey digest
         </h2>
@@ -228,7 +722,7 @@ export default async function NewsPage() {
           margin: '0 auto 1.25rem',
           lineHeight: 1.55,
         }}>
-          Every Friday: new rinks tracked, top team moves, biggest games, and the data points that mattered. No spam. Unsubscribe anytime.
+          Every Friday: top stories, biggest games, and the data points that mattered. No spam. Unsubscribe anytime.
         </p>
         <NewsletterSignup source="news_weekly_digest" />
         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.75rem' }}>
@@ -236,217 +730,77 @@ export default async function NewsPage() {
         </div>
       </section>
 
-      {/* Today's highlights — featured rail */}
-      <section
-        data-todays-highlights
-        aria-label="Today's highlights"
-        style={{ marginBottom: '2.5rem' }}
-      >
-        <div style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          marginBottom: '1rem',
-          paddingBottom: '0.5rem',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-        }}>
-          <h2 style={{
-            fontFamily: 'Bebas Neue, Impact, sans-serif',
-            fontSize: '1.5rem',
-            color: '#fff',
-            letterSpacing: '0.04em',
-            margin: 0,
-          }}>
-            TODAY'S HIGHLIGHTS
-          </h2>
-          <Link
-            href="/news/highlights"
+      {/* 8. Older archive */}
+      {older.length > 0 && (
+        <section
+          data-archive
+          aria-label="Older news archive"
+          style={{ marginBottom: '2rem' }}
+        >
+          <h2
             style={{
-              fontSize: '0.8125rem',
-              fontWeight: 700,
-              color: '#FFB81C',
-              textDecoration: 'none',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              letterSpacing: '0.22em',
+              color: 'rgba(255,255,255,0.5)',
+              textTransform: 'uppercase',
+              margin: '0 0 1rem',
             }}
           >
-            All highlights →
-          </Link>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-          {todays.length === 0 ? (
-            <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
-              No highlights published today yet. Check back soon.
-            </div>
-          ) : (
-            todays.map((post, i) => (
-              <Link
-                key={post.id}
-                href={`/news/${post.slug}`}
-                data-today-index={i}
-                style={{
-                  display: 'flex',
-                  gap: '1rem',
-                  padding: '1rem 1.25rem',
-                  background: i === 0
-                    ? 'linear-gradient(135deg, rgba(200,16,46,0.12) 0%, rgba(255,184,28,0.04) 100%)'
-                    : 'rgba(255,255,255,0.025)',
-                  border: i === 0 ? '1px solid rgba(200,16,46,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 8,
-                  textDecoration: 'none',
-                  color: '#fff',
-                  transition: 'transform 0.15s, border-color 0.15s',
-                }}
-              >
-                {i === 0 && (
-                  <div style={{
-                    width: 4,
-                    borderRadius: 4,
-                    background: '#C8102E',
-                    flexShrink: 0,
-                  }} aria-hidden />
-                )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
+            Older stories
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {older.map((post) => {
+              const league = post.league_id ? leagueById.get(post.league_id) : null;
+              return (
+                <Link
+                  key={post.id}
+                  href={`/news/${post.slug}`}
+                  style={{
                     display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.35rem',
-                  }}>
-                    {post.category && (
+                    gap: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    background: 'rgba(255,255,255,0.015)',
+                    border: '1px solid rgba(255,255,255,0.04)',
+                    borderRadius: 5,
+                    textDecoration: 'none',
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: '0.8125rem',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {league && (
                       <span style={{
                         fontSize: '0.5625rem',
                         fontWeight: 800,
-                        letterSpacing: '0.12em',
+                        letterSpacing: '0.1em',
                         textTransform: 'uppercase',
-                        padding: '0.15rem 0.45rem',
-                        borderRadius: 3,
-                        background: 'rgba(200,16,46,0.18)',
-                        color: '#FF8FA0',
+                        color: '#FFB81C',
+                        marginRight: '0.4rem',
                       }}>
-                        {post.category}
+                        {league.name}
                       </span>
                     )}
-                    <span style={{
-                      fontSize: '0.6875rem',
-                      color: 'rgba(255,255,255,0.45)',
-                    }}>
-                      {formatDate(post.published_at)}
-                    </span>
-                  </div>
-                  <h3 style={{
-                    fontSize: '1.0625rem',
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                    margin: 0,
-                    color: '#fff',
-                  }}>
                     {decodeEntities(post.title)}
-                  </h3>
-                  {(post.subtitle || post.excerpt) && (
-                    <p style={{
-                      fontSize: '0.875rem',
-                      color: 'rgba(255,255,255,0.55)',
-                      lineHeight: 1.45,
-                      margin: '0.35rem 0 0',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical' as const,
-                    }}>
-                      {decodeEntities(post.subtitle || post.excerpt)}
-                    </p>
-                  )}
-                </div>
-                <div style={{ flexShrink: 0, color: 'var(--red, #C8102E)', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', alignSelf: 'center' }}>
-                  Read →
-                </div>
-              </Link>
-            ))
-          )}
-        </div>
-      </section>
-
-      {/* All recent posts grouped by category */}
-      <section
-        data-news-archive
-        aria-label="Recent hockey news archive"
-        style={{ marginBottom: '2.5rem' }}
-      >
-        <h2 style={{
-          fontFamily: 'Bebas Neue, Impact, sans-serif',
-          fontSize: '1.5rem',
-          color: '#fff',
-          letterSpacing: '0.04em',
-          margin: '0 0 1rem',
-          paddingBottom: '0.5rem',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-        }}>
-          MORE HOCKEY NEWS
-        </h2>
-
-        {rest.length === 0 ? (
-          <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
-            Archive is empty. Check back as new posts publish.
+                  </span>
+                  <span style={{ flexShrink: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>
+                    {formatDate(post.published_at)}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
-        ) : (
-          Object.entries(byCategory).map(([category, catPosts]) => (
-            <div
-              key={category}
-              data-news-category={category}
-              style={{ marginBottom: '1.5rem' }}
-            >
-              <h3 style={{
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                letterSpacing: '0.18em',
-                color: 'rgba(255,255,255,0.5)',
-                textTransform: 'uppercase',
-                margin: '0 0 0.75rem',
-              }}>
-                {category}
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {catPosts.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/news/${post.slug}`}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      padding: '0.75rem 1rem',
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: 6,
-                      textDecoration: 'none',
-                      color: 'rgba(255,255,255,0.85)',
-                      fontSize: '0.9375rem',
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {decodeEntities(post.title)}
-                    </span>
-                    <span style={{ flexShrink: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                      {formatDate(post.published_at)}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* Social proof — drives traffic-to-conversion */}
-      <SocialProof variant="compact" />
-
-      {/* Cross-link to other RinkStop surfaces */}
+      {/* 9. Browse the directory */}
       <section
         data-news-crosslinks
+        aria-label="More from RinkStop"
         style={{
-          marginTop: '2rem',
           padding: '1.5rem',
           background: 'rgba(255,255,255,0.02)',
           border: '1px solid rgba(255,255,255,0.06)',
@@ -454,86 +808,49 @@ export default async function NewsPage() {
         }}
       >
         <h3 style={{
-          fontSize: '0.75rem',
+          fontSize: '0.7rem',
           fontWeight: 800,
-          letterSpacing: '0.18em',
+          letterSpacing: '0.22em',
           color: 'rgba(255,255,255,0.5)',
           textTransform: 'uppercase',
           margin: '0 0 1rem',
         }}>
-          More from RinkStop
+          Explore the directory
         </h3>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: '0.75rem',
         }}>
-          <Link
-            href="/directory"
-            style={{
-              padding: '0.875rem 1rem',
-              background: 'rgba(255,184,28,0.06)',
-              border: '1px solid rgba(255,184,28,0.2)',
-              borderRadius: 6,
-              color: '#fff',
-              textDecoration: 'none',
-            }}
-          >
-            <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>Hockey Directory</div>
-            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)' }}>
-              1,857 rinks, 2,601 teams, 6,351 players.
-            </div>
+          <Link href="/directory" style={linkCardStyle('#FFB81C')}>
+            <div style={linkCardTitleStyle}>Hockey Directory</div>
+            <div style={linkCardDescStyle}>1,857 rinks, 2,601 teams, 6,351 players.</div>
           </Link>
-          <Link
-            href="/learn"
-            style={{
-              padding: '0.875rem 1rem',
-              background: 'rgba(200,16,46,0.06)',
-              border: '1px solid rgba(200,16,46,0.2)',
-              borderRadius: 6,
-              color: '#fff',
-              textDecoration: 'none',
-            }}
-          >
-            <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>Learn Hockey</div>
-            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)' }}>
-              Equipment guides, parent handbooks, FAQ.
-            </div>
+          <Link href="/learn" style={linkCardStyle('#C8102E')}>
+            <div style={linkCardTitleStyle}>Learn Hockey</div>
+            <div style={linkCardDescStyle}>Equipment guides, parent handbooks, FAQ.</div>
           </Link>
-          <Link
-            href="/best-hockey-gear"
-            style={{
-              padding: '0.875rem 1rem',
-              background: 'rgba(20,184,166,0.06)',
-              border: '1px solid rgba(20,184,166,0.2)',
-              borderRadius: 6,
-              color: '#fff',
-              textDecoration: 'none',
-            }}
-          >
-            <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>Best Hockey Gear 2026</div>
-            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)' }}>
-              Tested picks for skates, sticks, helmets.
-            </div>
+          <Link href="/learn/best-hockey-gear" style={linkCardStyle('#14B8A6')}>
+            <div style={linkCardTitleStyle}>Best Hockey Gear 2026</div>
+            <div style={linkCardDescStyle}>Tested picks for skates, sticks, helmets.</div>
           </Link>
-          <Link
-            href="/dataset-license"
-            style={{
-              padding: '0.875rem 1rem',
-              background: 'rgba(255,184,28,0.06)',
-              border: '1px solid rgba(255,184,28,0.2)',
-              borderRadius: 6,
-              color: '#fff',
-              textDecoration: 'none',
-            }}
-          >
-            <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>Hockey Dataset — $499</div>
-            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)' }}>
-              Bulk CSV/JSON for analytics.
-            </div>
+          <Link href="/dataset-license" style={linkCardStyle('#FFB81C')}>
+            <div style={linkCardTitleStyle}>Hockey Dataset — $499</div>
+            <div style={linkCardDescStyle}>Bulk CSV/JSON for analytics.</div>
           </Link>
         </div>
       </section>
     </div>
   );
 }
+
+const linkCardStyle = (accent: string): React.CSSProperties => ({
+  padding: '0.875rem 1rem',
+  background: 'rgba(255,255,255,0.025)',
+  border: `1px solid rgba(255,255,255,0.08)`,
+  borderRadius: 6,
+  color: '#fff',
+  textDecoration: 'none',
+});
+const linkCardTitleStyle: React.CSSProperties = { fontWeight: 700, marginBottom: '0.2rem' };
+const linkCardDescStyle: React.CSSProperties = { fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)' };
