@@ -50,6 +50,7 @@ interface Post {
   game_date?: string | null;
   reading_time_minutes?: number | null;
   author_name?: string | null;
+  og_image_url?: string | null;
 }
 
 interface League {
@@ -338,14 +339,14 @@ export default async function NewsPage() {
     Promise.all([
       supabase
         .from('posts')
-        .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name')
+        .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name, og_image_url')
         .eq('status', 'published')
         .or('category.eq.highlights,pillar.eq.highlights,pillar.is.null')
         .order('published_at', { ascending: false })
         .limit(60),
       supabase
         .from('posts')
-        .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name')
+        .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name, og_image_url')
         .eq('status', 'published')
         .neq('category', 'highlights')
         .neq('pillar', 'highlights')
@@ -739,15 +740,31 @@ export default async function NewsPage() {
             href={`/news/${featured.slug}`}
             style={{
               display: 'block',
-              padding: '2rem 2rem',
               background: 'linear-gradient(135deg, rgba(200,16,46,0.18) 0%, rgba(11,30,63,0.6) 100%)',
               border: '2px solid rgba(200,16,46,0.5)',
               borderRadius: 14,
               textDecoration: 'none',
               color: '#fff',
               transition: 'transform 0.15s, border-color 0.15s',
+              overflow: 'hidden',
             }}
           >
+            {featured.og_image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={featured.og_image_url}
+                alt={decodeEntities(featured.title)}
+                data-featured-hero
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: 'clamp(200px, 32vw, 320px)',
+                  objectFit: 'cover',
+                  background: 'rgba(0,0,0,0.3)',
+                }}
+              />
+            )}
+            <div style={{ padding: '1.5rem 2rem 2rem' }}>
             <div
               style={{
                 display: 'flex',
@@ -808,6 +825,7 @@ export default async function NewsPage() {
             <div style={{ marginTop: '1.25rem', fontSize: '0.8125rem', fontWeight: 700, color: '#FFB81C', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Read full story →
             </div>
+            </div>
           </Link>
         </section>
       )}
@@ -860,63 +878,91 @@ export default async function NewsPage() {
                 >
                   {dateLabel}
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {datePosts.map((post) => {
                     const league = post.league_id ? leagueById.get(post.league_id) : null;
                     return (
                       <Link
                         key={post.id}
                         href={`/news/${post.slug}`}
+                        data-latest-card={post.slug}
                         style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: '1rem',
-                          padding: '0.875rem 1.125rem',
+                          display: 'block',
                           background: 'rgba(255,255,255,0.025)',
                           border: '1px solid rgba(255,255,255,0.06)',
-                          borderRadius: 6,
+                          borderRadius: 10,
                           textDecoration: 'none',
-                          color: 'rgba(255,255,255,0.85)',
-                          transition: 'background 0.15s, border-color 0.15s',
+                          color: '#fff',
+                          transition: 'border-color 0.15s, transform 0.15s',
+                          overflow: 'hidden',
                         }}
                       >
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {league && (
+                        {post.og_image_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={post.og_image_url}
+                            alt={decodeEntities(post.title)}
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              height: '180px',
+                              objectFit: 'cover',
+                              background: 'rgba(0,0,0,0.3)',
+                            }}
+                          />
+                        )}
+                        <div style={{ padding: '1.125rem 1.25rem 1.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            {post.category && (
                               <span style={{
-                                fontSize: '0.5625rem',
+                                fontSize: '0.625rem',
                                 fontWeight: 800,
                                 letterSpacing: '0.12em',
                                 textTransform: 'uppercase',
-                                padding: '0.1rem 0.4rem',
+                                padding: '0.2rem 0.5rem',
                                 borderRadius: 3,
-                                background: 'rgba(255,184,28,0.15)',
-                                color: '#FFB81C',
+                                background: '#C8102E',
+                                color: '#fff',
                               }}>
+                                {post.category}
+                              </span>
+                            )}
+                            {league && (
+                              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)' }}>
                                 {league.name}
                               </span>
                             )}
-                            <span style={{
-                              fontSize: '0.875rem',
-                              fontWeight: 600,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              color: '#fff',
-                            }}>
-                              {decodeEntities(post.title)}
+                            <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
+                              {formatDate(post.published_at)}
                             </span>
                           </div>
+                          <h4 style={{
+                            fontSize: '1.125rem',
+                            fontWeight: 700,
+                            color: '#fff',
+                            lineHeight: 1.3,
+                            margin: '0 0 0.4rem',
+                          }}>
+                            {decodeEntities(post.title)}
+                          </h4>
                           {post.subtitle && (
-                            <span style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <p style={{
+                              fontSize: '0.875rem',
+                              color: 'rgba(255,255,255,0.6)',
+                              lineHeight: 1.45,
+                              margin: '0 0 0.5rem',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical' as const,
+                              overflow: 'hidden',
+                            }}>
                               {decodeEntities(post.subtitle)}
-                            </span>
+                            </p>
                           )}
+                          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#C8102E', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                            Read more →
+                          </div>
                         </div>
-                        <span style={{ flexShrink: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
-                          {formatDate(post.published_at)}
-                        </span>
                       </Link>
                     );
                   })}
