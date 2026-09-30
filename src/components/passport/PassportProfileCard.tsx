@@ -89,7 +89,7 @@ export default async function PassportProfileCard({
           boxShadow: '0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,184,28,0.15)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div className="profile-passport-row" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           {/* Gold seal */}
           <div
             aria-hidden
@@ -113,7 +113,7 @@ export default async function PassportProfileCard({
           >
             RS
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ minWidth: 0, flex: '1 1 140px' }}>
             <p
               style={{
                 fontFamily: "'Bebas Neue', Impact, sans-serif",
@@ -134,6 +134,8 @@ export default async function PassportProfileCard({
                 color: PASSPORT_GOLD,
                 margin: '4px 0 0',
                 letterSpacing: '0.06em',
+                wordBreak: 'break-all',
+                overflowWrap: 'anywhere',
               }}
             >
               {passport.passport_id}
@@ -152,6 +154,7 @@ export default async function PassportProfileCard({
           <Link
             href={passportUrl}
             data-passport-view-link
+            className="profile-passport-view-link"
             style={{
               fontSize: 13,
               fontWeight: 700,
@@ -162,6 +165,7 @@ export default async function PassportProfileCard({
               padding: '8px 14px',
               background: 'rgba(255,184,28,0.08)',
               flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >
             View Passport →

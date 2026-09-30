@@ -30,8 +30,6 @@ export default function ProfileTabs({ active, username, counts }: ProfileTabsPro
     { key: 'overview', label: 'Overview', href: `/profile/${username}` },
     { key: 'about', label: 'About', href: `/profile/${username}#about` },
     { key: 'passport', label: 'Passport', href: `/profile/${username}/passport` },
-    { key: 'posts', label: 'Posts', href: `/profile/${username}#posts`, count: counts?.posts ?? 0, comingSoon: true },
-    { key: 'media', label: 'Media', href: `/profile/${username}#media`, count: counts?.media ?? 0, comingSoon: true },
   ];
 
   return (

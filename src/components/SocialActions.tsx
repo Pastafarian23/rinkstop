@@ -283,7 +283,7 @@ function baseBtnStyle(variant: 'primary' | 'outline', sizeStyle: React.CSSProper
     border: '1px solid', lineHeight: 1.2,
   };
   if (variant === 'primary') {
-    return { ...base, background: '#14B8A6', borderColor: '#14B8A6', color: '#0a0a0a' };
+    return { ...base, background: 'linear-gradient(135deg, #C8102E 0%, #a00d24 100%)', borderColor: '#C8102E', color: '#fff', boxShadow: '0 2px 8px rgba(200,16,46,0.35), inset 0 1px 0 rgba(255,255,255,0.15)' };
   }
   return { ...base, background: 'transparent', borderColor: 'rgba(255,255,255,0.15)', color: '#e2e8f0' };
 }
