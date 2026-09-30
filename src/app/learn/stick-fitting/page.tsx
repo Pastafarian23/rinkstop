@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
 import MarkReadButton from '@/components/learn/MarkReadButton';
+import AffiliateProductCard from '@/components/AffiliateProductCard';
 
 export const metadata: Metadata = {
   title: 'How to Choose a Hockey Stick — Length, Flex, Curve, Lie',
@@ -116,6 +117,23 @@ export default function StickFittingPage() {
           <li>After cutting, sand the end smooth with fine sandpaper.</li>
           <li>Re-attach the butt end of the grip. Most sticks have a removable butt end that pops off before cutting.</li>
         </ol>
+
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Recommended sticks</h2>
+        <p style={{ marginBottom: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem' }}>
+          Sticks that hold up for the right player. Pick by kick point and shot type.
+        </p>
+        <AffiliateProductCard
+          product={{ name: 'Bauer Nexus E5 Grip Senior Stick', brand: 'Bauer', reason: 'Best mid-kick for shooters. Most popular intermediate stick for good reason.', priceUsd: 199, searchTerms: 'Bauer Nexus E5 senior hockey stick' }}
+          placement="stick-fitting-article"
+        />
+        <AffiliateProductCard
+          product={{ name: 'CCM Tacks XF 80 Grip Senior Stick', brand: 'CCM', reason: 'Best low-kick for quick-release shooters. Lighter than the E5 at the same price.', priceUsd: 199, searchTerms: 'CCM Tacks XF 80 senior hockey stick' }}
+          placement="stick-fitting-article"
+        />
+        <AffiliateProductCard
+          product={{ name: 'Warrior Covert QR5 Pro Stock Grip Senior', brand: 'Warrior', reason: 'Best budget composite stick. Surprisingly durable for sub-$150 composite.', priceUsd: 129, searchTerms: 'Warrior Covert QR5 senior hockey stick' }}
+          placement="stick-fitting-article"
+        />
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
