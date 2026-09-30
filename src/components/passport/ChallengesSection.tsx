@@ -65,6 +65,8 @@ interface ChallengeDef {
 
 interface ChallengesSectionProps {
   holderUserId: string;
+  /** Theme variant: 'dark' for the premium public passport page (default), 'light' for embedded surfaces. */
+  theme?: 'dark' | 'light';
 }
 
 /**
@@ -159,6 +161,7 @@ async function resolveUserScope(holderUserId: string): Promise<ChallengeScope> {
 
 export default async function ChallengesSection({
   holderUserId,
+  theme = 'dark',
 }: ChallengesSectionProps): Promise<React.ReactElement | null> {
   // Uses the service-role client imported above (server-only).
   const attendance = await stampService.getPublicAttendance(holderUserId);
@@ -179,10 +182,10 @@ export default async function ChallengesSection({
           margin: '32px auto 0',
           padding: '20px 18px',
           maxWidth: 560,
-          background: '#FFFFFF',
-          border: '1px solid #E2E8F0',
+          background: theme === 'dark' ? 'rgba(15, 23, 42, 0.45)' : '#FFFFFF',
+          border: theme === 'dark' ? '1px solid rgba(255, 184, 28, 0.18)' : '1px solid #E2E8F0',
           borderRadius: 12,
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
         }}
       >
         <h2
@@ -191,12 +194,12 @@ export default async function ChallengesSection({
             fontFamily: "'Bebas Neue', Impact, sans-serif",
             fontSize: 22,
             letterSpacing: '0.06em',
-            color: '#1E1B4B',
+            color: theme === 'dark' ? '#FFB81C' : '#1E1B4B',
           }}
         >
           Challenges
         </h2>
-        <p style={{ margin: '0 0 8px', fontSize: 14, color: '#475569', lineHeight: 1.55 }}>
+        <p style={{ margin: '0 0 8px', fontSize: 14, color: theme === 'dark' ? 'rgba(255,255,255,0.7)' : '#475569', lineHeight: 1.55 }}>
           This Passport has no public stamps yet. Stamp rinks as you visit them to start challenges like{' '}
           <strong>Finish the NHL Rink Circuit</strong>, <strong>All 5 rinks in Ontario</strong>, and{' '}
           <strong>50 Rinks Club</strong>.
@@ -359,10 +362,10 @@ export default async function ChallengesSection({
         margin: '32px auto 0',
         padding: '20px 18px',
         maxWidth: 560,
-        background: '#FFFFFF',
-        border: '1px solid #E2E8F0',
+        background: theme === 'dark' ? 'rgba(15, 23, 42, 0.45)' : '#FFFFFF',
+        border: theme === 'dark' ? '1px solid rgba(255, 184, 28, 0.18)' : '1px solid #E2E8F0',
         borderRadius: 12,
-        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
       }}
     >
       <h2
@@ -371,7 +374,7 @@ export default async function ChallengesSection({
           fontFamily: "'Bebas Neue', Impact, sans-serif",
           fontSize: 22,
           letterSpacing: '0.06em',
-          color: '#1E1B4B',
+          color: theme === 'dark' ? '#FFB81C' : '#1E1B4B',
         }}
       >
         Challenges
@@ -408,10 +411,12 @@ export default async function ChallengesSection({
               data-challenge-goal={c.goal}
               data-challenge-complete={c.complete ? 'true' : 'false'}
               style={{
-                border: '1px solid #E2E8F0',
+                border: theme === 'dark' ? '1px solid rgba(255,255,255,0.12)' : '1px solid #E2E8F0',
                 borderRadius: 10,
                 padding: '12px 14px',
-                background: c.complete ? '#FEFCE8' : '#FAFBFC',
+                background: c.complete
+                  ? (theme === 'dark' ? 'rgba(255, 184, 28, 0.18)' : '#FEFCE8')
+                  : (theme === 'dark' ? 'rgba(255,255,255,0.04)' : '#FAFBFC'),
               }}
             >
               <div
@@ -428,7 +433,7 @@ export default async function ChallengesSection({
                     margin: 0,
                     fontSize: 15,
                     fontWeight: 700,
-                    color: '#0F172A',
+                    color: theme === 'dark' ? '#F8FAFC' : '#0F172A',
                     lineHeight: 1.2,
                   }}
                 >
@@ -484,7 +489,7 @@ export default async function ChallengesSection({
                   style={{
                     margin: '6px 0 0',
                     fontSize: 12,
-                    color: '#64748B',
+                    color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : '#64748B',
                   }}
                 >
                   {c.detail}
