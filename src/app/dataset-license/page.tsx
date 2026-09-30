@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getStripePaymentLink } from '@/lib/stripe-payment-links';
 import RelatedProducts from '@/components/RelatedProducts';
 import SocialProof from '@/components/SocialProof';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
@@ -295,6 +296,48 @@ export default function DatasetLicensePage() {
             Or pay without signing up · Receipt emailed · Download link delivered immediately
           </div>
         </div>
+
+        {/* Email capture — non-buyers become leads */}
+        <section
+          data-dataset-newsletter
+          style={{
+            marginTop: '2.5rem',
+            padding: '1.75rem 1.5rem',
+            background: 'rgba(255,184,28,0.04)',
+            border: '1px solid rgba(255,184,28,0.18)',
+            borderRadius: 12,
+            textAlign: 'center',
+          }}
+        >
+          <div style={{
+            fontSize: '0.6875rem',
+            fontWeight: 800,
+            letterSpacing: '0.22em',
+            color: 'rgba(255,184,28,0.7)',
+            textTransform: 'uppercase',
+            marginBottom: '0.5rem',
+          }}>
+            Not ready yet?
+          </div>
+          <h3 style={{
+            fontSize: '1.25rem',
+            fontWeight: 800,
+            color: '#fff',
+            margin: '0 0 0.5rem',
+          }}>
+            Get the next quarterly refresh notice
+          </h3>
+          <p style={{
+            color: 'rgba(255,255,255,0.65)',
+            fontSize: '0.9375rem',
+            maxWidth: 480,
+            margin: '0 auto 1.25rem',
+            lineHeight: 1.55,
+          }}>
+            Quarterly refreshes with new rinks + teams + leagues. We'll email when the next one ships.
+          </p>
+          <NewsletterSignup source="dataset_quarterly_notice" />
+        </section>
 
         {/* FAQ */}
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '3rem 0 1rem' }}>Questions</h2>
