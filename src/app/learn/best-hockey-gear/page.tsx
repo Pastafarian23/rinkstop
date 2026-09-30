@@ -3,6 +3,7 @@ import Link from 'next/link';
 import AffiliateProductCard, { AffiliateDisclosure } from '@/components/AffiliateProductCard';
 import { type ProductRecommendation } from '@/lib/affiliate-links';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import RelatedProducts from '@/components/RelatedProducts';
 
 export const metadata: Metadata = {
   title: { absolute: 'Best Hockey Gear 2026 — Expert-Tested Picks for Every Position | RinkStop' },
@@ -363,6 +364,25 @@ export default function BestHockeyGearPage() {
             })),
           ],
         })}}
+      />
+
+      <RelatedProducts
+        products={[
+          {
+            title: 'Plans for hockey people',
+            description: 'Verified Hockey Passport, team profiles, business listings — eight tiers from $24.99/yr.',
+            href: '/pricing',
+            cta: 'See plans',
+            accent: 'red',
+          },
+          {
+            title: 'Hockey Dataset License — $499',
+            description: 'Bulk CSV/JSON of 1,857 rinks, 2,601 teams, 305 leagues, 6,351 players. Commercial-use license.',
+            href: '/dataset-license',
+            cta: 'License the data',
+            accent: 'teal',
+          },
+        ]}
       />
     </main>
   );

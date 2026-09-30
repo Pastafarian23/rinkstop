@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
+import RelatedProducts from '@/components/RelatedProducts';
 import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel, getGroupForTier } from '@/lib/pricing';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
@@ -804,6 +805,25 @@ export default function PricingContent({
           Already a member? <Link href="/dashboard/subscription" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Manage your subscription</Link>.
         </p>
       </section>
+
+      <RelatedProducts
+        products={[
+          {
+            title: 'Best Hockey Gear 2026',
+            description: 'Free buyer\'s guide — skates, sticks, helmets, gloves. Tested picks from 20 years of coaching. Where-to-buy links for every pick.',
+            href: '/learn/best-hockey-gear',
+            cta: 'Read the guide',
+            accent: 'gold',
+          },
+          {
+            title: 'Hockey Dataset License — $499',
+            description: 'Bulk CSV/JSON download of 1,857 rinks, 2,601 teams, 305 leagues, 6,351 players. Commercial-use license.',
+            href: '/dataset-license',
+            cta: 'License the data',
+            accent: 'teal',
+          },
+        ]}
+      />
     </main>
   );
 }
