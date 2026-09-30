@@ -292,9 +292,18 @@ You can follow ${l.name} on RinkStop to get notifications about scores, trades, 
     pages.push(page);
   }
 
-  // 3. Per-city Q&A (top 100 cities by rink count)
-  const topCities = data.cities.slice(0, 100);
-  for (const city of topCities) {
+  // 3. Per-city Q&A (every city with ≥1 rink, capped at 1,500 to keep sitemap
+  // reasonable). The cap was 100 which left ~1,200 cities unaddressed. With
+  // the cap raised to 1,500 we cover the long tail of cities that drive
+  // the highest-CTR organic queries (Estonia/Portugal/Greece per 2026-09-29
+  // GSC analysis — these are small markets with very low competition).
+  // We skip cities whose name starts with a digit (postal-code artifacts
+  // in the source data) so the URL slugs are clean.
+  const allCities = data.cities
+    .filter((c) => c.city && c.country && !/^\d/.test(c.city.trim()))
+    .sort((a, b) => b.rinkCount - a.rinkCount)
+    .slice(0, 1500);
+  for (const city of allCities) {
     const citySlug = slugify(city.city);
     const countrySlug = slugify(city.country);
     // Slug matches URL /learn/hockey-rinks-in/{city-slug}-{country-slug},
