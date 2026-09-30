@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { auth } from '@clerk/nextjs/server';
 import PricingContent from './PricingContent';
+import SocialProof from '@/components/SocialProof';
 import { trackPageView, trackEvent } from '@/lib/analytics';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
@@ -104,12 +105,16 @@ export default async function FoundingMemberPage({
   }
 
   return (
-    <PricingContent
-      foundingClaimed={foundingClaimed}
-      foundingCap={500}
-      currentUserId={userId}
-      currentUserTier={userTier}
-      cancelled={cancelled}
-    />
+    <>
+      <PricingContent
+        foundingClaimed={foundingClaimed}
+        foundingCap={500}
+        currentUserId={userId}
+        currentUserTier={userTier}
+        cancelled={cancelled}
+      />
+      {/* Server component — renders after the client PricingContent. */}
+      <SocialProof variant="compact" />
+    </>
   );
 }

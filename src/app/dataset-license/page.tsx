@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getStripePaymentLink } from '@/lib/stripe-payment-links';
 import RelatedProducts from '@/components/RelatedProducts';
+import SocialProof from '@/components/SocialProof';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
@@ -258,6 +259,8 @@ export default function DatasetLicensePage() {
         </div>
 
         {/* Final CTA */}
+        <SocialProof variant="default" />
+
         <div style={{
           background: 'linear-gradient(135deg, rgba(200,16,46,0.12) 0%, rgba(255,184,28,0.06) 100%)',
           border: '1px solid rgba(255,184,28,0.2)',

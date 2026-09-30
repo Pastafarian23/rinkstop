@@ -4,6 +4,7 @@ import AffiliateProductCard, { AffiliateDisclosure } from '@/components/Affiliat
 import { type ProductRecommendation } from '@/lib/affiliate-links';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import RelatedProducts from '@/components/RelatedProducts';
+import SocialProof from '@/components/SocialProof';
 
 export const metadata: Metadata = {
   title: { absolute: 'Best Hockey Gear 2026 — Expert-Tested Picks for Every Position | RinkStop' },
@@ -332,6 +333,8 @@ export default function BestHockeyGearPage() {
           <Link href="/learn/cost-by-age" style={{ color: '#FFB81C' }}>→ Hockey costs by age — what to expect each year</Link>
         </div>
       </section>
+
+      <SocialProof variant="compact" />
 
       {/* Schema.org ItemList — for Google product snippets */}
       <script
