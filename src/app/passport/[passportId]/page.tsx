@@ -39,6 +39,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getStripePaymentLink } from '@/lib/stripe-payment-links';
 import ChallengesSection from '@/components/passport/ChallengesSection';
 import {
   isPublicPassportLookupEnabled,
@@ -1402,6 +1403,66 @@ function PassportDocument({
           </Link>
         )}
       </footer>
+
+      {/* CTA — anyone viewing a public passport sees the buy button.
+          Direct Stripe payment link, no Clerk auth required upfront.
+          Stripe collects the email + payment; success URL is /dashboard/welcome
+          which prompts sign-in. Visitor sees the value prop on the credential
+          above and can convert immediately. */}
+      <aside
+        data-passport-cta
+        style={{
+          marginTop: 18,
+          background:
+            'linear-gradient(135deg, rgba(255,184,28,0.18) 0%, rgba(255,184,28,0.06) 100%)',
+          border: '1px solid rgba(255,184,28,0.45)',
+          borderRadius: 14,
+          padding: '16px 18px',
+          color: '#F8FAFC',
+          textAlign: 'center',
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "'Bebas Neue', Impact, sans-serif",
+            fontSize: 14,
+            letterSpacing: '0.16em',
+            color: PASSPORT_GOLD,
+            margin: 0,
+            textTransform: 'uppercase',
+          }}
+        >
+          Get Your Hockey Passport
+        </p>
+        <p
+          style={{
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.7)',
+            margin: '8px 0 12px',
+            lineHeight: 1.45,
+          }}
+        >
+          The same credential this holder carries. Stamps at every rink you visit, challenges tailored to your country + level, federation-verifiable.
+        </p>
+        <a
+          href={getStripePaymentLink('verified_identity')}
+          data-passport-buy-link
+          rel="noopener"
+          style={{
+            display: 'inline-block',
+            fontSize: 14,
+            fontWeight: 700,
+            color: '#0B1E3F',
+            textDecoration: 'none',
+            background: PASSPORT_GOLD,
+            borderRadius: 10,
+            padding: '12px 22px',
+            boxShadow: '0 6px 18px rgba(255,184,28,0.4)',
+          }}
+        >
+          $24.99 / year →
+        </a>
+      </aside>
     </article>
   );
 }

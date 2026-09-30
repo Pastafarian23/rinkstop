@@ -15,6 +15,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase';
 import Link from 'next/link';
+import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
 const PASSPORT_GOLD = '#FFB81C';
 const PASSPORT_NAVY = '#0B1E3F';
@@ -233,8 +234,9 @@ export default async function PassportProfileCard({
               Every rink you've played in, stamped. Every league circuit you finish, a shareable badge.
             </p>
           </div>
-          <Link
-            href="/pricing?tier=verified_identity&from=profile"
+          <a
+            href={STRIPE_PAYMENT_LINKS.verified_identity}
+            rel="noopener"
             data-passport-upgrade-cta
             style={{
               fontSize: 13,
@@ -249,7 +251,7 @@ export default async function PassportProfileCard({
             }}
           >
             $24.99/yr →
-          </Link>
+          </a>
         </div>
       </section>
     );

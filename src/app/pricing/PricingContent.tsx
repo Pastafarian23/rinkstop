@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
 import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel, getGroupForTier } from '@/lib/pricing';
+import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
 type Tier = {
   id: TierName;
@@ -508,6 +509,29 @@ export default function PricingContent({
         >
           {busy === tier.id ? 'Loading...' : tier.cta}
         </button>
+        )}
+        {/* Guest checkout link: tier.id must match STRIPE_PAYMENT_LINKS keys.
+            Shown as a small secondary option so users who don't want to
+            sign up first can pay directly. Stripe collects email + payment,
+            redirects to /dashboard/welcome which prompts sign-in. */}
+        {!isContact && !isFree && STRIPE_PAYMENT_LINKS[tier.id as keyof typeof STRIPE_PAYMENT_LINKS] && (
+          <a
+            href={STRIPE_PAYMENT_LINKS[tier.id as keyof typeof STRIPE_PAYMENT_LINKS]}
+            rel="noopener"
+            data-testid={`tier-guest-checkout-${tier.id}`}
+            style={{
+              display: 'block',
+              marginTop: 8,
+              textAlign: 'center',
+              fontSize: '0.75rem',
+              color: 'rgba(255,255,255,0.5)',
+              textDecoration: 'underline',
+              textDecorationColor: 'rgba(255,255,255,0.2)',
+              textUnderlineOffset: 2,
+            }}
+          >
+            or pay without signing up →
+          </a>
         )}
         {tier.footnote && (
           <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', margin: '0.75rem 0 0', lineHeight: 1.5 }}>
