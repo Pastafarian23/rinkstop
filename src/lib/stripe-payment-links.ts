@@ -36,7 +36,8 @@ export type StripePaymentLinkTier =
   | 'club_elite'
   | 'league'
   | 'business_listing'
-  | 'business_plus';
+  | 'business_plus'
+  | 'dataset_license';
 
 /**
  * Public, shareable payment links per tier. Anyone visiting these URLs
@@ -54,6 +55,7 @@ export const STRIPE_PAYMENT_LINKS: Record<StripePaymentLinkTier, string> = {
   league: 'https://buy.stripe.com/dRmdR8dLNgKjfll1LMeIw07',
   business_listing: 'https://buy.stripe.com/00w9AS5fh79Jgpp2PQeIw08',
   business_plus: 'https://buy.stripe.com/8x23cu6jl79J6OP1LMeIw09',
+  dataset_license: 'https://buy.stripe.com/aFa3cuazB8dN3CD1LMeIw0a',
 };
 
 export function getStripePaymentLink(tier: StripePaymentLinkTier): string {

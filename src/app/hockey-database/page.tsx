@@ -432,6 +432,62 @@ export default async function HockeyDatabasePage() {
         </Link>
       </section>
 
+      {/* License the dataset — $499 one-time */}
+      <section
+        data-cta="dataset-license"
+        style={{
+          marginTop: '40px',
+          marginBottom: '40px',
+          padding: '32px 24px',
+          background: 'linear-gradient(135deg, rgba(200,16,46,0.10) 0%, rgba(255,184,28,0.06) 100%)',
+          border: '1px solid rgba(255,184,28,0.25)',
+          borderRadius: '12px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{
+          display: 'inline-block',
+          background: 'rgba(200,16,46,0.15)',
+          color: '#FFB81C',
+          fontSize: '0.7rem',
+          fontWeight: 800,
+          padding: '0.3rem 0.9rem',
+          borderRadius: 999,
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          marginBottom: '1rem',
+          border: '1px solid rgba(200,16,46,0.3)',
+        }}>
+          For builders, scouts, researchers, equipment brands
+        </div>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '0.5rem' }}>
+          License this dataset — $499
+        </h2>
+        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', maxWidth: 600, margin: '0 auto 1.25rem', lineHeight: 1.55 }}>
+          1,857 rinks · 2,601 teams · 305 leagues · 6,351 players. CSV + JSON + JSONL.
+          Commercial-use license. Quarterly refreshes for 12 months. No scraping.
+        </p>
+        <Link
+          href="/dataset-license"
+          style={{
+            display: 'inline-block',
+            background: '#C8102E',
+            color: '#fff',
+            fontSize: '15px',
+            fontWeight: 700,
+            padding: '12px 28px',
+            borderRadius: '6px',
+            textDecoration: 'none',
+            boxShadow: '0 4px 16px rgba(200,16,46,0.3)',
+          }}
+        >
+          Get the Dataset License →
+        </Link>
+        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '0.75rem' }}>
+          Or pay without signing up · Receipt emailed · Download link delivered immediately
+        </div>
+      </section>
+
       <footer style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', borderTop: '1px solid #eee', paddingTop: '16px' }}>
         Last updated {now}. Page re-rendered hourly via ISR. Counts are live database snapshots.
       </footer>
