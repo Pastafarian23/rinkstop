@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { CountryPageData } from '@/lib/country-page';
 import DirectoryRelatedArticles from '@/components/DirectoryRelatedArticles';
 import CountryRinksList from '@/components/CountryRinksList';
+import PassportStampsBanner from '@/components/PassportStampsBanner';
 
 interface Props {
   data: CountryPageData;
@@ -168,6 +169,14 @@ export default function CountryPageContent({ data }: Props) {
             }
           </p>
         </header>
+
+        {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). Country
+            pages rank well for "[country] ice hockey" / "hockey in [country]"
+            queries — this banner turns that research intent into a Passport
+            claim pitch. */}
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
+          <PassportStampsBanner variant="country" contextName={countryName} />
+        </div>
 
         {/* Hockey Canada affiliate ad — test placement, top of country page */}
         {countryName === 'Canada' && (

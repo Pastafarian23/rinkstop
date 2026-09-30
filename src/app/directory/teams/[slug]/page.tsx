@@ -8,6 +8,7 @@ import { isIdentityVerified } from '@/lib/identity-verified';
 import { timezoneForCountry } from '@/lib/team-timezone';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
 import { buildTeamFAQs } from '@/lib/team-context';
+import PassportStampsBanner from '@/components/PassportStampsBanner';
 
 interface TeamWithLocation {
   country_code: string | null;
@@ -734,6 +735,13 @@ export default async function PublicTeamPage({ params }: PageProps) {
         highlights={teamHighlights || []}
         teamLeagueLevel={team.league?.level ?? null}
       />
+
+      {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). Placed
+          below the PublicTeamProfile so visitors scrolling past the team
+          record see a reason to claim their own lifetime hockey record. */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
+        <PassportStampsBanner variant="team" contextName={team.name} />
+      </div>
 
       {/* 2026-09-03 PR #197: trust-signal footer (AdSense compliance hard gate).
           Required per MEMORY.md § AdSense-Compliant Content Rules:

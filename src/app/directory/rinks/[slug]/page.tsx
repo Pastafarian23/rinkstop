@@ -14,6 +14,7 @@ import { buildRinkShare } from '@/lib/share';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
 import RinkClaimNudge from '@/components/RinkClaimNudge';
+import PassportStampsBanner from '@/components/PassportStampsBanner';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
 import { computeOpenState, type OpeningHoursJson } from '@/lib/rinkOpeningHours';
@@ -888,6 +889,17 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             the page (per Arnel's 2026-07-08 request). This is a discovery nudge,
             not the full claim form. */}
         <RinkClaimNudge rinkId={rink.id} rinkName={rink.name} />
+
+        {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). Inline
+            banner placed above-the-fold so visitors who land here via Google
+            'ice rink near me' searches see a reason to engage beyond browsing. */}
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
+          <PassportStampsBanner
+            variant="rink"
+            contextName={rink.name}
+            contextHint={rink.city ? `Add ${rink.city} to your lifetime hockey record.` : undefined}
+          />
+        </div>
 
         {/* WS19: geo-targeted intro section for international rink pages.
             Hidden on country='United States' and country='Canada' pages
