@@ -383,7 +383,7 @@ export default async function ChallengesSection({
         style={{
           margin: '0 0 16px',
           fontSize: 13,
-          color: '#64748B',
+          color: theme === 'dark' ? 'rgba(255,255,255,0.55)' : '#64748B',
           lineHeight: 1.45,
         }}
       >
@@ -445,7 +445,9 @@ export default async function ChallengesSection({
                   style={{
                     fontSize: 12,
                     fontWeight: 700,
-                    color: c.complete ? '#15803D' : '#475569',
+                    color: c.complete
+                      ? (theme === 'dark' ? '#86EFAC' : '#15803D')
+                      : (theme === 'dark' ? 'rgba(255,255,255,0.65)' : '#475569'),
                     flexShrink: 0,
                   }}
                 >
