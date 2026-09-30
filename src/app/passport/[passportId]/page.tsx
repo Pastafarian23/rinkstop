@@ -183,16 +183,14 @@ export default async function PublicPassportPage({ params }: PageProps) {
 // ──────────────────────────────────────────────────────────────────────
 
 /**
- * Active Passport — the happy path.
+ * Premium passport-aesthetic document — replaces the old flat card.
  *
- * Layout (mobile-first, single column, max-width 560px):
- *   - Header: avatar (or initial), holder name, "Hockey Passport" label
- *   - Passport ID (monospace, FFB81C accent per design system)
- *   - Status + Verification pills
- *   - Two-column key/value grid: Issue date, Member since, Hockey teams count,
- *     Federation affiliations (names only — already public via directory)
- *   - Footer: small RinkStop attribution + "View full profile" link to
- *     /profile/[username] when username is available
+ * Per Arnel 2026-09-30 directive: "looks too cheap for $24.99 pricing tier."
+ * Dark navy field with gold accents + embossed double-border + monospace
+ * document number. Photo slot. Federation seal area. Designed to feel like
+ * a real international credential a coach/scout would want to see.
+ *
+ * Layout: see /passport/[id] live for the visual reference.
  */
 async function ActivePassportCard({
   record,
@@ -205,43 +203,43 @@ async function ActivePassportCard({
   const username = profile?.username?.trim() || null;
   const avatarUrl = profile?.avatar_url?.trim() || null;
 
+  // Federation names for the seal header.
+  const federationNames = await fetchFederationNames(record.internalUserId);
+  const primaryFederation = federationNames[0] ?? null;
+
   return (
     <main
       style={{
         minHeight: '100dvh',
         background:
-          'linear-gradient(180deg, #f8fafc 0%, #eef2f7 60%, #e2e8f0 100%)',
+          'linear-gradient(180deg, #0F172A 0%, #1E293B 60%, #0F172A 100%)',
         padding: '24px 16px 64px',
         fontFamily:
           "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
-        color: '#0f172a',
+        color: '#F8FAFC',
       }}
     >
-      <div style={{ maxWidth: 560, margin: '0 auto' }}>
-        <PassportHeader name={name} avatarUrl={avatarUrl} />
-        <PassportIdBlock passportId={record.passportId} />
-        <StatusPills
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        {/* Premium document card — passport-style aesthetic.
+            Dark navy field with gold accents + embossed border. */}
+        <PassportDocument
+          name={name}
+          avatarUrl={avatarUrl}
+          passportId={record.passportId}
           status={record.status}
           verificationLevel={record.verificationLevel}
+          issuedAt={record.issuedAt}
+          createdAt={record.createdAt}
+          federation={primaryFederation}
+          username={username}
         />
-        <DataGrid
-          rows={[
-            { label: 'Issue date', value: formatPublicDate(record.issuedAt) },
-            {
-              label: 'Member since',
-              value: formatPublicDate(record.createdAt),
-            },
-            { label: 'Verification', value: verificationLabel(record.verificationLevel) },
-          ]}
-        />
-        <FederationAffiliationsSection internalUserId={record.internalUserId} />
-        <AttendanceSection holderUserId={record.internalUserId} />
-        {/* Challenges (2026-09-29 WS-48h-pricing-passport). Public progress on
-            lifetime challenges — league circuits, geographic, career milestones.
-            Drives the marketing angle of the Hockey Passport: every stamp is
-            progress on a shareable badge. */}
-        <ChallengesSectionWrapper holderUserId={record.internalUserId} />
-        <PassportFooter username={username} />
+        {/* Affiliations + attendance + challenges below the document. */}
+        <div style={{ marginTop: 24 }}>
+          <FederationAffiliationsSection internalUserId={record.internalUserId} />
+          <AttendanceSection holderUserId={record.internalUserId} />
+          <ChallengesSectionWrapper holderUserId={record.internalUserId} />
+          <PassportFooter username={username} />
+        </div>
       </div>
     </main>
   );
@@ -1047,3 +1045,400 @@ const verificationColorMap: Record<
   id_verified: { bg: '#DCFCE7', fg: '#166534' },
   federation_verified: { bg: '#FCE7F3', fg: '#9D174D' },
 };
+// ─────────────────────────────────────────────────────────────────────────
+// Premium document (Arnel 2026-09-30 redesign) — kept inline for single-route PR.
+// ─────────────────────────────────────────────────────────────────────────
+
+const PASSPORT_GOLD = '#FFB81C';
+const PASSPORT_NAVY = '#0B1E3F';
+const PASSPORT_NAVY_DEEP = '#08152E';
+
+function PassportDocument({
+  name,
+  avatarUrl,
+  passportId,
+  status,
+  verificationLevel,
+  issuedAt,
+  createdAt,
+  federation,
+  username,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  passportId: string;
+  status: PassportStatus;
+  verificationLevel: VerificationLevel;
+  issuedAt: string | null;
+  createdAt: string | null;
+  federation: string | null;
+  username: string | null;
+}) {
+  const initials = (name?.[0] ?? '?').toUpperCase();
+
+  return (
+    <article
+      data-passport-document
+      data-verification-level={verificationLevel}
+      data-status={status}
+      style={{
+        position: 'relative',
+        borderRadius: 18,
+        background: `linear-gradient(160deg, ${PASSPORT_NAVY} 0%, ${PASSPORT_NAVY_DEEP} 100%)`,
+        padding: '26px 22px 22px',
+        boxShadow:
+          '0 30px 60px -20px rgba(0,0,0,0.55), 0 12px 24px -12px rgba(15,23,42,0.6), inset 0 1px 0 rgba(255,184,28,0.18)',
+        color: '#F8FAFC',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Embossed gold double-border */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 8,
+          border: '1px solid rgba(255, 184, 28, 0.45)',
+          borderRadius: 12,
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: 12,
+          border: '1px solid rgba(255, 184, 28, 0.18)',
+          borderRadius: 10,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Header band: HOCKEY PASSPORT title + status pill */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginBottom: 18,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <div
+            aria-hidden
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: `radial-gradient(circle at 30% 30%, #FFD66B 0%, ${PASSPORT_GOLD} 60%, #B45309 100%)`,
+              border: '2px solid rgba(255,255,255,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontWeight: 700,
+              fontSize: 16,
+              color: '#0B1E3F',
+              letterSpacing: '0.05em',
+              flexShrink: 0,
+              boxShadow: '0 4px 10px rgba(0,0,0,0.35)',
+            }}
+          >
+            RS
+          </div>
+          <p
+            style={{
+              fontFamily: "'Bebas Neue', Impact, sans-serif",
+              fontSize: 13,
+              letterSpacing: '0.18em',
+              color: PASSPORT_GOLD,
+              margin: 0,
+              textTransform: 'uppercase',
+            }}
+          >
+            Hockey Passport
+          </p>
+        </div>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '4px 10px',
+            borderRadius: 999,
+            background: 'rgba(34,197,94,0.18)',
+            border: '1px solid rgba(34,197,94,0.45)',
+            color: '#86EFAC',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            aria-hidden
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: '#22C55E',
+              boxShadow: '0 0 6px #22C55E',
+            }}
+          />
+          {statusLabel(status)}
+        </span>
+      </header>
+
+      {/* Gold divider */}
+      <div
+        aria-hidden
+        style={{
+          height: 1,
+          background: `linear-gradient(90deg, transparent 0%, ${PASSPORT_GOLD} 50%, transparent 100%)`,
+          margin: '0 0 18px',
+          opacity: 0.55,
+        }}
+      />
+
+      {/* Hero: photo/initial + name + handle + federation */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 18,
+          marginBottom: 20,
+        }}
+      >
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={`${name}'s Passport photo`}
+            width={84}
+            height={84}
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: 14,
+              objectFit: 'cover',
+              border: `2px solid ${PASSPORT_GOLD}`,
+              flexShrink: 0,
+              background: '#fff',
+              boxShadow: '0 6px 14px rgba(0,0,0,0.4)',
+            }}
+          />
+        ) : (
+          <div
+            aria-hidden
+            data-passport-photo-placeholder
+            style={{
+              width: 84,
+              height: 84,
+              borderRadius: 14,
+              background: `linear-gradient(135deg, rgba(255,184,28,0.18) 0%, rgba(255,184,28,0.08) 100%)`,
+              border: `2px dashed rgba(255,184,28,0.45)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: 32,
+              color: PASSPORT_GOLD,
+              flexShrink: 0,
+            }}
+          >
+            {initials}
+          </div>
+        )}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h1
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              margin: 0,
+              color: '#FFFFFF',
+              lineHeight: 1.15,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              textShadow: '0 1px 0 rgba(0,0,0,0.3)',
+            }}
+          >
+            {name}
+          </h1>
+          {username && (
+            <p
+              style={{
+                fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.55)',
+                margin: '4px 0 0',
+              }}
+            >
+              @{username}
+            </p>
+          )}
+          {federation && (
+            <p
+              style={{
+                fontSize: 13,
+                color: PASSPORT_GOLD,
+                margin: '6px 0 0',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+              }}
+            >
+              {federation}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Document Number strip — monospace gold, like a real passport */}
+      <div
+        data-passport-id-strip
+        style={{
+          background: 'rgba(0,0,0,0.35)',
+          border: '1px solid rgba(255,184,28,0.32)',
+          borderRadius: 8,
+          padding: '10px 14px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 10,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.5)',
+            fontWeight: 600,
+          }}
+        >
+          Document No.
+        </span>
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+            fontSize: 16,
+            fontWeight: 700,
+            color: PASSPORT_GOLD,
+            letterSpacing: '0.06em',
+          }}
+        >
+          {passportId}
+        </span>
+      </div>
+
+      {/* Key data row */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: 14,
+          marginBottom: 4,
+        }}
+      >
+        <DocField label="Issued" value={formatPublicDate(issuedAt)} />
+        <DocField label="Member Since" value={formatPublicDate(createdAt)} />
+        <DocField label="Verification" value={verificationLabel(verificationLevel)} accent />
+      </div>
+
+      {/* Bottom gold divider */}
+      <div
+        aria-hidden
+        style={{
+          height: 1,
+          background: `linear-gradient(90deg, transparent 0%, ${PASSPORT_GOLD} 50%, transparent 100%)`,
+          margin: '20px 0 16px',
+          opacity: 0.45,
+        }}
+      />
+
+      {/* Inline footer inside the document */}
+      <footer
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
+        <p
+          style={{
+            fontSize: 11,
+            color: 'rgba(255,255,255,0.5)',
+            margin: 0,
+            letterSpacing: '0.04em',
+          }}
+        >
+          Issued by RinkStop.com — Verify at{' '}
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
+              color: PASSPORT_GOLD,
+            }}
+          >
+            rinkstop.com/passport/{passportId}
+          </span>
+        </p>
+        {username && (
+          <Link
+            href={`/profile/${username}`}
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: PASSPORT_GOLD,
+              textDecoration: 'none',
+              borderBottom: `1px solid rgba(255,184,28,0.4)`,
+              flexShrink: 0,
+            }}
+          >
+            View profile →
+          </Link>
+        )}
+      </footer>
+    </article>
+  );
+}
+
+function DocField({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div>
+      <p
+        style={{
+          fontSize: 10,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.5)',
+          margin: 0,
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </p>
+      <p
+        style={{
+          fontSize: 14,
+          fontWeight: accent ? 700 : 500,
+          color: accent ? PASSPORT_GOLD : '#F8FAFC',
+          margin: '4px 0 0',
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
