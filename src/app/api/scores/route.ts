@@ -95,11 +95,12 @@ export async function GET(request: NextRequest) {
     .not('away_team_id', 'is', null)
     // 2026-09-22 audit fix (bug #22): default sort was ASC, but the
     // 'current' tab is the default and ASC showed oldest games first.
-    // PostgREST chains orderings as primary+secondary so a later
-    // .order(ascending: false) wouldn't override. Switching default
-    // to DESC. 'recent' mode explicitly overrides to DESC anyway.
-    // 'historical' keeps its natural order (oldest first).
-    .order('scheduled_at', { ascending: false });
+    // 2026-09-30 IA fix (Arnel feedback): default sort was DESC, which
+    // pushed the upcoming calendar out of view (e.g. preseason was
+    // 22 days away from the top of the list). Switched to ASC so
+    // today's games come first, then tomorrow, then the week. Matches
+    // NHL.com's scores layout.
+    .order('scheduled_at', { ascending: true });
 
   // League filter
   if (leagueIds.length === 0) {

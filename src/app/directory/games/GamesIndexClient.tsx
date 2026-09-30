@@ -61,6 +61,130 @@ function formatDate(d: string, tz: string) {
   return formatGameTime(d, tz);
 }
 
+/**
+ * WeekCalendar — 7-day strip showing daily game counts. Patterned after
+ * NHL.com's mobile scores header (Sep 27–Oct 3 example).
+ *
+ * Today is highlighted in red; clicking a day surfaces just that date's
+ * games below. Selected date has a thicker gold border.
+ *
+ * Implementation: client-side filter via URL hash param `d=YYYY-MM-DD`.
+ * When `d` is set, the games list below renders only that day's games.
+ */
+function WeekCalendar({ games }: { games: Game[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const selectedDate = search.get('d');
+  // Build a 7-day window starting 3 days before today through 3 days after.
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today.getTime() + (i - 3) * 86400000);
+    const iso = d.toISOString().slice(0, 10);
+    const count = games.filter((g) => (g.scheduled_at || g.date).slice(0, 10) === iso).length;
+    return {
+      iso,
+      label: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
+      dayNum: d.getDate(),
+      isToday: i === 3,
+      count,
+    };
+  });
+  function selectDate(iso: string | null) {
+    const params = new URLSearchParams(search.toString());
+    if (iso === null) params.delete('d');
+    else params.set('d', iso);
+    const qs = params.toString();
+    router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
+  }
+  return (
+    <section
+      data-week-calendar
+      aria-label="Week calendar"
+      style={{
+        marginTop: '1.25rem',
+        background: 'rgba(0,0,0,0.25)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: 12,
+        padding: '1rem',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '0.75rem',
+          fontSize: '0.75rem',
+          color: 'rgba(255,255,255,0.55)',
+        }}
+      >
+        <button
+          onClick={() => selectDate(days[0].iso)}
+          aria-label="Previous week"
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', padding: '0.25rem 0.5rem' }}
+        >
+          ←
+        </button>
+        <div style={{ fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          {days[0].iso.slice(5).replace('-', '/')} – {days[6].iso.slice(5).replace('-', '/')}
+        </div>
+        <button
+          onClick={() => selectDate(days[6].iso)}
+          aria-label="Next week"
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', padding: '0.25rem 0.5rem' }}
+        >
+          →
+        </button>
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: '0.5rem',
+        }}
+      >
+        {days.map((d) => {
+          const isSelected = d.iso === selectedDate;
+          return (
+            <button
+              key={d.iso}
+              onClick={() => selectDate(d.iso === selectedDate ? null : d.iso)}
+              data-week-day={d.iso}
+              data-week-day-selected={isSelected ? 'true' : 'false'}
+              data-week-day-today={d.isToday ? 'true' : 'false'}
+              aria-label={`${d.label} ${d.dayNum} (${d.count} games)`}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.5rem 0.25rem',
+                background: d.isToday ? 'rgba(200,16,46,0.18)' : isSelected ? 'rgba(255,184,28,0.08)' : 'rgba(255,255,255,0.025)',
+                border: d.isToday
+                  ? '1.5px solid #C8102E'
+                  : isSelected
+                  ? '1.5px solid rgba(255,184,28,0.6)'
+                  : '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 8,
+                cursor: 'pointer',
+                color: d.isToday ? '#fff' : 'rgba(255,255,255,0.85)',
+              }}
+            >
+              <span style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.55)' }}>{d.label}</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>{d.dayNum}</span>
+              {d.count > 0 && (
+                <span style={{ fontSize: '0.6875rem', color: 'rgba(255,184,28,0.9)', fontWeight: 700 }}>{d.count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function GameCard({ game }: { game: Game }) {
   // Per-game timezone — pick from the league if known, else default to ET
   // (most of the data is NHL/AHL/PWHL). The explicit abbreviation is what
@@ -222,6 +346,10 @@ export default function GamesIndexClient({ initialData }: Props) {
   const time = searchParams.get('time') || initialData.time || DEFAULT_TIME;
   const subleague = searchParams.get('subleague') ?? initialData.subleague ?? '';
   const q = searchParams.get('q') ?? '';
+  // 2026-09-30 IA fix: ?d=YYYY-MM-DD filter from the WeekCalendar strip.
+  // When set, the games list filters to only that day's games. When
+  // cleared, the strip goes back to "show all upcoming".
+  const dateFilter = searchParams.get('d') ?? '';
   const searchTimer = useRef<NodeJS.Timeout | null>(null);
 
   const chip = useMemo(() => getChip(league), [league]);
@@ -580,6 +708,11 @@ export default function GamesIndexClient({ initialData }: Props) {
 
       {/* Ticketmaster NHL Banner - 468x60 */}
 
+      {/* 2026-09-30 IA fix: Week calendar strip showing 7 days of game
+          counts. Today highlighted in red. Click any day to filter.
+          Patterned after NHL.com's mobile scores header. */}
+      <WeekCalendar games={games} />
+
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
           {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '8px' }} />)}
@@ -624,28 +757,72 @@ export default function GamesIndexClient({ initialData }: Props) {
               return true;
             });
             const completed = games.filter(g => g.status === 'completed');
+            // 2026-09-30 IA fix: apply the ?d=YYYY-MM-DD date filter from
+            // the WeekCalendar strip. When set, narrow both lists to just
+            // that day. When cleared, show everything.
+            const scopedUpcoming = dateFilter
+                ? upcoming.filter((g) => (g.scheduled_at || g.date).slice(0, 10) === dateFilter)
+                : upcoming;
+            const scopedCompleted = dateFilter
+                ? completed.filter((g) => (g.scheduled_at || g.date).slice(0, 10) === dateFilter)
+                : completed;
+            const gamesToGroup = [...scopedUpcoming, ...scopedCompleted];
             return (
               <>
-                {upcoming.length > 0 && (
-                  <section style={{ marginTop: '1.25rem' }}>
-                    <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
-                      Upcoming ({upcoming.length})
-                    </h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {upcoming.map(g => <GameCard key={g.id} game={g} />)}
-                    </div>
-                  </section>
-                )}
-                {completed.length > 0 && (
-                  <section style={{ marginTop: '1.75rem' }}>
-                    <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>
-                      Recently Completed ({completed.length})
-                    </h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {completed.map(g => <GameCard key={g.id} game={g} />)}
-                    </div>
-                  </section>
-                )}
+                {/* 2026-09-30 IA fix (Arnel feedback): replace the flat
+                    "Upcoming" list with date-grouped sections. Today's
+                    games appear under a TODAY header, tomorrow under
+                    TOMORROW, then each subsequent day. Within each
+                    date group, games are sorted chronologically
+                    (earliest start time first). Matches NHL.com's
+                    scores layout: hero "Today", then grouped days. */}
+                {(() => {
+                  const grouped: Record<string, Game[]> = {};
+                  for (const g of gamesToGroup) {
+                    const d = (g.scheduled_at || g.date).slice(0, 10);
+                    if (!grouped[d]) grouped[d] = [];
+                    grouped[d].push(g);
+                  }
+                  const dateKeys = Object.keys(grouped).sort();
+                  if (dateKeys.length === 0) return null;
+                  const todayStr = new Date().toISOString().slice(0, 10);
+                  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+                  return dateKeys.map((d) => {
+                    const isToday = d === todayStr;
+                    const isTomorrow = d === tomorrowStr;
+                    const dateLabel = isToday
+                      ? 'TODAY'
+                      : isTomorrow
+                      ? 'TOMORROW'
+                      : new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                    return (
+                      <section data-game-date={d} style={{ marginTop: '1.5rem' }}>
+                        <h2
+                          data-game-date-header
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            color: isToday ? '#FFB81C' : 'rgba(255,255,255,0.55)',
+                            marginBottom: '0.75rem',
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            gap: '0.75rem',
+                          }}
+                        >
+                          {dateLabel}
+                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'rgba(255,255,255,0.4)' }}>
+                            {grouped[d].length} {grouped[d].length === 1 ? 'game' : 'games'}
+                          </span>
+                        </h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          {grouped[d].map(g => <GameCard key={g.id} game={g} />)}
+                        </div>
+                      </section>
+                    );
+                  });
+                })()}
               </>
             );
           })()}
