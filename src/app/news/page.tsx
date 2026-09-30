@@ -94,6 +94,220 @@ function relativeTime(dateStr?: string | null): string {
 }
 
 /**
+ * NonScoreSection — Renders the "More from RinkStop" pillar section.
+ *
+ * Renders a list of non-highlights posts (Analysis, Guides, Business, Blog)
+ * if any exist, OR an empty-state "Coming soon" panel with an email signup
+ * if no non-highlights content exists yet.
+ *
+ * Extracted into its own component to avoid huge inline JSX that's hard
+ * to keep syntactically clean. The NewsletterSignup is a client component
+ * so this can render either content or empty state with the same wrapper.
+ */
+function NonScoreSection({
+  pillarGroups,
+  leagueById,
+  formatDate,
+  decodeEntities,
+}: {
+  pillarGroups: Record<string, Post[]>;
+  leagueById: Map<string, League>;
+  formatDate: (date?: string | null) => string;
+  decodeEntities: (s: string | null | undefined) => string;
+}) {
+  const nonScorePosts = Object.entries(pillarGroups)
+    .filter(([pillar]) => !['highlights'].includes(pillar))
+    .filter(([, posts]) => posts.length > 0)
+    .flatMap(([pillar, posts]) =>
+      posts.slice(0, 3).map((post) => ({ ...post, pillar })),
+    );
+
+  return (
+    <section
+      data-featured-pillars
+      aria-label="Featured non-score content"
+      style={{ marginBottom: '2.5rem' }}
+    >
+      <h2
+        style={{
+          fontSize: '0.7rem',
+          fontWeight: 800,
+          letterSpacing: '0.22em',
+          color: 'rgba(255,184,28,0.7)',
+          textTransform: 'uppercase',
+          margin: '0 0 1rem',
+          paddingBottom: '0.5rem',
+          borderBottom: '1px solid rgba(255,184,28,0.25)',
+        }}
+      >
+        More from RinkStop — Analysis, Guides, Industry
+      </h2>
+
+      {nonScorePosts.length === 0 ? (
+        <div
+          data-pillar-empty
+          style={{
+            padding: '2rem 1.5rem',
+            background: 'rgba(20,184,166,0.04)',
+            border: '1px solid rgba(20,184,166,0.2)',
+            borderRadius: 10,
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              letterSpacing: '0.22em',
+              color: 'rgba(20,184,166,0.7)',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Coming soon
+          </div>
+          <h3
+            style={{
+              fontSize: '1.125rem',
+              fontWeight: 800,
+              color: '#fff',
+              margin: '0 0 0.5rem',
+            }}
+          >
+            Analysis, guides, and industry coverage
+          </h3>
+          <p
+            style={{
+              color: 'rgba(255,255,255,0.65)',
+              fontSize: '0.9375rem',
+              maxWidth: 560,
+              margin: '0 auto 1.25rem',
+              lineHeight: 1.55,
+            }}
+          >
+            Beyond scores and recaps. Weekly analysis of NHL/NHLPA, NCAA recruiting, equipment innovation, and the business of hockey.
+          </p>
+          <div style={{ maxWidth: 480, margin: '0 auto' }}>
+            <NewsletterSignup source="news_pillar_announcement" />
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {nonScorePosts.map((post) => {
+            const league = post.league_id ? leagueById.get(post.league_id) : null;
+            const pillarAccent: Record<string, string> = {
+              nhl: 'rgba(200,16,46,0.18)',
+              blog: 'rgba(20,184,166,0.18)',
+              guides: 'rgba(255,184,28,0.18)',
+              business: 'rgba(168,85,247,0.18)',
+              news: 'rgba(20,184,166,0.18)',
+              international: 'rgba(20,184,166,0.18)',
+              womens: 'rgba(236,72,153,0.18)',
+            };
+            const pillarColor: Record<string, string> = {
+              nhl: '#FF8FA0',
+              blog: '#5EEAD4',
+              guides: '#FFB81C',
+              business: '#C4B5FD',
+              news: '#5EEAD4',
+              international: '#5EEAD4',
+              womens: '#F472B6',
+            };
+            const accent = pillarAccent[post.pillar] || 'rgba(255,255,255,0.05)';
+            const color = pillarColor[post.pillar] || 'rgba(255,255,255,0.85)';
+            return (
+              <Link
+                key={post.id}
+                href={`/news/${post.slug}`}
+                data-pillar-tile={post.pillar}
+                style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  padding: '1rem 1.25rem',
+                  background: accent,
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 8,
+                  textDecoration: 'none',
+                  color: '#fff',
+                  transition: 'border-color 0.15s, transform 0.15s',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <span
+                      style={{
+                        fontSize: '0.625rem',
+                        fontWeight: 800,
+                        letterSpacing: '0.12em',
+                        textTransform: 'uppercase',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: 3,
+                        background: 'rgba(0,0,0,0.35)',
+                        color: color,
+                      }}
+                    >
+                      {post.pillar}
+                    </span>
+                    {league && (
+                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)' }}>
+                        {league.name}
+                      </span>
+                    )}
+                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
+                      {formatDate(post.published_at)}
+                    </span>
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: '1.0625rem',
+                      fontWeight: 700,
+                      color: '#fff',
+                      lineHeight: 1.3,
+                      margin: '0 0 0.3rem',
+                    }}
+                  >
+                    {decodeEntities(post.title)}
+                  </h3>
+                  {post.subtitle && (
+                    <p
+                      style={{
+                        fontSize: '0.875rem',
+                        color: 'rgba(255,255,255,0.6)',
+                        lineHeight: 1.45,
+                        margin: 0,
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                      }}
+                    >
+                      {decodeEntities(post.subtitle)}
+                    </p>
+                  )}
+                </div>
+                <div
+                  style={{
+                    flexShrink: 0,
+                    color: color,
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    alignSelf: 'center',
+                  }}
+                >
+                  Read →
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
  * /news — Hockey news landing page.
  *
  * Information architecture (top to bottom):
@@ -863,128 +1077,12 @@ export default async function NewsPage() {
       </section>
 
       {/* 8. Featured non-score content (Analysis, Guides, Business, Blog) */}
-      {Object.entries(pillarGroups)
-        .filter(([pillar]) => !['highlights'].includes(pillar))
-        .filter(([, posts]) => posts.length > 0)
-        .length > 0 && (
-        <section
-          data-featured-pillars
-          aria-label="Featured non-score content"
-          style={{ marginBottom: '2.5rem' }}
-        >
-          <h2
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              letterSpacing: '0.22em',
-              color: 'rgba(255,184,28,0.7)',
-              textTransform: 'uppercase',
-              margin: '0 0 1rem',
-              paddingBottom: '0.5rem',
-              borderBottom: '1px solid rgba(255,184,28,0.25)',
-            }}
-          >
-            More from RinkStop — Analysis, Guides, Industry
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {Object.entries(pillarGroups)
-              .filter(([pillar]) => !['highlights'].includes(pillar))
-              .filter(([, posts]) => posts.length > 0)
-              .flatMap(([pillar, posts]) =>
-                posts.slice(0, 3).map((post) => {
-                  const league = post.league_id ? leagueById.get(post.league_id) : null;
-                  const pillarAccent = {
-                    nhl: 'rgba(200,16,46,0.18)',
-                    blog: 'rgba(20,184,166,0.18)',
-                    guides: 'rgba(255,184,28,0.18)',
-                    business: 'rgba(168,85,247,0.18)',
-                    news: 'rgba(20,184,166,0.18)',
-                    international: 'rgba(20,184,166,0.18)',
-                    womens: 'rgba(236,72,153,0.18)',
-                  }[pillar] || 'rgba(255,255,255,0.05)';
-                  const pillarColor = {
-                    nhl: '#FF8FA0',
-                    blog: '#5EEAD4',
-                    guides: '#FFB81C',
-                    business: '#C4B5FD',
-                    news: '#5EEAD4',
-                    international: '#5EEAD4',
-                    womens: '#F472B6',
-                  }[pillar] || 'rgba(255,255,255,0.85)';
-                  return (
-                    <Link
-                      key={post.id}
-                      href={`/news/${post.slug}`}
-                      data-pillar-tile={pillar}
-                      style={{
-                        display: 'flex',
-                        gap: '1rem',
-                        padding: '1rem 1.25rem',
-                        background: pillarAccent,
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        borderRadius: 8,
-                        textDecoration: 'none',
-                        color: '#fff',
-                        transition: 'border-color 0.15s, transform 0.15s',
-                      }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                          <span style={{
-                            fontSize: '0.625rem',
-                            fontWeight: 800,
-                            letterSpacing: '0.12em',
-                            textTransform: 'uppercase',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: 3,
-                            background: 'rgba(0,0,0,0.35)',
-                            color: pillarColor,
-                          }}>
-                            {pillar}
-                          </span>
-                          {league && (
-                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)' }}>
-                              {league.name}
-                            </span>
-                          )}
-                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
-                            {formatDate(post.published_at)}
-                          </span>
-                        </div>
-                        <h3 style={{
-                          fontSize: '1.0625rem',
-                          fontWeight: 700,
-                          color: '#fff',
-                          lineHeight: 1.3,
-                          margin: '0 0 0.3rem',
-                        }}>
-                          {decodeEntities(post.title)}
-                        </h3>
-                        {post.subtitle && (
-                          <p style={{
-                            fontSize: '0.875rem',
-                            color: 'rgba(255,255,255,0.6)',
-                            lineHeight: 1.45,
-                            margin: 0,
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical' as const,
-                          }}>
-                            {decodeEntities(post.subtitle)}
-                          </p>
-                        )}
-                      </div>
-                      <div style={{ flexShrink: 0, color: pillarColor, fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', alignSelf: 'center' }}>
-                        Read →
-                      </div>
-                    </Link>
-                  );
-                })
-              )}
-          </div>
-        </section>
-      )}
+      <NonScoreSection
+        pillarGroups={pillarGroups}
+        leagueById={leagueById}
+        formatDate={formatDate}
+        decodeEntities={decodeEntities}
+      />
 
       {/* 9. Older archive */}
       {older.length > 0 && (
