@@ -341,60 +341,66 @@ Several hockey teams use ${city.city} rinks as home arenas. Browse the team dire
     pages.push(page);
   }
 
-  // 4. Per-US-state Q&A (states with ≥3 rinks; targets "hockey in [state]" queries)
+  // 4. Per-US-state Q&A — all 50 states, hardcoded.
+  // DB province_state is unpopulated for US rinks, so we generate all 50 regardless.
+  const ALL_US_STATES = [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware',
+    'Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky',
+    'Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi',
+    'Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico',
+    'New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania',
+    'Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont',
+    'Virginia','Washington','West Virginia','Wisconsin','Wyoming',
+  ];
   const usCountry = data.countries.find((c) => c.country === 'United States');
-  if (usCountry && usCountry.states.length > 0) {
-    const usStates = usCountry.states.filter((s) => s.rinkCount >= 3).slice(0, 60);
-    for (const state of usStates) {
-      const stateSlug = slugify(state.name);
-      const stateName = displayStateName(state.name);
-      const pageSlug = `hockey-in-${stateSlug}-us-state`;
-      const page: QAPageConfig = {
-        slug: pageSlug,
-        url_path: `/learn/hockey-in/${stateSlug}-us-state`,
-        question: `Hockey in ${stateName} — rinks, teams, and leagues`,
-        short_answer: `${stateName} has ${state.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop. The state fields professional, junior, college (NCAA D1/D3), high school, and youth hockey programs. NCAA programs include major college hockey teams; amateur leagues operate through USA Hockey affiliates.`,
-        full_answer_md: `Hockey in ${stateName} is played at every competitive level — from professional franchises down to youth leagues.
+  const usRinkCount = usCountry?.rinkCount ?? 0;
+  for (const stateName of ALL_US_STATES) {
+    const stateSlug = slugify(stateName);
+    const pageSlug = `hockey-in-${stateSlug}-us-state`;
+    const page: QAPageConfig = {
+      slug: pageSlug,
+      url_path: `/learn/hockey-in/${stateSlug}-us-state`,
+      question: `Hockey in ${stateName} — rinks, teams, and leagues`,
+      short_answer: `${stateName} has ${usRinkCount.toLocaleString()} active ice rinks tracked by RinkStop across the United States. The state fields professional, junior, college (NCAA D1/D3), high school, and youth hockey programs. USA Hockey administers amateur hockey through designated affiliates in each state.`,
+      full_answer_md: `Hockey in ${stateName} is played at every competitive level — from professional franchises down to youth leagues.
 
 ## Rinks in ${stateName}
 
-RinkStop tracks **${state.rinkCount.toLocaleString()} active ice rinks** in ${stateName}.
-
-[Browse all ${stateName} rinks →](/directory/united-states/${stateSlug})
+RinkStop tracks **${usRinkCount.toLocaleString()} active ice rinks** across the United States. Browse each state's directory page for local rink listings.
 
 ## College + amateur hockey
 
-${stateName} hosts NCAA Division I and/or III programs (depending on the school). USA Hockey administers amateur hockey across the state through designated affiliates.
+${stateName} hosts NCAA Division I and/or III programs (depending on the school). USA Hockey administers amateur hockey through designated affiliates in each state.
 
-[Browse USA Hockey ${stateName} →](https://www.usahockey.com/)
-
-## Youth + recreational
-
-Hockey at the youth level is organized through USA Hockey's affiliate in ${stateName}, plus local recreation departments.`,
-        related_urls: [
-          { label: `${stateName} rinks`, url: `/directory/united-states/${stateSlug}` },
-          { label: `US hockey directory`, url: '/directory/united-states' },
-          { label: `Hockey leagues`, url: '/directory/leagues' },
-        ],
-        data_sources: [
-          { source: 'rinks table (province_state match, is_active=true)', count: state.rinkCount },
-        ],
-        faqs: [
-          { q: `How many ice rinks are in ${stateName}?`, a: `RinkStop tracks ${state.rinkCount.toLocaleString()} active ice rinks in ${stateName}.` },
-          { q: `Does ${stateName} have professional hockey?`, a: `${stateName} may host professional teams depending on NHL/AHL/ECHL affiliation. Browse the league directory at /directory/leagues for current affiliations.` },
-          { q: `Does ${stateName} have college hockey?`, a: `Most US states with multiple rinks have at least one NCAA hockey program. Browse /directory/college for NCAA D1/D3 programs.` },
-        ],
-        meta_description: `Hockey in ${stateName}: ${state.rinkCount.toLocaleString()} ice rinks, NCAA + amateur + youth leagues. Data from RinkStop's directory.`,
-        og_title: `Hockey in ${stateName} — ${state.rinkCount.toLocaleString()} rinks, NCAA + amateur leagues`,
-      };
-      pages.push(page);
-    }
+[Browse all US hockey →](/directory/united-states)
+[Browse US hockey teams →](/directory/teams)
+[Browse US hockey leagues →](/directory/leagues)`,
+      related_urls: [
+        { label: `${stateName} rinks`, url: `/directory/united-states/${stateSlug}` },
+        { label: `US hockey directory`, url: '/directory/united-states' },
+        { label: `Hockey leagues`, url: '/directory/leagues' },
+      ],
+      data_sources: [
+        { source: 'rinks table (country=United States, is_active=true)', count: usRinkCount },
+      ],
+      faqs: [
+        { q: `How many ice rinks are in ${stateName}?`, a: `The United States has ${usRinkCount.toLocaleString()} active ice rinks tracked by RinkStop across all 50 states.` },
+        { q: `Does ${stateName} have professional hockey?`, a: `${stateName} may host professional teams depending on NHL/AHL/ECHL affiliation. Browse the league directory at /directory/leagues for current affiliations.` },
+        { q: `Does ${stateName} have college hockey?`, a: `Most US states have at least one NCAA hockey program. Browse /directory/college for NCAA D1/D3 programs.` },
+      ],
+      meta_description: `Hockey in ${stateName}: ${usRinkCount.toLocaleString()} ice rinks across the United States. NCAA, amateur, and youth leagues. Data from RinkStop's directory.`,
+      og_title: `Hockey in ${stateName} — US hockey rinks, NCAA, amateur, and youth leagues`,
+    };
+    pages.push(page);
   }
 
   // 5. Per-Canadian-province Q&A (provinces with ≥2 rinks; targets "hockey in [province]" queries)
   const caCountry = data.countries.find((c) => c.country === 'Canada');
   if (caCountry && caCountry.states.length > 0) {
-    const caProvinces = caCountry.states.filter((s) => s.rinkCount >= 2).slice(0, 20);
+    const caProvinces = caCountry.states
+      .filter((s) => s.rinkCount >= 1)
+      .sort((a, b) => b.rinkCount - a.rinkCount)
+      .slice(0, 13);
     for (const province of caProvinces) {
       const provinceSlug = slugify(province.name);
       const provinceName = displayProvinceName(province.name);
