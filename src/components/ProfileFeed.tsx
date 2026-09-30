@@ -140,7 +140,7 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
         </div>
       ) : posts.length === 0 ? (
         <div className={styles.emptyState}>
-          <div className={styles.emptyIcon} aria-hidden>📝</div>
+          <div className={styles.emptyIcon} aria-hidden>🏒</div>
           <h2
             className="font-sport"
             style={{ fontSize: '1.25rem', color: '#fff', margin: '0 0 0.5rem' }}
@@ -157,7 +157,7 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
           >
             {isOwner
               ? 'Post updates, share highlights, and write about your hockey journey. Posts are public and indexed by search.'
-              : 'When this profile starts posting, the updates will appear here.'}
+              : 'When this profile starts posting, updates from their hockey journey will appear here.'}
           </p>
           {isOwner && (
             <button onClick={openGlobalComposer} className={styles.emptyPostBtn}>

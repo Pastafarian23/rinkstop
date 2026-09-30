@@ -101,6 +101,35 @@ export default function ProfileSidebar({
           )}
           <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
           <TierBadge tier={profile.tier} size="sm" />
+          {/* Free-tier upgrade trigger — converts profile visitors into paying customers.
+              Only renders for the OWNER (not visitors — we don't spam people). */}
+          {isOwner && (profile.tier === 'free' || !profile.tier) && (
+            <Link
+              href="/pricing"
+              data-cta="profile-free-tier-upgrade"
+              aria-label="Upgrade from Free to Verified Identity"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                marginLeft: 4,
+                padding: '4px 10px',
+                background: 'linear-gradient(135deg, rgba(255,184,28,0.18) 0%, rgba(200,16,46,0.18) 100%)',
+                border: '1px solid rgba(255,184,28,0.5)',
+                borderRadius: 999,
+                fontSize: '0.6875rem',
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                color: '#FFB81C',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                boxShadow: '0 0 12px rgba(255,184,28,0.15)',
+              }}
+            >
+              <span aria-hidden style={{ fontSize: '0.75rem' }}>⚡</span>
+              <span>Upgrade</span>
+            </Link>
+          )}
         </div>
 
         {/* Owner-only inline edit shortcut — sits above the action row so
@@ -255,7 +284,7 @@ export default function ProfileSidebar({
                 lineHeight: 1.5,
               }}
             >
-              {accountTypes.length === 1 ? 'This profile' : 'These profiles'} appear on RinkStop as{' '}
+              {accountTypes.length === 1 ? 'This profile appears' : 'These profiles appear'} on RinkStop as{' '}
               {accountTypes.map((t, i) => {
                 const labels = accountTypes.map((tt) => tt.account_type);
                 if (i === labels.length - 1 && labels.length > 1) return 'and ' + t.account_type;
