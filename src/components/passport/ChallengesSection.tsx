@@ -1,5 +1,26 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { stampService } from '@/lib/passport/13-stamp-service';
+import {
+  resolveScope,
+  type ChallengeScope,
+  type ChallengePrefsRow,
+  type UserProfileSummary,
+  CAREER_MILESTONES_BY_TIER,
+  tierShowsRinkCircuits,
+  tierShowsGeographicChallenges,
+  isCountryInScope,
+  countryNameToIso,
+  leagueNameToSlug,
+} from '@/lib/passport/17-challenge-tailoring';
+
+/**
+ * Local helper: check if a league slug is in scope. Uses the imported
+ * leagueNameToSlug to normalize, then checks activeLeagues.
+ */
+function isLeagueSlugInScope(slug: string | null, scope: ChallengeScope): boolean {
+  if (!slug) return false;
+  return scope.activeLeagues.includes(slug);
+}
 
 /**
  * Passport ChallengesSection — read-only public badge grid.
@@ -10,10 +31,18 @@ import { stampService } from '@/lib/passport/13-stamp-service';
  *
  *   1. League Circuit — visit every rink in a named league (e.g. NHL, SHL)
  *   2. Geographic     — visit every rink in a country / state / province
- *   3. Career         — milestone counts (10, 25, 50, 100, 250, 500 rinks)
+ *   3. Career         — milestone counts tier-aware (youth 5/10/25/50/100,
+ *                       pro 50/100/250/500/1000, coach 10/25/50/100 seasons, etc.)
  *
  * Public surface only. Counts from `getPublicAttendance()` which already
  * filters to visibility='public' confirmed stamps. No PII exposed.
+ *
+ * Per Arnel directive 2026-09-30 (memory/2026-09-30-passport-monetization.md):
+ *   - Challenges are TAILORED to the user by account_type + location.
+ *   - Default-on scope = home country + same-region peers + tier-default leagues.
+ *   - Opt-in additions = passport_challenge_prefs row.
+ *   - A PH player does NOT see "NHL Circuit" unless opted in.
+ *   - A USA coach does NOT see "Philippines rinks" unless opted in.
  *
  * Used on /passport/[passportId] when the Passport is active + has
  * verification level 'id_verified' or higher (Hockey Passport holders).
@@ -38,11 +67,105 @@ interface ChallengesSectionProps {
   holderUserId: string;
 }
 
+/**
+ * Map a `leagues.level` value to our challenge tier buckets.
+ * leagues.level is 'professional' | 'junior' | 'amateur' | NULL per
+ * the existing schema (see PublicTeamProfile.tsx).
+ */
+function derivePlayerLeagueLevel(
+  claimedPlayer: any
+): UserProfileSummary['playerLeagueLevel'] {
+  const level: string | null | undefined = claimedPlayer?.teams?.leagues?.level;
+  if (!level) return null;
+  if (level === 'professional') return 'pro';
+  if (level === 'junior') return 'youth';
+  if (level === 'amateur') return 'adult_rec';
+  return null;
+}
+
+/**
+ * Resolve the user's challenge scope for tailoring.
+ *
+ * Fetches (in parallel):
+ *   - profiles row (account_type, country, location)
+ *   - profile_account_types rows (multi-account detection, parent derives team/organization via managed_profiles)
+ *   - passport_challenge_prefs row (opt-in leagues + countries)
+ *
+ * Returns a ChallengeScope ready for filtering.
+ */
+async function resolveUserScope(holderUserId: string): Promise<ChallengeScope> {
+  // Default to fan/global so unparseable rows still get a scope.
+  const defaultUser: UserProfileSummary = {
+    accountType: 'fan',
+    country: null,
+    location: null,
+    hasClaimedPlayer: false,
+    isParent: false,
+    playerLeagueLevel: null,
+  };
+
+  try {
+    const [profileRes, accountTypesRes, managedRes, prefsRes, playersRes] = await Promise.all([
+      supabaseAdmin
+        .from('profiles')
+        .select('user_id, account_type, country, location')
+        .eq('user_id', holderUserId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('profile_account_types')
+        .select('account_type')
+        .eq('user_id', holderUserId),
+      supabaseAdmin
+        .from('managed_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', holderUserId),
+      supabaseAdmin
+        .from('passport_challenge_prefs')
+        .select('opted_in_leagues, opted_in_countries')
+        .eq('user_id', holderUserId)
+        .maybeSingle(),
+      // Detect claimed player + derive league level via team→leagues.level.
+      // Players table has no league_level column; join through team.
+      supabaseAdmin
+        .from('players')
+        .select('id, team_id, teams:team_id (league_id, leagues:league_id (level))')
+        .eq('user_id', holderUserId)
+        .maybeSingle(),
+    ]);
+
+    const profile = profileRes.data;
+    const accountTypes = (accountTypesRes.data ?? []) as Array<{ account_type: string }>;
+    const managedCount = managedRes.count ?? 0;
+    const prefs: ChallengePrefsRow | null = prefsRes.data ?? null;
+    const claimedPlayer = playersRes.data;
+
+    const user: UserProfileSummary = {
+      accountType:
+        profile?.account_type ??
+        (accountTypes.length > 0 ? accountTypes[0].account_type : null),
+      country: profile?.country ?? null,
+      location: profile?.location ?? null,
+      hasClaimedPlayer: !!claimedPlayer,
+      isParent: managedCount > 0,
+      playerLeagueLevel: derivePlayerLeagueLevel(claimedPlayer),
+    };
+
+    return resolveScope(user, prefs);
+  } catch (err) {
+    console.error('[ChallengesSection] resolveUserScope failed:', err);
+    return resolveScope(defaultUser, null);
+  }
+}
+
 export default async function ChallengesSection({
   holderUserId,
 }: ChallengesSectionProps): Promise<React.ReactElement | null> {
   // Uses the service-role client imported above (server-only).
   const attendance = await stampService.getPublicAttendance(holderUserId);
+
+  // Resolve user scope (account_type + location + opt-in prefs).
+  // Tailors which challenges are shown. Per 2026-09-30 directive.
+  const scope = await resolveUserScope(holderUserId);
 
   if (attendance.rinkCount === 0 && attendance.eventCount === 0) {
     // No stamps yet — render an empty-state nudge so visitors understand the
@@ -101,9 +224,11 @@ export default async function ChallengesSection({
   }
 
   // 1. League Circuit — count distinct leagues the holder has stamped at
+  // TAILORED by user scope (Arnel 2026-09-30). Coaches/scouts/orgs don't
+  // see rink circuits. Other users only see leagues in their active scope.
   const stampedRinkIds = attendance.rinks.map((r) => r.id);
   let leagueChallenges: ChallengeDef[] = [];
-  if (stampedRinkIds.length > 0) {
+  if (stampedRinkIds.length > 0 && tierShowsRinkCircuits(scope.tier)) {
     // Resolve each stamped rink to its league (via the leagues<->rinks link)
     const { data: rinkLeagues } = await supabaseAdmin
       .from('rinks')
@@ -137,7 +262,12 @@ export default async function ChallengesSection({
       });
     }
     leagueChallenges = (Array.from(leagueBuckets.values())
-      .filter((b) => b.total > 0 && b.stamped.size / b.total >= 0.15) // only surface challenges where ≥15% complete
+      .filter((b) => {
+        // TAILORING: only show leagues in user's active scope
+        const slug = leagueNameToSlug(b.name);
+        if (!isLeagueSlugInScope(slug, scope)) return false;
+        return b.total > 0 && b.stamped.size / b.total >= 0.15; // only surface challenges where ≥15% complete
+      })
       .map((b) => ({
         id: `league-${b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
         category: 'league' as const,
@@ -155,7 +285,7 @@ export default async function ChallengesSection({
 
   // 2. Geographic — count stamped rinks per country
   let geoChallenges: ChallengeDef[] = [];
-  if (stampedRinkIds.length > 0) {
+  if (stampedRinkIds.length > 0 && tierShowsGeographicChallenges(scope.tier)) {
     const { data: rinkCountries } = await supabaseAdmin
       .from('rinks')
       .select('id, country')
@@ -169,7 +299,13 @@ export default async function ChallengesSection({
       countryBuckets.get(country)!.stamped.add(rk.id);
     });
     geoChallenges = (Array.from(countryBuckets.values())
-      .filter((b) => b.stamped.size >= 3) // surface only meaningful country presence
+      .filter((b) => {
+        // TAILORING: only show countries in user's active scope.
+        // A PH player never sees "Rinks in Canada" unless opted in.
+        const iso = countryNameToIso(b.name);
+        if (!isCountryInScope(iso, scope)) return false;
+        return b.stamped.size >= 3; // surface only meaningful country presence
+      })
       .map((b) => ({
         id: `geo-${b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
         category: 'geographic' as const,
@@ -185,8 +321,12 @@ export default async function ChallengesSection({
       .slice(0, 3));
   }
 
-  // 3. Career milestones — fixed thresholds
-  const careerMilestones = [10, 25, 50, 100, 250, 500];
+  // 3. Career milestones — tier-aware thresholds (Arnel 2026-09-30).
+  // Youth: 5/10/25/50/100 · College: 10/25/50/100/250 · Adult rec: 3/5/10/25/50
+  // Pro: 50/100/250/500/1000 · Coach: 10/25/50/100 (seasons)
+  // Scout: 25/50/100/250 (prospects) · Official: 10/25/50/100/250 (games)
+  // Fan: 3/5/10/25 · Org: 5/10/25/50
+  const careerMilestones = CAREER_MILESTONES_BY_TIER[scope.tier] ?? [10, 25, 50, 100, 250, 500];
   const current = attendance.rinkCount;
   const careerChallenges: ChallengeDef[] = careerMilestones
     .filter((m) => current >= m * 0.4) // show milestones within reach

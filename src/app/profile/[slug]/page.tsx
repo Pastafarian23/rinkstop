@@ -8,6 +8,7 @@ import { getTierLabel } from '@/lib/pricing';
 import { TierBadge } from '@/components/TierBadge';
 import { emitProfileFirstVisitor } from '@/lib/notifications/emit';
 import { PassportSections } from './passport/PassportSections';
+import PassportProfileCard from '@/components/passport/PassportProfileCard';
 import PassportRefreshWrapper from '@/components/passport/PassportRefreshWrapper';
 import CoverImageEditor from '@/components/CoverImageEditor';
 import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
@@ -499,6 +500,20 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               active="overview"
               username={profile.username ?? slug}
               counts={{ posts: 0, media: 0 }}
+            />
+          </div>
+
+          {/* ─── PASSPORT CARD (Arnel 2026-09-30) ────────────────
+              Surfaces the Hockey Passport as the visual centerpiece.
+              Renders the holder's passport inline, OR the upgrade CTA
+              for owners without a passport. Visitors viewing someone
+              else's empty passport see nothing (no advertising). */}
+          <div style={{ padding: '0 1.25rem', marginTop: '1rem' }}>
+            <PassportProfileCard
+              profileUserId={profile.user_id}
+              viewerUserId={viewerUserId}
+              viewerTier={profile.tier}
+              profileUsername={profile.username}
             />
           </div>
 
