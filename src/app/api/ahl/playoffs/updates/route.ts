@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -22,29 +22,14 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const content = body.text || body.content;
-    if (!content || typeof content !== 'string' || !content.trim()) {
-      return NextResponse.json({ error: 'text is required' }, { status: 400 });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data, error } = await supabase
-      .from('ahl_playoff_updates')
-      .insert({
-        content: content.trim(),
-        update_type: body.type || 'update',
-        author: body.author || 'RinkStop',
-        game_id: body.game_id || null,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return NextResponse.json(data, { status: 201 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Failed to post update' }, { status: 500 });
-  }
+// 2026-09-30 SECURITY: POST disabled (was unauthenticated service-role write).
+// Returns 410 Gone. Use /api/admin/playoffs/updates for admin writes.
+export async function POST() {
+  return NextResponse.json(
+    {
+      error: 'POST disabled 2026-09-30 — use POST /api/admin/playoffs/updates with admin auth',
+      migration: 'supabase/migrations/2026-09-30_playoff_updates_rls.sql',
+    },
+    { status: 410 },
+  );
 }

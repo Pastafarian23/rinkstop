@@ -266,31 +266,30 @@ if should_run 6; then
 fi
 
 # ------------------------------------------------------------------ Gate 7 (renumbered from Gate 6)
-# Optional live RLS sanity for tables that exist on dev. Only runs if
-# SUPABASE_LIVE_CHECK=1 (default off — it's a network call to dev DB).
+# Live RLS sweep against the live database. Sweeps ALL public tables,
+# attempts anon INSERT for each. FAILs the deploy if any table allows it.
+#
+# Per Arnel 2026-09-29 directive: 'figure out and prevent it in the first
+# place' — the Supabase advisor email flagged 2 tables with RLS not
+# enabled (email_subscribers + cron_health_snapshots). A follow-up sweep
+# found 4 more (email_captures, playoff_updates, profile_tier_ranks,
+# rink_reviews_legacy). The gate now prevents the NEXT one.
+#
+# Runs by default (no env var needed). Set SUPABASE_LIVE_CHECK=0 to skip
+# (e.g. when working offline).
 if should_run 7; then
-  echo "[7/7] live RLS sanity (dev DB)..."
-  if [ "${SUPABASE_LIVE_CHECK:-0}" != "1" ]; then
-    note "skipping live RLS check (set SUPABASE_LIVE_CHECK=1 to enable)"
-    ok "live check skipped"
+  echo "[7/7] live RLS sweep (all tables)..."
+  if [ "${SUPABASE_LIVE_CHECK:-1}" != "1" ]; then
+    note "SUPABASE_LIVE_CHECK=0 — skipping live RLS sweep"
+    ok "live RLS sweep skipped"
   elif [ -z "$SVC_KEY" ] || [ -z "$ANON_KEY" ]; then
     note "missing credentials (supabase.json or .env.local) — live check skipped"
   else
-    # Probe a known table. If 0 rows with anon key + non-zero with service
-    # role, RLS is active. (Real apps: parameterize to specific tables.)
-    TABLE="${RLS_PROBE_TABLE:-learn_progress}"
-    ANON_RESULT=$(curl -s -o /dev/null -w "%{http_code}" \
-      "https://${PROJECT_REF}.supabase.co/rest/v1/${TABLE}?select=id&limit=1" \
-      -H "apikey: $ANON_KEY" \
-      -H "Authorization: Bearer $ANON_KEY")
-    if [ "$ANON_RESULT" = "200" ]; then
-      ANON_BODY=$(curl -s "https://${PROJECT_REF}.supabase.co/rest/v1/${TABLE}?select=id&limit=1" \
-        -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY")
-      note "  anon read of $TABLE: status=$ANON_RESULT body=$ANON_BODY"
+    if node scripts/_live-rls-audit.cjs 2>&1; then
+      ok "live RLS sweep passed (0 vulnerable tables)"
     else
-      note "  anon read of $TABLE: status=$ANON_RESULT (expected 200 with [] or RLS-blocked)"
+      fail "live RLS sweep found vulnerable tables — see output above. Fix before pushing."
     fi
-    ok "live RLS check ran (informational — verify the body above is what you expect)"
   fi
 fi
 
