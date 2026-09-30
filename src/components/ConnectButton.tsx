@@ -168,18 +168,26 @@ export default function ConnectButton({
       <a
         href={`/login?redirect_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/')}`}
         style={{
-          display: 'inline-block',
-          background: '#041E42',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          width: '100%',
+          background: 'linear-gradient(135deg, #C8102E 0%, #a00d24 100%)',
           color: '#fff',
-          border: '2px solid #C8102E',
-          padding: compact ? '0.4rem 0.8rem' : '0.6rem 1.2rem',
-          borderRadius: 6,
+          border: '1px solid rgba(255,184,28,0.4)',
+          padding: compact ? '0.55rem 0.85rem' : '0.7rem 1.2rem',
+          borderRadius: 8,
           fontSize: compact ? 12 : 14,
-          fontWeight: 600,
+          fontWeight: 700,
           textDecoration: 'none',
+          letterSpacing: '0.01em',
+          boxShadow: '0 2px 8px rgba(200,16,46,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+          transition: 'transform 0.15s',
         }}
       >
-        Sign in to connect
+        <span aria-hidden>🔒</span>
+        <span>Sign in to connect</span>
       </a>
     );
   }

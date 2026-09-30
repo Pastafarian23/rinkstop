@@ -375,24 +375,26 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 <div
                   style={{
                     position: 'absolute',
-                    top: 12,
-                    left: 16,
+                    top: 14,
+                    left: 18,
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 6,
-                    padding: '4px 10px',
-                    background: 'rgba(0,0,0,0.35)',
-                    border: '1px solid rgba(255,184,28,0.5)',
-                    borderRadius: 4,
-                    fontSize: 10,
+                    gap: 8,
+                    padding: '8px 14px',
+                    background: 'linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 100%)',
+                    border: '1.5px solid rgba(255,184,28,0.65)',
+                    borderRadius: 6,
+                    fontSize: 11,
                     fontWeight: 800,
-                    letterSpacing: '0.15em',
+                    letterSpacing: '0.18em',
                     color: 'var(--gold)',
                     textTransform: 'uppercase',
-                    backdropFilter: 'blur(4px)',
+                    backdropFilter: 'blur(8px)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,184,28,0.2)',
                   }}
                 >
-                  🏒 HOCKEY PROFILE
+                  <span aria-hidden style={{ fontSize: 13 }}>🏒</span>
+                  <span>HOCKEY PROFILE</span>
                 </div>
               </>
             )}
@@ -474,6 +476,7 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               >
                 <div
                   style={{
+                    position: 'relative',
                     width: 'clamp(96px, 14vw, 140px)',
                     height: 'clamp(96px, 14vw, 140px)',
                     borderRadius: '50%',
@@ -486,9 +489,25 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                     fontSize: '3rem',
                     border: '4px solid var(--red)',
                     boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+                    overflow: 'hidden',
                   }}
                 >
-                  {displayName.charAt(0).toUpperCase()}
+                  {/* Hockey-stripe accent at top */}
+                  <div
+                    aria-hidden
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '18%',
+                      background: 'rgba(255,255,255,0.18)',
+                      borderBottom: '1px solid rgba(255,255,255,0.25)',
+                    }}
+                  />
+                  <span style={{ position: 'relative', zIndex: 1, letterSpacing: '0.02em' }}>
+                    {displayName.charAt(0).toUpperCase()}
+                  </span>
                 </div>
               </div>
             )}
@@ -516,6 +535,124 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
               profileUsername={profile.username}
             />
           </div>
+
+          {/* ─── OWNER UPGRADE CTA (Free tier only, signed-out visitors see nothing)
+              Real revenue surface: a Free-tier owner visiting their own profile
+              sees a clear upgrade path. Hidden from signed-out visitors so we
+              don't spam them. Hidden from paid-tier owners (they already upgraded). */}
+          {isOwner && (!profile.tier || profile.tier === 'free') && (
+            <div
+              data-profile-upgrade-cta
+              style={{
+                margin: '1rem 1.25rem 0',
+                padding: '1.5rem 1.5rem',
+                background: 'linear-gradient(135deg, rgba(11,30,63,0.95) 0%, rgba(8,21,46,0.95) 100%)',
+                border: '1px solid rgba(255,184,28,0.4)',
+                borderRadius: 14,
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,184,28,0.15)',
+              }}
+            >
+              {/* Gold accent corner */}
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: '40%',
+                  height: '4px',
+                  background: 'linear-gradient(90deg, transparent 0%, var(--gold) 100%)',
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div
+                  aria-hidden
+                  style={{
+                    fontSize: '2.5rem',
+                    flexShrink: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  🏒
+                </div>
+                <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                  <h2
+                    style={{
+                      fontFamily: "'Bebas Neue', Impact, sans-serif",
+                      fontSize: '1.5rem',
+                      letterSpacing: '0.04em',
+                      color: '#fff',
+                      margin: '0 0 0.4rem',
+                    }}
+                  >
+                    Upgrade to Verified Identity
+                  </h2>
+                  <p
+                    style={{
+                      fontSize: '0.9375rem',
+                      color: 'rgba(255,255,255,0.7)',
+                      margin: '0 0 1rem',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Your profile looks great. Take it further — verified ID, custom passport, priority support, and a $19.99/year footprint across the global hockey directory.
+                  </p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <Link
+                      href="/pricing"
+                      data-cta="profile-upgrade-view-tiers"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: 'linear-gradient(135deg, #FFB81C 0%, #E89C0F 100%)',
+                        color: '#0B1E3F',
+                        fontSize: '0.9375rem',
+                        fontWeight: 800,
+                        padding: '0.7rem 1.25rem',
+                        borderRadius: 8,
+                        textDecoration: 'none',
+                        letterSpacing: '0.01em',
+                        boxShadow: '0 4px 12px rgba(255,184,28,0.35), inset 0 1px 0 rgba(255,255,255,0.3)',
+                      }}
+                    >
+                      See Plans →
+                    </Link>
+                    <Link
+                      href="/learn/hockey-passport-guide"
+                      data-cta="profile-upgrade-learn"
+                      style={{
+                        display: 'inline-block',
+                        color: 'rgba(255,255,255,0.65)',
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        padding: '0.5rem 0.75rem',
+                      }}
+                    >
+                      What's included? →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ─── TWO-COLUMN BODY ───────────────────────────────── */}
           {/* Desktop: 1/3 sidebar + 2/3 feed. Mobile: single column, sidebar stacks on top. */}
