@@ -456,7 +456,7 @@ export default async function ChallengesSection({
                 style={{
                   margin: '0 0 8px',
                   fontSize: 13,
-                  color: '#475569',
+                  color: theme === 'dark' ? 'rgba(255,255,255,0.6)' : '#475569',
                   lineHeight: 1.45,
                 }}
               >
@@ -471,7 +471,7 @@ export default async function ChallengesSection({
                 style={{
                   height: 8,
                   borderRadius: 999,
-                  background: '#E2E8F0',
+                  background: theme === 'dark' ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
                   overflow: 'hidden',
                 }}
               >
