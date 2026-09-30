@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
 import MarkReadButton from '@/components/learn/MarkReadButton';
+import AffiliateProductCard from '@/components/AffiliateProductCard';
 
 export const metadata: Metadata = {
   title: 'Hockey Equipment on a Budget — What to Buy New, Used, and Skip',
@@ -133,6 +134,23 @@ export default function EquipmentOnABudgetPage() {
           <li>The stick breaks (and your kid is now breaking sticks regularly — that's a sign of stronger shots, which is good)</li>
           <li>Your kid has been playing for 2+ years and is clearly committed</li>
         </ul>
+
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Recommended gear picks</h2>
+        <p style={{ marginBottom: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem' }}>
+          Where to actually spend. These are tested picks across skates, sticks, helmets, and gloves that hold up.
+        </p>
+        <AffiliateProductCard
+          product={{ name: 'Bauer X-LP Youth Skates', brand: 'Bauer', reason: 'Best entry-level fit for kids 6U-10U. Pre-baked stiffness that holds up after growth spurts.', priceUsd: 99, searchTerms: 'Bauer X-LP youth hockey skates' }}
+          placement="equipment-budget-article"
+        />
+        <AffiliateProductCard
+          product={{ name: 'Bauer Re-Akt 200 Helmet', brand: 'Bauer', reason: 'Best certified protection at mid-range. HECC + CSA certified. Best adjustable occipital pad.', priceUsd: 169, searchTerms: 'Bauer Re-Akt 200 hockey helmet' }}
+          placement="equipment-budget-article"
+        />
+        <AffiliateProductCard
+          product={{ name: 'Bauer Vapor X4 Gloves', brand: 'Bauer', reason: 'Best fit for narrower hands. Best break-in of any glove in this price range.', priceUsd: 119, searchTerms: 'Bauer Vapor X4 hockey gloves' }}
+          placement="equipment-budget-article"
+        />
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>

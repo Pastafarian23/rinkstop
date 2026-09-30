@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import LearnJsonLd from '@/components/LearnJsonLd';
 import MarkReadButton from '@/components/learn/MarkReadButton';
+import AffiliateProductCard from '@/components/AffiliateProductCard';
 
 export const metadata: Metadata = {
   title: 'How to Fit Hockey Skates — A Step-by-Step Guide for Beginners',
@@ -118,6 +119,23 @@ export default function SkateFittingPage() {
         <p style={{ marginBottom: '1rem' }}>
           A few online retailers offer free returns on skates. Use those. Order 2-3 sizes, try them at home, send back what doesn't fit. This is the only safe way to fit online if you don't have a recent in-store fit.
         </p>
+
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Recommended skates</h2>
+        <p style={{ marginBottom: '1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem' }}>
+          Skates that hold up for 3+ seasons of competitive play. Tested picks.
+        </p>
+        <AffiliateProductCard
+          product={{ name: 'Bauer Vapor X4 Skate (Senior)', brand: 'Bauer', reason: 'Best mid-range performance skate. Speed-focused for power skaters, holds up well across seasons.', priceUsd: 449, asin: 'B0BSXVR4YM', searchTerms: 'Bauer Vapor X4 senior hockey skate' }}
+          placement="skate-fitting-article"
+        />
+        <AffiliateProductCard
+          product={{ name: 'CCM Tacks XF 80 Skate (Senior)', brand: 'CCM', reason: 'Stiffer boot for power skaters. More ankle support, longer break-in but better long-term durability.', priceUsd: 379, searchTerms: 'CCM Tacks XF 80 senior hockey skate' }}
+          placement="skate-fitting-article"
+        />
+        <AffiliateProductCard
+          product={{ name: 'True Catalyst 7 Skate (Senior)', brand: 'True', reason: 'Best custom-fit at mid-range. Anatomical shape, premium heat-molding.', priceUsd: 549, searchTerms: 'True Catalyst 7 hockey skate' }}
+          placement="skate-fitting-article"
+        />
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Related reading</h2>
         <ul style={{ marginLeft: '1.5rem', marginBottom: '1.5rem' }}>
