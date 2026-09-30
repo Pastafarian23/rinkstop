@@ -96,6 +96,14 @@ async function getAllTables() {
   return [];
 }
 
+// Tables that are known to NOT need RLS — internal/excluded by design.
+// Add a table here ONLY if it's managed by an extension (PostGIS etc.)
+// and has no user data. Keep this list SHORT — every entry is a permanent
+// false-positive exemption.
+const EXEMPT_TABLES = new Set([
+  'spatial_ref_sys', // PostGIS internal reference table (no user data)
+]);
+
 (async () => {
   console.log(`=== Live RLS audit for ${PROJECT_REF} ===\n`);
   let tables;
@@ -112,6 +120,10 @@ async function getAllTables() {
   const t0 = Date.now();
 
   for (const t of tables) {
+    if (EXEMPT_TABLES.has(t)) {
+      skipped++;
+      continue;
+    }
     const r = await anonInsert(t);
     tested++;
 
