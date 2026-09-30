@@ -681,7 +681,7 @@ async function ChallengesSectionWrapper({
 }: {
   holderUserId: string;
 }): Promise<React.ReactElement | null> {
-  return <ChallengesSection holderUserId={holderUserId} />;
+  return <ChallengesSection holderUserId={holderUserId} theme="dark" />;
 }
 
 async function AttendanceSection({
@@ -707,12 +707,12 @@ async function AttendanceSection({
   return (
     <section
       style={{
-        background: '#fff',
-        border: '1px solid #e2e8f0',
+        background: 'rgba(15, 23, 42, 0.45)',
+        border: '1px solid rgba(255, 184, 28, 0.18)',
         borderRadius: 12,
         padding: '16px 18px',
         margin: '0 0 16px',
-        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
       }}
     >
       <h2
@@ -720,7 +720,7 @@ async function AttendanceSection({
           fontSize: 12,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: '#64748b',
+          color: '#FFB81C',
           fontWeight: 600,
           margin: '0 0 12px',
         }}
@@ -748,7 +748,7 @@ async function AttendanceSection({
               fontSize: 11,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: '#64748b',
+              color: '#FFB81C',
               fontWeight: 600,
               margin: '0 0 8px',
             }}
@@ -770,7 +770,7 @@ async function AttendanceSection({
                 key={ev.id}
                 style={{
                   fontSize: 14,
-                  color: '#0f172a',
+                  color: '#F8FAFC',
                   display: 'flex',
                   justifyContent: 'space-between',
                   gap: 12,
@@ -786,7 +786,7 @@ async function AttendanceSection({
                   {ev.name}
                 </span>
                 <span
-                  style={{ color: '#64748b', fontSize: 12, flexShrink: 0 }}
+                  style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, flexShrink: 0 }}
                 >
                   {formatPublicDate(ev.startsAt)}
                 </span>
@@ -815,7 +815,7 @@ function StatCell({ label, value }: { label: string; value: number }) {
   return (
     <div
       style={{
-        background: '#f8fafc',
+        background: 'rgba(255, 255, 255, 0.05)',
         borderRadius: 8,
         padding: '10px 8px',
         textAlign: 'center',
@@ -826,7 +826,7 @@ function StatCell({ label, value }: { label: string; value: number }) {
           fontSize: 10,
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
-          color: '#64748b',
+          color: 'rgba(255, 255, 255, 0.55)',
           fontWeight: 600,
           margin: 0,
         }}
@@ -837,7 +837,7 @@ function StatCell({ label, value }: { label: string; value: number }) {
         style={{
           fontSize: 22,
           fontWeight: 700,
-          color: '#C8102E',
+          color: '#FFB81C',
           margin: '2px 0 0',
         }}
       >
@@ -853,9 +853,9 @@ function PassportFooter({ username }: { username: string | null }) {
       style={{
         marginTop: 32,
         paddingTop: 20,
-        borderTop: '1px solid #e2e8f0',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
         textAlign: 'center',
-        color: '#64748b',
+        color: 'rgba(255,255,255,0.55)',
         fontSize: 13,
       }}
     >
@@ -864,7 +864,7 @@ function PassportFooter({ username }: { username: string | null }) {
           <Link
             href={`/profile/${username}`}
             style={{
-              color: '#1d4ed8',
+              color: '#FFB81C',
               textDecoration: 'none',
               fontWeight: 600,
             }}
@@ -878,7 +878,7 @@ function PassportFooter({ username }: { username: string | null }) {
         <Link
           href="/"
           style={{
-            color: '#1d4ed8',
+            color: '#FFB81C',
             textDecoration: 'none',
             fontWeight: 600,
           }}
