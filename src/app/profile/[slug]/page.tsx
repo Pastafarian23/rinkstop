@@ -14,6 +14,7 @@ import CoverImageEditor from '@/components/CoverImageEditor';
 import CoverImageHistoryStrip from '@/components/CoverImageHistoryStrip';
 import ProfileTabs from '@/components/ProfileTabs';
 import ProfileSidebar from '@/components/ProfileSidebar';
+import ProfileStampsGallery from '@/components/profile/ProfileStampsGallery';
 import ProfileFeed from '@/components/OnlyClientProfileFeed';
 import ProfilePhotoHistory from '@/components/ProfilePhotoHistory';
 
@@ -685,6 +686,15 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                   <ProfilePhotoHistory photos={photoHistory} maxItems={4} />
                 </div>
               )}
+
+              {/* Stamp gallery — shows what having a passport looks like. */}
+              <div style={{ marginTop: '1rem' }}>
+                <ProfileStampsGallery
+                  holderUserId={profile.user_id}
+                  displayName={displayName}
+                  passportUrl={`/passport/${profile.username ?? slug}`}
+                />
+              </div>
             </div>
 
             {/* ───── RIGHT FEED (2/3) ───── */}
