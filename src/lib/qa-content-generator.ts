@@ -32,7 +32,7 @@ export interface QAPageConfig {
 }
 
 interface DatasetCache {
-  countries: { country: string; rinkCount: number; teamCount: number; states: { name: string; rinkCount: number }[] }[];
+  countries: { country: string; rinkCount: number; teamCount: number; states: { name: string; rinkCount: number; cities: { city: string; rinkCount: number }[] }[] }[];
   leagues: { id: string; slug: string; name: string; country: string; level: string; teamCount: number }[];
   cities: { city: string; country: string; rinkCount: number }[];
   generatedAt: number;
@@ -61,14 +61,25 @@ async function buildCache(): Promise<DatasetCache> {
     rinkOffset += rinkPageSize;
   }
   const rinks = allRinks;
-  const countryRinks = new Map<string, { rinkCount: number; cities: Map<string, number>; states: Map<string, number> }>();
+  const countryRinks = new Map<string, { rinkCount: number; cities: Map<string, number>; states: Map<string, number>; stateCities: Map<string, Map<string, number>> }>();
   for (const r of rinks || []) {
     if (!r.country) continue;
-    if (!countryRinks.has(r.country)) countryRinks.set(r.country, { rinkCount: 0, cities: new Map(), states: new Map() });
+    if (!countryRinks.has(r.country)) countryRinks.set(r.country, { rinkCount: 0, cities: new Map(), states: new Map(), stateCities: new Map() });
     const c = countryRinks.get(r.country)!;
     c.rinkCount++;
-    if (r.city) c.cities.set(r.city, (c.cities.get(r.city) || 0) + 1);
-    if (r.province_state) c.states.set(r.province_state, (c.states.get(r.province_state) || 0) + 1);
+    // Filter postal-code artifacts out of city aggregation too.
+    const cityClean = r.city && !/\d/.test(r.city) ? r.city.trim() : null;
+    if (cityClean) c.cities.set(cityClean, (c.cities.get(cityClean) || 0) + 1);
+    if (r.province_state) {
+      c.states.set(r.province_state, (c.states.get(r.province_state) || 0) + 1);
+      // Per-state city aggregation for cross-linking from state QA pages
+      // to their top cities. Only for clean (no-digit) cities.
+      if (cityClean) {
+        if (!c.stateCities.has(r.province_state)) c.stateCities.set(r.province_state, new Map());
+        const sc = c.stateCities.get(r.province_state)!;
+        sc.set(cityClean, (sc.get(cityClean) || 0) + 1);
+      }
+    }
   }
 
   // Aggregate teams by country (paginate)
@@ -105,7 +116,17 @@ async function buildCache(): Promise<DatasetCache> {
   const countries: DatasetCache['countries'] = [];
   for (const [country, agg] of countryRinks.entries()) {
     const states = Array.from(agg.states.entries())
-      .map(([name, rinkCount]) => ({ name, rinkCount }))
+      .map(([name, rinkCount]) => {
+        // Top-5 cities per state for cross-linking from state QA pages.
+        const stateCityMap = agg.stateCities.get(name);
+        const cities = stateCityMap
+          ? Array.from(stateCityMap.entries())
+              .map(([city, cityCount]) => ({ city, rinkCount: cityCount }))
+              .sort((a, b) => b.rinkCount - a.rinkCount)
+              .slice(0, 5)
+          : [];
+        return { name, rinkCount, cities };
+      })
       .sort((a, b) => b.rinkCount - a.rinkCount);
     countries.push({
       country,
@@ -170,6 +191,15 @@ function displayStateName(s: string): string {
   return US_STATE_ABBR_TO_NAME[s] || s;
 }
 
+// Inverse map for looking up the 2-letter state code from the rinks.province_state
+// column. Used by state QA templates to find that state's cities.
+function getAbbrFromStateName(s: string): string {
+  for (const [abbr, fullName] of Object.entries(US_STATE_ABBR_TO_NAME)) {
+    if (fullName === s) return abbr;
+  }
+  return s;
+}
+
 // Canadian province abbrev → full name (Ontario, not ON)
 const CA_PROVINCE_ABBR_TO_NAME: Record<string, string> = {
   AB: 'Alberta', BC: 'British Columbia', MB: 'Manitoba', NB: 'New Brunswick',
@@ -180,6 +210,14 @@ const CA_PROVINCE_ABBR_TO_NAME: Record<string, string> = {
 
 function displayProvinceName(s: string): string {
   return CA_PROVINCE_ABBR_TO_NAME[s] || s;
+}
+
+// Inverse map for Canadian province abbr lookup.
+function getCaAbbrFromProvinceName(s: string): string {
+  for (const [abbr, fullName] of Object.entries(CA_PROVINCE_ABBR_TO_NAME)) {
+    if (fullName === s) return abbr;
+  }
+  return s;
 }
 
 export async function generateQAPages(): Promise<QAPageConfig[]> {
@@ -223,11 +261,38 @@ ${c.country}'s national team program represents the country in IIHF-sanctioned e
 
 ## Youth and recreational hockey
 
-Hockey Canada, USA Hockey, and equivalent federations run development programs at every age level.`,
+Hockey Canada, USA Hockey, and equivalent federations run development programs at every age level.` +
+        // For US/Canada, link to top states/provinces (cross-link graph).
+        (c.states.length > 0
+          ? `\n## Top ${c.country === 'United States' ? 'states' : c.country === 'Canada' ? 'provinces' : 'regions'} with rinks\n\n` +
+            c.states.slice(0, 10).map((s) => {
+              const urlSlug = c.country === 'United States'
+                ? `/learn/hockey-in/${slugify(displayStateName(s.name))}-us-state`
+                : c.country === 'Canada'
+                ? `/learn/hockey-in/${slugify(displayProvinceName(s.name))}-canadian-province`
+                : `/directory/${slug}`;
+              const displayName = c.country === 'United States' ? displayStateName(s.name)
+                : c.country === 'Canada' ? displayProvinceName(s.name)
+                : s.name;
+              return `- [Hockey in ${displayName}](${urlSlug}) — ${s.rinkCount.toLocaleString()} rink${s.rinkCount === 1 ? '' : 's'}`;
+            }).join('\n')
+          : ''),
       related_urls: [
         { label: `All ${c.country} rinks`, url: `/directory/${slug}` },
         { label: `Hockey teams in ${c.country}`, url: `/directory/${slug}/teams` },
         { label: `Hockey leagues`, url: '/directory/leagues' },
+        // Add state/province QA pages to the related URL graph.
+        ...(c.country === 'United States'
+          ? c.states.slice(0, 10).map((s) => ({
+              label: `Hockey in ${displayStateName(s.name)}`,
+              url: `/learn/hockey-in/${slugify(displayStateName(s.name))}-us-state`,
+            }))
+          : c.country === 'Canada'
+          ? c.states.slice(0, 10).map((s) => ({
+              label: `Hockey in ${displayProvinceName(s.name)}`,
+              url: `/learn/hockey-in/${slugify(displayProvinceName(s.name))}-canadian-province`,
+            }))
+          : []),
       ],
       data_sources: [
         { source: 'rinks table (is_active=true)', count: c.rinkCount },
@@ -361,12 +426,28 @@ Several hockey teams use ${city.city} rinks as home arenas. Browse the team dire
   const usRinkCount = usCountry?.rinkCount ?? 0;
   for (const stateName of ALL_US_STATES) {
     const stateSlug = slugify(stateName);
+    const stateAbbr = getAbbrFromStateName(stateName);
+    // Look up this state's data — rink count + top-5 cities for cross-links.
+    // Falls back gracefully if province_state isn't populated for this state.
+    const stateData = usCountry?.states.find((s) => s.name === stateAbbr);
+    const stateRinkCount = stateData?.rinkCount ?? 0;
+    const topCities = stateData?.cities ?? [];
     const pageSlug = `hockey-in-${stateSlug}-us-state`;
+    // Build a cities bullet list for the markdown body. Each entry links
+    // to the city QA page (deep internal link, high SEO value).
+    const citiesSection = topCities.length > 0
+      ? `\n## Top hockey cities in ${stateName}\n\n` +
+        topCities.map((c) =>
+          `- [Ice rinks in ${c.city}](/learn/hockey-rinks-in/${slugify(c.city)}-${slugify('United States')}) — ${c.rinkCount.toLocaleString()} rink${c.rinkCount === 1 ? '' : 's'}`
+        ).join('\n')
+      : '';
     const page: QAPageConfig = {
       slug: pageSlug,
       url_path: `/learn/hockey-in/${stateSlug}-us-state`,
       question: `Hockey in ${stateName} — rinks, teams, and leagues`,
-      short_answer: `${stateName} has ${usRinkCount.toLocaleString()} active ice rinks tracked by RinkStop across the United States. The state fields professional, junior, college (NCAA D1/D3), high school, and youth hockey programs. USA Hockey administers amateur hockey through designated affiliates in each state.`,
+      short_answer: stateRinkCount > 0
+        ? `${stateName} has ${stateRinkCount.toLocaleString()} active ice rinks tracked by RinkStop${topCities.length > 0 ? `, with ${topCities.slice(0,3).map((c) => c.city).join(', ')} among the top cities.` : ''}. The state fields professional, junior, college (NCAA D1/D3), high school, and youth hockey programs. USA Hockey administers amateur hockey through designated affiliates in each state.`
+        : `${stateName} is one of 50 US states tracked by RinkStop. The state fields professional, junior, college (NCAA D1/D3), high school, and youth hockey programs. USA Hockey administers amateur hockey through designated affiliates in each state.`,
       full_answer_md: `Hockey in ${stateName} is played at every competitive level — from professional franchises down to youth leagues.
 
 ## Rinks in ${stateName}
@@ -379,22 +460,37 @@ ${stateName} hosts NCAA Division I and/or III programs (depending on the school)
 
 [Browse all US hockey →](/directory/united-states)
 [Browse US hockey teams →](/directory/teams)
-[Browse US hockey leagues →](/directory/leagues)`,
+[Browse US hockey leagues →](/directory/leagues)` +
+        citiesSection,
       related_urls: [
         { label: `${stateName} rinks`, url: `/directory/united-states/${stateSlug}` },
         { label: `US hockey directory`, url: '/directory/united-states' },
         { label: `Hockey leagues`, url: '/directory/leagues' },
+        // Add top city QA pages as related URLs so they get included in the
+        // sitemap cross-link graph. Only emit if the state has cities.
+        ...topCities.map((c) => ({
+          label: `Ice rinks in ${c.city}`,
+          url: `/learn/hockey-rinks-in/${slugify(c.city)}-${slugify('United States')}`,
+        })),
       ],
       data_sources: [
         { source: 'rinks table (country=United States, is_active=true)', count: usRinkCount },
+        ...(topCities.length > 0 ? [{ source: `Top cities in ${stateName} (by rink count)`, count: topCities.length }] : []),
       ],
       faqs: [
-        { q: `How many ice rinks are in ${stateName}?`, a: `The United States has ${usRinkCount.toLocaleString()} active ice rinks tracked by RinkStop across all 50 states.` },
+        { q: `How many ice rinks are in ${stateName}?`, a: stateRinkCount > 0
+          ? `${stateName} has ${stateRinkCount.toLocaleString()} active ice rinks tracked by RinkStop. The US as a whole has ${usRinkCount.toLocaleString()} rinks across all 50 states.`
+          : `The United States has ${usRinkCount.toLocaleString()} active ice rinks tracked by RinkStop across all 50 states. ${stateName} rink counts are continuously updated as USA Hockey affiliates verify local listings.` },
         { q: `Does ${stateName} have professional hockey?`, a: `${stateName} may host professional teams depending on NHL/AHL/ECHL affiliation. Browse the league directory at /directory/leagues for current affiliations.` },
         { q: `Does ${stateName} have college hockey?`, a: `Most US states have at least one NCAA hockey program. Browse /directory/college for NCAA D1/D3 programs.` },
+        ...(topCities.length > 0 ? [{ q: `What are the biggest hockey cities in ${stateName}?`, a: `The top cities for hockey rinks in ${stateName} are ${topCities.slice(0,5).map((c) => `${c.city} (${c.rinkCount} rink${c.rinkCount === 1 ? '' : 's'})`).join(', ')}.` }] : []),
       ],
-      meta_description: `Hockey in ${stateName}: ${usRinkCount.toLocaleString()} ice rinks across the United States. NCAA, amateur, and youth leagues. Data from RinkStop's directory.`,
-      og_title: `Hockey in ${stateName} — US hockey rinks, NCAA, amateur, and youth leagues`,
+      meta_description: stateRinkCount > 0
+        ? `Hockey in ${stateName}: ${stateRinkCount.toLocaleString()} ice rinks${topCities.length > 0 ? `, top cities: ${topCities.slice(0,3).map((c) => c.city).join(', ')}` : ''}. NCAA, amateur, and youth leagues.`
+        : `Hockey in ${stateName}: US hockey data, NCAA, amateur, and youth leagues.`,
+      og_title: stateRinkCount > 0
+        ? `Hockey in ${stateName} — ${stateRinkCount.toLocaleString()} rinks${topCities.length > 0 ? `, top cities: ${topCities.slice(0,3).map((c) => c.city).join(', ')}` : ''}`
+        : `Hockey in ${stateName} — US hockey rinks, NCAA, amateur, and youth leagues`,
     };
     pages.push(page);
   }
@@ -410,11 +506,19 @@ ${stateName} hosts NCAA Division I and/or III programs (depending on the school)
       const provinceSlug = slugify(province.name);
       const provinceName = displayProvinceName(province.name);
       const pageSlug = `hockey-in-${provinceSlug}-canadian-province`;
+      // Top cities in this province for cross-linking.
+      const topCitiesCa = province.cities ?? [];
+      const citiesSectionCa = topCitiesCa.length > 0
+        ? `\n## Top hockey cities in ${provinceName}\n\n` +
+          topCitiesCa.map((c) =>
+            `- [Ice rinks in ${c.city}](/learn/hockey-rinks-in/${slugify(c.city)}-${slugify('Canada')}) — ${c.rinkCount.toLocaleString()} rink${c.rinkCount === 1 ? '' : 's'}`
+          ).join('\n')
+        : '';
       const page: QAPageConfig = {
         slug: pageSlug,
         url_path: `/learn/hockey-in/${provinceSlug}-canadian-province`,
         question: `Hockey in ${provinceName}, Canada — rinks and leagues`,
-        short_answer: `${provinceName} has ${province.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop. The province fields CHL major-junior teams, U Sports university programs, AAA minor hockey, and recreational leagues under Hockey Canada governance.`,
+        short_answer: `${provinceName} has ${province.rinkCount.toLocaleString()} active ice rinks tracked by RinkStop${topCitiesCa.length > 0 ? `, with ${topCitiesCa.slice(0,3).map((c) => c.city).join(', ')} among the top cities.` : ''}. The province fields CHL major-junior teams, U Sports university programs, AAA minor hockey, and recreational leagues under Hockey Canada governance.`,
         full_answer_md: `Hockey in ${provinceName} operates under Hockey Canada governance with regional branch offices.
 
 ## Rinks in ${provinceName}
@@ -431,22 +535,31 @@ ${provinceName} typically hosts CHL teams (OHL, WHL, or QMJHL depending on regio
 
 ## Minor hockey
 
-Hockey Canada runs minor hockey associations across ${provinceName} at AAA, AA, A, B, and recreational tiers.`,
+Hockey Canada runs minor hockey associations across ${provinceName} at AAA, AA, A, B, and recreational tiers.` +
+          citiesSectionCa,
         related_urls: [
           { label: `${provinceName} rinks`, url: `/directory/canada/${provinceSlug}` },
           { label: `Canadian hockey directory`, url: '/directory/canada' },
           { label: `Hockey leagues`, url: '/directory/leagues' },
+          ...topCitiesCa.map((c) => ({
+            label: `Ice rinks in ${c.city}`,
+            url: `/learn/hockey-rinks-in/${slugify(c.city)}-${slugify('Canada')}`,
+          })),
         ],
         data_sources: [
           { source: 'rinks table (province_state match, is_active=true)', count: province.rinkCount },
+          ...(topCitiesCa.length > 0 ? [{ source: `Top cities in ${provinceName} (by rink count)`, count: topCitiesCa.length }] : []),
         ],
         faqs: [
           { q: `How many ice rinks are in ${provinceName}?`, a: `RinkStop tracks ${province.rinkCount.toLocaleString()} active ice rinks in ${provinceName}, Canada.` },
           { q: `Does ${provinceName} have a CHL team?`, a: `${provinceName} may host CHL teams depending on the region. Browse the leagues directory for current affiliations.` },
           { q: `What is the main junior league in ${provinceName}?`, a: `${provinceName} typically has WHL (Western), OHL (Ontario), or QMJHL (Quebec) teams, plus U Sports university hockey.` },
+          ...(topCitiesCa.length > 0 ? [{ q: `What are the biggest hockey cities in ${provinceName}?`, a: `The top cities for hockey rinks in ${provinceName} are ${topCitiesCa.slice(0,5).map((c) => `${c.city} (${c.rinkCount} rink${c.rinkCount === 1 ? '' : 's'})`).join(', ')}.` }] : []),
         ],
-        meta_description: `Hockey in ${provinceName}: ${province.rinkCount.toLocaleString()} ice rinks, CHL + U Sports + minor hockey. Data from RinkStop's directory.`,
-        og_title: `Hockey in ${provinceName} — ${province.rinkCount.toLocaleString()} rinks, CHL + U Sports`,
+        meta_description: province.rinkCount > 0
+          ? `Hockey in ${provinceName}: ${province.rinkCount.toLocaleString()} ice rinks${topCitiesCa.length > 0 ? `, top cities: ${topCitiesCa.slice(0,3).map((c) => c.city).join(', ')}` : ''}, CHL + U Sports + minor hockey.`
+          : `Hockey in ${provinceName}: Canadian hockey data, CHL + U Sports + minor hockey.`,
+        og_title: `Hockey in ${provinceName} — ${province.rinkCount.toLocaleString()} rinks${topCitiesCa.length > 0 ? `, top cities: ${topCitiesCa.slice(0,3).map((c) => c.city).join(', ')}` : ''}, CHL + U Sports`,
       };
       pages.push(page);
     }
