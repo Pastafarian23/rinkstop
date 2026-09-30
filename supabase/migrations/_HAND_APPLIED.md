@@ -256,3 +256,26 @@ ALTER TABLE public.stamps
 - `cron_health_snapshots` (207 rows, used by scripts/collect-cron-health.js + admin route)
 
 **Audit follow-up:** ran anon-INSERT sweep across all 93 public tables. Found exactly 2 vulnerable tables (these two). Now 0 vulnerable.
+
+## 2026-09-30 — `2026-09-30_lock_remaining_tables_rls.sql`
+
+**Applied:** 2026-09-30 00:45 CDT
+**Applied by:** KiloClaw (main session, webchat)
+**Trigger:** scripts/_live-rls-audit.cjs sweep found 4 more tables without RLS
+
+**Tables affected (user-data only):**
+- `email_captures` (1 row) — POST /api/email-capture uses service_role
+- `playoff_updates` (87 rows) — public read, service_role write (POST endpoint now returns 410)
+- `profile_tier_ranks` (VIEW, 19 rows) — REVOKE INSERT/UPDATE/DELETE from anon
+- `rink_reviews_legacy` (VIEW, 0 rows) — REVOKE INSERT/UPDATE/DELETE from anon
+
+**API route fixes:**
+- `/api/nhl/playoffs/updates` POST → returns 410 Gone (was unauthenticated content injection)
+- `/api/ahl/playoffs/updates` POST → returns 410 Gone (was unauthenticated service-role write)
+
+**Pre-deploy gate upgrade:**
+- scripts/pre-deploy-gate.sh Gate 7 now calls scripts/_live-rls-audit.cjs
+- Sweeps all public tables, FAILS deploy if any allow anon INSERT
+- spatial_ref_sys (PostGIS internal) is the only known false positive — already documented in 2026-09-23 migration
+
+**Post-fix audit:** 174 tables tested, 1 vulnerable (spatial_ref_sys, PostGIS exempt).
