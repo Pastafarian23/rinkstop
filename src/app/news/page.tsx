@@ -159,11 +159,43 @@ export default async function NewsPage() {
     }
   }
 
-  // Top leagues by post count (filter to ones with at least 1 post).
+  // Top leagues by post count.
   const topLeagues = Array.from(leaguePostCounts.values())
     .filter((lp) => lp.count >= 1)
+    .sort((a, b) => b.count - a.count);
+
+  // Derive level facets: which leagues are professional, junior, college, amateur?
+  const levels = {
+    professional: topLeagues.filter((lp) => lp.league.level === 'professional').sort((a, b) => b.count - a.count).slice(0, 6),
+    junior: topLeagues.filter((lp) => lp.league.level === 'junior').sort((a, b) => b.count - a.count).slice(0, 6),
+    college: topLeagues.filter((lp) => lp.league.level === 'college').sort((a, b) => b.count - a.count).slice(0, 6),
+    amateur: topLeagues.filter((lp) => !['professional', 'junior', 'college'].includes(lp.league.level || '')).sort((a, b) => b.count - a.count).slice(0, 6),
+  };
+
+  // Derive country facets: which countries have content?
+  const countryFacets = new Map<string, { code: string; count: number; leagues: League[] }>();
+  for (const lp of topLeagues) {
+    if (!lp.league.country) continue;
+    const code = lp.league.country;
+    const existing = countryFacets.get(code);
+    if (!existing) {
+      countryFacets.set(code, { code, count: lp.count, leagues: [lp.league] });
+    } else {
+      existing.count += lp.count;
+      existing.leagues.push(lp.league);
+    }
+  }
+  const topCountryFacets = Array.from(countryFacets.values())
     .sort((a, b) => b.count - a.count)
-    .slice(0, 12);
+    .slice(0, 8);
+
+  // Group posts by pillar so non-highlights get their own section.
+  const pillarGroups: Record<string, Post[]> = {};
+  for (const post of posts) {
+    const key = (post.pillar || 'highlights').toLowerCase();
+    if (!pillarGroups[key]) pillarGroups[key] = [];
+    pillarGroups[key].push(post);
+  }
 
   // 3. Today's stories (last 3 days).
   const todayMs = Date.now();
@@ -302,7 +334,7 @@ export default async function NewsPage() {
             marginBottom: '0.75rem',
           }}
         >
-          Browse by league
+          Filter by level
         </div>
         <div
           style={{
@@ -325,14 +357,114 @@ export default async function NewsPage() {
               whiteSpace: 'nowrap',
             }}
           >
-            All leagues
+            All levels
           </Link>
-          {topLeagues.map(({ league, count }) => (
+          {levels.professional.length > 0 && (
             <Link
-              key={league.id}
-              href={`/directory/leagues/${league.slug}`}
+              href="/directory/leagues?level=professional"
+              data-level-pill="professional"
               style={{
                 padding: '0.5rem 1rem',
+                background: 'rgba(200,16,46,0.12)',
+                border: '1px solid rgba(200,16,46,0.4)',
+                borderRadius: 999,
+                color: '#FF8FA0',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Professional <span style={{ opacity: 0.6, marginLeft: 4 }}>· {levels.professional.reduce((s, lp) => s + lp.count, 0)}</span>
+            </Link>
+          )}
+          {levels.junior.length > 0 && (
+            <Link
+              href="/directory/leagues?level=junior"
+              data-level-pill="junior"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(255,184,28,0.10)',
+                border: '1px solid rgba(255,184,28,0.3)',
+                borderRadius: 999,
+                color: '#FFB81C',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Junior <span style={{ opacity: 0.6, marginLeft: 4 }}>· {levels.junior.reduce((s, lp) => s + lp.count, 0)}</span>
+            </Link>
+          )}
+          {levels.college.length > 0 && (
+            <Link
+              href="/directory/leagues?level=college"
+              data-level-pill="college"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(20,184,166,0.10)',
+                border: '1px solid rgba(20,184,166,0.3)',
+                borderRadius: 999,
+                color: '#5EEAD4',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              College <span style={{ opacity: 0.6, marginLeft: 4 }}>· {levels.college.reduce((s, lp) => s + lp.count, 0)}</span>
+            </Link>
+          )}
+          {levels.amateur.length > 0 && (
+            <Link
+              href="/directory/leagues?level=amateur"
+              data-level-pill="amateur"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 999,
+                color: 'rgba(255,255,255,0.85)',
+                fontSize: '0.8125rem',
+                fontWeight: 700,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Amateur <span style={{ opacity: 0.6, marginLeft: 4 }}>· {levels.amateur.reduce((s, lp) => s + lp.count, 0)}</span>
+            </Link>
+          )}
+        </div>
+
+        {/* Country filter row */}
+        <div
+          style={{
+            fontSize: '0.7rem',
+            fontWeight: 800,
+            letterSpacing: '0.22em',
+            color: 'rgba(255,255,255,0.5)',
+            textTransform: 'uppercase',
+            marginTop: '1.5rem',
+            marginBottom: '0.75rem',
+          }}
+        >
+          Filter by country
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+          }}
+        >
+          {topCountryFacets.map(({ code, count }) => (
+            <Link
+              key={code}
+              href={`/directory/${code.toLowerCase()}`}
+              data-country-pill={code}
+              style={{
+                padding: '0.5rem 0.85rem',
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 999,
@@ -343,7 +475,7 @@ export default async function NewsPage() {
                 whiteSpace: 'nowrap',
               }}
             >
-              {league.name} <span style={{ opacity: 0.5, marginLeft: 4 }}>· {count}</span>
+              {code} <span style={{ opacity: 0.5, marginLeft: 4 }}>· {count}</span>
             </Link>
           ))}
         </div>
@@ -730,7 +862,131 @@ export default async function NewsPage() {
         </div>
       </section>
 
-      {/* 8. Older archive */}
+      {/* 8. Featured non-score content (Analysis, Guides, Business, Blog) */}
+      {Object.entries(pillarGroups)
+        .filter(([pillar]) => !['highlights'].includes(pillar))
+        .filter(([, posts]) => posts.length > 0)
+        .length > 0 && (
+        <section
+          data-featured-pillars
+          aria-label="Featured non-score content"
+          style={{ marginBottom: '2.5rem' }}
+        >
+          <h2
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              letterSpacing: '0.22em',
+              color: 'rgba(255,184,28,0.7)',
+              textTransform: 'uppercase',
+              margin: '0 0 1rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '1px solid rgba(255,184,28,0.25)',
+            }}
+          >
+            More from RinkStop — Analysis, Guides, Industry
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {Object.entries(pillarGroups)
+              .filter(([pillar]) => !['highlights'].includes(pillar))
+              .filter(([, posts]) => posts.length > 0)
+              .flatMap(([pillar, posts]) =>
+                posts.slice(0, 3).map((post) => {
+                  const league = post.league_id ? leagueById.get(post.league_id) : null;
+                  const pillarAccent = {
+                    nhl: 'rgba(200,16,46,0.18)',
+                    blog: 'rgba(20,184,166,0.18)',
+                    guides: 'rgba(255,184,28,0.18)',
+                    business: 'rgba(168,85,247,0.18)',
+                    news: 'rgba(20,184,166,0.18)',
+                    international: 'rgba(20,184,166,0.18)',
+                    womens: 'rgba(236,72,153,0.18)',
+                  }[pillar] || 'rgba(255,255,255,0.05)';
+                  const pillarColor = {
+                    nhl: '#FF8FA0',
+                    blog: '#5EEAD4',
+                    guides: '#FFB81C',
+                    business: '#C4B5FD',
+                    news: '#5EEAD4',
+                    international: '#5EEAD4',
+                    womens: '#F472B6',
+                  }[pillar] || 'rgba(255,255,255,0.85)';
+                  return (
+                    <Link
+                      key={post.id}
+                      href={`/news/${post.slug}`}
+                      data-pillar-tile={pillar}
+                      style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        padding: '1rem 1.25rem',
+                        background: pillarAccent,
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: 8,
+                        textDecoration: 'none',
+                        color: '#fff',
+                        transition: 'border-color 0.15s, transform 0.15s',
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                          <span style={{
+                            fontSize: '0.625rem',
+                            fontWeight: 800,
+                            letterSpacing: '0.12em',
+                            textTransform: 'uppercase',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: 3,
+                            background: 'rgba(0,0,0,0.35)',
+                            color: pillarColor,
+                          }}>
+                            {pillar}
+                          </span>
+                          {league && (
+                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)' }}>
+                              {league.name}
+                            </span>
+                          )}
+                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)' }}>
+                            {formatDate(post.published_at)}
+                          </span>
+                        </div>
+                        <h3 style={{
+                          fontSize: '1.0625rem',
+                          fontWeight: 700,
+                          color: '#fff',
+                          lineHeight: 1.3,
+                          margin: '0 0 0.3rem',
+                        }}>
+                          {decodeEntities(post.title)}
+                        </h3>
+                        {post.subtitle && (
+                          <p style={{
+                            fontSize: '0.875rem',
+                            color: 'rgba(255,255,255,0.6)',
+                            lineHeight: 1.45,
+                            margin: 0,
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical' as const,
+                          }}>
+                            {decodeEntities(post.subtitle)}
+                          </p>
+                        )}
+                      </div>
+                      <div style={{ flexShrink: 0, color: pillarColor, fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', alignSelf: 'center' }}>
+                        Read →
+                      </div>
+                    </Link>
+                  );
+                })
+              )}
+          </div>
+        </section>
+      )}
+
+      {/* 9. Older archive */}
       {older.length > 0 && (
         <section
           data-archive
