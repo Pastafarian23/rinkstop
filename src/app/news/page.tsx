@@ -328,13 +328,34 @@ function NonScoreSection({
  */
 export default async function NewsPage() {
   // 1. Pull posts + leagues + teams in parallel.
+  //
+  // Two post queries: highlights (capped at 60, the bulk of the page)
+  // AND non-highlights (capped at 20, separate section). We can't just
+  // fetch 80 ordered by date because the highlights dominate the most
+  // recent slots, pushing non-highlights out entirely. Querying both
+  // categories separately guarantees we get a balanced mix.
   const [postsRes, leaguesRes, teamsRes] = await Promise.all([
-    supabase
-      .from('posts')
-      .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(80),
+    Promise.all([
+      supabase
+        .from('posts')
+        .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name')
+        .eq('status', 'published')
+        .or('category.eq.highlights,pillar.eq.highlights,pillar.is.null')
+        .order('published_at', { ascending: false })
+        .limit(60),
+      supabase
+        .from('posts')
+        .select('id, slug, title, subtitle, published_at, category, pillar, league_id, team_home_id, team_away_id, game_date, reading_time_minutes, author_name')
+        .eq('status', 'published')
+        .neq('category', 'highlights')
+        .neq('pillar', 'highlights')
+        .not('pillar', 'is', null)
+        .order('published_at', { ascending: false })
+        .limit(20),
+    ]).then(([highlightsRes, nonScoreRes]) => ({
+      data: [...(highlightsRes.data || []), ...(nonScoreRes.data || [])],
+      error: highlightsRes.error || nonScoreRes.error,
+    })),
     supabase
       .from('leagues')
       .select('id, name, slug, country, level')
