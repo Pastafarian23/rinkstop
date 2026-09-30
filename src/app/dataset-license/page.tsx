@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getStripePaymentLink } from '@/lib/stripe-payment-links';
+import RelatedProducts from '@/components/RelatedProducts';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
 export const metadata: Metadata = {
@@ -336,6 +337,25 @@ export default function DatasetLicensePage() {
             },
             aggregateRating: undefined,
           })}}
+        />
+
+        <RelatedProducts
+          products={[
+            {
+              title: 'Plans for hockey people',
+              description: 'Verified Hockey Passport, team profiles, business listings — eight tiers from $24.99/yr.',
+              href: '/pricing',
+              cta: 'See plans',
+              accent: 'red',
+            },
+            {
+              title: 'Best Hockey Gear 2026',
+              description: 'Free buyer\'s guide — tested picks for skates, sticks, helmets, gloves. Where-to-buy links for every pick.',
+              href: '/learn/best-hockey-gear',
+              cta: 'Read the guide',
+              accent: 'gold',
+            },
+          ]}
         />
       </div>
     </div>
