@@ -41,6 +41,7 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getStripePaymentLink } from '@/lib/stripe-payment-links';
 import ChallengesSection from '@/components/passport/ChallengesSection';
+import PassportShareBar from '@/components/passport/PassportShareBar';
 import {
   isPublicPassportLookupEnabled,
   passportLookupService,
@@ -239,6 +240,11 @@ async function ActivePassportCard({
           <FederationAffiliationsSection internalUserId={record.internalUserId} />
           <AttendanceSection holderUserId={record.internalUserId} />
           <ChallengesSectionWrapper holderUserId={record.internalUserId} />
+          <PassportShareBar
+            url={`https://rinkstop.com/passport/${record.passportId}`}
+            holderName={name}
+            passportId={record.passportId}
+          />
           <PassportFooter username={username} />
         </div>
       </div>
