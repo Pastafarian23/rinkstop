@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import AccountTypePicker from '@/components/AccountTypePicker';
 import Link from 'next/link';
 import RelatedProducts from '@/components/RelatedProducts';
+import PricingComparisonTable from '@/components/PricingComparisonTable';
 import { formatTierPrice, TIERS, TierName, TierGroup, PRICING_DISPLAY_ORDER, getTierLabel, getGroupForTier } from '@/lib/pricing';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
@@ -761,6 +762,10 @@ export default function PricingContent({
             </div>
           ))}
         </div>
+      </section>
+
+      <section style={{ padding: '2rem 0 4rem', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <PricingComparisonTable />
       </section>
 
       <section style={{ padding: '2rem 1.5rem 5rem', maxWidth: 760, margin: '0 auto' }}>
