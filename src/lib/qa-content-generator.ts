@@ -297,10 +297,15 @@ You can follow ${l.name} on RinkStop to get notifications about scores, trades, 
   // the cap raised to 1,500 we cover the long tail of cities that drive
   // the highest-CTR organic queries (Estonia/Portugal/Greece per 2026-09-29
   // GSC analysis — these are small markets with very low competition).
-  // We skip cities whose name starts with a digit (postal-code artifacts
-  // in the source data) so the URL slugs are clean.
+  // We skip cities that contain postal-code artifacts (digits anywhere in
+  // the city name) so the URL slugs are clean. Examples we filter out:
+  //   "Tallinn 13414", "Alexandria (Inner South Sydney), NSW 2015",
+  //   "Canillo, Andorra AD100".
+  // This reduces the corpus from ~1,431 raw cities to ~1,292 clean ones
+  // that produce useful URLs. Cities with all-letter names pass through
+  // regardless of punctuation (commas, dashes, parentheses).
   const allCities = data.cities
-    .filter((c) => c.city && c.country && !/^\d/.test(c.city.trim()))
+    .filter((c) => c.city && c.country && !/\d/.test(c.city))
     .sort((a, b) => b.rinkCount - a.rinkCount)
     .slice(0, 1500);
   for (const city of allCities) {
