@@ -170,6 +170,8 @@ export async function POST(req: NextRequest) {
         // ── Guest checkout path ─────────────────────────────────────────────
         // Reached when:
         //   - metadata.is_guest === 'true'  (set by /api/tier/upgrade for anonymous users)
+        //   - OR Payment Link checkout: no clerk_user_id, no is_guest flag,
+        //     but metadata.tier is set (because Payment Links carry tier in metadata)
         //   - session.customer_details?.email is the email the user typed into Stripe's form
         //   - metadata.tier is the tier they purchased
         //
@@ -184,7 +186,7 @@ export async function POST(req: NextRequest) {
         // they typed into Stripe, their Clerk account and their paid profile will
         // have different emails and they won't auto-link. Mitigation: /welcome
         // prompts them to sign up with the exact email from Stripe.
-        if (metadata.is_guest === 'true' && session.customer_details?.email && metadata.tier) {
+        if (metadata.tier && session.customer_details?.email && !metadata.clerk_user_id) {
           const email = session.customer_details.email as string;
           const subscriptionId = session.subscription as string;
           const customerId = session.customer as string;
