@@ -48,8 +48,7 @@ interface Post {
   category?: string | null;
   reading_time_minutes?: number | null;
   author_name?: string | null;
-  hero_image_url?: string | null;
-  hero_image_alt?: string | null;
+  og_image_url?: string | null;
 }
 
 function formatDate(date?: string | null) {
@@ -89,7 +88,7 @@ export default async function NewsPage() {
   // Pull latest published posts, ordered by date desc.
   const { data: posts } = await supabase
     .from('posts')
-    .select('id, slug, title, subtitle, excerpt, published_at, category, reading_time_minutes, author_name, hero_image_url, hero_image_alt')
+    .select('id, slug, title, subtitle, published_at, category, reading_time_minutes, author_name, og_image_url')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(60);
