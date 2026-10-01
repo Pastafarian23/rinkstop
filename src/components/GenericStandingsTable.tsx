@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { StandingRow } from '@/lib/standings';
+import { standingsTeamHref } from '@/lib/team-slug';
 
 /**
  * GenericStandingsTable — server-rendered table for any league's standings.
@@ -22,6 +23,8 @@ interface Props {
   rows: StandingRow[];
   /** When true, top-3 rows get a subtle green tint. */
   markTopThree?: boolean;
+  /** League name — used to build the team-page link. */
+  leagueName?: string;
 }
 
 const th: React.CSSProperties = {
@@ -54,7 +57,7 @@ function DiffCell({ gf, ga }: { gf: number | null; ga: number | null }) {
   );
 }
 
-export default function GenericStandingsTable({ rows, markTopThree }: Props) {
+export default function GenericStandingsTable({ rows, markTopThree, leagueName }: Props) {
   if (rows.length === 0) {
     return (
       <div style={{
@@ -110,7 +113,10 @@ export default function GenericStandingsTable({ rows, markTopThree }: Props) {
                     {row.rank ?? '—'}
                   </td>
                   <td style={{ ...td, textAlign: 'left' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Link
+                      href={standingsTeamHref(leagueName, row.team_name)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
+                    >
                       {row.team_logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -125,7 +131,7 @@ export default function GenericStandingsTable({ rows, markTopThree }: Props) {
                       <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {row.team_name}
                       </span>
-                    </span>
+                    </Link>
                   </td>
                   <td style={td}>{row.played ?? '—'}</td>
                   <td style={td}>{row.wins ?? '—'}</td>
