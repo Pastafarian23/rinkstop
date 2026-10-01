@@ -464,7 +464,7 @@ export default async function HockeyDatabasePage() {
           License this dataset — $499
         </h2>
         <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', maxWidth: 600, margin: '0 auto 1.25rem', lineHeight: 1.55 }}>
-          1,857 rinks · 2,601 teams · 305 leagues · 6,351 players. CSV + JSON + JSONL.
+          ${counts.rinks.toLocaleString()} rinks · 2,601 teams · ${counts.leagues.toLocaleString()} ${1} · 6,351 players. CSV + JSON + JSONL.
           Commercial-use license. Quarterly refreshes for 12 months. No scraping.
         </p>
         <Link

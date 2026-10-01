@@ -31,7 +31,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   // country only:    "Hockey Teams in [Country]"
   // level only:      "[Level] Hockey Teams Worldwide"
   // league only:     "[League] Hockey Teams"
-  // nothing:         "[count] Hockey Teams Across 240 Leagues"
+  // nothing:         "[count] Hockey Teams Across [leagues-count] Leagues"
   let title: string;
   if (country && levelIsValid) {
     title = `${LEVEL_LABELS[level as Level]} Hockey Teams in ${country}`;
@@ -42,7 +42,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   } else if (levelIsValid) {
     title = `${LEVEL_LABELS[level as Level]} Hockey Teams Worldwide`;
   } else {
-    title = `${teamCount.toLocaleString()}+ Hockey Teams Across 240 Leagues`;
+    title = `${teamCount.toLocaleString()}+ Hockey Teams Across ${counts.leagues.toLocaleString()} Leagues`;
   }
   const description = (() => {
     if (levelIsValid && country) {
@@ -54,7 +54,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
     if (country) {
       return `Browse hockey teams in ${country}. Find pro, junior, college, and amateur teams with rosters, logos, and arena info — searchable by league tier and city.`;
     }
-    return `Find any hockey team in the world. ${teamCount.toLocaleString()}+ active teams across 305 leagues and 78 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
+    return `Find any hockey team in the world. ${teamCount.toLocaleString()}+ active teams across ${counts.leagues.toLocaleString()} leagues and ${counts.countries.toLocaleString()} countries — NHL, AHL, KHL, NCAA, CHL, IIHF, and amateur levels. Search by name, league, or city.`;
   })();
   const canonicalParams = new URLSearchParams();
   if (country) canonicalParams.set('country', country);
@@ -158,27 +158,40 @@ async function fetchInitialTeams(opts: {
     // ids === null: level value was invalid; ignore (don't filter by level)
   }
   if (league) {
-    // Exact-name match (case-insensitive). Using ilike with wildcards
-    // previously over-matched leagues whose names CONTAINED the search
-    // string (e.g. "College" matched "College Hockey League").
-    const { data: matchedLeagues } = await supabase
-      .from('leagues')
-      .select('id')
-      .ilike('name', league);  // no wildcards — exact match
-    const leagueIds = (matchedLeagues ?? []).map((m: { id: string }) => m.id);
-
-    if (leagueIds.length === 0) {
-      // No match — force empty result
-      leagueIdFilter = ['__none__'];
-    } else if (leagueIdFilter === null) {
-      leagueIdFilter = leagueIds;
+    // 2026-10-01 Bug 2 fix (Arnel data-integrity audit): the leagues
+    // table stores full names ("National Hockey League"), but URL
+    // filters send abbreviations ("NHL"). `ilike 'NHL'` matches
+    // nothing → 0 teams returned. Use the abbreviation-to-name map
+    // so both forms resolve to the right canonical names.
+    const { expandLeagueAbbreviations } = await import('@/lib/league-abbreviations');
+    const candidateNames = expandLeagueAbbreviations(league);
+    if (!candidateNames || candidateNames.length === 0) {
+      // Known abbreviation but no matching leagues in our DB (e.g.
+      // user passed "NCAA WOMEN" before we ingested that league).
+      // Skip the .in() filter entirely — fall through to no-filter.
     } else {
-      // Intersect with the level-derived set
-      const set = new Set(leagueIds);
-      leagueIdFilter = leagueIdFilter.filter((id) => set.has(id));
-      if (leagueIdFilter.length === 0) leagueIdFilter = ['__none__'];
+      // Match any of the candidate full names. `ilike` is case-insensitive
+      // by default in Postgres.
+      const { data: matchedLeagues } = await supabase
+        .from('leagues')
+        .select('id')
+        .in('name', candidateNames);
+      const leagueIds = (matchedLeagues ?? []).map((m: { id: string }) => m.id);
+
+      if (leagueIds.length === 0) {
+        // No match — force empty result
+        leagueIdFilter = ['__none__'];
+      } else if (leagueIdFilter === null) {
+        leagueIdFilter = leagueIds;
+      } else {
+        // Intersect with the level-derived set
+        const set = new Set(leagueIds);
+        leagueIdFilter = leagueIdFilter.filter((id) => set.has(id));
+        if (leagueIdFilter.length === 0) leagueIdFilter = ['__none__'];
+      }
     }
   }
+
   if (leagueIdFilter !== null) {
     nhlQuery = nhlQuery.in('league_id', leagueIdFilter);
   }
