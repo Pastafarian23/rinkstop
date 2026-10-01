@@ -5,11 +5,19 @@ import RelatedProducts from '@/components/RelatedProducts';
 import SocialProof from '@/components/SocialProof';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
-export const metadata: Metadata = {
-  title: { absolute: 'Hockey Dataset License — 1,857 Rinks, 2,601 Teams, 6,351 Players | RinkStop' },
-  description:
-    'License RinkStop\'s complete hockey database — 1,857+ rinks, 2,601+ teams, 305+ leagues, 6,351+ players across 78 countries. CSV/JSON download with quarterly updates. $499 one-time.',
+// 2026-10-01 (Arnel data-integrity audit): route title/description through
+// the canonical helper so the dataset-license page metadata matches the
+// rendered body and never drifts.
+export async function generateMetadata(): Promise<Metadata> {
+  const counts = await getDirectoryCountsCached();
+  const titleFull = `Hockey Dataset License — ${counts.rinks.toLocaleString()} Rinks, ${counts.teams.toLocaleString()} Teams, ${counts.players.toLocaleString()} Players | RinkStop`;
+  const titleShort = `Hockey Dataset License — ${counts.rinks.toLocaleString()} Rinks, ${counts.teams.toLocaleString()} Teams`;
+  const description = `License RinkStop's complete hockey database — ${counts.rinks.toLocaleString()}+ rinks, ${counts.teams.toLocaleString()}+ teams, ${counts.leagues.toLocaleString()}+ leagues, ${counts.players.toLocaleString()}+ players across ${counts.countries.toLocaleString()} countries. CSV/JSON download with quarterly updates. $499 one-time.`;
+  return {
+  title: { absolute: titleFull },
+  description: description,
   keywords: [
     'hockey data', 'hockey database download', 'hockey rink data',
     'hockey teams csv', 'ice rink dataset', 'sports business data',
@@ -19,20 +27,21 @@ export const metadata: Metadata = {
     canonical: 'https://rinkstop.com/dataset-license',
   },
   openGraph: withDefaultOg({
-    title: 'Hockey Dataset License — 1,857 Rinks, 2,601 Teams, 6,351 Players',
+    title: titleFull,
     description:
-      'License RinkStop\'s complete hockey database. CSV/JSON download, commercial use, quarterly updates. $499 one-time.',
+      `License RinkStop's complete hockey database. CSV/JSON download, commercial use, quarterly updates. $499 one-time.`,
     url: 'https://rinkstop.com/dataset-license',
     siteName: 'RinkStop',
     type: 'website',
   }),
   twitter: {
     card: 'summary_large_image',
-    title: 'Hockey Dataset License — 1,857 Rinks, 2,601 Teams',
+    title: titleShort,
     description:
-      'Bulk hockey data for analytics, scouting, equipment, and research. Commercial-use license, $499.',
+      `Bulk hockey data for analytics, scouting, equipment, and research. Commercial-use license, $499.`,
   },
-};
+  };
+}
 
 /**
  * /dataset-license — $499 commercial license for the RinkStop hockey dataset.
@@ -61,8 +70,9 @@ export const metadata: Metadata = {
  *
  * Real revenue potential: $499 × N buyers. Even 1 sale/week = ~$2k/mo.
  */
-export default function DatasetLicensePage() {
+export default async function DatasetLicensePage() {
   const buyLink = getStripePaymentLink('dataset_license');
+  const counts = await getDirectoryCountsCached();
 
   return (
     <div style={{
@@ -220,10 +230,10 @@ export default function DatasetLicensePage() {
           marginBottom: '3rem',
         }}>
           <div style={{ display: 'grid', gap: '0.5rem', fontFamily: 'ui-monospace, monospace', fontSize: '0.875rem' }}>
-            <div><span style={{ color: '#FFB81C' }}>rinks.csv</span> — 1,857 rows. Address, lat/lon, hours, programs, capacity, contact.</div>
-            <div><span style={{ color: '#FFB81C' }}>teams.csv</span> — 2,601 rows. Roster, league_id, home_arena_id, contact, social.</div>
-            <div><span style={{ color: '#FFB81C' }}>leagues.csv</span> — 305 rows. Country, level, tier, season format, governing body.</div>
-            <div><span style={{ color: '#FFB81C' }}>players.csv</span> — 6,351 rows. Position, height, weight, club history, stats where available.</div>
+            <div><span style={{ color: '#FFB81C' }}>rinks.csv</span> — {counts.rinks.toLocaleString()} rows. Address, lat/lon, hours, programs, capacity, contact.</div>
+            <div><span style={{ color: '#FFB81C' }}>teams.csv</span> — {counts.teams.toLocaleString()} rows. Roster, league_id, home_arena_id, contact, social.</div>
+            <div><span style={{ color: '#FFB81C' }}>leagues.csv</span> — {counts.leagues.toLocaleString()} rows. Country, level, tier, season format, governing body.</div>
+            <div><span style={{ color: '#FFB81C' }}>players.csv</span> — {counts.players.toLocaleString()} rows. Position, height, weight, club history, stats where available.</div>
             <div><span style={{ color: '#FFB81C' }}>schema.json</span> — JSON Schema for every table. Validates the bundle.</div>
             <div><span style={{ color: '#FFB81C' }}>README.md</span> — License terms, citation guidance, update schedule.</div>
           </div>
@@ -371,7 +381,7 @@ export default function DatasetLicensePage() {
             '@context': 'https://schema.org',
             '@type': 'Product',
             name: 'RinkStop Hockey Dataset License',
-            description: 'Commercial license for bulk hockey database — 1,857 rinks, 2,601 teams, 305 leagues, 6,351 players across 78 countries.',
+            description: `Commercial license for bulk hockey database — ${counts.rinks.toLocaleString()} rinks, ${counts.teams.toLocaleString()} teams, ${counts.leagues.toLocaleString()} leagues, ${counts.players.toLocaleString()} players across ${counts.countries.toLocaleString()} countries.`,
             brand: { '@type': 'Brand', name: 'RinkStop' },
             offers: {
               '@type': 'Offer',
