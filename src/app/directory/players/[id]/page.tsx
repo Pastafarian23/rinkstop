@@ -6,6 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import ClaimListingNudge from '@/components/ClaimListingNudge';
+import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildPlayerFAQs } from '@/lib/player-context';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -300,8 +302,35 @@ export default async function PlayerPage({ params }: Props) {
     console.error('[player-page] JSON-LD build failed', err);
   }
 
+  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
+  // page view is the second step in the funnel. Fire listing_viewed.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/players/${id}`,
+      props: {
+        listing_type: 'player',
+        listing_slug: playerTyped?.slug ?? null,
+        listing_id: id,
+        nationality: playerTyped?.nationality ?? null,
+        position: playerTyped?.position ?? null,
+        is_active: playerTyped?.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   return (
     <>
+      {/* WS30 conversion overhaul (Arnel 2026-10-01):
+          Above-the-fold claim nudge for unclaimed players + owner banner
+          for the approved owner. Renders BEFORE PlayerDetail so the CTA
+          lands in the first viewport. */}
+      <ClaimListingNudge entityType="player" entityId={id} entityName={playerTyped ? `${playerTyped.first_name} ${playerTyped.last_name}` : 'this player'} />
+      <ClaimedOwnerBanner entityType="player" entityId={id} />
+
       {playerJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }} />
       )}

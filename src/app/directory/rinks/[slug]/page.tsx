@@ -13,7 +13,8 @@ import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildRinkShare } from '@/lib/share';
 import { ClaimedBy } from '@/components/ClaimedBy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
-import RinkClaimNudge from '@/components/RinkClaimNudge';
+import ClaimListingNudge from '@/components/ClaimListingNudge';
+import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
 import ListingContactFormMount from '@/components/ListingContactFormMount';
 import { rinkPageDecision, robotsMeta } from '@/lib/seo';
@@ -734,6 +735,28 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     });
   }
 
+  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
+  // page view is the second step in the funnel (search → listing view →
+  // claim CTA click → claim submitted). Fire listing_viewed server-side
+  // so we don't depend on client JS to capture it.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/rinks/${rink.slug}`,
+      props: {
+        listing_type: 'rink',
+        listing_slug: rink.slug,
+        listing_id: rink.id,
+        city: rink.city ?? null,
+        country: rink.country ?? null,
+        is_active: rink.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   // Tier 1h v3 (2026-07-07): catch ALL throws from the page body so we can
   // serve 200 instead of 500 even when something goes wrong. Logs the actual
   // error to Vercel so we can fix the root cause.
@@ -883,12 +906,14 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           {rink.name}
         </h1>
 
-        {/* Above-the-fold claim nudge for anonymous visitors on unclaimed rinks.
-            Backed by GSC data 2026-09-02: 65,983 imps / 610 clicks per 28d, mostly
-            to individual rink pages. The existing full CTA stays at the bottom of
-            the page (per Arnel's 2026-07-08 request). This is a discovery nudge,
-            not the full claim form. */}
-        <RinkClaimNudge rinkId={rink.id} rinkName={rink.name} />
+        {/* WS30 conversion overhaul (Arnel 2026-10-01):
+            - ClaimListingNudge: anonymous visitors on unclaimed rinks see a
+              compact "Claim it free" CTA + secondary "See what you can unlock"
+              link. Placed above-the-fold so it shows in the first viewport.
+            - ClaimedOwnerBanner: signed-in approved owners see "Manage your
+              profile" + upgrade hint. Same slot, mutually exclusive. */}
+        <ClaimListingNudge entityType="rink" entityId={rink.id} entityName={rink.name} />
+        <ClaimedOwnerBanner entityType="rink" entityId={rink.id} />
 
         {/* Hockey Passport CTA (2026-09-29 WS-48h-pricing-passport). Inline
             banner placed above-the-fold so visitors who land here via Google

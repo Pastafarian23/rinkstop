@@ -1,6 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { trackClient } from '@/lib/client-track';
+
+// WS30 conversion overhaul (2026-10-01, Arnel directive): the CTA on
+// every unclaimed listing is the third step in the funnel
+// (search → listing view → claim CTA click → claim submitted).
+// Fire claim_button_clicked before navigating so we can measure
+// "clicked-but-didnt-submit" (the most common funnel leak).
+function fireCtaClick(entityType: 'rink' | 'team' | 'league' | 'player', entityId: string) {
+  trackClient('claim_button_clicked', {
+    listing_type: entityType,
+    listing_id: entityId,
+  });
+}
 
 // Default tier per entity type (matches /claim-your-listing ClaimButton).
 // Used to display the entry price on the CTA so visitors know what they'll pay.
@@ -154,6 +167,7 @@ export default function ClaimThisListing({
         <Link
           href={`/login?redirect_url=${encodeURIComponent(claimDestination)}`}
           style={ctaStyle}
+          onClick={() => fireCtaClick(entityType, entityId)}
         >
           Sign in to claim — it's free
         </Link>
@@ -176,7 +190,7 @@ export default function ClaimThisListing({
             </div>
           </div>
         </div>
-        <Link href={claimDestination} style={ctaStyle}>
+        <Link href={claimDestination} style={ctaStyle} onClick={() => fireCtaClick(entityType, entityId)}>
           Claim it — it's free →
         </Link>
       </div>
@@ -198,7 +212,7 @@ export default function ClaimThisListing({
             </div>
           </div>
         </div>
-        <Link href={claimDestination} style={ctaDangerStyle}>
+        <Link href={claimDestination} style={ctaDangerStyle} onClick={() => fireCtaClick(entityType, entityId)}>
           {state.recommendedTier === 'federation' || state.recommendedTier === 'league' ? 'Contact Sales →' : 'Upgrade to Hockey Passport Plus →'}
         </Link>
       </div>
@@ -247,6 +261,7 @@ export default function ClaimThisListing({
       <Link
         href={claimDestination}
         style={ctaStyle}
+        onClick={() => fireCtaClick(entityType, entityId)}
       >
         Continue your claim →
       </Link>
