@@ -666,7 +666,7 @@ export default async function Home() {
                 ADD YOUR TEAM, RINK, OR LEAGUE
               </h2>
               <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)', maxWidth: '540px' }}>
-                Submit a new listing to the directory -- free to add. Already in our directory? Claim your team, rink, or league to add photos, schedules, contact info, and updates (paid tier).
+                Submit a new listing to the directory — free to add. Already in our directory? Claim your team, rink, or league for free; paid tiers add photos, schedules, contact info, lead capture, and updates.
               </p>
             </div>
             <div className="cta-btns">

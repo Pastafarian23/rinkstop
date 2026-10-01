@@ -185,6 +185,26 @@ export default async function LeaguePage({
     }
   }
 
+  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
+  // page view is the second step in the funnel. Fire listing_viewed.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/leagues/${league.id}`,
+      props: {
+        listing_type: 'league',
+        listing_slug: league.slug ?? null,
+        listing_id: league.id,
+        level: league.level ?? null,
+        country: league.country ?? null,
+        is_active: league.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   return (
     <>
       {leagueJsonLd.length > 0 && (
