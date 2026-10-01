@@ -21,13 +21,19 @@ async function getNhlDataFreshness(): Promise<{ lastSynced: string | null; sourc
   try {
     const { data } = await getSb()
       .from('highlightly_standings')
-      .select('last_synced')
-      .eq('league_name', 'NHL')
+      .select('last_synced, league_name')
       .order('last_synced', { ascending: false })
-      .limit(1)
-      .single();
-    const last = (data as { last_synced?: string } | null)?.last_synced ?? null;
-    return { lastSynced: last, source: 'NHL.com Stats API' };
+      .limit(20) as { data: { last_synced: string | null; league_name: string }[] | null };
+    if (!data || data.length === 0) return { lastSynced: null, source: 'No data' };
+    // Pick the most recent row, and report which source(s) it's from
+    const last = data[0].last_synced ?? null;
+    const sources = new Set<string>();
+    sources.add('NHL.com Stats API'); // NHL always uses NHL.com
+    for (const r of data) {
+      if (r.league_name === 'NHL') continue;
+      sources.add('Wikipedia');
+    }
+    return { lastSynced: last, source: Array.from(sources).join(' + ') };
   } catch {
     return { lastSynced: null, source: 'Highlightly API' };
   }
