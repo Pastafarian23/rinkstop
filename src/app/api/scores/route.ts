@@ -71,6 +71,16 @@ export async function GET(request: NextRequest) {
   const time = searchParams.get('time') || DEFAULT_TIME;
   const q = searchParams.get('q')?.trim() || '';  // 2026-09-17: free-text team search
   const limit = Math.min(parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10), 200);
+  // 2026-10-01 fix (Arnel feedback): explicit date range overrides the
+  // `time` preset. Lets the /scores week-strip and the new date-picker
+  // pull any historical or future window regardless of the current/recent
+  // cutoff. Format: YYYY-MM-DD. Either may be omitted (no bound on that side).
+  // When both are set, the `time` value is ignored entirely.
+  const rawFrom = searchParams.get('from');
+  const rawTo = searchParams.get('to');
+  const dateFrom = rawFrom && /^\d{4}-\d{2}-\d{2}$/.test(rawFrom) ? rawFrom : null;
+  const dateTo = rawTo && /^\d{4}-\d{2}-\d{2}$/.test(rawTo) ? rawTo : null;
+  const hasExplicitRange = !!(dateFrom || dateTo);
 
   const chip = getChip(league);
   const leagueIds = await getLeagueIdsForChip(league);
@@ -147,7 +157,20 @@ export async function GET(request: NextRequest) {
   // recent     = completed games from the last 7 days (DESC by date)
   // historical = anything older than the recent cutoff EXCEPT in-progress games
   // current    = scheduled/in_progress (any date) OR recently completed
-  if (time === 'historical') {
+  // from/to    = explicit [from, to] window (ISO date or datetime). When
+  //              set, the time preset is ignored entirely. Both bounds
+  //              optional. Sort order is preserved from the upstream builder.
+  if (hasExplicitRange) {
+    // Inclusive on both ends in UTC terms (PostgREST gte/lt semantics on
+    // scheduled_at). The week strip computes its bounds in ET and sends
+    // them as YYYY-MM-DD; we expand the upper bound to end-of-day UTC so
+    // an ET date like 2026-09-30 (which crosses midnight UTC) still
+    // includes all games that played out of that ET calendar day.
+    const fromTs = dateFrom ? `${dateFrom}T00:00:00.000Z` : null;
+    const toTs = dateTo ? `${dateTo}T23:59:59.999Z` : null;
+    if (fromTs) query = query.gte('scheduled_at', fromTs);
+    if (toTs)   query = query.lte('scheduled_at', toTs);
+  } else if (time === 'historical') {
     query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoffISO);
   } else if (time === 'recent') {
     // 2026-09-17: new mode for the /scores Recent Results section.
@@ -219,6 +242,8 @@ export async function GET(request: NextRequest) {
     count: mapped.length,
     chip: chip.slug,
     time,
+    from: dateFrom,
+    to: dateTo,
     hasMore: mapped.length === limit,
   });
   response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300');
