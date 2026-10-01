@@ -627,11 +627,16 @@ export default function GamesIndexClient({ initialData }: Props) {
 
       {/* Timezone disclosure — 2026-09-14: times shown in explicit
           ET/CT/MT/PT abbreviations. Per-league timezones will appear
-          inline on each card. */}
+          inline on each card.
+          2026-10-01 fix (Arnel): was incorrectly claiming "All start times
+          are shown in Eastern Time (ET)". That was true for NHL/CHL/NCAA
+          but KHL publishes in MSK, SHL in CET, Liiga in EET, etc.
+          Replaced with accurate per-league copy. */}
       <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', marginBottom: '1rem', lineHeight: 1.5, fontStyle: 'italic' }}>
-        All start times are shown in Eastern Time (ET). For venues outside
-        the Eastern Time zone, each game card shows the timezone
-        abbreviation. Game times are local to each venue at puck drop.
+        Start times are shown in each league's home timezone: ET for NHL/AHL/PWHL/NCAA,
+        MSK for KHL, CET for SHL/DEL/Extraliga, EET for Liiga, and so on. Each game
+        card shows the timezone abbreviation next to the puck-drop time.
+        Times are based on the league's official schedule, not browser-local.
       </p>
 
       {/* Filter bar: chips */}
