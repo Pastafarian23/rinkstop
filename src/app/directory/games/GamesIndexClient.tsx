@@ -76,18 +76,29 @@ function WeekCalendar({ games }: { games: Game[] }) {
   const pathname = usePathname();
   const search = useSearchParams();
   const selectedDate = search.get('d');
-  // Build a 7-day window starting 3 days before today through 3 days after.
+  // Build a 7-day window in the USER'S local timezone. Day numbers
+  // and the today-highlight are local — match the gamesToGroup
+  // grouping logic below so "Oct 1" highlights and "Oct 1" games
+  // match for users in any timezone.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const fmtLocalDate = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day_ = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day_}`;
+  };
+  const fmtGameLocalDate = (iso: string): string => fmtLocalDate(new Date(iso));
+  const todayIso = fmtLocalDate(today);
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today.getTime() + (i - 3) * 86400000);
-    const iso = d.toISOString().slice(0, 10);
-    const count = games.filter((g) => (g.scheduled_at || g.date).slice(0, 10) === iso).length;
+    const iso = fmtLocalDate(d);
+    const count = games.filter((g) => fmtGameLocalDate(g.scheduled_at || g.date) === iso).length;
     return {
       iso,
       label: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
       dayNum: d.getDate(),
-      isToday: i === 3,
+      isToday: iso === todayIso,
       count,
     };
   });
@@ -759,12 +770,22 @@ export default function GamesIndexClient({ initialData }: Props) {
             const completed = games.filter(g => g.status === 'completed');
             // 2026-09-30 IA fix: apply the ?d=YYYY-MM-DD date filter from
             // the WeekCalendar strip. When set, narrow both lists to just
-            // that day. When cleared, show everything.
+            // that day. When cleared, show everything. Uses local-timezone
+            // date formatting so ?d=2026-10-01 means "Oct 1 in the user's
+            // browser timezone", matching the calendar's day cells.
+            const localDate = (iso: string): string => {
+              const d = new Date(iso);
+              if (isNaN(d.getTime())) return iso.slice(0, 10);
+              const y = d.getFullYear();
+              const m = String(d.getMonth() + 1).padStart(2, '0');
+              const day_ = String(d.getDate()).padStart(2, '0');
+              return `${y}-${m}-${day_}`;
+            };
             const scopedUpcoming = dateFilter
-                ? upcoming.filter((g) => (g.scheduled_at || g.date).slice(0, 10) === dateFilter)
+                ? upcoming.filter((g) => localDate(g.scheduled_at || g.date) === dateFilter)
                 : upcoming;
             const scopedCompleted = dateFilter
-                ? completed.filter((g) => (g.scheduled_at || g.date).slice(0, 10) === dateFilter)
+                ? completed.filter((g) => localDate(g.scheduled_at || g.date) === dateFilter)
                 : completed;
             const gamesToGroup = [...scopedUpcoming, ...scopedCompleted];
             return (
@@ -777,16 +798,32 @@ export default function GamesIndexClient({ initialData }: Props) {
                     (earliest start time first). Matches NHL.com's
                     scores layout: hero "Today", then grouped days. */}
                 {(() => {
+                  // 2026-10-01 fix (Arnel feedback): group by the date in the
+                  // USER'S local timezone, not UTC. Previously slicing
+                  // scheduled_at.slice(0, 10) gave the UTC date, which
+                  // doesn't match the local dates in the week calendar
+                  // strip (e.g. a 23:30 UTC game is "tomorrow" in Cebu
+                  // but showed up under "today" UTC). Using toLocaleString
+                  // with the { year, month, day } options gives the user's
+                  // local date in YYYY-MM-DD form for grouping.
                   const grouped: Record<string, Game[]> = {};
+                  const fmtLocalDate = (iso: string): string => {
+                    const d = new Date(iso);
+                    if (isNaN(d.getTime())) return iso.slice(0, 10);
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                  };
                   for (const g of gamesToGroup) {
-                    const d = (g.scheduled_at || g.date).slice(0, 10);
+                    const d = fmtLocalDate(g.scheduled_at || g.date);
                     if (!grouped[d]) grouped[d] = [];
                     grouped[d].push(g);
                   }
                   const dateKeys = Object.keys(grouped).sort();
                   if (dateKeys.length === 0) return null;
-                  const todayStr = new Date().toISOString().slice(0, 10);
-                  const tomorrowStr = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+                  const todayStr = fmtLocalDate(new Date().toISOString());
+                  const tomorrowStr = fmtLocalDate(new Date(Date.now() + 86400000).toISOString());
                   return dateKeys.map((d) => {
                     const isToday = d === todayStr;
                     const isTomorrow = d === tomorrowStr;
