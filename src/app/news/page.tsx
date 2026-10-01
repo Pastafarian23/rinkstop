@@ -2,14 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 import NewsletterSignup from '@/components/NewsletterSignup';
 
 const supabase = supabaseAdmin;
 
-export const metadata: Metadata = {
+// 2026-10-01 (Arnel data-integrity audit): use canonical counts helper.
+export async function generateMetadata(): Promise<Metadata> {
+  const counts = await getDirectoryCountsCached();
+  const description = `Hockey news today: NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF scores and game recaps. Updated daily from the global hockey directory covering ${counts.rinks.toLocaleString()} rinks, ${counts.teams.toLocaleString()} teams, ${counts.countries.toLocaleString()} countries.`;
+  return {
   title: { absolute: 'Hockey News — Scores, Highlights & Stories | RinkStop' },
-  description:
-    'Hockey news today: NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF scores and game recaps. Updated daily from the global hockey directory covering 1,857 rinks, 2,601 teams, 78 countries.',
+  description: description,
   keywords: [
     'hockey news', 'hockey news today', 'hockey scores', 'hockey game recap',
     'NHL news', 'AHL news', 'KHL news', 'PWHL news', 'CHL news', 'NCAA hockey news',
@@ -19,8 +23,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   openGraph: withDefaultOg({
     title: 'Hockey News — Scores, Highlights & Stories',
-    description:
-      'Hockey news from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF. Updated daily.',
+    description: description,
     url: 'https://rinkstop.com/news',
     siteName: 'RinkStop',
     type: 'website',
@@ -28,10 +31,10 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey News',
-    description:
-      'Hockey news from NHL, AHL, KHL, PWHL, CHL, NCAA, IIHF — all from one global hockey directory.',
+    description: description,
   },
-};
+  };
+}
 
 export const revalidate = 1800;
 export const dynamicParams = true;
@@ -335,6 +338,7 @@ export default async function NewsPage() {
   // fetch 80 ordered by date because the highlights dominate the most
   // recent slots, pushing non-highlights out entirely. Querying both
   // categories separately guarantees we get a balanced mix.
+  const counts = await getDirectoryCountsCached();
   const [postsRes, leaguesRes, teamsRes] = await Promise.all([
     Promise.all([
       supabase
@@ -1139,7 +1143,7 @@ export default async function NewsPage() {
         </p>
         <NewsletterSignup source="news_weekly_digest" />
         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.75rem' }}>
-          Free forever. Used by coaches in 78 countries.
+          Free forever. Used by coaches in {counts.countries.toLocaleString()} countries.
         </div>
       </section>
 
@@ -1245,7 +1249,7 @@ export default async function NewsPage() {
         }}>
           <Link href="/directory" style={linkCardStyle('#FFB81C')}>
             <div style={linkCardTitleStyle}>Hockey Directory</div>
-            <div style={linkCardDescStyle}>1,857 rinks, 2,601 teams, 6,351 players.</div>
+            <div style={linkCardDescStyle}>{counts.rinks.toLocaleString()} rinks, {counts.teams.toLocaleString()} teams, {counts.players.toLocaleString()} players.</div>
           </Link>
           <Link href="/learn" style={linkCardStyle('#C8102E')}>
             <div style={linkCardTitleStyle}>Learn Hockey</div>

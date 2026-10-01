@@ -20,6 +20,7 @@
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
   title: 'List Your Ice on RinkStop — Founding Partner Program',
@@ -75,6 +76,7 @@ const TIER_OPTIONS = [
 export default async function LaunchPage() {
   const h = await headers();
   const pathname = h.get('x-pathname') || '/launch';
+  const counts = await getDirectoryCountsCached();
 
   return (
     <main
@@ -457,8 +459,8 @@ export default async function LaunchPage() {
             lineHeight: 1.6,
           }}
         >
-          <strong style={{ color: '#FFB81C' }}>Why we built this:</strong> RinkStop already lists 1,857 rinks, 2,601 teams, and 305 leagues
-          in 78 countries. The directory brings traffic. The marketplace turns that traffic into transactions between
+          <strong style={{ color: '#FFB81C' }}>Why we built this:</strong> RinkStop already lists {counts.rinks.toLocaleString()} rinks, {counts.teams.toLocaleString()} teams, and {counts.leagues.toLocaleString()} leagues
+          in {counts.countries.toLocaleString()} countries. The directory brings traffic. The marketplace turns that traffic into transactions between
           rinks with open ice and teams that need it. We take a 20% cut of every booking — same model as Airbnb, Vrbo,
           and Classpass.
         </div>

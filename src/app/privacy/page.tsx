@@ -21,7 +21,7 @@ export default function PrivacyPage() {
       </h1>
 
       <div style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.8, fontSize: '1rem' }}>
-        <p style={{ marginBottom: '1.5rem', color: 'rgba(255,255,255,0.5)' }}>Last updated: August 10, 2026</p>
+        <p style={{ marginBottom: '1.5rem', color: 'rgba(255,255,255,0.5)' }}>Last updated: October 1, 2026</p>
 
         <p style={{ marginBottom: '1.5rem' }}>
           RinkStop (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates the website rinkstop.com and related services. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website.

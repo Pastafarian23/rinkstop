@@ -2,11 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import DirectoryLandingClient from './DirectoryLandingClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
-export const metadata: Metadata = {
-  title: 'Hockey Directory',
-  description:
-    "Browse RinkStop's complete hockey directory — 2,601+ teams, 305+ leagues, 6,350+ players, and 1,856 ice rinks across 78 countries. Search by name, league, country, or city.",
+// 2026-10-01 (Arnel data-integrity audit): route title/description through
+// the canonical helper so the directory landing page metadata matches the
+// rendered DirectoryLandingClient counts and never drifts.
+export async function generateMetadata(): Promise<Metadata> {
+  const counts = await getDirectoryCountsCached();
+  const description = `Browse RinkStop's complete hockey directory — ${counts.teams.toLocaleString()}+ teams, ${counts.leagues.toLocaleString()}+ leagues, ${counts.players.toLocaleString()}+ players, and ${counts.rinks.toLocaleString()} ice rinks across ${counts.countries.toLocaleString()} countries. Search by name, league, country, or city.`;
+  return {
+    title: 'Hockey Directory',
+  description: description,
   alternates: {
     canonical: 'https://rinkstop.com/directory',
   },
@@ -16,8 +22,7 @@ export const metadata: Metadata = {
   },
   openGraph: withDefaultOg({
     title: 'Hockey Directory',
-    description:
-      "Browse RinkStop's complete hockey directory — 2,601+ teams, 305+ leagues, 6,350+ players, and 1,856 ice rinks across 78 countries.",
+    description: description,
     url: 'https://rinkstop.com/directory',
     siteName: 'RinkStop',
     type: 'website',
@@ -25,10 +30,10 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Hockey Directory',
-    description:
-      "Browse RinkStop's complete hockey directory — 2,601+ teams, 305+ leagues, 6,350+ players, and 1,856 ice rinks across 78 countries.",
+    description: description,
   },
-};
+  };
+}
 
 // ISR-cached for 1 hour (2026-07-22 perf pass).
 export const revalidate = 3600;
