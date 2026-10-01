@@ -9,6 +9,8 @@ import { timezoneForCountry } from '@/lib/team-timezone';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
 import { buildTeamFAQs } from '@/lib/team-context';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
+import ClaimListingNudge from '@/components/ClaimListingNudge';
+import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 
 interface TeamWithLocation {
   country_code: string | null;
@@ -698,8 +700,36 @@ export default async function PublicTeamPage({ params }: PageProps) {
   }
   const teamJsonLdString = JSON.stringify(teamJsonLd).replace(/</g, '\\u003c');
 
+  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
+  // page view is the second step in the funnel. Fire listing_viewed.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/teams/${team.slug}`,
+      props: {
+        listing_type: 'team',
+        listing_slug: team.slug,
+        listing_id: team.id,
+        league_id: team.league_id ?? null,
+        city: team.home_city ?? null,
+        country: team.home_country ?? null,
+        is_active: team.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   return (
     <>
+      {/* WS30 conversion overhaul (Arnel 2026-10-01):
+          Above-the-fold claim nudge for unclaimed teams + owner banner for
+          the approved owner. Renders BEFORE the PublicTeamProfile client
+          component so it lands in the first viewport on mobile and desktop. */}
+      <ClaimListingNudge entityType="team" entityId={team.id} entityName={team.name} />
+      <ClaimedOwnerBanner entityType="team" entityId={team.id} />
+
       {/* JSON-LD: SportsTeam + BreadcrumbList + FAQPage (PR #197) */}
       <script
         type="application/ld+json"
