@@ -76,28 +76,53 @@ function WeekCalendar({ games }: { games: Game[] }) {
   const pathname = usePathname();
   const search = useSearchParams();
   const selectedDate = search.get('d');
-  // Build a 7-day window in the USER'S local timezone. Day numbers
-  // and the today-highlight are local — match the gamesToGroup
-  // grouping logic below so "Oct 1" highlights and "Oct 1" games
-  // match for users in any timezone.
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const fmtLocalDate = (d: Date): string => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day_ = String(d.getDate()).padStart(2, '0');
+  // 2026-10-01 fix: ?w=N shifts the visible week window by N weeks
+  // (0 = current week centered on today, -1 = previous week, +1 = next).
+  // The previous/next arrows navigate between weeks. Without this, the
+  // arrows only re-selected days within the current visible week.
+  const weekOffset = parseInt(search.get('w') ?? '0', 10) || 0;
+  // 2026-10-01 fix (Arnel feedback): the calendar and game grouping must
+  // use the SAME date logic the displayed game times use — ET
+  // (America/New_York). The page already says "All start times are shown
+  // in ET". Previously the grouping used the user's browser-local
+  // timezone, which for late-night ET games (e.g., 7:30 PM ET) rolled
+  // into the next day in Cebu. Now everything lines up: the calendar
+  // day-number matches the date label of the game group below it.
+  //
+  // Why ET specifically: NHL/NHLPA publish schedule in ET. The disclaimer
+  // already promises ET times. Hockey fans mentally live in ET.
+  // Everyone outside ET just sees that the calendar + group + times all
+  // share the same day.
+  const ET_TZ = 'America/New_York';
+  const fmtETDate = (d: Date): string => {
+    // Intl.DateTimeFormat with timeZone option gives us the ET calendar date.
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ET_TZ,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(d);
+    const y = parts.find(p => p.type === 'year')!.value;
+    const m = parts.find(p => p.type === 'month')!.value;
+    const day_ = parts.find(p => p.type === 'day')!.value;
     return `${y}-${m}-${day_}`;
   };
-  const fmtGameLocalDate = (iso: string): string => fmtLocalDate(new Date(iso));
-  const todayIso = fmtLocalDate(today);
+  const fmtGameETDate = (iso: string): string => fmtETDate(new Date(iso));
+  // Build a 7-day window centered on ET-today, shifted by ?w=N weeks.
+  const nowInET = fmtETDate(new Date());
+  // Start: nowInET - 3 days in ET, shifted by weekOffset * 7 days.
+  // JS Date math treats ET 'today' as a local anchor: convert via noon-ET
+  // of that date to avoid DST shifts.
+  const anchor = new Date(`${nowInET}T12:00:00`);
+  anchor.setDate(anchor.getDate() + weekOffset * 7);
+  // 'Today' is the middle cell only when weekOffset === 0.
+  const todayIso = weekOffset === 0 ? nowInET : '';
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today.getTime() + (i - 3) * 86400000);
-    const iso = fmtLocalDate(d);
-    const count = games.filter((g) => fmtGameLocalDate(g.scheduled_at || g.date) === iso).length;
+    const d = new Date(anchor.getTime() + (i - 3) * 86400000);
+    const iso = fmtETDate(d);
+    const count = games.filter((g) => fmtGameETDate(g.scheduled_at || g.date) === iso).length;
     return {
       iso,
-      label: d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(),
-      dayNum: d.getDate(),
+      label: d.toLocaleDateString('en-US', { weekday: 'short', timeZone: ET_TZ }).toUpperCase(),
+      dayNum: Number(d.toLocaleDateString('en-US', { day: 'numeric', timeZone: ET_TZ })),
       isToday: iso === todayIso,
       count,
     };
@@ -106,6 +131,24 @@ function WeekCalendar({ games }: { games: Game[] }) {
     const params = new URLSearchParams(search.toString());
     if (iso === null) params.delete('d');
     else params.set('d', iso);
+    const qs = params.toString();
+    router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
+  }
+  // 2026-10-01 fix: previous/next week arrows adjust ?w and reset ?d
+  // to the middle of the new window so the games list shows that day.
+  function shiftWeek(delta: number) {
+    const params = new URLSearchParams(search.toString());
+    const newOffset = weekOffset + delta;
+    if (newOffset === 0) params.delete('w');
+    else params.set('w', String(newOffset));
+    params.delete('d');
+    const qs = params.toString();
+    router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
+  }
+  function jumpToToday() {
+    const params = new URLSearchParams(search.toString());
+    params.delete('w');
+    params.delete('d');
     const qs = params.toString();
     router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
   }
@@ -132,19 +175,38 @@ function WeekCalendar({ games }: { games: Game[] }) {
         }}
       >
         <button
-          onClick={() => selectDate(days[0].iso)}
+          onClick={() => shiftWeek(-1)}
           aria-label="Previous week"
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', padding: '0.25rem 0.5rem' }}
+          data-week-nav="prev"
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', padding: '0.25rem 0.5rem', fontSize: '1rem' }}
         >
           ←
         </button>
-        <div style={{ fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          {days[0].iso.slice(5).replace('-', '/')} – {days[6].iso.slice(5).replace('-', '/')}
-        </div>
         <button
-          onClick={() => selectDate(days[6].iso)}
+          onClick={jumpToToday}
+          data-week-jump-today
+          style={{
+            background: weekOffset === 0 ? 'rgba(255,184,28,0.12)' : 'transparent',
+            border: 'none',
+            color: weekOffset === 0 ? '#FFB81C' : 'rgba(255,255,255,0.55)',
+            cursor: 'pointer',
+            padding: '0.25rem 0.75rem',
+            borderRadius: 6,
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {weekOffset === 0
+            ? `${days[0].iso.slice(5).replace('-', '/')} – ${days[6].iso.slice(5).replace('-', '/')}`
+            : `${days[0].iso.slice(5).replace('-', '/')} – ${days[6].iso.slice(5).replace('-', '/')} · Today →`}
+        </button>
+        <button
+          onClick={() => shiftWeek(1)}
           aria-label="Next week"
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', padding: '0.25rem 0.5rem' }}
+          data-week-nav="next"
+          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.55)', cursor: 'pointer', padding: '0.25rem 0.5rem', fontSize: '1rem' }}
         >
           →
         </button>
@@ -770,22 +832,23 @@ export default function GamesIndexClient({ initialData }: Props) {
             const completed = games.filter(g => g.status === 'completed');
             // 2026-09-30 IA fix: apply the ?d=YYYY-MM-DD date filter from
             // the WeekCalendar strip. When set, narrow both lists to just
-            // that day. When cleared, show everything. Uses local-timezone
-            // date formatting so ?d=2026-10-01 means "Oct 1 in the user's
-            // browser timezone", matching the calendar's day cells.
-            const localDate = (iso: string): string => {
+            // that day. When cleared, show everything. The date is
+            // interpreted in ET (matches the displayed game times + the
+            // calendar day cells).
+            const ET_TZ = 'America/New_York';
+            const etDateOf = (iso: string): string => {
               const d = new Date(iso);
               if (isNaN(d.getTime())) return iso.slice(0, 10);
-              const y = d.getFullYear();
-              const m = String(d.getMonth() + 1).padStart(2, '0');
-              const day_ = String(d.getDate()).padStart(2, '0');
-              return `${y}-${m}-${day_}`;
+              const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: ET_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+              }).formatToParts(d);
+              return `${parts.find(p => p.type === 'year')!.value}-${parts.find(p => p.type === 'month')!.value}-${parts.find(p => p.type === 'day')!.value}`;
             };
             const scopedUpcoming = dateFilter
-                ? upcoming.filter((g) => localDate(g.scheduled_at || g.date) === dateFilter)
+                ? upcoming.filter((g) => etDateOf(g.scheduled_at || g.date) === dateFilter)
                 : upcoming;
             const scopedCompleted = dateFilter
-                ? completed.filter((g) => localDate(g.scheduled_at || g.date) === dateFilter)
+                ? completed.filter((g) => etDateOf(g.scheduled_at || g.date) === dateFilter)
                 : completed;
             const gamesToGroup = [...scopedUpcoming, ...scopedCompleted];
             return (
@@ -798,32 +861,31 @@ export default function GamesIndexClient({ initialData }: Props) {
                     (earliest start time first). Matches NHL.com's
                     scores layout: hero "Today", then grouped days. */}
                 {(() => {
-                  // 2026-10-01 fix (Arnel feedback): group by the date in the
-                  // USER'S local timezone, not UTC. Previously slicing
-                  // scheduled_at.slice(0, 10) gave the UTC date, which
-                  // doesn't match the local dates in the week calendar
-                  // strip (e.g. a 23:30 UTC game is "tomorrow" in Cebu
-                  // but showed up under "today" UTC). Using toLocaleString
-                  // with the { year, month, day } options gives the user's
-                  // local date in YYYY-MM-DD form for grouping.
-                  const grouped: Record<string, Game[]> = {};
-                  const fmtLocalDate = (iso: string): string => {
+                  // 2026-10-01 fix (Arnel feedback): group by ET date so the
+                  // "WEDNESDAY, SEPTEMBER 30" header matches the displayed
+                  // game times (which are already in ET). Previously
+                  // sliced scheduled_at which is UTC — late-night ET games
+                  // landed on the next day in UTC and showed up under the
+                  // wrong group.
+                  const ET_TZ = 'America/New_York';
+                  const fmtETDate = (iso: string): string => {
                     const d = new Date(iso);
                     if (isNaN(d.getTime())) return iso.slice(0, 10);
-                    const y = d.getFullYear();
-                    const m = String(d.getMonth() + 1).padStart(2, '0');
-                    const day = String(d.getDate()).padStart(2, '0');
-                    return `${y}-${m}-${day}`;
+                    const parts = new Intl.DateTimeFormat('en-CA', {
+                      timeZone: ET_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+                    }).formatToParts(d);
+                    return `${parts.find(p => p.type === 'year')!.value}-${parts.find(p => p.type === 'month')!.value}-${parts.find(p => p.type === 'day')!.value}`;
                   };
+                  const grouped: Record<string, Game[]> = {};
                   for (const g of gamesToGroup) {
-                    const d = fmtLocalDate(g.scheduled_at || g.date);
+                    const d = fmtETDate(g.scheduled_at || g.date);
                     if (!grouped[d]) grouped[d] = [];
                     grouped[d].push(g);
                   }
                   const dateKeys = Object.keys(grouped).sort();
                   if (dateKeys.length === 0) return null;
-                  const todayStr = fmtLocalDate(new Date().toISOString());
-                  const tomorrowStr = fmtLocalDate(new Date(Date.now() + 86400000).toISOString());
+                  const todayStr = fmtETDate(new Date().toISOString());
+                  const tomorrowStr = fmtETDate(new Date(Date.now() + 86400000).toISOString());
                   return dateKeys.map((d) => {
                     const isToday = d === todayStr;
                     const isTomorrow = d === tomorrowStr;
