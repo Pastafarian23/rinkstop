@@ -158,10 +158,18 @@ export async function GET(request: NextRequest) {
     // Override the default ASC sort from the upstream builder
     query = query.order('scheduled_at', { ascending: false });
   } else if (time === 'current' || !time) {
-    // 2026-09-22 audit fix (bug #22): 'current' is the default tab on
-    // /scores. The upstream builder now defaults to DESC (see line 96
-    // comment), so today's games + upcoming appear first, with
-    // recently-completed games trailing. No explicit override needed.
+    // 2026-10-01 fix (Arnel feedback): 'current' tab now restricts to
+    // today + upcoming + recently-completed. Without a date filter,
+    // the API was returning the limit (200) oldest games in ASC order
+    // — which were all stale 2024 preseason rows that the daily-scores
+    // cron never marked completed. Excluding past scheduled_at rows
+    // ensures the page shows TODAY's games and the upcoming week, not
+    // games from 2 years ago.
+    const nowISO = new Date().toISOString();
+    const fourHoursAgoISO = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+    query = query.or(
+      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${recentCutoffISO})`
+    );
   } else {
     // 2026-09-22 fix: 'scheduled' rows with a past scheduled_at are stale
     // (the game already happened but the daily-scores cron didn't update
