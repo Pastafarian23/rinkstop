@@ -923,6 +923,76 @@ export default function CityPageContent({ data, faqs }: Props) {
           </div>
         </section>
 
+        {/* 2026-10-01 Get-listed CTA (Arnel directive): city/state hub pages
+            like /directory/united-states/illinois/chicago are top organic
+            entry points (GSC shows /directory/canada/ontario/toronto at
+            8 clk/260 impr, 3.1% CTR) but had zero conversion CTA for rink
+            operators. Add a compact 2-button block above the empty-state
+            path so visitors on POPULATED pages also see how to add a rink. */}
+        {hasData && (
+          <section
+            data-get-listed-cta
+            style={{
+              marginTop: '1rem',
+              marginBottom: '2rem',
+              padding: '1.25rem 1.25rem 1.5rem',
+              background: 'linear-gradient(135deg, rgba(200,16,46,0.12) 0%, rgba(255,184,28,0.06) 100%)',
+              border: '1px solid rgba(200,16,46,0.45)',
+              borderRadius: 12,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.625rem',
+            }}
+          >
+            <span style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#FFB81C' }}>
+              Operate a rink, team, or league in {cityName}?
+            </span>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: textMain, margin: 0 }}>
+              Get your venue on the {cityName} directory
+            </h3>
+            <p style={{ color: textMuted, fontSize: '0.875rem', lineHeight: 1.55, margin: 0 }}>
+              RinkStop lists every rink, team, and league from{' '}
+              {regionName ? `${cityName}, ${regionName} ` : cityName}.
+              Adding a listing is free and takes about 2 minutes.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', marginTop: '0.25rem' }}>
+              <Link
+                href={`/claim-your-listing?type=rink&city=${encodeURIComponent(cityName)}${regionSlug ? `\u0026region=${encodeURIComponent(regionSlug)}` : ''}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '0.6rem 1.1rem',
+                  background: red,
+                  color: '#fff',
+                  borderRadius: 8,
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Claim a rink in {cityName} →
+              </Link>
+              <Link
+                href="/claim-your-listing"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '0.6rem 1.1rem',
+                  background: 'rgba(255,255,255,0.06)',
+                  color: textMain,
+                  border: `1px solid ${border}`,
+                  borderRadius: 8,
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
+              >
+                Claim a team / league →
+              </Link>
+            </div>
+          </section>
+        )}
+
         {/* EMPTY STATE */}
         {!hasData && (
           <section

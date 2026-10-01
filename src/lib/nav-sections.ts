@@ -112,19 +112,67 @@ const ABOUT_LINKS: NavItem[] = [
   { href: '/contact',        label: 'Contact Us'      },
   { href: '/advertise',      label: 'Advertise'       },
   { href: '/partner-with-us', label: 'Partner With Us' },
-  { href: '/add-listing',    label: 'Add Listing'     },
-  { href: '/dashboard/listings', label: 'List Your Business' },
+  { href: '/editorial-policy', label: 'Editorial Policy' },
+  { href: '/data-methodology', label: 'Data Methodology' },
+];
+
+// 2026-10-01 (Arnel directive): surfaced the conversion paths that were
+// previously buried or hidden. GSC shows ZERO organic clicks to /pricing,
+// /claim-your-listing, /passport, /ice-marketplace, /dataset-license
+// across the entire 90d window. The directory gets traffic; the funnel
+// is invisible. This block groups every "I want to list / monetize" path
+// in a single section so visitors on any entry page can find it.
+const GET_LISTED_LINKS: NavItem[] = [
+  { href: '/claim-your-listing',    label: 'Claim a listing'        },
+  { href: '/add-listing',           label: 'Add a new listing'      },
+  { href: '/partner-with-us',       label: 'Partner with RinkStop'  },
+  { href: '/launch',                label: 'List your ice'          },
+  { href: '/ice-marketplace',       label: 'Ice Marketplace'        },
+  { href: '/pricing',               label: 'Pricing & tiers'        },
+  { href: '/dataset-license',       label: 'Hockey dataset license' },
+  { href: '/advertise',             label: 'Advertise with us'      },
+];
+
+// 2026-10-01 (Arnel directive): merged Pro Hockey / International /
+// College / Junior / Youth & Adult / Explore into one "Browse Hockey"
+// section. Five of those sections are only one or two items deep and the
+// dropdown was 100+ links. Top nav now surfaces Directory / Scores /
+// News / Learn / Pricing so visitors don't have to dig. The menu panel
+// still has every deep link for power users.
+const BROWSE_HOCKEY: NavItem[] = [
+  { href: '/directory',               label: 'All Directory'          },
+  { href: '/directory/teams',         label: 'Teams'                  },
+  { href: '/directory/players',       label: 'Players'                },
+  { href: '/directory/coaches',       label: 'Coaches'                },
+  { href: '/directory/scouts',        label: 'Scouts'                 },
+  { href: '/directory/leagues',       label: 'Leagues'                },
+  { href: '/directory/rinks',         label: 'Rinks'                  },
+  { href: '/directory/games',         label: 'Games & Scores'         },
+  { href: '/directory/federations',   label: 'Federations'            },
+  { href: '/directory/countries',     label: 'Countries'              },
+  { href: '/directory/standings',     label: 'Standings'              },
+  { href: '/directory/nhl',           label: 'NHL'                    },
+  { href: '/directory/ahl',           label: 'AHL'                    },
+  { href: '/directory/pwhl',          label: 'PWHL'                   },
+  { href: '/directory/khl',           label: 'KHL'                    },
+  { href: '/directory/echl',          label: 'ECHL'                   },
+  { href: '/directory/ushl',          label: 'USHL'                   },
+  { href: '/directory/liiga',         label: 'Liiga'                  },
+  { href: '/directory/shl',           label: 'SHL'                    },
+  { href: '/directory/del',           label: 'DEL'                    },
+  { href: '/directory/international', label: 'International & Olympics'},
+  { href: '/directory/college',       label: 'NCAA Hockey'             },
+  { href: '/directory/junior',        label: 'Junior (CHL)'            },
+  { href: '/directory/youth-hockey',  label: 'Youth & Adult'           },
+  { href: '/directory/pro-leagues',   label: 'All Pro Leagues'         },
+  { href: '/partners',                label: 'Partners'                },
 ];
 
 export const NAV_SECTIONS: NavSection[] = [
-  { label: 'Explore Hockey', sub: EXPLORE       },
-  { label: 'Pro Hockey',     sub: PRO_HOCKEY    },
-  { label: 'International',  sub: INTERNATIONAL },
-  { label: 'College Hockey', sub: COLLEGE       },
-  { label: 'Junior Hockey',  sub: JUNIOR        },
-  { label: 'Youth & Adult',  sub: YOUTH_AMATEUR },
-  { label: 'Content',        sub: CONTENT_LINKS },
-  { label: 'Free Tools',     sub: FREE_TOOLS    },
-  { label: 'Learn',          sub: LEARN_LINKS   },
-  { label: 'About',          sub: ABOUT_LINKS   },
+  { label: 'Browse Hockey', sub: BROWSE_HOCKEY },
+  { label: 'News & Scores', sub: CONTENT_LINKS },
+  { label: 'Learn',         sub: LEARN_LINKS   },
+  { label: 'Free Tools',    sub: FREE_TOOLS    },
+  { label: 'Get Listed',    sub: GET_LISTED_LINKS },
+  { label: 'About',         sub: ABOUT_LINKS   },
 ];
