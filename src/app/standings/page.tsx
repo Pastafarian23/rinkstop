@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { getLatestSeason, getStandingsForSeason } from '@/lib/nhl-data';
 import { ALL_CONFERENCES, NHL_TEAMS_CANONICAL, teamsByConference } from '@/lib/nhl-teams-canonical';
 import NhlStandingsTable from '@/components/NhlStandingsTable';
+import GenericStandingsTable from '@/components/GenericStandingsTable';
+import StandingsFilterBar from '@/components/StandingsFilterBar';
+import { fetchStandings, fetchStandingsFacets, groupByLeagueName, levelLabel, getLeagueLevel } from '@/lib/standings';
 
 export const revalidate = 3600; // 1 hour
 
@@ -105,27 +108,40 @@ const LEAGUE_CARDS: LeagueCard[] = [
   },
 ];
 
-export default async function StandingsIndexPage() {
+interface PageProps {
+  searchParams: Promise<{
+    league?: string;
+    season?: string;
+    level?: string;
+  }>;
+}
+
+export default async function StandingsIndexPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const filterLeague = sp.league ?? null;
+  const filterSeason = sp.season ?? null;
+  const filterLevel = sp.level ?? null;
+
   const latestSeason = await getLatestSeason();
   const latestStandings = latestSeason ? await getStandingsForSeason(latestSeason) : [];
 
-  // Build top-3 overall NHL leaders from latest season
-  const overallLeaders = [...latestStandings]
-    .sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      return (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against);
-    })
-    .slice(0, 3);
+  // 2026-10-01 (Arnel feedback): filter bar at the TOP, not the bottom.
+  // Filter from URL params and render matching rows inline below.
+  const facets = await fetchStandingsFacets();
+  const filteredRows = await fetchStandings({
+    league: filterLeague,
+    season: filterSeason,
+    level: filterLevel,
+  });
+  const grouped = groupByLeagueName(filteredRows);
 
-  const available = LEAGUE_CARDS.filter(l => l.available);
-  const comingSoon = LEAGUE_CARDS.filter(l => !l.available);
+  // Leagues that are listed in LEAGUE_CARDS but have no standings data
+  // yet. Show as "Coming soon" cards so they know what's planned.
+  const comingSoon = LEAGUE_CARDS.filter(l => l.available === false && !facets.leagues.includes(l.fullName));
 
-  // 2026-10-01 (Arnel feedback): /standings was a league-picker with no
-  // actual standings visible. Now render the NHL table INLINE so the
-  // standings are visible on first click. Group by division for the
-  // conference/division sub-tables; top-3 in each division get a subtle
-  // green tint (matches the reference NHL.com / ESPN screenshots).
+  // NHL-specific path: when the user picked league=NHL (with no season
+  // override), still use the rich NHL data with conference/division
+  // grouping. The rest of the leagues just get a single ranked table.
   const enrichedWithDivision = latestStandings.map((s) => {
     const c = NHL_TEAMS_CANONICAL.find(t => t.name.toLowerCase() === s.team_name.toLowerCase());
     return { ...s, _division: c?.division ?? null, _conference: c?.conference ?? null };
@@ -135,6 +151,12 @@ export default async function StandingsIndexPage() {
   const westernCentral = enrichedWithDivision.filter(t => t._division === 'Central').sort((a, b) => a.rank - b.rank);
   const westernPacific = enrichedWithDivision.filter(t => t._division === 'Pacific').sort((a, b) => a.rank - b.rank);
   const hasNhlData = latestStandings.length > 0;
+
+  // Show NHL conference/division tables ONLY when the user picked NHL
+  // specifically (and didn't override the season). For all other
+  // queries, fall through to the generic group-by-league renderer.
+  const showNhlConference = !filterLeague || filterLeague === 'NHL';
+  const showGeneric = !!filterLeague && filterLeague !== 'NHL' || !!filterSeason || !!filterLevel;
 
   return (
     <main>
@@ -168,161 +190,117 @@ export default async function StandingsIndexPage() {
         </div>
       </section>
 
-      {/* Inline NHL standings tables (Arnel feedback 2026-10-01).
-          Inline so the /standings landing shows real data, not just a
-          league picker. Group by conference / division to match NHL.com +
-          ESPN references the user shared. */}
-      {hasNhlData && (
-        <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="container">
-            <div className="sec-head">
-              <div>
-                <div className="label">Live Now · {latestSeason && formatSeason(latestSeason)} season</div>
-                <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>NHL STANDINGS</h2>
-              </div>
-              <Link href={`/standings/nhl/${latestSeason}`} className="sec-link">Full NHL page →</Link>
-            </div>
-
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', letterSpacing: '0.05em', marginTop: '1.5rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              EASTERN CONFERENCE
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-              <div>
-                <NhlStandingsTable rows={easternAtlantic} caption="Atlantic Division" markTopThree />
-              </div>
-              <div>
-                <NhlStandingsTable rows={easternMetro} caption="Metropolitan Division" markTopThree />
-              </div>
-            </div>
-
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', letterSpacing: '0.05em', marginTop: '2rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              WESTERN CONFERENCE
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div>
-                <NhlStandingsTable rows={westernCentral} caption="Central Division" markTopThree />
-              </div>
-              <div>
-                <NhlStandingsTable rows={westernPacific} caption="Pacific Division" markTopThree />
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Other leagues switcher */}
+      {/* 2026-10-01 (Arnel feedback): FILTER BAR MOVED TO TOP.
+          Filter bar sits at the top of the standings content so visitors
+          can change league/season/level without scrolling. NHL-specific
+          conference/division tables render when no filter or league=NHL.
+          Otherwise fall through to the generic per-league renderer. */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
-          <div className="sec-head">
-            <div>
-              <div className="label">Switch League</div>
-              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>OTHER LEAGUES</h2>
-            </div>
-          </div>
+          <StandingsFilterBar
+            leagues={facets.leagues}
+            seasons={facets.seasons}
+            defaultLeague={filterLeague}
+            defaultSeason={filterSeason}
+            defaultLevel={filterLevel}
+          />
+
+          {/* Active filter summary */}
+          {(filterLeague || filterSeason || filterLevel) && (
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem', marginTop: '-0.75rem', marginBottom: '1rem' }}>
+              Showing {filteredRows.length} row{filteredRows.length === 1 ? '' : 's'}
+              {filterLeague && <> from <strong style={{ color: '#FFB81C' }}>{filterLeague}</strong></>}
+              {filterSeason && <> in season <strong style={{ color: '#FFB81C' }}>{formatSeason(filterSeason)}</strong></>}
+              {filterLevel && <> in <strong style={{ color: '#FFB81C' }}>{levelLabel(filterLevel)}</strong></>}
+              .
+            </p>
+          )}
+
+          {/* NHL conference/division tables (default landing) */}
+          {hasNhlData && showNhlConference && !showGeneric && (
+            <>
+              <div className="sec-head" style={{ marginTop: '0.5rem' }}>
+                <div>
+                  <div className="label">Live Now · {latestSeason && formatSeason(latestSeason)} season</div>
+                  <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>NHL STANDINGS</h2>
+                </div>
+                <Link href={`/standings/nhl/${latestSeason}`} className="sec-link">Full NHL page →</Link>
+              </div>
+
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', letterSpacing: '0.05em', marginTop: '1.5rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                EASTERN CONFERENCE
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                <div>
+                  <NhlStandingsTable rows={easternAtlantic} caption="Atlantic Division" markTopThree />
+                </div>
+                <div>
+                  <NhlStandingsTable rows={easternMetro} caption="Metropolitan Division" markTopThree />
+                </div>
+              </div>
+
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', letterSpacing: '0.05em', marginTop: '2rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                WESTERN CONFERENCE
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <NhlStandingsTable rows={westernCentral} caption="Central Division" markTopThree />
+                </div>
+                <div>
+                  <NhlStandingsTable rows={westernPacific} caption="Pacific Division" markTopThree />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Generic per-league renderer (when filter is active) */}
+          {showGeneric && (
+            <>
+              {grouped.length === 0 ? (
+                <div style={{
+                  padding: '2.5rem 1.5rem',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  color: 'rgba(255,255,255,0.5)',
+                }}>
+                  <p style={{ margin: 0, fontSize: '1rem' }}>
+                    No standings match your filter.
+                  </p>
+                  <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'rgba(255,255,255,0.35)' }}>
+                    Try a different season or league.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {grouped.map((g) => (
+                    <div key={g.league_name}>
+                      <div className="sec-head" style={{ marginBottom: '0.625rem' }}>
+                        <div>
+                          <div className="label">{levelLabel(g.level)} League</div>
+                          <h2 className="font-sport" style={{ fontSize: 'clamp(1.375rem, 3.5vw, 1.875rem)', color: '#fff' }}>
+                            {g.league_name} STANDINGS
+                          </h2>
+                        </div>
+                        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          {g.rows.length} team{g.rows.length === 1 ? '' : 's'} · season {g.rows[0]?.season}
+                        </span>
+                      </div>
+                      <GenericStandingsTable rows={g.rows} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
-      {/* Live: NHL */}
-      {available.length > 0 && (
-        <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="container">
-            <div className="sec-head">
-              <div>
-                <div className="label">Live Now</div>
-                <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>AVAILABLE LEAGUES</h2>
-              </div>
-            </div>
-            <div className="cat-grid">
-              {available.map((l) => {
-                const top = overallLeaders.find(t => true); // any top team reference
-                return (
-                  <Link
-                    key={l.slug}
-                    href={l.href}
-                    className="card"
-                    style={{ textDecoration: 'none', display: 'block' }}
-                  >
-                    <div style={{ padding: 'clamp(1rem, 2.5vw, 1.5rem)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                        <span style={{ fontWeight: 800, fontSize: '1.5rem', color: '#fff', fontFamily: "'Bebas Neue', Impact, sans-serif", letterSpacing: '0.05em' }}>
-                          {l.name}
-                        </span>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: l.accent, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                          {l.count} teams
-                        </span>
-                      </div>
-                      <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', lineHeight: 1.5, margin: 0 }}>
-                        {l.desc}
-                      </p>
-                      {latestSeason && (
-                        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
-                            {formatSeason(latestSeason)} season
-                          </span>
-                          <span style={{ color: l.accent, fontSize: '0.85rem', fontWeight: 700 }}>
-                            View →
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Top 3 overall NHL leaders preview */}
-      {overallLeaders.length >= 3 && latestSeason && (
-        <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="container">
-            <div className="sec-head">
-              <div>
-                <div className="label">NHL Top 3</div>
-                <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>OVERALL LEADERS</h2>
-              </div>
-              <Link href="/standings/nhl" className="sec-link">Full Standings →</Link>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
-              {overallLeaders.map((team, i) => (
-                <div
-                  key={team.team_id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.875rem',
-                    padding: '1rem 1.25rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: i === 0 ? '#FFB81C' : i === 1 ? '#C0C0C0' : '#CD7F32',
-                    color: '#000',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 800, fontSize: '0.9rem',
-                    flexShrink: 0,
-                  }}>{i + 1}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {team.team_name}
-                    </div>
-                    <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
-                      {team.wins}–{team.losses}–{team.overtime_losses} · {team.points} PTS
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Coming soon */}
-      {comingSoon.length > 0 && (
+      {/* Coming soon — only show leagues we don't have standings data for,
+          so the visitor knows what's still empty. Filtered out automatically
+          if the user already filtered by a different league. */}
+      {comingSoon.length > 0 && !showGeneric && (
         <section className="section-py" style={{ background: '#0D1117' }}>
           <div className="container">
             <div className="sec-head">
