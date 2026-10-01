@@ -181,17 +181,30 @@ export async function GET(request: NextRequest) {
     // Override the default ASC sort from the upstream builder
     query = query.order('scheduled_at', { ascending: false });
   } else if (time === 'current' || !time) {
-    // 2026-10-01 fix (Arnel feedback): 'current' tab now restricts to
-    // today + upcoming + recently-completed. Without a date filter,
-    // the API was returning the limit (200) oldest games in ASC order
-    // — which were all stale 2024 preseason rows that the daily-scores
-    // cron never marked completed. Excluding past scheduled_at rows
-    // ensures the page shows TODAY's games and the upcoming week, not
-    // games from 2 years ago.
+    // 2026-10-01 fix (Arnel feedback, second pass): 'current' tab now
+    // starts from TODAY (ET) — not 3 days ago. The earlier 3-day
+    // cutoff included games from Sep 29 when the user landed on Oct 1,
+    // which left the user staring at a "Tuesday, September 29" header
+    // instead of today's games. Restricting completed-games to today
+    // (ET midnight) puts today's results at the top of the page where
+    // the user expects them.
+    //
+    // The week strip + date picker still cover "yesterday" / "this
+    // week" via the explicit from/to range — the default landing no
+    // longer needs to.
     const nowISO = new Date().toISOString();
     const fourHoursAgoISO = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+    // ET midnight for "today" — compute the ET calendar date as YYYY-MM-DD
+    // and combine with the known UTC offset for that zone. ET in Oct 2026
+    // is EDT (UTC-4). We avoid Intl.DateTimeFormat timeZone lookups here
+    // because they're not free; the four hours are stable for the season.
+    const now = new Date();
+    const etCal = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+    const etYmd = `${etCal.getUTCFullYear()}-${String(etCal.getUTCMonth() + 1).padStart(2, '0')}-${String(etCal.getUTCDate()).padStart(2, '0')}`;
+    // ET midnight Oct 1 → UTC 04:00 Oct 1.
+    const etTodayISO = `${etYmd}T04:00:00.000Z`;
     query = query.or(
-      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${recentCutoffISO})`
+      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${etTodayISO})`
     );
   } else {
     // 2026-09-22 fix: 'scheduled' rows with a past scheduled_at are stale
@@ -200,11 +213,16 @@ export async function GET(request: NextRequest) {
     // games are also stale-prone — exclude any whose scheduled_at is more
     // than 4 hours in the past (NHL game duration ~2.5h + buffer; anything
     // past that without status=completed is a missed update). recently-
-    // completed shows as before.
+    // completed shows as before. Uses ET-today for the completed lower
+    // bound, matching the `time=current` branch (see comment there).
     const nowISO = new Date().toISOString();
     const fourHoursAgoISO = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+    const now = new Date();
+    const etCal = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+    const etYmd = `${etCal.getUTCFullYear()}-${String(etCal.getUTCMonth() + 1).padStart(2, '0')}-${String(etCal.getUTCDate()).padStart(2, '0')}`;
+    const etTodayISO = `${etYmd}T04:00:00.000Z`;
     query = query.or(
-      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${recentCutoffISO})`
+      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${etTodayISO})`
     );
   }
 
