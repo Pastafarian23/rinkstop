@@ -822,7 +822,7 @@ export default function PricingContent({
           },
           {
             title: 'Hockey Dataset License — $499',
-            description: 'Bulk CSV/JSON download of 1,857 rinks, 2,601 teams, 305 leagues, 6,351 players. Commercial-use license.',
+            description: 'Bulk CSV/JSON download of ${counts.rinks.toLocaleString()} rinks, 2,601 teams, ${counts.leagues.toLocaleString()} ${1}, 6,351 players. Commercial-use license.',
             href: '/dataset-license',
             cta: 'License the data',
             accent: 'teal',
