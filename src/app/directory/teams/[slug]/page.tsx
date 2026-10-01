@@ -698,6 +698,27 @@ export default async function PublicTeamPage({ params }: PageProps) {
   }
   const teamJsonLdString = JSON.stringify(teamJsonLd).replace(/</g, '\\u003c');
 
+  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
+  // page view is the second step in the funnel. Fire listing_viewed.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/teams/${team.slug}`,
+      props: {
+        listing_type: 'team',
+        listing_slug: team.slug,
+        listing_id: team.id,
+        league_id: team.league_id ?? null,
+        city: team.home_city ?? null,
+        country: team.home_country ?? null,
+        is_active: team.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   return (
     <>
       {/* JSON-LD: SportsTeam + BreadcrumbList + FAQPage (PR #197) */}

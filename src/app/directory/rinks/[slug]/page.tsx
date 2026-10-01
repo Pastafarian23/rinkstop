@@ -734,6 +734,28 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     });
   }
 
+  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
+  // page view is the second step in the funnel (search → listing view →
+  // claim CTA click → claim submitted). Fire listing_viewed server-side
+  // so we don't depend on client JS to capture it.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/rinks/${rink.slug}`,
+      props: {
+        listing_type: 'rink',
+        listing_slug: rink.slug,
+        listing_id: rink.id,
+        city: rink.city ?? null,
+        country: rink.country ?? null,
+        is_active: rink.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   // Tier 1h v3 (2026-07-07): catch ALL throws from the page body so we can
   // serve 200 instead of 500 even when something goes wrong. Logs the actual
   // error to Vercel so we can fix the root cause.

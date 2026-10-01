@@ -70,6 +70,22 @@ export async function POST(req: NextRequest) {
     'bing_submission_completed',
     'indexnow_submission_completed',
     'sitemap_submitted',
+    // WS30 — Conversion overhaul (Arnel 2026-10-01): the four-step funnel
+    // (search → listing view → claim CTA click → claim submitted) plus
+    // the post-claim conversion path (free account → checkout → paid).
+    'free_account_created',
+    'directory_search',
+    'homepage_search',
+    'listing_viewed',
+    'directory_rink_viewed',
+    'directory_team_viewed',
+    'directory_player_viewed',
+    'directory_league_viewed',
+    'listing_cta_clicked',
+    'listing_share_clicked',
+    'upgrade_modal_viewed',
+    'upgrade_modal_dismissed',
+    'checkout_completed',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });

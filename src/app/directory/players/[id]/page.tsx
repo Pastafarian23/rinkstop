@@ -300,6 +300,26 @@ export default async function PlayerPage({ params }: Props) {
     console.error('[player-page] JSON-LD build failed', err);
   }
 
+  // WS30 conversion overhaul (2026-10-01, Arnel directive): every listing
+  // page view is the second step in the funnel. Fire listing_viewed.
+  try {
+    const { trackEvent } = await import('@/lib/analytics');
+    await trackEvent({
+      name: 'listing_viewed',
+      pathname: `/directory/players/${id}`,
+      props: {
+        listing_type: 'player',
+        listing_slug: playerTyped?.slug ?? null,
+        listing_id: id,
+        nationality: playerTyped?.nationality ?? null,
+        position: playerTyped?.position ?? null,
+        is_active: playerTyped?.is_active ?? true,
+      },
+    });
+  } catch {
+    // never block the page on tracking
+  }
+
   return (
     <>
       {playerJsonLd && (

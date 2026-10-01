@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { trackClient } from '@/lib/client-track';
 
 type SuggestType =
   | 'rink'
@@ -199,10 +200,32 @@ export default function SearchBar({
         const item = flat[activeIdx];
         setOpen(false);
         recordSearch(q, source);
+        if (source === 'home_hero') {
+          trackClient('homepage_search', {
+            query_length: q.trim().length,
+            suggestion_type: item.type,
+          });
+        } else {
+          trackClient('directory_search', {
+            source,
+            query_length: q.trim().length,
+            suggestion_type: item.type,
+          });
+        }
         router.push(item.href);
       } else if (q.trim()) {
         setOpen(false);
         recordSearch(q, source);
+        if (source === 'home_hero') {
+          trackClient('homepage_search', {
+            query_length: q.trim().length,
+          });
+        } else {
+          trackClient('directory_search', {
+            source,
+            query_length: q.trim().length,
+          });
+        }
         router.push(`/directory?q=${encodeURIComponent(q.trim())}`);
       }
     } else if (e.key === 'Escape') {
@@ -220,6 +243,18 @@ export default function SearchBar({
   function handleSuggestionClick(item: SuggestItem) {
     recordSearch(q, source);
     setOpen(false);
+    if (source === 'home_hero') {
+      trackClient('homepage_search', {
+        query_length: q.trim().length,
+        suggestion_type: item.type,
+      });
+    } else {
+      trackClient('directory_search', {
+        source,
+        query_length: q.trim().length,
+        suggestion_type: item.type,
+      });
+    }
     router.push(item.href);
   }
 
@@ -228,6 +263,18 @@ export default function SearchBar({
     setShowRecent(false);
     setOpen(false);
     recordSearch(entry.query, source);
+    if (source === 'home_hero') {
+      trackClient('homepage_search', {
+        query_length: entry.query.length,
+        from_recent: true,
+      });
+    } else {
+      trackClient('directory_search', {
+        source,
+        query_length: entry.query.length,
+        from_recent: true,
+      });
+    }
     router.push(`/directory?q=${encodeURIComponent(entry.query)}`);
   }
 
@@ -237,6 +284,20 @@ export default function SearchBar({
     setOpen(false);
     setShowRecent(false);
     recordSearch(q, source);
+    // WS30 conversion overhaul (2026-10-01, Arnel directive): the home-page
+    // search bar is the top of the funnel. Fire `homepage_search` so we
+    // can measure "search → listing view → claim CTA click" without
+    // waiting on GA4 custom dimensions.
+    if (source === 'home_hero') {
+      trackClient('homepage_search', {
+        query_length: q.trim().length,
+      });
+    } else {
+      trackClient('directory_search', {
+        source,
+        query_length: q.trim().length,
+      });
+    }
     router.push(`/directory?q=${encodeURIComponent(q.trim())}`);
   }
 

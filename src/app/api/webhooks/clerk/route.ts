@@ -374,6 +374,12 @@ async function handleUserCreated(data: ClerkUserPayload) {
 
   // Welcome email (best-effort, never blocks).
   if (email) {
+    // WS30: free account creation is the top of the acquisition funnel.
+    // Source = 'fresh' means the user is a new email; 'linked' means they
+    // matched an existing paid profile (rare; reserved for the
+    // existing-account-recovery flow). Either way we count it as an
+    // account created on this date for funnel reporting.
+    trackFreeAccountCreated(data.id, email, 'fresh');
     void sendEmail({
       to: email,
       subject: 'Welcome to RinkStop',
@@ -441,6 +447,39 @@ async function handleUserCreated(data: ClerkUserPayload) {
 
   return NextResponse.json({ ok: true, event: 'user.created', userId: data.id });
 }
+
+// WS30 conversion overhaul (2026-10-01, Arnel directive): the top of the
+// acquisition funnel. A fresh Clerk account is the moment we lose track
+// of organic visitors, so logging it is critical for any "traffic →
+// account → claim → paid" report. Best-effort: never block the webhook.
+function trackFreeAccountCreated(userId: string, email: string | null, source: string): void {
+  try {
+    const log = {
+      name: 'free_account_created',
+      userId,
+      pathname: '/sign-up',
+      props: { email: email ? email.replace(/(.{2}).*(@.*)/, '$1***$2') : null, source },
+      ts: new Date().toISOString(),
+    };
+    console.log('[analytics]', JSON.stringify(log));
+    void import('@/lib/supabase').then(({ supabaseAdmin }) => {
+      const p = supabaseAdmin.from('analytics_events').insert({
+        name: log.name,
+        user_id: log.userId,
+        pathname: log.pathname,
+        props: log.props,
+      });
+      if (p && typeof (p as any).catch === 'function') {
+        (p as any).catch(() => {});
+      }
+    });
+  } catch {
+    // ignore
+  }
+}
+
+// Fire tracking at the end of the user.created handler. We do this
+// inline above the return; this comment keeps the marker visible.
 
 async function handleUserUpdated(data: ClerkUserPayload) {
   const email = pickPrimaryEmail(data);
