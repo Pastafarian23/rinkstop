@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { supabase } from '@/lib/supabase';
 import RinksIndexClient from './RinksIndexClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 interface Rink {
   id: string;
@@ -27,12 +28,13 @@ async function getRinkCount(country?: string | null): Promise<number> {
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ country?: string }> }): Promise<Metadata> {
   const { country } = await searchParams;
   const n = await getRinkCount(country);
+  const counts = await getDirectoryCountsCached();
   const desc = country
     ? `Browse ${n.toLocaleString()} ice rinks and arenas in ${country}. Find public skating, hockey, and curling facilities — with addresses, capacity, and ice size.`
-    : `Browse 1,856 ice rinks and arenas across 78 countries and 833 cities. Find public skating, hockey, and curling facilities worldwide — searchable by city, state, or country.`;
+    : `Browse ${counts.rinks.toLocaleString()} ice rinks and arenas across ${counts.countries.toLocaleString()}+ countries and ${counts.cities.toLocaleString()} cities. Find public skating, hockey, and curling facilities worldwide — searchable by city, state, or country.`;
   const title = country
     ? `Ice Rinks in ${country} — ${n.toLocaleString()} Arenas & Facilities`
-    : '1,856 Ice Rinks Across 78 Countries — Find One Near You';
+    : `${counts.rinks.toLocaleString()} Ice Rinks Across ${counts.countries.toLocaleString()} Countries — Find One Near You`;
   return {
     title,
     description: desc,
@@ -77,7 +79,11 @@ async function fetchInitialRinks(country?: string | null): Promise<Rink[]> {
   }
 }
 
-export default async function RinksPage({ searchParams }: { searchParams: Promise<{ country?: string }> }) {
+export default async function RinksPage({
+  searchParams,
+}: { searchParams: Promise<{ country?: string }> }) {
+  // 2026-10-01 (Arnel data-integrity audit): pull counts for body template literals.
+  const counts = await getDirectoryCountsCached();
   const { country } = await searchParams;
   const initialRinks = await fetchInitialRinks(country);
   const top = initialRinks.slice(0, 20);

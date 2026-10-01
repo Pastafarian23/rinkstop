@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import LeaguesIndexClient from './LeaguesIndexClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 interface League {
   id: string;
@@ -14,23 +15,32 @@ interface League {
   slug?: string;
 }
 
-export const metadata: Metadata = {
-  // 2026-09-03 Gap 2: tightened title from 88 chars to 56 chars, added season context.
-  // GSC: 532 imps, position 23.2 (page 3) — title was truncated, hurting both
-  // impressions (Google gave up showing it) and CTR.
-  title: 'Hockey Leagues Worldwide — Pro, Junior, College',
-  description:
-    'Browse 240+ hockey leagues across 78 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.',
-  alternates: { canonical: 'https://rinkstop.com/directory/leagues' },
-  openGraph: withDefaultOg({
+export async function generateMetadata(): Promise<Metadata> {
+  // 2026-10-01 (Arnel data-integrity audit): dynamic metadata so we can
+  // route the league/country counts through the canonical helper. The
+  // previous static `export const metadata` hardcoded "240+" and "78" in
+  // three places. async metadata allows Next.js to await the helper
+  // without changing the rest of the page (which already awaited counts
+  // via the helper).
+  const counts = await getDirectoryCountsCached();
+  return {
+    // 2026-09-03 Gap 2: tightened title from 88 chars to 56 chars, added season context.
+    // GSC: 532 imps, position 23.2 (page 3) — title was truncated, hurting both
+    // impressions (Google gave up showing it) and CTR.
     title: 'Hockey Leagues Worldwide — Pro, Junior, College',
     description:
-      'Browse 240+ hockey leagues across 78 countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.',
-    url: 'https://rinkstop.com/directory/leagues',
-    siteName: 'RinkStop',
-    type: 'website',
-  }),
-};
+      `Browse ${counts.leagues.toLocaleString()}+ hockey leagues across ${counts.countries}+ countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, OHL, WHL, QMJHL, USHL, ECHL, SHL, Liiga, DEL, NLA, and amateur tiers. Tier, country, level, and contact info.`,
+    alternates: { canonical: 'https://rinkstop.com/directory/leagues' },
+    openGraph: withDefaultOg({
+      title: 'Hockey Leagues Worldwide — Pro, Junior, College',
+      description:
+        `Browse ${counts.leagues.toLocaleString()}+ hockey leagues across ${counts.countries}+ countries — NHL, AHL, KHL, NCAA, CHL, IIHF, PWHL, and amateur tiers. Tier, country, level, and contact info.`,
+      url: 'https://rinkstop.com/directory/leagues',
+      siteName: 'RinkStop',
+      type: 'website',
+    }),
+  };
+}
 
 // ISR-cached for 1 hour (2026-07-22 perf pass).
 export const revalidate = 3600;
@@ -51,7 +61,15 @@ async function fetchInitialLeagues(): Promise<League[]> {
 }
 
 export default async function LeaguesPage() {
-  const initialLeagues = await fetchInitialLeagues();
+  // 2026-10-01 (Arnel data-integrity audit): centralize all entity
+  // counts through getDirectoryCountsCached(). The previous code hardcoded
+  // "305+ leagues" and "78 countries" in 4 places, each slightly off
+  // from the canonical DB value (305 active leagues, 84 team-derived
+  // countries).
+  const [initialLeagues, counts] = await Promise.all([
+    fetchInitialLeagues(),
+    getDirectoryCountsCached(),
+  ]);
   const top = initialLeagues.slice(0, 20);
   const countryCount = new Set(initialLeagues.map((l) => l.country).filter(Boolean)).size;
 
@@ -59,7 +77,7 @@ export default async function LeaguesPage() {
   const faqs = [
     {
       q: 'How many hockey leagues are in the RinkStop directory?',
-      a: 'RinkStop tracks 240+ active hockey leagues across professional, junior, college, international, and amateur tiers on six continents — including the NHL, AHL, KHL, PWHL, CHL (OHL/WHL/QMJHL), USHL, NCAA Division I and III, IIHF member federations, and regional amateur associations.',
+      a: `RinkStop tracks ${counts.leagues.toLocaleString()}+ active hockey leagues across professional, junior, college, international, and amateur tiers on six continents — including the NHL, AHL, KHL, PWHL, CHL (OHL/WHL/QMJHL), USHL, NCAA Division I and III, IIHF member federations, and regional amateur associations.`,
     },
     {
       q: 'What are the top professional hockey leagues?',
@@ -108,7 +126,7 @@ export default async function LeaguesPage() {
       {
         '@type': 'ItemList',
         name: 'Hockey Leagues',
-        numberOfItems: 240,
+        numberOfItems: counts.leagues,
         itemListElement: top.map((l, i) => ({
           '@type': 'ListItem',
           position: i + 1,
@@ -156,7 +174,7 @@ export default async function LeaguesPage() {
             Hockey Leagues Worldwide
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9375rem', marginTop: '0.5rem', maxWidth: '720px' }}>
-            305+ leagues across 78 countries — professional, junior, college, international, and amateur tiers.
+            ${counts.leagues.toLocaleString()}+ leagues across ${counts.countries}+ countries — professional, junior, college, international, and amateur tiers.
           </p>
         </div>
 
@@ -202,7 +220,7 @@ export default async function LeaguesPage() {
           </summary>
           <section style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.7, maxWidth: '820px', marginTop: '0.75rem' }}>
             <p style={{ margin: 0 }}>
-              RinkStop tracks <strong>240+ active hockey leagues</strong> across six continents — the most complete directory of organized ice hockey anywhere on the web. Browse professional leagues like the NHL, AHL, KHL, SHL, Liiga, DEL, and PWHL; major junior circuits including the OHL, WHL, QMJHL, and USHL; college hockey at the NCAA Division I and III levels plus U SPORTS in Canada; IIHF-sanctioned international tournaments; and amateur, women&apos;s, and youth leagues at every level.
+              RinkStop tracks <strong>${counts.leagues.toLocaleString()}+ active hockey leagues</strong> across six continents — the most complete directory of organized ice hockey anywhere on the web. Browse professional leagues like the NHL, AHL, KHL, SHL, Liiga, DEL, and PWHL; major junior circuits including the OHL, WHL, QMJHL, and USHL; college hockey at the NCAA Division I and III levels plus U SPORTS in Canada; IIHF-sanctioned international tournaments; and amateur, women&apos;s, and youth leagues at every level.
             </p>
             <p style={{ marginTop: '0.75rem' }}>
               Each league profile lists the current teams, tier, country, level, and the league&apos;s own website. Use the search and tier filters above to find a specific league, or browse the full directory by country, level, or season. League profiles are updated weekly during the active season and monthly in the off-season.

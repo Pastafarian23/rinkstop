@@ -1,9 +1,10 @@
 import { getDirectoryCounts } from '@/lib/directory-counts';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 /**
  * <SocialProof /> — Live directory-count band for product pages.
  *
- * Shows the actual numbers (1,857 rinks, 78 countries, etc.) pulled from
+ * Shows the actual numbers (${counts.rinks.toLocaleString()} rinks, 78 countries, etc.) pulled from
  * Supabase on each render. Numbers that move up over time signal
  * "growing platform" without needing Arnel to update copy.
  *
@@ -14,7 +15,7 @@ import { getDirectoryCounts } from '@/lib/directory-counts';
  *
  * Why this matters:
  *   Visitors land on product pages and ask "is this legit?" before they
- *   pay. Live counts answer: "Yes — 1,857 rinks, 6,351 players, 78
+ *   pay. Live counts answer: "Yes — ${counts.rinks.toLocaleString()} rinks, 6,351 players, 78
  *   countries covered." Social proof reduces hesitation.
  *
  * Cost: 0 (no DB cost — wrapped in a 1-hour cache by getDirectoryCountsCached).

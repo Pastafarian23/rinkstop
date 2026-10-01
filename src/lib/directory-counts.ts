@@ -10,6 +10,38 @@ export type DirectoryCounts = {
   countries: number;
 };
 
+/**
+ * Raw row returned by the `get_directory_stats` SQL RPC. The RPC uses
+ * `_count`-suffixed keys (rink_count, team_count, etc.) which is why
+ * 2026-10-01 had a key-name mismatch bug — every page reading
+ * `s.rinks` got undefined and rendered "0 teams". See the comment in
+ * getDirectoryCounts() below.
+ */
+export interface DirectoryStatsRPC {
+  rink_count?: number;
+  team_count?: number;
+  player_count?: number;
+  league_count?: number;
+  city_count?: number;
+  country_count?: number;
+  // Legacy fallback keys (no `_count` suffix). Older RPCs returned these.
+  // We still accept them for forward-compatibility if the RPC is ever
+  // updated to drop the suffix again.
+  rinks?: number;
+  teams?: number;
+  players?: number;
+  leagues?: number;
+  cities?: number;
+  countries?: number;
+  newest_rinks?: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null; created_at: string }>;
+  newest_teams?: Array<{ id: string; name: string; slug: string; city: string | null; league_id: string | null; country: string | null; created_at: string }>;
+  newest_players?: Array<{ id: string; first_name: string; last_name: string; slug: string; position: string | null; nationality: string | null; created_at: string }>;
+  newest_articles?: Array<{ id: string; slug: string; title: string; category: string | null; published_at: string | null; created_at: string }>;
+  recent_rinks?: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null }>;
+  recent_teams?: Array<{ id: string; name: string; slug: string; city: string | null; league_id: string | null; league_name: string | null }>;
+  upcoming_games?: Array<{ id: string; date: string; venue_name: string | null; away_team_name: string | null; home_team_name: string | null }>;
+}
+
 export type CountryCount = {
   country: string;
   team_count: number;
@@ -58,14 +90,20 @@ export async function getDirectoryCounts(): Promise<DirectoryCounts> {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     const { data } = await supabase.rpc('get_directory_stats');
-    const s = (data || {}) as Partial<DirectoryCounts>;
+    const s = (data || {}) as DirectoryStatsRPC;
     return {
-      rinks: s.rinks || 0,
-      teams: s.teams || 0,
-      players: s.players || 0,
-      leagues: s.leagues || 0,
-      cities: s.cities || 0,
-      countries: s.countries || 0,
+      // 2026-10-01 Bug 1 fix (Arnel data-integrity audit): the SQL RPC
+      // returns keys with `_count` suffix (rink_count, team_count, etc.),
+      // not the short names. The old code read `s.rinks` etc., so every
+      // value evaluated to undefined and was coerced to 0 via `|| 0`.
+      // Every page using this helper was rendering "0 teams" because of
+      // this key mismatch. Fixed to read the actual RPC keys.
+      rinks: s.rink_count ?? s.rinks ?? 0,
+      teams: s.team_count ?? s.teams ?? 0,
+      players: s.player_count ?? s.players ?? 0,
+      leagues: s.league_count ?? s.leagues ?? 0,
+      cities: s.city_count ?? s.cities ?? 0,
+      countries: s.country_count ?? s.countries ?? 0,
     };
   } catch {
     return ZERO_COUNTS;
