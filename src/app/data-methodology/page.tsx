@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
   // WS27 PR1: opt out of root layout's title template to prevent
@@ -10,7 +11,8 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://rinkstop.com/data-methodology' },
 };
 
-export default function DataMethodologyPage() {
+export default async function DataMethodologyPage() {
+  const counts = await getDirectoryCountsCached();
   return (
     <main style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
       <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: '1.5rem' }}>
@@ -22,11 +24,11 @@ export default function DataMethodologyPage() {
       <h1 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>
         DATA METHODOLOGY
       </h1>
-      <p style={{ marginBottom: '2rem', color: 'rgba(255,255,255,0.5)' }}>Last updated: August 10, 2026</p>
+      <p style={{ marginBottom: '2rem', color: 'rgba(255,255,255,0.5)' }}>Last updated: October 1, 2026</p>
 
       <div style={{ color: 'rgba(255,255,255,0.65)', lineHeight: 1.8, fontSize: '1rem' }}>
         <p style={{ marginBottom: '1.5rem' }}>
-          RinkStop maintains a directory of more than 11,700 hockey listings — rinks, teams, players, and leagues across 78 countries. This page describes how that data is sourced, how it is kept current, and how errors are handled.
+          RinkStop maintains a directory of more than {(counts.rinks + counts.teams + counts.players + counts.leagues).toLocaleString()} hockey listings — rinks, teams, players, and leagues across {counts.countries.toLocaleString()} countries. This page describes how that data is sourced, how it is kept current, and how errors are handled.
         </p>
 
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Where the data comes from</h2>

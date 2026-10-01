@@ -213,7 +213,7 @@ export default async function AboutPage() {
       <div style={{ marginBottom: '3rem' }}>
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.75rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW TO VERIFY A LISTING</h2>
         <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginBottom: '1rem' }}>
-          RinkStop contains over 9,500 listings (rinks, teams, players, leagues). Most are aggregated from publicly available sources; some are submitted by users. Here&apos;s how to tell the difference:
+          RinkStop contains over {(counts.rinks + counts.teams + counts.players + counts.leagues).toLocaleString()} listings (rinks, teams, players, leagues). Most are aggregated from publicly available sources; some are submitted by users. Here&apos;s how to tell the difference:
         </p>
         <ul style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '1rem', marginLeft: '1.5rem', marginBottom: '1rem' }}>
           <li><strong>Verified badge:</strong> A checkmark icon next to a team, player, or rink indicates we have confirmed the listing directly with the organization or a trusted source.</li>

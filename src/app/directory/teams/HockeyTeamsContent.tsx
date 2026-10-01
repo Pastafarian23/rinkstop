@@ -106,7 +106,7 @@ export default function HockeyTeamsContent({
           and {totalCountries} countries — from the NHL's 32 franchises and 24 IIHF national programs to
           ~600 European pro and junior clubs, ~150 NCAA programs, and tens of thousands of amateur and
           youth teams. The exact count moves weekly as new leagues are added and dormant teams are
-          archived; the figure above is current as of today.
+          archived; the figure above is updated weekly.
         </p>
       </div>
 
