@@ -342,6 +342,22 @@ img  { max-width: 100%; display: block; }
 }
 @media (min-width: 768px) { .nav-mobile-controls { display: none; } }
 
+/* 2026-10-01 Top-nav quick links (Arnel directive): always-visible primary
+   nav row (Directory, Scores, News, Learn, [Passport]). Hidden on
+   mobile (<1024px) since the hamburger drawer handles everything. */
+.nav-quick-links {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .nav-quick-links {
+    display: flex !important;
+  }
+}
+.nav-quick-links a:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* Mobile profile button (shown only on mobile, only when signed in) */
 .mob-profile-icon {
   display: inline-flex;
