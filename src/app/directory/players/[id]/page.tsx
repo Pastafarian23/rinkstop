@@ -6,6 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import PlayerDetail from './PlayerDetailClient';
 import PlayerSEOCopy from './PlayerSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import ClaimListingNudge from '@/components/ClaimListingNudge';
+import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 import { getEntityOwner, getFollowersCount } from '@/lib/ownership';
 import { buildPlayerFAQs } from '@/lib/player-context';
 import { supabaseAdmin } from '@/lib/supabase';
@@ -322,6 +324,13 @@ export default async function PlayerPage({ params }: Props) {
 
   return (
     <>
+      {/* WS30 conversion overhaul (Arnel 2026-10-01):
+          Above-the-fold claim nudge for unclaimed players + owner banner
+          for the approved owner. Renders BEFORE PlayerDetail so the CTA
+          lands in the first viewport. */}
+      <ClaimListingNudge entityType="player" entityId={id} entityName={playerTyped ? `${playerTyped.first_name} ${playerTyped.last_name}` : 'this player'} />
+      <ClaimedOwnerBanner entityType="player" entityId={id} />
+
       {playerJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }} />
       )}

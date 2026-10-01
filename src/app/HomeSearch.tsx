@@ -130,6 +130,33 @@ export default function HomeSearch() {
   function submitFull(e: React.FormEvent) {
     e.preventDefault();
     const term = q.trim();
+    // WS30 conversion overhaul (2026-10-01, Arnel directive): the home-page
+    // search bar is the top of the funnel. Fire homepage_search before
+    // navigation so we can measure search → listing view → claim CTA click.
+    // sendBeacon survives the page unload; fetch fallback is keepalive.
+    if (term) {
+      try {
+        const payload = JSON.stringify({
+          name: 'homepage_search',
+          pathname: '/',
+          props: {
+            query_length: term.length,
+            suggestion_type: activeIdx >= 0 ? results[activeIdx].type : null,
+          },
+        });
+        const blob = new Blob([payload], { type: 'application/json' });
+        if (!navigator.sendBeacon?.('/api/track', blob)) {
+          fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+          }).catch(() => {});
+        }
+      } catch {
+        // best-effort analytics only
+      }
+    }
     if (activeIdx >= 0 && results[activeIdx]) {
       // User highlighted a suggestion — go to that
       window.location.href = results[activeIdx].href;
