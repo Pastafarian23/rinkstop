@@ -44,6 +44,10 @@ interface InitialData {
   team: string;
   subleague: string;
   q: string;
+  from: string | null;
+  to: string | null;
+  selectedDate: string;
+  weekOffset: number;
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
@@ -59,6 +63,32 @@ function formatDate(d: string, tz: string) {
   // explicit abbreviation (ET, CET, MSK, etc.). Without this, a global
   // game list would silently mix timezones without disclosure.
   return formatGameTime(d, tz);
+}
+
+// 2026-10-01 fix (Arnel feedback): translate ?d= and ?w= URL state into
+// a [from, to] ISO range so we can fetch the right window server-side.
+// Single-day selection wins over the week window. Matches the helper in
+// src/app/directory/games/page.tsx so SSR and client agree on the same
+// games.
+function computeDateRange(d: string | null, w: string | null): { from: string | null; to: string | null } {
+  const ET_TZ = 'America/New_York';
+  const fmtIso = (date: Date): string => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ET_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(date);
+    return `${parts.find(p => p.type === 'year')!.value}-${parts.find(p => p.type === 'month')!.value}-${parts.find(p => p.type === 'day')!.value}`;
+  };
+  const todayIso = fmtIso(new Date());
+  if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) return { from: d, to: d };
+  const weekOffset = parseInt(w ?? '0', 10) || 0;
+  if (weekOffset !== 0 || w !== undefined) {
+    const anchor = new Date(`${todayIso}T12:00:00Z`);
+    anchor.setUTCDate(anchor.getUTCDate() + weekOffset * 7);
+    const from = new Date(anchor.getTime() - 3 * 86400000);
+    const to = new Date(anchor.getTime() + 3 * 86400000);
+    return { from: fmtIso(from), to: fmtIso(to) };
+  }
+  return { from: null, to: null };
 }
 
 /**
@@ -423,6 +453,11 @@ export default function GamesIndexClient({ initialData }: Props) {
   // When set, the games list filters to only that day's games. When
   // cleared, the strip goes back to "show all upcoming".
   const dateFilter = searchParams.get('d') ?? '';
+  // 2026-10-01 fix (Arnel feedback): ?w=N shifts the visible week window
+  // by N weeks. 0 = current week centered on today. -1 = previous week.
+  // Both ?d= and ?w= flow into the API fetch as ?from/?to so the server
+  // returns the right games, not just the cached 'current' set.
+  const weekOffset = parseInt(searchParams.get('w') ?? '0', 10) || 0;
   const searchTimer = useRef<NodeJS.Timeout | null>(null);
 
   const chip = useMemo(() => getChip(league), [league]);
@@ -461,13 +496,17 @@ export default function GamesIndexClient({ initialData }: Props) {
   const [hasMore, setHasMore] = useState(initialData.hasMore);
   const [totalShown, setTotalShown] = useState(initialData.totalShown);
 
-  // Reset & refetch on filter change
+  // Reset & refetch on filter change. 2026-10-01 fix: also re-run when
+// weekOffset or dateFilter change so the strip navigation actually
+// re-fetches data instead of just rebadging the cached 'current' list.
   useEffect(() => {
     setLoading(true);
     setGames([]);
     setTotalShown(0);
     setHasMore(false);
-    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=0`)
+    const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
+    const rangeQs = `${range.from ? `&from=${range.from}` : ''}${range.to ? `&to=${range.to}` : ''}`;
+    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${rangeQs}&limit=${DEFAULT_PAGE_SIZE}&offset=0`)
       .then(r => r.json())
       .then((d: ApiResponse) => {
         setGames(d?.data || []);
@@ -476,7 +515,7 @@ export default function GamesIndexClient({ initialData }: Props) {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [league, time, team, subleague, q]);
+  }, [league, time, team, subleague, q, dateFilter, weekOffset]);
 
   // 2026-09-22 self-heal: poll /api/health/scores every 5 min. If staleness
   // is red/yellow, trigger /api/cron/scores-refresh (which runs the multi-
@@ -504,7 +543,9 @@ export default function GamesIndexClient({ initialData }: Props) {
           // Wait a few seconds then refetch our games list
           setTimeout(() => {
             if (cancelled) return;
-            fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=0`, { cache: 'no-store' })
+            const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
+            const rangeQs = `${range.from ? `&from=${range.from}` : ''}${range.to ? `&to=${range.to}` : ''}`;
+            fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${rangeQs}&limit=${DEFAULT_PAGE_SIZE}&offset=0`, { cache: 'no-store' })
               .then(r => r.json())
               .then((d: ApiResponse) => {
                 if (cancelled) return;
@@ -520,12 +561,14 @@ export default function GamesIndexClient({ initialData }: Props) {
     };
     const interval = setInterval(tick, 5 * 60 * 1000); // every 5 minutes
     return () => { cancelled = true; clearInterval(interval); };
-  }, [league, time, team, subleague, q]);
+  }, [league, time, team, subleague, q, dateFilter, weekOffset]);
 
   const loadMore = () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${DEFAULT_PAGE_SIZE}&offset=${games.length}`)
+    const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
+    const rangeQs = `${range.from ? `&from=${range.from}` : ''}${range.to ? `&to=${range.to}` : ''}`;
+    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${rangeQs}&limit=${DEFAULT_PAGE_SIZE}&offset=${games.length}`)
       .then(r => r.json())
       .then((d: ApiResponse) => {
         setGames(prev => [...prev, ...(d?.data || [])]);
@@ -587,7 +630,7 @@ export default function GamesIndexClient({ initialData }: Props) {
     return () => { document.head.removeChild(script); };
   }, [games]);
 
-  // Empty state message varies by chip
+  // Empty state message varies by chip and (when set) the date range
   const emptyMessage = useMemo(() => {
     if (loading) return null;
     if (games.length > 0) return null;
@@ -595,6 +638,19 @@ export default function GamesIndexClient({ initialData }: Props) {
       return {
         title: 'No archived games found.',
         sub: 'Try switching to Current to see recent and upcoming games.',
+      };
+    }
+    // 2026-10-01 fix: when the user explicitly asked for a date/week
+    // window, tell them we found nothing in that range and offer a quick
+    // way back to the live view. Without this they could stare at an
+    // empty list wondering if the page is broken.
+    if (dateFilter || weekOffset !== 0) {
+      const dateLabel = dateFilter
+        ? new Date(dateFilter + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+        : `week ${weekOffset > 0 ? '+' : ''}${weekOffset}`;
+      return {
+        title: `No ${chip.label} games ${dateFilter ? 'on ' + dateLabel : 'in this week'}.`,
+        sub: 'Try a different day, switch leagues, or tap "Show current" below the date picker.',
       };
     }
     const emptyCopy: Record<string, { title: string; sub: string }> = {
@@ -606,7 +662,7 @@ export default function GamesIndexClient({ initialData }: Props) {
       junior:  { title: 'No CHL games right now.', sub: 'CHL (WHL/OHL/QMJHL) season is between phases. Try Historical to browse past junior matchups.' },
     };
     return emptyCopy[chip.slug] || { title: 'No games found.', sub: 'Try adjusting your filters.' };
-  }, [chip, time, games.length, loading]);
+  }, [chip, time, games.length, loading, dateFilter, weekOffset]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -790,6 +846,85 @@ export default function GamesIndexClient({ initialData }: Props) {
           counts. Today highlighted in red. Click any day to filter.
           Patterned after NHL.com's mobile scores header. */}
       <WeekCalendar games={games} />
+
+      {/* 2026-10-01 fix (Arnel feedback): a plain date input lets users
+          jump to any specific date, not just the visible week window.
+          The native <input type="date"> gives us a calendar picker for
+          free; we wrap it in a small label so the affordance is clear.
+          Submitting (change/blur) pushes ?d=YYYY-MM-DD into the URL,
+          which the parent reads and the API fetch honors. */}
+      <div
+        data-date-picker
+        style={{
+          marginTop: '0.75rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          padding: '0.5rem 0.75rem',
+          background: 'rgba(0,0,0,0.18)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 8,
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: '0.8125rem',
+        }}
+      >
+        <label htmlFor="jump-date" style={{ fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>
+          Jump to date:
+        </label>
+        <input
+          id="jump-date"
+          type="date"
+          value={dateFilter}
+          onChange={(e) => {
+            const v = e.target.value;
+            const params = new URLSearchParams(searchParams.toString());
+            if (v) params.set('d', v);
+            else params.delete('d');
+            // Clear week offset since a specific date takes precedence.
+            params.delete('w');
+            const qs = params.toString();
+            router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
+          }}
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 6,
+            padding: '0.375rem 0.5rem',
+            colorScheme: 'dark',
+            fontSize: '0.875rem',
+          }}
+        />
+        {dateFilter && (
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete('d');
+              params.delete('w');
+              const qs = params.toString();
+              router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.7)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 6,
+              padding: '0.375rem 0.625rem',
+              cursor: 'pointer',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Show current
+          </button>
+        )}
+        <span style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
+          Or use the week strip above to step ±7 days
+        </span>
+      </div>
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>

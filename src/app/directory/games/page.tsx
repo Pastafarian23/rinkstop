@@ -65,6 +65,8 @@ interface ApiResponse {
   count: number;
   chip: string;
   time: string;
+  from?: string | null;
+  to?: string | null;
   hasMore: boolean;
 }
 
@@ -74,7 +76,42 @@ type SearchParams = Promise<{
   time?: string;
   subleague?: string;
   q?: string;
+  d?: string;
+  w?: string;
 }>;
+
+// 2026-10-01 fix (Arnel feedback): when ?d= or ?w= is set on the URL,
+// compute a from/to date range and pass it to /api/scores. Without this,
+// the server's SSR was identical to the default 'current' view, so
+// refreshing a deep link like /directory/games?d=2026-09-22 showed
+// today's games instead of Sep 22's. The WeekCalendar strip + the new
+// date-picker both navigate via d/w, so SSR must honor them too.
+function computeDateRangeFromUrl(sp: { d?: string; w?: string }): { from: string | null; to: string | null } {
+  const ET_TZ = 'America/New_York';
+  const fmtIso = (d: Date): string => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: ET_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(d);
+    return `${parts.find(p => p.type === 'year')!.value}-${parts.find(p => p.type === 'month')!.value}-${parts.find(p => p.type === 'day')!.value}`;
+  };
+  const todayIso = fmtIso(new Date());
+  // Single-day selection wins over week window.
+  if (sp.d && /^\d{4}-\d{2}-\d{2}$/.test(sp.d)) {
+    return { from: sp.d, to: sp.d };
+  }
+  // Week window: centered on today, ±3 days. weekOffset shifts in
+  // 7-day increments. weekOffset=0 (default) is today±3.
+  const weekOffset = parseInt(sp.w ?? '0', 10) || 0;
+  if (weekOffset !== 0 || sp.w !== undefined) {
+    // Build anchor as today midnight UTC, shift by weekOffset weeks.
+    const anchor = new Date(`${todayIso}T12:00:00Z`);
+    anchor.setUTCDate(anchor.getUTCDate() + weekOffset * 7);
+    const from = new Date(anchor.getTime() - 3 * 86400000);
+    const to = new Date(anchor.getTime() + 3 * 86400000);
+    return { from: fmtIso(from), to: fmtIso(to) };
+  }
+  return { from: null, to: null };
+}
 
 async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
   games: Game[];
@@ -85,6 +122,10 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
   team: string;
   subleague: string;
   q: string;
+  from: string | null;
+  to: string | null;
+  selectedDate: string;
+  weekOffset: number;
 }> {
   const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
   const league = searchParams.league || 'nhl';
@@ -94,8 +135,11 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
   const q = searchParams.q || '';
   const limit = 50;
   const offset = 0;
+  const { from, to } = computeDateRangeFromUrl({ d: searchParams.d, w: searchParams.w });
+  const weekOffset = parseInt(searchParams.w ?? '0', 10) || 0;
+  const selectedDate = searchParams.d ?? '';
   try {
-    const url = `${base}/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}&limit=${limit}&offset=${offset}`;
+    const url = `${base}/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}&limit=${limit}&offset=${offset}`;
     const res = await fetch(url, { cache: 'no-store' });
     const json: ApiResponse = await res.json();
     return {
@@ -107,10 +151,14 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
       team,
       subleague,
       q,
+      from,
+      to,
+      selectedDate,
+      weekOffset,
     };
   } catch (err) {
     console.error('Games initial fetch failed:', err);
-    return { games: [], hasMore: false, totalShown: 0, league, time, team, subleague, q };
+    return { games: [], hasMore: false, totalShown: 0, league, time, team, subleague, q, from, to, selectedDate, weekOffset };
   }
 }
 
