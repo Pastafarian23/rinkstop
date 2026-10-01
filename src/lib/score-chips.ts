@@ -20,7 +20,12 @@ export const SCORE_CHIPS: ScoreChip[] = [
   { slug: 'khl',     label: 'KHL',     type: 'league',   popular: true, leagueSlugs: ['khl'] },
   { slug: 'pwhl',    label: 'PWHL',    type: 'league',   popular: true, leagueSlugs: ['pwhl'] },
   { slug: 'ahl',     label: 'AHL',     type: 'league',   leagueSlugs: ['ahl'] },
-  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['shl', 'del'] },
+  // 2026-10-01: added liiga, ushl, echl as standalone league chips now
+  // that those leagues have fixture data ingested from Highlightly.
+  { slug: 'liiga',   label: 'Liiga',   type: 'league',   leagueSlugs: ['liiga'] },
+  { slug: 'ushl',    label: 'USHL',    type: 'league',   leagueSlugs: ['ushl'] },
+  { slug: 'echl',    label: 'ECHL',    type: 'league',   leagueSlugs: ['echl'] },
+  { slug: 'intl',    label: 'Intl',    type: 'category', leagueSlugs: ['shl', 'del', 'liiga'] },
   { slug: 'college', label: 'NCAA',    type: 'category', leagueSlugs: ['ncaa-division-1-hockey'] },
   { slug: 'junior',  label: 'Junior',  type: 'category', leagueSlugs: ['whl', 'ohl', 'qmjhl'] },
 ];
