@@ -9,6 +9,8 @@ import { timezoneForCountry } from '@/lib/team-timezone';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
 import { buildTeamFAQs } from '@/lib/team-context';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
+import ClaimListingNudge from '@/components/ClaimListingNudge';
+import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 
 interface TeamWithLocation {
   country_code: string | null;
@@ -721,6 +723,13 @@ export default async function PublicTeamPage({ params }: PageProps) {
 
   return (
     <>
+      {/* WS30 conversion overhaul (Arnel 2026-10-01):
+          Above-the-fold claim nudge for unclaimed teams + owner banner for
+          the approved owner. Renders BEFORE the PublicTeamProfile client
+          component so it lands in the first viewport on mobile and desktop. */}
+      <ClaimListingNudge entityType="team" entityId={team.id} entityName={team.name} />
+      <ClaimedOwnerBanner entityType="team" entityId={team.id} />
+
       {/* JSON-LD: SportsTeam + BreadcrumbList + FAQPage (PR #197) */}
       <script
         type="application/ld+json"

@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import LeagueDetailClient from './LeagueDetailClient';
 import LeagueSEOCopy from './LeagueSEOCopy';
 import ClaimThisListingMount from '@/components/ClaimThisListingMount';
+import ClaimListingNudge from '@/components/ClaimListingNudge';
+import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
 import { getFollowersCount } from '@/lib/ownership';
 import { buildLeagueFAQs, countryContextFor, LEVEL_DESCRIPTION } from '@/lib/league-context';
 import { auth } from '@clerk/nextjs/server';
@@ -207,6 +209,13 @@ export default async function LeaguePage({
 
   return (
     <>
+      {/* WS30 conversion overhaul (Arnel 2026-10-01):
+          Above-the-fold claim nudge for unclaimed leagues + owner banner for
+          the approved owner. Renders BEFORE LeagueDetailClient so the CTA
+          lands in the first viewport on mobile and desktop. */}
+      <ClaimListingNudge entityType="league" entityId={league.id} entityName={league.name} />
+      <ClaimedOwnerBanner entityType="league" entityId={league.id} />
+
       {leagueJsonLd.length > 0 && (
         <script
           type="application/ld+json"

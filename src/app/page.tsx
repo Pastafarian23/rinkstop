@@ -6,6 +6,7 @@ import HomeSearch from '@/app/HomeSearch';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
+import FourPathNav from '@/components/FourPathNav';
 import JustGettingStartedSection from '@/components/home/JustGettingStartedSection';
 import { formatGameTime, tzAbbr, disclaimerText } from '@/lib/game-time';
 
@@ -451,6 +452,16 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ---- WS30 FOUR-PATH NAVIGATION (Arnel 2026-10-01) ---------------------------- */}
+      {/* Sits between the hero and the directory categories so first-time
+          visitors can self-segment before browsing the directory. Each path
+          uses the existing routing: Find → /directory, Claim → /claim-your-listing,
+          Manage → /claim-your-listing?focus=team, Grow → /launch. The
+          secondary link inside each card points at /pricing filtered by
+          intent so visitors can self-educate on the upgrade ladder without
+          being funnelled into checkout. */}
+      <FourPathNav variant="cards" />
+
       {/* ---- CATEGORIES ------------------------------------------------------------------- */}
       <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="container">
@@ -677,71 +688,82 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ---- MEMBERSHIP (pricing teaser) ----------------------------------------------------- */}
+      {/* ---- WS30 PHASE 6: MEMBERSHIP TEASER (3 cards, not 9) --------------- */}
+      {/* Per Arnel 2026-10-01: "Do not place all ten membership products in
+          equal visual prominence on the homepage. The homepage should sell
+          the ecosystem, not force visitors to understand the entire
+          pricing architecture." Three entry-tier cards (Free / Hockey
+          Passport / Business Listing) with a single "Compare all 9 plans"
+          link at the bottom. The full grid lives at /pricing. */}
       <section style={{ background: 'linear-gradient(180deg, #0D1117 0%, #041E42 100%)', padding: 'clamp(2.5rem, 6vw, 4rem) 0' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 2rem' }}>
+          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 1.75rem' }}>
             <div className="label" style={{ color: '#FFB81C' }}>Membership</div>
             <h2 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', color: '#fff', marginBottom: '0.625rem' }}>
-              PICK THE PLAN THAT FITS
+              START FREE, UPGRADE WHEN YOU OUTGROW IT
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6 }}>
-              Free is free, forever -- and it now includes 1 free claim and free identity verification. Hockey Passport ($24.99/yr) unlocks payments eligibility, document storage, and direct messaging. Hockey Passport Plus ($59.99/yr) adds Family Hub, career timeline, achievement tracking, and advanced analytics. For organizations: Club Starter ($149/yr, up to 30 players), Club Pro ($399/yr, up to 150), Club Elite ($999/yr, unlimited teams), League (starting $1,999/yr). For businesses: Business Listing ($99/yr) and Business Plus ($299/yr). Federation is custom for enterprise-scale organizations.
+            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+              Every RinkStop account starts with a free claim and free identity verification. Paid tiers add roster tools, lead capture, and analytics — pick one when you need it, not before.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', maxWidth: '1100px', margin: '0 auto' }}>
-            {(() => {
-              // Per Arnel's directive (2026-08-26): home page should not show
-              // "Upgrade to X" CTAs for the tier the user is already on, or
-              // for any same-or-lower tier within the same track. Same logic
-              // as src/app/pricing/PricingContent.tsx. Cross-track upgrades
-              // (e.g. individual -> organization) stay available; same-track
-              // same-or-lower gets locked.
-              const TIER_RANK_HOME: Record<string, number> = {
-                free: 0, verified_identity: 1, identity_plus: 2,
-                club_starter: 1, club_pro: 2, club_elite: 3,
-                league: 4, federation: 5,
-                business_listing: 1, business_plus: 2,
-              };
-              const TIER_TO_TRACK_HOME: Record<string, 'personal' | 'business'> = {
-                free: 'personal', verified_identity: 'personal', identity_plus: 'personal',
-                club_starter: 'business', club_pro: 'business', club_elite: 'business',
-                league: 'business', federation: 'business',
-                business_listing: 'business', business_plus: 'business',
-              };
-              const cards = [
-                { tier: 'free', label: 'Free', price: '$0', period: 'forever', color: '#9CA3AF', bg: 'rgba(156,163,175,0.04)', border: 'rgba(156,163,175,0.2)', tagline: 'Browse, follow, claim 1 listing, and verify your identity -- free, forever.', cta: 'Join Free', href: '/sign-up' },
-                { tier: 'verified_identity', label: 'Hockey Passport', price: '$24.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.06)', border: 'rgba(255,184,28,0.35)', tagline: 'Your digital hockey career record + payments, document storage, and messaging.', cta: 'Get My Hockey Passport', href: '/pricing?for=identity', popular: true },
-                { tier: 'identity_plus', label: 'Hockey Passport Plus', price: '$59.99', period: '/ year', color: '#FFB81C', bg: 'rgba(255,184,28,0.12)', border: 'rgba(255,184,28,0.4)', tagline: 'Career timeline, achievement tracking, advanced analytics, and 5 claims.', cta: 'Upgrade to Hockey Passport Plus', href: '/pricing?for=identity' },
-                { tier: 'club_starter', label: 'Club Starter', price: '$149', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.06)', border: 'rgba(200,16,46,0.35)', tagline: 'Small clubs -- up to 30 players.', cta: 'Start Your Club', href: '/pricing?for=organization' },
-                { tier: 'club_pro', label: 'Club Pro', price: '$399', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.10)', border: 'rgba(200,16,46,0.4)', tagline: 'Mid-sized clubs -- up to 150 players, multiple teams.', cta: 'Upgrade to Club Pro', href: '/pricing?for=organization' },
-                { tier: 'club_elite', label: 'Club Elite', price: '$999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.16)', border: 'rgba(200,16,46,0.5)', tagline: 'Large clubs -- unlimited teams, advanced analytics, custom branding.', cta: 'Go Club Elite', href: '/pricing?for=organization' },
-                { tier: 'league', label: 'League', price: 'From $1,999', period: '/ year', color: '#C8102E', bg: 'rgba(200,16,46,0.22)', border: 'rgba(200,16,46,0.55)', tagline: 'League-wide management -- every team, every division, every season.', cta: 'Talk to Sales', href: '/pricing?for=organization' },
-                { tier: 'business_listing', label: 'Business Listing', price: '$99', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.06)', border: 'rgba(20,184,166,0.35)', tagline: 'Verified business listing with contact and lead form.', cta: 'Claim Listing', href: '/pricing?for=business' },
-                { tier: 'business_plus', label: 'Business Plus', price: '$299', period: '/ year', color: '#14B8A6', bg: 'rgba(20,184,166,0.12)', border: 'rgba(20,184,166,0.4)', tagline: 'Multiple listings, featured placement, messaging.', cta: 'Upgrade to Business Plus', href: '/pricing?for=business' },
-              ];
-              return cards.map((t) => {
-                const isCurrent = currentUserTier === t.tier;
-                const sameTrack = TIER_TO_TRACK_HOME[currentUserTier] === TIER_TO_TRACK_HOME[t.tier];
-                const isDowngradeOrSame = sameTrack && (TIER_RANK_HOME[t.tier] ?? 0) <= (TIER_RANK_HOME[currentUserTier] ?? 0) && !isCurrent && t.tier !== 'free';
-                const ctaState = isCurrent ? 'current' : isDowngradeOrSame ? 'locked' : 'available';
-                return { ...t, ctaState };
-              });
-            })().map((t) => (
-              <div key={t.tier} style={{
-                position: 'relative',
-                background: t.bg,
-                border: `1px solid ${t.border}`,
-                borderRadius: 12,
-                padding: '1.5rem 1.25rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
-                transition: 'transform 0.15s, border-color 0.15s',
-                opacity: t.ctaState === 'locked' ? 0.5 : 1,
-              }}>
-                {('popular' in t && t.popular) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', maxWidth: '900px', margin: '0 auto' }}>
+            {[
+              {
+                tier: 'free',
+                label: 'Free',
+                price: '$0',
+                period: 'forever',
+                color: '#9CA3AF',
+                bg: 'rgba(156,163,175,0.04)',
+                border: 'rgba(156,163,175,0.25)',
+                tagline: 'Browse, follow, claim 1 listing, and verify your identity — free, forever.',
+                cta: 'Join Free',
+                href: '/sign-up',
+                popular: false,
+              },
+              {
+                tier: 'verified_identity',
+                label: 'Hockey Passport',
+                price: '$24.99',
+                period: '/ year',
+                color: '#FFB81C',
+                bg: 'rgba(255,184,28,0.08)',
+                border: 'rgba(255,184,28,0.45)',
+                tagline: 'Your digital hockey career record. Payments, document storage, and messaging.',
+                cta: 'Get My Hockey Passport',
+                href: '/pricing?for=identity',
+                popular: true,
+              },
+              {
+                tier: 'business_listing',
+                label: 'Business Listing',
+                price: '$99',
+                period: '/ year',
+                color: '#14B8A6',
+                bg: 'rgba(20,184,166,0.06)',
+                border: 'rgba(20,184,166,0.4)',
+                tagline: 'Verified business listing with contact, lead capture, and analytics.',
+                cta: 'See Business plans',
+                href: '/pricing?for=rink',
+                popular: false,
+              },
+            ].map((t) => (
+              <div
+                key={t.tier}
+                style={{
+                  position: 'relative',
+                  background: t.bg,
+                  border: `1px solid ${t.border}`,
+                  borderRadius: 12,
+                  padding: '1.5rem 1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  transition: 'transform 0.15s, border-color 0.15s',
+                }}
+              >
+                {t.popular && (
                   <div style={{
                     position: 'absolute', top: -10, right: 16,
                     background: '#14B8A6', color: '#fff',
@@ -749,15 +771,6 @@ export default async function Home() {
                     letterSpacing: '0.1em', textTransform: 'uppercase',
                     padding: '0.2rem 0.625rem', borderRadius: 999,
                   }}>Most Popular</div>
-                )}
-                {t.ctaState === 'current' && (
-                  <div style={{
-                    position: 'absolute', top: -10, left: 16,
-                    background: '#22c55e', color: '#fff',
-                    fontSize: '0.625rem', fontWeight: 800,
-                    letterSpacing: '0.1em', textTransform: 'uppercase',
-                    padding: '0.2rem 0.625rem', borderRadius: 999,
-                  }}>Current plan</div>
                 )}
                 <div>
                   <div style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.color, marginBottom: '0.25rem' }}>
@@ -775,58 +788,34 @@ export default async function Home() {
                 <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.8125rem', lineHeight: 1.5, margin: 0, flex: 1 }}>
                   {t.tagline}
                 </p>
-                {t.ctaState === 'current' ? (
-                  <Link
-                    href="/dashboard/subscription"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '0.625rem 1rem', borderRadius: 6,
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.15)',
-                      color: 'rgba(255,255,255,0.7)',
-                      textDecoration: 'none', fontWeight: 700, fontSize: '0.8125rem',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Current plan ✓
-                  </Link>
-                ) : t.ctaState === 'locked' ? (
-                  <span
-                    title="You're already on a higher or equal plan. To change, contact support@rinkstop.com."
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '0.625rem 1rem', borderRadius: 6,
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.4)',
-                      fontWeight: 700, fontSize: '0.8125rem',
-                      whiteSpace: 'nowrap', cursor: 'not-allowed',
-                    }}
-                  >
-                    Already included
-                  </span>
-                ) : (
-                  <Link
-                    href={t.href}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '0.625rem 1rem', borderRadius: 6,
-                      background: t.color,
-                      color: '#fff',
-                      textDecoration: 'none', fontWeight: 700, fontSize: '0.8125rem',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {t.cta}
-                  </Link>
-                )}
+                <Link
+                  href={t.href}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0.625rem 1rem', borderRadius: 6,
+                    background: t.color, color: t.tier === 'free' ? '#0a0a0a' : '#0a0a0a',
+                    textDecoration: 'none', fontWeight: 700, fontSize: '0.8125rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {t.cta} →
+                </Link>
               </div>
             ))}
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-            <Link href="/pricing" style={{ color: '#FFB81C', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
-              Compare all features (FAQ + Federation) →
+            <Link
+              href="/pricing"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                color: '#FFB81C', fontSize: '0.9375rem', fontWeight: 600, textDecoration: 'none',
+                padding: '0.625rem 1.25rem',
+                border: '1px solid rgba(255,184,28,0.4)',
+                borderRadius: 999,
+              }}
+            >
+              Compare all 9 plans →
             </Link>
           </div>
         </div>

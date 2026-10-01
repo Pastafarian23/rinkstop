@@ -3,6 +3,7 @@ import Link from 'next/link';
 import DirectoryLandingClient from './DirectoryLandingClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
+import FourPathNav from '@/components/FourPathNav';
 
 // 2026-10-01 (Arnel data-integrity audit): route title/description through
 // the canonical helper so the directory landing page metadata matches the
@@ -62,6 +63,22 @@ export default function DirectoryPage() {
         </div>
       </section>
       <DirectoryLandingClient />
+
+      {/* WS30 (Arnel 2026-10-01): 4-path compact nav at the bottom of the
+          directory landing page so visitors who finished browsing can self-
+          segment into the right next action. Sits below all browse
+          affordances — visitors see this AFTER they've explored, not before. */}
+      <section style={{ background: '#0D1117', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '2rem 0' }}>
+        <div className="container" style={{ maxWidth: '1200px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+            <div className="label" style={{ color: 'rgba(255,255,255,0.5)' }}>Done browsing?</div>
+            <h2 className="font-sport" style={{ fontSize: '1.25rem', color: '#fff', margin: 0 }}>
+              WHAT&apos;S NEXT?
+            </h2>
+          </div>
+          <FourPathNav variant="compact" />
+        </div>
+      </section>
     </>
   );
 }
