@@ -34,6 +34,7 @@ import RoleAwareTabBar from '@/components/RoleAwareTabBar';
 import PostComposer from '@/components/PostComposer';
 import NavLinks from '@/components/NavLinks';
 import NavAuth from '@/components/NavAuth';
+import TopNavQuickLinks from '@/components/TopNavQuickLinks';
 import CommandPalette from '@/components/CommandPalette';
 import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
@@ -285,9 +286,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   />
                 </Link>
 
-                {/* Desktop right — Sign In/Up or Clerk UserButton on the left, Menu, then Pricing on the far right */}
+                {/* Desktop right — Sign In/Up or Clerk UserButton on the left, then Quick Links,
+                    Menu, then Pricing on the far right. TopNavQuickLinks surfaces the 4 actions
+                    visitors actually want (Directory / Scores / News / Learn) so the deep
+                    panel doesn't hide them. Hidden on mobile via .nav-quick-links CSS. */}
                 <div className="nav-right">
                   <NavAuth />
+                  <TopNavQuickLinks />
                   <NavLinks />
                   <Link
                     href="/pricing"
@@ -350,9 +355,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <PostComposer />
 
           {/* ---- Footer ---------------------------------------------------------------------------------------------------------- */}
+          {/* 2026-10-01 (Arnel directive): reorganized the 7-column footer into 4
+              intent-based columns (Discover / Use / List / Company) plus Legal.
+              Old footer duplicated links across "Company" + "Account" + "Legal"
+              (Pricing appeared 3x, Add Listing appeared 3x) and buried the
+              conversion paths. New footer groups by what the user is trying
+              to accomplish, which surfaces /pricing and /claim-your-listing
+              alongside the directory links. */}
           <footer style={{ background: '#041E42', borderTop: '3px solid #C8102E', marginTop: '3rem', padding: '2.5rem 0 1.5rem' }}>
             <div className="container">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
 
                 <div>
                   <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: '1.25rem', color: '#fff', letterSpacing: '0.05em', marginBottom: '0.75rem' }}>RINKSTOP</div>
@@ -360,47 +372,61 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Explore</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {EXPLORE.map(item => (
-                      <Link key={item.href} href={item.href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{item.label}</Link>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Leagues</div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Discover</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {[
-                      ['/directory/nhl','NHL'],
-                      ['/directory/ahl','AHL'],
-                      ['/directory/khl','KHL'],
-                      ['/directory/pwhl','PWHL'],
-                      ['/directory/college','NCAA'],
-                      ['/directory/junior','Junior'],
-                    ].map(([href,label]) => (
+                      ['/directory', 'All Directory'],
+                      ['/directory/teams', 'Teams'],
+                      ['/directory/players', 'Players'],
+                      ['/directory/leagues', 'Leagues'],
+                      ['/directory/rinks', 'Rinks'],
+                      ['/directory/games', 'Scores'],
+                      ['/directory/federations', 'Federations'],
+                      ['/directory/countries', 'Countries'],
+                      ['/directory/standings', 'Standings'],
+                    ].map(([href, label]) => (
                       <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Free Tools</div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Use</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {[
-                      ['/tools','All tools'],
-                      ['/tools/hockey-cost-calculator','Cost Calculator'],
-                      ['/tools/junior-eligibility-checker','Junior Eligibility'],
-                      ['/tools/hockey-skate-size-calculator','Skate Size'],
-                      ['/tools/hockey-glove-size-calculator','Glove Size'],
-                      ['/tools/hockey-stick-size-calculator','Stick Size'],
-                      ['/tools/hockey-goalie-gear-sizer','Goalie Gear'],
-                      ['/learn','Learn Hockey'],
-                      ['/learn/age-to-start-hockey','When to Start Hockey'],
-                      ['/learn/cost-by-age','Hockey Cost by Age'],
-                      ['/guides','All guides'],
-                      ['/guides/hockey-parents-handbook','Parents Handbook'],
-                    ].map(([href,label]) => (
+                      ['/news', 'News'],
+                      ['/blog', 'Blog'],
+                      ['/guides', 'Guides'],
+                      ['/learn', 'Learn Hockey'],
+                      ['/tools', 'Free Tools'],
+                      ['/gear-brands', 'Gear Brands'],
+                      ['/directory/nhl', 'NHL'],
+                      ['/directory/ahl', 'AHL'],
+                      ['/directory/khl', 'KHL'],
+                      ['/directory/pwhl', 'PWHL'],
+                      ['/directory/college', 'NCAA'],
+                      ['/directory/junior', 'Junior'],
+                      ['/standings', 'Standings'],
+                      ['/schedule', 'Schedule'],
+                    ].map(([href, label]) => (
+                      <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>List</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {[
+                      ['/claim-your-listing', 'Claim a listing'],
+                      ['/add-listing', 'Add a new listing'],
+                      ['/pricing', 'Pricing & tiers'],
+                      ['/ice-marketplace', 'Ice Marketplace'],
+                      ['/dataset-license', 'Hockey dataset license'],
+                      ['/partner-with-us', 'Partner with RinkStop'],
+                      ['/launch', 'List your ice'],
+                      ['/advertise', 'Advertise'],
+                    ].map(([href, label]) => (
                       <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
                     ))}
                   </div>
@@ -410,21 +436,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Company</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {[
-                      ['/blog','Blog'],
-                      ['/news','News'],
-                      ['/guides','Guides'],
-                      ['/faq','FAQ'],
-                      ['/about','About'],
-                      ['/editorial-policy','Editorial Policy'],
-                      ['/data-methodology','Data Methodology'],
-                      ['/corrections','Corrections'],
-                      ['/advertise','Advertise'],
-                      ['/contact','Contact'],
-                      ['/add-listing','Add Listing'],
-                      ['/claim-your-listing','Claim Listing'],
-                      ['/launch','List Your Ice'],
-                      ['/pricing','Pricing'],
-                    ].map(([href,label]) => (
+                      ['/about', 'About'],
+                      ['/contact', 'Contact'],
+                      ['/faq', 'FAQ'],
+                      ['/editorial-policy', 'Editorial Policy'],
+                      ['/data-methodology', 'Data Methodology'],
+                      ['/corrections', 'Corrections'],
+                      ['/privacy', 'Privacy Policy'],
+                      ['/terms', 'Terms of Service'],
+                      ['/cookies', 'Cookie Policy'],
+                    ].map(([href, label]) => (
                       <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
                     ))}
                   </div>
@@ -433,22 +454,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <div>
                   <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Account</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <Link href="/login" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Sign In</Link>
-                    <Link href="/sign-up" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Join Free</Link>
-                    <Link href="/dashboard" prefetch={false} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>My Dashboard</Link>
-                    <Link href="/pricing" style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>Pricing</Link>
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '0.625rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.25)', marginBottom: '0.75rem' }}>Legal</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {[
-                      ['/privacy','Privacy Policy'],
-                      ['/terms','Terms of Service'],
-                      ['/cookies','Cookie Policy'],
-                    ].map(([href,label]) => (
-                      <Link key={href} href={href} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
+                      ['/login', 'Sign In'],
+                      ['/sign-up', 'Join Free'],
+                      ['/dashboard', 'My Dashboard'],
+                      ['/profile', 'My Profile'],
+                      ['/pricing', 'Hockey Passport'],
+                    ].map(([href, label]) => (
+                      <Link key={href} href={href} prefetch={false} style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem', textDecoration: 'none' }}>{label}</Link>
                     ))}
                   </div>
                 </div>
