@@ -6,8 +6,48 @@ import NhlStandingsTable from '@/components/NhlStandingsTable';
 import GenericStandingsTable from '@/components/GenericStandingsTable';
 import StandingsFilterBar from '@/components/StandingsFilterBar';
 import { fetchStandings, fetchStandingsFacets, groupByLeagueName, levelLabel, getLeagueLevel } from '@/lib/standings';
+import { createClient } from '@supabase/supabase-js';
 
-export const revalidate = 3600; // 1 hour
+// Module-level singleton — created once per cold start, reused across requests.
+let _sb: ReturnType<typeof createClient> | null = null;
+function getSb() {
+  if (!_sb) _sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return _sb;
+}
+
+export const revalidate = 900; // 15 min (freshness badge updates on re-render)
+
+async function getNhlDataFreshness(): Promise<{ lastSynced: string | null; source: string }> {
+  try {
+    const { data } = await getSb()
+      .from('highlightly_standings')
+      .select('last_synced, league_name')
+      .order('last_synced', { ascending: false })
+      .limit(20) as { data: { last_synced: string | null; league_name: string }[] | null };
+    if (!data || data.length === 0) return { lastSynced: null, source: 'No data' };
+    // Pick the most recent row, and report which source(s) it's from
+    const last = data[0].last_synced ?? null;
+    const sources = new Set<string>();
+    sources.add('NHL.com Stats API'); // NHL always uses NHL.com
+    for (const r of data) {
+      if (r.league_name === 'NHL') continue;
+      sources.add('Wikipedia');
+    }
+    return { lastSynced: last, source: Array.from(sources).join(' + ') };
+  } catch {
+    return { lastSynced: null, source: 'Highlightly API' };
+  }
+}
+
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 2) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 export const metadata: Metadata = {
   title: 'Standings',
@@ -124,6 +164,7 @@ export default async function StandingsIndexPage({ searchParams }: PageProps) {
 
   const latestSeason = await getLatestSeason();
   const latestStandings = latestSeason ? await getStandingsForSeason(latestSeason) : [];
+  const freshness = await getNhlDataFreshness();
 
   // 2026-10-01 (Arnel feedback): filter bar at the TOP, not the bottom.
   // Filter from URL params and render matching rows inline below.
@@ -221,7 +262,27 @@ export default async function StandingsIndexPage({ searchParams }: PageProps) {
             <>
               <div className="sec-head" style={{ marginTop: '0.5rem' }}>
                 <div>
-                  <div className="label">Live Now · {latestSeason && formatSeason(latestSeason)} season</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <span className="label">Live Now · {latestSeason && formatSeason(latestSeason)} season</span>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: '0.2rem 0.6rem',
+                  background: 'rgba(200,16,46,0.12)',
+                  border: '1px solid rgba(200,16,46,0.3)',
+                  borderRadius: '999px',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  color: '#FFB81C',
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'inline-block', flexShrink: 0 }} />
+                  {freshness.source}
+                  {freshness.lastSynced && <> · {timeAgo(freshness.lastSynced)}</>}
+                </span>
+              </div>
                   <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>NHL STANDINGS</h2>
                 </div>
                 <Link href={`/standings/nhl/${latestSeason}`} className="sec-link">Full NHL page →</Link>
@@ -325,7 +386,7 @@ export default async function StandingsIndexPage({ searchParams }: PageProps) {
                     <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', fontFamily: "'Bebas Neue', Impact, sans-serif", letterSpacing: '0.05em' }}>
                       {l.name}
                     </span>
-                    <span style={{ color: l.accent, fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', borderLeft: `2px solid ${l.accent}`, paddingLeft: '0.5rem' }}>
                       Soon
                     </span>
                   </div>
