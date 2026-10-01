@@ -1409,6 +1409,77 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
         {/* WS16 PR2 — AdSense display ad below the email capture block. */}
         
 
+        {/* 2026-10-01 Claim-this-rink CTA (Arnel directive): 1,562 rink pages
+            drive 70% of organic clicks (407 of 835 from GSC 90d) but had zero
+            conversion funnel before. Surface the canonical claim path at the
+          natural conversion moment — after the visitor has read the rink's
+            info. Single CTA, brand-red, high contrast, not a sticky floater
+            (sticky floats often hide user content on mobile). */}
+        <section
+          data-claim-cta
+          style={{
+            marginTop: '8px',
+            marginBottom: '24px',
+            background: 'linear-gradient(135deg, rgba(200,16,46,0.18) 0%, rgba(255,184,28,0.10) 100%)',
+            border: '1.5px solid rgba(200,16,46,0.55)',
+            borderRadius: 12,
+            padding: '1.5rem 1.5rem 1.75rem',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+          }}
+        >
+          <span style={{ fontSize: '0.6875rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#FFB81C' }}>
+            Is this your rink?
+          </span>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>
+            Claim {rink.name} on RinkStop
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: '0.9375rem', lineHeight: 1.55, margin: 0 }}>
+            Operators and managers get free editing of hours, programs, and contact info,
+            plus <Link href="/pricing" style={{ color: '#FFB81C', textDecoration: 'underline' }}>verified-listing features</Link> on the directory.
+            Takes about 2 minutes to start.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.625rem', marginTop: '0.25rem' }}>
+            <Link
+              href={`/claim-your-listing?type=rink&id=${encodeURIComponent(rink.id)}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.7rem 1.25rem',
+                background: '#C8102E',
+                color: '#fff',
+                borderRadius: 8,
+                fontSize: '0.9375rem',
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                textDecoration: 'none',
+              }}
+            >
+              Claim this rink →
+            </Link>
+            <Link
+              href={`/directory/rinks/${rink.slug}/edit`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '0.7rem 1.25rem',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'rgba(255,255,255,0.85)',
+                border: '1px solid rgba(255,255,255,0.18)',
+                borderRadius: 8,
+                fontSize: '0.9375rem',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Suggest an edit
+            </Link>
+          </div>
+        </section>
+
       </div>
     </>
       );
