@@ -348,7 +348,7 @@ export default async function StandingsIndexPage({ searchParams }: PageProps) {
                           {g.rows.length} team{g.rows.length === 1 ? '' : 's'} · season {g.rows[0]?.season}
                         </span>
                       </div>
-                      <GenericStandingsTable rows={g.rows} />
+                      <GenericStandingsTable rows={g.rows} leagueName={g.league_name} />
                     </div>
                   ))}
                 </div>
