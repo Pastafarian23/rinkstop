@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getLatestSeason, getStandingsForSeason } from '@/lib/nhl-data';
 import { ALL_CONFERENCES, NHL_TEAMS_CANONICAL, teamsByConference } from '@/lib/nhl-teams-canonical';
+import NhlStandingsTable from '@/components/NhlStandingsTable';
 
 export const revalidate = 3600; // 1 hour
 
@@ -120,6 +121,21 @@ export default async function StandingsIndexPage() {
   const available = LEAGUE_CARDS.filter(l => l.available);
   const comingSoon = LEAGUE_CARDS.filter(l => !l.available);
 
+  // 2026-10-01 (Arnel feedback): /standings was a league-picker with no
+  // actual standings visible. Now render the NHL table INLINE so the
+  // standings are visible on first click. Group by division for the
+  // conference/division sub-tables; top-3 in each division get a subtle
+  // green tint (matches the reference NHL.com / ESPN screenshots).
+  const enrichedWithDivision = latestStandings.map((s) => {
+    const c = NHL_TEAMS_CANONICAL.find(t => t.name.toLowerCase() === s.team_name.toLowerCase());
+    return { ...s, _division: c?.division ?? null, _conference: c?.conference ?? null };
+  });
+  const easternAtlantic = enrichedWithDivision.filter(t => t._division === 'Atlantic').sort((a, b) => a.rank - b.rank);
+  const easternMetro = enrichedWithDivision.filter(t => t._division === 'Metropolitan').sort((a, b) => a.rank - b.rank);
+  const westernCentral = enrichedWithDivision.filter(t => t._division === 'Central').sort((a, b) => a.rank - b.rank);
+  const westernPacific = enrichedWithDivision.filter(t => t._division === 'Pacific').sort((a, b) => a.rank - b.rank);
+  const hasNhlData = latestStandings.length > 0;
+
   return (
     <main>
       {/* Hero */}
@@ -149,6 +165,60 @@ export default async function StandingsIndexPage() {
           }}>
             Current standings for hockey leagues worldwide. Conference, division, and overall rankings — points, goals, streaks, and playoff position.
           </p>
+        </div>
+      </section>
+
+      {/* Inline NHL standings tables (Arnel feedback 2026-10-01).
+          Inline so the /standings landing shows real data, not just a
+          league picker. Group by conference / division to match NHL.com +
+          ESPN references the user shared. */}
+      {hasNhlData && (
+        <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="container">
+            <div className="sec-head">
+              <div>
+                <div className="label">Live Now · {latestSeason && formatSeason(latestSeason)} season</div>
+                <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>NHL STANDINGS</h2>
+              </div>
+              <Link href={`/standings/nhl/${latestSeason}`} className="sec-link">Full NHL page →</Link>
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', letterSpacing: '0.05em', marginTop: '1.5rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              EASTERN CONFERENCE
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+              <div>
+                <NhlStandingsTable rows={easternAtlantic} caption="Atlantic Division" markTopThree />
+              </div>
+              <div>
+                <NhlStandingsTable rows={easternMetro} caption="Metropolitan Division" markTopThree />
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff', letterSpacing: '0.05em', marginTop: '2rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              WESTERN CONFERENCE
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 480px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <NhlStandingsTable rows={westernCentral} caption="Central Division" markTopThree />
+              </div>
+              <div>
+                <NhlStandingsTable rows={westernPacific} caption="Pacific Division" markTopThree />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Other leagues switcher */}
+      <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Switch League</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>OTHER LEAGUES</h2>
+            </div>
+          </div>
         </div>
       </section>
 
