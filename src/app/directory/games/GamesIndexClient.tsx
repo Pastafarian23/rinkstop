@@ -334,7 +334,7 @@ function GameCard({ game }: { game: Game }) {
       <div style={{ textAlign: 'center', minWidth: '80px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>{game.home_score ?? '-'}</span>
-          <span style={{ color: '#333', fontSize: '0.875rem' }}>@</span>
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem' }}>@</span>
           <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>{game.away_score ?? '-'}</span>
         </div>
         <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>
