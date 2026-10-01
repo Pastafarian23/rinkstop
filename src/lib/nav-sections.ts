@@ -69,12 +69,17 @@ const YOUTH_AMATEUR: NavItem[] = [
   { href: '/directory/youth-hockey/adult-tournaments', label: 'Adult Tournaments' },
 ];
 
+// 2026-10-01 fix (Arnel feedback): 'News & Scores' section needs the Scores
+// link. Mobile drawer had a section named News & Scores that omitted Scores
+// itself. Added the games/scores entry and a stand-alone Rankings link.
 const CONTENT_LINKS: NavItem[] = [
-  { href: '/blog',           label: 'All Articles'  },
+  { href: '/directory/games', label: 'Scores'        },
+  { href: '/directory/standings', label: 'Standings'  },
   { href: '/news',           label: 'News'          },
+  { href: '/blog',           label: 'All Articles'  },
   { href: '/rankings',       label: 'Rankings'      },
   { href: '/hockey-travel',  label: 'Hockey Travel' },
-  { href: '/gear-brands',   label: 'Gear'          },
+  { href: '/gear-brands',    label: 'Gear'          },
 ];
 
 const LEARN_LINKS: NavItem[] = [
@@ -139,37 +144,47 @@ const GET_LISTED_LINKS: NavItem[] = [
 // dropdown was 100+ links. Top nav now surfaces Directory / Scores /
 // News / Learn / Pricing so visitors don't have to dig. The menu panel
 // still has every deep link for power users.
-const BROWSE_HOCKEY: NavItem[] = [
-  { href: '/directory',               label: 'All Directory'          },
-  { href: '/directory/teams',         label: 'Teams'                  },
-  { href: '/directory/players',       label: 'Players'                },
-  { href: '/directory/coaches',       label: 'Coaches'                },
-  { href: '/directory/scouts',        label: 'Scouts'                 },
-  { href: '/directory/leagues',       label: 'Leagues'                },
-  { href: '/directory/rinks',         label: 'Rinks'                  },
-  { href: '/directory/games',         label: 'Games & Scores'         },
-  { href: '/directory/federations',   label: 'Federations'            },
-  { href: '/directory/countries',     label: 'Countries'              },
-  { href: '/directory/standings',     label: 'Standings'              },
-  { href: '/directory/nhl',           label: 'NHL'                    },
-  { href: '/directory/ahl',           label: 'AHL'                    },
-  { href: '/directory/pwhl',          label: 'PWHL'                   },
-  { href: '/directory/khl',           label: 'KHL'                    },
-  { href: '/directory/echl',          label: 'ECHL'                   },
-  { href: '/directory/ushl',          label: 'USHL'                   },
-  { href: '/directory/liiga',         label: 'Liiga'                  },
-  { href: '/directory/shl',           label: 'SHL'                    },
-  { href: '/directory/del',           label: 'DEL'                    },
+//
+// 2026-10-01 fix (Arnel feedback): on mobile, BROWSE_HOCKEY expanded to
+// 27 items in one accordion which scrolled off the screen. Split into
+// "Browse" (entity directories — 11 items) + "Leagues" (12 leagues +
+// regional hubs — 15 items). Both still fit comfortably in the
+// accordion without forcing excessive scroll.
+const BROWSE: NavItem[] = [
+  { href: '/directory',               label: 'All Directory'   },
+  { href: '/directory/teams',         label: 'Teams'           },
+  { href: '/directory/players',       label: 'Players'         },
+  { href: '/directory/coaches',       label: 'Coaches'         },
+  { href: '/directory/scouts',        label: 'Scouts'          },
+  { href: '/directory/leagues',       label: 'Leagues'         },
+  { href: '/directory/rinks',         label: 'Rinks'           },
+  { href: '/directory/games',         label: 'Games & Scores'  },
+  { href: '/directory/federations',   label: 'Federations'     },
+  { href: '/directory/countries',     label: 'Countries'       },
+  { href: '/directory/standings',     label: 'Standings'       },
+  { href: '/partners',                label: 'Partners'        },
+];
+
+const LEAGUES: NavItem[] = [
+  { href: '/directory/nhl',           label: 'NHL'                  },
+  { href: '/directory/ahl',           label: 'AHL'                  },
+  { href: '/directory/pwhl',          label: 'PWHL'                 },
+  { href: '/directory/khl',           label: 'KHL'                  },
+  { href: '/directory/echl',          label: 'ECHL'                 },
+  { href: '/directory/ushl',          label: 'USHL'                 },
+  { href: '/directory/liiga',         label: 'Liiga'                },
+  { href: '/directory/shl',           label: 'SHL'                  },
+  { href: '/directory/del',           label: 'DEL'                  },
   { href: '/directory/international', label: 'International & Olympics'},
-  { href: '/directory/college',       label: 'NCAA Hockey'             },
-  { href: '/directory/junior',        label: 'Junior (CHL)'            },
-  { href: '/directory/youth-hockey',  label: 'Youth & Adult'           },
-  { href: '/directory/pro-leagues',   label: 'All Pro Leagues'         },
-  { href: '/partners',                label: 'Partners'                },
+  { href: '/directory/college',       label: 'NCAA Hockey'          },
+  { href: '/directory/junior',        label: 'Junior (CHL)'         },
+  { href: '/directory/youth-hockey',  label: 'Youth & Adult'        },
+  { href: '/directory/pro-leagues',   label: 'All Pro Leagues'      },
 ];
 
 export const NAV_SECTIONS: NavSection[] = [
-  { label: 'Browse Hockey', sub: BROWSE_HOCKEY },
+  { label: 'Browse',      sub: BROWSE           },
+  { label: 'Leagues',      sub: LEAGUES         },
   { label: 'News & Scores', sub: CONTENT_LINKS },
   { label: 'Learn',         sub: LEARN_LINKS   },
   { label: 'Free Tools',    sub: FREE_TOOLS    },
