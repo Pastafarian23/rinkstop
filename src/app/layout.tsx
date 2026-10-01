@@ -44,8 +44,17 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getUserTier } from '@/lib/connections';
 import { clerkSignInLocalization, clerkSignUpLocalization } from '@/lib/clerk-appearance';
 import type { Metadata } from 'next';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
-export const metadata: Metadata = {
+// 2026-10-01 (Arnel data-integrity audit): use canonical counts helper.
+// Static `export const metadata` cannot await an async helper, so this
+// becomes generateMetadata(). The hardcoded "2,601+ teams", "305+
+// leagues", "6,350+ players", "1,856 ice rinks", "78 countries" were
+// removed and replaced with counts.X.toLocaleString() so the layout's
+// metadata stays in sync with every other page.
+export async function generateMetadata(): Promise<Metadata> {
+  const counts = await getDirectoryCountsCached();
+  return {
   metadataBase: new URL('https://rinkstop.com'),
   // Default canonical + robots applied to every page that doesn't override them.
   // Per-page metadata can set `alternates.canonical` to override the default.
@@ -71,7 +80,7 @@ export const metadata: Metadata = {
     default: 'RinkStop — The World\'s Hockey Directory',
     template: '%s | RinkStop',
   },
-  description: "RinkStop is the world's hockey directory — 2,601+ teams, 305+ leagues, 6,350+ players, and 1,856 ice rinks across 78 countries. Search by name, league, country, or city.",
+  description: `RinkStop is the world's hockey directory — ${counts.teams.toLocaleString()}+ teams, ${counts.leagues.toLocaleString()}+ leagues, ${counts.players.toLocaleString()}+ players, and ${counts.rinks.toLocaleString()} ice rinks across ${counts.countries.toLocaleString()} countries. Search by name, league, country, or city.`,
   // WebSite schema — homepage only. Helps Google understand
   openGraph: {
     siteName: 'RinkStop',
@@ -87,7 +96,8 @@ export const metadata: Metadata = {
     icon: '/favicon.svg',
     apple: '/favicon.svg',
   },
-};
+  };
+}
 
 const EXPLORE = [
   { href: '/directory/teams',    label: 'Teams'   },
