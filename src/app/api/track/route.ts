@@ -86,6 +86,11 @@ export async function POST(req: NextRequest) {
     'upgrade_modal_viewed',
     'upgrade_modal_dismissed',
     'checkout_completed',
+    // Tool funnel — Phase 7 of conversion overhaul.
+    // Previously tool_upsell_clicked was fired but not allowlisted, so all
+    // clicks were silently rejected with 400. Now properly captured.
+    'tool_upsell_clicked',
+    'tool_free_account_clicked',
   ]);
   if (!ALLOWED.has(name)) {
     return NextResponse.json({ ok: false, msg: 'event not allowed' }, { status: 400 });
