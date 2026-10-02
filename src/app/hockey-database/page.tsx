@@ -22,36 +22,40 @@ import { withDefaultOg } from '@/lib/metadata-defaults';
  *   - All claims sourced to verifiable external pages or live DB counts.
  *   - No auth, no user input, no mutations.
  */
-export const metadata: Metadata = {
-  title: { absolute: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations | RinkStop' },
-  description:
-    'The most comprehensive structured hockey database on the open web. 1,856+ rinks, 2,601+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked. Built for hockey people, queryable by AI.',
-  keywords: [
-    'hockey database',
-    'internet hockey database',
-    'hockey player database',
-    'ice hockey directory',
-    'hockey teams database',
-    'hockey league database',
-    'rink database',
-  ],
-  robots: { index: true, follow: true },
-  alternates: { canonical: 'https://rinkstop.com/hockey-database' },
-  openGraph: withDefaultOg({
-    title: 'Hockey Database — The open hockey directory for AI and humans',
+export async function generateMetadata() {
+  const { getDirectoryCounts } = await import('@/lib/directory-counts');
+  const c = await getDirectoryCounts();
+  const f = { rinks: `${c.rinks.toLocaleString()}+ rinks`, teams: `${c.teams.toLocaleString()}+ teams`, players: `${c.players.toLocaleString()}+ players`, leagues: `${c.leagues.toLocaleString()}+ leagues`, federations: `${c.countries}+ IIHF federations` };
+  return {
+    title: { absolute: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations | RinkStop' },
     description:
-      'A live, structured, AI-citable database of ice hockey rinks, teams, players, leagues, and IIHF federations. Every number verifiable, every row sourced.',
-    url: 'https://rinkstop.com/hockey-database',
-    siteName: 'RinkStop',
-    type: 'website',
-  }),
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Hockey Database — RinkStop',
-    description:
-      '1,856+ rinks · 2,601+ teams · 6,351+ players · 84 federations. A live, structured, AI-citable hockey database.',
-  },
-};
+      `The most comprehensive structured hockey database on the open web. ${f.rinks}, ${f.teams}, ${f.players}, ${f.federations}, 720+ games tracked. Built for hockey people, queryable by AI.`,
+    keywords: [
+      'hockey database',
+      'internet hockey database',
+      'hockey player database',
+      'ice hockey directory',
+      'hockey teams database',
+      'hockey league database',
+      'rink database',
+    ],
+    robots: { index: true, follow: true },
+    alternates: { canonical: 'https://rinkstop.com/hockey-database' },
+    openGraph: withDefaultOg({
+      title: 'Hockey Database — The open hockey directory for AI and humans',
+      description:
+        `A live, structured, AI-citable database of ice hockey rinks, teams, players, leagues, and ${f.federations}. Every number verifiable, every row sourced.`,
+      url: 'https://rinkstop.com/hockey-database',
+      siteName: 'RinkStop',
+      type: 'website',
+    }),
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Hockey Database — RinkStop',
+      description: `${f.rinks} · ${f.teams} · ${f.players} players · ${f.federations}. A live, AI-citable hockey database.`,
+    },
+  };
+}
 
 // Live counts re-rendered every hour so the page stays accurate as the
 // directory grows. Identical pattern to /data-coverage.
@@ -171,7 +175,7 @@ export default async function HockeyDatabasePage() {
       url: 'https://rinkstop.com/hockey-database',
       name: 'Hockey Database — Rinks, Teams, Players, Leagues & Federations',
       description:
-        'The most comprehensive structured hockey database on the open web. 1,856+ rinks, 2,601+ teams, 6,351+ players, 84 IIHF federations, 720+ games tracked.',
+        `The most comprehensive structured hockey database on the open web. ${counts.rinks.toLocaleString()}+ rinks, ${counts.teams.toLocaleString()}+ teams, ${counts.players.toLocaleString()}+ players, ${counts.federations.toLocaleString()} IIHF federations, ${counts.games.toLocaleString()} games tracked.`,
       inLanguage: 'en',
       isPartOf: { '@id': 'https://rinkstop.com/#website' },
       about: { '@id': 'https://rinkstop.com/#organization' },

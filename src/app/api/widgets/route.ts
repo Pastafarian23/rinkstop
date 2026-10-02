@@ -30,7 +30,7 @@ li { padding: 4px 0; color: rgba(255,255,255,0.8); }
 
 <div class="widget">
 <h2>Team Stats Widget</h2>
-<p>Live team record + last 5 games for any of our 3,243+ teams.</p>
+<p>Live team record + last 5 games for any of our 2,601+ active teams.</p>
 <pre>&lt;iframe src="${baseUrl}/api/widgets/team-stats/toronto-maple-leafs"
         width="420" height="340" frameborder="0"
         style="border-radius:8px"&gt;&lt;/iframe&gt;</pre>
