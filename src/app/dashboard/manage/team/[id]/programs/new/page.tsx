@@ -74,7 +74,7 @@ export default async function NewTeamProgramPage({ params }: PageProps) {
       isEdit={false}
       initial={{}}
       rinkOptions={(rinks || []) as Array<{ id: string; name: string }>}
-      defaultCurrency={workspace.currency || 'PHP'}
+      defaultCurrency={workspace.currency || 'USD'}
     />
   );
 }

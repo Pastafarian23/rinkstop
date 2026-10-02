@@ -77,7 +77,7 @@ export default async function EditTeamProgramPage({ params }: PageProps) {
     ends_at: (p.ends_at as string) || '',
     arrival_minutes: p.arrival_minutes !== null ? String(p.arrival_minutes) : '30',
     cost_per_player: p.cost_per_player !== null ? String(p.cost_per_player) : '',
-    currency: (p.currency as string) || workspace.currency || 'PHP',
+    currency: (p.currency as string) || workspace.currency || 'USD',
     rsvp_required: p.rsvp_required !== false,
     rsvp_deadline: (p.rsvp_deadline as string) || '',
     max_attendees: p.max_attendees !== null ? String(p.max_attendees) : '',
@@ -94,7 +94,7 @@ export default async function EditTeamProgramPage({ params }: PageProps) {
       isEdit
       initial={initial}
       rinkOptions={(rinks || []) as Array<{ id: string; name: string }>}
-      defaultCurrency={workspace.currency || 'PHP'}
+      defaultCurrency={workspace.currency || 'USD'}
     />
   );
 }

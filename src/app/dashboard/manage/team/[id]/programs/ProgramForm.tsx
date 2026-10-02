@@ -73,7 +73,7 @@ export default function ProgramForm({ isEdit, initial, rinkOptions, defaultCurre
     cost_per_player: initial.cost_per_player === undefined || initial.cost_per_player === null
       ? ''
       : String(initial.cost_per_player),
-    currency: initial.currency || defaultCurrency || 'PHP',
+    currency: initial.currency || defaultCurrency || 'USD',
     rsvp_required: initial.rsvp_required ?? true,
     rsvp_deadline: toLocalInput(initial.rsvp_deadline as unknown as string),
     max_attendees: initial.max_attendees === undefined || initial.max_attendees === null
@@ -135,7 +135,7 @@ export default function ProgramForm({ isEdit, initial, rinkOptions, defaultCurre
       ends_at: fromLocalInput(form.ends_at),
       arrival_minutes: parseInt(form.arrival_minutes || '30', 10),
       cost_per_player: form.cost_per_player === '' ? null : Number(form.cost_per_player),
-      currency: (form.currency || 'PHP').toUpperCase().slice(0, 3),
+      currency: (form.currency || 'USD').toUpperCase().slice(0, 3),
       rsvp_required: form.rsvp_required,
       rsvp_deadline: form.rsvp_deadline ? fromLocalInput(form.rsvp_deadline) : null,
       max_attendees: form.max_attendees === '' ? null : parseInt(form.max_attendees, 10),
