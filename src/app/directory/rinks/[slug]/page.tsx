@@ -356,11 +356,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title = displayName;
   }
 
-  // Description (PR #180b, 2026-08-31): when meta_description is null, build
-  // a richer description from the available anchors instead of truncating
-  // the long blurb. The truncated blurb reads as "..." which kills CTR; a
-  // hand-built 140-155 char description with searchable keywords + a CTA
-  // reads better in SERPs.
+  // Description (PR #180b, 2026-08-31 + WS31 2026-10-02): when meta_description
+  // is null, build from available anchors WITHOUT inventing programming copy.
+  // Old wording ("public skate sessions, lessons, and league play") was
+  // removed because none of those were sourced from rink DB columns.
   let description: string;
   if ((rink as any).meta_description) {
     description = (rink as any).meta_description;
@@ -372,11 +371,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       : '';
     const capacityTag = rink.capacity && rink.capacity >= 5000
       ? ` ${rink.capacity.toLocaleString()}-seat`
+      : rink.capacity
+      ? ` ${rink.capacity.toLocaleString()}-capacity`
       : '';
     const cap1 = `${rink.name}${capacityTag ? ` is a${capacityTag}` : ' is an'} ice rink in ${loc || 'its city'}.`;
     const cap2 = sizeTag
-      ? `${cap1} ${sizeTag} surface, public skate sessions, lessons, and league play.`
-      : `${cap1} Public skate, lessons, and league play.`;
+      ? `${cap1} ${sizeTag}.`
+      : cap1;
     description = cap2.length > 155 ? cap2.slice(0, 152) + '...' : cap2;
   }
 
