@@ -6,6 +6,7 @@ import SocialProof from '@/components/SocialProof';
 import { trackPageView, trackEvent } from '@/lib/analytics';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
   // WS27 PR1: opt out of root layout's title template (`%s | RinkStop`) so the
@@ -82,6 +83,9 @@ export default async function FoundingMemberPage({
     });
   }
 
+  // Pull live counts so the dataset-license card stays accurate.
+  const counts = await getDirectoryCountsCached();
+
   // Count how many of the first 500 founding-member slots are taken so
   // we can show a live "N of 500 claimed" urgency lever on the page.
   let foundingClaimed = 0;
@@ -112,6 +116,10 @@ export default async function FoundingMemberPage({
         currentUserId={userId}
         currentUserTier={userTier}
         cancelled={cancelled}
+        rinkCount={counts.rinks}
+        teamCount={counts.teams}
+        leagueCount={counts.leagues}
+        playerCount={counts.players}
       />
       {/* Server component — renders after the client PricingContent. */}
       <SocialProof variant="compact" />

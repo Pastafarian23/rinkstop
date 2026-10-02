@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getDirectoryCounts } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
   title: { absolute: 'FAQ — RinkStop Hockey Directory | Accounts, Listings, Marketplace, Tools' },
@@ -28,7 +29,7 @@ export const metadata: Metadata = {
 
 // Last-verified stamp is also injected into the JSON-LD `dateModified` so
 // Google sees a real freshness signal. Bump this when content changes.
-const FAQ_LAST_UPDATED = '2026-09-10';
+const FAQ_LAST_UPDATED = '2026-10-02';
 
 // All Q&A content is defined here as data so we can render it both as visible
 // <details> accordions AND as a JSON-LD FAQPage schema (for Google rich results).
@@ -295,7 +296,7 @@ const sections: Array<{
       },
       {
         q: 'Who can stamp my passport?',
-        a: 'Any signed-in RinkStop user. Stamps are gated only by the STAMPS_ENABLED feature flag, not by tier — so a Free user scanning a coach\'s QR still creates a valid stamp. This is intentional: stamping is a public-verifiability feature.',
+        a: 'Any signed-in RinkStop user. Stamps are public-verifiable by default — a Free user scanning a coach\'s or operator\'s QR still creates a valid stamp. This is intentional: stamping is a feature any signed-in account can use, regardless of paid tier.',
       },
       {
         q: 'Can I see who stamped me and when?',
@@ -322,7 +323,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What are referee tools on RinkStop?',
-        a: 'A read-only dashboard built for referees, at /dashboard/referee. It shows upcoming game assignments, recent attendance, payment summary (what you\'re owed vs what you\'ve been paid), and a per-game detail page with check-in / check-out. The tools are not a full assignment-management system — they are the referee\'s view into leagues that already assign them through RinkStop.',
+        a: 'A read-only dashboard built for referees, at /dashboard/referee. It shows upcoming game assignments, recent attendance, and a payment summary (what you\'re owed vs what you\'ve been paid). It is the referee\'s view into leagues that already assign them through RinkStop. Check-in/check-out buttons on the assignment detail page are not yet shipped — for now, league admins record attendance manually and you see the result here.',
       },
       {
         q: 'Who can use referee tools?',
@@ -330,11 +331,11 @@ const sections: Array<{
       },
       {
         q: 'How do I check in to a game?',
-        a: 'From /dashboard/referee/games, click an assignment and use the check-in button when you arrive at the rink. The check-in time is recorded against the assignment and visible to the league admin.',
+        a: 'Check-in/check-out on the assignment detail page is not yet shipped (added in a follow-up). Today, league admins record attendance manually and your /dashboard/referee/games/[id] page reflects what they entered.',
       },
       {
         q: 'How do I check out / log payment?',
-        a: 'After the game, open the assignment detail and click check-out. If the league pays through RinkStop, the system marks the assignment as paid. If the league pays outside RinkStop (cash, check, external invoice), you can manually mark it as paid.',
+        a: 'Check-out is not yet shipped. Today, league admins record your attendance and payment status manually. Your /dashboard/referee/games/[id] page shows the current state from whatever the league admin has entered.',
       },
       {
         q: 'Where does my referee payment come from?',
@@ -349,11 +350,11 @@ const sections: Array<{
     qa: [
       {
         q: 'Can I buy a tier without creating an account first?',
-        a: 'Yes. Guest checkout is enabled — visit /pricing, pick a tier, enter your email and card details. Stripe processes the payment, your account is auto-created (or linked to your existing one if the email matches a Clerk user), and your tier activates within seconds. You land back on the dashboard.',
+        a: 'Yes. Go to /pricing and click any paid tier button — you\'re sent to a Stripe-hosted checkout page where you enter your email and card details. No RinkStop account is required at that step. After Stripe processes the payment, you\'re redirected to /dashboard/welcome, where you either sign in to your existing account or sign up free (the paid tier is linked to your account via the email you used).',
       },
       {
         q: 'What happens after guest checkout?',
-        a: 'You receive a welcome email with a link to set your password. Clicking it signs you in to your new (or existing) account with the paid tier already applied. No "verify your email first" friction.',
+        a: 'Stripe redirects you to /dashboard/welcome after payment. From there, sign in to your existing account (if the email matches) or sign up free in under 30 seconds. The paid tier is applied automatically — you don\'t have to manually enter any payment codes.',
       },
       {
         q: 'Can I claim a listing before signing up?',
@@ -563,7 +564,11 @@ const sections: Array<{
 // Flatten QAs for JSON-LD
 const allQAs = sections.flatMap(s => s.qa);
 
-export default function FAQPage() {
+export default async function FAQPage() {
+  // Pull live counts so the featured snippet doesn't drift from DB reality.
+  // Per audit 2026-10-02: previous version said 1,856 rinks / 2,601 teams,
+  // but DB now shows 1,916 rinks / 3,244 teams.
+  const counts = await getDirectoryCounts();
   return (
     <main style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem 4rem' }}>
       <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
@@ -599,7 +604,7 @@ export default function FAQPage() {
         }}
       >
         <strong style={{ color: '#FFB81C' }}>What is RinkStop?</strong>{' '}
-        RinkStop is the world’s hockey directory: 1,856 rinks, 2,601 teams, 6,351 players, and 305 leagues in one searchable index. It is free to browse, free to claim your own listing, and includes six free hockey calculators (cost, skate size, glove size, stick size, goalie gear, junior eligibility). RinkStop also brokers ice-time bookings through its <Link href="/ice-marketplace" style={{ color: '#FFB81C' }}>ice marketplace</Link> and tracks verified career data via <Link href="/dashboard/passport" style={{ color: '#FFB81C' }}>Hockey Passport</Link>.
+        RinkStop is the world’s hockey directory: {counts.rinks.toLocaleString()} rinks, {counts.teams.toLocaleString()} teams, {counts.players.toLocaleString()} players, and {counts.leagues.toLocaleString()} leagues in one searchable index. It is free to browse, free to claim your own listing, and includes six free hockey calculators (cost, skate size, glove size, stick size, goalie gear, junior eligibility). RinkStop also brokers ice-time bookings through its <Link href="/ice-marketplace" style={{ color: '#FFB81C' }}>ice marketplace</Link> and tracks verified career data via <Link href="/dashboard/passport" style={{ color: '#FFB81C' }}>Hockey Passport</Link>.
       </aside>
 
       {/* Quick jump links to each section */}

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import AffiliateProductCard, { AffiliateDisclosure } from '@/components/AffiliateProductCard';
 import { type ProductRecommendation } from '@/lib/affiliate-links';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 import RelatedProducts from '@/components/RelatedProducts';
 import SocialProof from '@/components/SocialProof';
 
@@ -159,7 +160,8 @@ export const revalidate = 86400; // 24h — picks rarely change
  *   - Activation: waiting on AMZN_ASSOCIATE_TAG env var
  *   - This page: 200 OK, all links work (Amazon search until tag set)
  */
-export default function BestHockeyGearPage() {
+export default async function BestHockeyGearPage() {
+  const counts = await getDirectoryCountsCached();
   return (
     <main style={{ maxWidth: 1000, margin: '0 auto', padding: '2rem 1rem 4rem' }}>
       <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1.5rem' }}>
@@ -380,7 +382,7 @@ export default function BestHockeyGearPage() {
           },
           {
             title: 'Hockey Dataset License — $499',
-            description: 'Bulk CSV/JSON of 1,857 rinks, 2,601 teams, 305 leagues, 6,351 players. Commercial-use license.',
+            description: `Bulk CSV/JSON of ${counts.rinks.toLocaleString()} rinks, ${counts.teams.toLocaleString()} teams, ${counts.leagues.toLocaleString()} leagues, ${counts.players.toLocaleString()} players. Commercial-use license.`,
             href: '/dataset-license',
             cta: 'License the data',
             accent: 'teal',

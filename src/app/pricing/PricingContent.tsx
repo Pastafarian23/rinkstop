@@ -138,12 +138,20 @@ export default function PricingContent({
   currentUserId = null,
   currentUserTier = null,
   cancelled = false,
+  rinkCount,
+  teamCount,
+  leagueCount,
+  playerCount,
 }: {
   foundingClaimed?: number;
   foundingCap?: number;
   currentUserId?: string | null;
   currentUserTier?: string | null;
   cancelled?: boolean;
+  rinkCount?: number;
+  teamCount?: number;
+  leagueCount?: number;
+  playerCount?: number;
 } = {}) {
   const { isSignedIn, isLoaded } = useUser();
   const searchParams = useSearchParams();
@@ -590,20 +598,7 @@ export default function PricingContent({
         >
           RinkStop pricing
         </div>
-        {foundingClaimed < foundingCap ? (
-          <div
-            data-testid="founding-urgency"
-            style={{
-              marginTop: 12,
-              fontSize: 14,
-              color: 'rgba(255,255,255,0.6)',
-            }}
-          >
-            <span style={{ color: '#FFB81C', fontWeight: 700 }}>{foundingClaimed}</span> of {foundingCap} Founding Member badges already claimed
-            {' · '}
-            <span style={{ color: '#FFB81C', fontWeight: 700 }}>{Math.max(foundingCap - foundingClaimed, 0)}</span> remaining
-          </div>
-        ) : (
+        {foundingClaimed < foundingCap ? null : (
           <div style={{ marginTop: 12, fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>
             All {foundingCap} Founding Member badges have been claimed.
           </div>
@@ -822,7 +817,7 @@ export default function PricingContent({
           },
           {
             title: 'Hockey Dataset License — $499',
-            description: 'Bulk CSV/JSON download of ${counts.rinks.toLocaleString()} rinks, 2,601 teams, ${counts.leagues.toLocaleString()} ${1}, 6,351 players. Commercial-use license.',
+            description: `Bulk CSV/JSON download of ${(rinkCount ?? 0).toLocaleString()} rinks, ${(teamCount ?? 0).toLocaleString()} teams, ${(leagueCount ?? 0).toLocaleString()} leagues, ${(playerCount ?? 0).toLocaleString()} players. Commercial-use license.`,
             href: '/dataset-license',
             cta: 'License the data',
             accent: 'teal',
