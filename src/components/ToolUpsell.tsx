@@ -1,16 +1,24 @@
 'use client';
 
 /**
- * ToolUpsell — inline upsell CTA rendered at the end of every free tool.
+ * ToolUpsell — inline conversion surface rendered at the end of every free tool.
  *
- * Targets parents who just finished a hockey cost / equipment / eligibility
- * calculation — they're the warmest leads for Verified Hockey Identity.
+ * Per Arnel Phase 7 directive (memory/2026-10-01-conversion-monetization-overhaul.md):
+ * "Free tools as acquisition funnel — provide useful free result; include a
+ * clear but non-intrusive account CTA; connect user to relevant directory
+ * listings; offer account creation only after delivering value."
  *
- * Client component so we can fire a `tool_upsell_clicked` analytics beacon
- * on click. Server-side rendering would lose the beacon.
+ * Two-button layout:
+ *  - PRIMARY (paid upgrade, passport / club)
+ *  - SECONDARY (free account creation, no card needed)
  *
- * Variant 'passport' (default): points at $24.99/yr Verified Identity
- * Variant 'club': points at $149/yr Club Starter (for organizers/coaches)
+ * Both fire analytics events so we can measure: tool → free_account_created
+ * vs tool → tool_upsell_clicked → checkout_started conversion paths.
+ *
+ * Client component for sendBeacon. Server-side would lose the beacon.
+ *
+ * Variant 'passport' (default): paid points at $24.99/yr Verified Identity
+ * Variant 'club': paid points at $149/yr Club Starter
  */
 
 import Link from 'next/link';
@@ -47,7 +55,7 @@ export default function ToolUpsell({ variant = 'passport', toolSlug }: ToolUpsel
   const cta = isClub ? 'Start your club' : 'Get my Hockey Passport';
   const bullets = isClub ? CLUB_BULLETS : PASSPORT_BULLETS;
 
-  function handleClick() {
+  function trackPaid() {
     try {
       const payload = JSON.stringify({
         name: 'tool_upsell_clicked',
@@ -56,7 +64,20 @@ export default function ToolUpsell({ variant = 'passport', toolSlug }: ToolUpsel
       });
       navigator.sendBeacon?.('/api/track', new Blob([payload], { type: 'application/json' }));
     } catch {
-      /* swallow — analytics is best-effort */
+      /* swallow */
+    }
+  }
+
+  function trackFreeAccount() {
+    try {
+      const payload = JSON.stringify({
+        name: 'tool_free_account_clicked',
+        pathname: `/tools/${toolSlug}`,
+        props: { source: toolSlug, variant, kind: 'free_signup' },
+      });
+      navigator.sendBeacon?.('/api/track', new Blob([payload], { type: 'application/json' }));
+    } catch {
+      /* swallow */
     }
   }
 
@@ -126,35 +147,56 @@ export default function ToolUpsell({ variant = 'passport', toolSlug }: ToolUpsel
           </li>
         ))}
       </ul>
-      <Link
-        href={`/pricing?tier=${plan}&from=tool&tool=${toolSlug}`}
-        data-upsell-cta="true"
-        data-upsell-plan={plan}
-        data-upsell-source={toolSlug}
-        onClick={handleClick}
-        style={{
-          display: 'inline-block',
-          padding: '0.75rem 1.5rem',
-          background: '#C8102E',
-          color: '#fff',
-          borderRadius: 6,
-          textDecoration: 'none',
-          fontWeight: 700,
-          fontSize: '0.9375rem',
-          fontFamily: 'inherit',
-        }}
-      >
-        {cta} →
-      </Link>
-      <span
-        style={{
-          marginLeft: '0.875rem',
-          color: 'rgba(255,255,255,0.5)',
-          fontSize: '0.75rem',
-        }}
-      >
-        No email required to start · Cancel anytime
-      </span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+        <Link
+          href={`/pricing?tier=${plan}&from=tool&tool=${toolSlug}`}
+          data-upsell-cta="true"
+          data-upsell-plan={plan}
+          data-upsell-source={toolSlug}
+          onClick={trackPaid}
+          style={{
+            display: 'inline-block',
+            padding: '0.75rem 1.5rem',
+            background: '#C8102E',
+            color: '#fff',
+            borderRadius: 6,
+            textDecoration: 'none',
+            fontWeight: 700,
+            fontSize: '0.9375rem',
+            fontFamily: 'inherit',
+          }}
+        >
+          {cta} →
+        </Link>
+        <Link
+          href={`/sign-up?from=tool&tool=${toolSlug}&intent=${isClub ? 'club' : 'passport'}`}
+          data-upsell-cta="free"
+          data-upsell-source={toolSlug}
+          onClick={trackFreeAccount}
+          style={{
+            display: 'inline-block',
+            padding: '0.75rem 1.5rem',
+            background: 'transparent',
+            color: '#FFB81C',
+            border: '1px solid #FFB81C',
+            borderRadius: 6,
+            textDecoration: 'none',
+            fontWeight: 700,
+            fontSize: '0.9375rem',
+            fontFamily: 'inherit',
+          }}
+        >
+          Create free account →
+        </Link>
+        <span
+          style={{
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: '0.75rem',
+          }}
+        >
+          Free = no card · Paid = cancel anytime
+        </span>
+      </div>
     </div>
   );
 }
