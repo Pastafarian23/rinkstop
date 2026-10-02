@@ -31,12 +31,14 @@ interface ListingRow {
 
 interface Props {
   total: number;
+  /** Total rinks in the directory (live from DB) — used in informational copy. */
+  rinkCount?: number;
   // The full list of listings rendered on the page is already
   // available in the parent. We don't need to re-fetch.
   listings?: ListingRow[];
 }
 
-export default function IceMarketplaceSEO({ total, listings = [] }: Props) {
+export default function IceMarketplaceSEO({ total, listings = [], rinkCount }: Props) {
   const jsonLd = buildIceListingItemList(
     listings as IceListingSchemaInput[],
     {
@@ -164,7 +166,7 @@ export default function IceMarketplaceSEO({ total, listings = [] }: Props) {
           </li>
         </ul>
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', margin: '0' }}>
-          You can also browse all 1,857+ rinks in the{' '}
+          You can also browse all {rinkCount != null ? rinkCount.toLocaleString() : '1,857+'} rinks in the{' '}
           <Link href="/directory/rinks" style={{ color: '#38BDF8', textDecoration: 'underline' }}>
             rink directory
           </Link>{' '}

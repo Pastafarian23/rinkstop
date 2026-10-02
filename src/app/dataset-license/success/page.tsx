@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 
 export const metadata: Metadata = {
   title: 'Dataset License — Download | RinkStop',
@@ -47,6 +48,7 @@ export default async function DatasetLicenseSuccessPage({
   searchParams: Promise<{ session_id?: string }>;
 }) {
   const { session_id } = await searchParams;
+  const counts = await getDirectoryCountsCached();
 
   // Look up the profile by stripe_session_id to confirm payment + grab email
   let buyerEmail: string | null = null;
@@ -117,10 +119,10 @@ export default async function DatasetLicenseSuccessPage({
           {[
             { name: 'Full dataset (JSON)', url: DATASET_DOWNLOAD_URLS.json, size: 'Single object', hot: true },
             { name: 'Full dataset (JSONL)', url: DATASET_DOWNLOAD_URLS.jsonl, size: 'LLM-friendly' },
-            { name: 'rinks.csv', url: DATASET_DOWNLOAD_URLS.csv_rinks, size: '1,857 rows' },
-            { name: 'teams.csv', url: DATASET_DOWNLOAD_URLS.csv_teams, size: '2,601 rows' },
-            { name: 'leagues.csv', url: DATASET_DOWNLOAD_URLS.csv_leagues, size: '305 rows' },
-            { name: 'players.csv', url: DATASET_DOWNLOAD_URLS.csv_players, size: '6,351 rows' },
+            { name: 'rinks.csv', url: DATASET_DOWNLOAD_URLS.csv_rinks, size: `${counts.rinks.toLocaleString()} rows` },
+            { name: 'teams.csv', url: DATASET_DOWNLOAD_URLS.csv_teams, size: `${counts.teams.toLocaleString()} rows` },
+            { name: 'leagues.csv', url: DATASET_DOWNLOAD_URLS.csv_leagues, size: `${counts.leagues.toLocaleString()} rows` },
+            { name: 'players.csv', url: DATASET_DOWNLOAD_URLS.csv_players, size: `${counts.players.toLocaleString()} rows` },
             { name: 'schema.json', url: DATASET_DOWNLOAD_URLS.schema, size: 'JSON Schema' },
           ].map((dl) => (
             <a

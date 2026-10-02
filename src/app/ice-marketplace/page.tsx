@@ -8,6 +8,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { getDirectoryCountsCached } from '@/lib/directory-counts';
 import CityCloud from './_components/CityCloud';
 import IceMarketplaceSEO from './_components/IceMarketplaceSEO';
 
@@ -113,6 +114,9 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
   }
 
   const hasFilters = rinkId || slotType || skillLevel || ageGroup;
+
+  // Pull total rink count for informational copy ("X rinks in the directory").
+  const counts = await getDirectoryCountsCached();
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 1rem' }}>
@@ -247,7 +251,7 @@ export default async function IceMarketplacePage({ searchParams }: { searchParam
         <CityCloud listings={listings} />
       )}
 
-      <IceMarketplaceSEO total={total} />
+      <IceMarketplaceSEO total={total} rinkCount={counts.rinks} />
 
       {/* New-to-hockey cross-link callout */}
       <section style={{ background: 'rgba(56,189,248,0.06)', borderTop: '1px solid rgba(56,189,248,0.18)', borderBottom: '1px solid rgba(56,189,248,0.18)', padding: '1rem 0' }}>

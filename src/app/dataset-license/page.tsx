@@ -119,7 +119,7 @@ export default async function DatasetLicensePage() {
             marginRight: 'auto',
             lineHeight: 1.55,
           }}>
-            1,857 ice rinks · 2,601 teams · 305 leagues · 6,351 players · 78 countries.
+            {counts.rinks.toLocaleString()} ice rinks · {counts.teams.toLocaleString()} teams · {counts.leagues.toLocaleString()} leagues · {counts.players.toLocaleString()} players · {counts.countries.toLocaleString()} countries.
             <br />
             Bulk download, CSV + JSON, commercial-use license.
           </p>
@@ -160,10 +160,10 @@ export default async function DatasetLicensePage() {
           marginBottom: '3rem',
         }}>
           {[
-            { n: '1,857', l: 'Ice rinks', sub: 'Address, hours, programs, capacity' },
-            { n: '2,601', l: 'Teams', sub: 'Roster, league, home arena' },
-            { n: '305', l: 'Leagues', sub: 'Country, level, tier, season' },
-            { n: '6,351', l: 'Players', sub: 'Position, stats, club history' },
+            { n: counts.rinks.toLocaleString(), l: 'Ice rinks', sub: 'Address, hours, programs, capacity' },
+            { n: counts.teams.toLocaleString(), l: 'Teams', sub: 'Roster, league, home arena' },
+            { n: counts.leagues.toLocaleString(), l: 'Leagues', sub: 'Country, level, tier, season' },
+            { n: counts.players.toLocaleString(), l: 'Players', sub: 'Position, stats, club history' },
           ].map((s) => (
             <div key={s.l} style={{
               background: 'rgba(255,255,255,0.04)',
