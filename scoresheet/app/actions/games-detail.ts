@@ -25,6 +25,8 @@ interface GameDetailsInput {
   home_coach_rinkstop_id?: string | null;
   away_coach_name?: string | null;
   away_coach_rinkstop_id?: string | null;
+  home_team_rinkstop_id?: string | null;
+  away_team_rinkstop_id?: string | null;
 }
 
 export async function updateGameDetailsAction(

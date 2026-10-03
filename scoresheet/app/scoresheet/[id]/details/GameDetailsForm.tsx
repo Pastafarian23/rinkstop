@@ -13,6 +13,10 @@ interface Initial {
   home_coach_rinkstop_id: string | null;
   away_coach_name: string | null;
   away_coach_rinkstop_id: string | null;
+  home_team_rinkstop_id: string | null;
+  home_team_rinkstop_name: string | null;
+  away_team_rinkstop_id: string | null;
+  away_team_rinkstop_name: string | null;
 }
 
 interface Props {
@@ -31,6 +35,15 @@ interface CoachOption {
   id: string;
   display_name: string;
   username: string | null;
+}
+interface TeamOption {
+  id: string;
+  name: string;
+  short_name: string | null;
+  home_city: string | null;
+  home_country: string | null;
+  age_label: string | null;
+  level: string | null;
 }
 
 export function GameDetailsForm({ gameId, initial }: Props) {
@@ -56,6 +69,16 @@ export function GameDetailsForm({ gameId, initial }: Props) {
   const [awayCoachId, setAwayCoachId] = useState<string | null>(initial.away_coach_rinkstop_id);
   const [awayCoachQuery, setAwayCoachQuery] = useState('');
   const [awayCoachOptions, setAwayCoachOptions] = useState<CoachOption[]>([]);
+
+  const [homeTeamId, setHomeTeamId] = useState<string | null>(initial.home_team_rinkstop_id);
+  const [homeTeamName, setHomeTeamName] = useState<string>(initial.home_team_rinkstop_name || '');
+  const [homeTeamQuery, setHomeTeamQuery] = useState('');
+  const [homeTeamOptions, setHomeTeamOptions] = useState<TeamOption[]>([]);
+
+  const [awayTeamId, setAwayTeamId] = useState<string | null>(initial.away_team_rinkstop_id);
+  const [awayTeamName, setAwayTeamName] = useState<string>(initial.away_team_rinkstop_name || '');
+  const [awayTeamQuery, setAwayTeamQuery] = useState('');
+  const [awayTeamOptions, setAwayTeamOptions] = useState<TeamOption[]>([]);
 
   // Debounced rink search.
   const rinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,6 +134,40 @@ export function GameDetailsForm({ gameId, initial }: Props) {
     return () => clearTimeout(id);
   }, [awayCoachQuery]);
 
+  useEffect(() => {
+    if (homeTeamQuery.trim().length < 2) {
+      setHomeTeamOptions([]);
+      return;
+    }
+    const id = setTimeout(async () => {
+      try {
+        const resp = await fetch(`/api/scoresheet/teams?q=${encodeURIComponent(homeTeamQuery.trim())}`);
+        const json = await resp.json();
+        setHomeTeamOptions(json.results || []);
+      } catch {
+        // ignore
+      }
+    }, 200);
+    return () => clearTimeout(id);
+  }, [homeTeamQuery]);
+
+  useEffect(() => {
+    if (awayTeamQuery.trim().length < 2) {
+      setAwayTeamOptions([]);
+      return;
+    }
+    const id = setTimeout(async () => {
+      try {
+        const resp = await fetch(`/api/scoresheet/teams?q=${encodeURIComponent(awayTeamQuery.trim())}`);
+        const json = await resp.json();
+        setAwayTeamOptions(json.results || []);
+      } catch {
+        // ignore
+      }
+    }, 200);
+    return () => clearTimeout(id);
+  }, [awayTeamQuery]);
+
   function pickRink(r: RinkOption) {
     setRinkId(r.id);
     setRinkName(r.name);
@@ -151,6 +208,30 @@ export function GameDetailsForm({ gameId, initial }: Props) {
     setRinkQuery('');
     setRinkOptions([]);
   }
+  function pickHomeTeam(t: TeamOption) {
+    setHomeTeamId(t.id);
+    setHomeTeamName(t.name);
+    setHomeTeamQuery('');
+    setHomeTeamOptions([]);
+  }
+  function pickAwayTeam(t: TeamOption) {
+    setAwayTeamId(t.id);
+    setAwayTeamName(t.name);
+    setAwayTeamQuery('');
+    setAwayTeamOptions([]);
+  }
+  function clearHomeTeam() {
+    setHomeTeamId(null);
+    setHomeTeamName('');
+    setHomeTeamQuery('');
+    setHomeTeamOptions([]);
+  }
+  function clearAwayTeam() {
+    setAwayTeamId(null);
+    setAwayTeamName('');
+    setAwayTeamQuery('');
+    setAwayTeamOptions([]);
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -164,6 +245,8 @@ export function GameDetailsForm({ gameId, initial }: Props) {
         home_coach_rinkstop_id: homeCoachId,
         away_coach_name: awayCoachName.trim() || null,
         away_coach_rinkstop_id: awayCoachId,
+        home_team_rinkstop_id: homeTeamId,
+        away_team_rinkstop_id: awayTeamId,
       });
       if (!result.ok) {
         setError(result.error);
@@ -176,6 +259,30 @@ export function GameDetailsForm({ gameId, initial }: Props) {
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+      {/* Team links (B1 prerequisite) */}
+      <TeamAutocomplete
+        label="Home team (rinkstop link)"
+        side="home"
+        value={homeTeamName}
+        linkedId={homeTeamId}
+        query={homeTeamQuery}
+        setQuery={setHomeTeamQuery}
+        options={homeTeamOptions}
+        onPick={pickHomeTeam}
+        onClear={clearHomeTeam}
+      />
+      <TeamAutocomplete
+        label="Away team (rinkstop link)"
+        side="away"
+        value={awayTeamName}
+        linkedId={awayTeamId}
+        query={awayTeamQuery}
+        setQuery={setAwayTeamQuery}
+        options={awayTeamOptions}
+        onPick={pickAwayTeam}
+        onClear={clearAwayTeam}
+      />
       {/* Rink */}
       <div style={{ position: 'relative' }}>
         <label className="rs-label">Rink</label>
@@ -356,6 +463,132 @@ export function GameDetailsForm({ gameId, initial }: Props) {
         </button>
       </div>
     </form>
+  );
+}
+
+function TeamAutocomplete({
+  label,
+  side,
+  value,
+  linkedId,
+  query,
+  setQuery,
+  options,
+  onPick,
+  onClear,
+}: {
+  label: string;
+  side: 'home' | 'away';
+  value: string;
+  linkedId: string | null;
+  query: string;
+  setQuery: (v: string) => void;
+  options: TeamOption[];
+  onPick: (t: TeamOption) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <label className="rs-label">{label}</label>
+      {linkedId && value ? (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1rem',
+            background: 'rgba(255,184,28,0.08)',
+            border: '1px solid rgba(255,184,28,0.3)',
+            borderRadius: 8,
+          }}
+        >
+          <span style={{ flex: 1, color: '#fff', fontWeight: 600 }}>{value}</span>
+          <span
+            style={{
+              fontSize: '0.6875rem',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#FFB81C',
+              fontWeight: 700,
+            }}
+          >
+            ✓ RinkStop
+          </span>
+          <button
+            type="button"
+            onClick={onClear}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255,255,255,0.5)',
+              fontSize: '1.125rem',
+              cursor: 'pointer',
+              padding: '0 0.25rem',
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ) : (
+        <>
+          <input
+            type="text"
+            className="rs-input"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search rinkstop teams (name or city)"
+            autoComplete="off"
+          />
+          {query.trim().length >= 2 && options.length > 0 && (
+            <ul
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: 'rgba(15,23,42,0.98)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                margin: '0.25rem 0 0',
+                padding: '0.25rem 0',
+                listStyle: 'none',
+                zIndex: 20,
+                maxHeight: 280,
+                overflowY: 'auto',
+              }}
+            >
+              {options.map((t) => (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(t)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '0.625rem 0.875rem',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>{t.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                      {[t.short_name, t.home_city, t.home_country, t.age_label, t.level].filter(Boolean).join(' · ')}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', margin: '0.25rem 0 0' }}>
+        Linking teams to rinkstop.com enables Submit-to-RinkStop + stat aggregation.
+      </p>
+    </div>
   );
 }
 
