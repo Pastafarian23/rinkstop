@@ -18,6 +18,7 @@
     "*.config.js",
     "*.config.ts",
     "capacitor.config.ts",
-    "next-env.d.ts"
+    "next-env.d.ts",
+    "scoresheet/**"
   ]
 }
