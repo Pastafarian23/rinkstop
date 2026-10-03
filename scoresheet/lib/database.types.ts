@@ -33,6 +33,12 @@ export interface Database {
           away_team_rinkstop_id: string | null;
           away_roster: any | null;
           venue_name: string | null;
+          rink_id: string | null;
+          sheet_label: string | null;
+          home_coach_name: string | null;
+          home_coach_rinkstop_id: string | null;
+          away_coach_name: string | null;
+          away_coach_rinkstop_id: string | null;
           scheduled_at: string | null;
           game_type: GameType;
           period_length_seconds: number;
@@ -70,6 +76,12 @@ export interface Database {
           away_team_rinkstop_id?: string | null;
           away_roster?: any;
           venue_name?: string | null;
+          rink_id?: string | null;
+          sheet_label?: string | null;
+          home_coach_name?: string | null;
+          home_coach_rinkstop_id?: string | null;
+          away_coach_name?: string | null;
+          away_coach_rinkstop_id?: string | null;
           scheduled_at?: string | null;
           game_type?: GameType;
           period_length_seconds?: number;

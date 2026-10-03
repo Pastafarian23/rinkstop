@@ -12,6 +12,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
+import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { getServerSupabase } from '@/lib/supabase';
 import { ScorekeeperView } from './ScorekeeperView';
@@ -44,6 +45,23 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   return (
     <>
       <Header title={g.status === 'final' ? 'Final' : g.status === 'in_progress' ? 'Live' : g.status === 'draft' ? 'Draft' : 'Game'} showBack />
+      {(g as any).rink_id || (g as any).home_coach_name || (g as any).away_coach_name ? null : (
+        <div
+          style={{
+            background: 'rgba(255,184,28,0.08)',
+            borderBottom: '1px solid rgba(255,184,28,0.2)',
+            padding: '0.625rem 1rem',
+            fontSize: '0.8125rem',
+            color: '#FFD66B',
+            textAlign: 'center',
+          }}
+        >
+          📝 Add rink, sheet &amp; coaches for the official PDF —{' '}
+          <Link href={`/scoresheet/${g.id}/details`} style={{ color: '#FFB81C', textDecoration: 'underline', fontWeight: 600 }}>
+            edit details
+          </Link>
+        </div>
+      )}
       <ScorekeeperView
         game={{
           id: g.id,
