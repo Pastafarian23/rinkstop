@@ -1,12 +1,8 @@
 /**
  * GET /api/scoresheet/[id]/pdf
  *
- * Returns the game as a PDF scoresheet. Available to:
- *   - The game owner (signed in, owns the game)
- *   - Anyone with a public_share_token (Phase C)
- *
- * For now: owner-only. The PDF is generated on-demand; no caching
- * since game data changes between requests.
+ * Returns the game as a PDF scoresheet. Owner-only (Phase C will add
+ * public-share-token access).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,7 +11,7 @@ import { getServerSupabase } from '@/lib/supabase';
 import { buildScoresheetPdf } from '@/lib/pdf-scoresheet';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';  // pdf-lib needs node, not edge
+export const runtime = 'nodejs';
 
 export async function GET(
   _req: NextRequest,
@@ -50,13 +46,54 @@ export async function GET(
     .order('clock_seconds', { ascending: true })
     .order('sequence_number', { ascending: true });
 
-  // Get scorekeeper name from Clerk. We don't have a users table
-  // populated yet, so we just use the userId prefix.
+  // Fetch rink name if rink_id is set.
+  let rinkName: string | null = null;
+  if ((game as any).rink_id) {
+    const { data: rink } = await sb
+      .from('rinks')
+      .select('name')
+      .eq('id', (game as any).rink_id)
+      .maybeSingle();
+    rinkName = rink?.name || null;
+  }
+
+  // Fetch coach names if linked.
+  const homeCoachId = (game as any).home_coach_rinkstop_id as string | null;
+  const awayCoachId = (game as any).away_coach_rinkstop_id as string | null;
+  const coachIds = [homeCoachId, awayCoachId].filter(Boolean) as string[];
+  let coachMap = new Map<string, string>();
+  if (coachIds.length > 0) {
+    const { data: profiles } = await sb
+      .from('profiles')
+      .select('user_id, display_name, username')
+      .in('user_id', coachIds);
+    for (const p of profiles || []) {
+      coachMap.set(p.user_id, p.display_name || p.username || '');
+    }
+  }
+
   const scorekeeperName = userId.startsWith('user_') ? `User ${userId.slice(5, 13)}` : userId;
 
   try {
     const pdfBytes = await buildScoresheetPdf({
-      game: game as any,
+      game: {
+        ...(game as any),
+        rink: (game as any).rink_id
+          ? { id: (game as any).rink_id, name: rinkName || '' }
+          : null,
+        home_coach: (game as any).home_coach_name
+          ? {
+              name: (game as any).home_coach_name,
+              rinkstopId: homeCoachId,
+            }
+          : null,
+        away_coach: (game as any).away_coach_name
+          ? {
+              name: (game as any).away_coach_name,
+              rinkstopId: awayCoachId,
+            }
+          : null,
+      },
       events: (events || []) as any[],
       scorekeeperName,
     });
