@@ -163,6 +163,33 @@ function rinkIndexable(status: string | null | undefined): boolean {
 }
 
 /**
+ * 2026-10-03 (audit fix #2): capacity-conditional rink descriptor.
+ * Previously hardcoded "{ice_size || 'community'}-sized ice facility" for every
+ * rink, which called Rogers Arena (18,910 seats) a "community-sized" facility.
+ * Now we describe the rink based on actual capacity and ice size. If neither
+ * is known, we just say "registered ice rink" — no invented scale.
+ */
+function rinkDescriptor(rink: { capacity: number | null; ice_size: string | null }): string {
+  const cap = typeof rink.capacity === 'number' && rink.capacity > 0 ? rink.capacity : null;
+  const size = typeof rink.ice_size === 'string' && rink.ice_size.trim() ? rink.ice_size.trim() : null;
+
+  if (cap !== null) {
+    if (cap >= 15000) return `${cap.toLocaleString()}-seat arena`;
+    if (cap >= 5000) return `${cap.toLocaleString()}-seat arena`;
+    if (cap >= 1500) return `${cap.toLocaleString()}-capacity arena`;
+    return `${cap.toLocaleString()}-capacity rink`;
+  }
+  if (size) {
+    const lower = size.toLowerCase();
+    if (lower.includes('nhl') || lower.includes('olympic')) return 'regulation-sized arena';
+    if (lower.includes('200') || lower.includes('190')) return 'Olympic-sized ice facility';
+    if (lower.includes('community')) return 'community-sized ice facility';
+    return `${size}-sized ice facility`;
+  }
+  return 'registered ice rink';
+}
+
+/**
  * Extract the "Formerly known as: X" line from the notes.
  * Returns the previous name(s), or null if no alias is recorded.
  * The alias is preserved in the notes for SEO + historical reference.
@@ -468,13 +495,43 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
           .ilike('city', rink.city)
           .limit(12)
       : Promise.resolve({ data: [] as LocalTeam[] }),
-    rink.country
-      ? supabase
-          .from('leagues')
-          .select('id, name, slug, country, level, logo_url')
-          .eq('country', rink.country)
-          .limit(8)
-      : Promise.resolve({ data: [] as LocalLeague[] }),
+    // 2026-10-03 (audit fix #3): leagues are no longer fetched by country.
+    // Previously showed every Canadian league on a Vancouver rink's page.
+    // Now we find leagues that actually have teams in the rink's city OR
+    // province/state. If neither city nor province is known, we fall back
+    // to country (better than nothing). Step 1: collect distinct league_ids
+    // from local teams. Step 2 (post-merge below): hydrate those leagues.
+    rink.city || rink.province_state
+      ? (async () => {
+          let q = supabase
+            .from('team_workspaces')
+            .select('league_id')
+            .not('league_id', 'is', null)
+            .limit(1000);
+          if (rink.city && rink.province_state) {
+            q = q.or(`city.ilike.${rink.city},state_province.eq.${rink.province_state}`);
+          } else if (rink.city) {
+            q = q.ilike('city', rink.city);
+          } else {
+            q = q.eq('state_province', rink.province_state!);
+          }
+          const { data: localTeams } = await q;
+          const leagueIds = Array.from(new Set((localTeams || []).map(t => t.league_id).filter(Boolean)));
+          if (leagueIds.length === 0) return { data: [] as LocalLeague[] };
+          const { data: localLeagues } = await supabase
+            .from('leagues')
+            .select('id, name, slug, country, level, logo_url')
+            .in('id', leagueIds.slice(0, 8))
+            .limit(8);
+          return { data: (localLeagues || []) as LocalLeague[] };
+        })()
+      : rink.country
+        ? supabase
+            .from('leagues')
+            .select('id, name, slug, country, level, logo_url')
+            .eq('country', rink.country)
+            .limit(8)
+        : Promise.resolve({ data: [] as LocalLeague[] }),
     // PR1: other rinks in the same city (excluding current rink). Empty
     // array fallback when the rink has no city set.
     rink.city
@@ -1231,7 +1288,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             Find an ice rink near you
           </h2>
           <p style={{ color: '#cbd5e1', fontSize: '15px', lineHeight: 1.7, marginBottom: '16px' }}>
-            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? {rink.name} is a registered {rink.ice_size || 'community'}-sized ice facility in the RinkStop directory. Whether you're looking for public skating hours, youth hockey programs, or figure skating sessions, this page has the rink's verified contact details, address, and schedule information.
+            Looking for ice rinks in {rink.city || 'this area'}{rink.country ? ', ' + rink.country : ''} or a nearby city? {rink.name} is a {rinkDescriptor(rink)} in the RinkStop directory. Whether you're looking for public skating hours, youth hockey programs, or figure skating sessions, this page has the rink's verified contact details, address, and schedule information.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px', marginBottom: '16px' }}>
             <Link href={`/directory/rinks?city=${encodeURIComponent(rink.city || '')}`} style={{ display: 'block', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px', textDecoration: 'none' }}>
