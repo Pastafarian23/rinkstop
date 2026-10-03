@@ -819,6 +819,25 @@ function FinalView({
           </div>
         </div>
       </section>
+
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        <a
+          href={`/api/scoresheet/${game.id}/pdf`}
+          download
+          className="rs-btn-primary"
+          style={{ flex: 1, textDecoration: 'none' }}
+        >
+          📄 Download PDF
+        </a>
+        <a
+          href="/scoresheet"
+          className="rs-btn-secondary"
+          style={{ flex: 1, textDecoration: 'none' }}
+        >
+          ← Dashboard
+        </a>
+      </div>
+
       <p
         style={{
           fontSize: '0.6875rem',
@@ -879,7 +898,7 @@ function FinalView({
           margin: '2rem 0',
         }}
       >
-        PDF export + RinkStop integration ship in Phase B.
+        RinkStop integration ships in Phase B.
       </p>
     </main>
   );
