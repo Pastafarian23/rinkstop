@@ -456,7 +456,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // so the address bar + Google index both end up on /directory/rinks/{slug}.
   const { data: rink, error } = await supabase
     .from('rinks')
-    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league')
+    .select('id, name, slug, city, province_state, country, address, latitude, longitude, capacity, ice_size, surface_type, website_url, phone, email, logo_url, cover_photo_url, is_active, notes, source, status, place_id, opening_hours_json, google_phone, google_website, google_maps_url, league, qr_identifier, qr_revoked_at')
     .eq(isUuid(param) ? 'id' : 'slug', param)
     .single();
 
@@ -1305,6 +1305,83 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             </Link>
           </div>
         </section>
+
+        {/* 2026-10-03 (audit fix #8): Rink check-in QR.
+            Every active rink has a `qr_identifier` in the DB. The QR
+            resolves through /qr/[uuid] to either the stamp confirmation
+            page (when STAMPS_ENABLED) or the public passport page. This
+            section is the "scan to check in" affordance for visitors —
+            rink operators can print this page or display it at the front
+            desk. Hidden if the rink has no qr_identifier (shouldn't
+            happen for active rinks, but defensive). */}
+        {rink.qr_identifier && !rink.qr_revoked_at && (
+          <section
+            data-rink-checkin-qr
+            style={{
+              background: 'rgba(13,17,23,0.6)',
+              padding: '24px',
+              borderRadius: '12px',
+              border: '1px solid var(--border)',
+              marginBottom: '24px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: '20px',
+            }}
+          >
+            <img
+              src={`/api/rinks/${encodeURIComponent(rink.slug)}/qr`}
+              alt={`Check-in QR for ${rink.name} — scan to check in or verify`}
+              width={128}
+              height={128}
+              loading="lazy"
+              style={{
+                display: 'block',
+                width: 128,
+                height: 128,
+                background: '#fff',
+                borderRadius: 8,
+                padding: 6,
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+              <h2
+                style={{
+                  fontWeight: 600,
+                  color: '#fff',
+                  fontSize: '18px',
+                  marginBottom: '8px',
+                }}
+              >
+                Check in at {rink.name}
+              </h2>
+              <p
+                style={{
+                  color: '#cbd5e1',
+                  fontSize: '14px',
+                  lineHeight: 1.6,
+                  margin: '0 0 8px',
+                }}
+              >
+                Scan this code with your phone to check in at {rink.name}.
+                Every check-in adds a verified stamp to your Hockey Passport
+                and helps you track which rinks you&apos;ve visited.
+              </p>
+              <p
+                style={{
+                  color: 'var(--muted)',
+                  fontSize: '12px',
+                  lineHeight: 1.5,
+                  margin: 0,
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                }}
+              >
+                QR: {rink.qr_identifier.slice(0, 8)}…{rink.qr_identifier.slice(-4)}
+              </p>
+            </div>
+          </section>
+        )}
 
         {/* Details Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>

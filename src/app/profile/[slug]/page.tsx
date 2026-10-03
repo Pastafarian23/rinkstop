@@ -79,6 +79,10 @@ async function fetchProfile(slug: string): Promise<{
   accountTypes: AccountTypeRow[];
   photoHistory: Array<{ id: string; url: string | null; set_at: string; replaced_at: string | null; removed_at: string | null; source: string }>;
   coverHistory: CoverHistoryEntry[];
+  // 2026-10-03: null if the user has no active passport, otherwise the
+  // canonical passport_id + status. Used to route the "View Full Passport"
+  // link and the Passport tab to /passport/[passport_id].
+  passport: { passportId: string; status: string } | null;
 } | null> {
   // Look up by username (case-insensitive)
   const { data: profile } = await supabaseAdmin
@@ -89,7 +93,7 @@ async function fetchProfile(slug: string): Promise<{
 
   if (!profile) return null;
 
-  const [mRes, aRes, phRes, chRes] = await Promise.all([
+  const [mRes, aRes, phRes, chRes, passportRes] = await Promise.all([
     // Fetch managed_profiles WITHOUT the broken `profile:profiles(*)` join.
     // That join returned the manager's own profiles row in place of the
     // linked player/team/league record, so every "Connected profile" card
@@ -124,6 +128,16 @@ async function fetchProfile(slug: string): Promise<{
       .not('url', 'is', null)
       .order('set_at', { ascending: false })
       .limit(20),
+    // 2026-10-03 (audit fix #6): look up the user's Hockey Passport so
+    // the "View Full Passport" link and the Passport tab can route to the
+    // canonical /passport/[passport_id] URL. Deactivated passports have
+    // no public view and are excluded.
+    supabaseAdmin
+      .from('passports')
+      .select('passport_id, status')
+      .eq('internal_user_id', profile.user_id)
+      .neq('status', 'deactivated')
+      .maybeSingle(),
   ]);
 
   // Hydrate managed profiles: fetch the linked player/team/league record
@@ -180,6 +194,15 @@ async function fetchProfile(slug: string): Promise<{
     accountTypes: (aRes.data as any) ?? [],
     photoHistory: (phRes.data as any) ?? [],
     coverHistory: ((chRes as any)?.data as CoverHistoryEntry[]) ?? [],
+    // 2026-10-03: null when the user has no active passport; object with
+    // passport_id + status when they do. Used by the "View Full Passport"
+    // link and the Passport tab on this page.
+    passport: (passportRes as any)?.data
+      ? {
+          passportId: (passportRes as any).data.passport_id as string,
+          status: (passportRes as any).data.status as string,
+        }
+      : null,
   };
 }
 
@@ -692,7 +715,11 @@ export default async function ProfileBySlugPage({ params }: PageProps) {
                 <ProfileStampsGallery
                   holderUserId={profile.user_id}
                   displayName={displayName}
-                  passportUrl={`/passport/${profile.username ?? slug}`}
+                  passportUrl={
+                    data.passport?.passportId
+                      ? `/passport/${data.passport.passportId}`
+                      : `/profile/${profile.username ?? slug}/passport`
+                  }
                 />
               </div>
             </div>
