@@ -1375,6 +1375,71 @@ function PassportDocument({
         <DocField label="Verification" value={verificationLabel(verificationLevel)} accent />
       </div>
 
+      {/* 2026-10-03 (audit fix #7): QR code for in-person verification.
+          Rinks can scan this to confirm the holder's credential at the
+          front desk; coaches/scouts can scan to verify identity before
+          tryouts. The endpoint at /api/internal/passport/qr/[passportId]
+          encodes the canonical qr_identifier (UUID) into an SVG. Same
+          endpoint the dashboard uses, so a single source of truth.
+          Width/height are explicit; <img> lazy-loads by default. */}
+      <div
+        data-passport-qr
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginTop: 14,
+          padding: '12px 14px',
+          background: 'rgba(0,0,0,0.28)',
+          border: '1px solid rgba(255,184,28,0.22)',
+          borderRadius: 10,
+        }}
+      >
+        <img
+          src={`/api/internal/passport/qr/${encodeURIComponent(passportId)}`}
+          alt={`QR code for Hockey Passport ${passportId} — scan to verify`}
+          width={88}
+          height={88}
+          loading="lazy"
+          style={{
+            display: 'block',
+            width: 88,
+            height: 88,
+            background: '#fff',
+            borderRadius: 6,
+            padding: 4,
+            flexShrink: 0,
+          }}
+        />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <p
+            style={{
+              fontSize: 10,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.5)',
+              fontWeight: 600,
+              margin: 0,
+            }}
+          >
+            Scan to verify
+          </p>
+          <p
+            style={{
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.75)',
+              margin: '4px 0 0',
+              lineHeight: 1.4,
+            }}
+          >
+            Rinks, coaches, and scouts can scan this code to confirm the
+            holder&apos;s verified identity and look up the public passport
+            page. Each QR is unique to this holder and revocable from the
+            dashboard.
+          </p>
+        </div>
+      </div>
+
       {/* Bottom gold divider */}
       <div
         aria-hidden
