@@ -18,18 +18,23 @@
  * The clock ticks locally every second (driven by clock_seconds + a
  * "started ticking at" timestamp). We don't write to the server every
  * tick — only when the user pauses / resumes / advances.
+ *
+ * Offline behavior: actions go through the online-actions wrapper,
+ * which queues in IndexedDB when offline and flushes on reconnect.
+ * The OfflineIndicator shows online/offline + queue depth.
  */
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  startGameAction,
-  setClockAction,
-  setPeriodAction,
-  recordEventAction,
-  undoLastEventAction,
-  finalizeGameAction,
-} from '@/app/actions/gameplay';
+  startGame as startGameOnline,
+  setClock as setClockOnline,
+  setPeriod as setPeriodOnline,
+  recordEvent as recordEventOnline,
+  undoLastEvent as undoLastEventOnline,
+  finalizeGame as finalizeGameOnline,
+} from '@/lib/online-actions';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 import type { GameMode, RosterPlayer, TeamRoster, EventType } from '@/types/scoresheet';
 
 interface GameData {
@@ -142,7 +147,7 @@ export function ScorekeeperView({ game, events }: Props) {
   function handleStart() {
     setError(null);
     startTransition(async () => {
-      const r = await startGameAction(game.id);
+      const r = await startGameOnline(game.id);
       if (!r.ok) setError(r.error);
       else router.refresh();
     });
@@ -151,7 +156,7 @@ export function ScorekeeperView({ game, events }: Props) {
   function handleToggleClock() {
     setError(null);
     startTransition(async () => {
-      const r = await setClockAction(game.id, !game.clock_running);
+      const r = await setClockOnline(game.id, !game.clock_running);
       if (!r.ok) setError(r.error);
       else router.refresh();
     });
@@ -159,13 +164,9 @@ export function ScorekeeperView({ game, events }: Props) {
 
   function handleAdvancePeriod() {
     setError(null);
-    // For live mode: cycle through regulation periods, then OT, then SO.
-    // The "next period" logic uses period_length_seconds to determine
-    // when to offer OT. For now, just increment; the scorekeeper can
-    // skip ahead to OT manually if needed.
     const next = game.current_period + 1;
     startTransition(async () => {
-      const r = await setPeriodAction(game.id, next);
+      const r = await setPeriodOnline(game.id, next);
       if (!r.ok) setError(r.error);
       else router.refresh();
     });
@@ -174,7 +175,7 @@ export function ScorekeeperView({ game, events }: Props) {
   function handleUndo() {
     setError(null);
     startTransition(async () => {
-      const r = await undoLastEventAction(game.id);
+      const r = await undoLastEventOnline(game.id);
       if (!r.ok) setError(r.error);
       else router.refresh();
     });
@@ -186,7 +187,7 @@ export function ScorekeeperView({ game, events }: Props) {
     }
     setError(null);
     startTransition(async () => {
-      const r = await finalizeGameAction(game.id);
+      const r = await finalizeGameOnline(game.id);
       if (!r.ok) setError(r.error);
       else router.refresh();
     });
@@ -201,11 +202,11 @@ export function ScorekeeperView({ game, events }: Props) {
     setEventModal({ team, type });
   }
 
-  function submitEvent(input: Parameters<typeof recordEventAction>[1]) {
+  function submitEvent(input: Parameters<typeof recordEventOnline>[1]) {
     if (!eventModal) return;
     setError(null);
     startTransition(async () => {
-      const r = await recordEventAction(game.id, input);
+      const r = await recordEventOnline(game.id, input);
       if (!r.ok) {
         setError(r.error);
         return;
@@ -219,28 +220,35 @@ export function ScorekeeperView({ game, events }: Props) {
 
   if (game.status === 'scheduled') {
     return (
-      <PreStartView
-        game={game}
-        onStart={handleStart}
-        isPending={isPending}
-        error={error}
-      />
+      <>
+        <OfflineIndicator gameId={game.id} />
+        <PreStartView
+          game={game}
+          onStart={handleStart}
+          isPending={isPending}
+          error={error}
+        />
+      </>
     );
   }
 
   if (game.status === 'final') {
     return (
-      <FinalView
-        game={game}
-        events={events}
-        homeLookup={homeLookup}
-        awayLookup={awayLookup}
-      />
+      <>
+        <OfflineIndicator gameId={game.id} />
+        <FinalView
+          game={game}
+          events={events}
+          homeLookup={homeLookup}
+          awayLookup={awayLookup}
+        />
+      </>
     );
   }
 
   return (
     <>
+      <OfflineIndicator gameId={game.id} />
       <main
         style={{
           padding: '0.75rem 0.75rem 6rem',
@@ -894,7 +902,7 @@ function EventModal({
   teamColor: string | null;
   roster: TeamRoster | null;
   opposingGoalieJersey: number | null;
-  onSubmit: (input: Parameters<typeof recordEventAction>[1]) => void;
+  onSubmit: (input: Parameters<typeof recordEventOnline>[1]) => void;
   onClose: () => void;
   isPending: boolean;
 }) {
