@@ -25,6 +25,7 @@
  */
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   startGame as startGameOnline,
@@ -518,6 +519,26 @@ export function ScorekeeperView({ game, events }: Props) {
           </button>
         </section>
 
+        {/* Submit to RinkStop CTA */}
+        <Link
+          href={`/scoresheet/${game.id}/rinkstop`}
+          style={{
+            display: 'block',
+            padding: '0.75rem 1rem',
+            background: 'rgba(255,184,28,0.08)',
+            border: '1px solid rgba(255,184,28,0.3)',
+            borderRadius: 10,
+            textAlign: 'center',
+            color: '#FFB81C',
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+            marginBottom: '0.75rem',
+          }}
+        >
+          🌐 Submit to RinkStop →
+        </Link>
+
         {error && (
           <div
             style={{
@@ -837,6 +858,26 @@ function FinalView({
           ← Dashboard
         </a>
       </div>
+
+      {/* Submit to RinkStop CTA (post-game) */}
+      <Link
+        href={`/scoresheet/${game.id}/rinkstop`}
+        style={{
+          display: 'block',
+          padding: '0.875rem 1rem',
+          background: 'linear-gradient(180deg, rgba(255,184,28,0.12) 0%, rgba(255,184,28,0.04) 100%)',
+          border: '1px solid rgba(255,184,28,0.3)',
+          borderRadius: 10,
+          textAlign: 'center',
+          color: '#FFB81C',
+          fontSize: '0.9375rem',
+          fontWeight: 700,
+          textDecoration: 'none',
+          marginBottom: '1rem',
+        }}
+      >
+        🌐 Push results to RinkStop →
+      </Link>
 
       <p
         style={{
