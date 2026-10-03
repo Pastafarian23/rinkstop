@@ -10,6 +10,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/new(.*)',             // Phase B2 deep-link from rinkstop.com QR
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/watch/(.*)',         // public read-only share view

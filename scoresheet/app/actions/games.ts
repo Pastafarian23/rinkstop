@@ -34,6 +34,12 @@ interface CreateGameInput {
   venue_name: string | null;
   scheduled_at: string | null;
   game_type: GameType;
+  /**
+   * Phase B2: when the user comes from a rinkstop.com deep link, we
+   * pre-link the new game to that fixture. Watch mode + the existing
+   * user-driven submit flow both leave this null.
+   */
+  rinkstop_fixture_id?: string | null;
 }
 
 /**
@@ -52,7 +58,10 @@ export async function createGameAction(
   // For live mode: stay in 'draft' until the roster step completes.
   // For watch mode: jump to 'scheduled' so it shows up in the dashboard
   // ready-to-track.
+  // If a rinkstop_fixture_id was passed (Phase B2 deep link), mark the
+  // game as 'linked' immediately — the fixture match is implicit.
   const initialStatus = input.mode === 'watch' ? 'scheduled' : 'draft';
+  const initialIntegration = input.rinkstop_fixture_id ? 'linked' : 'off';
 
   const { data, error } = await sb
     .from('games')
@@ -73,6 +82,8 @@ export async function createGameAction(
       venue_name: input.venue_name,
       scheduled_at: input.scheduled_at,
       game_type: input.game_type,
+      rinkstop_fixture_id: input.rinkstop_fixture_id || null,
+      rinkstop_integration: initialIntegration,
     })
     .select('id')
     .single();
