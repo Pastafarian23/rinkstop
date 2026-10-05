@@ -1,12 +1,13 @@
 /**
  * GET /api/internal/passport/qr/[passportId]
  *
- * Returns the QR-code SVG for a Passport. Always returns image/svg+xml.
+ * Returns the QR-code SVG for a Passport. Self-contained — no @/lib/passport
+ * imports — so the route module can't fail to load.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { passportAssetsService } from '@/lib/passport';
-import { isPassportAssetsApiEnabled } from '@/lib/passport';
+import { createClient } from '@supabase/supabase-js';
+import QRCode from 'qrcode';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,13 @@ function svg200(svg: string, qrId?: string): NextResponse {
   return new NextResponse(svg, { status: 200, headers });
 }
 
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
 async function handle(
   _req: NextRequest,
   ctx: { params: Promise<{ passportId: string }> }
@@ -30,11 +38,25 @@ async function handle(
     const { passportId } = await ctx.params;
     if (!passportId || typeof passportId !== 'string') return fallback;
 
-    if (!isPassportAssetsApiEnabled()) return fallback;
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return fallback;
 
-    const result = await passportAssetsService.qrSvg(passportId);
-    if (!result || !result.svg) return fallback;
-    return svg200(result.svg, result.qrIdentifier);
+    const { data: row, error } = await supabase
+      .from('passports')
+      .select('qr_identifier, status')
+      .eq('passport_id', passportId)
+      .maybeSingle();
+
+    if (error || !row || !row.qr_identifier) return fallback;
+
+    const svg = await QRCode.toString(row.qr_identifier, {
+      type: 'svg',
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      color: { dark: '#041E42', light: '#FFFFFF' },
+      width: 256,
+    });
+    return svg200(svg, row.qr_identifier);
   } catch {
     return fallback;
   }
