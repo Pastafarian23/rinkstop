@@ -205,11 +205,22 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
       // anywhere. Late-night ET games (e.g. 22:00 UTC = 6 PM ET) fall
       // on the *next* local day in Asia, but the *previous* UTC day.
       // A strict UTC day filter (00:00Z–23:59Z) misses those games.
-      // Widening by ±14h covers every timezone on Earth (max TZ offset
-      // is UTC+14). The client-side ET date grouping then narrows to
-      // exactly the user's chosen date.
-      if (from) query = query.gte('scheduled_at', `${from}T14:00:00.000Z`);
-      if (to) query = query.lte('scheduled_at', `${to}T13:59:59.999Z`);
+      // 2026-10-05 fix: previous widener used `${from}T14:00:00Z` and
+      // `${to}T13:59:59Z` which made the range empty for single-day
+      // filters. The correct widener subtracts 14h from the lower
+      // bound and adds 14h to the upper bound, giving a 28-hour
+      // window centered on the date. This catches games at any
+      // timezone (±14h covers all of Earth).
+      if (from) {
+        const fromDate = new Date(`${from}T00:00:00.000Z`);
+        fromDate.setUTCHours(fromDate.getUTCHours() - 14);
+        query = query.gte('scheduled_at', fromDate.toISOString());
+      }
+      if (to) {
+        const toDate = new Date(`${to}T23:59:59.999Z`);
+        toDate.setUTCHours(toDate.getUTCHours() + 14);
+        query = query.lte('scheduled_at', toDate.toISOString());
+      }
     } else if (time === 'historical') {
       query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoff);
     } else if (time === 'recent') {
