@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import { SCORE_CHIPS, DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip } from '@/lib/score-chips';
 import { formatGameTime, timezoneForGame, tzAbbr } from '@/lib/game-time';
 
@@ -503,6 +504,91 @@ export default function GamesIndexClient({ initialData }: Props) {
   // /api/scores is returning HTTP 500 on Vercel and the fetch was
   // clobbering the SSR'd initialData.games with an empty array.
   // Only refetch when filters actually change after mount.
+  // 2026-10-05 fix (Arnel week arrows): stop using /api/scores entirely.
+  // Query Supabase directly from the client. Same query shape as the
+  // SSR, same response fields. This is the only reliable path while
+  // /api/* returns 500 on Vercel.
+  const sbRef = useRef<ReturnType<typeof createClient> | null>(null);
+  if (!sbRef.current) {
+    sbRef.current = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
+    );
+  }
+
+  // Reusable: build a Supabase fixtures query from current filters.
+  // Returns null if the league slug doesn't resolve. offset/limit
+  // can be customized for the initial fetch and loadMore.
+  const buildQuery = useCallback(async (offset: number, limit: number) => {
+    const sb = sbRef.current!;
+    let leagueIds: string[] = [];
+    if (league !== 'all') {
+      const { data: leagueRow } = await sb.from('leagues').select('id').eq('slug', league).maybeSingle();
+      if (leagueRow && (leagueRow as { id: string }).id) leagueIds = [(leagueRow as { id: string }).id];
+    } else {
+      const { data: topLeagues } = await sb.from('leagues').select('id').in('slug', ['nhl', 'ahl', 'pwhl', 'khl', 'shl', 'liiga', 'del', 'nl', 'extraliga', 'ncaa', 'chl', 'ushl']);
+      leagueIds = ((topLeagues as { id: string }[] | null) || []).map((l) => l.id);
+    }
+    if (leagueIds.length === 0) return null;
+    const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
+    let query = sb
+      .from('fixtures')
+      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:teams!home_team_id(id, name, slug, logo_url), away_team:teams!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`, { count: 'exact' })
+      .not('home_team_id', 'is', null)
+      .not('away_team_id', 'is', null)
+      .order('scheduled_at', { ascending: true })
+      .in('league_id', leagueIds)
+      .range(offset, offset + limit - 1);
+    if (subleague) {
+      const { data: subRow } = await sb.from('leagues').select('id').eq('slug', subleague).maybeSingle();
+      if (subRow && (subRow as { id: string }).id) query = query.eq('league_id', (subRow as { id: string }).id);
+    }
+    if (team) {
+      const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).maybeSingle();
+      if (teamRow && (teamRow as { id: string }).id) {
+        const tid = (teamRow as { id: string }).id;
+        query = query.or(`home_team_id.eq.${tid},away_team_id.eq.${tid}`);
+      }
+    }
+    if (q) {
+      const safe = q.replace(/[%_\\]/g, '\\$&');
+      const { data: matchingTeams } = await sb.from('teams').select('id').ilike('name', `%${safe}%`);
+      const teamList = (matchingTeams as { id: string }[] | null) || [];
+      if (teamList.length > 0) {
+        const teamIds = teamList.map((t) => t.id).join(',');
+        query = query.or(`home_team_id.in.(${teamIds}),away_team_id.in.(${teamIds})`);
+      } else {
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+      }
+    }
+    const hasExplicitRange = !!(range.from || range.to);
+    const ET_DAY_START_HOUR_UTC = 4;
+    if (hasExplicitRange) {
+      if (range.from) {
+        const fromDate = new Date(`${range.from}T00:00:00.000Z`);
+        fromDate.setUTCHours(ET_DAY_START_HOUR_UTC, 0, 0, 0);
+        query = query.gte('scheduled_at', fromDate.toISOString());
+      }
+      if (range.to) {
+        const toDate = new Date(`${range.to}T00:00:00.000Z`);
+        toDate.setUTCDate(toDate.getUTCDate() + 1);
+        toDate.setUTCHours(ET_DAY_START_HOUR_UTC, 0, 0, 0);
+        query = query.lt('scheduled_at', toDate.toISOString());
+      }
+    } else {
+      const recentCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+      if (time === 'historical') {
+        query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoff);
+      } else if (time === 'recent') {
+        query = query.eq('status', 'completed').gte('scheduled_at', recentCutoff);
+      } else {
+        query = query.or(`status.in.(scheduled,in_progress),and(status.eq.completed,scheduled_at.gte.${recentCutoff})`);
+      }
+    }
+    return query;
+  }, [league, time, team, subleague, q, dateFilter, weekOffset, searchParams]);
+
   const isFirstMount = useRef(true);
   useEffect(() => {
     if (isFirstMount.current) {
@@ -513,79 +599,112 @@ export default function GamesIndexClient({ initialData }: Props) {
     setGames([]);
     setTotalShown(0);
     setHasMore(false);
-    const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
-    const rangeQs = `${range.from ? `&from=${range.from}` : ''}${range.to ? `&to=${range.to}` : ''}`;
-    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${rangeQs}&limit=${DEFAULT_PAGE_SIZE}&offset=0`)
-      .then(r => r.json())
-      .then((d: ApiResponse) => {
-        setGames(d?.data || []);
-        setHasMore(!!d?.hasMore);
-        setTotalShown(d?.count || 0);
+    (async () => {
+      try {
+        const query = await buildQuery(0, DEFAULT_PAGE_SIZE);
+        if (!query) {
+          setGames([]);
+          setHasMore(false);
+          setTotalShown(0);
+          setLoading(false);
+          return;
+        }
+        const { data, count, error } = await query;
+        if (error) {
+          console.error('Games client fetch error:', error.message);
+          setLoading(false);
+          return;
+        }
+        setGames((data as unknown as Game[]) || []);
+        setHasMore((count || 0) > DEFAULT_PAGE_SIZE);
+        setTotalShown(count || 0);
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [league, time, team, subleague, q, dateFilter, weekOffset]);
+      } catch (e) {
+        console.error('Games client fetch failed:', e);
+        setLoading(false);
+      }
+    })();
+  }, [buildQuery]);
 
-  // 2026-09-22 self-heal: poll /api/health/scores every 5 min. If staleness
-  // is red/yellow, trigger /api/cron/scores-refresh (which runs the multi-
-  // league ingest in the background). Then refetch our games list. This is
-  // the user-facing safety net for when the Vercel cron fails (rate limit,
-  // cold start, etc.). Per Arnel 01:39 CDT: 'protocols in case there are
-  // any cron issues'.
+  // 2026-09-22 self-heal: poll for stale scheduled games every 5 min. If
+  // we find any (past scheduled_at with status=scheduled), trigger a
+  // background refresh via /api/cron/scores-refresh. Then refetch the
+  // games list. This is the user-facing safety net for when the Vercel
+  // cron fails (rate limit, cold start, etc.). Per Arnel 01:39 CDT:
+  // 'protocols in case there are any cron issues'.
+  // 2026-10-05 fix: query Supabase directly instead of /api/health/scores
+  // (which returns HTTP 500 on Vercel). The /api/cron/scores-refresh call
+  // is best-effort; if it's also 500, we just wait for the next scheduled
+  // cron run.
   useEffect(() => {
     let cancelled = false;
     let triggerInFlight = false;
     const tick = async () => {
       if (cancelled || triggerInFlight) return;
       try {
-        const r = await fetch('/api/health/scores', { cache: 'no-store' });
-        if (!r.ok || cancelled) return;
-        const report = await r.json();
-        const staleTotal = (report?.staleness?.stale_in_progress || 0) + (report?.staleness?.stale_scheduled || 0);
-        if (staleTotal > 5) {
-          triggerInFlight = true;
-          // Trigger background refresh; we don't await it (it can take 60s+)
-          fetch('/api/cron/scores-refresh', {
-            method: 'POST',
-            headers: { 'x-internal-self-heal': '1' },
-          }).catch(() => {});
-          // Wait a few seconds then refetch our games list
-          setTimeout(() => {
-            if (cancelled) return;
-            const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
-            const rangeQs = `${range.from ? `&from=${range.from}` : ''}${range.to ? `&to=${range.to}` : ''}`;
-            fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${rangeQs}&limit=${DEFAULT_PAGE_SIZE}&offset=0`, { cache: 'no-store' })
-              .then(r => r.json())
-              .then((d: ApiResponse) => {
-                if (cancelled) return;
-                setGames(d?.data || []);
-                setHasMore(!!d?.hasMore);
-                setTotalShown(d?.count || 0);
-              })
-              .catch(() => {});
-            triggerInFlight = false;
-          }, 8000);
-        }
+        const sb = sbRef.current!;
+        const cutoff = new Date(Date.now() - 6 * 3600 * 1000).toISOString(); // 6h ago
+        const { count: staleScheduled } = await sb
+          .from('fixtures')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'scheduled')
+          .lt('scheduled_at', cutoff);
+        if (cancelled || (staleScheduled || 0) < 5) return;
+        triggerInFlight = true;
+        // Trigger background refresh; best-effort
+        fetch('/api/cron/scores-refresh', {
+          method: 'POST',
+          headers: { 'x-internal-self-heal': '1' },
+        }).catch(() => {});
+        // Wait a few seconds then refetch our games list
+        setTimeout(async () => {
+          if (cancelled) return;
+          try {
+            const query = await buildQuery(0, DEFAULT_PAGE_SIZE);
+            if (query) {
+              const { data, count, error } = await query;
+              if (!error) {
+                setGames((data as unknown as Game[]) || []);
+                setHasMore((count || 0) > DEFAULT_PAGE_SIZE);
+                setTotalShown(count || 0);
+              }
+            }
+          } catch {}
+          triggerInFlight = false;
+        }, 8000);
       } catch {}
     };
     const interval = setInterval(tick, 5 * 60 * 1000); // every 5 minutes
     return () => { cancelled = true; clearInterval(interval); };
-  }, [league, time, team, subleague, q, dateFilter, weekOffset]);
+  }, [buildQuery]);
 
   const loadMore = () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    const range = computeDateRange(dateFilter, weekOffset ? String(weekOffset) : (searchParams.get('w') ?? ''));
-    const rangeQs = `${range.from ? `&from=${range.from}` : ''}${range.to ? `&to=${range.to}` : ''}`;
-    fetch(`/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${rangeQs}&limit=${DEFAULT_PAGE_SIZE}&offset=${games.length}`)
-      .then(r => r.json())
-      .then((d: ApiResponse) => {
-        setGames(prev => [...prev, ...(d?.data || [])]);
-        setHasMore(!!d?.hasMore);
-        setTotalShown(prev => prev + (d?.count || 0));
+    const currentLen = games.length;
+    (async () => {
+      try {
+        const query = await buildQuery(currentLen, DEFAULT_PAGE_SIZE);
+        if (!query) {
+          setLoadingMore(false);
+          return;
+        }
+        const { data, count, error } = await query;
+        if (error) {
+          console.error('Games loadMore error:', error.message);
+          setLoadingMore(false);
+          return;
+        }
+        const newRows = (data as unknown as Game[]) || [];
+        setGames(prev => [...prev, ...newRows]);
+        setHasMore((count || 0) > currentLen + newRows.length);
+        setTotalShown(prev => prev + newRows.length);
         setLoadingMore(false);
-      })
-      .catch(() => setLoadingMore(false));
+      } catch (e) {
+        console.error('Games loadMore failed:', e);
+        setLoadingMore(false);
+      }
+    })();
   };
 
   // URL update helper
