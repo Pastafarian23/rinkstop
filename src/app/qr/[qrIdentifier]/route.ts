@@ -111,7 +111,13 @@ export async function GET(
     }
   }
 
-  const record = await passportRepository.findByQrIdentifier(qrIdentifier);
+  let record;
+  try {
+    record = await passportRepository.findByQrIdentifier(qrIdentifier);
+  } catch (err) {
+    console.error('[/qr] findByQrIdentifier error:', err instanceof Error ? err.message : String(err));
+    return deactivatedPage(qrIdentifier);
+  }
 
   if (!record) {
     return deactivatedPage(qrIdentifier);
