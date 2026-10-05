@@ -101,8 +101,13 @@ function computeDateRangeFromUrl(sp: { d?: string; w?: string }): { from: string
   }
   // Week window: centered on today, ±3 days. weekOffset shifts in
   // 7-day increments. weekOffset=0 (default) is today±3.
+  // 2026-10-05 fix (Arnel feedback): the default view (no ?w= param
+  // in the URL) should ALSO apply the current week window. Previously
+  // it returned from/to=null, which fell through to time=current and
+  // returned ALL upcoming games across all weeks — meaning the
+  // rendered list didn't match the week strip's date cells.
   const weekOffset = parseInt(sp.w ?? '0', 10) || 0;
-  if (weekOffset !== 0 || sp.w !== undefined) {
+  if (sp.w !== undefined || weekOffset !== 0 || !sp.d) {
     // Build anchor as today midnight UTC, shift by weekOffset weeks.
     const anchor = new Date(`${todayIso}T12:00:00Z`);
     anchor.setUTCDate(anchor.getUTCDate() + weekOffset * 7);
