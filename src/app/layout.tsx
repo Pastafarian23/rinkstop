@@ -27,6 +27,7 @@ import AdSenseLoader from '@/components/AdSenseLoader';
 // (fail-closed — same pattern as AdSenseLoader). CSP already permits
 // googletagmanager.com + google-analytics.com (verified 2026-09-14).
 import GtagLoader from '@/components/GtagLoader';
+import HapticTap from '@/components/HapticTap';
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 import MobileNav from '@/components/MobileNav';
 import MobileProfileButton from '@/components/MobileProfileButton';
@@ -552,6 +553,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             the env var is unset (e.g. local dev), the component returns
             null — no half-broken script ships to production. */}
         <GtagLoader measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        {/* 2026-10-05 (Arnel feedback): instant mobile tap feedback.
+            Fires navigator.vibrate(8) on touch and applies the
+            :active CSS in globals.css so users never see a "dead tap"
+            between touch and navigation. Pairs with the touch-action:
+            manipulation rule in globals.css to kill the 300ms tap delay. */}
+        <HapticTap />
         </body>
       </html>
     </ClerkProvider>
