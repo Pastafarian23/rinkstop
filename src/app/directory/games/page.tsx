@@ -127,7 +127,14 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
   selectedDate: string;
   weekOffset: number;
 }> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://rinkstop.com';
+  // 2026-10-05: Bypass /api/scores (currently 500'ing on Vercel for
+  // every /api/* route) and query Supabase directly from the server
+  // component. Same query shape, same response fields, same joins.
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const sb = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+
   const league = searchParams.league || 'nhl';
   const team = searchParams.team || '';
   const time = searchParams.time || 'current';
@@ -138,14 +145,75 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
   const { from, to } = computeDateRangeFromUrl({ d: searchParams.d, w: searchParams.w });
   const weekOffset = parseInt(searchParams.w ?? '0', 10) || 0;
   const selectedDate = searchParams.d ?? '';
+
   try {
-    const url = `${base}/api/scores?league=${league}&time=${time}${team ? `&team=${team}` : ''}${subleague ? `&subleague=${subleague}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}${from ? `&from=${from}` : ''}${to ? `&to=${to}` : ''}&limit=${limit}&offset=${offset}`;
-    const res = await fetch(url, { cache: 'no-store' });
-    const json: ApiResponse = await res.json();
+    // Resolve league(s)
+    let leagueIds: string[] = [];
+    if (league !== 'all') {
+      const { data: leagueRow } = await sb.from('leagues').select('id').eq('slug', league).maybeSingle();
+      if (leagueRow) leagueIds = [leagueRow.id];
+    } else {
+      const { data: topLeagues } = await sb.from('leagues').select('id').in('slug', ['nhl', 'ahl', 'pwhl', 'khl', 'shl', 'liiga', 'del', 'nl', 'extraliga', 'ncaa', 'chl', 'ushl']);
+      leagueIds = (topLeagues || []).map((l) => l.id);
+    }
+    if (leagueIds.length === 0) {
+      return { games: [], hasMore: false, totalShown: 0, league, time, team, subleague, q, from, to, selectedDate, weekOffset };
+    }
+
+    // Build query
+    let query = sb
+      .from('fixtures')
+      .select(`id, scheduled_at, status, home_score, away_score, season, league_id, home_team:teams!home_team_id(id, name, slug, logo_url), away_team:teams!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`, { count: 'exact' })
+      .not('home_team_id', 'is', null)
+      .not('away_team_id', 'is', null)
+      .order('scheduled_at', { ascending: true })
+      .in('league_id', leagueIds)
+      .range(offset, offset + limit - 1);
+
+    if (subleague) {
+      const { data: subRow } = await sb.from('leagues').select('id').eq('slug', subleague).maybeSingle();
+      if (subRow) query = query.eq('league_id', subRow.id);
+    }
+
+    if (team) {
+      const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).maybeSingle();
+      if (teamRow) query = query.or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`);
+    }
+
+    if (q) {
+      const safe = q.replace(/[%_\\]/g, '\\$&');
+      const { data: matchingTeams } = await sb.from('teams').select('id').ilike('name', `%${safe}%`);
+      if (matchingTeams && matchingTeams.length > 0) {
+        const teamIds = matchingTeams.map((t) => t.id).join(',');
+        query = query.or(`home_team_id.in.(${teamIds}),away_team_id.in.(${teamIds})`);
+      } else {
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+      }
+    }
+
+    const hasExplicitRange = !!(from || to);
+    const recentCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+    if (hasExplicitRange) {
+      if (from) query = query.gte('scheduled_at', `${from}T00:00:00.000Z`);
+      if (to) query = query.lte('scheduled_at', `${to}T23:59:59.999Z`);
+    } else if (time === 'historical') {
+      query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoff);
+    } else if (time === 'recent') {
+      query = query.eq('status', 'completed').gte('scheduled_at', recentCutoff);
+    } else {
+      query = query.or(`status.in.(scheduled,in_progress),and(status.eq.completed,scheduled_at.gte.${recentCutoff})`);
+    }
+
+    const { data, count, error } = await query;
+    if (error) {
+      console.error('Games initial fetch error:', error.message);
+      return { games: [], hasMore: false, totalShown: 0, league, time, team, subleague, q, from, to, selectedDate, weekOffset };
+    }
+
     return {
-      games: json?.data || [],
-      hasMore: !!json?.hasMore,
-      totalShown: json?.count || 0,
+      games: (data as unknown as Game[]) || [],
+      hasMore: (count || 0) > offset + limit,
+      totalShown: count || 0,
       league,
       time,
       team,
