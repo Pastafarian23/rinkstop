@@ -23,7 +23,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-
+// Trigger fresh deploy 2026-10-05
 const FALLBACK_SVG = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <rect width="100%" height="100%" fill="#FFFFFF"/>
