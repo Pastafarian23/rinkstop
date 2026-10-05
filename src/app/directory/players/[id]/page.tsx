@@ -46,33 +46,58 @@ function getDirectAdminClient() {
   return createClient(url, key);
 }
 
+// 2026-10-03 (audit fix #1): null-safe description builder.
+// Previously rendered "professional ice hockey unknown who plays for the undefined"
+// when team or position was null. Now each clause is gated on a real value;
+// nothing is rendered if the value is missing.
 function buildPlayerDescription(player: any): string {
   const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
   const teamArr: any[] = Array.isArray(player.teams) ? player.teams : (player.teams ? [player.teams] : []);
-  const team0 = teamArr[0];
+  const team0 = teamArr[0] || {};
   const league0 = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
-  const teamName = team0?.name || player.current_team_name || null;
-  const leagueName = league0?.name || '';
-  const position = POSITION_FULL[player.position] || player.position || null;
+  const teamName = (typeof team0?.name === 'string' && team0.name.trim()) ? team0.name : null;
+  const leagueName = (typeof league0?.name === 'string' && league0.name.trim()) ? league0.name : '';
+  const rawPos = typeof player.position === 'string' && player.position.trim() ? player.position : null;
+  const position = rawPos ? (POSITION_FULL[rawPos] || rawPos) : null;
 
   const facts: string[] = [];
-  if (player.nationality && player.nationality.length <= 3) {
+  if (player.nationality && typeof player.nationality === 'string' && player.nationality.length <= 3) {
     facts.push(COUNTRY_NAMES[player.nationality] || player.nationality);
   }
   if (player.jersey_number != null) facts.push(`#${player.jersey_number}`);
-  if (player.shoots) facts.push(`shoots ${player.shoots === 'L' ? 'left' : 'right'}`);
+  if (player.shoots === 'L' || player.shoots === 'R') facts.push(`shoots ${player.shoots === 'L' ? 'left' : 'right'}`);
   if (player.height_cm) facts.push(`${player.height_cm} cm tall`);
   if (player.weight_kg) facts.push(`${player.weight_kg} kg`);
 
   if (!position && !teamName && facts.length === 0) {
-    return `${fullName} — hockey player profile with stats, team history, and career highlights on RinkStop.`;
+    return `${fullName} — hockey player profile on RinkStop.`;
   }
 
   const factsStr = facts.length > 0 ? ` (${facts.join(', ')})` : '';
   const positionClause = position ? `a ${position}` : 'a hockey player';
   const teamClause = teamName ? ` who plays for ${teamName}` : '';
   const leagueClause = leagueName ? ` in the ${leagueName}` : '';
-  return `${fullName}${factsStr} is ${positionClause}${teamClause}${leagueClause} — full profile, stats, and career highlights on RinkStop.`;
+  return `${fullName}${factsStr} is ${positionClause}${teamClause}${leagueClause} — profile on RinkStop.`;
+}
+
+// 2026-10-03 (audit fix #1): safe accessor for joined FK fields.
+// Returns null when the value is missing, empty, or the literal string
+// "undefined" / "unknown" — never returns those as valid strings.
+function safeName(val: any): string | null {
+  if (val == null) return null;
+  if (typeof val !== 'string') return null;
+  const t = val.trim();
+  if (!t) return null;
+  if (t.toLowerCase() === 'undefined' || t.toLowerCase() === 'unknown') return null;
+  return t;
+}
+
+function safePosition(raw: any): string | null {
+  if (typeof raw !== 'string') return null;
+  const t = raw.trim();
+  if (!t) return null;
+  if (t.toLowerCase() === 'unknown') return null;
+  return POSITION_FULL[t] || t;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -98,9 +123,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const team0: any = Array.isArray(player.teams) ? player.teams[0] : player.teams;
     const league0: any = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : null;
     const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || 'Player';
-    const teamName = team0?.name || null;
-    const leagueName = league0?.name || '';
-    const position = POSITION_FULL[player.position] || player.position || null;
+    const teamName = safeName(team0?.name);
+    const leagueName = safeName(league0?.name) || '';
+    const position = safePosition(player.position);
     const description = buildPlayerDescription(player);
     const stripSuffix = (s: string) => s.replace(/\s*\|\s*RinkStop\s*$/, '');
 
@@ -242,20 +267,27 @@ export default async function PlayerPage({ params }: Props) {
     const teamsArr: any[] = Array.isArray(playerTyped.teams) ? playerTyped.teams : (playerTyped.teams ? [playerTyped.teams] : []);
     const team0 = teamsArr[0] || {};
     const league0 = team0?.leagues ? (Array.isArray(team0.leagues) ? team0.leagues[0] : team0.leagues) : {};
-    const teamName = team0?.name;
-    const teamSlug = team0?.slug;
-    const leagueName = league0?.name;
-    const leagueSlug = league0?.slug;
-    const position = POSITION_FULL[playerTyped.position] || playerTyped.position || 'Hockey Player';
+    const teamName = safeName(team0?.name);
+    const teamSlug = safeName(team0?.slug);
+    const leagueName = safeName(league0?.name);
+    const leagueSlug = safeName(league0?.slug);
+    const position = safePosition(playerTyped.position);
 
     const seoFaqs = buildPlayerFAQs({
-      fullName, firstName: playerTyped.first_name, position: playerTyped.position,
+      fullName, firstName: playerTyped.first_name, position: position,
       jerseyNumber: playerTyped.jersey_number, shoots: playerTyped.shoots, catches: playerTyped.catches,
       heightCm: playerTyped.height_cm, weightKg: playerTyped.weight_kg, birthDate: playerTyped.birth_date,
       nationality: playerTyped.nationality, bio: playerTyped.bio,
-      teamName, teamSlug, leagueName, leagueSlug, leagueCountry: league0?.country,
+      teamName: teamName || undefined, teamSlug: teamSlug || undefined,
+      leagueName: leagueName || undefined, leagueSlug: leagueSlug || undefined,
+      leagueCountry: league0?.country,
       updatedAt: playerTyped.updated_at,
     });
+
+    // 2026-10-03 (audit fix #1): Person schema no longer hardcodes
+    // "Professional Ice Hockey Player" when level is unknown. Only emit
+    // jobTitle when we have a real position; never render "undefined".
+    const jobTitle = position ? `Ice Hockey Player — ${position}` : undefined;
 
     playerJsonLd = {
       '@context': 'https://schema.org',
@@ -263,16 +295,16 @@ export default async function PlayerPage({ params }: Props) {
         {
           '@type': 'Person',
           name: fullName,
-          jobTitle: `Professional Ice Hockey Player — ${position}`,
+          ...(jobTitle ? { jobTitle } : { description: 'Ice hockey player profile on RinkStop.' }),
           sport: 'Ice hockey',
           url: `${BASE_URL}/directory/players/${id}`,
           ...(playerTyped.headshot_url ? { image: playerTyped.headshot_url } : {}),
           ...(teamName ? {
             affiliation: {
               '@type': 'SportsTeam', name: teamName,
-              url: teamSlug ? `${BASE_URL}/directory/teams/${teamSlug}` : undefined,
+              ...(teamSlug ? { url: `${BASE_URL}/directory/teams/${teamSlug}` } : {}),
               ...(leagueName ? {
-                memberOf: { '@type': 'SportsOrganization', name: leagueName, url: leagueSlug ? `${BASE_URL}/directory/leagues/${leagueSlug}` : undefined },
+                memberOf: { '@type': 'SportsOrganization', name: leagueName, ...(leagueSlug ? { url: `${BASE_URL}/directory/leagues/${leagueSlug}` } : {}) },
               } : {}),
             },
           } : {}),

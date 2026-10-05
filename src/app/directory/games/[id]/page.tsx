@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { ScoresheetQRPanel } from '@/components/ScoresheetQRPanel';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -121,11 +122,30 @@ export default async function GameDetailPage(
     } : undefined,
   };
 
+  // Phase B2: check if the scoresheet QR is enabled for this fixture.
+  const sb2 = getSupabase();
+  let qrEnabled = true;
+  try {
+    const { data: fss } = await sb2
+      .from('fixture_scoresheet_settings')
+      .select('qr_enabled')
+      .eq('fixture_id', (game as any).id)
+      .maybeSingle();
+    if (fss && (fss as any).qr_enabled === false) qrEnabled = false;
+  } catch {
+    // ignore — defaults to true if the table is missing
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEvent) }}
+      />
+      <ScoresheetQRPanel
+        fixtureId={(game as any).id}
+        status={(game as any).status}
+        qrEnabled={qrEnabled}
       />
       <GamePageClient />
     </>
