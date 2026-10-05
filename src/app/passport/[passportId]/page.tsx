@@ -43,6 +43,7 @@ import { getStripePaymentLink } from '@/lib/stripe-payment-links';
 import ChallengesSection from '@/components/passport/ChallengesSection';
 import PassportShareBar from '@/components/passport/PassportShareBar';
 import QrCodeClient from '@/components/passport/QrCodeClient';
+import { PublicPassportCareerStats } from './PublicPassportCareerStats';
 import {
   isPublicPassportLookupEnabled,
   passportLookupService,
@@ -261,6 +262,7 @@ async function ActivePassportCard({
         {/* Affiliations + attendance + challenges below the document. */}
         <div style={{ marginTop: 24 }}>
           <FederationAffiliationsSection internalUserId={record.internalUserId} />
+          <PublicPassportCareerStats internalUserId={record.internalUserId} />
           <AttendanceSection holderUserId={record.internalUserId} />
           <ChallengesSectionWrapper holderUserId={record.internalUserId} />
           <PassportShareBar
