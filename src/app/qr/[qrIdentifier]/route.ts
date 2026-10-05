@@ -102,12 +102,16 @@ export async function GET(
   // (which won't find it either, so the deactivated page still renders,
   // just via the passport path).
   if (isStampsEnabled()) {
-    const stampTarget = await stampService.resolveTarget(qrIdentifier);
-    if (stampTarget) {
-      return NextResponse.redirect(
-        new URL(`/stamp/${qrIdentifier}`, _req.url),
-        302
-      );
+    try {
+      const stampTarget = await stampService.resolveTarget(qrIdentifier);
+      if (stampTarget) {
+        return NextResponse.redirect(
+          new URL(`/stamp/${qrIdentifier}`, _req.url),
+          302
+        );
+      }
+    } catch {
+      // Not a stamp QR — fall through to passport lookup.
     }
   }
 
