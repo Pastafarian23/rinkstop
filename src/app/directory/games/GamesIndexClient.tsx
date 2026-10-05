@@ -973,9 +973,15 @@ export default function GamesIndexClient({ initialData }: Props) {
               // scheduled rows whose scheduled_at is past, and stale
               // in_progress rows whose scheduled_at is >4h ago, but skip
               // them client-side too in case the API response is cached.
+              // 2026-10-05 fix: when the user explicitly picked a date
+              // via ?d=YYYY-MM-DD or ?w=N, do NOT drop "stale scheduled"
+              // games — they want to see that day/week's games even if
+              // the puck has already dropped.
               const t = new Date(g.scheduled_at || g.date).getTime();
-              if (g.status === 'scheduled' && t < Date.now()) return false;
-              if (g.status === 'in_progress' && t < Date.now() - 4 * 60 * 60 * 1000) return false;
+              if (!dateFilter && weekOffset === 0) {
+                if (g.status === 'scheduled' && t < Date.now()) return false;
+                if (g.status === 'in_progress' && t < Date.now() - 4 * 60 * 60 * 1000) return false;
+              }
               return true;
             });
             const completed = games.filter(g => g.status === 'completed');
