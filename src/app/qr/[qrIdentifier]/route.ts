@@ -74,14 +74,15 @@ export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ qrIdentifier: string }> }
 ) {
-  if (!isPassportQrResolveEnabled()) {
-    return new NextResponse('Not Found', { status: 404 });
-  }
+  try {
+    if (!isPassportQrResolveEnabled()) {
+      return new NextResponse('Not Found', { status: 404 });
+    }
 
-  const { qrIdentifier } = await ctx.params;
-  if (!qrIdentifier) {
-    return new NextResponse('Not Found', { status: 404 });
-  }
+    const { qrIdentifier } = await ctx.params;
+    if (!qrIdentifier) {
+      return new NextResponse('Not Found', { status: 404 });
+    }
 
   // qr_identifier is a UUID column in Postgres. The repository's
   // findByQrIdentifier would otherwise bubble up a 500 ("invalid input
@@ -135,8 +136,12 @@ export async function GET(
   // PASSPORT_PUBLIC_LOOKUP — when off, that route 404s (intentional per
   // Workstream 1 Rule 5). Use 302 vs 307 intentionally — the redirect is
   // permanent for this qr_identifier (no method preservation needed).
-  return NextResponse.redirect(
-    new URL(`/passport/${record.passportId}`, _req.url),
-    302
-  );
+    return NextResponse.redirect(
+      new URL(`/passport/${record.passportId}`, _req.url),
+      302
+    );
+  } catch (err) {
+    console.error('[/qr] unexpected error:', err instanceof Error ? err.message : String(err));
+    return deactivatedPage((await ctx.params).qrIdentifier || 'unknown');
+  }
 }
