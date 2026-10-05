@@ -102,7 +102,26 @@ function computeDateRange(d: string | null, w: string | null): { from: string | 
  * Implementation: client-side filter via URL hash param `d=YYYY-MM-DD`.
  * When `d` is set, the games list below renders only that day's games.
  */
+// Module-scope supabase client — shared by GamesIndexClient and the
+// standalone WeekCalendar. 2026-10-05 fix: WeekCalendar now fetches
+// its own week-total counts (independent of the date-filter applied
+// to the games list) so the strip always shows the full week.
+const sbRefForCalendar = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { persistSession: false } }
+);
+
 function WeekCalendar({ games }: { games: Game[] }) {
+  // 2026-10-05 fix (Arnel feedback): the week-strip cell counts should
+  // ALWAYS show the full week's game totals, not just the games in the
+  // currently-rendered list. When the user picks a date via the
+  // Jump-to-date picker, the page filters to that single day and the
+  // week strip used to show "0" on every cell except the selected one.
+  //
+  // We query Supabase directly for the current week's game totals,
+  // independent of the dateFilter. The counts are then keyed by ET date
+  // and rendered on the strip.
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
@@ -112,6 +131,75 @@ function WeekCalendar({ games }: { games: Game[] }) {
   // The previous/next arrows navigate between weeks. Without this, the
   // arrows only re-selected days within the current visible week.
   const weekOffset = parseInt(search.get('w') ?? '0', 10) || 0;
+  // 2026-10-05 fix (Arnel feedback): the week-strip cell counts should
+  // ALWAYS show the full week's game totals, not just the games in the
+  // currently-rendered list. When the user picks a date via the
+  // Jump-to-date picker, the page filters to that single day and the
+  // week strip used to show "0" on every cell except the selected one.
+  // We query Supabase directly for the current week's game totals,
+  // independent of the dateFilter.
+  const [weekCounts, setWeekCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const league = search.get('league') || 'nhl';
+        let leagueIds: string[] = [];
+        if (league !== 'all') {
+          const { data: leagueRow } = await sbRefForCalendar.from('leagues').select('id').eq('slug', league).maybeSingle();
+          if (leagueRow && (leagueRow as { id: string }).id) leagueIds = [(leagueRow as { id: string }).id];
+        } else {
+          const { data: topLeagues } = await sbRefForCalendar.from('leagues').select('id').in('slug', ['nhl', 'ahl', 'pwhl', 'khl', 'shl', 'liiga', 'del', 'nl', 'extraliga', 'ncaa', 'chl', 'ushl']);
+          leagueIds = ((topLeagues as { id: string }[] | null) || []).map((l) => l.id);
+        }
+        if (leagueIds.length === 0) return;
+        // ET-day boundaries for the visible week (centered on ET-today).
+        const ET_TZ = 'America/New_York';
+        const fmtETDate = (d: Date): string => {
+          const parts = new Intl.DateTimeFormat('en-CA', { timeZone: ET_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+          return `${parts.find(p => p.type === 'year')!.value}-${parts.find(p => p.type === 'month')!.value}-${parts.find(p => p.type === 'day')!.value}`;
+        };
+        const nowInET = fmtETDate(new Date());
+        const anchor = new Date(`${nowInET}T12:00:00`);
+        anchor.setDate(anchor.getDate() + weekOffset * 7);
+        const from = new Date(anchor.getTime() - 3 * 86400000);
+        const to = new Date(anchor.getTime() + 3 * 86400000);
+        const fmtIso = (d: Date): string => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day_ = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${day_}`;
+        };
+        const fromStr = fmtIso(from);
+        const toStr = fmtIso(to);
+        const fromDate = new Date(`${fromStr}T00:00:00.000Z`);
+        fromDate.setUTCHours(4, 0, 0, 0);
+        const toDate = new Date(`${toStr}T00:00:00.000Z`);
+        toDate.setUTCDate(toDate.getUTCDate() + 1);
+        toDate.setUTCHours(4, 0, 0, 0);
+        const { data, error } = await sbRefForCalendar
+          .from('fixtures')
+          .select('scheduled_at')
+          .not('home_team_id', 'is', null)
+          .not('away_team_id', 'is', null)
+          .in('league_id', leagueIds)
+          .gte('scheduled_at', fromDate.toISOString())
+          .lt('scheduled_at', toDate.toISOString())
+          .range(0, 999);
+        if (error) {
+          console.error('WeekCalendar count error:', error.message);
+          return;
+        }
+        const counts: Record<string, number> = {};
+        for (const g of (data as { scheduled_at: string }[] | null) || []) {
+          const etDate = fmtETDate(new Date(g.scheduled_at));
+          counts[etDate] = (counts[etDate] || 0) + 1;
+        }
+        setWeekCounts(counts);
+      } catch (e) {
+        console.error('WeekCalendar count failed:', e);
+      }
+    })();
+  }, [search, weekOffset]);
   // 2026-10-01 fix (Arnel feedback): the calendar and game grouping must
   // use the SAME date logic the displayed game times use — ET
   // (America/New_York). The page already says "All start times are shown
@@ -149,7 +237,11 @@ function WeekCalendar({ games }: { games: Game[] }) {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(anchor.getTime() + (i - 3) * 86400000);
     const iso = fmtETDate(d);
-    const count = games.filter((g) => fmtGameETDate(g.scheduled_at || g.date) === iso).length;
+    // 2026-10-05 fix: use weekCounts (full week totals) instead of the
+    // games array (which is filtered to the selected date). The strip
+    // should always show how many games are on each day of the visible
+    // week, regardless of the date picker.
+    const count = weekCounts[iso] ?? games.filter((g) => fmtGameETDate(g.scheduled_at || g.date) === iso).length;
     return {
       iso,
       label: d.toLocaleDateString('en-US', { weekday: 'short', timeZone: ET_TZ }).toUpperCase(),
