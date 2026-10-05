@@ -499,7 +499,16 @@ export default function GamesIndexClient({ initialData }: Props) {
   // Reset & refetch on filter change. 2026-10-01 fix: also re-run when
 // weekOffset or dateFilter change so the strip navigation actually
 // re-fetches data instead of just rebadging the cached 'current' list.
+  // 2026-10-05 fix (Arnel empty page): on first mount, do NOT refetch —
+  // /api/scores is returning HTTP 500 on Vercel and the fetch was
+  // clobbering the SSR'd initialData.games with an empty array.
+  // Only refetch when filters actually change after mount.
+  const isFirstMount = useRef(true);
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
     setLoading(true);
     setGames([]);
     setTotalShown(0);
