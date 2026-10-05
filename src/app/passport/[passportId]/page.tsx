@@ -42,6 +42,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getStripePaymentLink } from '@/lib/stripe-payment-links';
 import ChallengesSection from '@/components/passport/ChallengesSection';
 import PassportShareBar from '@/components/passport/PassportShareBar';
+import QrCodeClient from '@/components/passport/QrCodeClient';
 import {
   isPublicPassportLookupEnabled,
   passportLookupService,
@@ -249,6 +250,7 @@ async function ActivePassportCard({
           name={name}
           avatarUrl={avatarUrl}
           passportId={record.passportId}
+          qrIdentifier={record.qrIdentifier}
           status={record.status}
           verificationLevel={record.verificationLevel}
           issuedAt={record.issuedAt}
@@ -1085,6 +1087,7 @@ function PassportDocument({
   name,
   avatarUrl,
   passportId,
+  qrIdentifier,
   status,
   verificationLevel,
   issuedAt,
@@ -1095,6 +1098,7 @@ function PassportDocument({
   name: string;
   avatarUrl: string | null;
   passportId: string;
+  qrIdentifier: string;
   status: PassportStatus;
   verificationLevel: VerificationLevel;
   issuedAt: string | null;
@@ -1378,10 +1382,14 @@ function PassportDocument({
       {/* 2026-10-03 (audit fix #7): QR code for in-person verification.
           Rinks can scan this to confirm the holder's credential at the
           front desk; coaches/scouts can scan to verify identity before
-          tryouts. The endpoint at /api/internal/passport/qr/[passportId]
-          encodes the canonical qr_identifier (UUID) into an SVG. Same
-          endpoint the dashboard uses, so a single source of truth.
-          Width/height are explicit; <img> lazy-loads by default. */}
+          tryouts.
+
+          2026-10-05: switched from <img src="/api/internal/passport/qr/...">
+          to client-side rendering via <QrCodeClient />. The /api/* surface
+          was returning HTTP 500 across all routes due to a Vercel
+          build-level issue; rendering the QR on the client with the
+          same canonical qr_identifier (UUID) keeps a single source of
+          truth while bypassing the broken API surface. */}
       <div
         data-passport-qr
         style={{
@@ -1395,21 +1403,10 @@ function PassportDocument({
           borderRadius: 10,
         }}
       >
-        <img
-          src={`/api/internal/passport/qr/${encodeURIComponent(passportId)}`}
-          alt={`QR code for Hockey Passport ${passportId} — scan to verify`}
-          width={88}
-          height={88}
-          loading="lazy"
-          style={{
-            display: 'block',
-            width: 88,
-            height: 88,
-            background: '#fff',
-            borderRadius: 6,
-            padding: 4,
-            flexShrink: 0,
-          }}
+        <QrCodeClient
+          qrIdentifier={qrIdentifier}
+          passportId={passportId}
+          size={88}
         />
         <div style={{ minWidth: 0, flex: 1 }}>
           <p
