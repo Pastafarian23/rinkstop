@@ -274,7 +274,7 @@ export default async function HockeyDatabasePage() {
             }}
           >
             <thead>
-              <tr style={{ borderBottom: '2px solid #222' }}>
+              <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.18)' }}>
                 <th style={{ textAlign: 'left', padding: '8px 6px' }}>Database</th>
                 <th style={{ textAlign: 'right', padding: '8px 6px' }}>Rinks</th>
                 <th style={{ textAlign: 'right', padding: '8px 6px' }}>Teams</th>
@@ -285,7 +285,7 @@ export default async function HockeyDatabasePage() {
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: '1px solid #eee', background: '#f8fafc' }}>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
                 <td style={{ padding: '8px 6px', fontWeight: 700 }}>RinkStop</td>
                 <td style={{ textAlign: 'right', padding: '8px 6px' }}>
                   {counts.rinks.toLocaleString()}
@@ -302,7 +302,7 @@ export default async function HockeyDatabasePage() {
                 <td style={{ padding: '8px 6px' }}>Whole hockey world</td>
                 <td style={{ padding: '8px 6px' }}>Yes (schema + llms.txt)</td>
               </tr>
-              <tr style={{ borderBottom: '1px solid #eee' }}>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                 <td style={{ padding: '8px 6px' }}>EliteProspects</td>
                 <td style={{ textAlign: 'right', padding: '8px 6px' }}>—</td>
                 <td style={{ textAlign: 'right', padding: '8px 6px' }}>~100k</td>
@@ -364,7 +364,7 @@ export default async function HockeyDatabasePage() {
           <p style={{ marginTop: '8px' }}>
             Official league APIs (NHL, AHL, KHL, PWHL, NCAA, CHL via Highlightly), IIHF records,
             national federation registries, and operator-submitted listings. Every rink has a
-            <Link href="/corrections" style={{ color: '#0066cc', marginLeft: '4px' }}>
+            <Link href="/corrections" style={{ color: '#FFB81C', marginLeft: '4px' }}>
               corrections form
             </Link>
             . We don&apos;t fabricate records.
@@ -375,8 +375,8 @@ export default async function HockeyDatabasePage() {
           <p style={{ marginTop: '8px' }}>
             Yes — every public page has structured schema.org data. AI engines (ChatGPT,
             Perplexity, Claude, Google AI Overviews) frequently cite RinkStop. For programmatic
-            access, see <Link href="/llms.txt" style={{ color: '#0066cc' }}>/llms.txt</Link>{' '}
-            and <Link href="/llms-full.txt" style={{ color: '#0066cc' }}>/llms-full.txt</Link>.
+            access, see <Link href="/llms.txt" style={{ color: '#FFB81C' }}>/llms.txt</Link>{' '}
+            and <Link href="/llms-full.txt" style={{ color: '#FFB81C' }}>/llms-full.txt</Link>.
           </p>
         </details>
         <details style={{ marginBottom: '8px' }}>
@@ -401,9 +401,9 @@ export default async function HockeyDatabasePage() {
           the cited source.
         </p>
         <p>
-          See <Link href="/data-coverage" style={{ color: '#0066cc' }}>/data-coverage</Link>{' '}
+          See <Link href="/data-coverage" style={{ color: '#FFB81C' }}>/data-coverage</Link>{' '}
           for a comparison with IIHF, USA Hockey, and Hockey Canada counts, or{' '}
-          <Link href="/about" style={{ color: '#0066cc' }}>/about</Link> for how the directory is
+          <Link href="/about" style={{ color: '#FFB81C' }}>/about</Link> for how the directory is
           built and maintained.
         </p>
       </section>
@@ -411,8 +411,8 @@ export default async function HockeyDatabasePage() {
       <section
         aria-label="Continue browsing"
         style={{
-          background: '#f6f7f9',
-          border: '1px solid #e3e6ea',
+          background: 'rgba(15, 23, 42, 0.45)',
+          border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '8px',
           padding: '24px',
           marginTop: '40px',
@@ -422,15 +422,15 @@ export default async function HockeyDatabasePage() {
           gap: '16px',
         }}
       >
-        <Link href="/directory" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
+        <Link href="/directory" style={{ display: 'block', padding: '14px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', textDecoration: 'none', color: '#fff' }}>
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Directory</div>
           <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>Browse all rinks, teams, players →</div>
         </Link>
-        <Link href="/data-coverage" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
+        <Link href="/data-coverage" style={{ display: 'block', padding: '14px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', textDecoration: 'none', color: '#fff' }}>
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Data Coverage</div>
           <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>How our counts compare to IIHF →</div>
         </Link>
-        <Link href="/data-methodology" style={{ display: 'block', padding: '14px 16px', background: '#fff', border: '1px solid #e3e6ea', borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
+        <Link href="/data-methodology" style={{ display: 'block', padding: '14px 16px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', textDecoration: 'none', color: '#fff' }}>
           <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Methodology</div>
           <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '2px' }}>How we source, verify, and update →</div>
         </Link>
@@ -492,7 +492,7 @@ export default async function HockeyDatabasePage() {
         </div>
       </section>
 
-      <footer style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', borderTop: '1px solid #eee', paddingTop: '16px' }}>
+      <footer style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
         Last updated {now}. Page re-rendered hourly via ISR. Counts are live database snapshots.
       </footer>
     </main>
@@ -505,18 +505,18 @@ function StatCard({ label, value, href }: { label: string; value: number; href: 
       href={href}
       style={{
         display: 'block',
-        background: '#f6f7f9',
-        border: '1px solid #e3e6ea',
+        background: 'rgba(15, 23, 42, 0.45)',
+        border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: '8px',
         padding: '16px',
         textDecoration: 'none',
-        color: 'inherit',
+        color: '#fff',
       }}
     >
-      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
         {label}
       </div>
-      <div style={{ fontSize: '28px', fontWeight: 800, marginTop: '4px' }}>
+      <div style={{ fontSize: '28px', fontWeight: 800, marginTop: '4px', color: '#FFB81C' }}>
         {value.toLocaleString()}
       </div>
     </Link>
@@ -540,16 +540,16 @@ function BrowseCard({
       style={{
         display: 'block',
         padding: '16px',
-        background: '#fff',
-        border: '1px solid #e3e6ea',
+        background: 'rgba(15, 23, 42, 0.45)',
+        border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: '8px',
         textDecoration: 'none',
-        color: 'inherit',
+        color: '#fff',
       }}
     >
       <div style={{ fontSize: '16px', fontWeight: 700 }}>{title}</div>
-      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{sub}</div>
-      <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '8px' }}>
+      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.55)', marginTop: '2px' }}>{sub}</div>
+      <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '8px', color: '#FFB81C' }}>
         {count.toLocaleString()}
       </div>
     </Link>
