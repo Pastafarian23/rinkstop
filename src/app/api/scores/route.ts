@@ -1,270 +1,143 @@
+/**
+ * GET /api/scores
+ *
+ * Self-contained scores endpoint — only depends on @supabase/supabase-js and
+ * the service-role env var. Does NOT import from @/lib/scores or any other
+ * module that could fail to load. This is the 2026-10-05 rewrite after the
+ * prior /api/* surface started returning HTTP 500 for every route on Vercel.
+ *
+ * Query params:
+ *   league     — league slug or "all" (default: "all")
+ *   time       — "current" | "recent" | "historical" (default: "current")
+ *   team       — team slug (optional)
+ *   from       — YYYY-MM-DD lower bound (optional, overrides time)
+ *   to         — YYYY-MM-DD upper bound (optional, overrides time)
+ *   limit      — 1-200, default 50
+ *   offset     — pagination offset, default 0
+ *
+ * Response: { data, count, chip, time, hasMore, from, to }
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
-import { DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip, getRecentCutoff } from '@/lib/score-chips';
+import { createClient } from '@supabase/supabase-js';
 
-const RATE_LIMIT = { maxRequests: 60, windowMs: 60 * 1000 };
+export const dynamic = 'force-dynamic';
 
-// Cache league_id lookups per-process (chip → league_id[]) for the lifetime of the lambda.
-let leagueIdCache: Record<string, string[]> | null = null;
-async function getLeagueIdsForChip(chipSlug: string): Promise<string[]> {
-  if (leagueIdCache && leagueIdCache[chipSlug]) return leagueIdCache[chipSlug];
-  if (!leagueIdCache) leagueIdCache = {};
-  const chip = getChip(chipSlug);
-  if (chip.leagueSlugs.length === 0) {
-    leagueIdCache[chipSlug] = [];
-    return [];
-  }
-  const { data } = await supabase
-    .from('leagues')
-    .select('id, slug')
-    .in('slug', chip.leagueSlugs);
-  leagueIdCache[chipSlug] = (data || []).map(l => l.id);
-  return leagueIdCache[chipSlug];
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { persistSession: false } });
 }
 
-// Cache single-league lookups (for subleague within a category chip).
-let singleLeagueCache: Record<string, string | null> = {};
-async function getLeagueIdBySlug(slug: string): Promise<string | null> {
-  if (slug in singleLeagueCache) return singleLeagueCache[slug];
-  const { data } = await supabase
-    .from('leagues')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle();
-  singleLeagueCache[slug] = data?.id ?? null;
-  return singleLeagueCache[slug];
+function json(data: unknown, status = 200) {
+  return new NextResponse(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600',
+    },
+  });
 }
 
-// Cache team_id lookups (slug → id) for the team filter.
-let teamIdCache: Record<string, string | null> = {};
-async function getTeamIdBySlug(slug: string): Promise<string | null> {
-  if (slug in teamIdCache) return teamIdCache[slug];
-  const { data } = await supabase
-    .from('team_workspaces')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle();
-  teamIdCache[slug] = data?.id ?? null;
-  return teamIdCache[slug];
+function err(message: string, status = 500) {
+  return json({ error: message, data: [], count: 0, hasMore: false }, status);
 }
 
 export async function GET(request: NextRequest) {
-  const ip = getClientIP(request);
-  const result = await checkRateLimit(`scores:${ip}`, RATE_LIMIT);
-  maybeCleanup();
+  const sb = getSupabase();
+  if (!sb) return err('Supabase env not configured', 500);
 
-  if (!result.allowed) {
-    const response = new NextResponse(
-      JSON.stringify({ error: 'Too many requests. Please slow down.' }),
-      { status: 429 }
-    );
-    applyRateLimitHeaders(response, result);
-    response.headers.set('Content-Type', 'application/json');
-    return response;
-  }
+  const sp = request.nextUrl.searchParams;
+  const league = (sp.get('league') || 'all').toLowerCase();
+  const time = (sp.get('time') || 'current').toLowerCase();
+  const team = sp.get('team') || '';
+  const fromParam = sp.get('from');
+  const toParam = sp.get('to');
+  const limit = Math.min(Math.max(parseInt(sp.get('limit') || '50', 10) || 50, 1), 200);
+  const offset = Math.max(parseInt(sp.get('offset') || '0', 10) || 0, 0);
+  const hasExplicitRange = !!(fromParam || toParam);
 
-  const { searchParams } = new URL(request.url);
-  const league = searchParams.get('league') || DEFAULT_CHIP;
-  const team = searchParams.get('team');
-  const subleague = searchParams.get('subleague');
-  const time = searchParams.get('time') || DEFAULT_TIME;
-  const q = searchParams.get('q')?.trim() || '';  // 2026-09-17: free-text team search
-  const limit = Math.min(parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10), 200);
-  // 2026-10-01 fix (Arnel feedback): explicit date range overrides the
-  // `time` preset. Lets the /scores week-strip and the new date-picker
-  // pull any historical or future window regardless of the current/recent
-  // cutoff. Format: YYYY-MM-DD. Either may be omitted (no bound on that side).
-  // When both are set, the `time` value is ignored entirely.
-  const rawFrom = searchParams.get('from');
-  const rawTo = searchParams.get('to');
-  const dateFrom = rawFrom && /^\d{4}-\d{2}-\d{2}$/.test(rawFrom) ? rawFrom : null;
-  const dateTo = rawTo && /^\d{4}-\d{2}-\d{2}$/.test(rawTo) ? rawTo : null;
-  const hasExplicitRange = !!(dateFrom || dateTo);
-
-  const chip = getChip(league);
-  const leagueIds = await getLeagueIdsForChip(league);
-  const recentCutoffISO = getRecentCutoff().toISOString();
-
-  // Build the fixtures query with joins to teams + leagues for accurate team names.
-  // We also exclude fixtures with NULL team_ids — the NHL import was incomplete
-  // for ~53% of NHL rows (no home/away team assigned), and they render as the
-  // "Home vs Away" placeholder. Hide them until a backfill restores them.
-  // Time filter is applied via an OR clause:
-  //   current    = status IN (scheduled, in_progress)  OR  (status=completed AND scheduled_at >= recentCutoff)
-  //   historical = anything older than recentCutoff AND status != 'in_progress'
-  let query = supabase
-    .from('fixtures')
-    .select(`
-      id, scheduled_at, status, home_score, away_score, season, league_id, home_team_id, away_team_id,
-      home_team:teams!home_team_id(id, name, slug, logo_url),
-      away_team:teams!away_team_id(id, name, slug, logo_url),
-      league:leagues(id, name, slug, level, country)
-    `)
-    .not('home_team_id', 'is', null)
-    .not('away_team_id', 'is', null)
-    // 2026-09-22 audit fix (bug #22): default sort was ASC, but the
-    // 'current' tab is the default and ASC showed oldest games first.
-    // 2026-09-30 IA fix (Arnel feedback): default sort was DESC, which
-    // pushed the upcoming calendar out of view (e.g. preseason was
-    // 22 days away from the top of the list). Switched to ASC so
-    // today's games come first, then tomorrow, then the week. Matches
-    // NHL.com's scores layout.
-    .order('scheduled_at', { ascending: true });
-
-  // League filter
-  if (leagueIds.length === 0) {
-    const empty = NextResponse.json({ data: [], count: 0, chip: chip.slug, time });
-    empty.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
-    return applyRateLimitHeaders(empty, result);
-  }
-  query = query.in('league_id', leagueIds);
-
-  // Subleague (within a category chip) — narrows to a single league_id
-  if (subleague) {
-    const subId = await getLeagueIdBySlug(subleague);
-    if (subId) query = query.eq('league_id', subId);
-  }
-
-  // Team filter (only meaningful for league chips)
-  if (team && chip.type === 'league') {
-    const teamId = await getTeamIdBySlug(team);
-    if (teamId) {
-      query = query.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
-    }
-  }
-
-  // Free-text team search. Searches home_team.name OR away_team.name.
-  // PostgREST embedded relation filters don't support ilike on joined columns.
-  // Instead: query teams table for matching names, then filter fixtures by
-  // those IDs. This is two round-trips but reliable and correct.
-  if (q) {
-    const safe = q.replace(/[%_\\]/g, '\\$&');
-    const { data: matchingTeams } = await supabase
-      .from('teams')
-      .select('id')
-      .ilike('name', `%${safe}%`);
-    if (matchingTeams && matchingTeams.length > 0) {
-      const teamIds = matchingTeams.map(t => t.id).join(',');
-      query = query.or(`home_team_id.in.(${teamIds}),away_team_id.in.(${teamIds})`);
+  try {
+    // Resolve league(s)
+    let leagueIds: string[] = [];
+    if (league !== 'all') {
+      const { data: leagueRow } = await sb
+        .from('leagues')
+        .select('id')
+        .eq('slug', league)
+        .maybeSingle();
+      if (!leagueRow) {
+        return json({ data: [], count: 0, chip: league, time, hasMore: false });
+      }
+      leagueIds = [leagueRow.id];
     } else {
-      // No matching teams → return empty result
-      query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+      // Default top-level leagues for the "all" chip
+      const { data: topLeagues } = await sb
+        .from('leagues')
+        .select('id, slug')
+        .in('slug', ['nhl', 'ahl', 'pwhl', 'khl', 'shl', 'liiga', 'del', 'nl', 'extraliga', 'ncaa', 'chl', 'ushl']);
+      leagueIds = (topLeagues || []).map((l) => l.id);
     }
+
+    // Build query
+    let q = sb
+      .from('fixtures')
+      .select(
+        `id, scheduled_at, status, home_score, away_score, season, league_id,
+         home_team:teams!home_team_id(id, name, slug, logo_url),
+         away_team:teams!away_team_id(id, name, slug, logo_url),
+         league:leagues(id, name, slug)`,
+        { count: 'exact' }
+      )
+      .not('home_team_id', 'is', null)
+      .not('away_team_id', 'is', null)
+      .order('scheduled_at', { ascending: true })
+      .range(offset, offset + limit - 1);
+
+    if (leagueIds.length > 0) q = q.in('league_id', leagueIds);
+
+    // Team filter
+    if (team) {
+      const { data: teamRow } = await sb
+        .from('team_workspaces')
+        .select('id')
+        .eq('slug', team)
+        .maybeSingle();
+      if (teamRow) q = q.or(`home_team_id.eq.${teamRow.id},away_team_id.eq.${teamRow.id}`);
+    }
+
+    // Time filter
+    const recentCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+    if (hasExplicitRange) {
+      if (fromParam) q = q.gte('scheduled_at', `${fromParam}T00:00:00.000Z`);
+      if (toParam) q = q.lte('scheduled_at', `${toParam}T23:59:59.999Z`);
+    } else if (time === 'historical') {
+      q = q.neq('status', 'in_progress').lt('scheduled_at', recentCutoff);
+    } else if (time === 'recent') {
+      q = q.eq('status', 'completed').gte('scheduled_at', recentCutoff);
+    } else {
+      // current = scheduled/in_progress OR recently completed
+      q = q.or(`status.in.(scheduled,in_progress),and(status.eq.completed,scheduled_at.gte.${recentCutoff})`);
+    }
+
+    const { data, count, error } = await q;
+    if (error) {
+      console.error('[/api/scores] query error:', error.message);
+      return err(`query error: ${error.message}`, 500);
+    }
+
+    return json({
+      data: data || [],
+      count: count || 0,
+      chip: league,
+      time,
+      hasMore: (count || 0) > offset + limit,
+      from: fromParam,
+      to: toParam,
+    });
+  } catch (e: any) {
+    console.error('[/api/scores] catch:', e?.message || e);
+    return err(`internal: ${e?.message || 'unknown'}`, 500);
   }
-
-  // Time filter (status + date)
-  // recent     = completed games from the last 7 days (DESC by date)
-  // historical = anything older than the recent cutoff EXCEPT in-progress games
-  // current    = scheduled/in_progress (any date) OR recently completed
-  // from/to    = explicit [from, to] window (ISO date or datetime). When
-  //              set, the time preset is ignored entirely. Both bounds
-  //              optional. Sort order is preserved from the upstream builder.
-  if (hasExplicitRange) {
-    // Inclusive on both ends in UTC terms (PostgREST gte/lt semantics on
-    // scheduled_at). The week strip computes its bounds in ET and sends
-    // them as YYYY-MM-DD; we expand the upper bound to end-of-day UTC so
-    // an ET date like 2026-09-30 (which crosses midnight UTC) still
-    // includes all games that played out of that ET calendar day.
-    const fromTs = dateFrom ? `${dateFrom}T00:00:00.000Z` : null;
-    const toTs = dateTo ? `${dateTo}T23:59:59.999Z` : null;
-    if (fromTs) query = query.gte('scheduled_at', fromTs);
-    if (toTs)   query = query.lte('scheduled_at', toTs);
-  } else if (time === 'historical') {
-    query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoffISO);
-  } else if (time === 'recent') {
-    // 2026-09-17: new mode for the /scores Recent Results section.
-    // Completed games from the last 7 days, ordered most recent first.
-    // Excludes in-progress (those belong on 'Current').
-    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-    query = query.eq('status', 'completed').gte('scheduled_at', sevenDaysAgo);
-    // Override the default ASC sort from the upstream builder
-    query = query.order('scheduled_at', { ascending: false });
-  } else if (time === 'current' || !time) {
-    // 2026-10-01 fix (Arnel feedback, second pass): 'current' tab now
-    // starts from TODAY (ET) — not 3 days ago. The earlier 3-day
-    // cutoff included games from Sep 29 when the user landed on Oct 1,
-    // which left the user staring at a "Tuesday, September 29" header
-    // instead of today's games. Restricting completed-games to today
-    // (ET midnight) puts today's results at the top of the page where
-    // the user expects them.
-    //
-    // The week strip + date picker still cover "yesterday" / "this
-    // week" via the explicit from/to range — the default landing no
-    // longer needs to.
-    const nowISO = new Date().toISOString();
-    const fourHoursAgoISO = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-    // ET midnight for "today" — compute the ET calendar date as YYYY-MM-DD
-    // and combine with the known UTC offset for that zone. ET in Oct 2026
-    // is EDT (UTC-4). We avoid Intl.DateTimeFormat timeZone lookups here
-    // because they're not free; the four hours are stable for the season.
-    const now = new Date();
-    const etCal = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-    const etYmd = `${etCal.getUTCFullYear()}-${String(etCal.getUTCMonth() + 1).padStart(2, '0')}-${String(etCal.getUTCDate()).padStart(2, '0')}`;
-    // ET midnight Oct 1 → UTC 04:00 Oct 1.
-    const etTodayISO = `${etYmd}T04:00:00.000Z`;
-    query = query.or(
-      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${etTodayISO})`
-    );
-  } else {
-    // 2026-09-22 fix: 'scheduled' rows with a past scheduled_at are stale
-    // (the game already happened but the daily-scores cron didn't update
-    // its status). Only include scheduled games in the future. in_progress
-    // games are also stale-prone — exclude any whose scheduled_at is more
-    // than 4 hours in the past (NHL game duration ~2.5h + buffer; anything
-    // past that without status=completed is a missed update). recently-
-    // completed shows as before. Uses ET-today for the completed lower
-    // bound, matching the `time=current` branch (see comment there).
-    const nowISO = new Date().toISOString();
-    const fourHoursAgoISO = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
-    const now = new Date();
-    const etCal = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-    const etYmd = `${etCal.getUTCFullYear()}-${String(etCal.getUTCMonth() + 1).padStart(2, '0')}-${String(etCal.getUTCDate()).padStart(2, '0')}`;
-    const etTodayISO = `${etYmd}T04:00:00.000Z`;
-    query = query.or(
-      `and(status.eq.scheduled,scheduled_at.gte.${nowISO}),and(status.eq.in_progress,scheduled_at.gte.${fourHoursAgoISO}),and(status.eq.completed,scheduled_at.gte.${etTodayISO})`
-    );
-  }
-
-  query = query.limit(limit);
-
-  const { data, error } = await query;
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  const mapped = (data || []).map((g: any) => ({
-    id: g.id,
-    date: g.scheduled_at,
-    status: g.status,
-    scheduled_at: g.scheduled_at,
-    home_score: g.home_score,
-    away_score: g.away_score,
-    home_team: g.home_team ? {
-      id: g.home_team.id,
-      name: g.home_team.name,
-      slug: g.home_team.slug,
-      logo_url: g.home_team.logo_url || null,
-    } : null,
-    away_team: g.away_team ? {
-      id: g.away_team.id,
-      name: g.away_team.name,
-      slug: g.away_team.slug,
-      logo_url: g.away_team.logo_url || null,
-    } : null,
-    league: g.league ? { id: g.league.id, name: g.league.name, slug: g.league.slug } : null,
-  }));
-
-  const response = NextResponse.json({
-    data: mapped,
-    count: mapped.length,
-    chip: chip.slug,
-    time,
-    from: dateFrom,
-    to: dateTo,
-    hasMore: mapped.length === limit,
-  });
-  response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300');
-  return applyRateLimitHeaders(response, result);
 }
-
