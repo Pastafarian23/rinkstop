@@ -1406,7 +1406,7 @@ function PassportDocument({
         <QrCodeClient
           qrIdentifier={qrIdentifier}
           passportId={passportId}
-          size={88}
+          responsive
         />
         <div style={{ minWidth: 0, flex: 1 }}>
           <p

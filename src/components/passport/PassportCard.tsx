@@ -8,13 +8,21 @@
  *
  * Visual principles (per spec): professional, timeless, minimal, clean,
  * credible. Not social media, not gamification, not NFT.
+ *
+ * 2026-10-05: now a client component because it embeds <QrCodeClient> in
+ * the footer (the /api/* surface is currently 500'ing on Vercel, so the
+ * <img> pattern would render a broken-image icon). No state hooks added —
+ * the client boundary is just to allow the QrCodeClient child.
  */
+
+'use client';
 
 import type {
   PassportRecord,
   PassportUnifiedView,
 } from '@/lib/passport/types';
 import { PassportCardActions } from './PassportCardActions';
+import QrCodeClient from './QrCodeClient';
 
 interface PassportCardProps {
   passport: PassportRecord;
@@ -22,13 +30,13 @@ interface PassportCardProps {
   holderName: string;
   photoUrl?: string | null;
   /**
-   * WS2 PR2 — QR image source. When provided, the Card renders the QR <img>
-   * in the footer area. Server-side rendered. The endpoint is gated by
-   * PASSPORT_INTERNAL_API + PASSPORT_ASSETS_API; the Card does not gate on
-   * those flags here (the page-level /dashboard/passport route is responsible
-   * for the master gate).
+   * 2026-10-05: changed semantics. Pass the opaque qr_identifier (UUID)
+   * instead of an image src. The QrCodeClient component renders the QR
+   * client-side via qrcode.react. The previous <img> pattern pointing at
+   * /api/internal/passport/qr/* was broken because the /api/* surface is
+   * returning 500s on Vercel.
    */
-  qrImageSrc?: string;
+  qrIdentifier?: string;
 }
 
 const STATUS_LABEL: Record<PassportRecord['status'], string> = {
@@ -56,7 +64,7 @@ function formatDate(iso: string | null): string {
   });
 }
 
-export function PassportCard({ passport, view, holderName, photoUrl, qrImageSrc }: PassportCardProps) {
+export function PassportCard({ passport, view, holderName, photoUrl, qrIdentifier }: PassportCardProps) {
   const cardStyle: React.CSSProperties = {
     background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)',
     border: '1px solid rgba(255,255,255,0.12)',
@@ -177,20 +185,14 @@ export function PassportCard({ passport, view, holderName, photoUrl, qrImageSrc 
       >
         <div style={{ flex: '1 1 auto', minWidth: 0 }}>
           <p style={fieldLabelStyle}>QR Code</p>
-          {qrImageSrc ? (
-            <img
-              src={qrImageSrc}
-              alt="Hockey Passport QR code — scan to look up this Passport"
-              width={120}
-              height={120}
-              style={{
-                display: 'block',
-                marginTop: '0.25rem',
-                borderRadius: 6,
-                background: '#fff',
-                padding: 6,
-              }}
-            />
+          {qrIdentifier ? (
+            <div style={{ marginTop: '0.25rem' }}>
+              <QrCodeClient
+                qrIdentifier={qrIdentifier}
+                passportId={passport.passportId}
+                size={120}
+              />
+            </div>
           ) : (
             <div
               aria-hidden="true"
