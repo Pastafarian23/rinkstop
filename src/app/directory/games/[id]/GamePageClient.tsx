@@ -115,42 +115,86 @@ export default function GamePage() {
     (async () => {
       try {
         const sb = sbRef.current!;
-        // Game core data
+        // 1. Game core data
         const { data: g, error: gErr } = await sb
           .from('fixtures')
-          .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data, home_team:teams!home_team_id(id, name, slug, logo_url), away_team:teams!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug, level, country)`)
+          .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, season, game_data, home_team:teams!home_team_id(id, name, slug, logo_url, city, country), away_team:teams!away_team_id(id, name, slug, logo_url, city, country), league:leagues!fixtures_league_id_fkey(id, name, slug, level, country)`)
           .eq('id', gameId)
           .maybeSingle();
         if (cancelled) return;
         if (gErr) { setLoading(false); setError(gErr.message); return; }
         if (!g) { setLoading(false); return; }
-        // Linked articles / highlights. The /api/game/[id] endpoint
-        // previously joined these from a post_links table and a
-        // highlights table; both have been removed. Wrap in try/catch
-        // so the page renders the game details even if these joins
-        // 404. The server-side page.tsx can be extended later to
-        // surface per-fixture content from a different table.
+
+        // 2. Linked articles via posts + highlight_backups join.
+        // Mirrors the old /api/game/[id] route: find published articles
+        // linked to highlights that match this game's teams + date.
+        const gameDate = ((g as any).scheduled_at || '').slice(0, 10);
         let linkedArticles: any[] = [];
         let linkedHighlights: any[] = [];
         try {
-          const { data: links } = await sb
+          const { data: articles } = await sb
             .from('posts')
-            .select('id, slug, title, subtitle, category, reading_time_minutes, author_name, published_at, path')
-            .eq('fixture_id', gameId)
-            .limit(20);
-          if (Array.isArray(links)) linkedArticles = links as any[];
+            .select('id, slug, title, subtitle, category, reading_time_minutes, author_name, published_at, highlight_id')
+            .eq('status', 'published')
+            .not('highlight_id', 'is', null);
+          const articlesList = (articles as any[] | null) || [];
+          if (articlesList.length > 0) {
+            const hlIds = articlesList.map((a: any) => a.highlight_id).filter(Boolean);
+            const { data: matchingHighlights } = await sb
+              .from('highlight_backups')
+              .select('id, title, video_url, embed_url, source, channel, home_team_name, away_team_name, league_name, image_url, match_id, match_date')
+              .in('id', hlIds)
+              .gte('match_date', `${gameDate}T00:00:00Z`)
+              .lt('match_date', `${gameDate}T23:59:59Z`);
+            const matchesList = (matchingHighlights as any[] | null) || [];
+            if (matchesList.length > 0) {
+              const hlMap = new Map(matchesList.map((h: any) => [h.id, h]));
+              const homeTeamName = ((g as any).home_team as any)?.name;
+              const awayTeamName = ((g as any).away_team as any)?.name;
+              linkedArticles = articlesList
+                .filter((a: any) => {
+                  const hl = hlMap.get(a.highlight_id);
+                  if (!hl) return false;
+                  return hl.home_team_name === homeTeamName || hl.away_team_name === awayTeamName;
+                })
+                .map((a: any) => ({
+                  id: a.id,
+                  slug: a.slug,
+                  title: a.title,
+                  subtitle: a.subtitle,
+                  category: a.category,
+                  reading_time_minutes: a.reading_time_minutes,
+                  author_name: a.author_name,
+                  published_at: a.published_at,
+                  path: `/news/${a.slug}`,
+                }));
+              linkedHighlights = matchesList.map((h: any) => ({
+                id: h.id,
+                title: h.title,
+                video_url: h.video_url,
+                embed_url: h.embed_url,
+                source: h.source,
+                channel: h.channel,
+                league_name: (() => {
+                  if (!h.league_name) return null;
+                  try {
+                    const parsed = JSON.parse(h.league_name);
+                    return parsed?.name || h.league_name;
+                  } catch { return h.league_name; }
+                })(),
+                image_url: h.image_url,
+                match_id: h.match_id,
+                home_team_name: h.home_team_name,
+                away_team_name: h.away_team_name,
+              }));
+            }
+          }
         } catch {}
-        try {
-          const { data: hs } = await sb
-            .from('video_highlights')
-            .select('id, title, video_url, embed_url, source, channel, league_name, image_url, home_team_name, away_team_name')
-            .contains('related_fixture_ids', [gameId])
-            .limit(20);
-          if (Array.isArray(hs)) linkedHighlights = hs as any[];
-        } catch {}
+
         if (cancelled) return;
         const merged = {
           ...(g as any),
+          period_scores: (g as any).game_data?.period_scores || null,
           linked_articles: linkedArticles,
           linked_highlights: linkedHighlights,
         };
@@ -166,22 +210,25 @@ export default function GamePage() {
   }, [gameId]);
 
   // Boxscore: /api/game/[id]/boxscore is also /api/* and returns 500.
-  // The endpoint enriches a fixture with NHL.com or Highlightly period
-  // scores. For now, render without boxscore detail — the page still
-  // shows the final score, status, and team info. The /api/* endpoints
-  // are still listed as the long-term target once the Vercel surface
-  // is unblocked.
+  // 2026-10-05: boxscore data is embedded in fixtures.game_data.period_scores
+  // (from the Highlightly ingest). The /api route just unwraps it. Render
+  // from the game state directly, no extra fetch needed.
   useEffect(() => {
-    if (!gameId) return;
+    if (!game) { setBoxLoading(false); return; }
+    if (game.status !== 'completed' || game.home_score == null || game.away_score == null) {
+      setBoxLoading(false);
+      return;
+    }
     setBoxLoading(true);
-    fetch(`/api/game/${gameId}/boxscore`)
-      .then(r => r.json())
-      .then(d => {
-        if (d?.source === 'nhl.com' || d?.source === 'highlightly') setBoxscore(d);
-      })
-      .catch(() => {})
-      .finally(() => setBoxLoading(false));
-  }, [gameId]);
+    const ps = (game as any).period_scores;
+    if (ps && (Array.isArray(ps.first) || Array.isArray(ps.second) || Array.isArray(ps.third))) {
+      setBoxscore({
+        source: 'highlightly',
+        periodScores: ps,
+      } as Boxscore);
+    }
+    setBoxLoading(false);
+  }, [game]);
 
   if (loading) {
     return (
