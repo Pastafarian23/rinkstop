@@ -194,8 +194,17 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
     const hasExplicitRange = !!(from || to);
     const recentCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
     if (hasExplicitRange) {
-      if (from) query = query.gte('scheduled_at', `${from}T00:00:00.000Z`);
-      if (to) query = query.lte('scheduled_at', `${to}T23:59:59.999Z`);
+      // 2026-10-05 fix: when the user picks a date (or week window), we
+      // don't know their timezone. The site displays game times in ET,
+      // but the user could be in Cebu (UTC+8), Honolulu (UTC-10), or
+      // anywhere. Late-night ET games (e.g. 22:00 UTC = 6 PM ET) fall
+      // on the *next* local day in Asia, but the *previous* UTC day.
+      // A strict UTC day filter (00:00Z–23:59Z) misses those games.
+      // Widening by ±14h covers every timezone on Earth (max TZ offset
+      // is UTC+14). The client-side ET date grouping then narrows to
+      // exactly the user's chosen date.
+      if (from) query = query.gte('scheduled_at', `${from}T14:00:00.000Z`);
+      if (to) query = query.lte('scheduled_at', `${to}T13:59:59.999Z`);
     } else if (time === 'historical') {
       query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoff);
     } else if (time === 'recent') {
