@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface Props {
@@ -11,39 +12,60 @@ interface Props {
   /** Public passport id (e.g. RS1-DEMOPLAYER01) — used for ARIA / alt. */
   passportId: string;
   /**
-   * Pixel size of the rendered SVG. Defaults to 88 to match the existing
-   * <img> dimensions; callers can request larger sizes for print contexts.
+   * Pixel size of the rendered SVG. If omitted, the QR auto-sizes to the
+   * viewport: 88px on phones (the original <img> width), 168px on tablets,
+   * 240px on desktop. The whole card is ~280px wide so going larger starts
+   * to compete with the holder name — 240px is the largest size that keeps
+   * the row balanced on a 1440px viewport.
    */
   size?: number;
+  /**
+   * If true, ignore the `size` prop and pick a responsive size based on the
+   * current viewport width. The width is measured client-side because there
+   * is no SSR viewport API. On the very first paint we render at `size` (or
+   * 88px) to avoid a flash of zero-sized content; then we swap in the
+   * measured size once `useEffect` runs.
+   *
+   * Tiers (2026-10-05):
+   *   <640px   →  96px   (small mobile)
+   *   <1024px  → 144px   (tablet / small laptop)
+   *   <1440px  → 192px   (desktop)
+   *   ≥1440px  → 240px   (wide desktop)
+   */
+  responsive?: boolean;
 }
 
-/**
- * Client-side QR code generator for the public Passport page.
- *
- * Why client-side: as of 2026-10-05 the entire /api/* surface on rinkstop.com
- * was returning HTTP 500 because of a Vercel build-level issue affecting
- * route handlers. The previous <img src="/api/internal/passport/qr/[id]">
- * pattern was therefore producing broken-image icons on every passport page.
- *
- * Rendering the QR on the client with `qrcode.react` bypasses the broken
- * API surface entirely while still encoding the same canonical
- * `qr_identifier` (UUID) the server-side route used to encode. Single source
- * of truth for the payload is preserved: the value passed in here is the
- * same value the destination `/qr/[qrIdentifier]` resolver decodes.
- */
+const RESPONSIVE_TIER = (vw: number): number => {
+  if (vw < 640) return 96;
+  if (vw < 1024) return 144;
+  if (vw < 1440) return 192;
+  return 240;
+};
+
 export default function QrCodeClient({
   qrIdentifier,
   passportId,
   size = 88,
+  responsive = false,
 }: Props) {
+  const [resolvedSize, setResolvedSize] = useState<number>(size);
+
+  useEffect(() => {
+    if (!responsive || typeof window === 'undefined') return;
+    const compute = () => setResolvedSize(RESPONSIVE_TIER(window.innerWidth));
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, [responsive]);
+
   if (!qrIdentifier) {
     return (
       <div
         role="img"
         aria-label={`QR code unavailable for Hockey Passport ${passportId}`}
         style={{
-          width: size,
-          height: size,
+          width: resolvedSize,
+          height: resolvedSize,
           background: '#fff',
           display: 'flex',
           alignItems: 'center',
@@ -64,8 +86,8 @@ export default function QrCodeClient({
   return (
     <div
       style={{
-        width: size,
-        height: size,
+        width: resolvedSize,
+        height: resolvedSize,
         background: '#fff',
         borderRadius: 6,
         padding: 4,
@@ -78,7 +100,7 @@ export default function QrCodeClient({
     >
       <QRCodeSVG
         value={qrIdentifier}
-        size={size}
+        size={resolvedSize}
         level="M"
         fgColor="#041E42"
         bgColor="#FFFFFF"
