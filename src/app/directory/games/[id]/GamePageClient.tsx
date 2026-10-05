@@ -355,6 +355,64 @@ export default function GamePage() {
             variant="brand"
           />
         </div>
+
+        {/* Quick links — give the user one tap to the team pages and the
+            league page. Competitors (ESPN, NHL.com) all have this on
+            the game detail. Without it the user has to navigate back
+            to find the teams again. */}
+        <div style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
+          {game.home_team?.slug && (
+            <Link
+              href={`/directory/teams/${game.home_team.slug}`}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '99px',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.85)',
+                textDecoration: 'none',
+              }}
+            >
+              {homeName} →
+            </Link>
+          )}
+          {game.away_team?.slug && (
+            <Link
+              href={`/directory/teams/${game.away_team.slug}`}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '99px',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.85)',
+                textDecoration: 'none',
+              }}
+            >
+              {awayName} →
+            </Link>
+          )}
+          {game.league?.slug && (
+            <Link
+              href={`/directory/leagues/${game.league.slug}`}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'rgba(200,16,46,0.15)',
+                border: '1px solid rgba(200,16,46,0.4)',
+                borderRadius: '99px',
+                fontSize: '0.8125rem',
+                fontWeight: 600,
+                color: '#fff',
+                textDecoration: 'none',
+              }}
+            >
+              {game.league.name} →
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Period Scores — prefer game.period_scores (DB-stored from HL ingest),
