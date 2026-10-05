@@ -199,29 +199,30 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
     const hasExplicitRange = !!(from || to);
     const recentCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
     if (hasExplicitRange) {
-      // 2026-10-05 fix: when the user picks a date, we don't know
-      // their timezone. The site displays game times in ET, but the
-      // user could be in Cebu (UTC+8), Honolulu (UTC-10), or anywhere.
-      // Late-night ET games (e.g. 22:00 UTC = 6 PM ET) fall on the
-      // *next* local day in Asia, but the *previous* UTC day. A strict
-      // UTC day filter (00:00Z–23:59Z) misses those games.
-      // Widening by ±14h covers every timezone on Earth (max TZ offset
-      // is UTC+14). The client-side ET date grouping then narrows to
-      // exactly the user's chosen date.
-      // 2026-10-05 fix: only widen for SINGLE-DAY filters (from===to).
-      // For week windows the user expects the full ±3-day week exactly
-      // and widening pulls in games from the prior week's late-night
-      // ET slate.
-      const isSingleDay = from && to && from === to;
+      // 2026-10-05 fix: the site displays game times in ET, so the
+      // user's "date" is the ET date, not the UTC date. The DB stores
+      // scheduled_at in UTC. A game at 02:30 UTC on Oct 2 is Oct 1
+      // 9:30 PM ET, so it belongs to the user's Oct 1 — even though
+      // the strict UTC-day filter for 10/02 would include it.
+      // ET day starts at 04:00Z (during EDT) or 05:00Z (during EST).
+      // 04:00Z is the safe lower bound. The upper bound is end-of-day
+      // in ET = next day 04:00Z (exclusive). For a week window like
+      // 10/02-10/08, this gives 10/02 04:00Z to 10/09 04:00Z which
+      // catches every ET-day game in the user's chosen range and
+      // nothing more. For a single-day filter like 10/04, this gives
+      // 10/04 04:00Z to 10/05 04:00Z — one full ET day, no spillover.
+      const ET_DAY_START_HOUR_UTC = 4; // EDT
       if (from) {
         const fromDate = new Date(`${from}T00:00:00.000Z`);
-        if (isSingleDay) fromDate.setUTCHours(fromDate.getUTCHours() - 14);
+        fromDate.setUTCHours(ET_DAY_START_HOUR_UTC, 0, 0, 0);
         query = query.gte('scheduled_at', fromDate.toISOString());
       }
       if (to) {
-        const toDate = new Date(`${to}T23:59:59.999Z`);
-        if (isSingleDay) toDate.setUTCHours(toDate.getUTCHours() + 14);
-        query = query.lte('scheduled_at', toDate.toISOString());
+        // End is exclusive: from `to+1` at 04:00Z
+        const toDate = new Date(`${to}T00:00:00.000Z`);
+        toDate.setUTCDate(toDate.getUTCDate() + 1);
+        toDate.setUTCHours(ET_DAY_START_HOUR_UTC, 0, 0, 0);
+        query = query.lt('scheduled_at', toDate.toISOString());
       }
     } else if (time === 'historical') {
       query = query.neq('status', 'in_progress').lt('scheduled_at', recentCutoff);
