@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 import ShareButton from '@/components/ShareButton';
 import { type SharePayload } from '@/lib/share';
 import { formatGameTime, timezoneForGame, disclaimerText } from '@/lib/game-time';
@@ -94,28 +95,82 @@ export default function GamePage() {
   const [boxscore, setBoxscore] = useState<Boxscore | null>(null);
   const [boxLoading, setBoxLoading] = useState(false);
 
+  // 2026-10-05 fix (Arnel 404 on game detail): the original useEffect
+  // called /api/game/${gameId} which returns HTTP 500 on Vercel (the
+  // /api/* surface is broken). The catch set error='HTTP 500' and the
+  // page rendered 'Game Not Found' even though the row existed in
+  // fixtures. Query Supabase directly from the client instead.
+  const sbRef = useRef<ReturnType<typeof createClient> | null>(null);
+  if (!sbRef.current) {
+    sbRef.current = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
+    );
+  }
+
   useEffect(() => {
     if (!gameId) return;
-    // 2026-09-17: switched from /api/scores?limit=100 to /api/game/[id].
-    // The old approach fetched all current/recent games ordered DESC by
-    // scheduled_at and searched by ID — if the game was outside the first
-    // 100 (e.g. a preseason game in September), the detail page showed
-    // "Game Not Found" even though the row existed in fixtures.
-    fetch(`/api/game/${gameId}`)
-      .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-      .then((g: any) => {
-        if (g?.error) { setLoading(false); setError(g.error); return; }
-        setGame(g);
+    let cancelled = false;
+    (async () => {
+      try {
+        const sb = sbRef.current!;
+        // Game core data
+        const { data: g, error: gErr } = await sb
+          .from('fixtures')
+          .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data, home_team:teams!home_team_id(id, name, slug, logo_url), away_team:teams!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug, level, country)`)
+          .eq('id', gameId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (gErr) { setLoading(false); setError(gErr.message); return; }
+        if (!g) { setLoading(false); return; }
+        // Linked articles / highlights. The /api/game/[id] endpoint
+        // previously joined these from a post_links table and a
+        // highlights table; both have been removed. Wrap in try/catch
+        // so the page renders the game details even if these joins
+        // 404. The server-side page.tsx can be extended later to
+        // surface per-fixture content from a different table.
+        let linkedArticles: any[] = [];
+        let linkedHighlights: any[] = [];
+        try {
+          const { data: links } = await sb
+            .from('posts')
+            .select('id, slug, title, subtitle, category, reading_time_minutes, author_name, published_at, path')
+            .eq('fixture_id', gameId)
+            .limit(20);
+          if (Array.isArray(links)) linkedArticles = links as any[];
+        } catch {}
+        try {
+          const { data: hs } = await sb
+            .from('video_highlights')
+            .select('id, title, video_url, embed_url, source, channel, league_name, image_url, home_team_name, away_team_name')
+            .contains('related_fixture_ids', [gameId])
+            .limit(20);
+          if (Array.isArray(hs)) linkedHighlights = hs as any[];
+        } catch {}
+        if (cancelled) return;
+        const merged = {
+          ...(g as any),
+          linked_articles: linkedArticles,
+          linked_highlights: linkedHighlights,
+        };
+        setGame(merged as Game);
         setLoading(false);
-      })
-      .catch(err => { setLoading(false); setError(err.message); });
+      } catch (e: any) {
+        if (cancelled) return;
+        setLoading(false);
+        setError(e?.message || String(e));
+      }
+    })();
+    return () => { cancelled = true; };
   }, [gameId]);
 
-  // Fetch rich boxscore (NHL.com for NHL games, Highlightly for others).
-  // Per Arnel 2026-09-22 02:49 CDT: non-NHL games used to fall through to
-  // 'detailed stats on the league's official site' which was a dead end.
-  // The /api/game/[id]/boxscore endpoint now returns HL period scores for
-  // non-NHL leagues (KHL/SHL/DEL/MHL/VHL/SPHL/Liiga).
+  // Boxscore: /api/game/[id]/boxscore is also /api/* and returns 500.
+  // The endpoint enriches a fixture with NHL.com or Highlightly period
+  // scores. For now, render without boxscore detail — the page still
+  // shows the final score, status, and team info. The /api/* endpoints
+  // are still listed as the long-term target once the Vercel surface
+  // is unblocked.
   useEffect(() => {
     if (!gameId) return;
     setBoxLoading(true);
