@@ -186,7 +186,9 @@ function DirectoryLandingInner({ counts }: { counts: { rinks: number; teams: num
               Browse the Hockey Database
             </div>
             <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8125rem', lineHeight: 1.45 }}>
-              ${counts.rinks.toLocaleString()} rinks, ${counts.teams.toLocaleString()} teams, ${counts.players.toLocaleString()} players, ${counts.leagues.toLocaleString()} leagues, 85 federations — the global hockey knowledge base.
+{counts
+                ? `${counts.rinks.toLocaleString()} rinks, ${counts.teams.toLocaleString()} teams, ${counts.players.toLocaleString()} players, ${counts.leagues.toLocaleString()} leagues, 85 federations — the global hockey knowledge base.`
+                : '1,856 rinks, 2,601 teams, 6,351 players, 305 leagues, 85 federations — the global hockey knowledge base.'}
             </div>
           </div>
           <div style={{ color: '#0078D4', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', flexShrink: 0 }}>
