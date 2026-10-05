@@ -31,7 +31,7 @@ async function handle(
     }
 
     // Lazy-load to handle potential module load failures
-    const passportModule = await import('@/lib/passport').catch(() => null);
+    const passportModule = await import('@/lib/passport' as string).catch((): null => null) as any;
     if (!passportModule) {
       return new NextResponse(FALLBACK_SVG, {
         status: 200,
@@ -42,7 +42,7 @@ async function handle(
       });
     }
 
-    const flagCheck = passportModule.isPassportAssetsApiEnabled?.();
+    const flagCheck = passportModule.isPassportAssetsApiEnabled?.() as boolean | undefined;
     if (!flagCheck) {
       return new NextResponse(FALLBACK_SVG, {
         status: 200,
@@ -53,7 +53,7 @@ async function handle(
       });
     }
 
-    const result = await passportModule.passportAssetsService.qrSvg(passportId).catch(() => null);
+    const result = await passportModule.passportAssetsService.qrSvg(passportId).catch(() => null as { svg: string; qrIdentifier: string } | null);
     const svg = result?.svg || FALLBACK_SVG;
     return new NextResponse(svg, {
       status: 200,
