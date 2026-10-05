@@ -90,29 +90,47 @@ export default async function PassportProfileCard({
         }}
       >
         <div className="profile-passport-row" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          {/* Gold seal */}
-          <div
-            aria-hidden
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              background: `radial-gradient(circle at 30% 30%, #FFD66B 0%, ${PASSPORT_GOLD} 60%, #B45309 100%)`,
-              border: '2px solid rgba(255,255,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: "'Bebas Neue', Impact, sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              color: '#0B1E3F',
-              letterSpacing: '0.05em',
-              flexShrink: 0,
-              boxShadow: '0 4px 10px rgba(0,0,0,0.35)',
-            }}
-          >
-            RS
-          </div>
+          {/* Avatar (or gold seal fallback) */}
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={`${profile.display_name || 'Hockey Passport holder'} avatar`}
+              data-passport-avatar
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: `2px solid ${PASSPORT_GOLD}`,
+                flexShrink: 0,
+                background: '#fff',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.35)',
+              }}
+            />
+          ) : (
+            <div
+              aria-hidden
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                background: `radial-gradient(circle at 30% 30%, #FFD66B 0%, ${PASSPORT_GOLD} 60%, #B45309 100%)`,
+                border: '2px solid rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: "'Bebas Neue', Impact, sans-serif",
+                fontWeight: 700,
+                fontSize: 14,
+                color: '#0B1E3F',
+                letterSpacing: '0.05em',
+                flexShrink: 0,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.35)',
+              }}
+            >
+              RS
+            </div>
+          )}
           <div style={{ minWidth: 0, flex: '1 1 140px' }}>
             <p
               style={{
