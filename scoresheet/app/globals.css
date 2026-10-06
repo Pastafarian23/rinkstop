@@ -1,0 +1,167 @@
+/* RinkStop Scoresheet — global styles
+ *
+ * Brand: RinkStop navy + gold + red (matches rinkstop.com)
+ *   - Background: #0F172A (navy)
+ *   - Primary action: #FFB81C (gold)
+ *   - Accent / critical: #C8102E (red)
+ *   - Text: white / rgba(255,255,255,0.7) for body / rgba(255,255,255,0.5) for dim
+ *
+ * Mobile-first. Designed for one-handed use at a noisy rink.
+ * High contrast for outdoor / bright-rink visibility.
+ */
+
+:root {
+  --rs-navy: #0F172A;
+  --rs-navy-deep: #041E42;
+  --rs-gold: #FFB81C;
+  --rs-gold-deep: #B45309;
+  --rs-red: #C8102E;
+  --rs-red-deep: #8B0A1F;
+  --rs-green: #22C55E;
+  --rs-text: #F8FAFC;
+  --rs-text-dim: rgba(255,255,255,0.7);
+  --rs-text-faint: rgba(255,255,255,0.5);
+  --rs-border: rgba(255,255,255,0.12);
+  --rs-card: rgba(15,23,42,0.65);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--rs-navy);
+  color: var(--rs-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  min-height: 100dvh;
+}
+
+body {
+  background: linear-gradient(180deg, var(--rs-navy-deep) 0%, var(--rs-navy) 50%, var(--rs-navy-deep) 100%);
+  background-attachment: fixed;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 16px;  /* prevents iOS zoom on focus */
+}
+
+/* Big-tap primary action button. Used for the most common action
+   (start game, save goal, etc). */
+.rs-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  background: var(--rs-gold);
+  color: var(--rs-navy-deep);
+  border: 2px solid var(--rs-gold-deep);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  min-height: 52px;
+  min-width: 52px;
+  text-decoration: none;
+  transition: transform 0.05s ease;
+}
+
+.rs-btn-primary:active {
+  transform: scale(0.97);
+}
+
+.rs-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255,255,255,0.06);
+  color: var(--rs-text);
+  border: 1px solid var(--rs-border);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  min-height: 48px;
+  text-decoration: none;
+}
+
+.rs-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  background: var(--rs-red);
+  color: white;
+  border: 2px solid var(--rs-red-deep);
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  min-height: 52px;
+}
+
+.rs-card {
+  background: var(--rs-card);
+  border: 1px solid var(--rs-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.rs-input {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--rs-border);
+  border-radius: 8px;
+  color: var(--rs-text);
+  font-size: 1rem;
+}
+
+.rs-input:focus {
+  outline: 2px solid var(--rs-gold);
+  outline-offset: 2px;
+  border-color: var(--rs-gold);
+}
+
+.rs-label {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--rs-text-faint);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+/* Big-tap event buttons in the scorekeeper view. Used for Goal, Penalty, Save. */
+.rs-event-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: 2px solid;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rs-event-btn:active {
+  transform: scale(0.97);
+}

@@ -1,0 +1,31 @@
+{
+  "name": "scoresheet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RinkStop Scoresheet — hockey scorekeeping app. Lives at scoresheet.rinkstop.com as a separate Vercel project built from the scoresheet/ subdirectory of rinkstop-platform.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.4.1",
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "^15.5.24",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.5.24",
+    "typescript": "^5.7.0"
+  }
+}
