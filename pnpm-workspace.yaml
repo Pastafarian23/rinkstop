@@ -2,10 +2,13 @@
 # this file exists; without it, `pnpm install` fails with "packages field
 # missing or empty". This was breaking the `Build Android APK` CI workflow.
 #
-# 2026-10-06: Added the scoresheet/ subdirectory as a recognized workspace
-# so Vercel can build it as a separate project. The scoresheet shares the
-# monorepo's Supabase/Clerk/types deps via the workspace link.
+# 2026-10-06: Added scoresheet/ AND the root as recognized workspace
+# packages so Vercel can build the scoresheet as a separate project.
+# Both the rinkstop-platform root and the scoresheet subdir are
+# workspace members, so pnpm install resolves their combined deps
+# correctly from the shared lockfile.
 packages:
+  - '.'
   - 'scoresheet'
 
 # OWASP A06 audit 2026-08-26: opt-in to running install scripts for these
@@ -22,7 +25,7 @@ minimumReleaseAgeExclude:
   - '@next/swc-linux-arm64-gnu@15.5.24'
   - '@next/swc-linux-arm64-musl@15.5.24'
   - '@next/swc-linux-x64-gnu@15.5.24'
-  - '@next/swc-win32-arm64-musl@15.5.24'
+  - '@next/swc-linux-x64-musl@15.5.24'
   - '@next/swc-win32-arm64-msvc@15.5.24'
-  - '@next/swc-win32-x64-15.5.24'
+  - '@next/swc-win32-x64-msvc@15.5.24'
   - next@15.5.24
