@@ -61,7 +61,27 @@ export function displayNameForGame(teamSlug: string, date: string | Date | null 
   const isValidDate = gameDate && !isNaN(gameDate.getTime());
 
   if (!isValidDate) {
-    // No date — show current name.
+    // No date — this is a team-page lookup. Resolve the entry that
+    // matches the input slug directly (chain.entry.slug === input slug),
+    // not the current entry. That way a historical slug like
+    // 'phoenix-coyotes' resolves to "Phoenix Coyotes (now Utah Mammoth)",
+    // not to the current name.
+    const directMatch = chain.chain.find((e) => e.slug === teamSlug);
+    if (directMatch) {
+      // An entry is "historical" if (a) it's not the current entry, OR
+      // (b) it IS the current entry but has an endDate (the franchise is
+      // defunct — e.g. brooklyn-americans, montreal-wanderers).
+      const isCurrentEntry = directMatch.slug === current.slug;
+      const isDefunct = isCurrentEntry && !!directMatch.endDate;
+      return {
+        display: directMatch.name,
+        entrySlug: directMatch.slug,
+        isHistorical: !isCurrentEntry || isDefunct,
+        currentName: isCurrentEntry && !isDefunct ? undefined : current.name,
+        currentSlug: chain.current,
+      };
+    }
+    // No direct slug match — fall back to current name.
     return {
       display: current.name,
       entrySlug: current.slug,
