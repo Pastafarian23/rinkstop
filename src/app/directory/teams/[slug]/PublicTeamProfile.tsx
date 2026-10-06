@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { buildTeamShare } from '@/lib/share';
+import { getChainForSlug } from '@/lib/franchise-name-lookup';
 
 // ── Types ────────────────────────────────────────────────────────────────────────
 
@@ -586,6 +587,19 @@ export default function PublicTeamProfile({
             >
               {flag} {team.name}
             </h1>
+            {/* Formerly known as — only for teams with franchise chains
+                (e.g. Utah Hockey Club was formerly Phoenix Coyotes).
+                Arnel directive 2026-10-05. */}
+            {(() => {
+              const chain = getChainForSlug(team.slug);
+              if (!chain || chain.chain.length < 2) return null;
+              const priorNames = chain.chain.slice(0, -1).map((e: { name: string }) => e.name);
+              return (
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.35rem' }}>
+                  Formerly known as {priorNames.join(', ')}
+                </p>
+              );
+            })()}
             <ClaimBadge
               claimed={claimed}
               admins={admins}
