@@ -1,15 +1,7 @@
 # pnpm v9+ requires the `packages:` field to be present (even as []) when
 # this file exists; without it, `pnpm install` fails with "packages field
 # missing or empty". This was breaking the `Build Android APK` CI workflow.
-#
-# 2026-10-06: Added scoresheet/ AND the root as recognized workspace
-# packages so Vercel can build the scoresheet as a separate project.
-# Both the rinkstop-platform root and the scoresheet subdir are
-# workspace members, so pnpm install resolves their combined deps
-# correctly from the shared lockfile.
-packages:
-  - '.'
-  - 'scoresheet'
+packages: []
 
 # OWASP A06 audit 2026-08-26: opt-in to running install scripts for these
 # packages. Required so `@clerk/shared` and `esbuild` can run their native
