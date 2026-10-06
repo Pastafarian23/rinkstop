@@ -1,9 +1,9 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && pnpm install --filter rinkstop-platform... --frozen-lockfile=false && cd scoresheet && pnpm install && pnpm build",
+  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile=false && pnpm build",
   "outputDirectory": ".next",
-  "installCommand": "cd ../.. && pnpm install --filter rinkstop-platform... --frozen-lockfile=false",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile=false",
   "rewrites": [
     {
       "source": "/(.*)",
