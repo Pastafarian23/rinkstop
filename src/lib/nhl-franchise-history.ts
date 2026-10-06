@@ -53,6 +53,7 @@ export const NHL_FRANCHISE_HISTORY: FranchiseChain[] = [
       { slug: 'winnipeg-jets-original', name: 'Winnipeg Jets', years: '1972–1996', city: 'Winnipeg', startDate: '1972-01-01', endDate: '1996-07-01', notes: 'Original WHA (1972) and NHL (1979) franchise. Relocated to Phoenix in 1996.' },
       { slug: 'phoenix-coyotes', name: 'Phoenix Coyotes', years: '1996–2014', city: 'Phoenix', startDate: '1996-07-01', endDate: '2014-06-27', notes: 'Relocated from Winnipeg. Retained Winnipeg-era Jets history.' },
       { slug: 'arizona-coyotes', name: 'Arizona Coyotes', years: '2014–2024', city: 'Glendale / Tempe', startDate: '2014-06-27', endDate: '2024-04-13', notes: 'Renamed from Phoenix to Arizona in 2014. Played at multiple Valley venues.' },
+      { slug: 'arizona-coyotes-historical', name: 'Arizona Coyotes (historical record)', years: '2014–2024', city: 'Glendale / Tempe', startDate: '2014-06-27', endDate: '2024-04-13', notes: 'Historical-record entry for the URL /directory/teams/arizona-coyotes-historical. Same franchise as arizona-coyotes. Both point at the same team.' },
       { slug: 'utah-hockey-club', name: 'Utah Hockey Club', years: '2024–2025', city: 'Salt Lake City', startDate: '2024-04-13', endDate: '2025-09-01', notes: 'Relocated from Arizona. "Mammoth" branding identity adopted 2025-26.' },
       { slug: 'utah-mammoth', name: 'Utah Mammoth', years: '2025–present', city: 'Salt Lake City', startDate: '2025-09-01', notes: 'Permanent name adopted for the 2025-26 season. Direct successor of the Utah Hockey Club.' },
     ],
