@@ -92,6 +92,21 @@ export default function TeamDetailClient({
             <h1 style={{ fontFamily: "'Bebas Neue', Impact, sans-serif", fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', color: '#fff', letterSpacing: '0.02em', lineHeight: 1 }}>
               {team.name.toUpperCase()}
             </h1>
+            {/* Formerly known as — only for teams with franchise chains
+                (e.g. Utah Hockey Club was formerly Phoenix Coyotes) */}
+            {(() => {
+              const chain = getChainForSlug(team.slug);
+              if (!chain || chain.chain.length < 2) return null;
+              const priorNames = chain.chain
+                .slice(0, -1)
+                .map((e) => e.name);
+              const priorLabel = priorNames.join(', ');
+              return (
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.25rem' }}>
+                  Formerly known as {priorLabel}
+                </p>
+              );
+            })()}
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8125rem', marginTop: '0.2rem' }}>
               {[team.city, team.country].filter(Boolean).join(', ')}
               {team.leagues?.name ? ` · ${team.leagues.name}` : ''}

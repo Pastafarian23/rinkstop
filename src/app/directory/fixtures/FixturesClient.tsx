@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { displayNameForGame } from '@/lib/franchise-name-lookup';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -28,16 +29,23 @@ export default function FixturesClient({ initialFixtures }: { initialFixtures: a
       ],
     };
 
-    const events = fixtures.map((f: any) => ({
-      '@type': 'SportsEvent',
-      name: `${f.home_team?.name || 'Home'} vs ${f.away_team?.name || 'Away'}`,
-      startDate: f.scheduled_at,
-      location: f.venue?.name ? { '@type': 'Place', name: f.venue.name } : undefined,
-      competitor: [
-        f.home_team ? { '@type': 'SportsTeam', name: f.home_team.name } : undefined,
-        f.away_team ? { '@type': 'SportsTeam', name: f.away_team.name } : undefined,
-      ].filter(Boolean),
-    }));
+    // Date-aware historical name resolution for SEO schema too.
+    const events = fixtures.map((f: any) => {
+      const hd = f.home_team?.slug ? displayNameForGame(f.home_team.slug, f.scheduled_at) : null;
+      const ad = f.away_team?.slug ? displayNameForGame(f.away_team.slug, f.scheduled_at) : null;
+      const homeName = hd?.display || f.home_team?.name || 'Home';
+      const awayName = ad?.display || f.away_team?.name || 'Away';
+      return {
+        '@type': 'SportsEvent',
+        name: `${homeName} vs ${awayName}`,
+        startDate: f.scheduled_at,
+        location: f.venue?.name ? { '@type': 'Place', name: f.venue.name } : undefined,
+        competitor: [
+          f.home_team ? { '@type': 'SportsTeam', name: homeName } : undefined,
+          f.away_team ? { '@type': 'SportsTeam', name: awayName } : undefined,
+        ].filter(Boolean),
+      };
+    });
 
     const script = document.createElement('script');
     script.type = 'application/ld+json';
@@ -92,10 +100,15 @@ export default function FixturesClient({ initialFixtures }: { initialFixtures: a
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {fixtures.map((f: any) => {
             const s = statusStyle[f.status] || statusStyle.scheduled;
+            // Date-aware historical name resolution for list display.
+            const hd = f.home_team?.slug ? displayNameForGame(f.home_team.slug, f.scheduled_at) : null;
+            const ad = f.away_team?.slug ? displayNameForGame(f.away_team.slug, f.scheduled_at) : null;
+            const homeRenderName = hd?.display || f.home_team?.name || 'Home';
+            const awayRenderName = ad?.display || f.away_team?.name || 'Away';
             return (
               <div key={f.id} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{f.home_team?.name || 'Home'}</p>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{homeRenderName}</p>
                   <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: '0.2rem' }}>{f.home_score ?? '-'}</p>
                 </div>
                 <div style={{ textAlign: 'center' }}>
@@ -105,7 +118,7 @@ export default function FixturesClient({ initialFixtures }: { initialFixtures: a
                   </span>
                 </div>
                 <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{f.away_team?.name || 'Away'}</p>
+                  <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff' }}>{awayRenderName}</p>
                   <p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', marginTop: '0.2rem' }}>{f.away_score ?? '-'}</p>
                 </div>
                 {f.venue?.name && (

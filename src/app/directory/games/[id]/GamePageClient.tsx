@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { type SharePayload } from '@/lib/share';
 import { formatGameTime, timezoneForGame, disclaimerText } from '@/lib/game-time';
+import { displayNameForGame, historicalAliasLabel } from '@/lib/franchise-name-lookup';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -156,6 +157,18 @@ export default function GamePage() {
   const homeSlug = game.home_team?.slug;
   const awaySlug = game.away_team?.slug;
 
+  // Date-aware franchise name resolution — old Phoenix Coyotes games
+  // show "Phoenix Coyotes" not "Utah Hockey Club" (Arnel 2026-10-05).
+  const gameDate = game.scheduled_at || game.date;
+  const homeDisplay = homeSlug ? displayNameForGame(homeSlug, gameDate) : null;
+  const awayDisplay = awaySlug ? displayNameForGame(awaySlug, gameDate) : null;
+  const homeRenderName = homeDisplay?.display || homeName;
+  const awayRenderName = awayDisplay?.display || awayName;
+  const homeAlias = homeDisplay ? historicalAliasLabel(homeSlug!, gameDate) : undefined;
+  const awayAlias = awayDisplay ? historicalAliasLabel(awaySlug!, gameDate) : undefined;
+  const homeChainLink = homeDisplay && homeDisplay.isHistorical ? `/directory/nhl/history#${homeDisplay.currentSlug}` : null;
+  const awayChainLink = awayDisplay && awayDisplay.isHistorical ? `/directory/nhl/history#${awayDisplay.currentSlug}` : null;
+
   // Determine winner for completed games
   const isCompleted = game.status === 'completed' && game.home_score !== null && game.away_score !== null;
   const homeWin = isCompleted && game.home_score! > game.away_score!;
@@ -188,12 +201,19 @@ export default function GamePage() {
             {awaySlug ? (
               <Link href={`/directory/teams/${awaySlug}`} style={{ textDecoration: 'none' }}>
                 {game.away_team?.logo_url && (
-                  <img src={game.away_team.logo_url} alt={`${awayName} logo`} style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
+                  <img src={game.away_team.logo_url} alt={`${awayRenderName} logo`} style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
                 )}
-                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: awayWin ? '#34d399' : '#fff' }}>{awayName}</p>
+                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: awayWin ? '#34d399' : '#fff' }}>{awayRenderName}</p>
+                {awayAlias && awayChainLink && (
+                  <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                    <Link href={awayChainLink} style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
+                      {awayAlias}
+                    </Link>
+                  </p>
+                )}
               </Link>
             ) : (
-              <p style={{ fontSize: '1.125rem', fontWeight: 700, color: awayWin ? '#34d399' : '#fff' }}>{awayName}</p>
+              <p style={{ fontSize: '1.125rem', fontWeight: 700, color: awayWin ? '#34d399' : '#fff' }}>{awayRenderName}</p>
             )}
           </div>
 
@@ -226,12 +246,19 @@ export default function GamePage() {
             {homeSlug ? (
               <Link href={`/directory/teams/${homeSlug}`} style={{ textDecoration: 'none' }}>
                 {game.home_team?.logo_url && (
-                  <img src={game.home_team.logo_url} alt={`${homeName} logo`} style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
+                  <img src={game.home_team.logo_url} alt={`${homeRenderName} logo`} style={{ width: '64px', height: '64px', objectFit: 'contain', marginBottom: '0.5rem' }} />
                 )}
-                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: homeWin ? '#34d399' : '#fff' }}>{homeName}</p>
+                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: homeWin ? '#34d399' : '#fff' }}>{homeRenderName}</p>
+                {homeAlias && homeChainLink && (
+                  <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                    <Link href={homeChainLink} style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
+                      {homeAlias}
+                    </Link>
+                  </p>
+                )}
               </Link>
             ) : (
-              <p style={{ fontSize: '1.125rem', fontWeight: 700, color: homeWin ? '#34d399' : '#fff' }}>{homeName}</p>
+              <p style={{ fontSize: '1.125rem', fontWeight: 700, color: homeWin ? '#34d399' : '#fff' }}>{homeRenderName}</p>
             )}
           </div>
         </div>

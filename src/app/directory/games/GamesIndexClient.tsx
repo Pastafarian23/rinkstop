@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SCORE_CHIPS, DEFAULT_CHIP, DEFAULT_TIME, DEFAULT_PAGE_SIZE, getChip } from '@/lib/score-chips';
 import { formatGameTime, timezoneForGame, tzAbbr } from '@/lib/game-time';
+import { displayNameForGame, historicalAliasLabel } from '@/lib/franchise-name-lookup';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -297,6 +298,16 @@ function GameCard({ game }: { game: Game }) {
   const homeName = game.home_team?.name || 'Home';
   const awayName = game.away_team?.name || 'Away';
 
+  // Date-aware franchise name resolution — old Phoenix Coyotes games
+  // show "Phoenix Coyotes" not "Utah Hockey Club" (Arnel 2026-10-05).
+  const gameDate = game.scheduled_at || game.date;
+  const homeSlug = game.home_team?.slug;
+  const awaySlug = game.away_team?.slug;
+  const homeDisplay = homeSlug ? displayNameForGame(homeSlug, gameDate) : null;
+  const awayDisplay = awaySlug ? displayNameForGame(awaySlug, gameDate) : null;
+  const homeRenderName = homeDisplay?.display || homeName;
+  const awayRenderName = awayDisplay?.display || awayName;
+
   return (
     <Link
       href={`/directory/games/${game.id}`}
@@ -325,9 +336,9 @@ function GameCard({ game }: { game: Game }) {
       <div style={{ textAlign: 'left' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {game.home_team?.logo_url && (
-            <img src={game.home_team.logo_url} alt={`${homeName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <img src={game.home_team.logo_url} alt={`${homeRenderName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
           )}
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{homeName}</p>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{homeRenderName}</p>
         </div>
       </div>
 
@@ -359,9 +370,9 @@ function GameCard({ game }: { game: Game }) {
 
       <div style={{ textAlign: 'right' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{awayName}</p>
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{awayRenderName}</p>
           {game.away_team?.logo_url && (
-            <img src={game.away_team.logo_url} alt={`${awayName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <img src={game.away_team.logo_url} alt={`${awayRenderName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
           )}
         </div>
       </div>
@@ -613,16 +624,25 @@ export default function GamesIndexClient({ initialData }: Props) {
         { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/games` },
       ],
     };
-    const events = games.map((g: any): Record<string, any> => ({
-      '@type': 'SportsEvent',
-      name: `${g.home_team?.name || 'Home'} vs ${g.away_team?.name || 'Away'}`,
-      startDate: g.scheduled_at,
-      location: undefined,
-      competitor: [
-        g.home_team ? { '@type': 'SportsTeam', name: g.home_team.name } : undefined,
-        g.away_team ? { '@type': 'SportsTeam', name: g.away_team.name } : undefined,
-      ].filter(Boolean),
-    }));
+    const events = games.map((g: any): Record<string, any> => {
+      // Date-aware historical team name resolution for SEO schema too
+      // (search engines should index the name the team was known by on
+      // game date, not the current canonical name — Arnel 2026-10-05).
+      const hd = g.home_team?.slug ? displayNameForGame(g.home_team.slug, g.scheduled_at || g.date) : null;
+      const ad = g.away_team?.slug ? displayNameForGame(g.away_team.slug, g.scheduled_at || g.date) : null;
+      const homeName = hd?.display || g.home_team?.name || 'Home';
+      const awayName = ad?.display || g.away_team?.name || 'Away';
+      return {
+        '@type': 'SportsEvent',
+        name: `${homeName} vs ${awayName}`,
+        startDate: g.scheduled_at,
+        location: undefined,
+        competitor: [
+          g.home_team ? { '@type': 'SportsTeam', name: homeName } : undefined,
+          g.away_team ? { '@type': 'SportsTeam', name: awayName } : undefined,
+        ].filter(Boolean),
+      };
+    });
     const script = document.createElement('script');
     script.type = 'application/ld+json';
     script.text = JSON.stringify([breadcrumbSchema, ...events]);
