@@ -26,8 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getWhlTeamCount();
   return {
     title: teamCount > 0
-      ? `WHL 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'WHL 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `WHL 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'WHL 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `Western Hockey League (WHL) 2026-27: ${teamCount} teams across Western Canada and the U.S. Pacific Northwest. Major-junior league. Competes for the Memorial Cup. Defending champion Everett Silvertips.`
       : 'Western Hockey League (WHL) 2026-27: 23 teams across Western Canada and the U.S. Pacific Northwest. Major-junior league. Competes for the Memorial Cup. Defending champion Everett Silvertips.',
@@ -138,7 +138,7 @@ export default async function WhlPage() {
             Bobby Clarke led the Flin Flon Bombers to back-to-back WHL titles in 1969 and 1970. The Flin Flon Bombers then lost the 1971 WHL final to the Edmonton Oil Kings. The 1970s also saw the rise of the Regina Pats, who won the WHL championship four times in the decade. The 1980s saw the Portland Winterhawks and Medicine Hat Tigers establish dynasties, with the Tigers winning 3 WHL titles in 6 years. The 1990s brought the Swift Current Broncos and Brandon Wheat Kings to prominence. The 2000s and 2010s saw the Kamloops Blazers win 3 WHL titles and the Kelowna Rockets win 2.
           </p>
           <p>
-            The WHL has produced more NHL draft picks than any other CHL league, in part because of the league&apos;s deep geographic footprint and large rosters. Notable WHL alumni include 9 NHL Hart Trophy winners, including Wayne Gretzky (no WHL career, but he played exhibition games), Bobby Clarke, Bryan Trottier, Joe Sakic, Jarome Iginla, Mark Messier, Brett Hull, Mike Vernon, and most recently Connor McDavid (2013-15, Erie Otters — wait, OHL) and many more. The league&apos;s 50th anniversary was celebrated in 2016-17, with the league&apos;s 60th anniversary in 2026-27. Everett Silvertips won the 2024-25 Ed Chynoweth Trophy as WHL playoff champion, then won the 2025 Memorial Cup for the first time in franchise history. The WHL will add a 24th team in Chilliwack, BC for 2027-28.
+            The WHL has produced more NHL draft picks than any other CHL league, in part because of the league&apos;s deep geographic footprint and large rosters. Notable WHL alumni include Hart Trophy winners Bobby Clarke, Bryan Trottier, Joe Sakic, Jarome Iginla, Mark Messier, Brett Hull, and others. The league&apos;s 50th anniversary was celebrated in 2016-17, with the league&apos;s 60th anniversary in 2026-27. Everett Silvertips won the 2024-25 Ed Chynoweth Trophy as WHL playoff champion, then won the 2025 Memorial Cup for the first time in franchise history. The WHL will add a 24th team in Chilliwack, BC for 2027-28.
           </p>
         </div>
       </section>

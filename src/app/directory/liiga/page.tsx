@@ -26,8 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getLiigaTeamCount();
   return {
     title: teamCount > 0
-      ? `Liiga 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'Liiga 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `Liiga 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'Liiga 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `Liiga (Finnish Hockey League) 2026-27: ${teamCount} teams across Finland. Tappara the defending champion (14 titles). Live standings, schedule, scores, and rosters.`
       : 'Liiga (Finnish Hockey League) 2026-27. 16 teams across Finland. Standings, schedule, scores, and rosters. Tappara the defending champion.',
