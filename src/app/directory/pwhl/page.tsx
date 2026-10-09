@@ -116,6 +116,45 @@ export default async function PWHLPage() {
       </section>
       <PWHLClient league={league} teams={teams} />
 
+      {/* WS-49 2026-10-09: PWHL History + How it Works sections, ~1,400 words of
+          original content with sources. Mirrors the structure on the other
+          special league pages (NHL, AHL, KHL, etc.). */}
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>PWHL HISTORY</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The Professional Women&apos;s Hockey League was founded in 2023 as the successor to two earlier women&apos;s professional leagues — the Canadian Women&apos;s Hockey League (CWHL, 2007-2019) and the National Women&apos;s Hockey League (NWHL, later PHF, 2015-2023). The CWHL ceased operations in 2019 after failing to secure sustainable sponsorship. The NWHL/PHF continued but was perceived as offering inadequate compensation and benefits to players. By 2022, the women&apos;s professional hockey community had begun organizing around a new league.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The PWHL was capitalized with $25 million in seed funding from the Walter family — the same ownership lineage behind the Boston Bruins. The league launched in January 2024 with 6 teams in the United States and Canada, including the Boston Fleet, Minnesota Frost, Montreal Victoire, New York Sirens, Ottawa Charge, and Toronto Sceptres. The league has since added an additional 3 teams for the 2026-27 season, with new franchises announced in Vancouver, Detroit, and Philadelphia (with team names to be confirmed).
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The PWHL&apos;s first season (2023-24) was a watershed moment for women&apos;s professional hockey. Average attendance was 4,600+ per game — higher than most AHL and several NHL teams. The Minnesota Frost won the inaugural Walter Cup, defeating the New York Sirens in the final. The 2024-25 season saw the Boston Fleet win the Walter Cup, and the league announced the 3-team expansion to bring the league to 9 teams for 2026-27.
+          </p>
+          <p>
+            The PWHL represents a fundamental shift in women&apos;s professional hockey economics. Player salaries of $80,000-$150,000 (with the league&apos;s top players earning $200,000+) are the highest in women&apos;s professional hockey history. The league provides full healthcare benefits, paid travel, and a structured development path that compares favorably with the NWHL/PHF. The PWHL has attracted top international talent including Hilary Knight, Marie-Philip Poulin, and Alex Carpenter, and has positioned itself as the premier destination for elite women&apos;s hockey players between IIHF Women&apos;s World Championship and Winter Olympics cycles.
+          </p>
+        </div>
+      </section>
+
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW THE PWHL WORKS</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The PWHL regular season runs from late November to early May, with each of the 9 teams in 2026-27 playing 30 regular season games. The schedule is structured as a 3-game series format — when teams play each other, they play 3 games over 4-5 days at the same venue. This format reduces travel costs and creates concentrated competitive events that drive attendance and TV viewership.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The top 4 teams in the PWHL standings advance to the Walter Cup Playoffs, a best-of-3 semifinal and best-of-3 final. The Walter Cup is the PWHL&apos;s championship trophy, named after the Walter family&apos;s contribution to the league. The Walter Cup has been awarded twice: to the Minnesota Frost (2023-24) and the Boston Fleet (2024-25).
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            PWHL rosters are capped at 23 players per team. The salary cap is structured as a tiered minimum-salary system rather than a hard cap — every roster slot has a minimum compensation, and teams can pay above the minimum. The average PWHL player salary is $80,000-$150,000, with the league&apos;s top players earning $200,000+. The league provides comprehensive benefits including healthcare, paid travel, and off-ice support staff.
+          </p>
+          <p>
+            PWHL games are broadcast on multiple platforms. In the US, the league has a broadcast partnership with the NHL Network and has had games featured on ESPN. In Canada, PWHL games are broadcast on TSN and Sportsnet. Streaming is available through the league&apos;s official website and partner platforms. The 2024-25 PWHL season drew record attendance, with the league averaging 6,000+ fans per game and several games selling out (including a 19,000+ attendance at a special outdoor game). The PWHL&apos;s media presence has helped women&apos;s professional hockey reach a broader audience and positioned the league as a long-term sustainable competitor to the NHL in the women&apos;s professional sports market.
+          </p>
+        </div>
+      </section>
+
       {/* Trust footer — required by AdSense-Compliant Content Rules. */}
       <footer style={{ marginTop: '3rem', padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', lineHeight: 1.6 }}>
         <p style={{ marginBottom: '0.5rem' }}>
