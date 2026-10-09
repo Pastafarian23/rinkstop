@@ -120,6 +120,55 @@ export default async function LeaguePage({
   const levelKey = (league?.level || 'other').toLowerCase();
   const levelDesc = LEVEL_DESCRIPTION[levelKey] || LEVEL_DESCRIPTION.other;
 
+  // 2026-10-09 SEO sprint WS-49 (Arnel directive): pull recent results,
+  // upcoming games, and a top-teasms sample so the league page can show
+  // dynamic, entity-specific content instead of a single templated
+  // paragraph. Only leagues with fixture data benefit; leagues with
+  // zero fixtures get an empty array (LeagueSEOCopy renders an
+  // inline note instead of a section).
+  let recentFixtures: any[] = [];
+  let upcomingFixtures: any[] = [];
+  let topTeams: any[] = [];
+  let seasonYear: number | null = null;
+  if (league) {
+    try {
+      const nowIso = new Date().toISOString();
+      // Last 5 completed games with team names joined inline.
+      const { data: recentData } = await supabaseAdmin
+        .from('fixtures')
+        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, season, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .eq('league_id', league.id)
+        .not('home_score', 'is', null)
+        .order('scheduled_at', { ascending: false })
+        .limit(5);
+      recentFixtures = (recentData || []).slice(0, 5);
+      if (recentFixtures[0]?.season) seasonYear = recentFixtures[0].season;
+
+      // Next 5 scheduled games with team names joined inline.
+      const { data: upcomingData } = await supabaseAdmin
+        .from('fixtures')
+        .select('id, scheduled_at, home_team_id, away_team_id, status, season, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .eq('league_id', league.id)
+        .eq('status', 'scheduled')
+        .gte('scheduled_at', nowIso)
+        .order('scheduled_at', { ascending: true })
+        .limit(5);
+      upcomingFixtures = upcomingData || [];
+
+      // Top 5 teams by name (alphabetical — cheap proxy for "notable")
+      const { data: teamsData } = await supabaseAdmin
+        .from('teams')
+        .select('id, name, slug, city, country, logo_url')
+        .eq('league_id', league.id)
+        .eq('is_active', true)
+        .order('name')
+        .limit(5);
+      topTeams = teamsData || [];
+    } catch {
+      // Best-effort: never block the page on enrichment failures
+    }
+  }
+
   const faqs = league
     ? buildLeagueFAQs({
         name: league.name,
@@ -164,6 +213,8 @@ export default async function LeaguePage({
       ...(league.logo_url ? { logo: league.logo_url } : {}),
       ...(league.country ? { address: { '@type': 'PostalAddress', addressCountry: league.country } } : {}),
       ...(league.description ? { description: league.description } : {}),
+      // 2026-10-09 WS-49: include number of members (teams) for richer SERP.
+      ...(teamCount > 0 ? { member: teamCount } : {}),
     });
     leagueJsonLd.push({
       '@context': 'https://schema.org',
@@ -230,6 +281,10 @@ export default async function LeaguePage({
           levelDesc={levelDesc}
           countryContext={countryContext}
           faqs={faqs}
+          recentFixtures={recentFixtures}
+          upcomingFixtures={upcomingFixtures}
+          topTeams={topTeams}
+          seasonYear={seasonYear}
         />
       )}
       {/* PR #146 (2026-08-22) — server-rendered league intro (anchors the page body

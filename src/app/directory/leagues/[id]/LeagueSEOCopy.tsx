@@ -20,9 +20,13 @@ interface Props {
   levelDesc: { oneLiner: string; paragraph: string; rinksUs: string };
   countryContext: string;
   faqs: { question: string; answer: string }[];
+  recentFixtures?: any[];
+  upcomingFixtures?: any[];
+  topTeams?: any[];
+  seasonYear?: number | null;
 }
 
-export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryContext, faqs }: Props) {
+export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryContext, faqs, recentFixtures = [], upcomingFixtures = [], topTeams = [], seasonYear = null }: Props) {
   const displayName: string = league.name;
   const country: string = league.country || '';
   const level: string = (league.level || '').toLowerCase();
@@ -68,6 +72,46 @@ export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryCon
           {levelDesc.paragraph}
         </p>
 
+        {/* 2026-10-09 WS-49: dynamic "How {League} works" section. Each
+            statement is grounded in entity data (level, team count, season)
+            so the content is unique per league. Long-tail targets: 'X games
+            per season', 'X schedule', 'X season start', 'X format'. */}
+        <h3
+          style={{
+            fontFamily: '"Bebas Neue", sans-serif',
+            fontSize: '1.125rem',
+            letterSpacing: '0.04em',
+            color: '#fff',
+            margin: '1.25rem 0 0.5rem',
+          }}
+        >
+          How {displayName} works
+        </h3>
+        <p style={{ color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, margin: '0 0 0.75rem', fontSize: '0.95rem' }}>
+          {teamCount > 0
+            ? `${displayName} fields ${teamCount} active team${teamCount === 1 ? '' : 's'} tracked by RinkStop${country ? ` across ${country}` : ''}.`
+            : `${displayName} is tracked in the RinkStop directory; full team lists, schedules, and standings are added as the season progresses.`
+          }
+          {seasonYear
+            ? ` The ${seasonYear} season is in the RinkStop fixtures database${recentFixtures.length > 0 ? `, with ${recentFixtures.length} recent result${recentFixtures.length === 1 ? '' : 's'} on record` : ''}.`
+            : level === 'professional' || level === 'junior' || level === 'college'
+            ? ' Most seasons run from September through April, with playoffs extending into May or June.'
+            : ''
+          }
+          {level === 'professional'
+            ? ' Professional leagues at this level typically play a 60-82 game regular season, depending on conference structure, with best-of-seven playoff rounds leading to a league championship.'
+            : level === 'junior'
+            ? ' Major-junior leagues typically play a 68-game regular season running in line with the academic calendar, with league-wide playoffs concluding in May.'
+            : level === 'college'
+            ? ' College hockey seasons typically run from October through early April, with conference tournaments and a national championship determining the season winner.'
+            : level === 'youth'
+            ? ' Youth hockey seasons follow the school year, with house, travel, and select tiers allowing players of different competitive levels to participate in the same league structure.'
+            : level === 'amateur'
+            ? ' Amateur and recreational leagues run shorter seasons than the professional ranks, with most adult play concentrated in the fall through early spring.'
+            : ''
+          }
+        </p>
+
         {country && countryContext && (
           <>
             <h3
@@ -85,6 +129,214 @@ export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryCon
               {countryContext}
             </p>
           </>
+        )}
+
+        {/* 2026-10-09 WS-49: dynamic Recent Results + Upcoming Games sections.
+            Pulled server-side in page.tsx from the fixtures table. Only renders
+            for leagues with at least one game tracked. Each row is a unique
+            sentence that Google can index and users can click through. */}
+        {recentFixtures.length > 0 && (
+          <div style={{ marginTop: '1.25rem' }}>
+            <h3
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '1.125rem',
+                letterSpacing: '0.04em',
+                color: '#fff',
+                margin: '0 0 0.5rem',
+              }}
+            >
+              Recent results {seasonYear ? `(${seasonYear})` : ''}
+            </h3>
+            <ul
+              style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: '0 0 0.5rem',
+                display: 'grid',
+                gap: '0.375rem',
+              }}
+            >
+              {recentFixtures.map((f: any) => {
+                const date = f.scheduled_at ? new Date(f.scheduled_at).toISOString().slice(0, 10) : '';
+                const homeName = f.home_team?.name || 'Home';
+                const awayName = f.away_team?.name || 'Away';
+                return (
+                  <li
+                    key={f.id}
+                    style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      alignItems: 'baseline',
+                      fontSize: '0.875rem',
+                      color: 'rgba(255,255,255,0.78)',
+                      borderTop: '1px solid var(--border)',
+                      paddingTop: '0.375rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums', minWidth: 80 }}>
+                      {date}
+                    </span>
+                    <span style={{ color: '#fff', fontWeight: 600, minWidth: 60 }}>
+                      {f.home_score}–{f.away_score}
+                    </span>
+                    <span style={{ flex: '1 1 auto', minWidth: 200 }}>
+                      {f.home_team?.slug ? (
+                        <Link href={`/directory/teams/${f.home_team.slug}`} style={{ color: 'rgba(255,255,255,0.85)' }}>
+                          {homeName}
+                        </Link>
+                      ) : (
+                        <span>{homeName}</span>
+                      )}
+                      <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 0.4rem' }}>vs</span>
+                      {f.away_team?.slug ? (
+                        <Link href={`/directory/teams/${f.away_team.slug}`} style={{ color: 'rgba(255,255,255,0.85)' }}>
+                          {awayName}
+                        </Link>
+                      ) : (
+                        <span>{awayName}</span>
+                      )}
+                    </span>
+                    <span>
+                      <Link href={`/scores/${f.id}`} style={{ color: '#5eead4', fontSize: '0.78rem' }}>
+                        Box score
+                      </Link>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {upcomingFixtures.length > 0 && (
+          <div style={{ marginTop: '1rem' }}>
+            <h3
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '1.125rem',
+                letterSpacing: '0.04em',
+                color: '#fff',
+                margin: '0 0 0.5rem',
+              }}
+            >
+              Upcoming games
+            </h3>
+            <ul
+              style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: '0 0 0.5rem',
+                display: 'grid',
+                gap: '0.375rem',
+              }}
+            >
+              {upcomingFixtures.map((f: any) => {
+                const date = f.scheduled_at ? new Date(f.scheduled_at).toISOString().slice(0, 10) : '';
+                const homeName = f.home_team?.name || 'Home';
+                const awayName = f.away_team?.name || 'Away';
+                return (
+                  <li
+                    key={f.id}
+                    style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      alignItems: 'baseline',
+                      fontSize: '0.875rem',
+                      color: 'rgba(255,255,255,0.78)',
+                      borderTop: '1px solid var(--border)',
+                      paddingTop: '0.375rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums', minWidth: 80 }}>
+                      {date}
+                    </span>
+                    <span style={{ flex: '1 1 auto', minWidth: 200 }}>
+                      {f.home_team?.slug ? (
+                        <Link href={`/directory/teams/${f.home_team.slug}`} style={{ color: 'rgba(255,255,255,0.85)' }}>
+                          {homeName}
+                        </Link>
+                      ) : (
+                        <span>{homeName}</span>
+                      )}
+                      <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 0.4rem' }}>vs</span>
+                      {f.away_team?.slug ? (
+                        <Link href={`/directory/teams/${f.away_team.slug}`} style={{ color: 'rgba(255,255,255,0.85)' }}>
+                          {awayName}
+                        </Link>
+                      ) : (
+                        <span>{awayName}</span>
+                      )}
+                    </span>
+                    <span>
+                      <Link href={`/scores/${f.id}`} style={{ color: '#5eead4', fontSize: '0.78rem' }}>
+                        Preview
+                      </Link>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* 2026-10-09 WS-49: Top Teams list. Cross-links to team pages. */}
+        {topTeams.length > 0 && (
+          <div style={{ marginTop: '1.25rem' }}>
+            <h3
+              style={{
+                fontFamily: '"Bebas Neue", sans-serif',
+                fontSize: '1.125rem',
+                letterSpacing: '0.04em',
+                color: '#fff',
+                margin: '0 0 0.5rem',
+              }}
+            >
+              Teams in {displayName}
+            </h3>
+            <ul
+              style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: '0 0 0.5rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                gap: '0.375rem',
+              }}
+            >
+              {topTeams.map((t: any) => (
+                <li
+                  key={t.id}
+                  style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    alignItems: 'center',
+                    fontSize: '0.875rem',
+                    color: 'rgba(255,255,255,0.78)',
+                    borderTop: '1px solid var(--border)',
+                    paddingTop: '0.375rem',
+                  }}
+                >
+                  {t.logo_url && (
+                    <img src={t.logo_url} alt="" style={{ width: 20, height: 20, objectFit: 'contain', background: '#1a2D45', borderRadius: 3 }} loading="lazy" />
+                  )}
+                  <Link href={`/directory/teams/${t.slug}`} style={{ color: '#5eead4' }}>
+                    {t.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {teamCount > topTeams.length && (
+              <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', margin: '0.25rem 0 0' }}>
+                Showing {topTeams.length} of {teamCount} teams.{' '}
+                <Link href={`/directory/teams?league=${league.slug || league.id}`} style={{ color: '#5eead4' }}>
+                  View all teams →
+                </Link>
+              </p>
+            )}
+          </div>
         )}
 
         {faqs.length > 0 && (
