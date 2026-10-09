@@ -284,6 +284,53 @@ export default async function NHLHubPage() {
         })}
       </div>
 
+      {/* NHL HISTORY */}
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>NHL HISTORY</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The National Hockey League was founded on November 26, 1917, in Montreal, as a successor to the National Hockey Association (NHA, 1909-17). The NHA&apos;s owner-operators — including the owners of the Montreal Canadiens, Montreal Wanderers, Ottawa Senators, Quebec Bulldogs, and Toronto Arenas — incorporated the NHL with the Canadiens, Ottawa Senators, and the new Toronto Arenas as charter members. The Montreal Wanderers joined a day later, then disbanded mid-season after their arena burned down. The Quebec Bulldogs were unable to participate in the inaugural 1917-18 season and replaced mid-season by the Toronto Arenas.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The NHL was a Canadian-only league for its first seven seasons, with the Toronto Arenas/St Patricks (renamed in 1919, rebranded as the Maple Leafs in 1927), Montreal Canadiens, Ottawa Senators, and the Hamilton Tigers and Quebec Bulldogs as the original members. The Boston Bruins became the first American franchise in 1924, beginning the league&apos;s expansion into the United States. By 1926, the NHL had 10 teams (split between the Canadian Division and the American Division) and would consolidate in the early 1930s — the so-called &quot;Original Six era&quot; saw the league&apos;s six surviving franchises (Boston, Chicago, Detroit, Montreal, New York Rangers, Toronto) play without contraction or expansion from 1942-43 through 1966-67.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The 1967 expansion doubled the NHL&apos;s size from 6 to 12 teams, adding the Los Angeles Kings, Minnesota North Stars, Oakland Seals, Philadelphia Flyers, Pittsburgh Penguins, and St. Louis Blues. Two more expansions in 1970 and 1972 brought the league to 16 teams. The 1979 merger with the World Hockey Association (WHA) added four former WHA teams: Edmonton Oilers, Hartford Whalers (now Carolina Hurricanes), Quebec Nordiques (now Colorado Avalanche), and Winnipeg Jets (now Arizona Coyotes — and via 2011 relocation, the current Winnipeg Jets). The NHL reached 21 teams in 1979, 22 in 1991-92 (San Jose Sharks), 26 in 1993-94 (Ottawa Senators + Tampa Bay Lightning), and 30 in 2000-01 (Columbus Blue Jackets + Minnesota Wild). The Vegas Golden Knights (2017) and Seattle Kraken (2021) brought the league to 32 teams.
+          </p>
+          <p>
+            The Stanley Cup is the oldest professional sports trophy in North America, first awarded in 1893 to the Montreal Hockey Club of the AHAC (Amateur Hockey Association of Canada). The Cup has been awarded to the NHL playoff champion since 1926-27, with the modern best-of-7 playoff format adopted in 1939. The Montreal Canadiens hold the record with 24 Stanley Cup championships, followed by the Toronto Maple Leafs (13), Detroit Red Wings (11), and Boston Bruins (6). The Edmonton Oilers (5), Pittsburgh Penguins (5), and Chicago Blackhawks (6) round out the most successful modern-era franchises.
+          </p>
+        </div>
+      </section>
+
+      {/* HOW THE NHL WORKS */}
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginBottom: '1rem' }}>HOW THE NHL WORKS</h2>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.75 }}>
+          <p style={{ marginBottom: '1rem' }}>
+            The NHL regular season runs from early October to mid-April, with each of the 32 teams playing 82 games. The 32 teams are organized into 4 divisions (Atlantic, Metropolitan, Central, Pacific) of 8 teams each, with 2 conferences (Eastern and Western). The schedule includes intra-division games (most frequent), inter-division games within each conference, and inter-conference games. Two points are awarded for a win (any kind), one for an overtime or shootout loss, and zero for a regulation loss.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The top 3 teams in each division qualify directly for the Stanley Cup Playoffs. Two additional wild-card spots are awarded to the teams with the next-highest point totals in each conference, regardless of division. The first round is a divisional matchup of the 1st-place team against the wild-card; the second and third rounds are divisional playoffs, with the conference finals pitting the two surviving divisional champions against each other. All four rounds are best-of-7. The Stanley Cup Final is typically played in June, with the series alternating home-ice advantage each year between the Eastern and Western Conference champions.
+          </p>
+          <p style={{ marginBottom: '1rem' }}>
+            The NHL salary cap for 2025-26 is $88 million USD per team, with a $4 million performance bonus cushion. The cap was introduced in 2005-06 following the 2004-05 lockout and is set annually based on league revenue. Each team&apos;s roster is capped at 23 players for the standard playing roster (plus unlimited reserve), with a minimum payroll of approximately $61 million. The Entry Draft is held annually in late June, with the order determined by a draft lottery for non-playoff teams.
+          </p>
+          <p>
+            NHL games are broadcast in the US on ESPN and TNT (regular season) and ABC (Stanley Cup Final), in Canada on Sportsnet and TVA Sports, and internationally through NHL.TV (streaming) and various regional partners. The NHL&apos;s 32 franchises operate as independent businesses under the league umbrella, with the Commissioner (currently Gary Bettman, since 1993) overseeing league-wide operations. The NHL&apos;s 32 arenas range from Madison Square Garden (capacity 18,006) to smaller-market venues of around 17,000, with the league regularly drawing 20,000+ per game across the regular season and playoffs.
+          </p>
+        </div>
+      </section>
+
+      {/* Editorial footer */}
+      <section style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.85rem', lineHeight: 1.6, margin: 0 }}>
+          <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Editorial standards.</strong> By Arnel Larracas, Founder &amp; Editor-in-Chief, RinkStop. Last reviewed 2026-10-09.<br />
+          <strong style={{ color: 'rgba(255,255,255,0.7)' }}>Data sources.</strong> Founding 1917, Original Six era 1942-67, 1967 expansion, 1979 WHA merger, Stanley Cup 24 Canadiens titles, salary cap 88M: Wikipedia (National Hockey League), nhl.com, Hockey Reference.<br />
+          <span style={{ color: 'rgba(255,255,255,0.45)' }}><Link href="/editorial-policy" style={{ color: '#FFB81C' }}>Editorial policy</Link> · <Link href="/data-methodology" style={{ color: '#FFB81C' }}>Data methodology</Link> · <Link href="/corrections" style={{ color: '#FFB81C' }}>Report a correction</Link></span>
+        </p>
+      </section>
+
       {/* Ticketmaster ad */}
     </main>
   );
