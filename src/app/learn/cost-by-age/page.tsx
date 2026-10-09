@@ -6,13 +6,13 @@ import MarkReadButton from '@/components/learn/MarkReadButton';
 
 export const metadata: Metadata = {
   title: 'Hockey Cost by Age — What Youth Hockey Costs from 6U to 18U',
-  description: 'Hockey cost by age group: 6U, 8U, 10U, 12U, 14U, 16U, 18U. Registration, equipment, ice time, travel. Plus the cost calculator and how to budget.',
+  description: 'How much does youth hockey cost? 2026 pricing for 6U through 18U: registration ($150-$3,000), equipment ($200-$1,500), ice time, travel. Real family budgets, cost calculator, and ways to save.',
   keywords: ['hockey cost by age', 'hockey cost', 'youth hockey cost', 'how much does hockey cost', 'hockey budget', 'hockey family budget'],
   alternates: { canonical: 'https://rinkstop.com/learn/cost-by-age' },
   robots: { index: true, follow: true },
   openGraph: withDefaultOg({
-    title: 'Hockey Cost by Age',
-    description: 'What youth hockey costs from 6U to 18U. Registration, equipment, ice time, travel.',
+    title: 'Hockey Cost by Age — 6U to 18U Pricing (2026)',
+    description: 'How much does youth hockey cost? 2026 pricing for 6U through 18U: registration, equipment, ice time, travel, plus a free cost calculator.',
     type: 'article',
     url: 'https://rinkstop.com/learn/cost-by-age',
     siteName: 'RinkStop',
