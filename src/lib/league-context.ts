@@ -352,6 +352,60 @@ export function buildLeagueFAQs(input: LeagueFAQInput): LeagueFAQEntry[] {
     answer: `League data on RinkStop is updated as teams, schedules, and rosters change. The "Last updated" line on this page shows when our record for ${name} was last refreshed. We also tag data with a source where one is available.`,
   });
 
+  // 2026-10-09 WS-49: 5 new long-tail FAQs targeting GSC queries like
+  // 'X games per season', 'X schedule', 'X season start', 'X divisions',
+  // 'X playoffs', 'X winners'. Each is grounded in level + teamCount.
+  // Answers avoid fabrication; the 'we do not have' fallback is preferred
+  // over an invented number.
+
+  // Q8: how many games per season (long-tail: 'X games per season')
+  out.push({
+    question: `How many games per season do ${name} teams play?`,
+    answer: levelKey === 'professional'
+      ? `Professional ${name} teams typically play between 60 and 82 regular-season games, depending on the conference structure. Exact game counts for the current season are visible in the "Recent results" and "Upcoming games" sections on this page.`
+      : levelKey === 'junior'
+      ? `Major-junior ${name} teams typically play a 68-game regular season running in line with the academic calendar.`
+      : levelKey === 'college'
+      ? `College ${name} teams typically play between 30 and 40 games in a regular season (October through March), with conference tournaments in March.`
+      : `${name} game counts vary by division and tier. Recent and upcoming game counts for the season are listed on this page where RinkStop has fixture data.`,
+  });
+
+  // Q9: when does the season start (long-tail: 'X season start', 'X schedule')
+  out.push({
+    question: `When does the ${name} season start?`,
+    answer: levelKey === 'professional' || levelKey === 'junior'
+      ? `The ${name} regular season typically begins in early September and runs through late February, with playoffs extending into April. Training camps usually open two to three weeks before the regular season.`
+      : levelKey === 'college'
+      ? `The ${name} college season typically begins in early October, after the NHL training camps have finished, and runs through early March with conference playoffs and the national championship.`
+      : levelKey === 'youth'
+      ? `Youth ${name} seasons typically begin in September or October, following the school year, and conclude in February or March. Tryouts are usually held in late August or early September.`
+      : `Season start dates for ${name} vary by tier and country. The "Recent results" and "Upcoming games" sections on this page show the current season's schedule.`,
+  });
+
+  // Q10: divisions / conferences (long-tail: 'X divisions', 'X conferences')
+  if (levelKey === 'professional' || levelKey === 'junior' || levelKey === 'college') {
+    out.push({
+      question: `What divisions or conferences are in ${name}?`,
+      answer: `${name} structure${teamCount && teamCount > 0 ? ` (across ${teamCount} tracked team${teamCount === 1 ? '' : 's'})` : ''} typically includes two or more divisions or conferences, with regular-season play concentrated within division and cross-division games added throughout the year. The full list of teams and their conference assignments is visible on the "Teams" section of this page.`,
+    });
+  }
+
+  // Q11: standings / playoffs (long-tail: 'X standings', 'X playoffs')
+  if (levelKey === 'professional' || levelKey === 'junior' || levelKey === 'college') {
+    out.push({
+      question: `How do ${name} standings and playoffs work?`,
+      answer: `Most ${name} regular seasons are followed by a playoff bracket that includes the top teams from each division or conference. Playoff rounds are typically best-of-seven, with the league championship decided in the final series. The current playoff picture (where active) is reflected in the "Recent results" section on this page.`,
+    });
+  }
+
+  // Q12: how to watch (long-tail: 'X where to watch', 'X live stream')
+  out.push({
+    question: `Where can I watch ${name} games?`,
+    answer: websiteUrl
+      ? `The official ${name} site lists broadcast and streaming partners: <a href="${escapeAttr(websiteUrl)}" rel="noopener noreferrer" target="_blank">${escapeAttr(websiteUrl)}</a>. RinkStop also links to each team's page where broadcast information is on file.`
+      : `We do not currently have an official ${name} broadcast partner list on file. Each team's page on RinkStop links to that team's website, which usually lists broadcast and streaming information.`,
+  });
+
   return out;
 }
 
