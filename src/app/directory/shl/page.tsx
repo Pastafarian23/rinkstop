@@ -27,8 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getShlTeamCount();
   return {
     title: teamCount > 0
-      ? `SHL 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'SHL 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `SHL 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'SHL 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `Svenska Hockeyligan (SHL) 2026-27: ${teamCount} teams across Sweden. 52-game regular season. Defending champion Skellefteå AIK (5 titles). Le Mat Trophy playoff format.`
       : 'Svenska Hockeyligan (SHL) 2026-27: 14 teams across Sweden. 52-game regular season. Defending champion Skellefteå AIK (5 titles). Le Mat Trophy playoff format.',

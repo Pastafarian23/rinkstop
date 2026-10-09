@@ -27,8 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getQmjhlTeamCount();
   return {
     title: teamCount > 0
-      ? `QMJHL 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'QMJHL 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `QMJHL 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'QMJHL 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `Quebec Maritimes Junior Hockey League (QMJHL / LHJMQ) 2026-27: ${teamCount} teams across Quebec and the Maritimes. Major-junior league. Competes for the Memorial Cup. Defending champion Chicoutimi Saguenéens.`
       : 'Quebec Maritimes Junior Hockey League (QMJHL / LHJMQ) 2026-27: 18 teams across Quebec and the Maritimes. Major-junior league. Competes for the Memorial Cup. Defending champion Chicoutimi Saguenéens.',
@@ -137,7 +137,7 @@ export default async function QmjhlPage() {
             The QMJHL expanded in the 1970s and 1980s into a major force in Canadian junior hockey. New franchises in Chicoutimi (1973), Hull (1973), and later expansion to Moncton (1995), Halifax (1994), Acadie-Bathurst (1998), and the Maritimes transformed the league from a Quebec-only operation into a Maritimes-spanning circuit. The league has had 26 total franchises since 1969. The Sherbrooke Castors franchise is the oldest continuously-operating franchise in the league, having played under several names (Bruins, Dynamos, Cataractes) but maintained in Shawinigan since 1969.
           </p>
           <p style={{ marginBottom: '1rem' }}>
-            The QMJHL was renamed the Quebec Maritimes Junior Hockey League in 2023, formalizing the league&apos;s geographic scope across Quebec, New Brunswick, Nova Scotia, and Prince Edward Island. The league has produced 12 Memorial Cup-winning teams — the most of any CHL league. Notable QMJHL alumni include Guy Lafleur (Quebec Remparts, 1969-71), Mario Lemieux (Laval Voisins, 1981-84), Vincent Lecavalier (Rimouski Océanic, 1997-98), Sidney Crosby (Rimouski Océanic, 2003-05), Carey Price (Tri-City Americans, no wait — Anaheim Wildcats then Tri-City — actually played 2002-04 Tri-City, but is a QMJHL alumnus via Tri-City? No — he played in the Tri-City of the WHL, not QMJHL; the actual QMJHL alumni include Crosby, Lecavalier, Lafleur, Lemieux, and many others), Patrice Bergeron (Acadie-Bathurst, 2001-03), and Nathan MacKinnon (Halifax Mooseheads, 2011-13).
+            The QMJHL was renamed the Quebec Maritimes Junior Hockey League in 2023, formalizing the league&apos;s geographic scope across Quebec, New Brunswick, Nova Scotia, and Prince Edward Island. The league has produced 12 Memorial Cup-winning teams — the most of any CHL league. Notable QMJHL alumni include Guy Lafleur (Quebec Remparts, 1969-71), Mario Lemieux (Laval Voisins, 1981-84), Vincent Lecavalier (Rimouski Océanic, 1997-98), Sidney Crosby (Rimouski Océanic, 2003-05), Patrice Bergeron (Acadie-Bathurst, 2001-03), and Nathan MacKinnon (Halifax Mooseheads, 2011-13).
           </p>
           <p>
             The QMJHL&apos;s current Commissioner is Mario Cecchini, who took over in 2023 from long-time Commissioner Gilles Courteau (1986-2023). Chicoutimi Saguenéens won the 2025-26 President&apos;s Cup, their 3rd QMJHL title. The QMJHL&apos;s Memorial Cup wins are 12 in total, with notable recent champions including the Rimouski Océanic (2000), the Val-d&apos;Or Foreurs (2001), the Halifax Mooseheads (2013), and the Rouyn-Noranda Huskies (2015). The league&apos;s geographic expansion to the Maritimes reflects both the Maritime provinces&apos; growing hockey infrastructure and the QMJHL&apos;s strategy of giving French-Canadian players a path to major-junior hockey that doesn&apos;t require relocation to Ontario or Western Canada.

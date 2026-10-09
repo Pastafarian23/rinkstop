@@ -26,8 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getOhlTeamCount();
   return {
     title: teamCount > 0
-      ? `OHL 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'OHL 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `OHL 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'OHL 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `Ontario Hockey League (OHL) 2026-27: ${teamCount} teams across Ontario, Michigan, and Pennsylvania. Major-junior league for players 16-20. Competes for the Memorial Cup.`
       : 'Ontario Hockey League (OHL) 2026-27: 20 teams across Ontario, Michigan, and Pennsylvania. Major-junior league for players 16-20. Competes for the Memorial Cup.',

@@ -26,8 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getDelTeamCount();
   return {
     title: teamCount > 0
-      ? `DEL 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'DEL 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `DEL 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'DEL 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `Deutsche Eishockey Liga (DEL / PENNY DEL) 2026-27: ${teamCount} teams across Germany. Defending champion Eisbären Berlin (12 titles). Founded 1994.`
       : 'Deutsche Eishockey Liga (DEL / PENNY DEL) 2026-27: 14 teams across Germany. Defending champion Eisbären Berlin (12 titles). Founded 1994.',

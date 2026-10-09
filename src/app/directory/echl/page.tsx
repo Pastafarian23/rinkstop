@@ -26,8 +26,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getEchlTeamCount();
   return {
     title: teamCount > 0
-      ? `ECHL 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'ECHL 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `ECHL 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'ECHL 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `ECHL (East Coast Hockey League) 2026-27: ${teamCount} teams in 24 US states and 1 Canadian province. Tier-3 minor professional league. 72-game regular season. Kelly Cup playoffs. Defending champion Florida Everblades.`
       : 'ECHL (East Coast Hockey League) 2026-27: 30 teams in 24 US states and 1 Canadian province. Tier-3 minor professional league. 72-game regular season. Kelly Cup playoffs. Defending champion Florida Everblades.',

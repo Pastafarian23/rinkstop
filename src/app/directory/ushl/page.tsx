@@ -27,8 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const teamCount = await getUshlTeamCount();
   return {
     title: teamCount > 0
-      ? `USHL 2026-27 — ${teamCount} Teams, Standings & Schedule | RinkStop`
-      : 'USHL 2026-27 — Standings, Schedule & Teams | RinkStop',
+      ? `USHL 2026-27 — ${teamCount} Teams, Standings & Schedule`
+      : 'USHL 2026-27 — Standings, Schedule & Teams',
     description: teamCount > 0
       ? `United States Hockey League (USHL) 2026-27: ${teamCount} teams across the US Midwest. The only Tier-1 junior league sanctioned by USA Hockey. Strictly amateur (NCAA-eligible). Phil Housley, Tkachuk brothers alumni.`
       : 'United States Hockey League (USHL) 2026-27: 16 teams across the US Midwest. The only Tier-1 junior league sanctioned by USA Hockey. Strictly amateur (NCAA-eligible).',
