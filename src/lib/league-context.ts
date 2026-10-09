@@ -255,6 +255,44 @@ export interface LeagueFAQInput {
  * in the league data. Anything missing returns "We do not have..." rather
  * than fabricating.
  */
+/**
+ * Detect whether a league description is tautological (just restates the
+ * league name + 'is the ice hockey competition in <country>'). These
+ * descriptions were auto-populated from a script and add no value to the
+ * page. The template should skip them and use the level + country
+ * description instead.
+ */
+export function isTautologicalDescription(name: string, description: string | null | undefined): boolean {
+  if (!description) return true;
+  const d = description.trim();
+  if (!d) return true;
+  if (d === name) return true;
+  if (d.length < name.length + 20) return true;
+  // Common tautology pattern: "<name> is the ice hockey competition in <country>"
+  if (d.toLowerCase().startsWith(name.toLowerCase()) && d.length < name.length + 60) return true;
+  return false;
+}
+
+/**
+ * Format `name` + a level description into a grammatically correct
+ * 'X is a/an <oneLiner>' sentence. The level descriptions start with
+ * 'A top-tier', 'An amateur', 'A major-junior', etc., so the concatenation
+ * must not duplicate the article.
+ *
+ * Examples:
+ *   formatLevelSentence('KHL', LEVEL_DESCRIPTION.professional)
+ *     -> 'KHL is a top-tier professional ice hockey league.'
+ *   formatLevelSentence('USHL', LEVEL_DESCRIPTION.junior)
+ *     -> 'USHL is a major-junior ice hockey league, typically for players 16–20.'
+ */
+export function formatLevelSentence(
+  name: string,
+  levelDesc: { oneLiner: string }
+): string {
+  const trimmed = levelDesc.oneLiner.replace(/^(?:A|An)\s+/, '').trim();
+  return `${name} is ${levelDesc.oneLiner.startsWith('An ') ? 'an' : 'a'} ${trimmed}`;
+}
+
 export function buildLeagueFAQs(input: LeagueFAQInput): LeagueFAQEntry[] {
   const { name, country, level, teamCount, websiteUrl, description } = input;
   const levelKey = (level || '').toLowerCase();
@@ -262,23 +300,25 @@ export function buildLeagueFAQs(input: LeagueFAQInput): LeagueFAQEntry[] {
 
   const out: LeagueFAQEntry[] = [];
 
-  // Q1: what is this league
+  // Q1: what is this league. Skip tautological descriptions (the 'X is the
+  // hockey competition in Y' auto-populated ones) — they add no info.
+  const usefulDescription = isTautologicalDescription(name, description) ? null : description;
   if (country && level) {
     out.push({
       question: `What is ${name}?`,
       answer:
-        `${name} is a ${levelDesc.oneLiner} based in ${country}. ` +
-        `${description || `${name} is listed in the RinkStop directory as an active ${level} ice hockey league.`}`,
+        `${formatLevelSentence(name, levelDesc)} based in ${country}. ` +
+        (usefulDescription || `The league is listed in the RinkStop directory as an active ${level} league.`),
     });
   } else if (country) {
     out.push({
       question: `What is ${name}?`,
-      answer: `${name} is an ice hockey league based in ${country}. ${description || 'It is listed in the RinkStop directory.'}`,
+      answer: `${name} is an ice hockey league based in ${country}. ${usefulDescription || 'It is listed in the RinkStop directory.'}`,
     });
   } else {
     out.push({
       question: `What is ${name}?`,
-      answer: `${name} is an ice hockey league tracked by RinkStop. ${description || 'Full profile details are listed on this page.'}`,
+      answer: `${name} is an ice hockey league tracked by RinkStop. ${usefulDescription || 'Full profile details are listed on this page.'}`,
     });
   }
 
@@ -307,7 +347,7 @@ export function buildLeagueFAQs(input: LeagueFAQInput): LeagueFAQEntry[] {
   // Q3: level
   out.push({
     question: `What level of hockey is ${name}?`,
-    answer: `${name} is classified as a ${level || 'unclassified'} league in the RinkStop directory. ${levelDesc.paragraph}`,
+    answer: `${name} is classified as a ${level || 'unclassified'} league. ${levelDesc.paragraph}`,
   });
 
   // Q4: how to watch / follow

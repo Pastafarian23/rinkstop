@@ -138,10 +138,13 @@ export default async function LeaguePage({
         .from('fixtures')
         .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, season, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
         .eq('league_id', league.id)
+        .eq('status', 'completed')
         .not('home_score', 'is', null)
         .order('scheduled_at', { ascending: false })
         .limit(5);
-      recentFixtures = (recentData || []).slice(0, 5);
+      // Only show leagues with at least 3 completed games; otherwise
+      // 'Recent results' would mislead users with stale data.
+      recentFixtures = (recentData || []).filter((f: any) => f.home_score > 0 || f.away_score > 0).slice(0, 5);
       if (recentFixtures[0]?.season) seasonYear = recentFixtures[0].season;
 
       // Next 5 scheduled games with team names joined inline.
@@ -153,7 +156,10 @@ export default async function LeaguePage({
         .gte('scheduled_at', nowIso)
         .order('scheduled_at', { ascending: true })
         .limit(5);
-      upcomingFixtures = upcomingData || [];
+      // Only show upcoming when we have 3+ games on the schedule; otherwise
+      // the section looks abandoned.
+      upcomingFixtures = (upcomingData || []).slice(0, 5);
+      if (upcomingFixtures.length < 3) upcomingFixtures = [];
 
       // Top 5 teams by name (alphabetical — cheap proxy for "notable")
       const { data: teamsData } = await supabaseAdmin
@@ -287,36 +293,13 @@ export default async function LeaguePage({
           seasonYear={seasonYear}
         />
       )}
-      {/* PR #146 (2026-08-22) — server-rendered league intro (anchors the page body
-          above the 150-word thin-content threshold without depending on
-          LeagueSEOCopy's prose). Always renders; each sentence is entity-specific
-          or factually true for every league page. */}
-      {league && (
-        <section
-          aria-label={`About ${league.name}`}
-          style={{ maxWidth: '1280px', margin: '0 auto 2rem', padding: '0 1.5rem' }}
-        >
-          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 10, padding: '1.25rem 1.5rem' }}>
-            <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', letterSpacing: '0.04em', color: '#fff', margin: '0 0 0.75rem' }}>
-              About the {league.name}
-            </h2>
-            <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontSize: '0.9375rem' }}>
-              <p style={{ marginBottom: '0.75rem' }}>
-                {league.name} is a {levelDesc.oneLiner.toLowerCase()}{league.country ? ` based in ${league.country}` : ''}.
-                {(league as any).founded_year ? ` The league was founded in ${(league as any).founded_year}.` : ''}
-                {teamCount > 0 ? ` RinkStop currently tracks ${teamCount} team${teamCount === 1 ? '' : 's'} in ${league.name}, with full roster pages, schedules, and recent results visible from the team list below.` : ' RinkStop tracks the teams competing in this league — full team pages, schedules, and recent results appear on the team list below.'}
-              </p>
-              <p style={{ marginBottom: '0.75rem' }}>{levelDesc.paragraph}</p>
-              {countryContext && (
-                <p style={{ marginBottom: '0.75rem' }}>{countryContext}</p>
-              )}
-              <p style={{ marginBottom: 0 }}>
-                Below this introduction, the {league.name} page lists the league's teams, the latest news and recents where available, the country-level hockey context, an FAQ section answering the most common questions about the league, and the steward link so a verified league official can claim or correct this record. RinkStop maintains every league profile as a public, indexable entry so visitors searching for {league.name} land on a page with the verified details and a path into the wider hockey directory.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* WS-49 2026-10-09: removed the duplicate 'About the {league}' block
+          that was in this file. The LeagueSEOCopy component already
+          provides the league intro, level description, and country
+          context. Keeping the duplicate caused Google to see two near-
+          identical "is a top-tier professional... tracks N teams" passages
+          on the same page, which is a quality signal Google penalizes
+          (duplicate content). The LeagueSEOCopy version is canonical. */}
       {/* Claim CTA — moved below all content per Arnel (2026-07-08) */}
       <div style={{ maxWidth: '800px', margin: '0 auto 2rem' }}>
         <ClaimThisListingMount entityType="league" entityId={id} />

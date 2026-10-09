@@ -12,7 +12,7 @@
  */
 
 import Link from 'next/link';
-import { COUNTRY_HOCKEY_CONTEXT } from '@/lib/league-context';
+import { COUNTRY_HOCKEY_CONTEXT, formatLevelSentence } from '@/lib/league-context';
 
 interface Props {
   league: any;
@@ -64,8 +64,10 @@ export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryCon
         </h2>
 
         <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, margin: '0 0 0.75rem', fontSize: '1rem' }}>
-          {displayName} is a {(level && level !== 'other' ? level : '')} ice hockey league{country ? ` based in ${country}` : ''}.
-          {' '}The RinkStop directory currently has {teamCountLabel} for this league. {levelDesc.oneLiner}
+          {formatLevelSentence(displayName, levelDesc)}{country ? ` based in ${country}` : ''}.{' '}
+          {teamCount > 0
+            ? `RinkStop currently tracks ${teamCountLabel} for this league, with each team having a full profile page linking to roster, schedule, and recent results.`
+            : 'Full team pages, schedules, and results appear below as teams are added to the directory.'}
         </p>
 
         <p style={{ color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, margin: '0 0 0.75rem', fontSize: '0.95rem' }}>
