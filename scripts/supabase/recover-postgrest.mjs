@@ -113,6 +113,50 @@ async function pageArnel(message) {
   });
 }
 
+async function testRpcWorks() {
+  // ACTUALLY exercise PostgREST with an RPC call. The health check
+  // (ACTIVE_HEALTHY) can lie — the service is up but the schema cache
+  // may be stale and unable to find any function or table. This is
+  // the failure mode that hit 2026-10-10 12:31 UTC: all services
+  // "healthy" but every RPC returned PGRST202 / 42P01 'does not exist'.
+  // We probe the same anon-keyed get_directory_stats() call the home
+  // page makes; if it returns a 2xx with JSONB, PostgREST can see
+  // the schema. If it returns PGRST202 or 42P01, the cache is stale.
+  const envPath = '/root/.openclaw/workspace/rinkstop-platform/.env';
+  if (!fs.existsSync(envPath)) return { ok: false, reason: 'no .env' };
+  const env = {};
+  for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+    const m = line.match(/^([A-Z_]+)\s*=\s*(.+)$/);
+    if (m) env[m[1]] = m[2];
+  }
+  const url = `https://${PROJECT_REF}.supabase.co/rest/v1/rpc/get_directory_stats`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let reason = `HTTP ${res.status}`;
+      try {
+        const j = JSON.parse(text);
+        if (j.code === 'PGRST202' || j.code === 'PGRST002' || j.code === '42P01') {
+          reason = `${j.code}: ${j.message}`;
+        }
+      } catch {}
+      return { ok: false, reason };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: e.message };
+  }
+}
+
 async function main() {
   let health;
   try {
@@ -129,9 +173,20 @@ async function main() {
     (s) => s && (s.status === 'ACTIVE_HEALTHY' || s.healthy === true)
   );
 
+  // Real-world check: does the home-page RPC actually return data?
+  // This catches the failure mode where health says healthy but the
+  // schema cache is stale.
+  const rpcTest = await testRpcWorks();
+
   if (allHealthy) {
-    console.log('OK: all services healthy');
-    process.exit(0);
+    if (rpcTest.ok) {
+      console.log('OK: all services healthy + RPC test passes');
+      process.exit(0);
+    } else {
+      // Health says healthy but RPC fails. Schema cache is stale but
+      // the management API doesn't know. Page Arnel + try reload.
+      console.log('UNHEALTHY: schema cache stale, RPC test failed:', rpcTest.reason);
+    }
   }
 
   console.log('UNHEALTHY:',
@@ -140,6 +195,39 @@ async function main() {
   if (CHECK_ONLY) {
     console.log('--check mode, not attempting recovery');
     process.exit(2);
+  }
+
+  // Try NOTIFY reload via the management API SQL endpoint
+  // (works when health is "healthy" but schema cache is stale)
+  if (allHealthy && !rpcTest.ok) {
+    console.log('Attempting schema reload via management API SQL...');
+    try {
+      const pat = JSON.parse(fs.readFileSync(CRED_PATH, 'utf8')).pat;
+      const url = `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`;
+      const sql = `
+        NOTIFY pgrst, 'reload schema';
+        NOTIFY pgrst, 'reload config';
+      `;
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${pat}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: sql }),
+      });
+      if (r.ok) {
+        console.log('NOTIFY sent. Waiting 15s for cache propagation...');
+        await new Promise((res) => setTimeout(res, 15000));
+        const retest = await testRpcWorks();
+        if (retest.ok) {
+          console.log('Schema cache recovered after NOTIFY');
+          return;
+        }
+        console.log('Cache still stale after NOTIFY:', retest.reason);
+      } else {
+        console.log('NOTIFY via management API failed:', r.status);
+      }
+    } catch (e) {
+      console.error('Schema reload attempt failed:', e.message);
+    }
   }
 
   // If db is healthy but rest is stuck, try the schema reload
