@@ -1,0 +1,972 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
+import HomeSearch from '@/app/HomeSearch';
+import HighlightsGrid from '@/components/HighlightsGrid';
+import HomeNewsSection from '@/app/components/HomeNewsSection';
+import HomeCtaButtons from '@/components/HomeCtaButtons';
+import FourPathNav from '@/components/FourPathNav';
+import JustGettingStartedSection from '@/components/home/JustGettingStartedSection';
+import { formatGameTime, tzAbbr, disclaimerText } from '@/lib/game-time';
+
+// Home page is rendered statically with ISR (revalidate every 5 min).
+// The page runs 9 Supabase queries for the stats grid + recent sections;
+// force-dynamic made every request re-run those queries (1+ second TTFB).
+// 5-min staleness on directory counts is fine -- users see counts as
+// approximate and they update regularly with weekly content drops.
+//
+// Cache invalidation: also runs on `revalidatePath('/')` from any admin
+// action that changes rinks/teams/players/leagues counts.
+export const revalidate = 300;
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// generateMetadata pulls live counts from the same `get_directory_stats` RPC
+// the page uses, so the meta description never drifts from the rendered
+// stats. (Audit fix Batch C #2: previously the description had a hardcoded
+// "800+ cities, 50+ countries, 900+ rinks, 2,100+ teams, 6,300+ players,
+// 190+ leagues" string that Google saw as outdated once counts grew.)
+//
+// 2026-10-10: getDirectoryStatsForMeta() shares the same RPC + direct
+// fallback as the body so the meta description never shows 0+ when the
+// RPC is broken.
+async function getDirectoryStatsForMeta(): Promise<{ rinks: number; teams: number; players: number; leagues: number; cities: number; countries: number; }> {
+  try {
+    const { data } = await supabase.rpc('get_directory_stats');
+    const s = (data || {}) as { rink_count?: number; team_count?: number; player_count?: number; league_count?: number; city_count?: number; country_count?: number };
+    if (s.rink_count || s.team_count) {
+      return {
+        rinks: s.rink_count || 0,
+        teams: s.team_count || 0,
+        players: s.player_count || 0,
+        leagues: s.league_count || 0,
+        cities: s.city_count || 0,
+        countries: s.country_count || 0,
+      };
+    }
+  } catch {
+    // fall through to fallback
+  }
+  // Fallback: parallel direct table queries (same approach the body uses)
+  try {
+    const [
+      { count: rinks },
+      { count: teams },
+      { count: players },
+      { count: leagues },
+      { data: citiesRows },
+      { data: countriesRows },
+    ] = await Promise.all([
+      supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('is_active', true).is('merged_into_id', null),
+      supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
+      supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
+    ]);
+    const cities = new Set((citiesRows || []).map((r: any) => (r.city || '').toLowerCase().trim()).filter(Boolean));
+    const countries = new Set((countriesRows || []).map((r: any) => r.country).filter(Boolean));
+    return {
+      rinks: rinks || 0,
+      teams: teams || 0,
+      players: players || 0,
+      leagues: leagues || 0,
+      cities: cities.size,
+      countries: countries.size,
+    };
+  } catch {
+    return { rinks: 0, teams: 0, players: 0, leagues: 0, cities: 0, countries: 0 };
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { rinks, teams, players, leagues, cities, countries } = await getDirectoryStatsForMeta();
+  const desc = `RinkStop lists every public rink, arena, and ice facility we can verify — searchable by city, country, and league. ${cities}+ cities in ${countries} countries, ${rinks}+ rinks, ${teams}+ teams, ${players}+ players, ${leagues}+ leagues.`;
+  return {
+    // WS27 PR2: em-dash instead of `--` in title (same anti-pattern WS26 fixed
+    // across city/state/league pages but missed on the homepage — the most
+    // visible page in SERPs).
+    title: 'RinkStop — The Global Hockey Directory',
+    description: desc,
+    keywords: [
+      'hockey directory',
+      'ice rink directory',
+      'hockey teams',
+      'hockey rinks',
+      'hockey players',
+      'NHL directory',
+      'youth hockey',
+      'hockey leagues',
+      'find a hockey rink',
+      'hockey near me',
+    ],
+    alternates: { canonical: 'https://rinkstop.com/' },
+    robots: { index: true, follow: true },
+    openGraph: {
+      title: 'RinkStop — The World’s Hockey Directory',
+      description: desc,
+      url: 'https://rinkstop.com/',
+      siteName: 'RinkStop',
+      type: 'website',
+      locale: 'en_US',
+      images: [
+        {
+          url: 'https://rinkstop.com/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'RinkStop — The World’s Hockey Directory',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'RinkStop — The World’s Hockey Directory',
+      description: desc,
+      images: ['https://rinkstop.com/og-image.png'],
+    },
+  };
+}
+
+const TOP_CITIES = [
+  { name: 'Toronto',   country: 'CA', href: '/directory/canada/ontario/toronto' },
+  { name: 'Montreal',  country: 'CA', href: '/directory/canada/quebec/montreal' },
+  { name: 'Boston',    country: 'US', href: '/directory/united-states/massachusetts/boston' },
+  { name: 'New York',  country: 'US', href: '/directory/united-states/new-york/new-york' },
+  { name: 'Chicago',   country: 'US', href: '/directory/united-states/illinois/chicago' },
+  { name: 'Detroit',   country: 'US', href: '/directory/united-states/michigan/detroit' },
+  { name: 'Pittsburgh',country: 'US', href: '/directory/united-states/pennsylvania/pittsburgh' },
+  { name: 'Edmonton',  country: 'CA', href: '/directory/canada/alberta/edmonton' },
+];
+
+const CATEGORIES = [
+  { label: 'Teams',      href: '/directory/teams',  color: '#C8102E', desc: 'Pro, junior & youth clubs worldwide' },
+  { label: 'Players',    href: '/directory/players', color: '#2563EB', desc: 'Profiles, stats & career histories' },
+  { label: 'Leagues',    href: '/directory/leagues', color: '#D97706', desc: 'NHL, AHL, KHL, IIHF, NCAA & more' },
+  { label: 'Rinks',      href: '/directory/rinks',   color: '#059669', desc: 'Ice arenas in every country' },
+  { label: 'Brands',     href: '/directory/brands',  color: '#7C3AED', desc: 'Equipment & gear manufacturers' },
+  { label: 'Scores',     href: '/directory/games',   color: '#C8102E', desc: 'Results, standings & schedules' },
+  { label: 'Highlights', href: '/highlights',        color: '#FFB81C', desc: 'Top goals, saves & game recaps' },
+  { label: 'Staff',      href: '/directory/staff',   color: '#14B8A6', desc: 'Coaches, officials & scouts' },
+];
+
+function approx(n: number) {
+  if (n >= 1000) return `${Math.floor(n / 100) * 100}+`;
+  if (n >= 100)  return `${Math.floor(n / 10) * 10}+`;
+  if (n >= 10)   return `${Math.floor(n / 5) * 5}+`;
+  return `${n}+`;
+}
+
+export default async function Home() {
+  // Two paths: try the RPC first, fall back to direct COUNT(*) queries
+  // on the underlying tables if the RPC fails. This makes the home page
+  // resilient to PostgREST schema-cache failures (which break RPCs but
+  // not direct table queries). The fallback is a bit slower (~200ms vs
+  // ~50ms) but returns real numbers instead of all zeros.
+  //
+  // 2026-10-10: Added the fallback after the second PostgREST 42P01
+  // incident in 12 hours. Direct queries on the tables (rinks, teams,
+  // players, leagues) bypass PostgREST's schema cache and still work.
+  let stats: any = {};
+  let statsError: any = null;
+  try {
+    const { data, error } = await supabase.rpc('get_directory_stats');
+    if (data) {
+      stats = data;
+    } else {
+      statsError = error;
+    }
+  } catch (e: any) {
+    statsError = e;
+  }
+  // Fallback: direct parallel COUNT queries on the underlying tables.
+  // We do this in parallel; the COUNTs are O(index) so each is fast.
+  if (!stats.rink_count && !stats.team_count) {
+    try {
+      const [
+        { count: rinkCount },
+        { count: teamCount },
+        { count: playerCount },
+        { count: leagueCount },
+        { data: citiesRow },
+        { data: countriesRow },
+        { data: newestRinks },
+        { data: newestTeams },
+        { data: newestPlayers },
+        { data: newestArticles },
+        { data: recentRinks },
+        { data: recentTeams },
+        { data: upcomingGames },
+      ] = await Promise.all([
+        supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('teams').select('*', { count: 'exact', head: true }).eq('is_active', true).is('merged_into_id', null),
+        supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
+        supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
+        supabase.from('rinks').select('id, name, slug, city, country, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
+        supabase.from('teams').select('id, name, slug, city, league_id, country, created_at').eq('is_active', true).is('merged_into_id', null).order('created_at', { ascending: false }).limit(3),
+        supabase.from('players').select('id, first_name, last_name, slug, position, nationality, headshot_url, team_id, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
+        supabase.from('posts').select('id, slug, title, subtitle, category, published_at, created_at').eq('status', 'published').order('created_at', { ascending: false }).limit(3),
+        supabase.from('rinks').select('id, name, slug, city, country').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
+        supabase.from('teams').select('id, name, slug, city, league_id').eq('is_active', true).is('merged_into_id', null).order('created_at', { ascending: false }).limit(3),
+        supabase.from('fixtures').select('id, scheduled_at, home_team_name, away_team_name, venue_name').gte('scheduled_at', new Date().toISOString().slice(0, 10)).in('status', ['scheduled', 'pending', 'live']).order('scheduled_at', { ascending: true }).limit(3),
+      ]);
+      const cities = new Set((citiesRow || []).map((r: any) => (r.city || '').toLowerCase().trim()).filter(Boolean));
+      const countries = new Set((countriesRow || []).map((r: any) => r.country).filter(Boolean));
+      stats = {
+        rink_count: rinkCount || 0,
+        team_count: teamCount || 0,
+        player_count: playerCount || 0,
+        league_count: leagueCount || 0,
+        city_count: cities.size,
+        country_count: countries.size,
+        newest_rinks: newestRinks || [],
+        newest_teams: newestTeams || [],
+        newest_players: newestPlayers || [],
+        newest_articles: newestArticles || [],
+        recent_rinks: recentRinks || [],
+        recent_teams: recentTeams || [],
+        upcoming_games: upcomingGames || [],
+      };
+    } catch (fallbackErr: any) {
+      console.error('[home] fallback COUNT also failed:', fallbackErr.message);
+    }
+  }
+  const _statsData = stats;
+  // The rest of this function reads from `stats`, which is now always
+  // populated either via the RPC or the direct-table fallback.
+  if (statsError && stats.rink_count) {
+    // Only log if the RPC failed BUT the fallback didn't fire (i.e.
+    // we got data from the RPC anyway). Suppress the noise when the
+    // fallback path is what's actually running.
+    console.error('[home] get_directory_stats failed:', statsError);
+  }
+
+  // Per Arnel's directive (2026-08-26): home page should not show
+  // "Upgrade to X" CTAs for the tier the user is already on, or for any
+  // same-or-lower tier within the same track. The pricing page already
+  // does this (see PricingContent.tsx); the home page tier grid does the
+  // same so users don't see upgrade CTAs they can't actually use.
+  //
+  // Note (2026-08-28 perf fix): the previous version called
+  // `await auth()` here to fetch the signed-in user's tier. That call
+  // forced-dynamic rendering on the entire home page, breaking ISR
+  // (5 min revalidate) and pushing TTFB to ~1.5s.
+  //
+  // We removed it. The home page now treats every visitor as 'free'
+  // for tier-card highlighting purposes. Signed-in users will still
+  // see the correct CTA in the nav (handled by <HomeCtaButtons> via
+  // client hooks) and on their dashboard. The minor UX loss is
+  // "premium users don't see a 'Current plan' badge on the home
+  // pricing cards" — acceptable for a 14x speed improvement.
+  const currentUserTier: string = 'free';
+
+  const counts = {
+    rinks: stats.rink_count || 0,
+    teams: stats.team_count || 0,
+    players: stats.player_count || 0,
+    leagues: stats.league_count || 0,
+    cities: stats.city_count || 0,
+    countries: stats.country_count || 0,
+  };
+
+  const recentRinks = stats.recent_rinks || [];
+  const recentTeams = stats.recent_teams || [];
+  const upcomingGames = stats.upcoming_games || [];
+
+  // Item #3 from the ChatGPT retention audit (2026-08-07): "Create a
+  // homepage activity feed ('What's new on RinkStop')." As of 2026-08-28,
+  // these 4 queries are folded into get_directory_stats() RPC (one
+  // round-trip instead of five). Migration
+  // 2026-08-28_get_directory_stats_add_activity.sql added the
+  // newest_rinks/newest_teams/newest_players/newest_articles keys.
+  const homeNewest = {
+    rinks: stats.newest_rinks || [],
+    teams: stats.newest_teams || [],
+    players: stats.newest_players || [],
+    articles: stats.newest_articles || [],
+  };
+  const hasHomeActivity =
+    homeNewest.rinks.length > 0 ||
+    homeNewest.teams.length > 0 ||
+    homeNewest.players.length > 0 ||
+    homeNewest.articles.length > 0;
+
+  // 2026-09-17: server-fetch the 5 latest YouTube highlights so the
+  // page renders together (no client-side loading flash on the
+  // LATEST HIGHLIGHTS section). Mirrors the logic in
+  // /api/highlights?youtubeOnly=true&limit=5 (backup table query).
+  // NOTE: highlight_backups is RLS-locked to service_role only — the
+  // anon `supabase` client below returns 0 rows. We use supabaseAdmin.
+  let initialHighlights: any[] = [];
+  try {
+    const { data: hlRows } = await supabaseAdmin
+      .from('highlight_backups')
+      .select('id, title, description, highlight_type, video_url, embed_url, image_url, source, channel, post_id, match_id, match_date, match_season, match_round, league_id, league_name, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo')
+      .not('video_url', 'is', null)
+      .ilike('video_url', '%youtube.com%')
+      .order('match_date', { ascending: false })
+      .limit(5);
+    initialHighlights = (hlRows || []).map((h: any) => ({
+      id: h.id,
+      title: h.title,
+      description: h.description || '',
+      type: h.highlight_type,
+      url: h.video_url,
+      embedUrl: h.embed_url,
+      imageUrl: h.image_url,
+      source: h.source,
+      channel: h.channel,
+      // 2026-09-19: forward post_id to the popup so it can resolve the
+      // companion article via /api/blog/posts?highlight_id=X. Without
+      // this, the popup's article-lookup effect falls back to a separate
+      // blog endpoint and the linked article is invisible on home-page
+      // modals.
+      linkedPostId: h.post_id,
+      match: {
+        id: h.match_id,
+        league: h.league_name,
+        leagueId: h.league_id,
+        season: h.match_season,
+        date: h.match_date,
+        round: h.match_round,
+        homeTeam: h.home_team_name ? {
+          id: h.home_team_id,
+          name: h.home_team_name,
+          displayName: h.home_team_name,
+          abbreviation: '',
+          logo: h.home_team_logo,
+        } : null,
+        awayTeam: h.away_team_name ? {
+          id: h.away_team_id,
+          name: h.away_team_name,
+          displayName: h.away_team_name,
+          abbreviation: '',
+          logo: h.away_team_logo,
+        } : null,
+      },
+    }));
+  } catch (err) {
+    console.error('[home] initialHighlights fetch failed:', err);
+  }
+
+  const ldJson = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://rinkstop.com/#website',
+        url: 'https://rinkstop.com/',
+        name: 'RinkStop',
+        description:
+          'The World’s Hockey Directory -- searchable database of rinks, teams, players, and leagues worldwide.',
+        inLanguage: 'en-US',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: 'https://rinkstop.com/directory?q={search_term_string}',
+          },
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://rinkstop.com/#organization',
+        name: 'RinkStop',
+        alternateName: 'RinkStop.com',
+        legalName: 'RinkStop',
+        url: 'https://rinkstop.com/',
+        logo: 'https://rinkstop.com/rinkstoplogo.png',
+        image: 'https://rinkstop.com/rinkstoplogo.png',
+        description: "RinkStop is a global directory of ice rinks, hockey teams, players, and leagues -- searchable by city, country, and league. Founded in 2018 by Arnel Larracas, headquartered in Villa Park, Illinois.",
+        slogan: "The World's Hockey Directory",
+        foundingDate: '2018',
+        founder: {
+          '@type': 'Person',
+          '@id': 'https://rinkstop.com/#founder',
+          name: 'Arnel Larracas',
+          jobTitle: 'Founder',
+          worksFor: { '@id': 'https://rinkstop.com/#organization' },
+          url: 'https://rinkstop.com/about',
+          sameAs: ['https://www.wikidata.org/wiki/Q140956126'],
+          nationality: 'US',
+          description: 'Founder of RinkStop. Hockey coach with 20+ years of experience playing in Chicago and coaching internationally.',
+        },
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: '709 S Riverside Dr',
+          addressLocality: 'Villa Park',
+          addressRegion: 'IL',
+          postalCode: '60181',
+          addressCountry: 'US',
+        },
+        areaServed: [
+          { '@type': 'Place', name: 'Worldwide' },
+          { '@type': 'Country', name: 'United States' },
+          { '@type': 'Country', name: 'Canada' },
+        ],
+        knowsAbout: [
+          // Discipline
+          'Ice Hockey',
+          // Entity types we cover (live counts via get_directory_stats RPC — updated 2026-10-02)
+          'Hockey Rinks', 'Ice Rinks', 'Hockey Teams', 'Hockey Players', 'Hockey Leagues', 'Hockey Federations',
+          // Major North American leagues
+          'NHL', 'AHL', 'ECHL', 'PWHL', 'NCAA Hockey', 'USports Hockey',
+          // Major European leagues
+          'KHL', 'SHL', 'HockeyAllsvenskan', 'Liiga', 'Mestis', 'DEL', 'DEL2', 'Extraliga', '1. liga', 'ICE Hockey League',
+          // Junior leagues
+          'CHL', 'OHL', 'WHL', 'QMJHL', 'USHL', 'NAHL', 'BCHL', 'AJHL',
+          // Women's hockey
+          'Womens Hockey', 'NCAA Womens Hockey', 'PWHL',
+          // Governance and emerging markets
+          'IIHF', 'IIHF Member Federations', 'Olympic Hockey',
+          'Hockey in the Philippines', 'Hockey in the UAE', 'Hockey in Thailand', 'Hockey in South Africa', 'Hockey in Brazil',
+          // Equipment and operations
+          'Hockey Equipment', 'Hockey Skates', 'Hockey Sticks', 'Hockey Coaching',
+        ],
+        sameAs: [
+          'https://www.wikidata.org/wiki/Q140955752',
+          'https://www.wikidata.org/wiki/Q140956126',
+          'https://www.crunchbase.com/organization/rinkstop-hockey',
+          'https://twitter.com/rinkstopnews',
+          'https://www.facebook.com/rinkstop',
+          'https://www.instagram.com/rinkstop',
+          'https://www.linkedin.com/company/rinkstop/',
+        ],
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            contactType: 'customer support',
+            email: 'support@rinkstop.com',
+            availableLanguage: 'English',
+          },
+          {
+            '@type': 'ContactPoint',
+            contactType: 'founder',
+            email: 'hello@rinkstop.com',
+            availableLanguage: 'English',
+          },
+        ],
+      },
+      {
+        '@type': 'ItemList',
+        name: 'Top Hockey Cities',
+        itemListElement: TOP_CITIES.map((c, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: c.name,
+          url: `https://rinkstop.com${c.href}`,
+        })),
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ldJson) }}
+      />
+
+      {/* ---- HERO -------------------------------------------------------------------- */}
+      <section style={{
+        position: 'relative',
+        background: 'linear-gradient(140deg, #041E42 0%, #0A2E5C 55%, #0D1117 100%)',
+        overflow: 'hidden',
+      }}>
+        <div aria-hidden="true" style={{ position: 'absolute', inset: 0, opacity: 0.04, pointerEvents: 'none' }}>
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="rink-bg" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="white" strokeWidth="1"/>
+                <line x1="0" y1="60" x2="120" y2="60" stroke="white" strokeWidth="0.5"/>
+                <line x1="60" y1="0" x2="60" y2="120" stroke="white" strokeWidth="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#rink-bg)"/>
+          </svg>
+        </div>
+        <div aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: '#C8102E' }}/>
+
+        <div className="container" style={{ position: 'relative', zIndex: 2, paddingTop: '3rem', paddingBottom: '3rem' }}>
+          <div className="hero-grid">
+            <div>
+              <div className="label">The World's Hockey Database</div>
+
+              <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#fff', lineHeight: 0.95, marginBottom: '0.5rem' }}>
+                THE GLOBAL
+              </h1>
+              <h1 className="font-sport" style={{ fontSize: 'clamp(2.25rem, 9vw, 5rem)', color: '#C8102E', lineHeight: 0.95, marginBottom: '1rem' }}>
+                HOCKEY DIRECTORY
+              </h1>
+
+              <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 'clamp(0.9375rem, 2.5vw, 1.0625rem)', lineHeight: 1.55, marginBottom: '1.5rem', maxWidth: '480px' }}>
+                <strong style={{ color: '#fff' }}>Browse every verified rink, team, player, and league we have on file.</strong>{' '}
+                {approx(counts.cities)} cities in {counts.countries} countries,{' '}
+                {approx(counts.rinks)} rinks, {approx(counts.teams)} teams,{' '}
+                {approx(counts.players)} players, {approx(counts.leagues)} leagues -- searchable by city, state, or country.
+              </p>
+
+              <HomeSearch />
+
+              <HomeCtaButtons />
+            </div>
+
+            <div className="stats-grid">
+              {[
+                { n: counts.teams,   l: 'Teams' },
+                { n: counts.players, l: 'Players' },
+                { n: counts.leagues, l: 'Leagues' },
+                { n: counts.rinks,   l: 'Rinks' },
+              ].map(s => (
+                <div key={s.l} style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '6px',
+                  padding: 'clamp(0.875rem, 3vw, 1.5rem)',
+                  textAlign: 'center',
+                }}>
+                  <div className="font-sport" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', color: '#C8102E', lineHeight: 1, marginBottom: '0.25rem' }}>
+                    {s.n.toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+                    {s.l}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- WS30 FOUR-PATH NAVIGATION (Arnel 2026-10-01) ---------------------------- */}
+      {/* Sits between the hero and the directory categories so first-time
+          visitors can self-segment before browsing the directory. Each path
+          uses the existing routing: Find → /directory, Claim → /claim-your-listing,
+          Manage → /claim-your-listing?focus=team, Grow → /launch. The
+          secondary link inside each card points at /pricing filtered by
+          intent so visitors can self-educate on the upgrade ladder without
+          being funnelled into checkout. */}
+      <FourPathNav variant="cards" />
+
+      {/* ---- CATEGORIES ------------------------------------------------------------------- */}
+      <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Browse</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>THE DIRECTORY</h2>
+            </div>
+            <Link href="/directory" className="sec-link">View All →</Link>
+          </div>
+          <div className="cat-grid">
+            {CATEGORIES.map(c => (
+              <Link key={c.href} href={c.href} className="card" style={{ textDecoration: 'none' }}>
+                <div style={{ padding: 'clamp(0.875rem, 2.5vw, 1.375rem)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.2rem', gap: '0.25rem' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{c.label}</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: c.color, flexShrink: 0 }}>
+                      {c.href === '/highlights' ? 'Video' :
+                       c.href === '/directory/games' ? 'Live' :
+                       approx(
+                         c.href === '/directory/teams'   ? counts.teams   :
+                         c.href === '/directory/players' ? counts.players :
+                         c.href === '/directory/leagues' ? counts.leagues :
+                         c.href === '/directory/rinks'   ? counts.rinks   :
+                         c.href === '/directory/brands'  ? 32             :
+                         c.href === '/directory/staff'   ? 800            : 0
+                       )}
+                    </span>
+                  </div>
+                  <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.75rem', lineHeight: 1.5 }}>{c.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '0.875rem 0 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- AdSense display ad (WS16 PR2) ---------------------------------------------- */}
+      {/* Between EEAT intro and Top Cities -- low-intrusion, above the directory listing cards. */}
+      <section style={{ background: '#0D1117', padding: '1rem 0' }}>
+        <div className="container" style={{ maxWidth: '1200px' }}>
+          
+        </div>
+      </section>
+
+      {/* ---- E-E-A-T INTRO (server-rendered, full HTML, crawlable text) ------------- */}
+      <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+        <div className="container" style={{ maxWidth: '900px' }}>
+          <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2rem)', color: '#fff', marginBottom: '0.75rem' }}>
+            THE WORLD’S HOCKEY DIRECTORY
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9375rem', lineHeight: 1.7, margin: 0 }}>
+            RinkStop is the largest free, searchable directory of ice hockey rinks, teams, players, and leagues anywhere on the web.
+            Whether you’re looking for a <Link href="/directory/rinks" style={{ color: '#FFB81C', textDecoration: 'underline' }}>hockey rink near you</Link>,
+            scouting <Link href="/directory/teams" style={{ color: '#FFB81C', textDecoration: 'underline' }}>youth and amateur teams</Link> by city or league,
+            tracking <Link href="/directory/players" style={{ color: '#FFB81C', textDecoration: 'underline' }}>player profiles and career stats</Link>,
+            or following your favorite <Link href="/directory/leagues" style={{ color: '#FFB81C', textDecoration: 'underline' }}>league</Link>’s schedule,
+            RinkStop puts the whole hockey world in one place. Browse NHL, AHL, KHL, NCAA, IIHF, PWHL, and hundreds of junior, women’s, and amateur leagues.
+            Every listing is open to the public and free to browse.
+          </p>
+        </div>
+      </section>
+
+      {/* ---- TOP HOCKEY CITIES ----------------------------------------------------------- */}
+      <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Featured</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>TOP HOCKEY CITIES</h2>
+            </div>
+            <Link href="/directory/united-states" className="sec-link">All US Cities →</Link>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.625rem' }}>
+            {TOP_CITIES.map(city => (
+              <Link
+                key={city.name}
+                href={city.href}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '1.25rem 0.75rem',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '6px',
+                  textDecoration: 'none',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+              >
+                <div style={{ fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', color: '#C8102E', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                  {city.country}
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#fff' }}>{city.name}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---- LATEST HIGHLIGHTS ----------------------------------------------------------- */}
+      <section className="section-py" style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="container">
+          <HighlightsGrid limit={5} columns={4} title="LATEST HIGHLIGHTS" initialData={initialHighlights} />
+        </div>
+      </section>
+
+      <HomeNewsSection />
+
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem 0' }}>
+      </div>
+
+      {/* ---- WHAT'S NEW ON RINKSTOP (homepage activity feed, item #3 from ChatGPT audit) ----- */}
+      {hasHomeActivity && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+          <div className="container">
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>WHAT&apos;S NEW ON RINKSTOP</h2>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Latest across the directory</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              {homeNewest.rinks.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#059669', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏒 Newest Rinks</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.rinks.slice(0, 4).map((r: any) => (
+                      <Link key={r.id} href={`/directory/rinks/${r.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{r.name}</div>
+                        {(r.city || r.country) && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{[r.city, r.country].filter(Boolean).join(', ')}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.teams.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#2563EB', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🏆 Newest Teams</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.teams.slice(0, 4).map((t: any) => (
+                      <Link key={t.id} href={`/directory/teams/${t.slug}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{t.name}</div>
+                        {t.home_city && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{t.home_city}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {homeNewest.players.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.6875rem', color: '#D97706', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>🧑 Newest Players</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {homeNewest.players.slice(0, 4).map((p: any) => (
+                      <Link key={p.id} href={`/directory/players/${p.slug || p.id}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#fff', lineHeight: 1.3 }}>{p.first_name} {p.last_name}</div>
+                        {p.position && <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{p.position}</div>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+
+      {/* ---- UPCOMING GAMES (own section -- rinks/teams/players already shown above) ---------- */}
+      {upcomingGames.length > 0 && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em' }}>UPCOMING GAMES</h2>
+              <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All Games →</Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+              {upcomingGames.map((g: any) => {
+                // `g.date` is fixtures.scheduled_at as ISO string.
+                // All NHL times are published in Eastern Time per the NHL.com
+                // public API convention; surface that fact to readers.
+                const timeText = g.date
+                  ? formatGameTime(g.date, 'America/New_York')
+                  : 'Date TBD';
+                return (
+                  <Link key={g.id} href={`/directory/games/${g.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none', transition: 'background 0.15s' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff' }}>{g.away_team_name} @ {g.home_team_name}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{g.venue_name || 'TBD'}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{timeText}</div>
+                    </div>
+                  </Link>
+                );
+              })}
+              <div style={{ gridColumn: '1 / -1', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                {disclaimerText('America/New_York', 'compact')}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ---- CTA BAND -------------------------------------------------------------------- */}
+      <section style={{ background: 'linear-gradient(135deg, #C8102E 0%, #9B0D23 100%)', padding: 'clamp(2rem, 5vw, 3rem) 0' }}>
+        <div className="container">
+          <div className="cta-flex">
+            <div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', color: '#fff', marginBottom: '0.375rem' }}>
+                ADD YOUR TEAM, RINK, OR LEAGUE
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.78)', fontSize: 'clamp(0.875rem, 2vw, 0.9375rem)', maxWidth: '540px' }}>
+                Submit a new listing to the directory — free to add. Already in our directory? Claim your team, rink, or league for free; paid tiers add photos, schedules, contact info, lead capture, and updates.
+              </p>
+            </div>
+            <div className="cta-btns">
+              <Link href="/sign-up" className="btn btn-white">Claim Your Profile</Link>
+              <Link href="/add-listing" className="btn btn-ghost" style={{ borderColor: 'rgba(255,255,255,0.4)' }}>+ Add a Listing</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- WS30 PHASE 6: MEMBERSHIP TEASER (3 cards, not 9) --------------- */}
+      {/* Per Arnel 2026-10-01: "Do not place all ten membership products in
+          equal visual prominence on the homepage. The homepage should sell
+          the ecosystem, not force visitors to understand the entire
+          pricing architecture." Three entry-tier cards (Free / Hockey
+          Passport / Business Listing) with a single "Compare all 9 plans"
+          link at the bottom. The full grid lives at /pricing. */}
+      <section style={{ background: 'linear-gradient(180deg, #0D1117 0%, #041E42 100%)', padding: 'clamp(2.5rem, 6vw, 4rem) 0' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 1.75rem' }}>
+            <div className="label" style={{ color: '#FFB81C' }}>Membership</div>
+            <h2 className="font-sport" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', color: '#fff', marginBottom: '0.625rem' }}>
+              START FREE, UPGRADE WHEN YOU OUTGROW IT
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', margin: 0, lineHeight: 1.6, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+              Every RinkStop account starts with a free claim and free identity verification. Paid tiers add roster tools, lead capture, and analytics — pick one when you need it, not before.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', maxWidth: '900px', margin: '0 auto' }}>
+            {[
+              {
+                tier: 'free',
+                label: 'Free',
+                price: '$0',
+                period: 'forever',
+                color: '#9CA3AF',
+                bg: 'rgba(156,163,175,0.04)',
+                border: 'rgba(156,163,175,0.25)',
+                tagline: 'Browse, follow, claim 1 listing, and verify your identity — free, forever.',
+                cta: 'Join Free',
+                href: '/sign-up',
+                popular: false,
+              },
+              {
+                tier: 'verified_identity',
+                label: 'Hockey Passport',
+                price: '$24.99',
+                period: '/ year',
+                color: '#FFB81C',
+                bg: 'rgba(255,184,28,0.08)',
+                border: 'rgba(255,184,28,0.45)',
+                tagline: 'Your digital hockey career record. Payments, document storage, and messaging.',
+                cta: 'Get My Hockey Passport',
+                href: '/pricing?for=identity',
+                popular: true,
+              },
+              {
+                tier: 'business_listing',
+                label: 'Business Listing',
+                price: '$99',
+                period: '/ year',
+                color: '#14B8A6',
+                bg: 'rgba(20,184,166,0.06)',
+                border: 'rgba(20,184,166,0.4)',
+                tagline: 'Verified business listing with contact, lead capture, and analytics.',
+                cta: 'See Business plans',
+                href: '/pricing?for=rink',
+                popular: false,
+              },
+            ].map((t) => (
+              <div
+                key={t.tier}
+                style={{
+                  position: 'relative',
+                  background: t.bg,
+                  border: `1px solid ${t.border}`,
+                  borderRadius: 12,
+                  padding: '1.5rem 1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  transition: 'transform 0.15s, border-color 0.15s',
+                }}
+              >
+                {t.popular && (
+                  <div style={{
+                    position: 'absolute', top: -10, right: 16,
+                    background: '#14B8A6', color: '#fff',
+                    fontSize: '0.625rem', fontWeight: 800,
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    padding: '0.2rem 0.625rem', borderRadius: 999,
+                  }}>Most Popular</div>
+                )}
+                <div>
+                  <div style={{ fontSize: '0.625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: t.color, marginBottom: '0.25rem' }}>
+                    {t.label}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span className="font-sport" style={{ fontSize: '2rem', color: '#fff', lineHeight: 1 }}>
+                      {t.price}
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8125rem' }}>
+                      {t.period}
+                    </span>
+                  </div>
+                </div>
+                <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.8125rem', lineHeight: 1.5, margin: 0, flex: 1 }}>
+                  {t.tagline}
+                </p>
+                <Link
+                  href={t.href}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0.625rem 1rem', borderRadius: 6,
+                    background: t.color, color: t.tier === 'free' ? '#0a0a0a' : '#0a0a0a',
+                    textDecoration: 'none', fontWeight: 700, fontSize: '0.8125rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {t.cta} →
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+            <Link
+              href="/pricing"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                color: '#FFB81C', fontSize: '0.9375rem', fontWeight: 600, textDecoration: 'none',
+                padding: '0.625rem 1.25rem',
+                border: '1px solid rgba(255,184,28,0.4)',
+                borderRadius: 999,
+              }}
+            >
+              Compare all 9 plans →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- FREE TOOLS + GUIDES (cross-link surface) --------------------------------- */}
+      <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }}>
+        <div className="container">
+          <div className="sec-head">
+            <div>
+              <div className="label">Free Tools &amp; Guides</div>
+              <h2 className="font-sport" style={{ fontSize: 'clamp(1.625rem, 4vw, 2.25rem)', color: '#fff' }}>PLAN YOUR SEASON</h2>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <Link href="/tools" className="sec-link">All tools →</Link>
+              <Link href="/guides" className="sec-link">All guides →</Link>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+            <Link href="/tools/hockey-cost-calculator" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>💰</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Hockey Cost Calculator</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Estimate your season by age, state, and level.</div>
+            </Link>
+            <Link href="/tools/junior-eligibility-checker" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🎯</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Junior Eligibility Checker</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>CHL / USHL / NCAA by birth year.</div>
+            </Link>
+            <Link href="/tools/hockey-skate-size-calculator" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>⛸️</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Skate, Glove &amp; Stick Sizing</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Free sizing for every new player.</div>
+            </Link>
+            <Link href="/guides/hockey-parents-handbook" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>👪</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Hockey Parents Handbook</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>First-year parent survival guide.</div>
+            </Link>
+            <Link href="/guides/youth-to-junior-hockey" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🛤️</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>Youth to Junior Pathways</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>NCAA vs CHL vs USHL explained.</div>
+            </Link>
+            <Link href="/guides/nhl-draft" style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '1rem 1.25rem', textDecoration: 'none' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏆</div>
+              <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>NHL Draft Guide</div>
+              <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>Eligibility, order, combine, path.</div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- JUST GETTING STARTED? (cross-link to /learn) ---------------------------- */}
+      {/* 2026-09-17 Arnel directive: moved here from line 465 (was right */}
+      {/* after the hero). New placement: AFTER pricing (Membership) AND */}
+      {/* after Plan Your Season (Free Tools + Guides), so the home page */}
+      {/* reads top-to-bottom: directory → browse → pricing → tools → on-ramp. */}
+      <JustGettingStartedSection />
+    </>
+  );
+}
