@@ -46,11 +46,18 @@ function resolveFederation(slug: string): Federation | null {
   return lookupFederation(code);
 }
 
-export async function generateStaticParams() {
-  return FEDERATIONS.map((f) => ({
-    country: countryToSlug(f.countryName),
-  }));
-}
+// 2026-10-10: Removed generateStaticParams to fix Vercel build timeout.
+// With 84 country pages each running at build time, the build worker hit
+// the 60s-per-page budget × 3-attempt retry. Now the page is rendered on
+// first request (dynamicParams=true) and cached for 1 hour (revalidate=3600).
+// The page is data-only (no Supabase), so first-render cost is minimal.
+//
+// To revert (re-enable build-time pre-render): uncomment the function below.
+// export async function generateStaticParams() {
+//   return FEDERATIONS.map((f) => ({
+//     country: countryToSlug(f.countryName),
+//   }));
+// }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { country } = await params;
