@@ -48,6 +48,9 @@ declare -a CHECKS=(
   "/directory/teams|200|15|/directory/teams/[a-z0-9-]:20+"
   "/directory/games|200|15|/directory/games/[a-z0-9-]:5+"
   "/news|200|15|/news/[a-z0-9-]:10+"
+  "/directory/extraliga-cz|200|15|Extraliga:2+"
+  "/directory/aihl-australia|200|15|AIHL:2+"
+  "/directory/mestis-finland|200|15|Mestis:2+"
 )
 
 echo "=== Post-deploy smoke test: $SITE ==="
