@@ -122,35 +122,88 @@ function approx(n: number) {
 }
 
 export default async function Home() {
-  // One RPC call replaces 9 separate Supabase round-trips. The RPC does
-  // counts + dedupe + joins in PostgreSQL and returns a single JSONB doc.
-  // See supabase/migrations/2026-06-18_get_directory_stats.sql.
+  // Two paths: try the RPC first, fall back to direct COUNT(*) queries
+  // on the underlying tables if the RPC fails. This makes the home page
+  // resilient to PostgREST schema-cache failures (which break RPCs but
+  // not direct table queries). The fallback is a bit slower (~200ms vs
+  // ~50ms) but returns real numbers instead of all zeros.
   //
-  // With revalidate=300 (set above) the result is cached by Vercel for 5
-  // minutes; only the first request after expiry runs the RPC. This brings
-  // home page TTFB from ~1s to ~50ms after warmup.
-  const { data: statsData, error: statsError } = await supabase.rpc('get_directory_stats');
-  const stats = (statsData || {}) as {
-    // 2026-09-17: migration renamed RPC keys to *_count. The interface
-    // keeps both old (for backward-compat in case of partial migration)
-    // and new fields. The counts reader uses the new ones.
-    rink_count?: number; team_count?: number; player_count?: number; league_count?: number;
-    city_count?: number; country_count?: number;
-    rinks?: number; teams?: number; players?: number; leagues?: number;
-    cities?: number; countries?: number;
-    recent_rinks: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null }>;
-    recent_teams: Array<{ id: string; name: string; slug: string; city: string | null; league_id: string | null; league_name: string | null }>;
-    upcoming_games: Array<{ id: string; date: string; home_team_name: string | null; away_team_name: string | null; venue_name: string | null }>;
-    // Added 2026-08-28 by migration
-    // 2026-08-28_get_directory_stats_add_activity.sql. These used to be
-    // 4 separate parallel queries in this file; now folded into the
-    // single get_directory_stats() RPC call.
-    newest_rinks: Array<{ id: string; name: string; slug: string; city: string | null; country: string | null; created_at: string }>;
-    newest_teams: Array<{ id: string; name: string; slug: string; home_city: string | null; country_code: string | null; created_at: string }>;
-    newest_players: Array<{ id: string; first_name: string; last_name: string; slug: string | null; position: string | null; nationality: string | null; created_at: string }>;
-    newest_articles: Array<{ id: string; slug: string; title: string; category: string; published_at: string | null; created_at: string }>;
-  };
-  if (statsError) {
+  // 2026-10-10: Added the fallback after the second PostgREST 42P01
+  // incident in 12 hours. Direct queries on the tables (rinks, teams,
+  // players, leagues) bypass PostgREST's schema cache and still work.
+  let stats: any = {};
+  let statsError: any = null;
+  try {
+    const { data, error } = await supabase.rpc('get_directory_stats');
+    if (data) {
+      stats = data;
+    } else {
+      statsError = error;
+    }
+  } catch (e: any) {
+    statsError = e;
+  }
+  // Fallback: direct parallel COUNT queries on the underlying tables.
+  // We do this in parallel; the COUNTs are O(index) so each is fast.
+  if (!stats.rink_count && !stats.team_count) {
+    try {
+      const [
+        { count: rinkCount },
+        { count: teamCount },
+        { count: playerCount },
+        { count: leagueCount },
+        { data: citiesRow },
+        { data: countriesRow },
+        { data: newestRinks },
+        { data: newestTeams },
+        { data: newestPlayers },
+        { data: newestArticles },
+        { data: recentRinks },
+        { data: recentTeams },
+        { data: upcomingGames },
+      ] = await Promise.all([
+        supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('team_workspaces').select('*', { count: 'exact', head: true }).eq('is_active', true).is('merged_into_id', null),
+        supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
+        supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
+        supabase.from('rinks').select('id, name, slug, city, country, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
+        supabase.from('team_workspaces').select('id, name, slug, home_city, league_id, created_at').eq('is_active', true).is('merged_into_id', null).order('created_at', { ascending: false }).limit(3),
+        supabase.from('players').select('id, first_name, last_name, slug, position, nationality, headshot_url, team_id, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
+        supabase.from('posts').select('id, slug, title, subtitle, category, published_at, created_at').eq('status', 'published').order('created_at', { ascending: false }).limit(3),
+        supabase.from('rinks').select('id, name, slug, city, country').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
+        supabase.from('team_workspaces').select('id, name, slug, home_city, league_id, league_name').eq('is_active', true).is('merged_into_id', null).order('created_at', { ascending: false }).limit(3),
+        supabase.from('fixtures').select('id, scheduled_at, home_team_name, away_team_name, venue_name').gte('scheduled_at', new Date().toISOString().slice(0, 10)).in('status', ['scheduled', 'pending', 'live']).order('scheduled_at', { ascending: true }).limit(3),
+      ]);
+      const cities = new Set((citiesRow || []).map((r: any) => (r.city || '').toLowerCase().trim()).filter(Boolean));
+      const countries = new Set((countriesRow || []).map((r: any) => r.country).filter(Boolean));
+      stats = {
+        rink_count: rinkCount || 0,
+        team_count: teamCount || 0,
+        player_count: playerCount || 0,
+        league_count: leagueCount || 0,
+        city_count: cities.size,
+        country_count: countries.size,
+        newest_rinks: newestRinks || [],
+        newest_teams: newestTeams || [],
+        newest_players: newestPlayers || [],
+        newest_articles: newestArticles || [],
+        recent_rinks: recentRinks || [],
+        recent_teams: recentTeams || [],
+        upcoming_games: upcomingGames || [],
+      };
+    } catch (fallbackErr: any) {
+      console.error('[home] fallback COUNT also failed:', fallbackErr.message);
+    }
+  }
+  const _statsData = stats;
+  // The rest of this function reads from `stats`, which is now always
+  // populated either via the RPC or the direct-table fallback.
+  if (statsError && stats.rink_count) {
+    // Only log if the RPC failed BUT the fallback didn't fire (i.e.
+    // we got data from the RPC anyway). Suppress the noise when the
+    // fallback path is what's actually running.
     console.error('[home] get_directory_stats failed:', statsError);
   }
 
