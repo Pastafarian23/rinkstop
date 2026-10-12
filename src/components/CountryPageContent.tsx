@@ -74,7 +74,7 @@ export default function CountryPageContent({ data }: Props) {
       {
         '@type': 'Question',
         name: `Is hockey popular in ${countryName}?`,
-        acceptedAnswer: { '@type': 'Answer', text: info?.note ? `Hockey in ${countryName}: ${info.note}. IIHF ranking: ${info.iihfRank ?? 'unranked'}.` : `Hockey has a dedicated community in ${countryName}. Browse the rinks, teams, and leagues listed on this page to see the local scene.` },
+        acceptedAnswer: { '@type': 'Answer', text: info?.iihfRank ? `Hockey in ${countryName} is ranked ${info.iihfRank} by the IIHF. Browse the rinks, teams, and leagues listed on this page to see the local scene.` : `Hockey has a dedicated community in ${countryName}. Browse the rinks, teams, and leagues listed on this page to see the local scene.` },
       },
       {
         '@type': 'Question',
@@ -164,7 +164,7 @@ export default function CountryPageContent({ data }: Props) {
           </h1>
           <p style={{ color: textMuted, fontSize: 16, maxWidth: 640, margin: '0 auto 24px' }}>
             {hasData
-              ? `${info?.note || `Browse the complete hockey directory for ${countryName}.`}`
+              ? `Browse the complete hockey directory for ${countryName}.${info?.iihfRank ? ` IIHF rank: ${info.iihfRank}.` : ''}${info?.league ? ` Top league: ${info.league}.` : ''}`
               : `Hockey has a growing presence in ${countryName}. Browse the directory, learn-to-play resources, and the closest active hockey countries.`
             }
           </p>
@@ -331,9 +331,9 @@ export default function CountryPageContent({ data }: Props) {
                 {howToNote
                   ? howToNote
                   : hasData
-                    ? `${countryName} has ${rinkN} ice rinks, ${teamN} active teams, and ${leagueN} leagues in the RinkStop directory. ${info?.note || ''}`
+                    ? `${countryName} has ${rinkN} ice rinks, ${teamN} active teams, and ${leagueN} leagues in the RinkStop directory.${info?.iihfRank ? ` IIHF rank: ${info.iihfRank}.` : ''}${info?.league ? ` Top league: ${info.league}.` : ''}`
                     : iihfMember
-                      ? `${countryName} is a ${iihfMember.iihf_status} member of the IIHF${iihfMember.date_joined ? `, joining on ${new Date(iihfMember.date_joined).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` : ''}. ${iihfMember.organization ? `The national federation is ${iihfMember.organization}.` : ''} RinkStop lists ${rinkN} ${rinkN === 1 ? 'rink' : 'rinks'} in the country. ${info?.note || ''}`
+                      ? `${countryName} is a ${iihfMember.iihf_status} member of the IIHF${iihfMember.date_joined ? `, joining on ${new Date(iihfMember.date_joined).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` : ''}. ${iihfMember.organization ? `The national federation is ${iihfMember.organization}.` : ''} RinkStop lists ${rinkN} ${rinkN === 1 ? 'rink' : 'rinks'} in the country.${info?.iihfRank ? ` IIHF rank: ${info.iihfRank}.` : ''}`
                       : `Hockey is an emerging or developing sport in ${countryName}. The page below includes learn-to-play resources and the closest established hockey markets.`
                 }
               </p>
@@ -572,7 +572,7 @@ export default function CountryPageContent({ data }: Props) {
                 { title: 'Learn to skate first', body: `Most hockey players in ${countryName} start with skating lessons. Many rinks run learn-to-skate programs for ages 3+ that teach the basics of balance, edges, and stopping — the foundations of hockey.` },
                 { title: 'Try a learn-to-play clinic', body: `Most local rinks and clubs run learn-to-play programs for beginners. These typically run 6–8 weeks, provide loaner equipment, and cost between $50–$300. ${hasData ? `Browse rinks above and contact one directly to ask about upcoming sessions.` : 'Search for nearby rinks in the closest active hockey country.'}` },
                 { title: 'Join a youth or adult recreational team', body: `After learn-to-play, most players in ${countryName} join a house league or recreational team. These run weekly practices and games at the local rink and are the most common entry point to organized hockey.` },
-                { title: 'Register with the national federation', body: `${info ? info.note || '' : `Most countries require player registration with the national ice hockey federation.`} In the US this is USA Hockey, in Canada it's Hockey Canada, and in Europe each country has its own federation. Registration is typically annual and includes insurance.` },
+                { title: 'Register with the national federation', body: `Most countries require player registration with the national ice hockey federation. In the US this is USA Hockey, in Canada it's Hockey Canada, and in Europe each country has its own federation. Registration is typically annual and includes insurance.${info?.iihfRank ? ` ${countryName} is currently ranked ${info.iihfRank} by the IIHF.` : ''}` },
                 { title: 'Progress through the development pathway', body: `Talented players in ${countryName} typically progress through age-group teams (U8, U10, U12...) into travel or select teams, then junior leagues, and eventually professional or collegiate hockey. The pathway differs by country but generally follows the IIHF development model.` },
               ].map((step, i) => (
                 <li key={i} style={{ display: 'grid', gridTemplateColumns: '32px 1fr', gap: 12, alignItems: 'start' }}>
