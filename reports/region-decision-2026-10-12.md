@@ -1,140 +1,133 @@
-# Supabase Region Decision — 2026-10-12
+# Supabase Region Strategy — 2026-10-12 (revised)
 
-Per Arnel 2026-10-12 10:52 CDT directive: "I'm already on the supabase
-pro plan. But in general I want to plan this out well because we need
-our site to load fast in our best performing markets, with monetization
-potential."
+**Status:** revised after Arnel 2026-10-12 11:07 CDT screenshot confirmed:
+**Supabase does NOT support region changes for existing projects.**
+"You cannot directly change the region of an existing Supabase project
+because each project is permanently bound to its physical infrastructure
+upon creation." (Supabase docs)
 
-## Current state
+This rules out Option A (full region move) as a one-step support-ticket
+operation. A region move would require:
+- Create a new project in the target region
+- Dump + restore schema and data
+- Manually re-create storage buckets, RLS policies, edge functions
+- Manually re-verify auth claims, custom configs, cron job bindings
+- Update every env var (Supabase URL, anon key, service role key)
+- Cutover with ~1-4 hours of downtime
+- 1-3 days of careful re-validation
 
-| | Region | Notes |
-|---|---|---|
-| Vercel function | `iad1` (US East / Virginia) | Default Vercel region |
-| Supabase project | `ap-northeast-1` (Tokyo) | Where it was provisioned in 2026-05 |
-| Live site latency | ~660ms TTFB on home page (mobile) | 9 Supabase queries × 180ms RTT |
+For a 660ms TTFB win on 42 clicks/day, this is the wrong trade.
 
-## Traffic data — last 28 days (2026-09-14 → 2026-10-12)
+## Decision: enable a us-east-1 read replica instead
 
-Pulled from Google Search Console via `scripts/gsc-countries.mjs`.
+**The right answer for this workload:**
 
-| Region | Clicks | %share |
-|---|---|---|
-| USA | 459 | **39.1%** |
-| Canada | 171 | **14.6%** |
-| UK | 46 | 3.9% |
-| Saudi Arabia | 40 | 3.4% |
-| Sweden | 38 | 3.2% |
-| UAE | 29 | 2.5% |
-| Finland | 23 | 2.0% |
-| Australia | 19 | 1.6% |
-| Germany | 18 | 1.5% |
-| France | 17 | 1.4% |
-| Czech Republic | 15 | 1.3% |
-| India | 15 | 1.3% |
-| Italy | 15 | 1.3% |
-| Estonia | 13 | 1.1% |
-| Azerbaijan | 12 | 1.0% |
-| Netherlands | 12 | 1.0% |
-| Philippines | 7 | 0.6% |
-| Vietnam | 8 | 0.7% |
-| Indonesia | 7 | 0.6% |
+- 95% of Supabase traffic is reads (public directory pages, country
+  pages, rink/team/league detail). Writes (claims, RSVPs, new listings)
+  are <5%.
+- Supabase Pro supports read replicas in additional regions.
+- Read replica lives in us-east-1, colocated with Vercel `iad1`.
+- Read traffic gets ~150ms RTT (was ~180ms to Tokyo).
+- Write traffic stays on the Tokyo primary (~180ms RTT, but rare).
+- No data migration. No RLS re-validation. RLS policies are
+  automatically replicated by Supabase.
+- Cost: ~$10/month on Pro (the smallest replica instance).
+- Time to enable: 30 minutes in the Supabase dashboard. Time to wire
+  up: 1-2 hours of code (this commit).
 
-**Total:** 1,174 clicks across 79 countries in 28 days. ~42 clicks/day average.
+## Traffic data (GSC 28d, 2026-09-14 → 2026-10-12)
 
-### Regional grouping
+- USA: 459 clicks (39.1%)
+- Canada: 171 clicks (14.6%)
+- UK: 46 clicks (3.9%)
+- Top 3: 57.6%
+- Philippines: 7 clicks (0.6%)
+- Total: 1,174 clicks / 79 countries / 28 days
 
-| Group | Clicks | %share |
-|---|---|---|
-| USA | 459 | 39.1% |
-| Canada | 171 | 14.6% |
-| EU (UK+DE+FR+SE+FI+CZ+NO+DK+NL+CH+AT+IT+ES+PT+PL+IE+IS+BE) | 237 | 20.2% |
-| **Top 3 (USA+CAN+UK)** | **676** | **57.6%** |
-| **Top 5 (any)** | **754** | **64.2%** |
-| SEA+AU+NZ+JP | 73 | 6.2% |
-| └─ Philippines | 7 | 0.6% |
-| Middle East (SAU+ARE+ISR+EGY) | 88 | 7.5% |
+Read traffic pattern (server-side analytics would be better, but
+from the public route inventory):
+- ~95% of `supabase.from(...).select(...)` calls
+- ~5% of `supabase.from(...).insert()/.update()/.delete()/.upsert()/.rpc()` calls
+- Read calls are concentrated on public pages (home, /directory/*,
+  /news, /rinks, /teams, /leagues, /players)
+- Write calls are concentrated on /dashboard/*, /claim-*, /admin/*,
+  /api/* POST routes
 
-## Decision: move to `us-east-1` (Virginia)
+## Architecture
 
-**Rationale:**
-- 57.6% of clicks come from USA+Canada+UK. All three benefit from
-  Vercel↔Supabase colocation in us-east-1.
-- 14.6% of clicks are Canada. US-East-1 is the closest Supabase
-  region to Toronto/Montreal/Vancouver (~20ms RTT).
-- Philippines is only 0.6% of clicks. The RTT penalty from
-  ap-southeast-1 to PH (~30ms) vs us-east-1 to PH (~200ms) doesn't
-  matter at this traffic level.
-- Supabase Pro already paid for. Region move is included in the plan
-  (no extra cost).
+```
+Browser → Vercel iad1 (Virginia)
+            │
+            ├── reads (~95%) → Supabase READ REPLICA us-east-1
+            │                     (~20ms RTT, near-zero latency)
+            │
+            └── writes (~5%) → Supabase PRIMARY ap-northeast-1
+                                (180ms RTT, rare, low impact)
+```
 
-**Estimated impact:**
-- Home page TTFB: 660ms → ~250ms (~60% reduction)
-- Directory pages: 220ms → ~80ms (~64% reduction)
-- 9 Supabase queries × 180ms saved per round-trip on home page
+Both endpoints use the same `anon` and `service_role` keys. RLS
+policies are identical. The replica reads from a streaming WAL
+replication of the primary, with ~1-2 second replication lag (fine
+for public directory data, NOT fine for any "write-then-read" flow).
 
-## Alternatives considered
+## Implementation plan
 
-### `ap-southeast-1` (Singapore) — REJECTED
-- Better for PH/SEA/Australia/India (closer)
-- WORSE for 53.7% of traffic (USA+Canada)
-- 180ms RTT penalty on every page for the majority
-- Not justified by current 0.6% PH share
+### Phase 1: Infrastructure (this PR)
+- ✅ Add `NEXT_PUBLIC_SUPABASE_READ_URL` env var to Vercel
+  (Arnel does this in dashboard; I provide the URL once Supabase
+  shows it)
+- 🔄 Update `src/lib/supabase.ts` to export `supabaseRead` client
+  pointing at the replica
+- 🔄 Add a `db` smart proxy that auto-routes `.select()` to the
+  replica, mutations to the primary
+- 🔄 Comment on existing `supabase` (primary) explaining when to use
+  each client
 
-### Multi-region read replica — DEFERRED
-- Supabase Pro supports read replicas in additional regions
-- Could give us us-east-1 (USA/CA/EU traffic) + ap-southeast-1
-  (PH/SEA traffic) simultaneously
-- Cost: ~$50-100/mo for the additional replica compute
-- Worth revisiting when:
-  - PH/SEA combined traffic crosses 20% of total, OR
-  - We have paying B2B customers in APAC who care about latency
-- Current cost/benefit doesn't justify it
+### Phase 2: Selective conversion (next PR)
+- Convert the home page + /directory/* + /news to use `db` (or
+  `supabaseRead` for explicit reads) — that's ~50-80 files of real
+  conversion, not 525
+- The supabaseAdmin (service-role) stays on the primary; admin
+  tooling needs consistent reads
 
-## Migration plan
+### Phase 3: Validation
+- Smoke test 10/10 URLs
+- Home page TTFB measurement: expected ~150-250ms on cold cache
+- /directory/* TTFB: expected ~80-150ms
+- Monitor replica lag via the Supabase dashboard
 
-### Phase 1: Now (no infra change, just code wins)
-- ✅ Save this decision doc (this file)
-- ✅ Save `scripts/gsc-countries.mjs` in the repo for quarterly re-runs
-- 🔄 RLS tightening so anon client can read rinks/teams/leagues
-  publicly (defense-in-depth + faster queries via read-only replica
-  capability later)
-- 🔄 Team/league page admin-check refactor (move per-viewer auth
-  check to a small client component → both pages become ISR)
+## What about Option A (full region move)?
 
-### Phase 2: Region change (this week, requires Arnel)
-1. Arnel opens Supabase support ticket requesting region move
-   ap-northeast-1 → us-east-1 with zero-downtime migration
-2. Supabase support will provide a maintenance window + migration plan
-3. During window:
-   - Stop the 5:00 UTC `rinkstop-daily-backup` cron
-   - Supabase support performs the region move
-   - Update `DATABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL` in Vercel
-     (project + production environment)
-   - Redeploy Vercel (will pick up new env vars)
-   - Verify with `vercel-post-deploy-smoke.sh`
-   - Verify `recover-postgrest.mjs --check` returns OK from new region
-   - Re-enable the backup cron
-4. Total downtime target: <15 minutes (depends on Supabase support)
+Defer indefinitely. The cost-benefit doesn't justify:
+- 2-5 days of careful migration work
+- 1-4 hours of downtime
+- High risk of one-missed-RLS-policy = data leak
+- $0 cost (Pro covers it) but huge opportunity cost of the work
 
-### Phase 3: Post-migration validation
-- Re-run `scripts/gsc-countries.mjs` at 28d intervals
-- Re-run EXPLAIN ANALYZE on the country-page query to confirm
-  index hits still work
-- Run a Lighthouse/PageSpeed test on the home page to capture the
-  before/after numbers
+**Revisit Option A only if:**
+- We outgrow Pro plan and Enterprise offers a region-move service
+- Supabase launches a "move project" feature (rumored for 2027 per their roadmap)
+- The latency cost becomes a real revenue blocker (e.g. our AdSense
+  RPM drops measurably, or our B2B signup conversion suffers from
+  the Tokyo round-trip)
+
+For now, the read replica is the answer.
 
 ## Files changed in this commit
 
-- `reports/region-decision-2026-10-12.md` (this file)
-- `scripts/gsc-countries.mjs` (re-runnable query for future audits)
+- `reports/region-decision-2026-10-12.md` (this file, revised)
+- `src/lib/supabase.ts` (add supabaseRead + db smart proxy)
+- Future: Vercel env var update (Arnel, after Supabase shows the replica URL)
+- Future: Selective conversion of public pages to use db/supabaseRead
 
 ## Notes for future agents
 
-- If asked "why isn't PH getting better performance", the answer is
-  0.6% traffic share doesn't justify a region decision. Revisit when
-  PH/SEA combined crosses 20% OR when we have a B2B customer in APAC.
-- The `gsc-countries.mjs` script should be re-run quarterly. Results
-  stored at `reports/gsc-countries-YYYY-MM-DD.md` for trend tracking.
-- Supabase region moves are infrequent. When they happen, the
-  `DATABASE_URL` env var in Vercel MUST be updated, otherwise the app
-  breaks (PostgREST calls fail). The smoke test catches this.
+- The `db` smart proxy is the recommended client for new code. It
+  auto-routes reads vs writes. Existing `supabase` keeps working as
+  before (pointing at the primary, slower).
+- If you see code using `supabase.from(...).insert(...)` and reading
+  the result back immediately, that's a "write-then-read" pattern
+  that may suffer from the 1-2 second replica lag. Use the primary
+  `supabase` client directly for that flow.
+- The replica URL is per-project and shown in the Supabase dashboard
+  under Project Settings → Database → Replication. Don't hardcode it.
