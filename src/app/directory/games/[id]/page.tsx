@@ -4,6 +4,12 @@ import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { ScoresheetQRPanel } from '@/components/ScoresheetQRPanel';
 
+// 2026-10-12: switched to ISR. Game pages only read public fixtures data
+// via service-role client (no cookies, no auth()). 1h revalidation —
+// game times/score updates warrant fresher than 24h, but this isn't on
+// the live game page (those are still force-dynamic for score updates).
+export const revalidate = 3600;
+
 const BASE_URL = 'https://rinkstop.com';
 
 function getSupabase() {

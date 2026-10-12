@@ -9,7 +9,7 @@ import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import ProvinceMarketplaceClient from '../../_components/ProvinceMarketplaceClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 86400;
 
 const US_STATE_ABBR: Record<string, string> = {
   'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',

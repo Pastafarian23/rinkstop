@@ -10,7 +10,7 @@ import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import CountryMarketplaceClient from '../_components/CountryMarketplaceClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 86400;
 
 interface PageProps {
   params: Promise<{ country: string }>;

@@ -10,7 +10,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import CityMarketplaceClient from '../../../_components/CityMarketplaceClient';
 import { citySlugToVariants } from '@/lib/ice-marketplace-city-match';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 86400;
 
 interface PageProps {
   params: Promise<{ country: string; city: string }>;
