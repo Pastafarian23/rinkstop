@@ -161,89 +161,55 @@ function approx(n: number) {
 }
 
 export default async function Home() {
-  // Two paths: try the RPC first, fall back to direct COUNT(*) queries
-  // on the underlying tables if the RPC fails. This makes the home page
-  // resilient to PostgREST schema-cache failures (which break RPCs but
-  // not direct table queries). The fallback is a bit slower (~200ms vs
-  // ~50ms) but returns real numbers instead of all zeros.
-  //
-  // 2026-10-10: Added the fallback after the second PostgREST 42P01
-  // incident in 12 hours. Direct queries on the tables (rinks, teams,
-  // players, leagues) bypass PostgREST's schema cache and still work.
+  // Single-RPC fetch (2026-10-12). Replaces the previous 14-query
+  // pattern (one RPC + 13 fallback queries). Drops 14 round-trips to 1.
+  // Migration: 2026-10-12_get_home_page_data_rpc.sql
+  // The RPC returns: stats (counts), newest_*, recent_*, upcoming_games.
   let stats: any = {};
   let statsError: any = null;
   try {
-    const { data, error } = await supabase.rpc('get_directory_stats');
+    const { data, error } = await supabase.rpc('get_home_page_data');
     if (data) {
-      stats = data;
+      // Normalize shape: the RPC returns { stats: {...}, newest_*: [...], ... }
+      // The rest of this function reads stats.* (rink_count etc) and
+      // stats.recent_* / stats.newest_* / stats.upcoming_games directly.
+      stats = {
+        rink_count: data.stats?.rink_count || 0,
+        team_count: data.stats?.team_count || 0,
+        player_count: data.stats?.player_count || 0,
+        league_count: data.stats?.league_count || 0,
+        city_count: data.stats?.city_count || 0,
+        country_count: data.stats?.country_count || 0,
+        newest_rinks: data.newest_rinks || [],
+        newest_teams: data.newest_teams || [],
+        newest_players: data.newest_players || [],
+        newest_articles: data.newest_articles || [],
+        recent_rinks: data.recent_rinks || [],
+        recent_teams: data.recent_teams || [],
+        upcoming_games: data.upcoming_games || [],
+      };
     } else {
       statsError = error;
     }
   } catch (e: any) {
     statsError = e;
   }
-  // Fallback: direct parallel COUNT queries on the underlying tables.
-  // We do this in parallel; the COUNTs are O(index) so each is fast.
-  if (!stats.rink_count && !stats.team_count) {
+  // Fallback: if the RPC failed entirely, do the count-only RPC
+  // (get_directory_stats still works even when the big RPC doesn't,
+  // because it touches fewer tables and is older). This at least gives
+  // us the headline numbers even if we lose the activity feed.
+  if (!stats.rink_count) {
     try {
-      const [
-        { count: rinkCount },
-        { count: teamCount },
-        { count: playerCount },
-        { count: leagueCount },
-        { data: citiesRow },
-        { data: countriesRow },
-        { data: newestRinks },
-        { data: newestTeams },
-        { data: newestPlayers },
-        { data: newestArticles },
-        { data: recentRinks },
-        { data: recentTeams },
-        { data: upcomingGames },
-      ] = await Promise.all([
-        supabase.from('rinks').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('teams').select('*', { count: 'exact', head: true }).eq('is_active', true).is('merged_into_id', null),
-        supabase.from('players').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('leagues').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('rinks').select('city').eq('is_active', true).not('city', 'is', null),
-        supabase.from('rinks').select('country').eq('is_active', true).not('country', 'is', null),
-        supabase.from('rinks').select('id, name, slug, city, country, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
-        supabase.from('teams').select('id, name, slug, city, league_id, country, created_at').eq('is_active', true).is('merged_into_id', null).order('created_at', { ascending: false }).limit(3),
-        supabase.from('players').select('id, first_name, last_name, slug, position, nationality, headshot_url, team_id, created_at').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
-        supabase.from('posts').select('id, slug, title, subtitle, category, published_at, created_at').eq('status', 'published').order('created_at', { ascending: false }).limit(3),
-        supabase.from('rinks').select('id, name, slug, city, country').eq('is_active', true).order('created_at', { ascending: false }).limit(3),
-        supabase.from('teams').select('id, name, slug, city, league_id').eq('is_active', true).is('merged_into_id', null).order('created_at', { ascending: false }).limit(3),
-        supabase.from('fixtures').select('id, scheduled_at, home_team_name, away_team_name, venue_name').gte('scheduled_at', new Date().toISOString().slice(0, 10)).in('status', ['scheduled', 'pending', 'live']).order('scheduled_at', { ascending: true }).limit(3),
-      ]);
-      const cities = new Set((citiesRow || []).map((r: any) => (r.city || '').toLowerCase().trim()).filter(Boolean));
-      const countries = new Set((countriesRow || []).map((r: any) => r.country).filter(Boolean));
-      stats = {
-        rink_count: rinkCount || 0,
-        team_count: teamCount || 0,
-        player_count: playerCount || 0,
-        league_count: leagueCount || 0,
-        city_count: cities.size,
-        country_count: countries.size,
-        newest_rinks: newestRinks || [],
-        newest_teams: newestTeams || [],
-        newest_players: newestPlayers || [],
-        newest_articles: newestArticles || [],
-        recent_rinks: recentRinks || [],
-        recent_teams: recentTeams || [],
-        upcoming_games: upcomingGames || [],
-      };
-    } catch (fallbackErr: any) {
-      console.error('[home] fallback COUNT also failed:', fallbackErr.message);
+      const { data } = await supabase.rpc('get_directory_stats');
+      if (data) {
+        stats = { ...stats, ...(data as any) };
+      }
+    } catch {
+      // Last resort: render with zeros. Better than a 500.
     }
   }
-  const _statsData = stats;
-  // The rest of this function reads from `stats`, which is now always
-  // populated either via the RPC or the direct-table fallback.
   if (statsError && stats.rink_count) {
-    // Only log if the RPC failed BUT the fallback didn't fire (i.e.
-    // we got data from the RPC anyway). Suppress the noise when the
-    // fallback path is what's actually running.
-    console.error('[home] get_directory_stats failed:', statsError);
+    console.error('[home] get_home_page_data RPC failed but stats populated:', statsError);
   }
 
   // Per Arnel's directive (2026-08-26): home page should not show
