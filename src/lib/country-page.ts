@@ -102,31 +102,31 @@ export const COUNTRY_TO_ISO: Record<string, string> = {
 
 
 // League info for top countries
-export const LEAGUE_INFO: Record<string, { league: string; note: string; iihfRank?: string; firstNhl?: string }> = {
-  'United States': { league: 'NHL, NCAA, USHL', note: 'Fastest-growing hockey market globally', iihfRank: '#4', firstNhl: '1924' },
-  'Canada': { league: 'NHL, OHL, WHL, QMJHL', note: "Hockey's birthplace and powerhouse", iihfRank: '#1', firstNhl: '1917' },
-  'Russia': { league: 'KHL, MHL, VHL', note: "World's second-best league after NHL", iihfRank: '#3', firstNhl: '1952' },
-  'Sweden': { league: 'SHL, Hockeyallsvenskan', note: 'Top player development system', iihfRank: '#4', firstNhl: '1932' },
-  'Finland': { league: 'Liiga, Mestis', note: 'Per-capita hockey power', iihfRank: '#3', firstNhl: '1927' },
-  'Germany': { league: 'DEL, DEL2', note: 'Growing NHL pipeline', iihfRank: '#7', firstNhl: '1952' },
-  'Switzerland': { league: 'NL, SL', note: 'High-quality league, neutral host', iihfRank: '#5', firstNhl: '1935' },
-  'Czech Republic': { league: 'Extraliga, 1. Liga', note: 'Rich hockey tradition', iihfRank: '#5', firstNhl: '1936' },
-  'Norway': { league: 'Fjordkraft-Ligaen', note: 'Rapidly improving program', iihfRank: '#8', firstNhl: '1949' },
-  'France': { league: 'Ligue Magnus', note: 'Growing NHL interest', iihfRank: '#11', firstNhl: '1931' },
-  'Austria': { league: 'ICEHL, EBEL', note: 'Alpine hockey tradition', iihfRank: '#13', firstNhl: '1947' },
-  'Italy': { league: 'Serie A', note: 'Mediterranean hockey hub', iihfRank: '#16', firstNhl: '1947' },
-  'Australia': { league: 'AIHL', note: 'Growing Down Under', iihfRank: '#22', firstNhl: '1982' },
-  'Netherlands': { league: 'Eredivisie', note: 'Dutch hockey progressing', iihfRank: '#19', firstNhl: '1961' },
-  'Japan': { league: 'BHL', note: "Asia's most developed program", iihfRank: '#23', firstNhl: '1930' },
-  'South Korea': { league: 'Asia League', note: 'Rapidly rising program', iihfRank: '#14', firstNhl: '1984' },
-  'China': { league: 'KHL (Kunlun)', note: 'Fastest-growing market', iihfRank: '#26', firstNhl: '1981' },
-  'Denmark': { league: 'Metal Ligaen', note: 'Strong international results', iihfRank: '#9', firstNhl: '1949' },
-  'New Zealand': { league: 'NZIHL', note: 'Oceania hockey entry point', iihfRank: '#25', firstNhl: '1989' },
-  'United Kingdom': { league: 'EIHL, NIHL', note: 'UK hockey expanding', iihfRank: '#18', firstNhl: '1935' },
-  'Mexico': { league: 'LNHHB', note: 'Growing in North America', iihfRank: '#30', firstNhl: '1989' },
-  'Slovakia': { league: 'Extraliga, 1. Liga', note: 'Consistent NHL talent producer', iihfRank: '#10', firstNhl: '1936' },
-  'Latvia': { league: 'Optibet Latvian Hockey League', note: 'Passionate hockey nation', iihfRank: '#10', firstNhl: '1932' },
-  'Belarus': { league: 'Extraleague', note: 'Strong regional presence', iihfRank: '#15', firstNhl: '1952' },
+export const LEAGUE_INFO: Record<string, { league: string; iihfRank?: string; firstNhl?: string }> = {
+  'United States': { league: 'NHL, NCAA, USHL', iihfRank: '#4', firstNhl: '1924' },
+  'Canada': { league: 'NHL, OHL, WHL, QMJHL', iihfRank: '#1', firstNhl: '1917' },
+  'Russia': { league: 'KHL, MHL, VHL', iihfRank: '#3', firstNhl: '1952' },
+  'Sweden': { league: 'SHL, Hockeyallsvenskan', iihfRank: '#4', firstNhl: '1932' },
+  'Finland': { league: 'Liiga, Mestis', iihfRank: '#3', firstNhl: '1927' },
+  'Germany': { league: 'DEL, DEL2', iihfRank: '#7', firstNhl: '1952' },
+  'Switzerland': { league: 'NL, SL', iihfRank: '#5', firstNhl: '1935' },
+  'Czech Republic': { league: 'Extraliga, 1. Liga', iihfRank: '#5', firstNhl: '1936' },
+  'Norway': { league: 'Fjordkraft-Ligaen', iihfRank: '#8', firstNhl: '1949' },
+  'France': { league: 'Ligue Magnus', iihfRank: '#11', firstNhl: '1931' },
+  'Austria': { league: 'ICEHL, EBEL', iihfRank: '#13', firstNhl: '1947' },
+  'Italy': { league: 'Serie A', iihfRank: '#16', firstNhl: '1947' },
+  'Australia': { league: 'AIHL', iihfRank: '#22', firstNhl: '1982' },
+  'Netherlands': { league: 'Eredivisie', iihfRank: '#19', firstNhl: '1961' },
+  'Japan': { league: 'BHL', iihfRank: '#23', firstNhl: '1930' },
+  'South Korea': { league: 'Asia League', iihfRank: '#14', firstNhl: '1984' },
+  'China': { league: 'KHL (Kunlun)', iihfRank: '#26', firstNhl: '1981' },
+  'Denmark': { league: 'Metal Ligaen', iihfRank: '#9', firstNhl: '1949' },
+  'New Zealand': { league: 'NZIHL', iihfRank: '#25', firstNhl: '1989' },
+  'United Kingdom': { league: 'EIHL, NIHL', iihfRank: '#18', firstNhl: '1935' },
+  'Mexico': { league: 'LNHHB', iihfRank: '#30', firstNhl: '1989' },
+  'Slovakia': { league: 'Extraliga, 1. Liga', iihfRank: '#10', firstNhl: '1936' },
+  'Latvia': { league: 'Optibet Latvian Hockey League', iihfRank: '#10', firstNhl: '1932' },
+  'Belarus': { league: 'Extraleague', iihfRank: '#15', firstNhl: '1952' },
 };
 
 // For the 40 placeholder countries with no permanent ice rink, list the
@@ -246,7 +246,7 @@ export interface CountryPageData {
   relatedPosts: any[];
   finalPosts: any[];
   hasData: boolean;
-  info: { league: string; note: string; iihfRank?: string; firstNhl?: string } | undefined;
+  info: { league: string; iihfRank?: string; firstNhl?: string } | undefined;
   howToNote: string | undefined;
   nearestHockeyCountries: { name: string; slug: string; rinkCount: number; teamCount: number }[];
   hockeyCities: { name: string; slug: string; rinkCount: number }[];
@@ -452,7 +452,6 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
   // new template leads with the dominant query ("hockey in {country}"),
   // names top leagues and IIHF rank when known, and finishes with a
   // concrete browse-action CTA instead of filler.
-  const infoNote = (data.info as any)?.note || LEAGUE_INFO[countryName]?.note || '';
   const iihfRank = LEAGUE_INFO[countryName]?.iihfRank;
   const topLeague = LEAGUE_INFO[countryName]?.league;
   const leagueClause = topLeague ? ` Top league: ${topLeague}.` : '';
@@ -460,7 +459,7 @@ export async function getCountryMetadata(countryName: string, countrySlug: strin
 
   const description = hasData
     ? `Hockey in ${countryName}: ${rinks} rinks, ${teams} active teams, ${data.leagueCount || 'all major'} leagues.${leagueClause}${iihfClause} Browse teams, fixtures, and schedules, or jump to a specific rink or league.`.slice(0, 240)
-    : `Hockey in ${countryName} — directory of leagues, teams, and learn-to-play programs.${leagueClause} ${infoNote || 'How to get started in hockey in ' + countryName + '.'}`.slice(0, 240);
+    : `Hockey in ${countryName} — directory of leagues, teams, and learn-to-play programs.${leagueClause} Browse teams, fixtures, and schedules, or jump to a specific rink or league.`.slice(0, 240);
 
   return {
     title,
