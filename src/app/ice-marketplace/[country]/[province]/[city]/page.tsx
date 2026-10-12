@@ -13,7 +13,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { citySlugToVariants } from '@/lib/ice-marketplace-city-match';
 import CityMarketplaceClient from '../../../_components/CityMarketplaceClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 86400;
 
 const US_STATE_ABBR: Record<string, string> = {
   'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',

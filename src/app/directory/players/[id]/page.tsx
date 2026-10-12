@@ -1,5 +1,11 @@
 import type { Metadata } from 'next';
-export const dynamic = 'force-dynamic';
+// 2026-10-12: switched to ISR with 24h revalidation. The page used to
+// be force-dynamic, but it only reads from the public players table via
+// the service-role client (no cookies, no auth() calls) — there's no
+// per-viewer state to make dynamic. 24h matches the lifetime of a player
+// profile (rarely changes day to day); we still get revalidatePath() on
+// any admin edit to invalidate immediately.
+export const revalidate = 86400;
 
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';

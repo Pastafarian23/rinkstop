@@ -4,6 +4,11 @@
 // This pattern works because Next.js doesn't allow two dynamic segments at the
 // same level, so we keep [id] and discriminate the input format.
 
+// 2026-10-12: switched to ISR. Brand data rarely changes; 24h cache
+// matches the lifetime of a brand profile. No auth() or cookies in
+// the render path.
+export const revalidate = 86400;
+
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getBrandBySlug, getBrandSlugMap } from '@/lib/brand-page';
