@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge } from '@/components/TierBadge';
 import ListingsManager from './ListingsManager';
+import BusinessPlusFeatures from './BusinessPlusFeatures';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,6 +63,8 @@ export default async function ListingsPage() {
       </div>
 
       <ListingsManager userTier={profile?.tier || 'free'} />
+
+      <BusinessPlusFeatures userId={userId} userTier={profile?.tier || 'free'} />
     </div>
   );
 }
