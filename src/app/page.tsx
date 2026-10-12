@@ -10,7 +10,13 @@ import FourPathNav from '@/components/FourPathNav';
 import JustGettingStartedSection from '@/components/home/JustGettingStartedSection';
 import { formatGameTime, tzAbbr, disclaimerText } from '@/lib/game-time';
 
-// Home page is rendered statically with ISR (revalidate every 5 min).
+// Home page is rendered statically with ISR. Counts/activity change slowly
+// (the blog pipeline adds maybe 1-5 new rinks/teams per day, not per minute),
+// so a 1-hour revalidate gives us cache hit rates near 99% while keeping
+// the data fresh enough for users. 5-min revalidate was overkill.
+// (Note: was 300 (5 min) before. Bumped to 1 hour on 2026-10-12 because
+// the data changes slowly + the new single-RPC path makes fresh renders
+// cheap enough that we don't need a 5-min cache.)
 // The page runs 9 Supabase queries for the stats grid + recent sections;
 // force-dynamic made every request re-run those queries (1+ second TTFB).
 // 5-min staleness on directory counts is fine -- users see counts as
@@ -161,18 +167,16 @@ function approx(n: number) {
 }
 
 export default async function Home() {
-  // Single-RPC fetch (2026-10-12). Replaces the previous 14-query
-  // pattern (one RPC + 13 fallback queries). Drops 14 round-trips to 1.
+  // Single-RPC fetch (2026-10-12). Replaces the previous 15-query
+  // pattern (1 RPC + 1 metadata RPC + 2 Promise.all batches of 6-7
+  // queries each + 1 separate highlight query = 15 round-trips).
   // Migration: 2026-10-12_get_home_page_data_rpc.sql
-  // The RPC returns: stats (counts), newest_*, recent_*, upcoming_games.
+  // The RPC returns: stats, newest_*, recent_*, upcoming_games, highlights.
   let stats: any = {};
   let statsError: any = null;
   try {
     const { data, error } = await supabase.rpc('get_home_page_data');
     if (data) {
-      // Normalize shape: the RPC returns { stats: {...}, newest_*: [...], ... }
-      // The rest of this function reads stats.* (rink_count etc) and
-      // stats.recent_* / stats.newest_* / stats.upcoming_games directly.
       stats = {
         rink_count: data.stats?.rink_count || 0,
         team_count: data.stats?.team_count || 0,
@@ -187,6 +191,7 @@ export default async function Home() {
         recent_rinks: data.recent_rinks || [],
         recent_teams: data.recent_teams || [],
         upcoming_games: data.upcoming_games || [],
+        highlights: data.highlights || [],
       };
     } else {
       statsError = error;
@@ -195,17 +200,15 @@ export default async function Home() {
     statsError = e;
   }
   // Fallback: if the RPC failed entirely, do the count-only RPC
-  // (get_directory_stats still works even when the big RPC doesn't,
-  // because it touches fewer tables and is older). This at least gives
-  // us the headline numbers even if we lose the activity feed.
+  // (get_directory_stats still works even when the big RPC doesn't).
   if (!stats.rink_count) {
     try {
       const { data } = await supabase.rpc('get_directory_stats');
       if (data) {
-        stats = { ...stats, ...(data as any) };
+        stats = { ...stats, ...(data as any), highlights: [] };
       }
     } catch {
-      // Last resort: render with zeros. Better than a 500.
+      // Last resort: render with zeros.
     }
   }
   if (statsError && stats.rink_count) {
@@ -262,63 +265,43 @@ export default async function Home() {
     homeNewest.players.length > 0 ||
     homeNewest.articles.length > 0;
 
-  // 2026-09-17: server-fetch the 5 latest YouTube highlights so the
-  // page renders together (no client-side loading flash on the
-  // LATEST HIGHLIGHTS section). Mirrors the logic in
-  // /api/highlights?youtubeOnly=true&limit=5 (backup table query).
-  // NOTE: highlight_backups is RLS-locked to service_role only — the
-  // anon `supabase` client below returns 0 rows. We use supabaseAdmin.
-  let initialHighlights: any[] = [];
-  try {
-    const { data: hlRows } = await supabaseAdmin
-      .from('highlight_backups')
-      .select('id, title, description, highlight_type, video_url, embed_url, image_url, source, channel, post_id, match_id, match_date, match_season, match_round, league_id, league_name, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo')
-      .not('video_url', 'is', null)
-      .ilike('video_url', '%youtube.com%')
-      .order('match_date', { ascending: false })
-      .limit(5);
-    initialHighlights = (hlRows || []).map((h: any) => ({
-      id: h.id,
-      title: h.title,
-      description: h.description || '',
-      type: h.highlight_type,
-      url: h.video_url,
-      embedUrl: h.embed_url,
-      imageUrl: h.image_url,
-      source: h.source,
-      channel: h.channel,
-      // 2026-09-19: forward post_id to the popup so it can resolve the
-      // companion article via /api/blog/posts?highlight_id=X. Without
-      // this, the popup's article-lookup effect falls back to a separate
-      // blog endpoint and the linked article is invisible on home-page
-      // modals.
-      linkedPostId: h.post_id,
-      match: {
-        id: h.match_id,
-        league: h.league_name,
-        leagueId: h.league_id,
-        season: h.match_season,
-        date: h.match_date,
-        round: h.match_round,
-        homeTeam: h.home_team_name ? {
-          id: h.home_team_id,
-          name: h.home_team_name,
-          displayName: h.home_team_name,
-          abbreviation: '',
-          logo: h.home_team_logo,
-        } : null,
-        awayTeam: h.away_team_name ? {
-          id: h.away_team_id,
-          name: h.away_team_name,
-          displayName: h.away_team_name,
-          abbreviation: '',
-          logo: h.away_team_logo,
-        } : null,
-      },
-    }));
-  } catch (err) {
-    console.error('[home] initialHighlights fetch failed:', err);
-  }
+  // 2026-10-12: highlights are now included in the single get_home_page_data
+  // RPC. We just reshape the response into the shape the <HighlightsGrid>
+  // component expects. No additional DB round-trip.
+  const initialHighlights: any[] = (stats.highlights || []).map((h: any) => ({
+    id: h.id,
+    title: h.title,
+    description: h.description || '',
+    type: h.highlight_type,
+    url: h.video_url,
+    embedUrl: h.embed_url,
+    imageUrl: h.image_url,
+    source: h.source,
+    channel: h.channel,
+    linkedPostId: h.post_id,
+    match: {
+      id: h.match_id,
+      league: h.league_name,
+      leagueId: h.league_id,
+      season: h.match_season,
+      date: h.match_date,
+      round: h.match_round,
+      homeTeam: h.home_team_name ? {
+        id: h.home_team_id,
+        name: h.home_team_name,
+        displayName: h.home_team_name,
+        abbreviation: '',
+        logo: h.home_team_logo,
+      } : null,
+      awayTeam: h.away_team_name ? {
+        id: h.away_team_id,
+        name: h.away_team_name,
+        displayName: h.away_team_name,
+        abbreviation: '',
+        logo: h.away_team_logo,
+      } : null,
+    },
+  }));
 
   const ldJson = {
     '@context': 'https://schema.org',

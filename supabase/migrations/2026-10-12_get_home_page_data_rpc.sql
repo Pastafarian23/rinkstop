@@ -82,6 +82,21 @@ AS $$
         AND f.status IN ('scheduled', 'pending', 'live')
       ORDER BY f.scheduled_at ASC LIMIT 3
     ) f
+  ),
+  highlights AS (
+    SELECT coalesce(jsonb_agg(row_to_json(hl)::jsonb ORDER BY hl.match_date DESC), '[]'::jsonb) AS j
+    FROM (
+      SELECT id, title, description, highlight_type, video_url, embed_url,
+             image_url, source, channel, post_id, match_id, match_date,
+             match_season, match_round, league_id, league_name,
+             home_team_id, home_team_name, home_team_logo,
+             away_team_id, away_team_name, away_team_logo
+      FROM highlight_backups
+      WHERE video_url IS NOT NULL
+        AND video_url ILIKE '%youtube.com%'
+      ORDER BY match_date DESC
+      LIMIT 5
+    ) hl
   )
   SELECT jsonb_build_object(
     'stats', (SELECT j FROM stats),
@@ -91,7 +106,8 @@ AS $$
     'newest_articles', (SELECT j FROM newest_articles),
     'recent_rinks', (SELECT j FROM recent_rinks),
     'recent_teams', (SELECT j FROM recent_teams),
-    'upcoming_games', (SELECT j FROM upcoming_games)
+    'upcoming_games', (SELECT j FROM upcoming_games),
+    'highlights', (SELECT j FROM highlights)
   );
 $$;
 
