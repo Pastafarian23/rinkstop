@@ -182,6 +182,8 @@ export default async function ManageRinkPage({ params }: PageProps) {
         />
       )}
 
+      <ProgrammingPrompt rinkId={id} />
+
       <EntityEditForm
         type="rink"
         id={id}
@@ -190,6 +192,129 @@ export default async function ManageRinkPage({ params }: PageProps) {
         publicHref={`/directory/rinks/${(entity as { slug?: string }).slug || id}`}
         isVerified={ownerVerified}
       />
+    </div>
+  );
+}
+
+/**
+ * ProgrammingPrompt
+ *
+ * WS32 — nudge the rink operator to enter their weekly schedule.
+ *
+ * Counts published + draft programming rows (we don't gate on `status` because
+ * a single draft isn't a "real" weekly schedule for visitors — but a single
+ * published slot IS a signal the operator is using the tool, so the threshold
+ * is "1-3 rows" not "1-3 published").
+ *
+ * Three tiers:
+ *   - 0 rows   → yellow banner: "Add your weekly schedule so visitors know
+ *     when you offer public skating, learn-to-skate, etc."
+ *   - 1-3 rows → softer reminder that there's room to grow.
+ *   - 4+ rows  → silent. Operator is doing the right thing; the list page
+ *     and the public rink page will surface the schedule on their own.
+ *
+ * We render nothing past 3 rows rather than a celebratory "great job!" — the
+ * page already has too many high-emphasis CTAs. Operators who fill the
+ * schedule get an unsolicited bump when their public rink page starts
+ * surfacing the slot data.
+ */
+async function ProgrammingPrompt({ rinkId }: { rinkId: string }) {
+  const { count } = await supabaseAdmin
+    .from('rink_programming')
+    .select('id', { count: 'exact', head: true })
+    .eq('rink_id', rinkId);
+
+  const total = count ?? 0;
+  if (total >= 4) return null;
+
+  const isZero = total === 0;
+  const bg = isZero ? 'rgba(255,184,28,0.08)' : 'rgba(56,189,248,0.06)';
+  const border = isZero ? 'rgba(255,184,28,0.3)' : 'rgba(56,189,248,0.25)';
+  const titleColor = isZero ? '#FFB81C' : '#7DD3FC';
+  const titleText = isZero
+    ? 'Add your weekly schedule so visitors can see when you offer public skating, learn-to-skate, and more.'
+    : `You're showing ${total} programming slot${total === 1 ? '' : 's'}. Add more to fill out your weekly schedule.`;
+  const subText = isZero
+    ? 'Takes 5 minutes — bulk-import a CSV or quick-add your common slots.'
+    : 'A complete week helps visitors plan their visit and improves your rink page in search.';
+
+  return (
+    <div
+      data-programming-prompt
+      style={{
+        background: bg,
+        border: `1px solid ${border}`,
+        borderRadius: 12,
+        padding: '1.125rem 1.25rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.625rem',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem' }}>
+        <span style={{ fontSize: '1.125rem' }}>{isZero ? '📅' : '✨'}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ color: titleColor, fontWeight: 600, fontSize: '0.95rem', margin: 0, lineHeight: 1.4 }}>
+            {titleText}
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.8rem', margin: '0.25rem 0 0', lineHeight: 1.5 }}>
+            {subText}
+          </p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <Link
+          href={`/dashboard/manage/rink/${rinkId}/programming/import`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            background: '#38BDF8',
+            color: '#0F172A',
+            padding: '0.5rem 0.875rem',
+            borderRadius: 8,
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          📥 Bulk import (CSV)
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${rinkId}/programming/quick`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            background: 'rgba(255,255,255,0.06)',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.16)',
+            padding: '0.5rem 0.875rem',
+            borderRadius: 8,
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          ⚡ Quick-add
+        </Link>
+        <Link
+          href={`/dashboard/manage/rink/${rinkId}/programming`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            background: 'transparent',
+            color: '#94A3B8',
+            padding: '0.5rem 0.625rem',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            textDecoration: 'none',
+          }}
+        >
+          View programming →
+        </Link>
+      </div>
     </div>
   );
 }
