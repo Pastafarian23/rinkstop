@@ -480,7 +480,7 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // + Programming tab) and upcoming events (schema.org event[] + Events tab).
   // We only need schema-relevant columns for the schema builder; the tab
   // components fetch their own full payload below.
-  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes] = await Promise.all([
+  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, visitUsProgrammingRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
@@ -577,6 +577,20 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .gte('starts_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
       .order('starts_at', { ascending: true })
       .limit(50),
+    // WS32 (2026-10-02): first-paint "Visit Us" card. We need the full row
+    // (day_of_week, times, activity_type, price_cents, description) — the
+    // schemaProgrammingRes above only returns activity_type/skill_level/
+    // description for schema.org emission. Distinct fetch so we don't churn
+    // the schema-builder signature. status filter matches what the public
+    // page is allowed to show (drafts are owner-only).
+    supabase
+      .from('rink_programming')
+      .select('id, day_of_week, start_time, end_time, activity_type, price_cents, currency, booking_url, description')
+      .eq('rink_id', rink.id)
+      .eq('status', 'published')
+      .order('day_of_week', { ascending: true })
+      .order('start_time', { ascending: true })
+      .limit(40),
   ]);
 
   const games = gamesRes.data || [];
@@ -629,6 +643,25 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   const programmingPillars = (schemaProgrammingRes.data || [])
     .map((p: any) => p.activity_type)
     .filter((v: unknown): v is string => typeof v === 'string' && v.length > 0);
+
+  // WS32 (2026-10-02): first-paint "Visit Us" card. Shows the next 4
+  // programming slots visitors can visit this rink for. Fetched separately
+  // from schemaProgrammingRes so we keep the schema builder stable. When
+  // the rink has no published programming, casual visitors see an
+  // owner-only CTA pointing at the import/quick-add pages. The
+  // isCurrentVisitUserOwner check is derived below after owner resolves.
+  const visitUsProgramming = (visitUsProgrammingRes.data || []).slice(0, 4).map((p: any) => ({
+    id: p.id,
+    day_of_week: p.day_of_week,
+    start_time: p.start_time,
+    end_time: p.end_time,
+    activity_type: p.activity_type,
+    price_cents: p.price_cents,
+    currency: p.currency,
+    booking_url: p.booking_url,
+    description: p.description,
+  }));
+
   const nextGame = games[0];
   const nextGameOpponent = nextGame
     ? (nextGame.home_team_id === rink.id ? nextGame.away_team_name : nextGame.home_team_name) || null
@@ -656,6 +689,12 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
     getEntityOwner('rink', rink.id),
     getFollowersCount('rink', rink.id),
   ]);
+
+  // WS32 (2026-10-02): owner check for the Visit Us CTA. The "Add your
+  // weekly schedule" prompt only shows for the rink's owner, not casual
+  // visitors. owner.userId is set only when the current Clerk session owns
+  // this rink.
+  const isCurrentVisitUserOwner = !!owner?.userId;
 
   // Compute current open/closed state from Google's opening_hours_json.
   // Server-side so the pill is accurate at request time. Returns
@@ -1248,6 +1287,86 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             </p>
           </section>
         )}
+
+        {/* WS32 (2026-10-02): Visit Us — first-paint card above the tab system
+            so casual visitors (the 58% of search traffic that lands on rink
+            pages) see weekly programming on first paint instead of having to
+            click ?tab=programming. Falls through to an owner-only CTA when
+            the rink has no published programming. */}
+        {visitUsProgramming.length > 0 ? (
+          <section
+            aria-label="Public skating and programs at this rink"
+            style={{
+              background: 'rgba(13,17,23,0.6)',
+              padding: '24px',
+              borderRadius: '12px',
+              border: '1px solid var(--border)',
+              marginBottom: '24px',
+            }}
+          >
+            <h2 style={{ fontWeight: 600, color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
+              Public Skating &amp; Programs at {rink.name}
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+              {visitUsProgramming.map((slot) => (
+                <div key={slot.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '14px' }}>
+                  <div style={{ color: '#fff', fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>
+                    {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][slot.day_of_week]} · {slot.start_time.slice(0,5)}–{slot.end_time.slice(0,5)}
+                  </div>
+                  <div style={{ color: '#cbd5e1', fontSize: '13px', marginBottom: '4px' }}>
+                    {slot.activity_type.replace(/_/g, ' ')}
+                  </div>
+                  <div style={{ color: '#94A3B8', fontSize: '12px' }}>
+                    {slot.price_cents != null ? `${slot.currency} ${(slot.price_cents / 100).toFixed(2)}` : 'Free'}
+                    {slot.booking_url ? (
+                      <>
+                          {' '}·{' '}
+                          <a href={slot.booking_url} target="_blank" rel="noopener noreferrer" style={{ color: '#FFB81C' }}>
+                            Book online →
+                          </a>
+                        </>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link href={`/directory/rinks/${rink.slug}?tab=programming`} style={{ color: '#FFB81C', fontSize: '13px', textDecoration: 'none' }}>
+              View full weekly schedule →
+            </Link>
+          </section>
+        ) : isCurrentVisitUserOwner ? (
+          <section
+            aria-label="Add programming for this rink"
+            style={{
+              background: 'rgba(255,184,28,0.06)',
+              border: '1px solid rgba(255,184,28,0.25)',
+              padding: '20px',
+              borderRadius: '12px',
+              marginBottom: '24px',
+            }}
+          >
+            <h2 style={{ fontWeight: 600, color: '#FFB81C', fontSize: '16px', marginBottom: '8px' }}>
+              Add your weekly schedule
+            </h2>
+            <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.6, marginBottom: '12px' }}>
+              Casual visitors searching Google find {rink.name} but leave when they can&rsquo;t find out what to do here. Adding public skating and learn-to-skate times takes 5 minutes and gets your rink in front of more visitors.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <Link
+                href={`/dashboard/manage/rink/${rink.id}/programming/quick`}
+                style={{ display: 'inline-block', background: '#38BDF8', color: '#0F172A', padding: '0.5rem 1rem', borderRadius: 6, fontWeight: 600, textDecoration: 'none', fontSize: '0.85rem' }}
+              >
+                + Quick-add slot
+              </Link>
+              <Link
+                href={`/dashboard/manage/rink/${rink.id}/programming/import`}
+                style={{ display: 'inline-block', background: 'transparent', color: '#FFB81C', padding: '0.5rem 1rem', borderRadius: 6, fontWeight: 600, textDecoration: 'none', fontSize: '0.85rem', border: '1px solid #FFB81C' }}
+              >
+                Import from CSV
+              </Link>
+            </div>
+          </section>
+        ) : null}
 
         {/* WS17 PR2 (2026-08-05): Tab switcher + Programming & Events tab.
             Replaces the old generic "Programs & amenities" 6-item grid with
