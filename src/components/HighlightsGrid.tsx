@@ -199,7 +199,7 @@ export default function HighlightsGrid({
           <Link href="/highlights" className="sec-link">View all highlights →</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-          {highlights.map((highlight) => {
+          {highlights.map((highlight, idx) => {
             const home = highlight.match.homeTeam;
             const away = highlight.match.awayTeam;
             const matchLabel = home && away ? `${home.abbreviation} vs ${away.abbreviation}` : '';
@@ -223,6 +223,9 @@ export default function HighlightsGrid({
                       <img
                         src={highlight.imageUrl}
                         alt={highlight.title}
+                        loading={idx === 0 ? 'eager' : 'lazy'}
+                        decoding={idx === 0 ? 'sync' : 'async'}
+                        fetchPriority={idx === 0 ? 'high' : 'low'}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : null}
