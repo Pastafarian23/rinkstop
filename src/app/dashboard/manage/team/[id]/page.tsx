@@ -4,8 +4,10 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isIdentityVerified } from '@/lib/identity-verified';
+import { countryToCurrency } from '@/lib/currency';
 import EntityEditForm from '../../EntityEditForm';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import CurrencySettingsCard from './CurrencySettingsCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,6 +109,13 @@ export default async function ManageTeamPage({ params }: PageProps) {
       />
 
       <ProgramsCard teamId={id} />
+
+      <CurrencySettingsCard
+        teamId={id}
+        teamCountry={(entity as { country?: string | null }).country ?? null}
+        initialCurrency={(entity as { currency?: string | null }).currency ?? null}
+        inferredLocalCurrency={countryToCurrency((entity as { country?: string | null }).country ?? null)}
+      />
     </div>
   );
 }

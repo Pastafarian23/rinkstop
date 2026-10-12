@@ -11,6 +11,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { countryToCurrency } from '@/lib/currency';
 import ProgramForm from '../ProgramForm';
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +30,7 @@ export default async function NewTeamProgramPage({ params }: PageProps) {
 
   // Owner + workspace check in parallel.
   const [{ data: workspace, error: wsErr }, { count: claimCount }] = await Promise.all([
-    supabaseAdmin.from('team_workspaces').select('id, name, currency').eq('id', id).maybeSingle(),
+    supabaseAdmin.from('team_workspaces').select('id, name, currency, country').eq('id', id).maybeSingle(),
     supabaseAdmin
       .from('claims')
       .select('id', { count: 'exact', head: true })
@@ -69,12 +70,20 @@ export default async function NewTeamProgramPage({ params }: PageProps) {
     .order('name')
     .limit(500);
 
+  // Default currency: team workspace's stored currency, else the country's
+  // local currency, else USD. The form will let the user override.
+  const defaultCurrency =
+    workspace.currency ||
+    countryToCurrency(workspace.country) ||
+    'USD';
+
   return (
     <ProgramForm
       isEdit={false}
       initial={{}}
       rinkOptions={(rinks || []) as Array<{ id: string; name: string }>}
-      defaultCurrency={workspace.currency || 'USD'}
+      defaultCurrency={defaultCurrency}
+      teamCountry={workspace.country ?? null}
     />
   );
 }

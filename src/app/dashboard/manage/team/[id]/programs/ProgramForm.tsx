@@ -8,9 +8,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { buildCurrencyOptions, countryToCurrency } from '@/lib/currency';
 
 const EVENT_KINDS = ['practice', 'game', 'tryout', 'tournament', 'camp', 'meeting', 'other'] as const;
 const STATUSES = ['scheduled', 'cancelled', 'completed'] as const;
@@ -40,6 +41,7 @@ interface ProgramFormProps {
   initial: Partial<FormData>;
   rinkOptions: Array<{ id: string; name: string }>;
   defaultCurrency: string;
+  teamCountry: string | null;
 }
 
 function toLocalInput(iso: string | null | undefined): string {
@@ -58,10 +60,18 @@ function fromLocalInput(value: string): string | null {
   return dt.toISOString();
 }
 
-export default function ProgramForm({ isEdit, initial, rinkOptions, defaultCurrency }: ProgramFormProps) {
+export default function ProgramForm({ isEdit, initial, rinkOptions, defaultCurrency, teamCountry }: ProgramFormProps) {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id as string;
+
+  // Build the currency dropdown options. The team's local currency (derived
+  // from teamCountry) is always shown first; USD is always available as the
+  // explicit fallback per the 2026-10-12 currency directive.
+  const currencyOptions = useMemo(() => {
+    const localCurrency = countryToCurrency(teamCountry);
+    return buildCurrencyOptions(localCurrency);
+  }, [teamCountry]);
 
   const [form, setForm] = useState<FormData>({
     event_kind: initial.event_kind || 'practice',
@@ -230,7 +240,14 @@ export default function ProgramForm({ isEdit, initial, rinkOptions, defaultCurre
             <input type="number" min="0" max="600" value={form.arrival_minutes} onChange={(e) => update('arrival_minutes', e.target.value)} style={inputStyle} />
           </Field>
           <Field label="Currency">
-            <input type="text" maxLength={3} value={form.currency} onChange={(e) => update('currency', e.target.value.toUpperCase())} style={inputStyle} />
+            <select value={form.currency} onChange={(e) => update('currency', e.target.value)} style={inputStyle}>
+              {currencyOptions.map((c) => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
+            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.2rem' }}>
+              Default is your team's local currency. Pick USD to invoice in dollars.
+            </span>
           </Field>
           <Field label="Capacity">
             <input type="number" min="1" value={form.max_attendees} onChange={(e) => update('max_attendees', e.target.value)} placeholder="unlimited" style={inputStyle} />

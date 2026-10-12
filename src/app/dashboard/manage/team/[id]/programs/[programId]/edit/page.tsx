@@ -10,6 +10,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
+import { countryToCurrency } from '@/lib/currency';
 import ProgramForm from '../../ProgramForm';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,7 @@ export default async function EditTeamProgramPage({ params }: PageProps) {
       .eq('claim_type', 'team')
       .eq('entity_id', id)
       .eq('status', 'approved'),
-    supabaseAdmin.from('team_workspaces').select('id, name, currency').eq('id', id).maybeSingle(),
+    supabaseAdmin.from('team_workspaces').select('id, name, currency, country').eq('id', id).maybeSingle(),
     supabaseAdmin.from('team_events').select('*').eq('id', programId).eq('team_id', id).maybeSingle(),
     supabaseAdmin.from('rinks').select('id, name').eq('is_active', true).order('name').limit(500),
   ]);
@@ -89,12 +90,20 @@ export default async function EditTeamProgramPage({ params }: PageProps) {
     timezone: (p.timezone as string) || '',
   };
 
+  // Default currency: team workspace's stored currency, else the country's
+  // local currency, else USD. The form will let the user override.
+  const defaultCurrency =
+    workspace.currency ||
+    countryToCurrency(workspace.country) ||
+    'USD';
+
   return (
     <ProgramForm
       isEdit
       initial={initial}
       rinkOptions={(rinks || []) as Array<{ id: string; name: string }>}
-      defaultCurrency={workspace.currency || 'USD'}
+      defaultCurrency={defaultCurrency}
+      teamCountry={workspace.country ?? null}
     />
   );
 }
