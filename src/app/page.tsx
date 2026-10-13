@@ -276,19 +276,20 @@ export default async function Home() {
   // a direct query against highlight_backups. The table has RLS that blocks
   // the anon key, so we use supabaseAdmin (service role) here.
   if (!stats.highlights || stats.highlights.length === 0) {
+    console.log('[home] highlights empty, trying highlight_backups fallback');
     try {
-      const { data: hlData } = await supabaseAdmin
+      const { data: hlData, error: hlErr } = await supabaseAdmin
         .from('highlight_backups')
         .select('id, title, description, highlight_type, video_url, embed_url, image_url, source, channel, post_id, match_id, match_date, match_season, match_round, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo, league_id, league_name')
         .order('id', { ascending: false })
         .eq('source', 'youtube')
         .limit(5);
+      console.log('[home] highlight_backups fallback result:', { count: hlData?.length, error: hlErr?.message });
       if (hlData && hlData.length) {
         stats.highlights = hlData;
       }
-    } catch (e) {
-      // Last resort: section will still render via the client-side fallback
-      // added in HighlightsGrid (commit 64e76dc9).
+    } catch (e: any) {
+      console.error('[home] highlight_backups fallback threw:', e?.message);
     }
   }
 
