@@ -1,16 +1,47 @@
 # RinkStop robots.txt
-# AI knowledge hub strategy: ALLOW all major AI crawlers so RinkStop can be cited
-# by ChatGPT, Perplexity, Claude, Google AI Overviews, Gemini, and other engines.
-# Updated 2026-09-02 per workstream ai-hub-workstream-2026-09-02.md
+#
+# Strategy (2026-10-13 update, Arnel 2026-10-13 12:31 CDT directive):
+#
+#  1. ALLOW every AI bot that cites us in answers (ChatGPT, Perplexity,
+#     Claude, Google AI Overviews, Gemini, Copilot, Mistral, xAI/Grok,
+#     DeepSeek, Qwen, Meta, etc.). We want to be cited.
+#  2. ALLOW every AI bot that trains foundation models on the open web
+#     (GPTBot, ClaudeBot-train, Google-Extended, CCBot, etc.). Good for
+#     the broader AI ecosystem; some of these don't cite back but
+#     blocking them hurts our long-term discoverability.
+#  3. BLOCK commercial SEO scrapers (Ahrefs, Semrush, etc.) — they
+#     resell our data to competitors with no benefit to us.
+#  4. BLOCK uptime / monitoring bots (UptimeRobot, Pingdom, etc.) —
+#     they ping / healthcheck pages and inflate analytics with no
+#     user-facing value.
+#  5. llms.txt is the canonical AI-citation index. We expose a full
+#     reference at /llms-full.txt for deep ingestion.
+#
+# Sitemaps (last 7):
+#   /sitemap.xml, /sitemap-rinks, /sitemap-teams, /sitemap-players,
+#   /sitemap-leagues, /sitemap-locations, /sitemap-news
+#   /llms.txt (AI-citation index)
+#
+# Updated 2026-10-13.
 
-# === Search engine crawlers (needed for SEO + AdSense) ===
+# === 1. Search engine crawlers (needed for SEO + AdSense) ===
+# Without these we get zero Google organic traffic. Always allow.
+User-agent: Googlebot
+Allow: /
+
 User-agent: Mediapartners-Google
 Allow: /
 
 User-agent: AdsBot-Google
 Allow: /
 
-User-agent: Googlebot
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-News
+Allow: /
+
+User-agent: GoogleOther
 Allow: /
 
 User-agent: Bingbot
@@ -28,32 +59,28 @@ Allow: /
 User-agent: YandexBot
 Allow: /
 
-# === AI search / answer engines (ALLOW for AI knowledge hub) ===
+# === 2. AI ANSWER / CITATION engines (ALLOW — we want to be cited) ===
+# These bots fetch pages in response to a real user query, then return
+# our content (cited or summarized) in the AI's answer. Direct ROI.
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
 User-agent: PerplexityBot
 Allow: /
 
 User-agent: Perplexity-User
 Allow: /
 
-User-agent: ChatGPT-User
+User-agent: Claude-User
 Allow: /
 
-User-agent: GPTBot
-Allow: /
-
-User-agent: OAI-SearchBot
+User-agent: Claude-SearchBot
 Allow: /
 
 User-agent: anthropic-ai
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: Claude-User
 Allow: /
 
 User-agent: Google-Extended
@@ -62,10 +89,53 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: xAI
+Allow: /
+
+User-agent: Grok
+Allow: /
+
+User-agent: DeepSeekBot
+Allow: /
+
+User-agent: SearchGPT
+Allow: /
+
 User-agent: cohere-ai
 Allow: /
 
-User-agent: cohere-training-data-crawler
+User-agent: Cohere-AI
+Allow: /
+
+User-agent: Perplexity
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Andibot
+Allow: /
+
+# === 3. AI TRAINING crawlers (ALLOW — good for the ecosystem) ===
+# These fetch pages to train foundation models. They don't always cite
+# us back, but blocking them hurts our discoverability in the long run.
+# All of them respect robots.txt by default.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
 Allow: /
 
 User-agent: CCBot
@@ -77,13 +147,10 @@ Allow: /
 User-agent: FacebookBot
 Allow: /
 
-User-agent: Meta-ExternalAgent
+User-agent: cohere-training-data-crawler
 Allow: /
 
 User-agent: MistralAI-User
-Allow: /
-
-User-agent: DeepSeekBot
 Allow: /
 
 User-agent: Bytespider
@@ -98,36 +165,29 @@ Allow: /
 User-agent: Diffbot
 Allow: /
 
-User-agent: DuckAssistBot
-Allow: /
-
-User-agent: YouBot
-Allow: /
-
 User-agent: ImagesiftBot
 Allow: /
 
-User-agent: Andibot
+User-agent: Google-Other
 Allow: /
 
-User-agent: xAI
-Allow: /
-
-User-agent: GoogleOther
-Allow: /
-
-User-agent: Googlebot-Image
-Allow: /
-
-User-agent: Googlebot-News
-Allow: /
-
-# === Block only the actual bad actors (scrapers with no citation purpose) ===
-# These have a history of aggressive scraping with no refer/use benefit to us.
+# === 4. AI / Data scrapers that don't cite (BLOCK) ===
+# These are commercial data resellers. They take our data, package it,
+# and sell it back to SEO tools and competitor research platforms.
+# No reciprocal value to us.
 User-agent: AhrefsBot
 Disallow: /
 
 User-agent: SemrushBot
+Disallow: /
+
+User-agent: SemrushBot-SA
+Disallow: /
+
+User-agent: SemrushBot-CT
+Disallow: /
+
+User-agent: SemrushBot-BM
 Disallow: /
 
 User-agent: MJ12bot
@@ -145,7 +205,78 @@ Disallow: /
 User-agent: SeekportBot
 Disallow: /
 
-# === Default for everything else: allow (be a good AI citizen) ===
+User-agent: Rogerbot
+Disallow: /
+
+User-agent: ScreamingFrogSEOSpider
+Disallow: /
+
+# === 5. Uptime / monitoring bots (BLOCK) ===
+# These bots ping pages every few minutes to check if the site is up.
+# They don't render, don't cite, don't engage. They only inflate analytics.
+User-agent: UptimeRobot
+Disallow: /
+
+User-agent: StatusCake
+Disallow: /
+
+User-agent: Pingdom
+Disallow: /
+
+User-agent: Uptime
+Disallow: /
+
+User-agent: GTmetrix
+Disallow: /
+
+User-agent: Charles
+Disallow: /
+
+User-agent: Chrome-Lighthouse
+Disallow: /
+
+User-agent: Datadog
+Disallow: /
+
+User-agent: DatadogSynthetics
+Disallow: /
+
+User-agent: Site24x7
+Disallow: /
+
+User-agent: NewRelicPinger
+Disallow: /
+
+User-agent: Upptime
+Disallow: /
+
+# === 6. Headless / generic scrapers (BLOCK) ===
+# Generic scrapers with no identifiable purpose.
+User-agent: Scrapy
+Disallow: /
+
+User-agent: Wget
+Disallow: /
+
+User-agent: Curl
+Disallow: /
+
+User-agent: libwww-perl
+Disallow: /
+
+User-agent: python-requests
+Disallow: /
+
+User-agent: Go-http-client
+Disallow: /
+
+User-agent: Java
+Disallow: /
+
+# === Default: allow (be a good web citizen) ===
+# Anything not explicitly listed is allowed. We err on the side of
+# openness because citation is the goal. Bad actors that don't respect
+# robots.txt will need rate-limiting at the app layer (separate work).
 User-agent: *
 Allow: /
 
@@ -159,7 +290,9 @@ Sitemap: https://rinkstop.com/sitemap-leagues.xml
 Sitemap: https://rinkstop.com/sitemap-locations.xml
 Sitemap: https://rinkstop.com/sitemap-news.xml
 
-# === AI-specific discovery endpoints ===
-# llms.txt — Markdown-formatted index of our content for LLM ingestion
-# (https://llmstxt.org spec). Major AI crawlers check this.
+# === AI-citation index ===
+# llms.txt is the canonical discovery surface for LLM citation engines
+# (https://llmstxt.org spec). We also expose /llms-full.txt for deep
+# ingestion by training crawlers.
 Sitemap: https://rinkstop.com/llms.txt
+Sitemap: https://rinkstop.com/llms-full.txt
