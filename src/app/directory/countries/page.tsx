@@ -139,7 +139,7 @@ const ALL_COUNTRIES: Array<{
   { country: 'Qatar', flag: '🇶🇦', hasHockey: false, region: 'Asia' },
   { country: 'Saudi Arabia', flag: '🇸🇦', hasHockey: false, region: 'Asia' },
   { country: 'Singapore', flag: '🇸🇬', hasHockey: true, leagues: 'SHL Singapore', note: 'City-state hockey', region: 'Asia' },
-  { country: 'South Korea', flag: '🇰🇷', hasHockey: true, leagues: 'KHL, Asia League', note: 'Rapidly rising program', region: 'Asia' },
+  { country: 'South Korea', flag: '🇰🇷', hasHockey: true, leagues: 'KHL, Asia League Ice Hockey', note: 'Rapidly rising program', region: 'Asia' },
   { country: 'Sri Lanka', flag: '🇱🇰', hasHockey: false, region: 'Asia' },
   { country: 'Syria', flag: '🇸🇾', hasHockey: false, region: 'Asia' },
   { country: 'Taiwan', flag: '🇹🇼', hasHockey: false, region: 'Asia' },
