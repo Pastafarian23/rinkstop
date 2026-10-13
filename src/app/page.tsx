@@ -273,11 +273,11 @@ export default async function Home() {
   // component expects. No additional DB round-trip.
   console.log('[home] highlights at render:', { count: (stats.highlights || []).length, firstKeys: stats.highlights?.[0] ? Object.keys(stats.highlights[0]) : null });
   // 2026-10-13: if the single-RPC didn't include highlights, fall back to
-  // the same /api/highlights endpoint the client uses. Keeps the section
-  // populated regardless of what the big RPC returns.
+  // a direct query against highlight_backups. The table has RLS that blocks
+  // the anon key, so we use supabaseAdmin (service role) here.
   if (!stats.highlights || stats.highlights.length === 0) {
     try {
-      const { data: hlData } = await supabase
+      const { data: hlData } = await supabaseAdmin
         .from('highlight_backups')
         .select('id, title, description, highlight_type, video_url, embed_url, image_url, source, channel, post_id, match_id, match_date, match_season, match_round, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo, league_id, league_name')
         .order('id', { ascending: false })
