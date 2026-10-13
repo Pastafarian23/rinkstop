@@ -272,25 +272,49 @@ export default async function Home() {
   // RPC. We just reshape the response into the shape the <HighlightsGrid>
   // component expects. No additional DB round-trip.
   console.log('[home] highlights at render:', { count: (stats.highlights || []).length, firstKeys: stats.highlights?.[0] ? Object.keys(stats.highlights[0]) : null });
-  // 2026-10-13: if the single-RPC didn't include highlights, fall back to
-  // a direct query against highlight_backups. The table has RLS that blocks
-  // the anon key, so we use supabaseAdmin (service role) here.
-  if (!stats.highlights || stats.highlights.length === 0) {
-    console.log('[home] highlights empty, trying highlight_backups fallback');
-    try {
-      const { data: hlData, error: hlErr } = await supabaseAdmin
-        .from('highlight_backups')
-        .select('id, title, description, highlight_type, video_url, embed_url, image_url, source, channel, post_id, match_id, match_date, match_season, match_round, home_team_id, home_team_name, home_team_logo, away_team_id, away_team_name, away_team_logo, league_id, league_name')
-        .order('id', { ascending: false })
-        .eq('source', 'youtube')
-        .limit(5);
-      console.log('[home] highlight_backups fallback result:', { count: hlData?.length, error: hlErr?.message });
-      if (hlData && hlData.length) {
-        stats.highlights = hlData;
-      }
-    } catch (e: any) {
-      console.error('[home] highlight_backups fallback threw:', e?.message);
+  // 2026-10-13: ALWAYS fetch highlights from the canonical endpoint, not
+  // from the single-RPC. The single-RPC's highlights field is empty/stale;
+  // the /api/highlights endpoint (which uses highlight_backups as its
+  // primary source) returns the right data. This call runs server-side,
+  // is cached for 5min, and never blocks the home page render — same
+  // performance characteristics as the original RPC.
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://rinkstop.com');
+    const hlRes = await fetch(`${baseUrl}/api/highlights?limit=5&youtubeOnly=true`, {
+      // Server-side fetch; cache for 5 min, revalidate in background.
+      next: { revalidate: 300 },
+    });
+    if (hlRes.ok) {
+      const hlJson = await hlRes.json();
+      // Reshape to the flat snake_case shape the rest of this function expects
+      stats.highlights = (hlJson.highlights || []).map((h: any) => ({
+        id: h.id,
+        title: h.title,
+        description: h.description || '',
+        highlight_type: h.type,
+        video_url: h.url,
+        embed_url: h.embedUrl,
+        image_url: h.imageUrl,
+        source: h.source,
+        channel: h.channel,
+        post_id: h.linkedPostId,
+        match_id: h.match?.id,
+        match_date: h.match?.date,
+        match_season: h.match?.season,
+        match_round: h.match?.round,
+        home_team_id: h.match?.homeTeam?.id,
+        home_team_name: h.match?.homeTeam?.name,
+        home_team_logo: h.match?.homeTeam?.logo,
+        away_team_id: h.match?.awayTeam?.id,
+        away_team_name: h.match?.awayTeam?.name,
+        away_team_logo: h.match?.awayTeam?.logo,
+        league_id: h.match?.leagueId,
+        league_name: h.match?.league,
+      }));
     }
+  } catch (e) {
+    // Non-fatal: section will still try the client-side fallback
   }
 
   const initialHighlights: any[] = (stats.highlights || []).map((h: any) => ({
