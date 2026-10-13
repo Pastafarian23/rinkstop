@@ -304,6 +304,79 @@ function dedupeTags(tags) {
 }
 
 // ── Build the tweet ──────────────────────────────────────────────────────
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function formatGameDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso.length === 10 ? iso + 'T00:00:00Z' : iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${MONTH_ABBR[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+// Extract venue from title or subtitle.
+//
+// Patterns we handle (in priority order):
+//   1. Title: "...at <Capitalized Words>"  e.g. "at Enterprise Center"
+//   2. Subtitle: "...at <Capitalized Words>."  e.g. "at Xfinity Mobile Arena."
+//   3. Subtitle: "...in <Capitalized City>."  e.g. "in Frankfurt."
+//
+// We reject matches that look like a team name or a phrase ending in
+// "'s home venue" or "home ice" because those aren't real venues.
+function extractVenue(title, subtitle, teamHomeName, teamAwayName) {
+  const teamNamesLower = new Set(
+    [teamHomeName, teamAwayName].filter(Boolean).map(n => n.toLowerCase())
+  );
+
+  const clean = (raw) => {
+    if (!raw) return null;
+    // Stop at the first sentence boundary. Patterns we cut on:
+    //   ". " / "! " / "? " / "; "         — punctuation followed by space
+    //   " — " / " - " / " – "             — em/en dash separators
+    //   " The " / " A " / " An "          — next sentence starting with article
+    //   " in " / " on " / " for " / " with " / " during " — trailing prepositional
+    //                                       phrase that starts a continuation
+    //                                       (e.g. "Canadian Tire Centre in a regulation decision")
+    const stop = raw.search(/[.!?;]\s|\s[—–—-]\s|\sThe\s|\sA\s|\sAn\s|\sin\s|\son\s|\sfor\s|\swith\s|\sduring\s|\sthat\s|\swhich\s/);
+    let venue = (stop > 0 ? raw.substring(0, stop) : raw).trim();
+    venue = venue.replace(/^[Tt]he\s+/, '').replace(/'s$/, '').trim();
+    if (venue.length > 35) venue = venue.substring(0, 34) + '…';
+    return venue || null;
+  };
+
+  const isTeamName = (s) => {
+    const low = s.toLowerCase();
+    if (teamNamesLower.has(low)) return true;
+    // "...home venue" / "...home ice" / "...home rink" = team-as-venue, not real
+    if (/\bhome (venue|ice|rink|arena)\b/i.test(s)) return true;
+    // Trailing possessives on team names: "Dynamo Moscow's", "Jukurit's"
+    if (/'s\b|\u2019s\b/.test(s) && /\bhome\b/i.test(s)) return true;
+    return false;
+  };
+
+  // "at <Capitalized Word>(s)" — allow Unicode letters (å, ä, ö) and apostrophes
+  const AT = / at ([A-ZÀ-Ý][\w'\u2019\u00C0-\u00FF\-]*(?:\s[A-ZÀ-Ýa-zà-ÿ][\w'\u2019\u00C0-\u00FF\-]*|of|and|the){0,4})/;
+  // "in <Capitalized Word>(s)" — fallback when no "at" pattern matches
+  const IN = / in ([A-ZÀ-Ý][\w'\u2019\u00C0-\u00FF\-]*(?:\s[A-ZÀ-Ýa-zà-ÿ][\w'\u2019\u00C0-\u00FF\-]*|of|and|the){0,3})/;
+
+  for (const src of [title, subtitle]) {
+    if (!src) continue;
+    const m = src.match(AT);
+    if (m) {
+      const candidate = clean(m[1]);
+      if (candidate && !isTeamName(candidate)) return candidate;
+    }
+  }
+  // Fall back to "in <City>" if "at <Venue>" didn't yield a real venue
+  if (subtitle) {
+    const m = subtitle.match(IN);
+    if (m) {
+      const candidate = clean(m[1]);
+      if (candidate && !isTeamName(candidate)) return candidate;
+    }
+  }
+  return null;
+}
+
 async function buildTweet(post, league, teamHome, teamAway) {
   const leagueBracket = league?.slug
     ? LEAGUE_TAGS[league.slug.toLowerCase()]
@@ -312,6 +385,13 @@ async function buildTweet(post, league, teamHome, teamAway) {
     : '[Hockey]';
   const title = (post.title || '').trim();
   const url = `${RINKSTOP_BASE}/news/${post.slug}`;
+  const dateStr = formatGameDate(post.game_date);
+  const venue = extractVenue(post.title, post.subtitle, teamHome?.name, teamAway?.name);
+
+  const detailParts = [];
+  if (dateStr) detailParts.push(`🗓 ${dateStr}`);
+  if (venue) detailParts.push(`🏟 ${venue}`);
+  const detailLine = detailParts.length ? detailParts.join(' · ') + '\n' : '';
 
   const tags = [];
   if (league) {
@@ -326,7 +406,7 @@ async function buildTweet(post, league, teamHome, teamAway) {
   const tagLine = dedupeTags(tags).join(' ');
 
   // X premium allows 4000 chars; we use a compact 2-3 line format
-  const tweet = `${leagueBracket} ${title}\n\nFull recap and highlights ↓\n${url}\n\n${tagLine}`;
+  const tweet = `${leagueBracket} ${title}\n${detailLine}\nFull recap and highlights ↓\n${url}\n\n${tagLine}`;
 
   // Twitter free limit is 280 chars; premium is 4000. Our copy is ~150-200 chars
   // including tags. If it ever blows past 280, drop the tag line first, then the CTA.
@@ -399,7 +479,7 @@ async function main() {
   const sinceIso = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000).toISOString();
   const { data: posts, error } = await sb
     .from('posts')
-    .select('id, slug, title, og_image_url, team_home_id, team_away_id, league_id, created_at')
+    .select('id, slug, title, og_image_url, team_home_id, team_away_id, league_id, game_date, subtitle, created_at')
     .eq('status', 'published')
     .eq('x_posted', false)
     .not('highlight_id', 'is', null)
