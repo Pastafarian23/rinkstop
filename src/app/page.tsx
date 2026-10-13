@@ -206,8 +206,9 @@ export default async function Home() {
     try {
       const { data } = await supabase.rpc('get_directory_stats');
       if (data) {
-        const { highlights: _keep, ...counts } = stats;
-        stats = { ...counts, ...(data as any), highlights };
+        const preservedHighlights = stats.highlights || [];
+        const { highlights: _drop, ...counts } = stats;
+        stats = { ...counts, ...(data as any), highlights: preservedHighlights };
       }
     } catch {
       // Last resort: render with zeros.
