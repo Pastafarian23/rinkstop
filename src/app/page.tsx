@@ -201,11 +201,13 @@ export default async function Home() {
   }
   // Fallback: if the RPC failed entirely, do the count-only RPC
   // (get_directory_stats still works even when the big RPC doesn't).
+  // Only merge in fallback counts; preserve any highlights we already have.
   if (!stats.rink_count) {
     try {
       const { data } = await supabase.rpc('get_directory_stats');
       if (data) {
-        stats = { ...stats, ...(data as any), highlights: [] };
+        const { highlights: _keep, ...counts } = stats;
+        stats = { ...counts, ...(data as any), highlights };
       }
     } catch {
       // Last resort: render with zeros.
