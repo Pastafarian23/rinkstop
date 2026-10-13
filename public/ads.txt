@@ -45,6 +45,7 @@ imds.tv, AM1601, RESELLER, ae6c32151e71f19d
 improvedigital.com, 2050, RESELLER
 improvedigital.com, 2643, RESELLER
 indexexchange.com, 194111, DIRECT, 50b1c356f2c5c8fc
+indexexchange.com, 194111, RESELLER, 50b1c356f2c5c8fc
 inmobi.com, 87ef0821606c415781f1549938f9c9cc, DIRECT, 83e75a7ae333ca9d
 inmobi.com, 87ef0821606c415781f1549938f9c9cc, RESELLER, 83e75a7ae333ca9d #InMobi
 kargo.com, 8824, RESELLER
