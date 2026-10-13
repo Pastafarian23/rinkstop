@@ -84,6 +84,11 @@ export default function PrivacyPage() {
           When a third-party advertising network is integrated with RinkStop, that network&rsquo;s privacy practices govern the data it collects. We require each network we work with to provide users with the disclosures and controls required by applicable law.
         </p>
 
+        <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', color: '#fff', letterSpacing: '0.04em', marginTop: '1.5rem', marginBottom: '0.75rem' }}>Monumetric</h3>
+        <p style={{ marginBottom: '1rem' }}>
+          This Site is affiliated with Monumetric (dba for The Blogger Network, LLC) for the purposes of placing advertising on the Site, and Monumetric will collect and use certain data for advertising purposes. To learn more about Monumetric&rsquo;s data usage, click here: <a target="_blank" href="http://www.monumetric.com/publisher-advertising-privacy" rel="noopener noreferrer" style={{ color: '#C8102E' }}>Publisher Advertising Privacy</a>
+        </p>
+
         <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.04em', marginTop: '2.5rem', marginBottom: '1rem' }}>Consent Management (EEA / UK / Switzerland)</h2>
         <p style={{ marginBottom: '1rem' }}>
           For visitors in the European Economic Area, the United Kingdom, or Switzerland, RinkStop only loads advertising and analytics scripts after you have provided consent through our first-party consent banner.
