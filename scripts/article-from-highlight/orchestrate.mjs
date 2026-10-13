@@ -993,8 +993,62 @@ async function processHighlight(h) {
 
   let llmArticle;
   let webRecapData = null;
+  // Pre-emptively look up a completed fixture for this highlight (added
+  // 2026-10-13 per repeated 'No data source returned score' failures).
+  // The fixtures table is our own ground-truth — when the game is
+  // status='completed' with both scores set, we can build a no-transcript
+  // facts block from it WITHOUT calling Highlightly/NHL.com/HockeyTech.
+  // This unblocks AHL preseason games and other less-covered leagues
+  // that external APIs don't have data for.
+  let preFixtureRow = null;
+  if (!videoData.transcript?.ok && USE_WEB_RECAP) {
+    try {
+      preFixtureRow = await findFixtureForHighlight(h);
+      if (preFixtureRow
+          && preFixtureRow.status === 'completed'
+          && typeof preFixtureRow.home_score === 'number'
+          && typeof preFixtureRow.away_score === 'number'
+          && preFixtureRow.home_team_name
+          && preFixtureRow.away_team_name) {
+        // Build a no-transcript facts block from local fixture data.
+        // Same shape as llmWebRecapDraft so llmDraft accepts it.
+        const fxFactsBlock = {
+          highlight: {
+            id: h.id,
+            title: h.title,
+            source: h.source,
+            match_date: h.match_date,
+            home_team: h.home_team_name,
+            away_team: h.away_team_name,
+            league: h.league_name,
+            video_url: h.video_url,
+          },
+          video: { id: videoData.video_id, oembed: videoData.oembed, transcript: null },
+          fixtures: [preFixtureRow],
+          recap_source: 'local fixtures table (no YouTube transcript, no external API needed)',
+          note: 'NO TRANSCRIPT AVAILABLE. Final score is confirmed via our own fixtures table. DO NOT invent goal scorers, play-by-play, or stats. Write a score-anchored recap.',
+        };
+        const fxWebRecapData = {
+          source: 'local-fixtures',
+          home_team_name: preFixtureRow.home_team_name,
+          away_team_name: preFixtureRow.away_team_name,
+          league: h.league_name,
+          score: `${preFixtureRow.home_score} - ${preFixtureRow.away_score}`,
+        };
+        const t0 = Date.now();
+        const llmResult = await llmDraft(fxFactsBlock, { noTranscript: true });
+        llmArticle = llmResult.markdown;
+        webRecapData = fxWebRecapData;
+        result.steps.llm = { source: 'local_fixture_facts', elapsed_ms: Date.now() - t0 };
+        result.steps.fixture_match = preFixtureRow.id;
+      }
+    } catch (e) {
+      // Fall through to web-recap fallback
+      console.log(`  ℹ local-fixture fast path failed: ${e.message?.slice(0, 200)}; trying external APIs`);
+    }
+  }
   try {
-    if (!videoData.transcript?.ok && USE_WEB_RECAP) {
+    if (!videoData.transcript?.ok && USE_WEB_RECAP && !llmArticle) {
       // Web-search recap fallback (used when YouTube is rate-limiting us).
       // The kilo agent has web_search built in via Exa.
       const t0 = Date.now();
@@ -1002,7 +1056,7 @@ async function processHighlight(h) {
       llmArticle = wr.markdown;
       webRecapData = wr.matchData; // { score, home_team_name, away_team_name, source }
       result.steps.llm = { source: 'web_recap', elapsed_ms: Date.now() - t0 };
-    } else {
+    } else if (!llmArticle) {
       const llmResult = await llmDraft(factsBlock);
       llmArticle = llmResult.markdown; // includes YAML frontmatter
     }
