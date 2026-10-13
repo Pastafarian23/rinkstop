@@ -78,7 +78,10 @@ export default function HighlightsGrid({
     // 2026-09-17: skip the client fetch entirely when the parent
     // (home page) already supplied initialData via SSR. We still set
     // mounted=true so the gating below lets the section render.
-    if (initialData) return;
+    // 2026-10-13: only skip when initialData is non-empty. If the parent
+    // passed [] (e.g. RPC data shape changed), fall back to client fetch
+    // so the section still renders.
+    if (initialData && initialData.length > 0) return;
     async function fetchHighlights() {
       try {
         const params = new URLSearchParams({ limit: String(limit) });
