@@ -271,6 +271,7 @@ export default async function Home() {
   // 2026-10-12: highlights are now included in the single get_home_page_data
   // RPC. We just reshape the response into the shape the <HighlightsGrid>
   // component expects. No additional DB round-trip.
+  console.log('[home] highlights at render:', { count: (stats.highlights || []).length, firstKeys: stats.highlights?.[0] ? Object.keys(stats.highlights[0]) : null });
   const initialHighlights: any[] = (stats.highlights || []).map((h: any) => ({
     id: h.id,
     title: h.title,
