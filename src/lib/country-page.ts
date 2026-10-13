@@ -118,7 +118,7 @@ export const LEAGUE_INFO: Record<string, { league: string; iihfRank?: string; fi
   'Australia': { league: 'AIHL', iihfRank: '#22', firstNhl: '1982' },
   'Netherlands': { league: 'Eredivisie', iihfRank: '#19', firstNhl: '1961' },
   'Japan': { league: 'BHL', iihfRank: '#23', firstNhl: '1930' },
-  'South Korea': { league: 'Asia League', iihfRank: '#14', firstNhl: '1984' },
+  'South Korea': { league: 'Asia League Ice Hockey', iihfRank: '#14', firstNhl: '1984' },
   'China': { league: 'KHL (Kunlun)', iihfRank: '#26', firstNhl: '1981' },
   'Denmark': { league: 'Metal Ligaen', iihfRank: '#9', firstNhl: '1949' },
   'New Zealand': { league: 'NZIHL', iihfRank: '#25', firstNhl: '1989' },
