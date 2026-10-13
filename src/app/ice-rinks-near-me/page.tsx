@@ -106,11 +106,24 @@ export default async function IceRinksNearMePage() {
   let totalCountries = 0;
 
   try {
-    const { data: rinks } = await supabaseAdmin
-      .from('rinks')
-      .select('city, country, country_slug, province_state')
-      .eq('is_active', true)
-      .not('city', 'is', null);
+    // Fetch all active rinks in pages (Supabase default caps at 1000).
+    const allRinks: Array<{ city: string; country: string; province_state: string | null }> = [];
+    const pageSize = 1000;
+    let from = 0;
+    while (true) {
+      const { data: page, error: pageErr } = await supabaseAdmin
+        .from('rinks')
+        .select('city, country, province_state')
+        .eq('is_active', true)
+        .not('city', 'is', null)
+        .range(from, from + pageSize - 1);
+      if (pageErr) throw pageErr;
+      if (!page || page.length === 0) break;
+      allRinks.push(...(page as Array<{ city: string; country: string; province_state: string | null }>));
+      if (page.length < pageSize) break;
+      from += pageSize;
+    }
+    const rinks = allRinks;
 
     if (rinks && rinks.length > 0) {
       const cityMap = new Map<string, { city: string; country: string; country_slug: string; province_state: string | null; rink_count: number }>();
@@ -126,7 +139,7 @@ export default async function IceRinksNearMePage() {
           cityMap.set(k, {
             city: r.city,
             country: r.country || 'Unknown',
-            country_slug: r.country_slug || slugifyCity(r.country || 'unknown'),
+            country_slug: slugifyCity(r.country || 'unknown'),
             province_state: r.province_state || null,
             rink_count: 1,
           });
