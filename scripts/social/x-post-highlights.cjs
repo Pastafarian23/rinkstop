@@ -229,9 +229,11 @@ function cleanTeamTag(raw) {
     return COUNTRY_NAME_TO_TAG[country] || null;
   }
   // Fallback: humanize the slug
+  // Only uppercase known acronyms. Otherwise treat as a normal word.
+  const ACRONYMS = new Set(['nhl','ahl','khl','echl','whl','ohl','qmjhl','ushl','shl','del','nl','chl','al','us','uk','uae','gb']);
   const human = lower
     .split('-')
-    .map(w => w.length <= 3 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))
+    .map(w => ACRONYMS.has(w) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))
     .join('');
   return `#${human}`;
 }
