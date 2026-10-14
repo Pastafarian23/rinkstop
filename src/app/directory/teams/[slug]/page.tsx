@@ -8,6 +8,7 @@ import { isIdentityVerified } from '@/lib/identity-verified';
 import { timezoneForCountry } from '@/lib/team-timezone';
 import { teamPageDecision, robotsMeta } from '@/lib/seo';
 import { buildTeamFAQs } from '@/lib/team-context';
+import FollowButton from '@/components/FollowButton';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
 import ClaimListingNudge from '@/components/ClaimListingNudge';
 import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
@@ -751,6 +752,11 @@ export default async function PublicTeamPage({ params }: PageProps) {
           component so it lands in the first viewport on mobile and desktop. */}
       <ClaimListingNudge entityType="team" entityId={team.id} entityName={team.name} />
       <ClaimedOwnerBanner entityType="team" entityId={team.id} />
+      {/* 2026-10-14 (Phase 5): 'Follow this team' button. localStorage-
+          backed, no login. State shared with the home 'Your teams' strip. */}
+      <div style={{ maxWidth: '1280px', margin: '0.75rem auto 0', padding: '0 1.5rem' }}>
+        <FollowButton teamSlug={team.slug} teamName={team.name} />
+      </div>
 
       {/* JSON-LD: SportsTeam + BreadcrumbList + FAQPage (PR #197) */}
       <script
