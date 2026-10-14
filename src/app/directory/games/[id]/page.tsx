@@ -78,20 +78,30 @@ interface FixtureRow {
 }
 
 // Probe just the status + scheduled_at — used to pick the cache
-// tier for the full row.
+// tier for the full row. Wrapped in unstable_cache so the top-level
+// page render can stay static. 30s revalidate is fine for the probe —
+// the full-row fetcher has its own per-tier revalidate.
+const probeStatusCached = unstable_cache(
+  async (id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> => {
+    try {
+      const sb = getSupabase();
+      const { data } = await sb
+        .from('fixtures')
+        .select('status, scheduled_at')
+        .eq('id', id)
+        .maybeSingle();
+      if (!data) return null;
+      return { status: data.status as GameStatus, scheduled_at: data.scheduled_at };
+    } catch {
+      return null;
+    }
+  },
+  ['game-detail-probe-v1'],
+  { revalidate: 30, tags: ['game-detail'] }
+);
+
 async function probeStatus(id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> {
-  try {
-    const sb = getSupabase();
-    const { data } = await sb
-      .from('fixtures')
-      .select('status, scheduled_at')
-      .eq('id', id)
-      .maybeSingle();
-    if (!data) return null;
-    return { status: data.status as GameStatus, scheduled_at: data.scheduled_at };
-  } catch {
-    return null;
-  }
+  return probeStatusCached(id);
 }
 
 function tierForStatus(status: GameStatus | undefined, scheduledAt: string | undefined): number {
