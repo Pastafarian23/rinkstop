@@ -16,12 +16,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // slug format: YYYY-MM-DD-home-slug-vs-away-slug
   const parsed = parseGameSlug(slug);
   if (!parsed) return { title: 'Game Not Found' };
+  // 2026-10-14 (Phase 6): title per the user's spec.
+  //   Completed: "[Winner] [score], [Loser] [score] – [Date] | [League] Final Score"
+  //   Upcoming:  "[Away] vs [Home] – [Date] | [League]"
+  // We try to load the actual game so we can put the score in the
+  // title. If we can't, fall back to a slug-based title.
+  let title: string;
+  let description: string;
+  try {
+    const games = await getNhlGamesByDate(parsed.date);
+    const m = games.find(g => slugify(g.home_team_name) === parsed.homeSlug && slugify(g.away_team_name) === parsed.awaySlug);
+    if (m && m.status.startsWith('Finished') && m.home_score !== null && m.away_score !== null) {
+      const homeWin = m.home_score > m.away_score;
+      const winner = homeWin ? m.home_team_name : m.away_team_name;
+      const loser = homeWin ? m.away_team_name : m.home_team_name;
+      const winScore = homeWin ? m.home_score : m.away_score;
+      const loseScore = homeWin ? m.away_score : m.home_score;
+      title = `${winner} ${winScore}, ${loser} ${loseScore} – ${parsed.date} | NHL Final Score`;
+      description = `Final score: ${m.away_team_name} ${m.away_score}–${m.home_score} ${m.home_team_name}. ${winner} won.`;
+    } else if (m) {
+      title = `${m.away_team_name} vs ${m.home_team_name} – ${parsed.date} | NHL`;
+      description = `${m.away_team_name} at ${m.home_team_name} on ${parsed.date}. NHL game preview, scheduled start time, and broadcast info on RinkStop.`;
+    } else {
+      title = `${parsed.awayName} vs ${parsed.homeName} – ${parsed.date} | NHL`;
+      description = `${parsed.awayName} at ${parsed.homeName} on ${parsed.date}.`;
+    }
+  } catch {
+    title = `${parsed.awayName} vs ${parsed.homeName} – ${parsed.date} | NHL`;
+    description = `${parsed.awayName} at ${parsed.homeName} on ${parsed.date}.`;
+  }
   return {
-    title: `${parsed.awayName} at ${parsed.homeName} | ${parsed.date}`,
-    description: `${parsed.awayName} vs ${parsed.homeName} on ${parsed.date}. Box score, final score, and game details on RinkStop.`,
+    title,
+    description,
     openGraph: withDefaultOg({
-      title: `${parsed.awayName} vs ${parsed.homeName} | ${parsed.date}`,
-      description: `NHL game — ${parsed.awayName} at ${parsed.homeName}.`,
+      title,
+      description,
       type: 'website',
     }),
   };
@@ -99,16 +128,43 @@ export default async function GamePage({ params }: Props) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'BreadcrumbList',
-              itemListElement: [
-                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
-                { '@type': 'ListItem', position: 2, name: 'Scores', item: 'https://rinkstop.com/directory/games' },
-                { '@type': 'ListItem', position: 3, name: 'NHL', item: 'https://rinkstop.com/directory/nhl' },
-                { '@type': 'ListItem', position: 4, name: `${match.away_team_name} at ${match.home_team_name}`, item: `https://rinkstop.com/directory/nhl/games/${slug}` },
-              ],
-            }),
+            __html: JSON.stringify([
+              {
+                '@context': 'https://schema.org',
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                  { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+                  { '@type': 'ListItem', position: 2, name: 'Scores', item: 'https://rinkstop.com/directory/games' },
+                  { '@type': 'ListItem', position: 3, name: 'NHL', item: 'https://rinkstop.com/directory/nhl' },
+                  { '@type': 'ListItem', position: 4, name: `${match.away_team_name} at ${match.home_team_name}`, item: `https://rinkstop.com/directory/nhl/games/${slug}` },
+                ],
+              },
+              {
+                // 2026-10-14 (Phase 6): SportsEvent schema. Includes
+                // name, startDate (with UTC offset per the user's
+                // spec — .toISOString() emits the Z suffix), location
+                // (when present), homeTeam, awayTeam, eventStatus, and
+                // score for completed games.
+                '@context': 'https://schema.org',
+                '@type': 'SportsEvent',
+                name: `${match.away_team_name} at ${match.home_team_name}`,
+                startDate: match.date,
+                url: `https://rinkstop.com/directory/nhl/games/${slug}`,
+                eventStatus: match.status.startsWith('Finished')
+                  ? 'https://schema.org/EventCompleted'
+                  : (match.status === 'Scheduled' || match.status === 'Not started')
+                    ? 'https://schema.org/EventScheduled'
+                    : 'https://schema.org/EventPostponed',
+                eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+                sport: 'Ice Hockey',
+                homeTeam: { '@type': 'SportsTeam', name: match.home_team_name, url: `https://rinkstop.com/directory/nhl/teams/${parsed.homeSlug}` },
+                awayTeam: { '@type': 'SportsTeam', name: match.away_team_name, url: `https://rinkstop.com/directory/nhl/teams/${parsed.awaySlug}` },
+                ...(match.venue ? { location: { '@type': 'Place', name: match.venue } } : {}),
+                ...(match.status.startsWith('Finished') && match.home_score !== null && match.away_score !== null ? {
+                  description: `Final score: ${match.away_team_name} ${match.away_score}–${match.home_score} ${match.home_team_name}.`,
+                } : {}),
+              },
+            ]),
           }}
         />
       )}
