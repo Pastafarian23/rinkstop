@@ -288,10 +288,12 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
         }
         return q.range(0, upcomingLimit - 1);
       })();
-      // Past completed: last 7d, DESC by date (most recent first).
-      // We use the full 7d window so users still see recent results at
-      // the bottom of the page. The merged order (upcoming first) keeps
-      // today's and this-week's scheduled games at the top.
+      // Past completed: last 24h only, DESC by date. We keep this
+      // window tight so the date-grouped render doesn't pull 7 days
+      // of stale completed games into the day list and push today
+      // below the fold. Yesterday's results live under the 'Recent
+      // Results' time filter, not here.
+      const last24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
       const pastQ = (() => {
         let q: any = sb
           .from('fixtures')
@@ -299,7 +301,7 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
           .not('home_team_id', 'is', null)
           .not('away_team_id', 'is', null)
           .eq('status', 'completed')
-          .gte('scheduled_at', recentCutoff)
+          .gte('scheduled_at', last24h)
           .in('league_id', mergedLeagueIds)
           .order('scheduled_at', { ascending: false });
         if (teamId) q = q.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
