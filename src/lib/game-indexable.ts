@@ -1,48 +1,70 @@
-// 2026-10-14 (Phase 2 + 3): isGameIndexable — single source of truth
-// for "is this game page thin / should Google not index it".
+// 2026-10-14: isGameIndexable — single source of truth for "is
+// this game page worth indexing?".  Now uses REAL data:
+//
+//   - status must be in_progress, scheduled, or completed.
+//   - both teams' form must exist (non-null from getTeamForm).
+//   - at least 3 of: H2H > 0, home next game exists, away next
+//     game exists, same-day games > 0, completed result, upcoming
+//     (scheduled within 7 days so a "countdown" makes sense).
+//
+// Cancelled and postponed never indexable.
 //
 // Used by:
 //   - src/app/directory/games/[id]/page.tsx  (generateMetadata)
 //   - src/app/directory/nhl/games/[slug]/page.tsx (generateMetadata)
-//   - src/app/api/sitemap-games.xml/route.ts  (omit thin games from sitemap)
+//   - src/app/sitemap-games.xml/route.ts      (the page can decide
+//     this from its fetched data; the sitemap applies the same
+//     SQL-equivalent — see src/lib/game-indexable-sql.ts).
 //
-// Inputs are the data the page already has.  We deliberately keep the
-// predicate shape stable so a thin version of it can be re-implemented
-// in pure SQL (see _indexable-sitemap-candidates.sql) for the sitemap
-// generator that runs on Supabase without a Next.js context.
+// The page and the sitemap MUST agree.  When the page builds the
+// indexability check from real module data, the SQL sitemap must
+// surface the same condition.  The agreement is verified by
+// scripts/_check-predicate-agreement.cjs.
 
 export interface IndexableGame {
-  /** Did the page render the venue block (linked highights with a venue, or a venue_details row)? */
-  hasVenue?: boolean;
-  /** Did both teams have at least one recent game in the form section? */
-  bothTeamsHaveForm?: boolean;
-  /** How many of the page modules rendered (h2h, form, period scores, etc.)? */
-  moduleCount?: number;
-  /** Optional: explicit "this is a finished game with no broken data" signal. */
-  isFinal?: boolean;
+  status?: string;
+  /** bothTeamsHaveForm = both getTeamForm() calls returned non-null. */
+  bothTeamsHaveForm: boolean;
+  /** At least 3 of these must be true for the page to be indexable. */
+  hasH2H?: boolean;
+  hasHomeNextGame?: boolean;
+  hasAwayNextGame?: boolean;
+  hasSameDayGames?: boolean;
+  isCompletedWithScore?: boolean;
+  isUpcomingWithinWeek?: boolean;
 }
 
-/**
- * Returns true if a game page has enough content to justify a Google
- * indexing pass.  Conservative: when in doubt, return false (the
- * page is noindex+follow and we tell Google the canonical points at
- * the [id] URL or the [slug] URL).
- *
- * Thresholds (match MEMORY.md visual-QC rules):
- *  - finished games:  indexable if moduleCount >= 3 OR (hasVenue AND bothTeamsHaveForm)
- *  - in-progress:     always indexable (live scores are valuable)
- *  - scheduled:       indexable if moduleCount >= 2 (preview/team-context)
- *  - cancelled:       not indexable (thin)
- *  - postponed:       not indexable
- *  - missing data:    not indexable
- */
-export function isGameIndexable(g: IndexableGame & { status?: string } = {}): boolean {
-  const status = g.status || (g.isFinal ? 'completed' : undefined);
-  if (!status) return false;
-  if (status === 'cancelled' || status === 'postponed') return false;
-  if (status === 'in_progress') return true;
-  if (status === 'scheduled') return (g.moduleCount ?? 0) >= 2;
-  // completed
-  if (g.hasVenue && g.bothTeamsHaveForm) return true;
-  return (g.moduleCount ?? 0) >= 3;
+export function isGameIndexable(g: IndexableGame): boolean {
+  if (!g.status) return false;
+  if (g.status === 'cancelled' || g.status === 'postponed') return false;
+  if (g.status === 'in_progress') return true; // live games always index
+  if (!g.bothTeamsHaveForm) return false;     // thin if no form
+  if (g.status === 'scheduled') {
+    // scheduled needs form + at least 3 module signals
+    const moduleCount = [
+      g.hasH2H,
+      g.hasHomeNextGame,
+      g.hasAwayNextGame,
+      g.hasSameDayGames,
+      g.isUpcomingWithinWeek, // scheduled+upcoming (countdown-able)
+      g.isCompletedWithScore, // typically false for scheduled
+    ].filter(Boolean).length;
+    return moduleCount >= 3;
+  }
+  if (g.status === 'completed') {
+    if (g.isCompletedWithScore) {
+      // Completed with score + form + at least 3 signals.
+      const moduleCount = [
+        g.hasH2H,
+        g.hasHomeNextGame,
+        g.hasAwayNextGame,
+        g.hasSameDayGames,
+        true, // completed result itself counts
+        g.isUpcomingWithinWeek, // typically false
+      ].filter(Boolean).length;
+      return moduleCount >= 3;
+    }
+    return false; // completed without a score is thin
+  }
+  return false;
 }

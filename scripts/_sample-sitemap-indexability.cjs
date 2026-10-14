@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// scripts/_sample-sitemap-indexability.mjs
+// scripts/_sample-sitemap-indexability.cjs
 //
-// 2026-10-14 (Phase 3 follow-up, after pagination landed): stratified
-// sample.  Per Arnel's spec:
+// 2026-10-14 (Phase 3 follow-up): stratified sample of the
+// sitemap-games.xml.  Per Arnel's spec:
 //   - at least 15 finished
 //   - at least 15 scheduled
 //   - at least 10 lower-league
@@ -13,47 +13,45 @@
 //     somewhere else)
 //
 // Run:
-//   node scripts/_sample-sitemap-indexability.mjs [base]
-//   # or
-//   SAMPLE_BASE=https://rinkstop.com node scripts/_sample-sitemap-indexability.mjs
+//   SAMPLE_BASE=https://rinkstop.com node scripts/_sample-sitemap-indexability.cjs
 //
-// Exit 0 on success (all samples pass), exit 1 on any failure.
+// Exit 0 on success, exit 1 on any failure.
 
-const BASE = process.argv[2] || process.env.SAMPLE_BASE || 'https://rinkstop.com';
+const fs = require('fs');
+const https = require('https');
+
+const BASE = process.env.SAMPLE_BASE || process.argv[2] || 'https://rinkstop.com';
 const N_FINISHED = parseInt(process.env.SAMPLE_FINISHED || '15', 10);
 const N_SCHEDULED = parseInt(process.env.SAMPLE_SCHEDULED || '15', 10);
 const N_LOWER = parseInt(process.env.SAMPLE_LOWER || '10', 10);
 const CONCURRENCY = 4;
 
-const TOP_TIER_LEAGUES = new Set([
-  'nhl', 'ahl', 'pwhl', 'khl', 'shl', 'liiga', 'del', 'nl',
-  'extraliga', 'ncaa', 'chl', 'whl', 'ohl', 'qmjhl', 'ushl',
+const TOP_TIER = new Set([
+  'nhl','ahl','pwhl','khl','shl','liiga','del','nl',
+  'extraliga','ncaa','chl','whl','ohl','qmjhl','ushl',
 ]);
 
-async function fetchSitemapIndex() {
-  // Sitemap may be a single file or a sitemap-index pointing at
-  // numbered chunks (sitemap-games.xml?sitemap=N).  Handle both.
-  const res = await fetch(`${BASE}/sitemap-games.xml`, {
-    headers: { 'User-Agent': 'rinkstop-sitemap-sampler/2.0' },
+// parse .env.local manually
+const env = {};
+for (const line of fs.readFileSync('/root/.openclaw/workspace/rinkstop-platform/.env.local', 'utf8').split('\n')) {
+  const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+  if (m) env[m[1]] = m[2];
+}
+const { createClient } = require('@supabase/supabase-js');
+const sb = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+
+function getXml(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url + '?_=' + Date.now(), (res) => {
+      let body = '';
+      res.on('data', d => body += d);
+      res.on('end', () => resolve(body));
+      res.on('error', reject);
+    });
   });
-  if (!res.ok) throw new Error(`sitemap fetch ${res.status}`);
-  const xml = await res.text();
-  // Detect sitemapindex (parent of chunked sitemaps)
-  if (xml.includes('<sitemapindex')) {
-    const children = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
-    // fetch each chunk and concatenate URLs
-    let allXml = '';
-    for (const c of children) {
-      const r = await fetch(c, { headers: { 'User-Agent': 'rinkstop-sitemap-sampler/2.0' } });
-      if (r.ok) allXml += await r.text();
-    }
-    return allXml;
-  }
-  return xml;
 }
 
-function parseUrlEntries(xml: string) {
-  // <url><loc>...</loc>...
+function parseUrlEntries(xml) {
   return [...xml.matchAll(/<url>[\s\S]*?<loc>([^<]+)<\/loc>[\s\S]*?<\/url>/g)].map(m => {
     const url = m[1];
     const idMatch = url.match(/\/directory\/games\/([a-f0-9-]{36})/);
@@ -61,18 +59,8 @@ function parseUrlEntries(xml: string) {
   });
 }
 
-async function fetchFixtureStatuses(ids: string[]): Promise<Map<string, { status: string; leagueSlug: string }>> {
-  // We need status + league per ID to bucket.  Pull from Supabase
-  // by chunked IN.  Requires env in .env.local.
-  const { createClient } = await import('@supabase/supabase-js');
-  const { config } = await import('dotenv');
-  config({ path: '.env.local' });
-  const sb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  );
-  const map = new Map<string, { status: string; leagueSlug: string }>();
-  // chunk IN list (PostgREST limit ~ a few hundred per query)
+async function fetchFixtureStatuses(ids) {
+  const map = new Map();
   for (let i = 0; i < ids.length; i += 200) {
     const chunk = ids.slice(i, i + 200);
     const { data, error } = await sb
@@ -87,7 +75,7 @@ async function fetchFixtureStatuses(ids: string[]): Promise<Map<string, { status
   return map;
 }
 
-async function checkOne(url: string) {
+async function checkOne(url) {
   const r = await fetch(url, {
     headers: { 'User-Agent': 'rinkstop-sitemap-sampler/2.0' },
     redirect: 'follow',
@@ -113,26 +101,33 @@ async function main() {
   console.log(`Stratified sample of sitemap-games.xml from ${BASE}`);
   console.log(`  buckets: finished=${N_FINISHED}, scheduled=${N_SCHEDULED}, lower-league=${N_LOWER}\n`);
 
-  const xml = await fetchSitemapIndex();
+  // Handle sitemap index (parent of chunked sitemaps)
+  const xml0 = await getXml(BASE + '/sitemap-games.xml');
+  let xml = xml0;
+  if (xml.includes('<sitemapindex')) {
+    const children = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
+    xml = '';
+    for (const c of children) {
+      try { xml += await getXml(c); } catch (e) { /* ignore */ }
+    }
+  }
   const entries = parseUrlEntries(xml);
   console.log(`  sitemap has ${entries.length} URLs total`);
 
-  const ids = entries.map(e => e.id).filter((x): x is string => !!x);
+  const ids = entries.map(e => e.id).filter(x => !!x);
   const meta = await fetchFixtureStatuses(ids);
 
-  // Bucket the entries
-  const finished: typeof entries = [];
-  const scheduled: typeof entries = [];
-  const lower: typeof entries = [];
+  const finished = [];
+  const scheduled = [];
+  const lower = [];
   for (const e of entries) {
     const m = meta.get(e.id || '');
     if (!m) continue;
     if (m.status === 'completed') finished.push(e);
     else if (m.status === 'scheduled') scheduled.push(e);
-    if (!TOP_TIER_LEAGUES.has(m.leagueSlug)) lower.push(e);
+    if (!TOP_TIER.has(m.leagueSlug)) lower.push(e);
   }
-  // shuffle
-  const shuf = <T>(a: T[]) => [...a].sort(() => Math.random() - 0.5);
+  const shuf = a => [...a].sort(() => Math.random() - 0.5);
   const sample = [
     ...shuf(finished).slice(0, N_FINISHED),
     ...shuf(scheduled).slice(0, N_SCHEDULED),
@@ -140,27 +135,41 @@ async function main() {
   ];
   console.log(`  sampling ${sample.length} URLs`);
 
-  const results: any[] = [];
+  const results = [];
   for (let i = 0; i < sample.length; i += CONCURRENCY) {
     const batch = sample.slice(i, i + CONCURRENCY);
     const r = await Promise.all(batch.map(e => checkOne(e.url)));
     for (let j = 0; j < batch.length; j++) {
       const e = batch[j];
       const m = meta.get(e.id || '');
-      results.push({ ...r[j], bucket: r[j].ok ? (m?.status === 'completed' ? 'finished' : m?.status === 'scheduled' ? 'scheduled' : 'lower') : 'unknown' });
+      let bucket = 'unknown';
+      if (m) {
+        if (m.status === 'completed') bucket = 'finished';
+        else if (m.status === 'scheduled') bucket = 'scheduled';
+        if (!TOP_TIER.has(m.leagueSlug) && bucket !== 'unknown') bucket += '+lower';
+      }
+      results.push({ ...r[j], bucket });
     }
   }
 
-  // Summary
   const pass = results.filter(r => r.ok);
   const fail = results.filter(r => !r.ok);
+  // Per-bucket counts
+  const bucketStats = {};
+  for (const r of results) {
+    if (!bucketStats[r.bucket]) bucketStats[r.bucket] = { pass: 0, fail: 0 };
+    r.ok ? bucketStats[r.bucket].pass++ : bucketStats[r.bucket].fail++;
+  }
   console.log();
   console.log(`  PASS: ${pass.length} / ${results.length}`);
+  for (const [b, s] of Object.entries(bucketStats)) {
+    console.log(`    ${b.padEnd(15)}  pass=${s.pass}  fail=${s.fail}`);
+  }
   if (fail.length > 0) {
-    console.log(`  FAIL: ${fail.length}`);
+    console.log(`\n  FAIL: ${fail.length}`);
     for (const f of fail.slice(0, 20)) {
       console.log(`    - ${f.url}`);
-      console.log(`        status=${f.status} robots=${f.robots} canonical=${f.canonical} reason=${f.reason}`);
+      console.log(`        bucket=${f.bucket} status=${f.status} robots=${f.robots} canonical=${f.canonical} reason=${f.reason}`);
     }
   }
   if (fail.length > 0) process.exit(1);

@@ -1,49 +1,35 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { ScoresheetQRPanel } from '@/components/ScoresheetQRPanel';
 import { isGameIndexable } from '@/lib/game-indexable';
+import {
+  getTeamForm,
+  getH2H,
+  getNextGame,
+  getSameDayGames,
+  type TeamForm,
+  type H2HRow,
+  type NextGame,
+  type SameDayGame,
+} from '@/lib/game-modules';
+import { displayNameForGame } from '@/lib/franchise-name-lookup';
 
-// 2026-10-14 (Arnel cache fix, final): tiered ISR.
+// 2026-10-14 (Arnel 13:38 directive): server-render the data-driven
+// modules (team form, H2H, next games, same-day, recap) in the
+// initial HTML.  Per the user spec, GamePageClient keeps only
+// interactive parts (ShareButton, countdown timer, add-to-calendar
+// ICS download, FollowButton).
 //
-// Why this is structured the way it is:
-//
-// - Next.js 15 requires either `generateStaticParams()` (returning
-//   an array, even empty) OR `export const dynamic = 'force-static'`
-//   for a dynamic route ([id]) to be treated as ISR rather than
-//   server-rendered-on-demand.  We don't know the full set of valid
-//   fixture ids at build time, so we return `[]` and let any id be
-//   prerendered on first request.  Subsequent requests for the same
-//   id are served from the per-id cache entry.
-//
-// - `revalidate` is set to 0 here (segment-level) and revalidation
-//   is delegated to the per-tier `unstable_cache` wrappers below.
-//   Each tier has its own revalidate value matching the freshness
-//   the data needs:
-//
-//     live / today's in-progress games:  30s
-//     upcoming scheduled (within 7 days):  5 min
-//     upcoming scheduled (further out):   1 hour
-//     finished games:                      24 hours
-//
-//   Setting segment revalidate=0 prevents Next.js from revalidating
-//   the whole page on a global timer — the cache wrapper revalidates
-//   the data it cached, which Next.js will pick up on the next
-//   request via the cache tag.
-//
-// - Errors and empty results are NEVER cached.  The unstable_cache
-//   wrappers return `null` on error and the per-id cache key is
-//   skipped (the `if (game)` check below).
+// Tiered ISR revalidation is delegated to per-module unstable_cache
+// wrappers in src/lib/game-modules.ts.  Errors and empty results
+// are never cached.
 
 export const revalidate = 0;
-export const dynamicParams = true; // default; explicit for clarity
+export const dynamicParams = true;
 export async function generateStaticParams(): Promise<Array<{ id: string }>> {
-  // Return empty array — Next.js will prerender on first request
-  // for each [id] and serve subsequent requests from the per-id
-  // unstable_cache entries.
   return [];
 }
 
@@ -52,21 +38,14 @@ const BASE_URL = 'https://rinkstop.com';
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 }
-
-// 2026-10-14: tiered caching by game status.  We probe the row's
-// status first (cheap — no joins) to pick a revalidate value, then
-// fetch the full row.  The status probe itself is cached for 30s
-// to avoid hammering Supabase on back-to-back requests.
-
-type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
 
 interface FixtureRow {
   id: string;
   scheduled_at: string;
-  status: GameStatus;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
   home_score: number | null;
   away_score: number | null;
   league_id: string;
@@ -78,80 +57,67 @@ interface FixtureRow {
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
 }
 
-// Probe just the status + scheduled_at — used to pick the cache
-// tier for the full row. Wrapped in unstable_cache so the top-level
-// page render can stay static. 30s revalidate is fine for the probe —
-// the full-row fetcher has its own per-tier revalidate.
 const probeStatusCached = unstable_cache(
-  async (id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> => {
+  async (id: string): Promise<{ status: FixtureRow['status']; scheduled_at: string } | null> => {
     try {
       const sb = getSupabase();
-      const { data } = await sb
-        .from('fixtures')
-        .select('status, scheduled_at')
-        .eq('id', id)
-        .maybeSingle();
+      const { data } = await sb.from('fixtures').select('status, scheduled_at').eq('id', id).maybeSingle();
       if (!data) return null;
-      return { status: data.status as GameStatus, scheduled_at: data.scheduled_at };
-    } catch {
-      return null;
-    }
+      return { status: data.status as FixtureRow['status'], scheduled_at: data.scheduled_at };
+    } catch { return null; }
   },
-  ['game-detail-probe-v1'],
+  ['game-detail-probe-v2'],
   { revalidate: 30, tags: ['game-detail'] }
 );
 
-async function probeStatus(id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> {
-  return probeStatusCached(id);
-}
-
-function tierForStatus(status: GameStatus | undefined, scheduledAt: string | undefined): number {
-  if (!status) return 3600; // unknown — be conservative
-  if (status === 'in_progress') return 30;
-  if (status === 'completed' || status === 'cancelled') return 86400;
-  if (status === 'scheduled' || status === 'postponed') {
-    if (!scheduledAt) return 3600;
-    const minutesUntil = (new Date(scheduledAt).getTime() - Date.now()) / 60000;
-    if (minutesUntil < 0) return 30; // past but not yet marked completed
-    if (minutesUntil < 60 * 24 * 7) return 300; // within 7 days
-    return 3600; // further out
-  }
-  return 3600;
-}
-
-const fetchGameByStatus = (status: GameStatus, scheduledAt: string) => {
-  const tier = tierForStatus(status, scheduledAt);
-  const cacheKey = `game-detail-fixture-v2-${status}-${tier}`;
+const fetchGameByStatus = (status: FixtureRow['status'], scheduledAt: string) => {
+  const tier = (() => {
+    if (status === 'in_progress') return 30;
+    if (status === 'completed' || status === 'cancelled') return 86400;
+    if (status === 'scheduled' || status === 'postponed') {
+      const minutesUntil = (new Date(scheduledAt).getTime() - Date.now()) / 60000;
+      if (minutesUntil < 0) return 30;
+      if (minutesUntil < 60 * 24 * 7) return 300;
+      return 3600;
+    }
+    return 3600;
+  })();
   return (id: string): Promise<FixtureRow | null> => unstable_cache(
     async (): Promise<FixtureRow | null> => {
       try {
         const sb = getSupabase();
         const { data: fixture, error } = await sb
           .from('fixtures')
-          .select(`
-            id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data,
+          .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data,
             home_team:teams!fixtures_home_team_id_fkey(id, name, slug, logo_url),
             away_team:teams!fixtures_away_team_id_fkey(id, name, slug, logo_url),
-            league:leagues(id, name, slug, level, country)
-          `)
+            league:leagues(id, name, slug, level, country)`)
           .eq('id', id)
           .maybeSingle();
-        if (error || !fixture) return null; // never cache errors/empty
+        if (error || !fixture) return null;
         return fixture as unknown as FixtureRow;
-      } catch {
-        return null; // never cache errors/empty
-      }
+      } catch { return null; }
     },
-    [cacheKey],
+    ['game-detail-fixture-v2'],
     { revalidate: tier, tags: ['game-detail', `game:${id}`] }
   )();
 };
 
 async function fetchGame(id: string): Promise<FixtureRow | null> {
-  const probe = await probeStatus(id);
-  if (!probe) return null; // not found — don't cache
-  const fetcher = fetchGameByStatus(probe.status, probe.scheduled_at);
-  return fetcher(id);
+  const probe = await probeStatusCached(id);
+  if (!probe) return null;
+  return fetchGameByStatus(probe.status, probe.scheduled_at)(id);
+}
+
+function buildRecap(g: FixtureRow, homeDisplayName: string, awayDisplayName: string): string | null {
+  if (g.status !== 'completed' || g.home_score === null || g.away_score === null) return null;
+  if (g.home_score > g.away_score) {
+    return `${homeDisplayName} won ${g.home_score}–${g.away_score} over ${awayDisplayName}.`;
+  }
+  if (g.away_score > g.home_score) {
+    return `${awayDisplayName} won ${g.away_score}–${g.home_score} at ${homeDisplayName}.`;
+  }
+  return `Final: ${awayDisplayName} ${g.away_score}–${g.home_score} ${homeDisplayName}.`;
 }
 
 export async function generateMetadata(
@@ -175,36 +141,39 @@ export async function generateMetadata(
   const description = `${awayName} vs ${homeName} on ${dateStr} in the ${leagueName}. Live score, boxscore, and game details on RinkStop.`;
   const ogImage = game.home_team?.logo_url || `${BASE_URL}/og-image.png`;
 
-  // 2026-10-14 (Phase 2): server-side noindex for thin game pages.
-  // The isGameIndexable predicate decides whether the page has
-  // enough content to be worth indexing.  Scheduled games need
-  // moduleCount >= 2; completed games need moduleCount >= 3 OR
-  // (hasVenue AND bothTeamsHaveForm).  Cancelled/postponed always
-  // noindex.  In-progress is always indexable (live scores are
-  // valuable).
-  //
-  // Server-side approximation: we know the fixture row and the
-  // status from the same fetch.  moduleCount is the number of
-  // boxes that will render in GamePageClient (period scores,
-  // final score, goals, three-stars, shots, goalies, top skaters,
-  // h2h, form).  We don't have those data points on the server
-  // (the client does its own fetches), so we approximate:
-  //  - completed with both team names: moduleCount = 3 (final
-  //    score box + period scores + share button) — indexable
-  //  - completed with league: +1 (league module)
-  //  - scheduled with both team names: moduleCount = 2 (preview
-  //    + QR) — indexable
-  // The more nuanced gates (form, h2h) require a server-side
-  // data fetch we don't currently do; a follow-up can fold those
-  // in.
-  const moduleCount =
-    (game.status === 'completed' ? 3 : 2) +
-    (game.league ? 1 : 0);
+  // Indexability is decided from real data below in the page body
+  // (we fetch the modules in the page itself and pass the
+  // boolean into metadata).  We mirror the same condition here
+  // by calling the same getters with the same status + scheduled_at
+  // — the result is consistent with the page's isGameIndexable().
+  const [homeForm, awayForm, h2h, homeNext, awayNext, sameDay] = await Promise.all([
+    getTeamForm(game.league_id, game.home_team_id, game.status, game.scheduled_at),
+    getTeamForm(game.league_id, game.away_team_id, game.status, game.scheduled_at),
+    getH2H(game.league_id, game.home_team_id, game.away_team_id, game.id, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.home_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.away_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getSameDayGames(
+      game.league_id,
+      `${game.scheduled_at.slice(0, 10)}T00:00:00Z`,
+      `${game.scheduled_at.slice(0, 10)}T23:59:59Z`,
+      game.id,
+      game.status,
+      game.scheduled_at,
+    ),
+  ]);
+  const isUpcomingWithinWeek = game.status === 'scheduled'
+    && (new Date(game.scheduled_at).getTime() - Date.now()) < 7 * 86400000;
+  const isCompletedWithScore = game.status === 'completed'
+    && game.home_score !== null && game.away_score !== null;
   const indexable = isGameIndexable({
     status: game.status,
-    moduleCount,
-    hasVenue: !!(game as any).venue_details?.name || !!(game as any).game_data?.venue,
-    bothTeamsHaveForm: !!(game.home_team?.name && game.away_team?.name),
+    bothTeamsHaveForm: !!(homeForm && awayForm),
+    hasH2H: h2h.length > 0,
+    hasHomeNextGame: !!homeNext,
+    hasAwayNextGame: !!awayNext,
+    hasSameDayGames: sameDay.length > 0,
+    isCompletedWithScore,
+    isUpcomingWithinWeek,
   });
   return {
     title,
@@ -235,18 +204,43 @@ export default async function GameDetailPage(
   const game = await fetchGame(id);
 
   if (!game) {
-    return <GamePageClient id={id} />;
+    return <GamePageClient id={id} game={null} modules={null} />;
   }
+
+  // Fetch all data-driven modules in parallel.  Each is wrapped in
+  // its own unstable_cache with tiered revalidation.
+  const [homeForm, awayForm, h2h, homeNext, awayNext, sameDay] = await Promise.all([
+    getTeamForm(game.league_id, game.home_team_id, game.status, game.scheduled_at),
+    getTeamForm(game.league_id, game.away_team_id, game.status, game.scheduled_at),
+    getH2H(game.league_id, game.home_team_id, game.away_team_id, game.id, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.home_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.away_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getSameDayGames(
+      game.league_id,
+      `${game.scheduled_at.slice(0, 10)}T00:00:00Z`,
+      `${game.scheduled_at.slice(0, 10)}T23:59:59Z`,
+      game.id,
+      game.status,
+      game.scheduled_at,
+    ),
+  ]);
 
   const homeName = game.home_team?.name ?? 'Home';
   const awayName = game.away_team?.name ?? 'Away';
   const leagueName = game.league?.name ?? 'Hockey';
 
-  // SportsEvent JSON-LD for Google rich results.
+  // Date-aware franchise name resolution: old Phoenix Coyotes games
+  // show "Phoenix Coyotes" not "Utah Hockey Club".
+  const homeDisplay = game.home_team?.slug ? displayNameForGame(game.home_team.slug, game.scheduled_at) : null;
+  const awayDisplay = game.away_team?.slug ? displayNameForGame(game.away_team.slug, game.scheduled_at) : null;
+  const homeRenderName = homeDisplay?.display || homeName;
+  const awayRenderName = awayDisplay?.display || awayName;
+
+  // SportsEvent JSON-LD
   const sportsEvent = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
-    name: `${awayName} at ${homeName}`,
+    name: `${awayRenderName} at ${homeRenderName}`,
     startDate: game.scheduled_at,
     url: `${BASE_URL}/directory/games/${id}`,
     eventStatus:
@@ -256,15 +250,53 @@ export default async function GameDetailPage(
       'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     sport: 'Ice Hockey',
-    homeTeam: game.home_team ? { '@type': 'SportsTeam', name: homeName, url: `${BASE_URL}/directory/teams/${game.home_team.slug}` } : undefined,
-    awayTeam: game.away_team ? { '@type': 'SportsTeam', name: awayName, url: `${BASE_URL}/directory/teams/${game.away_team.slug}` } : undefined,
+    homeTeam: game.home_team ? { '@type': 'SportsTeam', name: homeRenderName, url: `${BASE_URL}/directory/teams/${game.home_team.slug}` } : undefined,
+    awayTeam: game.away_team ? { '@type': 'SportsTeam', name: awayRenderName, url: `${BASE_URL}/directory/teams/${game.away_team.slug}` } : undefined,
+    ...(game.status === 'completed' && game.home_score !== null && game.away_score !== null ? {
+      description: `Final: ${awayRenderName} ${game.away_score}–${game.home_score} ${homeRenderName}.`,
+    } : {}),
   };
 
-  // Phase B2: QR panel enabled for scheduled fixtures.
+  // BreadcrumbList JSON-LD (server-rendered, not behind a client component)
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${BASE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/games` },
+      { '@type': 'ListItem', position: 3, name: leagueName, item: game.league?.slug ? `${BASE_URL}/directory/${game.league.slug}` : `${BASE_URL}/directory/games` },
+      { '@type': 'ListItem', position: 4, name: `${awayRenderName} at ${homeRenderName}`, item: `${BASE_URL}/directory/games/${id}` },
+    ],
+  };
+
+  const recap = buildRecap(game, homeRenderName, awayRenderName);
+  const isUpcomingWithinWeek = game.status === 'scheduled'
+    && (new Date(game.scheduled_at).getTime() - Date.now()) < 7 * 86400000;
+
+  // Decide indexable for the page-side decision (the metadata
+  // function already ran with the same data, but we want the
+  // components themselves to be able to read this if needed).
+  const isCompletedWithScore = game.status === 'completed'
+    && game.home_score !== null && game.away_score !== null;
+  const indexable = isGameIndexable({
+    status: game.status,
+    bothTeamsHaveForm: !!(homeForm && awayForm),
+    hasH2H: h2h.length > 0,
+    hasHomeNextGame: !!homeNext,
+    hasAwayNextGame: !!awayNext,
+    hasSameDayGames: sameDay.length > 0,
+    isCompletedWithScore,
+    isUpcomingWithinWeek,
+  });
+
   const qrEnabled = game.status === 'scheduled';
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEvent) }}
@@ -274,9 +306,24 @@ export default async function GameDetailPage(
         status={game.status}
         qrEnabled={qrEnabled}
       />
-      <Suspense fallback={null}>
-        <GamePageClient id={id} />
-      </Suspense>
+      <GamePageClient
+        id={id}
+        game={game}
+        modules={{
+          homeForm,
+          awayForm,
+          h2h,
+          homeNext,
+          awayNext,
+          sameDay,
+          recap,
+          homeRenderName,
+          awayRenderName,
+          indexable,
+          isCompletedWithScore,
+          isUpcomingWithinWeek,
+        }}
+      />
     </>
   );
 }
