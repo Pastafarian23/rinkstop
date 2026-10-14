@@ -111,7 +111,7 @@ const NHL_ABBREV_TO_TEAMS_ID = {
   FLA: '7772070c-6c9b-4ca0-a442-dfe5b8beabcb',
   LAK: 'df9b5d1e-c5d9-46af-a524-99de500e95bf',
   MIN: 'd3947cbf-8b3c-4c16-8ab6-b8f8d0f5a1fe',
-  MTL: 'dfa8a4b4-01b9-4f53-9a5d-6ca34302d074',
+  MTL: 'cff8bd78-5fee-49dc-b0ee-374722efd7b5',
   NSH: '2d3d8a64-c0d7-4b8e-a327-a1201cc92f72',
   NJD: '486e6592-5873-48a0-8cdd-8411c8eb1105',
   NYI: 'acc8b466-ef9b-4d81-8ea5-6f13fc180d9e',
