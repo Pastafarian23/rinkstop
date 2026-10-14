@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { ScoresheetQRPanel } from '@/components/ScoresheetQRPanel';
+import { isGameIndexable } from '@/lib/game-indexable';
 
 // 2026-10-14 (Arnel cache fix, final): tiered ISR.
 //
@@ -173,11 +174,43 @@ export async function generateMetadata(
   const title = `${awayName} at ${homeName} — ${dateStr} | ${leagueName}`;
   const description = `${awayName} vs ${homeName} on ${dateStr} in the ${leagueName}. Live score, boxscore, and game details on RinkStop.`;
   const ogImage = game.home_team?.logo_url || `${BASE_URL}/og-image.png`;
+
+  // 2026-10-14 (Phase 2): server-side noindex for thin game pages.
+  // The isGameIndexable predicate decides whether the page has
+  // enough content to be worth indexing.  Scheduled games need
+  // moduleCount >= 2; completed games need moduleCount >= 3 OR
+  // (hasVenue AND bothTeamsHaveForm).  Cancelled/postponed always
+  // noindex.  In-progress is always indexable (live scores are
+  // valuable).
+  //
+  // Server-side approximation: we know the fixture row and the
+  // status from the same fetch.  moduleCount is the number of
+  // boxes that will render in GamePageClient (period scores,
+  // final score, goals, three-stars, shots, goalies, top skaters,
+  // h2h, form).  We don't have those data points on the server
+  // (the client does its own fetches), so we approximate:
+  //  - completed with both team names: moduleCount = 3 (final
+  //    score box + period scores + share button) — indexable
+  //  - completed with league: +1 (league module)
+  //  - scheduled with both team names: moduleCount = 2 (preview
+  //    + QR) — indexable
+  // The more nuanced gates (form, h2h) require a server-side
+  // data fetch we don't currently do; a follow-up can fold those
+  // in.
+  const moduleCount =
+    (game.status === 'completed' ? 3 : 2) +
+    (game.league ? 1 : 0);
+  const indexable = isGameIndexable({
+    status: game.status,
+    moduleCount,
+    hasVenue: !!(game as any).venue_details?.name || !!(game as any).game_data?.venue,
+    bothTeamsHaveForm: !!(game.home_team?.name && game.away_team?.name),
+  });
   return {
     title,
     description: description.slice(0, 240),
     alternates: { canonical: `${BASE_URL}/directory/games/${id}` },
-    robots: { index: true, follow: true },
+    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     openGraph: withDefaultOg({
       title: `${awayName} @ ${homeName}`,
       description,

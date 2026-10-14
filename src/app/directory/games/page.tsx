@@ -11,7 +11,44 @@ const BASE_URL = 'https://rinkstop.com';
 // Extraliga/NCAA/CHL/USHL), live/recent/historical time windows, and the
 // always-rendered directory-context baseline.
 const _gamesMetaLong = `Live scores, schedules, and results from hockey games worldwide — NHL, AHL, PWHL, KHL, SHL (Sweden), Liiga (Finland), DEL (Germany), National League (Switzerland), Czech Extraliga, NCAA hockey, CHL (WHL, OHL, QMJHL), and USHL. Filter by team or league, switch between Current (live and recent) and Historical (archived) matchups, and load more games as you scroll. Every score on this page links to the team profile and league directory so you can follow the teams and leagues you care about. RinkStop is the open hockey directory — every team, league, player, and rink in the world has a public profile page.`.trim();
-export const metadata: Metadata = {
+
+// 2026-10-14 (Phase 2): server-side noindex for filtered /scores URLs.
+// Per Arnel's spec: when the URL has any of these searchParams, the
+// page is a thin filtered view and Google should not index it.  The
+// canonical always points to the clean URL so Google consolidates
+// ranking signal to the no-filter view.
+//
+// Filtered = (d set) OR (w != 0) OR (q set) OR (team set) OR
+//            (subleague set) OR (league is not the default) OR
+//            (time is not the default).
+//
+// "Default" matches what the page uses when no param is given.
+// Looking at fetchInitialGames: league defaults to 'nhl' and time
+// defaults to 'current'.  So "non-default league" = anything
+// except 'nhl', and "non-default time" = anything except 'current'.
+function isFiltered(sp: Record<string, string | string[] | undefined>): boolean {
+  const v = (k: string) => {
+    const raw = sp[k];
+    return Array.isArray(raw) ? raw[0] : raw;
+  };
+  if (v('d')) return true;
+  if (v('q')) return true;
+  if (v('team')) return true;
+  if (v('subleague')) return true;
+  const w = parseInt(v('w') || '0', 10);
+  if (!Number.isNaN(w) && w !== 0) return true;
+  const league = v('league') || 'nhl';
+  if (league !== 'nhl') return true;
+  const time = v('time') || 'current';
+  if (time !== 'current') return true;
+  return false;
+}
+
+export async function generateMetadata(
+  props: { searchParams: Promise<Record<string, string | string[] | undefined>> }
+): Promise<Metadata> {
+  const sp = await props.searchParams;
+  const filtered = isFiltered(sp);
   // PR #150 (2026-08-23) WS25 GSC Bucket-1: previously pos 44.6 with 34
   // imps / 0 clicks. Title was keyword-rich but the H1 was SCORES &
   // FIXTURES — mismatch. Also rewrote the meta with current-time hook
@@ -22,28 +59,34 @@ export const metadata: Metadata = {
   // 2026-09-12 WS26 GSC CTR pass: added season year + games-today phrase.
   // Top queries: "what hockey games are on tonight", "hockey games today".
   // Old title missed the "today/tonight" hook; new version fronts it.
-  title: 'Hockey Games Today (2026-27) — Live Scores, Schedule & Results',
-  description: _gamesMetaLong.slice(0, 240),
-  alternates: {
-    canonical: 'https://rinkstop.com/directory/games',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  openGraph: withDefaultOg({
-    title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+  return {
+    title: 'Hockey Games Today (2026-27) — Live Scores, Schedule & Results',
     description: _gamesMetaLong.slice(0, 240),
-    url: 'https://rinkstop.com/directory/games',
-    siteName: 'RinkStop',
-    type: 'website',
-  }),
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
-    description: _gamesMetaLong.slice(0, 240),
-  },
-};
+    // Canonical always points to the clean URL.  Even when this
+    // page is indexable, the canonical is the unfiltered view
+    // so Google consolidates the ranking signal there.
+    alternates: {
+      canonical: 'https://rinkstop.com/directory/games',
+    },
+    // Filtered views are thin; noindex them so they don't dilute
+    // the main page's crawl budget.
+    robots: filtered
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
+    openGraph: withDefaultOg({
+      title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+      description: _gamesMetaLong.slice(0, 240),
+      url: 'https://rinkstop.com/directory/games',
+      siteName: 'RinkStop',
+      type: 'website',
+    }),
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+      description: _gamesMetaLong.slice(0, 240),
+    },
+  };
+}
 
 // ISR-cached for 1 hour (2026-07-22 perf pass).
 export const dynamic = 'force-dynamic';

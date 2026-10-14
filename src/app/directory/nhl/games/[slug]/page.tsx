@@ -7,6 +7,7 @@ import { findCanonicalTeam } from '@/lib/nhl-teams-canonical';
 import ShareButton from '@/components/ShareButton';
 import { buildGameShare } from '@/lib/share';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+import { isGameIndexable } from '@/lib/game-indexable';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -137,6 +138,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       // fixture found above — this is a thin / phantom URL
       // (probably typo'd slug or a team-name mismatch).  Apply
       // isGameIndexable gate: not indexable.
+      noindex = true;
+    }
+
+    // 2026-10-14 (Phase 2): apply the shared isGameIndexable
+    // predicate.  For fixture-matched pages, the content is
+    // "score + team names + share + league".  Approximate
+    // moduleCount: 3 (final score box + period scores + share)
+    // for completed with both scores, 2 for scheduled with team
+    // context, etc.  The page body below this metadata function
+    // renders the same shape; the server approximation here is
+    // intentionally conservative.
+    const indexabilitySignals = {
+      status: m && m.status.startsWith('Finished') ? 'completed' :
+              m ? 'scheduled' : undefined,
+      moduleCount: m && m.home_score !== null && m.away_score !== null ? 3 : 2,
+      hasVenue: false, // NHL.com cache doesn't carry venue
+      bothTeamsHaveForm: !!(m && m.home_team_name && m.away_team_name),
+    };
+    if (!isGameIndexable(indexabilitySignals)) {
       noindex = true;
     }
   } catch {
