@@ -95,24 +95,36 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // slug "nhl".  Look it up once and cache via module-level
         // memo to avoid a per-request league query.
         const leagueId = await getNhlLeagueId(sb);
-        const homeFirst = parsed.homeName.split(' ')[0];
-        const awayFirst = parsed.awayName.split(' ')[0];
-        const { data: fixture } = await sb
-          .from('fixtures')
-          .select('id, status, scheduled_at')
-          .eq('league_id', leagueId)
-          .gte('scheduled_at', `${parsed.date}T00:00:00Z`)
-          .lt('scheduled_at', `${parsed.date}T23:59:59Z`)
-          .ilike('home_team.name', `%${homeFirst}%`)
-          .ilike('away_team.name', `%${awayFirst}%`)
-          .maybeSingle();
-        if (fixture && fixture.id) {
-          canonicalUrl = `${BASE_URL}/directory/games/${fixture.id}`;
-          // The [id] page is the one Google should index — the
-          // NHL slug page is an alternate URL for direct traffic
-          // and NHL-specific SEO targeting.  Tell crawlers to
-          // follow the link but not index this duplicate.
-          noindex = true;
+        if (leagueId) {
+          // PostgREST needs the !inner hint on the join to apply
+          // the ilike filter to the joined table.  Without it,
+          // ilike('home_team.name', ...) silently fanned out to
+          // ALL fixtures in the league, returning 11 placeholder
+          // rows for a single real game.  The first-word match is
+          // good enough for the lookup — we then verify the
+          // full names against the returned home/away team names
+          // before declaring a match.
+          const { data: candidates } = await sb
+            .from('fixtures')
+            .select('id, status, scheduled_at, home_team:teams!fixtures_home_team_id_fkey!inner(name), away_team:teams!fixtures_away_team_id_fkey!inner(name)')
+            .eq('league_id', leagueId)
+            .gte('scheduled_at', `${parsed.date}T00:00:00Z`)
+            .lt('scheduled_at', `${parsed.date}T23:59:59Z`)
+            .ilike('home_team.name', `%${parsed.homeName.split(' ')[0]}%`)
+            .ilike('away_team.name', `%${parsed.awayName.split(' ')[0]}%`)
+            .order('scheduled_at', { ascending: false })
+            .limit(5);
+          const fixture = (candidates || []).find((c: any) =>
+            c.home_team?.name === parsed.homeName && c.away_team?.name === parsed.awayName
+          ) || null;
+          if (fixture && fixture.id) {
+            canonicalUrl = `${BASE_URL}/directory/games/${fixture.id}`;
+            // The [id] page is the one Google should index — the
+            // NHL slug page is an alternate URL for direct traffic
+            // and NHL-specific SEO targeting.  Tell crawlers to
+            // follow the link but not index this duplicate.
+            noindex = true;
+          }
         }
       } catch {
         // Supabase query failed — leave canonical self-referential
