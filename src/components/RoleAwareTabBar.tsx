@@ -58,13 +58,22 @@ export default function RoleAwareTabBar() {
     pathname === '/onboarding';
   if (hide) return null;
 
-  // Wait for Clerk to load so we don't flash a "signed out" state for
-  // signed-in users during hydration.
-  if (!isLoaded) return null;
+  // 2026-10-14 (cache fix): while Clerk is loading OR the user is
+  // signed out, render a fixed-height placeholder.  The cached
+  // HTML has no user-specific content; the bar only appears after
+  // client hydration confirms signed-in.  Without the placeholder,
+  // signed-in users see the page jump when the bar mounts —
+  // especially noticeable on slow networks or cached pages where
+  // the bar appears 100-300ms after first paint.  The placeholder
+  // is mobile-only (display:none on desktop matches the real bar
+  // via the .mob-bottom-tabbar class).
+  if (!isLoaded) {
+    return <div className="mob-bottom-tabbar" aria-hidden="true" style={{ visibility: 'hidden' }} />;
+  }
 
-  // Use real auth state instead of pathname heuristics. If the user
-  // is signed out, do not render the tab bar.
-  if (!isSignedIn) return null;
+  if (!isSignedIn) {
+    return null;
+  }
 
   function tapPressed(href: string) {
     setPressedHref(href);
