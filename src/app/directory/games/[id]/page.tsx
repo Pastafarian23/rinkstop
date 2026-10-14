@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
@@ -204,7 +205,7 @@ export default async function GameDetailPage(
   const game = await fetchGame(id);
 
   if (!game) {
-    return <GamePageClient id={id} game={null} modules={null} />;
+    notFound();
   }
 
   // Fetch all data-driven modules in parallel.  Each is wrapped in
