@@ -325,56 +325,7 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
 });
 
 export const config = {
-  // 2026-10-14 (cache fix): the previous matcher ran middleware on
-  // EVERY non-static route, which forced clerkMiddleware to read
-  // auth cookies on every /directory/** request.  This opts the
-  // entire /directory/** tree into dynamic rendering — every game
-  // page, team page, rink page, league page was returning
-  // `cache-control: private, no-cache, no-store` instead of being
-  // ISR-cached at the Vercel edge.
-  //
-  // New matcher is restricted to routes that actually need the
-  // middleware: auth-protected pages, claim/onboarding flows, the
-  // auth-URL typo redirects, and the small set of API routes that
-  // call auth() / rate-limit per request.
-  //
-  // Public /directory/** routes are now served without middleware,
-  // so they can be ISR-cached (revalidate on the page, tiered per
-  // status in the [id] page itself).  The UUID→slug redirects that
-  // used to live here for /directory/<entity>/<uuid> were moved to
-  // each entity's page handler (already true for /directory/rinks/
-  // [slug], added for /directory/leagues, /directory/teams,
-  // /directory/players in this same change).
   matcher: [
-    // Auth-protected pages and onboarding flows.
-    '/dashboard/:path*',
-    '/admin/:path*',
-    '/claim-your-listing/:path*',
-    '/onboarding/:path*',
-    '/sso-callback/:path*',
-    // API routes that need auth or rate limiting per request.
-    // Public API routes (e.g. /api/scoresheet-qr, /api/feed/*) are
-    // excluded so they can be edge-cached by Vercel independently.
-    '/api/audit-log/:path*',
-    '/api/admin/:path*',
-    '/api/dashboard/:path*',
-    '/api/uploadthing/:path*',
-    '/api/webhooks/:path*',
-    '/api/cron/:path*',
-    '/api/follow/:path*',
-    '/api/consumer-notifications/:path*',
-    '/api/teams/:path*',
-    // Auth URL typo redirects (cheap to evaluate, no auth needed
-    // but should run before the user lands on a 404).
-    '/signin',
-    '/signup',
-    '/register',
-    '/auth',
-    // News slug redirects stay in middleware because the news
-    // page itself is statically generated and doesn't have a hook
-    // to perform the redirect; doing it here keeps the
-    // redirect cache TTL simple and avoids a DB lookup on every
-    // /news/[slug] request at the page level.
-    '/news/:slug',
+    '/((?!_next/static|_next/image|favicon.ico|images|.*\\..*).*)',
   ],
 };
