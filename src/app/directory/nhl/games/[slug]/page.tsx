@@ -1,11 +1,25 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import { getNhlGameById, getNhlGamesByDate, slugify, NhlMatch } from '@/lib/nhl-data';
 import { findCanonicalTeam } from '@/lib/nhl-teams-canonical';
 import ShareButton from '@/components/ShareButton';
 import { buildGameShare } from '@/lib/share';
 import { withDefaultOg } from '@/lib/metadata-defaults';
+
+const BASE_URL = 'https://rinkstop.com';
+
+// 2026-10-14 (Phase 1d): service-role client for the canonical
+// lookup so the request doesn't read cookies and force the page
+// dynamic.  No /api/* proxy needed — the query is small, read-only,
+// and on the public fixtures table.
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -23,6 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // title. If we can't, fall back to a slug-based title.
   let title: string;
   let description: string;
+  // 2026-10-14 (Phase 1d): if a Supabase fixtures row exists for
+  // this game, point canonical to /directory/games/[id] (universal,
+  // UUID-based) instead of the NHL-specific slug URL.  Set robots
+  // to noindex,follow because the [id] page is the one we want
+  // Google to index.  Falls back to self-canonical + indexable when
+  // no fixture is found.
+  let canonicalUrl = `${BASE_URL}/directory/nhl/games/${slug}`;
+  let noindex = false;
   try {
     const games = await getNhlGamesByDate(parsed.date);
     const m = games.find(g => slugify(g.home_team_name) === parsed.homeSlug && slugify(g.away_team_name) === parsed.awaySlug);
@@ -41,6 +63,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title = `${parsed.awayName} vs ${parsed.homeName} – ${parsed.date} | NHL`;
       description = `${parsed.awayName} at ${parsed.homeName} on ${parsed.date}.`;
     }
+
+    // 2026-10-14 (Phase 1d): try to find the matching Supabase
+    // fixture so the [id] page can be the canonical target.  Match
+    // by league + date + team names (best-effort string match —
+    // "Detroit Red Wings" in NHL.com may be stored as "Detroit Red
+    // Wings" in fixtures.home_team.name).  We filter on the
+    // home_team join (ilike on name) rather than scraping a
+    // name-to-id map at module load.
+    if (m) {
+      try {
+        const sb = getSupabaseAdmin();
+        const homeFirst = parsed.homeName.split(' ')[0];
+        const awayFirst = parsed.awayName.split(' ')[0];
+        const { data: fixture } = await sb
+          .from('fixtures')
+          .select('id, status, scheduled_at')
+          .eq('league_id', 'nhl')
+          .gte('scheduled_at', `${parsed.date}T00:00:00Z`)
+          .lt('scheduled_at', `${parsed.date}T23:59:59Z`)
+          .ilike('home_team.name', `%${homeFirst}%`)
+          .ilike('away_team.name', `%${awayFirst}%`)
+          .maybeSingle();
+        if (fixture && fixture.id) {
+          canonicalUrl = `${BASE_URL}/directory/games/${fixture.id}`;
+          // The [id] page is the one Google should index — the
+          // NHL slug page is an alternate URL for direct traffic
+          // and NHL-specific SEO targeting.  Tell crawlers to
+          // follow the link but not index this duplicate.
+          noindex = true;
+        }
+      } catch {
+        // Supabase query failed — leave canonical self-referential
+        // and keep the page indexable as a standalone page.
+      }
+    }
   } catch {
     title = `${parsed.awayName} vs ${parsed.homeName} – ${parsed.date} | NHL`;
     description = `${parsed.awayName} at ${parsed.homeName} on ${parsed.date}.`;
@@ -48,10 +105,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    alternates: { canonical: canonicalUrl },
+    robots: noindex
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
     openGraph: withDefaultOg({
       title,
       description,
       type: 'website',
+      url: canonicalUrl,
     }),
   };
 }
