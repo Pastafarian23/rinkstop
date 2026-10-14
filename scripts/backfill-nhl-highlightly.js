@@ -71,6 +71,17 @@ function parseScore(current) {
   return { home: parseInt(m[1], 10), away: parseInt(m[2], 10) };
 }
 
+// Derive NHL season from a date (YYYY-MM-DD) using Oct1 season-opener convention.
+// 2025-08-01..2026-07-31 → '2025-26', 2026-08-01..2027-07-31 → '2026-27', etc.
+function deriveSeason(yyyy_mm_dd) {
+  const d = new Date(yyyy_mm_dd + 'T00:00:00Z');
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  const startY = m >= 8 ? y : y - 1;
+  const endY = (startY + 1) % 100;
+  return `${startY}-${String(endY).padStart(2,'0')}`;
+}
+
 // Map Highlightly state → our status
 function hlToStatus(m) {
   const desc = (m.state?.description || m.state?.report || '').toLowerCase();
@@ -175,7 +186,7 @@ async function main() {
             home_team_id: hId, away_team_id: aId,
             scheduled_at: scheduled,
             home_score: home, away_score: away,
-            status, season: '20252026', game_data: gameData,
+            status, season: deriveSeason(scheduled), game_data: gameData,
             created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
           });
           if (error) { dateSkip++; continue; }
