@@ -57,8 +57,8 @@ interface FixtureRow {
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
 }
 
-const probeStatusCached = unstable_cache(
-  async (id: string): Promise<{ status: FixtureRow['status']; scheduled_at: string } | null> => {
+const probeStatusCached = (id: string) => unstable_cache(
+  async (): Promise<{ status: FixtureRow['status']; scheduled_at: string } | null> => {
     try {
       const sb = getSupabase();
       const { data } = await sb.from('fixtures').select('status, scheduled_at').eq('id', id).maybeSingle();
@@ -66,11 +66,11 @@ const probeStatusCached = unstable_cache(
       return { status: data.status as FixtureRow['status'], scheduled_at: data.scheduled_at };
     } catch { return null; }
   },
-  ['game-detail-probe-v2'],
-  { revalidate: 30, tags: ['game-detail'] }
+  ['game-detail-probe-v2', id],
+  { revalidate: 30, tags: ['game-detail', `game:${id}`] }
 );
 
-const fetchGameByStatus = (status: FixtureRow['status'], scheduledAt: string) => {
+const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt: string) => {
   const tier = (() => {
     if (status === 'in_progress') return 30;
     if (status === 'completed' || status === 'cancelled') return 86400;
@@ -82,7 +82,7 @@ const fetchGameByStatus = (status: FixtureRow['status'], scheduledAt: string) =>
     }
     return 3600;
   })();
-  return (id: string): Promise<FixtureRow | null> => unstable_cache(
+  return unstable_cache(
     async (): Promise<FixtureRow | null> => {
       try {
         const sb = getSupabase();
@@ -98,15 +98,15 @@ const fetchGameByStatus = (status: FixtureRow['status'], scheduledAt: string) =>
         return fixture as unknown as FixtureRow;
       } catch { return null; }
     },
-    ['game-detail-fixture-v2'],
+    ['game-detail-fixture-v2', id],
     { revalidate: tier, tags: ['game-detail', `game:${id}`] }
-  )();
+  );
 };
 
 async function fetchGame(id: string): Promise<FixtureRow | null> {
-  const probe = await probeStatusCached(id);
+  const probe = await probeStatusCached(id)();
   if (!probe) return null;
-  return fetchGameByStatus(probe.status, probe.scheduled_at)(id);
+  return fetchGameByStatus(id, probe.status, probe.scheduled_at)();
 }
 
 function buildRecap(g: FixtureRow, homeDisplayName: string, awayDisplayName: string): string | null {
