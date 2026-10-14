@@ -232,6 +232,110 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
       query = query.or(`status.in.(scheduled,in_progress),and(status.eq.completed,scheduled_at.gte.${recentCutoff})`);
     }
 
+    // 2026-10-14 fix (Arnel feedback): when time='current' with no
+    // explicit date range, the previous single-query approach returned
+    // games in ASC scheduled_at order — which put 7 days of
+    // past-completed games FIRST, burying today and this week below
+    // 50 results. User had to scroll to see today's games.
+    //
+    // Fix: split into two ordered queries — upcoming (scheduled +
+    // in_progress) first ASC, then past-completed (last 7d) DESC — and
+    // concatenate. This puts today's 6 games at the top, then the rest
+    // of the week, then yesterday/this-week's completed results at the
+    // bottom. hasMore is true if either side has more rows.
+    if (time === 'current' && !hasExplicitRange) {
+      const baseSelect = `id, scheduled_at, status, home_score, away_score, season, league_id, home_team:teams!home_team_id(id, name, slug, logo_url), away_team:teams!away_team_id(id, name, slug, logo_url), league:leagues(id, name, slug)`;
+      // Resolve subleague override (when set, narrow to that one league)
+      let mergedLeagueIds = leagueIds;
+      if (subleague) {
+        const { data: subRow } = await sb.from('leagues').select('id').eq('slug', subleague).maybeSingle();
+        if (subRow) mergedLeagueIds = [subRow.id];
+      }
+      // Resolve team filter (id) and q filter (team id list)
+      let teamId: string | null = null;
+      if (team) {
+        const { data: teamRow } = await sb.from('team_workspaces').select('id').eq('slug', team).maybeSingle();
+        if (teamRow) teamId = teamRow.id;
+      }
+      let qTeamIds: string[] | null = null;
+      if (q) {
+        const safe = q.replace(/[%_\\]/g, '\\$&');
+        const { data: matchingTeams } = await sb.from('teams').select('id').ilike('name', `%${safe}%`);
+        qTeamIds = (matchingTeams || []).map((t) => t.id);
+      }
+      // Upcoming: scheduled + in_progress, ASC by date. Also bound
+      // scheduled_at >= now() so we don't fill the 50-row limit with
+      // stale past-scheduled rows (preseason, postponed, etc).
+      // Limit upcoming to ~30 rows so past-completed also has room.
+      const upcomingLimit = 30;
+      const pastLimit = limit - upcomingLimit;
+      const upcomingQ = (() => {
+        let q: any = sb
+          .from('fixtures')
+          .select(baseSelect, { count: 'exact' })
+          .not('home_team_id', 'is', null)
+          .not('away_team_id', 'is', null)
+          .in('status', ['scheduled', 'in_progress'])
+          .gte('scheduled_at', new Date().toISOString())
+          .in('league_id', mergedLeagueIds)
+          .order('scheduled_at', { ascending: true });
+        if (teamId) q = q.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
+        else if (qTeamIds && qTeamIds.length > 0) {
+          const list = qTeamIds.join(',');
+          q = q.or(`home_team_id.in.(${list}),away_team_id.in.(${list})`);
+        } else if (q) {
+          q = q.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        return q.range(0, upcomingLimit - 1);
+      })();
+      // Past completed: last 7d, DESC by date (most recent first).
+      // We use the full 7d window so users still see recent results at
+      // the bottom of the page. The merged order (upcoming first) keeps
+      // today's and this-week's scheduled games at the top.
+      const pastQ = (() => {
+        let q: any = sb
+          .from('fixtures')
+          .select(baseSelect, { count: 'exact' })
+          .not('home_team_id', 'is', null)
+          .not('away_team_id', 'is', null)
+          .eq('status', 'completed')
+          .gte('scheduled_at', recentCutoff)
+          .in('league_id', mergedLeagueIds)
+          .order('scheduled_at', { ascending: false });
+        if (teamId) q = q.or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`);
+        else if (qTeamIds && qTeamIds.length > 0) {
+          const list = qTeamIds.join(',');
+          q = q.or(`home_team_id.in.(${list}),away_team_id.in.(${list})`);
+        } else if (q) {
+          q = q.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        return q.range(0, pastLimit - 1);
+      })();
+      const [upRes, pastRes] = await Promise.all([upcomingQ, pastQ]);
+      if (upRes.error) console.error('Games upcoming fetch error:', upRes.error.message);
+      if (pastRes.error) console.error('Games past fetch error:', pastRes.error.message);
+      const upcomingGames = (upRes.data as unknown as Game[]) || [];
+      const pastGames = (pastRes.data as unknown as Game[]) || [];
+      const merged = [...upcomingGames, ...pastGames];
+      const upCount = upRes.count || 0;
+      const pastCount = pastRes.count || 0;
+      return {
+        games: merged,
+        // hasMore is true if either side has more rows beyond limit
+        hasMore: upCount > limit || pastCount > limit,
+        totalShown: upCount + pastCount,
+        league,
+        time,
+        team,
+        subleague,
+        q,
+        from,
+        to,
+        selectedDate,
+        weekOffset,
+      };
+    }
+
     const { data, count, error } = await query;
     if (error) {
       console.error('Games initial fetch error:', error.message);
