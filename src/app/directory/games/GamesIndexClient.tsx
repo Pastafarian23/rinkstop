@@ -658,6 +658,18 @@ export default function GamesIndexClient({ initialData }: Props) {
   // Both ?d= and ?w= flow into the API fetch as ?from/?to so the server
   // returns the right games, not just the cached 'current' set.
   const weekOffset = parseInt(searchParams.get('w') ?? '0', 10) || 0;
+  // 2026-10-14 (Phase 6): detect any active filter so we can noindex
+  // those URLs. The clean default URL is the only one Google indexes.
+  const qParam = searchParams.get('q') ?? '';
+  const teamParam = searchParams.get('team') ?? '';
+  const subleagueParam = searchParams.get('subleague') ?? '';
+  const leagueParam = searchParams.get('league') ?? '';
+  const timeParam = searchParams.get('time') ?? '';
+  const hasActiveFilters = Boolean(
+    dateFilter || weekOffset || qParam || teamParam || subleagueParam ||
+    (leagueParam && leagueParam !== DEFAULT_CHIP) ||
+    (timeParam && timeParam !== DEFAULT_TIME)
+  );
   const searchTimer = useRef<NodeJS.Timeout | null>(null);
 
   const chip = useMemo(() => getChip(league), [league]);
@@ -1238,6 +1250,17 @@ export default function GamesIndexClient({ initialData }: Props) {
       {/* 2026-09-30 IA fix: Week calendar strip showing 7 days of game
           counts. Today highlighted in red. Click any day to filter.
           Patterned after NHL.com's mobile scores header. */}
+      {/* 2026-10-14 (Phase 6): any URL with filter params (d, w, q,
+          team, subleague, or a non-default time) gets noindex +
+          canonical to the clean URL. The clean /directory/games is
+          the only version Google should index. The filtered
+          variants are user conveniences, not unique content. */}
+      {hasActiveFilters && (
+        <>
+          <meta name="robots" content="noindex,follow" />
+          <link rel="canonical" href="https://rinkstop.com/directory/games" />
+        </>
+      )}
       <WeekCalendar games={games} />
 
       {/* 2026-10-01 fix (Arnel feedback): a plain date input lets users

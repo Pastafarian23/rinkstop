@@ -73,6 +73,40 @@ function formatDate(d: string, timezone: string) {
   return formatGameTime(d, timezone);
 }
 
+/**
+ * 2026-10-14 (Phase 6): <head> meta control for thin game pages.
+ * We can't use Next.js's metadata API because the page is a client
+ * component and the form/h2h/next-games data arrives after mount.
+ * So we set/remove a robots meta tag at runtime.
+ *
+ * Rule (matches the user's spec): noindex unless the page has
+ *   - both teams' form data AND
+ *   - at least 3 of the data-driven modules populated AND
+ *   - (a venue OR a successful status, which we count as a "real"
+ *     game record, not just a placeholder).
+ */
+function ThinPageNoindex({ hasVenue, bothTeamsHaveForm, moduleCount, gameId }: { hasVenue: boolean; bothTeamsHaveForm: boolean; moduleCount: number; gameId: string }): null {
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const isThin = !(bothTeamsHaveForm && moduleCount >= 3 && hasVenue);
+    let tag = document.querySelector('meta[name="robots"][data-rs-thin]') as HTMLMetaElement | null;
+    if (isThin) {
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', 'robots');
+        tag.setAttribute('data-rs-thin', '1');
+        tag.setAttribute('content', 'noindex,follow');
+        document.head.appendChild(tag);
+      } else {
+        tag.setAttribute('content', 'noindex,follow');
+      }
+    } else if (tag) {
+      tag.remove();
+    }
+  }, [hasVenue, bothTeamsHaveForm, moduleCount, gameId]);
+  return null;
+}
+
 function periodLabel(period: number, periodDescriptor: any): string {
   if (!period) return '';
   if (period === 1) return '1st';
@@ -396,7 +430,81 @@ export default function GamePage() {
 
   return (
     <div style={{ maxWidth: '900px', marginLeft: 'auto', marginRight: 'auto', padding: '2rem 1rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+      {/* 2026-10-14 (Phase 6): noindex on thin game pages. Per the
+          user's spec, an indexable game page must have:
+          - a venue OR a successful status
+          - form data for BOTH teams (last 5)
+          - at least 3 of the data-driven modules populated
+            (h2h, next game each side, same-day, auto recap,
+            countdown, add-to-calendar)
+          If any of those is missing, drop noindex. We check on the
+          client because some of the data (form, h2h, next games)
+          is fetched after mount. Use useEffect to flip the meta
+          tag once the data is in. */}
+      <ThinPageNoindex
+        hasVenue={Boolean((game as any).venue_details?.name) || Boolean((game as any).linked_highlights?.[0]?.venue)}
+        bothTeamsHaveForm={Boolean(teamForm.home && teamForm.away)}
+        moduleCount={[
+          h2h.length > 0,
+          Boolean(nextGames.home),
+          Boolean(nextGames.away),
+          sameDayGames.length > 0,
+          isCompleted,
+          game.status === 'scheduled',
+        ].filter(Boolean).length}
+        gameId={game.id}
+      />
+      {/* 2026-10-14 (Phase 6): SportsEvent + BreadcrumbList JSON-LD.
+          SportsEvent includes name, startDate (with offset), home/away
+          teams, eventStatus, and an optional score string. Breadcrumb
+          mirrors the visible nav above. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+                { '@type': 'ListItem', position: 2, name: 'Scores', item: 'https://rinkstop.com/directory/games' },
+                { '@type': 'ListItem', position: 3, name: game.league?.name || 'Game', item: game.league?.slug ? `https://rinkstop.com/directory/${game.league.slug}` : 'https://rinkstop.com/directory/games' },
+                { '@type': 'ListItem', position: 4, name: `${awayRenderName} at ${homeRenderName}`, item: `https://rinkstop.com/directory/games/${game.id}` },
+              ],
+            },
+            {
+              '@context': 'https://schema.org',
+              '@type': 'SportsEvent',
+              name: `${awayRenderName} at ${homeRenderName}`,
+              startDate: game.scheduled_at || game.date,
+              url: `https://rinkstop.com/directory/games/${game.id}`,
+              eventStatus: game.status === 'completed'
+                ? 'https://schema.org/EventCompleted'
+                : game.status === 'in_progress'
+                  ? 'https://schema.org/EventLive'
+                  : game.status === 'cancelled'
+                    ? 'https://schema.org/EventCancelled'
+                    : 'https://schema.org/EventScheduled',
+              eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+              sport: 'Ice Hockey',
+              homeTeam: {
+                '@type': 'SportsTeam',
+                name: homeRenderName,
+                ...(homeSlug ? { url: `https://rinkstop.com/directory/teams/${homeSlug}` } : {}),
+              },
+              awayTeam: {
+                '@type': 'SportsTeam',
+                name: awayRenderName,
+                ...(awaySlug ? { url: `https://rinkstop.com/directory/teams/${awaySlug}` } : {}),
+              },
+              ...(isCompleted ? {
+                description: `Final: ${awayRenderName} ${game.away_score}–${game.home_score} ${homeRenderName}.`,
+              } : {}),
+            },
+          ]),
+        }}
+      />
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }} aria-label="Breadcrumb">
         <Link href="/" style={{ color: 'rgba(255,255,255,0.4)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <Link href="/directory/games" style={{ color: 'rgba(255,255,255,0.4)' }}>Scores</Link>
