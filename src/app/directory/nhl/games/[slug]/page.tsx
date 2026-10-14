@@ -56,10 +56,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let description: string;
   // 2026-10-14 (Phase 1d): if a Supabase fixtures row exists for
   // this game, point canonical to /directory/games/[id] (universal,
-  // UUID-based) instead of the NHL-specific slug URL.  Set robots
-  // to noindex,follow because the [id] page is the one we want
-  // Google to index.  Falls back to self-canonical + indexable when
-  // no fixture is found.
+  // UUID-based) instead of the NHL-specific slug URL.  Per
+  // 2026-10-14 review: noindex + cross-canonical is a mixed
+  // signal — the canonical tag alone is enough for Google to
+  // collapse the duplicate.  So fixture-matched pages stay
+  // indexable (with robots: { index: true, follow: true }).  The
+  // noindex gate is reserved for thin pages (no NHL.com match +
+  // no Supabase fixture).
   let canonicalUrl = `${BASE_URL}/directory/nhl/games/${slug}`;
   let noindex = false;
   try {
@@ -118,18 +121,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             c.home_team?.name === parsed.homeName && c.away_team?.name === parsed.awayName
           ) || null;
           if (fixture && fixture.id) {
+            // Per 2026-10-14 review: canonical link alone is enough.
+            // Don't add noindex — the cross-canonical + index,follow
+            // combo tells Google to consolidate to the [id] URL
+            // without removing this page from the index entirely.
             canonicalUrl = `${BASE_URL}/directory/games/${fixture.id}`;
-            // The [id] page is the one Google should index — the
-            // NHL slug page is an alternate URL for direct traffic
-            // and NHL-specific SEO targeting.  Tell crawlers to
-            // follow the link but not index this duplicate.
-            noindex = true;
           }
         }
       } catch {
         // Supabase query failed — leave canonical self-referential
         // and keep the page indexable as a standalone page.
       }
+    } else {
+      // No NHL.com match for this date/teams AND no Supabase
+      // fixture found above — this is a thin / phantom URL
+      // (probably typo'd slug or a team-name mismatch).  Apply
+      // isGameIndexable gate: not indexable.
+      noindex = true;
     }
   } catch {
     title = `${parsed.awayName} vs ${parsed.homeName} – ${parsed.date} | NHL`;
