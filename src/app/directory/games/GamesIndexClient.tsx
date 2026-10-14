@@ -1266,7 +1266,17 @@ export default function GamesIndexClient({ initialData }: Props) {
                     if (!grouped[d]) grouped[d] = [];
                     grouped[d].push(g);
                   }
-                  const dateKeys = Object.keys(grouped).sort();
+                  // 2026-10-14 fix (Arnel feedback): sort date keys with
+                  // today first, then by date ASC. Previous behavior was
+                  // straight ASC which put Oct 11/12/13 (past 7d
+                  // completed) before Oct 14 (today). User had to scroll
+                  // past 3 days of completed results to find today.
+                  const todayStr0 = fmtETDate(new Date().toISOString());
+                  const dateKeys = Object.keys(grouped).sort((a, b) => {
+                    if (a === todayStr0) return -1;
+                    if (b === todayStr0) return 1;
+                    return a.localeCompare(b);
+                  });
                   if (dateKeys.length === 0) return null;
                   const todayStr = fmtETDate(new Date().toISOString());
                   const tomorrowStr = fmtETDate(new Date(Date.now() + 86400000).toISOString());
