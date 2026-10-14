@@ -21,6 +21,23 @@ function getSupabaseAdmin() {
   );
 }
 
+// fixtures.league_id is a UUID, not the slug "nhl".  Resolve once
+// per process and cache.  If the league row isn't found we return
+// null and the canonical lookup falls back to self-canonical.
+let _nhlLeagueIdCache: string | null = null;
+let _nhlLeagueIdResolved = false;
+async function getNhlLeagueId(sb: ReturnType<typeof getSupabaseAdmin>): Promise<string | null> {
+  if (_nhlLeagueIdResolved) return _nhlLeagueIdCache;
+  _nhlLeagueIdResolved = true;
+  try {
+    const { data } = await sb.from('leagues').select('id').eq('slug', 'nhl').maybeSingle();
+    _nhlLeagueIdCache = data?.id ?? null;
+  } catch {
+    _nhlLeagueIdCache = null;
+  }
+  return _nhlLeagueIdCache;
+}
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -74,12 +91,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (m) {
       try {
         const sb = getSupabaseAdmin();
+        // fixtures.league_id is a UUID (FK to leagues.id), not the
+        // slug "nhl".  Look it up once and cache via module-level
+        // memo to avoid a per-request league query.
+        const leagueId = await getNhlLeagueId(sb);
         const homeFirst = parsed.homeName.split(' ')[0];
         const awayFirst = parsed.awayName.split(' ')[0];
         const { data: fixture } = await sb
           .from('fixtures')
           .select('id, status, scheduled_at')
-          .eq('league_id', 'nhl')
+          .eq('league_id', leagueId)
           .gte('scheduled_at', `${parsed.date}T00:00:00Z`)
           .lt('scheduled_at', `${parsed.date}T23:59:59Z`)
           .ilike('home_team.name', `%${homeFirst}%`)
