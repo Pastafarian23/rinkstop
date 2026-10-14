@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { SafeImage } from '@/components/SafeImage';
 import { supabase } from '@/lib/supabase';
 import RinkGames from '@/components/RinkGames';
 import RinkReviews from '@/components/RinkReviews';
@@ -905,10 +906,15 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
             (lh3.googleusercontent.com) return 403 if they detect a Referer
             header from non-Google origins. */}
         {rink.cover_photo_url ? (
-          <img
+          // 2026-10-14 (Arnel feedback): wrap in SafeImage so a broken
+          // cover_photo_url (Google Places photos return 404 when the
+          // reference expires) doesn't show a broken-image glyph.
+          // SafeImage hides the <img> on error and shows a styled
+          // placeholder box of the same size — no layout shift.
+          <SafeImage
             src={rink.cover_photo_url}
+            label={`${rink.name} — photo unavailable`}
             // 2026-09-03 PR #198: keyword-rich alt text for image search SEO.
-            // Old: just rink.name. New: "{name} exterior — {city, country} indoor ice rink".
             // Targets queries like "ice rink [city]", "[name] arena photos".
             alt={`${rink.name} exterior — ${[rink.city, rink.country].filter(Boolean).join(', ') || 'ice rink'}`}
             referrerPolicy="no-referrer"
@@ -1044,15 +1050,28 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
               rel="noopener noreferrer"
               style={{ display: 'block', position: 'relative' }}
             >
-              <img
-                src={`https://maps.googleapis.com/maps/api/staticmap?center=${rink.latitude},${rink.longitude}&zoom=15&size=640x280&maptype=roadmap&markers=color:red%7C${rink.latitude},${rink.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || ''}`}
-                alt={`${rink.name} location map`}
-                width={640}
-                height={280}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                style={{ width: '100%', height: 'auto', display: 'block', border: 0 }}
-              />
+              {/* 2026-10-14 (Arnel feedback): the static-map <img> used
+                  to render unconditionally.  When the Google Maps
+                  Static API key isn't authorized for this site
+                  (NEXT_PUBLIC_GOOGLE_MAPS_KEY is set but the project
+                  doesn't have the Static Maps API enabled) the
+                  response is HTTP 403 and the browser shows a broken-
+                  image glyph.  We now render the image only when the
+                  key is present AND the API call is reachable.  We
+                  use a SafeImage so a 403/404 also falls back to the
+                  grey box rather than a broken-image glyph. */}
+              {process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ? (
+                <SafeImage
+                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${rink.latitude},${rink.longitude}&zoom=15&size=640x280&maptype=roadmap&markers=color:red%7C${rink.latitude},${rink.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`}
+                  label={`${rink.name} — map preview unavailable`}
+                  alt={`${rink.name} location map`}
+                  width={640}
+                  height={280}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  style={{ width: '100%', height: 'auto', display: 'block', border: 0 }}
+                />
+              ) : null}
               <span style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.75)', color: '#fff', fontSize: '12px', fontWeight: 600, padding: '6px 12px', borderRadius: '999px', textDecoration: 'none' }}>
                 Get directions on Google Maps →
               </span>
