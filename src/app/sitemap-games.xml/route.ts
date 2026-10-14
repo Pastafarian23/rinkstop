@@ -106,8 +106,10 @@ async function fetchAllFixtures(): Promise<{ fixtures: SitemapFixture[]; counts:
   //   ordered DESC (newest first)
   // - scheduled: scheduled_at >= now AND scheduled_at <= upcomingCutoff
   //   ordered ASC (soonest first)
-  // Indexability filter: status NOT IN (cancelled, postponed) AND
-  // both team_ids present.
+  // Loose pre-filter at the SQL level (skip rows that the RPC
+  // would always reject — cancelled/postponed/missing team_ids),
+  // then call is_game_indexable_batch per page to apply the same
+  // real predicate as the page-side isGameIndexable.
   const finishedQuery = supabaseAdmin
     .from('fixtures')
     .select('id, updated_at, scheduled_at, status')
@@ -126,13 +128,39 @@ async function fetchAllFixtures(): Promise<{ fixtures: SitemapFixture[]; counts:
     .not('home_team_id', 'is', null)
     .not('away_team_id', 'is', null);
 
-  const [finished, scheduled] = await Promise.all([
+  // Fetch raw candidates (no indexability filter at the SQL level)
+  // then call the batch RPC to apply the same predicate the page uses.
+  const [rawFinished, rawScheduled] = await Promise.all([
     paginatedSelect(finishedQuery, /* orderAsc */ false),
     paginatedSelect(scheduledQuery, /* orderAsc */ true),
   ]);
+  const allRaw = [...rawFinished, ...rawScheduled];
+
+  // Apply the real indexability check via batch RPC.  Pages of 500
+  // to keep RPC payload modest.
+  const BATCH = 500;
+  const indexableIds = new Set<string>();
+  for (let i = 0; i < allRaw.length; i += BATCH) {
+    const batch = allRaw.slice(i, i + BATCH);
+    const { data: results, error } = await supabaseAdmin.rpc('is_game_indexable_batch', { ids: batch.map(r => r.id) });
+    if (error) {
+      console.error('sitemap-games: rpc error', error);
+      // fail open: keep all rows from this batch so we don't accidentally drop pages
+      for (const r of batch) indexableIds.add(r.id);
+      continue;
+    }
+    for (const row of (results || [])) {
+      if (row.indexable === 'index') indexableIds.add(row.out_id);
+    }
+  }
+  const fixtures = allRaw.filter(r => indexableIds.has(r.id));
   return {
-    fixtures: [...finished, ...scheduled],
-    counts: { finished: finished.length, scheduled: scheduled.length, total: finished.length + scheduled.length },
+    fixtures,
+    counts: {
+      finished: fixtures.filter(f => f.status === 'completed').length,
+      scheduled: fixtures.filter(f => f.status === 'scheduled' || f.status === 'in_progress').length,
+      total: fixtures.length,
+    },
   };
 }
 
