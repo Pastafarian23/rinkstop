@@ -715,6 +715,25 @@ export default function GamesIndexClient({ initialData }: Props) {
     });
   };
 
+  // 2026-10-14 (Phase 5): restore the user's preferred league/team
+  // filter from localStorage when the URL has no ?league= or ?team=
+  // set. Only the default landing case; explicit URLs win.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('league') || url.searchParams.has('team')) return;
+    const persistedLeague = (() => { try { return localStorage.getItem('rs_filter_league'); } catch { return null; } })();
+    const persistedTeam = (() => { try { return localStorage.getItem('rs_filter_team'); } catch { return null; } })();
+    if (persistedLeague || persistedTeam) {
+      const params = new URLSearchParams(url.searchParams);
+      if (persistedLeague) params.set('league', persistedLeague);
+      if (persistedTeam) params.set('team', persistedTeam);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Reset & refetch on filter change. 2026-10-01 fix: also re-run when
 // weekOffset or dateFilter change so the strip navigation actually
 // re-fetches data instead of just rebadging the cached 'current' list.
@@ -931,6 +950,21 @@ export default function GamesIndexClient({ initialData }: Props) {
     if (!value) params.delete(key);
     else params.set(key, value);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // 2026-10-14 (Phase 5): persist the league + team filter choice
+    // in localStorage so the user's preferred scope (e.g. always
+    // open /scores to "NHL" or "Pittsburgh Penguins") is restored
+    // on the next visit. We do this on every update so the
+    // always-last-set value wins.
+    if (typeof window === 'undefined') return;
+    try {
+      if (key === 'league') {
+        if (value) localStorage.setItem('rs_filter_league', value);
+        else localStorage.removeItem('rs_filter_league');
+      } else if (key === 'team') {
+        if (value) localStorage.setItem('rs_filter_team', value);
+        else localStorage.removeItem('rs_filter_team');
+      }
+    } catch {}
   }, [searchParams, router, pathname]);
 
   // 2026-10-14: GameCard passes a navigate callback so the whole

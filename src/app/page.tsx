@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
 import HomeSearch from '@/app/HomeSearch';
+import YourTeams from '@/components/YourTeams';
 import HighlightsGrid from '@/components/HighlightsGrid';
 import HomeNewsSection from '@/app/components/HomeNewsSection';
 import HomeCtaButtons from '@/components/HomeCtaButtons';
@@ -249,6 +250,55 @@ export default async function Home() {
   const recentRinks = stats.recent_rinks || [];
   const recentTeams = stats.recent_teams || [];
   const upcomingGames = stats.upcoming_games || [];
+
+  // 2026-10-14 (Phase 5): compact 'Today's games' strip for the home
+  // page. We pick the top 3 highest-traffic leagues (NHL, KHL, PWHL
+  // per the user's spec) and fetch live + today's final + next 3
+  // upcoming. Renders as: live (if any), then upcoming, then
+  // completed. The 'Live now' badge appears only when at least one
+  // game is actually in progress.
+  const FEATURED_LEAGUE_SLUGS = ['nhl', 'khl', 'pwhl'];
+  let featuredLeagues: Array<{ id: string; name: string; slug: string }> = [];
+  let liveGames: any[] = [];
+  let finalGames: any[] = [];
+  try {
+    const { data: leagues } = await supabaseAdmin
+      .from('leagues')
+      .select('id, name, slug')
+      .in('slug', FEATURED_LEAGUE_SLUGS);
+    featuredLeagues = (leagues as any) || [];
+    if (featuredLeagues.length > 0) {
+      const leagueIds = featuredLeagues.map((l: any) => l.id);
+      const ET_TZ = 'America/New_York';
+      const fmtIso = (d: Date) => {
+        const p = new Intl.DateTimeFormat('en-CA', { timeZone: ET_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+        return `${p.find(x => x.type === 'year')!.value}-${p.find(x => x.type === 'month')!.value}-${p.find(x => x.type === 'day')!.value}`;
+      };
+      const todayIso = fmtIso(new Date());
+      const dayStart = new Date(`${todayIso}T04:00:00.000Z`);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
+      const [liveRes, finalRes] = await Promise.all([
+        supabaseAdmin
+          .from('fixtures')
+          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+          .in('league_id', leagueIds)
+          .eq('status', 'in_progress')
+          .order('scheduled_at', { ascending: true })
+          .limit(5),
+        supabaseAdmin
+          .from('fixtures')
+          .select('id, scheduled_at, home_score, away_score, status, home_team_id, away_team_id, league_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+          .in('league_id', leagueIds)
+          .eq('status', 'completed')
+          .gte('scheduled_at', dayStart.toISOString())
+          .lt('scheduled_at', dayEnd.toISOString())
+          .order('scheduled_at', { ascending: false })
+          .limit(5),
+      ]);
+      liveGames = (liveRes as any)?.data || [];
+      finalGames = (finalRes as any)?.data || [];
+    }
+  } catch {}
 
   // Item #3 from the ChatGPT retention audit (2026-08-07): "Create a
   // homepage activity feed ('What's new on RinkStop')." As of 2026-08-28,
@@ -761,6 +811,62 @@ export default async function Home() {
           </div>
         </section>
       )}
+
+      {/* 2026-10-14 (Phase 5): 'Today's games' strip — live first, then
+          upcoming, then final, limited to the top 3 leagues (NHL/KHL/PWHL
+          per the spec). Shows a 'Live now' badge only when at least one
+          game is actually in progress. Each game links to the game page.
+          A 'Your teams' client component lives below this strip and reads
+          the user's localStorage favorites (no login). */}
+      {(liveGames.length > 0 || upcomingGames.length > 0 || finalGames.length > 0) && (
+        <section style={{ background: '#0D1117', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '2.5rem 0' }} data-todays-games>
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.5rem', color: '#fff', letterSpacing: '0.05em', margin: 0 }}>
+                TODAY’S GAMES
+                {liveGames.length > 0 && (
+                  <span style={{ marginLeft: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.15rem 0.5rem', background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.4)', borderRadius: '99px', color: '#f87171', fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.05em', verticalAlign: 'middle' }}>
+                    <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', background: '#f87171', display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} aria-hidden="true" />
+                    LIVE NOW
+                  </span>
+                )}
+              </h2>
+              <Link href="/directory/games" style={{ color: '#C8102E', fontSize: '0.75rem', fontWeight: 600 }}>All scores →</Link>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+              {[...liveGames, ...upcomingGames.slice(0, 6), ...finalGames].slice(0, 12).map((g: any) => {
+                const isLive = g.status === 'in_progress';
+                const isFinal = g.status === 'completed';
+                return (
+                  <Link key={g.id} href={`/directory/games/${g.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: isLive ? 'rgba(248,113,113,0.06)' : 'rgba(255,255,255,0.03)', border: `1px solid ${isLive ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.05)'}`, borderRadius: '6px', textDecoration: 'none', color: 'inherit' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.away_team?.name || g.away_team_name || '?'} @ {g.home_team?.name || g.home_team_name || '?'}</div>
+                      <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.125rem' }}>
+                        {featuredLeagues.find((l: any) => l.id === g.league_id)?.name || g.venue_name || ''}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
+                      {isFinal ? (
+                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fff' }}>{g.away_score ?? '–'}–{g.home_score ?? '–'}</div>
+                      ) : isLive ? (
+                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#f87171' }}>{g.away_score ?? '–'}–{g.home_score ?? '–'} <span style={{ fontSize: '0.625rem', color: '#f87171' }}>LIVE</span></div>
+                      ) : (
+                        <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#FFB81C' }}>{g.scheduled_at ? formatGameTime(g.scheduled_at, 'America/New_York') : 'TBD'}</div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 2026-10-14 (Phase 5): 'Your teams' strip. Reads localStorage
+          (rs_followed_teams) and shows each followed team's last +
+          next game. Server-rendered shell, client-side data. Renders
+          below the 'Today's games' strip. */}
+      <YourTeams />
 
       {/* ---- CTA BAND -------------------------------------------------------------------- */}
       <section style={{ background: 'linear-gradient(135deg, #C8102E 0%, #9B0D23 100%)', padding: 'clamp(2rem, 5vw, 3rem) 0' }}>
