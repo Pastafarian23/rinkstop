@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
@@ -84,11 +83,7 @@ export default async function GameDetailPage(
   const game = await fetchGame(id);
 
   if (!game) {
-    return (
-      <Suspense fallback={null}>
-        <GamePageClient id={id} />
-      </Suspense>
-    );
+    return <GamePageClient id={id} />;
   }
 
   const homeName = (game as any).home_team?.name ?? 'Home';
@@ -158,9 +153,7 @@ export default async function GameDetailPage(
         status={(game as any).status}
         qrEnabled={qrEnabled}
       />
-      <Suspense fallback={null}>
-        <GamePageClient id={id} />
-      </Suspense>
+      <GamePageClient id={id} />
     </>
   );
 }
