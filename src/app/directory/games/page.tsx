@@ -288,12 +288,11 @@ async function fetchInitialGames(searchParams: Awaited<SearchParams>): Promise<{
         }
         return q.range(0, upcomingLimit - 1);
       })();
-      // Past completed: last 24h only, DESC by date. We keep this
-      // window tight so the date-grouped render doesn't pull 7 days
-      // of stale completed games into the day list and push today
-      // below the fold. Yesterday's results live under the 'Recent
-      // Results' time filter, not here.
-      const last24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      // Past completed: last 7d, DESC by date. We keep the wider
+      // window so users still see recent results. The client-side
+      // today-first sort hoists today above past days regardless of
+      // how many past days there are.
+      const last24h = recentCutoff;
       const pastQ = (() => {
         let q: any = sb
           .from('fixtures')
