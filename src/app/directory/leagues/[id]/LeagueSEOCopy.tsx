@@ -24,9 +24,10 @@ interface Props {
   upcomingFixtures?: any[];
   topTeams?: any[];
   seasonYear?: number | null;
+  todayFixtures?: any[];
 }
 
-export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryContext, faqs, recentFixtures = [], upcomingFixtures = [], topTeams = [], seasonYear = null }: Props) {
+export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryContext, faqs, recentFixtures = [], upcomingFixtures = [], topTeams = [], seasonYear = null, todayFixtures = [] }: Props) {
   const displayName: string = league.name;
   const country: string = league.country || '';
   const level: string = (league.level || '').toLowerCase();
@@ -283,6 +284,49 @@ export default function LeagueSEOCopy({ league, teamCount, levelDesc, countryCon
             </ul>
           </div>
         )}
+
+        {/* 2026-10-14 (Phase 4): today's games in this league, each
+            linked. Standings link if the league has a standings
+            page. Both modules gate on data — no empty sections. */}
+        {todayFixtures.length > 0 && (
+          <div style={{ marginTop: '1.25rem' }}>
+            <h3 style={{ fontFamily: '"Bebas Neue", sans-serif', fontSize: '1.125rem', letterSpacing: '0.04em', color: '#fff', margin: '0 0 0.5rem' }}>
+              Today’s scores
+            </h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 0.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.375rem' }}>
+              {todayFixtures.map((f: any) => {
+                const isFinal = f.status === 'completed';
+                return (
+                  <li key={f.id}>
+                    <Link href={`/directory/games/${f.id}`} style={{ display: 'block', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
+                      <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>
+                        {new Date(f.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })} UTC
+                      </div>
+                      <div style={{ color: '#fff', marginTop: '0.25rem' }}>{f.away_team?.name || '?'} @ {f.home_team?.name || '?'}</div>
+                      <div style={{ color: isFinal ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 700, marginTop: '0.25rem' }}>
+                        {isFinal ? `Final ${f.away_score}–${f.home_score}` : 'Scheduled'}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* 2026-10-14 (Phase 4): standings link for leagues that have
+            a /standings route. Hide for leagues we don't surface. */}
+        {(() => {
+          const slugsWithStandings = new Set(['nhl', 'ahl', 'pwhl', 'chl', 'whl', 'ohl', 'qmjhl', 'ushl']);
+          if (!league?.slug || !slugsWithStandings.has(league.slug)) return null;
+          return (
+            <div style={{ marginTop: '0.75rem' }}>
+              <Link href={`/directory/${league.slug}/standings`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.875rem', background: 'rgba(200,16,46,0.12)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: '8px', color: '#fff', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 600 }}>
+                {displayName} Standings →
+              </Link>
+            </div>
+          );
+        })()}
 
         {/* 2026-10-09 WS-49: Top Teams list. Cross-links to team pages. */}
         {topTeams.length > 0 && (

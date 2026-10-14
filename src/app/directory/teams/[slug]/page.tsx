@@ -467,6 +467,28 @@ export default async function PublicTeamPage({ params }: PageProps) {
     .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
     .slice(0, 10);
 
+  // 2026-10-14 (Phase 4): also pull the most recent 10 completed
+  // fixtures for this team. This complements the manually-entered
+  // team_results table; for top leagues (NHL/AHL/etc.) the auto
+  // ingest is the more accurate source. Renders as a "Recent
+  // results" module on the team page.
+  const { data: fixtureRecentRes } = await supabaseAdmin
+    .from('fixtures')
+    .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug), league:leagues!fixtures_league_id_fkey(id, name, slug)')
+    .or(`home_team_id.eq.${team.id},away_team_id.eq.${team.id}`)
+    .eq('status', 'completed')
+    .order('scheduled_at', { ascending: false })
+    .limit(10);
+  const fixtureRecent: Array<{
+    id: string; scheduled_at: string; home_score: number | null; away_score: number | null;
+    home_team_id: string; away_team_id: string;
+    home_team: { name: string; slug: string } | null;
+    away_team: { name: string; slug: string } | null;
+    league: { id: string; name: string; slug: string } | null;
+  }> = (fixtureRecentRes as any) || [];
+
+  const nextGameForCountdown = mergedUpcoming[0] || null;
+
   interface AdminJoin {
     user_id: string;
     role: string;
@@ -744,6 +766,95 @@ export default async function PublicTeamPage({ params }: PageProps) {
           narrow screens via max-height + overflow:hidden, and let
           the user tap to expand via a details/summary element. */}
       <style>{`details[open] > summary > .about-arrow { transform: rotate(90deg); }`}</style>
+      {/* 2026-10-14 (Phase 4): recent results from fixtures + next
+          game countdown + standings link. Each module gates on its
+          own data. The user-facing motivation: teams_results table is
+          manually entered and not always populated; the fixtures
+          ingest gives us the most accurate record for top leagues. */}
+      {(fixtureRecent.length > 0 || nextGameForCountdown) && (
+        <div style={{ maxWidth: '1280px', margin: '1.5rem auto 0', padding: '0 1.5rem' }} data-team-fixtures>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+            {/* Next game countdown */}
+            {nextGameForCountdown && (() => {
+              const dt = new Date(nextGameForCountdown.scheduled_at);
+              const ms = dt.getTime() - Date.now();
+              if (ms < 0) return null;
+              const days = Math.floor(ms / 86400000);
+              const hours = Math.floor((ms % 86400000) / 3600000);
+              const mins = Math.floor((ms % 3600000) / 60000);
+              const opp = nextGameForCountdown.opponent || 'TBD';
+              const ha = nextGameForCountdown.home_away;
+              const haLabel = ha === 'home' ? 'vs' : 'at';
+              return (
+                <Link
+                  href={`/directory/games/${nextGameForCountdown.id.replace(/^fx_/, '')}`}
+                  style={{ display: 'block', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', textDecoration: 'none', color: 'inherit' }}
+                >
+                  <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>Next game</p>
+                  <p style={{ color: '#fff', fontSize: '1.125rem', fontWeight: 700, margin: '0.25rem 0 0.5rem' }}>{haLabel} {opp}</p>
+                  <p style={{ color: '#FFB81C', fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>
+                    {days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${mins}m` : `${mins}m`}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>until puck drop →</p>
+                </Link>
+              );
+            })()}
+            {/* Standings link — only if we know the league */}
+            {team.league?.slug && (() => {
+              const slugsWithStandings = new Set(['nhl', 'ahl', 'pwhl', 'chl', 'whl', 'ohl', 'qmjhl', 'ushl']);
+              const showStandings = slugsWithStandings.has(team.league.slug);
+              if (!showStandings) return null;
+              return (
+                <Link
+                  href={`/directory/${team.league.slug}/standings`}
+                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: '12px', padding: '1.25rem', textDecoration: 'none', color: 'inherit' }}
+                >
+                  <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>{team.league.name} Standings</p>
+                  <p style={{ color: '#fff', fontSize: '1.125rem', fontWeight: 700, margin: '0.25rem 0 0' }}>View full standings →</p>
+                </Link>
+              );
+            })()}
+          </div>
+
+          {/* Recent results (from fixtures) */}
+          {fixtureRecent.length > 0 && (
+            <div style={{ marginTop: '0.75rem', background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem' }}>
+              <h2 style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: '0 0 0.75rem' }}>Recent results</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {fixtureRecent.map((m) => {
+                  const isHome = m.home_team_id === team.id;
+                  const myScore = isHome ? m.home_score : m.away_score;
+                  const theirScore = isHome ? m.away_score : m.home_score;
+                  const opp = isHome ? m.away_team?.name : m.home_team?.name;
+                  let resultLabel: 'W' | 'L' | 'OTL' | null = null;
+                  if (myScore !== null && theirScore !== null) {
+                    if (myScore > theirScore) resultLabel = 'W';
+                    else if (myScore < theirScore) resultLabel = 'L';
+                  }
+                  return (
+                    <Link key={m.id} href={`/directory/games/${m.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>{new Date(m.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {resultLabel && (
+                          <span style={{
+                            display: 'inline-block', width: '1.5rem', height: '1.5rem', lineHeight: '1.5rem',
+                            textAlign: 'center', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700,
+                            background: resultLabel === 'W' ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)',
+                            color: resultLabel === 'W' ? '#34d399' : '#f87171',
+                          }}>{resultLabel}</span>
+                        )}
+                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{isHome ? 'vs' : '@'} {opp || '?'}</span>
+                      </span>
+                      <span style={{ color: '#fff', fontWeight: 700 }}>{myScore ?? '–'}–{theirScore ?? '–'}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <PublicTeamProfile
         team={team}
         news={news}

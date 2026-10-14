@@ -161,6 +161,27 @@ export default async function LeaguePage({
       upcomingFixtures = (upcomingData || []).slice(0, 5);
       if (upcomingFixtures.length < 3) upcomingFixtures = [];
 
+      // 2026-10-14 (Phase 4): today's games specifically — completed +
+      // scheduled + in_progress for the current ET day. Used for the
+      // 'Today's scores' section in the rendered SEO copy.
+      const ET_TZ = 'America/New_York';
+      const fmtIso = (d: Date) => {
+        const p = new Intl.DateTimeFormat('en-CA', { timeZone: ET_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+        return `${p.find(x => x.type === 'year')!.value}-${p.find(x => x.type === 'month')!.value}-${p.find(x => x.type === 'day')!.value}`;
+      };
+      const todayIso = fmtIso(new Date());
+      const dayStart = new Date(`${todayIso}T04:00:00.000Z`);
+      const dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
+      const { data: todayData } = await supabaseAdmin
+        .from('fixtures')
+        .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .eq('league_id', league.id)
+        .gte('scheduled_at', dayStart.toISOString())
+        .lt('scheduled_at', dayEnd.toISOString())
+        .order('scheduled_at', { ascending: true })
+        .limit(20);
+      var todayFixtures: any[] = todayData || [];
+
       // Top 5 teams by name (alphabetical — cheap proxy for "notable")
       const { data: teamsData } = await supabaseAdmin
         .from('teams')
@@ -291,6 +312,7 @@ export default async function LeaguePage({
           upcomingFixtures={upcomingFixtures}
           topTeams={topTeams}
           seasonYear={seasonYear}
+          todayFixtures={todayFixtures}
         />
       )}
       {/* WS-49 2026-10-09: removed the duplicate 'About the {league}' block
