@@ -67,6 +67,30 @@ function formatDate(d: string, tz: string) {
   return formatGameTime(d, tz);
 }
 
+/**
+ * 2026-10-14 (Arnel feedback): when the user toggles 'Show my local
+ * time' we reformat the time into the browser's tz. Module-scope so
+ * GameCard (a separate function) can use it without prop-drilling.
+ */
+function formatGameTimeDisplay(iso: string, leagueTz: string, showLocal: boolean): string {
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return '—';
+  if (!showLocal) return formatGameTime(iso, leagueTz);
+  const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  if (localTz === leagueTz) return formatGameTime(iso, leagueTz);
+  try {
+    const datePart = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: localTz });
+    const timePart = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: localTz });
+    let abbr = '';
+    try {
+      abbr = dt.toLocaleTimeString('en-US', { timeZone: localTz, timeZoneName: 'short' }).split(' ').slice(-1)[0] || '';
+    } catch {}
+    return `${datePart} · ${timePart}${abbr ? ' ' + abbr : ''}`;
+  } catch {
+    return formatGameTime(iso, leagueTz);
+  }
+}
+
 // 2026-10-01 fix (Arnel feedback): translate ?d= and ?w= URL state into
 // a [from, to] ISO range so we can fetch the right window server-side.
 // Single-day selection wins over the week window. Matches the helper in
@@ -382,7 +406,7 @@ function WeekCalendar({ games }: { games: Game[] }) {
   );
 }
 
-function GameCard({ game }: { game: Game }) {
+function GameCard({ game, showLocalTime }: { game: Game; showLocalTime: boolean }) {
   // Per-game timezone — pick from the league if known, else default to ET
   // (most of the data is NHL/AHL/PWHL). The explicit abbreviation is what
   // makes the time meaningful to a reader anywhere on earth.
@@ -405,14 +429,13 @@ function GameCard({ game }: { game: Game }) {
     <Link
       href={`/directory/games/${game.id}`}
       style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
-        alignItems: 'center',
-        gap: '1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
         background: 'var(--s2)',
         border: '1px solid var(--border)',
         borderRadius: '8px',
-        padding: '1rem 1.25rem',
+        padding: '0.875rem 1rem',
         textDecoration: 'none',
         color: 'inherit',
         transition: 'border-color 0.15s, background 0.15s',
@@ -426,31 +449,43 @@ function GameCard({ game }: { game: Game }) {
         e.currentTarget.style.background = 'var(--s2)';
       }}
     >
-      <div style={{ textAlign: 'left' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      {/* Row 1: teams + score. Mobile-first stack; team rows are
+          always above the score row so the names never overlap the
+          date/time below. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {/* Home team row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
           {game.home_team?.logo_url && (
-            <img src={game.home_team.logo_url} alt={`${homeRenderName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+            <img src={game.home_team.logo_url} alt={`${homeRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
           )}
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{homeRenderName}</p>
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{homeRenderName}</span>
+          <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#fff', flexShrink: 0, minWidth: '1.75rem', textAlign: 'right' }}>{game.home_score ?? '–'}</span>
+        </div>
+        {/* Away team row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+          {game.away_team?.logo_url && (
+            <img src={game.away_team.logo_url} alt={`${awayRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
+          )}
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{awayRenderName}</span>
+          <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#fff', flexShrink: 0, minWidth: '1.75rem', textAlign: 'right' }}>{game.away_score ?? '–'}</span>
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', minWidth: '80px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>{game.home_score ?? '-'}</span>
-          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem' }}>@</span>
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>{game.away_score ?? '-'}</span>
-        </div>
-        <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>
-          {formatDate(game.scheduled_at || game.date, tz)}
-          <span style={{ marginLeft: '0.375rem', color: 'rgba(255,255,255,0.55)', fontWeight: 600 }}>{tzAbbr(tz)}</span>
-        </p>
+      {/* Row 2: date/time + timezone (once). formatDate() already
+          includes the timezone abbreviation; we render the date/time
+          line as a single unit so the abbreviation never doubles up. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)' }}>{formatGameTimeDisplay(game.scheduled_at || game.date, tz, showLocalTime)}</span>
+      </div>
+
+      {/* Row 3: status badge + league name on the same row so the
+          card stays compact on mobile. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
         <span style={{
           display: 'inline-block',
-          marginTop: '0.25rem',
-          padding: '0.15rem 0.4rem',
+          padding: '0.15rem 0.5rem',
           borderRadius: '99px',
-          fontSize: '0.5rem',
+          fontSize: '0.625rem',
           fontWeight: 700,
           textTransform: 'uppercase',
           letterSpacing: '0.06em',
@@ -459,22 +494,10 @@ function GameCard({ game }: { game: Game }) {
         }}>
           {s.label}
         </span>
-      </div>
-
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-end' }}>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#fff', margin: 0 }}>{awayRenderName}</p>
-          {game.away_team?.logo_url && (
-            <img src={game.away_team.logo_url} alt={`${awayRenderName} logo`} style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-          )}
-        </div>
-      </div>
-
-      {game.league?.name && (
-        <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: '0.25rem' }}>
+        {game.league?.name && (
           <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{game.league.name}</span>
-        </div>
-      )}
+        )}
+      </div>
     </Link>
   );
 }
@@ -599,6 +622,25 @@ export default function GamesIndexClient({ initialData }: Props) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialData.hasMore);
   const [totalShown, setTotalShown] = useState(initialData.totalShown);
+  // 2026-10-14 (Arnel feedback): 'Show my local time' toggle so users
+  // outside ET don't have to mentally convert. Persisted in
+  // localStorage so the choice sticks across visits. Default off — the
+  // site's default is still league-local time, with the explicit
+  // abbreviation so nobody's surprised.
+  const [showLocalTime, setShowLocalTime] = useState(false);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('rs_showLocalTime');
+      if (v === '1') setShowLocalTime(true);
+    } catch {}
+  }, []);
+  const toggleLocalTime = () => {
+    setShowLocalTime(prev => {
+      const next = !prev;
+      try { localStorage.setItem('rs_showLocalTime', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  };
 
   // Reset & refetch on filter change. 2026-10-01 fix: also re-run when
 // weekOffset or dateFilter change so the strip navigation actually
@@ -1112,7 +1154,16 @@ export default function GamesIndexClient({ initialData }: Props) {
         <input
           id="jump-date"
           type="date"
-          value={dateFilter}
+          value={dateFilter || (() => {
+            // 2026-10-14 (Arnel feedback): the input used to render
+            // empty when no date was selected, which made the picker
+            // look broken. Default to today (in ET) so users see a
+            // meaningful date in the box.
+            const d = new Date();
+            return new Intl.DateTimeFormat('en-CA', {
+              timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+            }).format(d);
+          })()}
           onChange={(e) => {
             const v = e.target.value;
             const params = new URLSearchParams(searchParams.toString());
@@ -1164,6 +1215,37 @@ export default function GamesIndexClient({ initialData }: Props) {
         </span>
       </div>
 
+      {/* 2026-10-14 (Arnel feedback): when the venue timezone is
+          unknown we can't show the arena's local time, so offer a
+          'Show my local time' toggle. Client-side only; persisted in
+          localStorage so the choice sticks across visits. */}
+      <div
+        data-local-time-toggle
+        style={{
+          marginTop: '0.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          color: 'rgba(255,255,255,0.55)',
+          fontSize: '0.75rem',
+        }}
+      >
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', userSelect: 'none' }}>
+          <input
+            type="checkbox"
+            checked={showLocalTime}
+            onChange={toggleLocalTime}
+            style={{ accentColor: '#C8102E', cursor: 'pointer' }}
+          />
+          <span>Show my local time</span>
+        </label>
+        {showLocalTime && (
+          <span style={{ color: 'rgba(255,255,255,0.35)' }}>
+            ({(Intl.DateTimeFormat().resolvedOptions().timeZone || 'local').replace(/_/g, ' ')})
+          </span>
+        )}
+      </div>
+
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
           {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '8px' }} />)}
@@ -1191,7 +1273,7 @@ export default function GamesIndexClient({ initialData }: Props) {
                     Recent Results ({games.length})
                   </h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {games.map(g => <GameCard key={g.id} game={g} />)}
+                    {games.map(g => <GameCard key={g.id} game={g} showLocalTime={showLocalTime} />)}
                   </div>
                 </section>
               );
@@ -1310,7 +1392,7 @@ export default function GamesIndexClient({ initialData }: Props) {
                           </span>
                         </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          {grouped[d].map(g => <GameCard key={g.id} game={g} />)}
+                          {grouped[d].map(g => <GameCard key={g.id} game={g} showLocalTime={showLocalTime} />)}
                         </div>
                       </section>
                     );
