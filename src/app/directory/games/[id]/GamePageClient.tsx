@@ -231,6 +231,123 @@ export default function GamePage() {
     setBoxLoading(false);
   }, [game]);
 
+  // 2026-10-14 (Arnel directive): replace the dead-end
+  // "Detailed box score on the league's official site" block with
+  // data-driven modules: each team's record + last 5, head-to-head
+  // this season, each team's next game, same-day games, an auto
+  // recap, and a countdown/Add-to-calendar for upcoming games. Each
+  // module is independent — if its query returns 0 rows we render
+  // nothing for that module instead of an empty card.
+  const [teamForm, setTeamForm] = useState<{
+    home: { record: { w: number; l: number; otl: number }; last5: Array<{ id: string; date: string; opponent: string; result: 'W' | 'L' | 'OTL'; score: string }> } | null;
+    away: { record: { w: number; l: number; otl: number }; last5: Array<{ id: string; date: string; opponent: string; result: 'W' | 'L' | 'OTL'; score: string }> } | null;
+  }>({ home: null, away: null });
+  const [h2h, setH2h] = useState<Array<{ id: string; date: string; home: string; away: string; home_score: number | null; away_score: number | null; status: string }>>([]);
+  const [nextGames, setNextGames] = useState<{ home: Game | null; away: Game | null }>({ home: null, away: null });
+  const [sameDayGames, setSameDayGames] = useState<Array<Game>>([]);
+
+  useEffect(() => {
+    if (!game) return;
+    const sb = sbRef.current!;
+    const leagueId = game.league?.id;
+    const homeId = game.home_team_id;
+    const awayId = game.away_team_id;
+    const gameDate = (game.scheduled_at || game.date || '').slice(0, 10);
+    if (!leagueId || !homeId || !awayId) return;
+
+    let cancelled = false;
+    (async () => {
+      // Team form helper: last 15 completed games for a team, then
+      // derive W-L-OTL + last 5.
+      const fetchForm = async (teamId: string) => {
+        const { data: recent } = await sb
+          .from('fixtures')
+          .select('id, scheduled_at, home_team_id, away_team_id, home_score, away_score, status, home_team:teams!home_team_id(name, slug), away_team:teams!away_team_id(name, slug)')
+          .eq('league_id', leagueId)
+          .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+          .eq('status', 'completed')
+          .neq('id', gameId)
+          .order('scheduled_at', { ascending: false })
+          .limit(15);
+        if (!recent || recent.length === 0) return null;
+        const wins = recent.filter((m: any) => (m.home_team_id === teamId ? m.home_score : m.away_score) > (m.home_team_id === teamId ? m.away_score : m.home_score)).length;
+        const losses = recent.filter((m: any) => {
+          if (m.home_score === null || m.away_score === null) return false;
+          return (m.home_team_id === teamId ? m.home_score : m.away_score) < (m.home_team_id === teamId ? m.away_score : m.home_score);
+        }).length;
+        const otls = recent.length - wins - losses;
+        const last5 = recent.slice(0, 5).map((m: any) => {
+          const isHome = m.home_team_id === teamId;
+          const myScore = isHome ? m.home_score : m.away_score;
+          const theirScore = isHome ? m.away_score : m.home_score;
+          const opp = isHome ? m.away_team?.name : m.home_team?.name;
+          let result: 'W' | 'L' | 'OTL' = 'OTL';
+          if (myScore !== null && theirScore !== null) {
+            if (myScore > theirScore) result = 'W';
+            else if (myScore < theirScore) result = 'L';
+          }
+          return { id: m.id, date: m.scheduled_at, opponent: opp || '?', result, score: `${myScore ?? '–'}-${theirScore ?? '–'}` };
+        });
+        return { record: { w: wins, l: losses, otl: otls }, last5 };
+      };
+
+      // H2H this season — same matchup, completed only, last 5 of them
+      const { data: h2hData } = await sb
+        .from('fixtures')
+        .select('id, scheduled_at, home_score, away_score, status')
+        .eq('league_id', leagueId)
+        .or(`and(home_team_id.eq.${homeId},away_team_id.eq.${awayId}),and(home_team_id.eq.${awayId},away_team_id.eq.${homeId})`)
+        .eq('status', 'completed')
+        .neq('id', gameId)
+        .order('scheduled_at', { ascending: false })
+        .limit(5);
+
+      // Each team's next game (first scheduled after the current game)
+      const fetchNext = async (teamId: string) => {
+        const { data: next } = await sb
+          .from('fixtures')
+          .select('id, scheduled_at, status, home_team_id, away_team_id, home_team:teams!home_team_id(name, slug), away_team:teams!away_team_id(name, slug), league:leagues(id, name, slug)')
+          .eq('league_id', leagueId)
+          .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+          .gt('scheduled_at', game.scheduled_at)
+          .in('status', ['scheduled', 'in_progress'])
+          .order('scheduled_at', { ascending: true })
+          .limit(1);
+        if (next && next[0]) return next[0] as any as Game;
+        return null;
+      };
+
+      // Same-day other games in this league
+      const { data: sameDay } = await sb
+        .from('fixtures')
+        .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:teams!home_team_id(name, slug), away_team:teams!away_team_id(name, slug), league:leagues(id, name, slug)')
+        .eq('league_id', leagueId)
+        .gte('scheduled_at', `${gameDate}T00:00:00Z`)
+        .lt('scheduled_at', `${gameDate}T23:59:59Z`)
+        .neq('id', gameId)
+        .order('scheduled_at', { ascending: true })
+        .limit(20);
+
+      const [homeForm, awayForm, homeNext, awayNext] = await Promise.all([
+        fetchForm(homeId),
+        fetchForm(awayId),
+        fetchNext(homeId),
+        fetchNext(awayId),
+      ]);
+
+      if (cancelled) return;
+      setTeamForm({ home: homeForm, away: awayForm });
+      setH2h(((h2hData || []) as any[]).map(m => ({
+        id: m.id, date: m.scheduled_at, home: m.home_team_id === homeId ? (game.home_team?.name || '') : (game.away_team?.name || ''),
+        away: m.away_team_id === awayId ? (game.away_team?.name || '') : (game.home_team?.name || ''),
+        home_score: m.home_score, away_score: m.away_score, status: m.status,
+      })));
+      setNextGames({ home: homeNext, away: awayNext });
+      setSameDayGames(((sameDay || []) as any[]).map(g => ({ ...g, date: g.scheduled_at })) as Game[]);
+    })();
+    return () => { cancelled = true; };
+  }, [game, gameId]);
+
   if (loading) {
     return (
       <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
@@ -590,20 +707,198 @@ export default function GamePage() {
         </div>
       )}
 
-      {/* Non-NHL fallback — show "stats on league.com" link */}
-      {!boxscore && !boxLoading && (
-        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
-            Detailed box score for {game.league?.name || 'this league'} is available on{' '}
-            {game.league?.name?.toLowerCase().includes('nhl') ? 'NHL.com' :
-             game.league?.name?.toLowerCase().includes('khl') ? 'en.khl.ru' :
-             game.league?.name?.toLowerCase().includes('shl') ? 'shl.se' :
-             game.league?.name?.toLowerCase().includes('del') ? 'del.org' :
-             game.league?.name?.toLowerCase().includes('liiga') ? 'liiga.fi' :
-             'the league\'s official site'}.
+      {/* 2026-10-14 (Arnel directive): replaced the dead-end
+          "Detailed box score on the league's official site" block
+          with a series of data-driven modules. Each module renders
+          only if it has data — no empty cards. Module order matches
+          the user's spec: team form, h2h, next games, same-day,
+          auto recap, then countdown/calendar for upcoming games. */}
+
+      {/* Auto recap — one line, factual. Only for completed games
+          that have scores. */}
+      {isCompleted && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
+          <p style={{ color: '#fff', fontSize: '0.9375rem', margin: 0 }}>
+            {(() => {
+              if (isTie) return `Final: ${awayRenderName} ${game.away_score}–${game.home_score} ${homeRenderName}.`;
+              if (homeWin) return `${homeRenderName} won ${game.home_score}–${game.away_score} over ${awayRenderName}.`;
+              if (awayWin) return `${awayRenderName} won ${game.away_score}–${game.home_score} at ${homeRenderName}.`;
+              return `Final: ${awayRenderName} ${game.away_score}–${game.home_score} ${homeRenderName}.`;
+            })()}
           </p>
         </div>
       )}
+
+      {/* Upcoming-game modules: countdown + add to calendar. We
+          build a minimal .ics file inline so no server work needed. */}
+      {game.status === 'scheduled' && (() => {
+        const dt = new Date(game.scheduled_at);
+        const startUtc = dt.toISOString().replace(/[-:]|\.\d{3}/g, '');
+        const endDt = new Date(dt.getTime() + 2.5 * 3600 * 1000);
+        const endUtc = endDt.toISOString().replace(/[-:]|\.\d{3}/g, '');
+        const ics = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'PRODID:-//RinkStop//Game//EN',
+          'BEGIN:VEVENT',
+          `UID:rs-${game.id}@rinkstop.com`,
+          `DTSTAMP:${startUtc}`,
+          `DTSTART:${startUtc}`,
+          `DTEND:${endUtc}`,
+          `SUMMARY:${awayRenderName} at ${homeRenderName}`,
+          `DESCRIPTION:${game.league?.name || 'Hockey'} game on RinkStop — https://rinkstop.com/directory/games/${game.id}`,
+          'END:VEVENT',
+          'END:VCALENDAR',
+        ].join('\r\n');
+        const icsHref = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+        const ms = dt.getTime() - Date.now();
+        const days = Math.max(0, Math.floor(ms / 86400000));
+        const hours = Math.max(0, Math.floor((ms % 86400000) / 3600000));
+        const mins = Math.max(0, Math.floor((ms % 3600000) / 60000));
+        return (
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>Puck drop in</p>
+              <p style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 800, margin: '0.25rem 0 0' }}>
+                {days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${mins}m` : `${mins}m`}
+              </p>
+            </div>
+            <a
+              href={icsHref}
+              download={`rinkstop-${game.id}.ics`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1rem', background: '#C8102E', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 700 }}
+            >
+              Add to calendar
+            </a>
+          </div>
+        );
+      })()}
+
+      {/* Each team's form: record + last 5 results, each result
+          linking to the game page. Hide the whole module if we have
+          no form data for either team. */}
+      {(teamForm.home || teamForm.away) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+          {([
+            { label: awayRenderName, data: teamForm.away, slug: awaySlug },
+            { label: homeRenderName, data: teamForm.home, slug: homeSlug },
+          ] as const).map((side) => {
+            if (!side.data) return null;
+            const { record, last5 } = side.data;
+            return (
+              <div key={side.label} style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <h3 style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>{side.label}</h3>
+                  <div style={{ fontSize: '0.8125rem', color: '#fff', fontWeight: 700 }}>
+                    <span style={{ color: '#34d399' }}>{record.w}W</span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)' }}> – </span>
+                    <span style={{ color: '#f87171' }}>{record.l}L</span>
+                    {record.otl > 0 && (
+                      <>
+                        <span style={{ color: 'rgba(255,255,255,0.4)' }}> – </span>
+                        <span style={{ color: '#FFB81C' }}>{record.otl}OTL</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {last5.map((r) => (
+                    <Link
+                      key={r.id}
+                      href={`/directory/games/${r.id}`}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.8125rem' }}
+                    >
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{
+                          display: 'inline-block', width: '1.5rem', height: '1.5rem', lineHeight: '1.5rem',
+                          textAlign: 'center', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700,
+                          background: r.result === 'W' ? 'rgba(52,211,153,0.2)' : r.result === 'L' ? 'rgba(248,113,113,0.2)' : 'rgba(255,184,28,0.2)',
+                          color: r.result === 'W' ? '#34d399' : r.result === 'L' ? '#f87171' : '#FFB81C',
+                        }}>{r.result}</span>
+                        <span style={{ color: 'rgba(255,255,255,0.7)' }}>{r.opponent}</span>
+                      </span>
+                      <span style={{ color: '#fff', fontWeight: 600 }}>{r.score}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Head-to-head this season (completed only). Hide if empty. */}
+      {h2h.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '0.75rem' }}>Head-to-head this season</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {h2h.map((m) => (
+              <Link key={m.id} href={`/directory/games/${m.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
+                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>{new Date(m.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</span>
+                <span style={{ color: '#fff' }}>{m.away} @ {m.home}</span>
+                <span style={{ color: '#fff', fontWeight: 700 }}>{m.away_score}–{m.home_score}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Each team's next game, linked. Hide if either side has none. */}
+      {(nextGames.home || nextGames.away) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+          {([
+            { label: `${awayRenderName} next`, g: nextGames.away },
+            { label: `${homeRenderName} next`, g: nextGames.home },
+          ] as const).map((side) => {
+            if (!side.g) return null;
+            const ng = side.g;
+            const ngHome = ng.home_team as any;
+            const ngAway = ng.away_team as any;
+            const ngLeague = ng.league as any;
+            return (
+              <Link
+                key={ng.id}
+                href={`/directory/games/${ng.id}`}
+                style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', textDecoration: 'none', color: 'inherit' }}
+              >
+                <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: '0 0 0.5rem' }}>{side.label}</p>
+                <p style={{ color: '#fff', fontSize: '0.9375rem', fontWeight: 700, margin: 0 }}>
+                  {ngAway?.name || '?'} @ {ngHome?.name || '?'}
+                </p>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8125rem', margin: '0.25rem 0 0' }}>
+                  {formatDate(ng.scheduled_at, tz)}
+                </p>
+                {ngLeague?.name && (
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>{ngLeague.name}</p>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Other [league] games on this day, linked. Hide if none. */}
+      {sameDayGames.length > 0 && game.league?.name && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '0.75rem' }}>Other {game.league.name} games on this day</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            {sameDayGames.map((m) => (
+              <Link key={m.id} href={`/directory/games/${m.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
+                <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>{new Date(m.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tz })}</span>
+                <span style={{ color: '#fff' }}>{m.away_team?.name || '?'} @ {m.home_team?.name || '?'}</span>
+                <span style={{ color: m.status === 'completed' ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
+                  {m.status === 'completed' ? `${m.away_score ?? '–'}–${m.home_score ?? '–'}` : 'Scheduled'}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Standings mini-snippet: SKIPPED 2026-10-14. The site has
+          no standings table — checked (standings / team_standings /
+          league_standings all 0 rows). When we add a standings
+          table, render a top-3 + around-this-team snippet here. */}
 
       {/* HL non-NHL games: show game state + venue (more useful than nothing)
           since HL doesn't expose goal events for KHL/SHL/DEL/etc. */}
