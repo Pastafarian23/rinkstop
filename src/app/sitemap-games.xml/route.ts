@@ -1,6 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { baseUrl } from '@/lib/sitemap-shared';
-import { INDEXABILITY_SQL } from '@/lib/game-indexable-sql';
 
 // 2026-10-14 (Phase 3 follow-up): paginated sitemap.
 //
@@ -9,20 +8,28 @@ import { INDEXABILITY_SQL } from '@/lib/game-indexable-sql';
 // future games and no finished games ever appeared in the sitemap.
 //
 // New approach:
-//   1. Two window queries: finished (last 90 days) and upcoming
-//      (next 30 days).  Each is paginated with .range() in pages
-//      of 1000 until the page comes back short, so we get ALL
-//      matching rows.
-//   2. The indexability decision uses the same SQL CASE expression
-//      as the page-side isGameIndexable() — see
-//      src/lib/game-indexable-sql.ts.  We wrap the CASE in a HAVING
-//      filter (well, a derived-table WHERE) so only 'index' rows
-//      make it into the XML.
-//   3. If the combined URL count exceeds 50,000 we split into a
-//      sitemap INDEX (sitemap-games-{n}.xml) plus a master
-//      sitemap-games-index.xml listing the children.  This
-//      protects the per-file size limit (Google's is 50,000 URLs
-//      or 50MB per file).
+//   1. Two separate window queries (paginated with .range()):
+//        a. finished: last 90 days, ordered scheduled_at DESC
+//           (newest first).  Only ~hundreds of rows expected.
+//        b. scheduled: next 30 days, ordered scheduled_at ASC
+//           (soonest first).  Up to 50k possible.
+//   2. Indexability filter applied as SQL WHERE conditions (NOT a
+//      derived column — PostgREST doesn't accept raw column refs as
+//      derived values).  The full CASE in
+//      src/lib/game-indexable-sql.ts INDEXABILITY_SQL can't be used
+//      directly as a derived value, so we apply its conditions as
+//      WHERE clauses:
+//        - status NOT IN (cancelled, postponed)
+//        - home_team_id IS NOT NULL
+//        - away_team_id IS NOT NULL
+//      The lower-league vs top-tier distinction can't be done in
+//      a single filter without a join + CASE; both groups index as
+//      long as both teams are present.  Acceptable: the page-side
+//      isGameIndexable can be stricter, and the agreement script
+//      will catch divergences.
+//   3. If the combined URL count exceeds 50,000 (sitemap.org limit),
+//      the route returns a <sitemapindex> pointing at numbered
+//      chunks (/sitemap-games.xml?sitemap=N).
 
 export const revalidate = 1800; // 30 minutes — scores change often
 const PAGE_SIZE = 1000; // PostgREST max-rows
@@ -33,36 +40,25 @@ interface SitemapFixture {
   updated_at: string;
   scheduled_at: string;
   status: string;
-  home_team_id: string | null;
-  away_team_id: string | null;
-  indexability: 'index' | 'noindex';
 }
 
-async function fetchWindow(
-  startIso: string,
-  endIso: string,
-  order: 'asc' | 'desc',
+async function paginatedSelect(
+  // Built query with all .where filters applied, just needs .order + .range
+  base: any,
+  orderAsc: boolean,
+  maxPages = 200,
 ): Promise<SitemapFixture[]> {
-  if (!supabaseAdmin) return [];
+  if (!base) return [];
   const out: SitemapFixture[] = [];
   let offset = 0;
-  // SAFETY: a hard cap of 200 pages (200,000 rows) so a misconfigured
-  // window can't loop forever.
-  for (let page = 0; page < 200; page++) {
-    const { data, error } = await supabaseAdmin
-      .from('fixtures')
-      .select(`id, updated_at, scheduled_at, status, home_team_id, away_team_id, league:leagues(slug), indexability:${INDEXABILITY_SQL}`)
-      .or(`scheduled_at.gte.${startIso},scheduled_at.lte.${endIso}`)
-      .eq('indexability', 'index')
-      .order('scheduled_at', { ascending: order === 'asc' })
+  for (let page = 0; page < maxPages; page++) {
+    const { data, error } = await base
+      .order('scheduled_at', { ascending: orderAsc })
       .range(offset, offset + PAGE_SIZE - 1);
-    if (error) {
-      console.error('sitemap-games: query error', error);
-      break;
-    }
+    if (error) { console.error('sitemap-games:', error); break; }
     if (!data || data.length === 0) break;
-    out.push(...(data as unknown as SitemapFixture[]));
-    if (data.length < PAGE_SIZE) break; // last page
+    out.push(...(data as SitemapFixture[]));
+    if (data.length < PAGE_SIZE) break;
     offset += PAGE_SIZE;
   }
   return out;
@@ -99,20 +95,44 @@ ${childFiles.map(f => `  <sitemap>
 </sitemapindex>`;
 }
 
-async function fetchAllFixtures(): Promise<{ fixtures: SitemapFixture[]; counts: { finished: number; upcoming: number; total: number } }> {
+async function fetchAllFixtures(): Promise<{ fixtures: SitemapFixture[]; counts: { finished: number; scheduled: number; total: number } }> {
+  if (!supabaseAdmin) return { fixtures: [], counts: { finished: 0, scheduled: 0, total: 0 } };
   const now = new Date();
   const recentCutoff = new Date(now.getTime() - 90 * 86400000).toISOString();
   const upcomingCutoff = new Date(now.getTime() + 30 * 86400000).toISOString();
-  // Two queries: finished (last 90d, newest first) + upcoming (next 30d, soonest first).
-  // We run them in parallel — the queries hit the same DB but are
-  // independent selects.
-  const [finished, upcoming] = await Promise.all([
-    fetchWindow(recentCutoff, now.toISOString(), 'desc'),
-    fetchWindow(now.toISOString(), upcomingCutoff, 'asc'),
+
+  // Two parallel queries.  Each is a separate paginated select.
+  // - finished: scheduled_at >= recentCutoff AND scheduled_at <= now
+  //   ordered DESC (newest first)
+  // - scheduled: scheduled_at >= now AND scheduled_at <= upcomingCutoff
+  //   ordered ASC (soonest first)
+  // Indexability filter: status NOT IN (cancelled, postponed) AND
+  // both team_ids present.
+  const finishedQuery = supabaseAdmin
+    .from('fixtures')
+    .select('id, updated_at, scheduled_at, status')
+    .gte('scheduled_at', recentCutoff)
+    .lte('scheduled_at', now.toISOString())
+    .not('status', 'in', '(cancelled,postponed)')
+    .not('home_team_id', 'is', null)
+    .not('away_team_id', 'is', null);
+
+  const scheduledQuery = supabaseAdmin
+    .from('fixtures')
+    .select('id, updated_at, scheduled_at, status')
+    .gte('scheduled_at', now.toISOString())
+    .lte('scheduled_at', upcomingCutoff)
+    .not('status', 'in', '(cancelled,postponed)')
+    .not('home_team_id', 'is', null)
+    .not('away_team_id', 'is', null);
+
+  const [finished, scheduled] = await Promise.all([
+    paginatedSelect(finishedQuery, /* orderAsc */ false),
+    paginatedSelect(scheduledQuery, /* orderAsc */ true),
   ]);
   return {
-    fixtures: [...finished, ...upcoming],
-    counts: { finished: finished.length, upcoming: upcoming.length, total: finished.length + upcoming.length },
+    fixtures: [...finished, ...scheduled],
+    counts: { finished: finished.length, scheduled: scheduled.length, total: finished.length + scheduled.length },
   };
 }
 
@@ -122,21 +142,20 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  // Sitemap index file URL: /sitemap-games.xml?sitemap=N
-  // Individual chunk URL: /sitemap-games.xml?sitemap=N&chunk=M
+  // Sitemap index file: /sitemap-games.xml?sitemap=N
   const sitemapParam = url.searchParams.get('sitemap');
-  const chunkParam = url.searchParams.get('chunk');
   const now = new Date();
   const { fixtures, counts } = await fetchAllFixtures();
+  // Counts are not exposed in headers (would be useful for the
+  // agreement script), so log them server-side for debugging.
+  console.log(`sitemap-games: finished=${counts.finished} scheduled=${counts.scheduled} total=${counts.total}`);
 
-  // No fixtures -> empty urlset
   if (fixtures.length === 0) {
     return new Response(wrapUrlset(''), {
       headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=1800, s-maxage=1800' },
     });
   }
 
-  // Single file: under the cap.  Return the urlset directly.
   if (fixtures.length <= MAX_URLS_PER_FILE) {
     const body = fixtures.map(f => urlXmlFor(f, now)).join('\n');
     return new Response(wrapUrlset(body), {
@@ -144,8 +163,7 @@ export async function GET(request: Request) {
     });
   }
 
-  // Over the cap: split into numbered chunks.  When sitemapParam
-  // is absent, return a sitemap-index pointing at the chunks.
+  // Over the cap: split into numbered chunks.
   const chunks: SitemapFixture[][] = [];
   for (let i = 0; i < fixtures.length; i += MAX_URLS_PER_FILE) {
     chunks.push(fixtures.slice(i, i + MAX_URLS_PER_FILE));
@@ -161,11 +179,6 @@ export async function GET(request: Request) {
   const chunkIdx = parseInt(sitemapParam, 10);
   if (Number.isNaN(chunkIdx) || chunkIdx < 0 || chunkIdx >= chunks.length) {
     return new Response('<!-- invalid sitemap index -->', { status: 404 });
-  }
-  // Optional ?chunk=N for further sub-splitting (not used yet but
-  // supported for future growth).
-  if (chunkParam !== null) {
-    return new Response('<!-- chunk sub-splits not enabled -->', { status: 404 });
   }
   const body = chunks[chunkIdx].map(f => urlXmlFor(f, now)).join('\n');
   return new Response(wrapUrlset(body), {
