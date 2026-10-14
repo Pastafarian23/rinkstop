@@ -406,7 +406,7 @@ function WeekCalendar({ games }: { games: Game[] }) {
   );
 }
 
-function GameCard({ game, showLocalTime }: { game: Game; showLocalTime: boolean }) {
+function GameCard({ game, showLocalTime, onNavigate }: { game: Game; showLocalTime: boolean; onNavigate?: (id: string) => void }) {
   // Per-game timezone — pick from the league if known, else default to ET
   // (most of the data is NHL/AHL/PWHL). The explicit abbreviation is what
   // makes the time meaningful to a reader anywhere on earth.
@@ -424,10 +424,33 @@ function GameCard({ game, showLocalTime }: { game: Game; showLocalTime: boolean 
   const awayDisplay = awaySlug ? displayNameForGame(awaySlug, gameDate) : null;
   const homeRenderName = homeDisplay?.display || homeName;
   const awayRenderName = awayDisplay?.display || awayName;
+  const homeTeamUrl = game.home_team?.slug ? teamHrefForLeague(game.league?.slug, game.home_team.slug) : null;
+  const awayTeamUrl = game.away_team?.slug ? teamHrefForLeague(game.league?.slug, game.away_team.slug) : null;
+  const gameHref = `/directory/games/${game.id}`;
 
+  // 2026-10-14: the card is now a div (not a Link) so the team-name
+  // links inside it are valid HTML. Clicking anywhere on the card
+  // (other than a team-name link) navigates to the game page via
+  // onNavigate. This is the only way to get a tappable card AND
+  // tappable team names without nesting <a> inside <a>.
   return (
-    <Link
-      href={`/directory/games/${game.id}`}
+    <div
+      role="group"
+      onClick={(e) => {
+        // Ignore clicks on inner links.
+        const t = e.target as HTMLElement;
+        if (t.closest('a')) return;
+        if (onNavigate) onNavigate(game.id);
+        else if (typeof window !== 'undefined') window.location.href = gameHref;
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (onNavigate) onNavigate(game.id);
+          else if (typeof window !== 'undefined') window.location.href = gameHref;
+        }
+      }}
+      tabIndex={0}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -436,8 +459,8 @@ function GameCard({ game, showLocalTime }: { game: Game; showLocalTime: boolean 
         border: '1px solid var(--border)',
         borderRadius: '8px',
         padding: '0.875rem 1rem',
-        textDecoration: 'none',
         color: 'inherit',
+        cursor: 'pointer',
         transition: 'border-color 0.15s, background 0.15s',
       }}
       onMouseEnter={e => {
@@ -451,22 +474,45 @@ function GameCard({ game, showLocalTime }: { game: Game; showLocalTime: boolean 
     >
       {/* Row 1: teams + score. Mobile-first stack; team rows are
           always above the score row so the names never overlap the
-          date/time below. */}
+          date/time below. Each team name + logo is a real link to
+          the team page. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
         {/* Home team row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-          {game.home_team?.logo_url && (
-            <img src={game.home_team.logo_url} alt={`${homeRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
+          {homeTeamUrl ? (
+            <Link href={homeTeamUrl} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1, color: 'inherit', textDecoration: 'none' }}>
+              {game.home_team?.logo_url && (
+                <img src={game.home_team.logo_url} alt={`${homeRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{homeRenderName}</span>
+            </Link>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+              {game.home_team?.logo_url && (
+                <img src={game.home_team.logo_url} alt={`${homeRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{homeRenderName}</span>
+            </div>
           )}
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{homeRenderName}</span>
           <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#fff', flexShrink: 0, minWidth: '1.75rem', textAlign: 'right' }}>{game.home_score ?? '–'}</span>
         </div>
         {/* Away team row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-          {game.away_team?.logo_url && (
-            <img src={game.away_team.logo_url} alt={`${awayRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
+          {awayTeamUrl ? (
+            <Link href={awayTeamUrl} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1, color: 'inherit', textDecoration: 'none' }}>
+              {game.away_team?.logo_url && (
+                <img src={game.away_team.logo_url} alt={`${awayRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{awayRenderName}</span>
+            </Link>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+              {game.away_team?.logo_url && (
+                <img src={game.away_team.logo_url} alt={`${awayRenderName} logo`} style={{ width: '24px', height: '24px', objectFit: 'contain', flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{awayRenderName}</span>
+            </div>
           )}
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{awayRenderName}</span>
           <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: '#fff', flexShrink: 0, minWidth: '1.75rem', textAlign: 'right' }}>{game.away_score ?? '–'}</span>
         </div>
       </div>
@@ -478,8 +524,8 @@ function GameCard({ game, showLocalTime }: { game: Game; showLocalTime: boolean 
         <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)' }}>{formatGameTimeDisplay(game.scheduled_at || game.date, tz, showLocalTime)}</span>
       </div>
 
-      {/* Row 3: status badge + league name on the same row so the
-          card stays compact on mobile. */}
+      {/* Row 3: status badge + league link + view-game link on the
+          same row so the card stays compact on mobile. */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
         <span style={{
           display: 'inline-block',
@@ -494,12 +540,39 @@ function GameCard({ game, showLocalTime }: { game: Game; showLocalTime: boolean 
         }}>
           {s.label}
         </span>
-        {game.league?.name && (
-          <span style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.4)' }}>{game.league.name}</span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {game.league?.slug && (
+            <Link href={leagueHrefForSlug(game.league.slug)} style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}>
+              {game.league.name}
+            </Link>
+          )}
+          <Link href={gameHref} style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.75)', textDecoration: 'none', fontWeight: 600 }} aria-label="Open game details">
+            View →
+          </Link>
+        </div>
       </div>
-    </Link>
+    </div>
   );
+}
+
+/**
+ * 2026-10-14: Build the per-team page URL based on the league. The
+ * canonical team page lives at /directory/<league>/teams/<slug> for
+ * the top leagues; fall back to /directory/teams/<slug> for the
+ * mixed bag. leagueHrefForSlug does the same for the league chip.
+ */
+function teamHrefForLeague(leagueSlug: string | undefined | null, teamSlug: string): string {
+  const slugsWithTeamDir = new Set(['nhl', 'ahl', 'pwhl', 'khl', 'shl', 'liiga', 'del', 'nl', 'extraliga', 'ncaa', 'chl', 'ushl', 'echl']);
+  if (leagueSlug && slugsWithTeamDir.has(leagueSlug)) {
+    return `/directory/${leagueSlug}/teams/${teamSlug}`;
+  }
+  return `/directory/teams/${teamSlug}`;
+}
+
+function leagueHrefForSlug(leagueSlug: string): string {
+  const slugsWithTeamDir = new Set(['nhl', 'ahl', 'pwhl', 'khl', 'shl', 'liiga', 'del', 'nl', 'extraliga', 'ncaa', 'chl', 'ushl', 'echl']);
+  if (slugsWithTeamDir.has(leagueSlug)) return `/directory/${leagueSlug}`;
+  return `/directory/leagues/${leagueSlug}`;
 }
 
 function Dropdown({
@@ -859,6 +932,12 @@ export default function GamesIndexClient({ initialData }: Props) {
     else params.set(key, value);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }, [searchParams, router, pathname]);
+
+  // 2026-10-14: GameCard passes a navigate callback so the whole
+  // card is clickable without nesting <a> inside <a> (invalid HTML).
+  const navigateToGame = useCallback((id: string) => {
+    router.push(`/directory/games/${id}`);
+  }, [router]);
 
   const setLeague = (slug: string) => {
     // Reset team / subleague when switching chips
@@ -1273,7 +1352,7 @@ export default function GamesIndexClient({ initialData }: Props) {
                     Recent Results ({games.length})
                   </h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {games.map(g => <GameCard key={g.id} game={g} showLocalTime={showLocalTime} />)}
+                    {games.map(g => <GameCard key={g.id} game={g} showLocalTime={showLocalTime} onNavigate={navigateToGame} />)}
                   </div>
                 </section>
               );
@@ -1392,7 +1471,7 @@ export default function GamesIndexClient({ initialData }: Props) {
                           </span>
                         </h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          {grouped[d].map(g => <GameCard key={g.id} game={g} showLocalTime={showLocalTime} />)}
+                          {grouped[d].map(g => <GameCard key={g.id} game={g} showLocalTime={showLocalTime} onNavigate={navigateToGame} />)}
                         </div>
                       </section>
                     );

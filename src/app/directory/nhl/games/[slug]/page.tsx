@@ -90,10 +90,32 @@ export default async function GamePage({ params }: Props) {
 
   return (
     <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '0.75rem 1rem 3rem' }}>
-      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }}>
+      {/* 2026-10-14 (Arnel feedback): BreadcrumbList schema for the
+          Scores hub so Google can render the breadcrumb in search
+          results. Path: Home > Scores > NHL > Game. The /directory/games
+          page is the canonical Scores hub — /directory/nhl is the
+          league hub. */}
+      {match && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rinkstop.com/' },
+                { '@type': 'ListItem', position: 2, name: 'Scores', item: 'https://rinkstop.com/directory/games' },
+                { '@type': 'ListItem', position: 3, name: 'NHL', item: 'https://rinkstop.com/directory/nhl' },
+                { '@type': 'ListItem', position: 4, name: `${match.away_team_name} at ${match.home_team_name}`, item: `https://rinkstop.com/directory/nhl/games/${slug}` },
+              ],
+            }),
+          }}
+        />
+      )}
+      <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem' }} aria-label="Breadcrumb">
         <Link href="/" style={{ color: 'rgba(255,255,255,0.5)' }}>Home</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
-        <Link href="/directory" style={{ color: 'rgba(255,255,255,0.5)' }}>Directory</Link>
+        <Link href="/directory/games" style={{ color: 'rgba(255,255,255,0.5)' }}>Scores</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
         <Link href="/directory/nhl" style={{ color: 'rgba(255,255,255,0.5)' }}>NHL</Link>
         <span style={{ margin: '0 0.4rem' }}>›</span>
@@ -115,8 +137,11 @@ export default async function GamePage({ params }: Props) {
       ) : (
         <>
           {/* Share — full popover (X, FB, LI, WhatsApp, Reddit, Email, Copy).
-              Server-rendered with the parsed match data. Mobile uses native share sheet. */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+              Server-rendered with the parsed match data. Mobile uses native share sheet.
+              2026-10-14: shrunk to a small inline button (was a centered
+              hero CTA that pushed the scoreboard down). The team links
+              below carry the visual weight now. */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
             <ShareButton
               payload={buildGameShare({
                 homeName: match.home_team_name,
@@ -239,29 +264,52 @@ export default async function GamePage({ params }: Props) {
                   ))}
                 </div>
 
-                {/* Links to team pages */}
+                {/* Links to team pages — away first, then home, on a
+                    single side-by-side row. League is rendered as a
+                    separate row below so the team links stay clearly
+                    grouped (Arnel 2026-10-14). */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <Link href={`/directory/nhl/teams/${parsed.awaySlug}`} style={{
                     textDecoration: 'none',
                     background: 'var(--s2)',
                     border: '1px solid var(--border)',
                     borderRadius: '8px',
-                    padding: '1rem',
+                    padding: '0.875rem 1rem',
                     textAlign: 'center',
+                    color: 'inherit',
                   }}>
-                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Away Team</div>
-                    <div style={{ color: '#fff', fontSize: '1rem', fontWeight: 700, marginTop: '0.25rem' }}>{match.away_team_name} →</div>
+                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Away</div>
+                    <div style={{ color: '#fff', fontSize: '0.9375rem', fontWeight: 700, marginTop: '0.25rem', overflowWrap: 'anywhere' }}>{match.away_team_name} →</div>
                   </Link>
                   <Link href={`/directory/nhl/teams/${parsed.homeSlug}`} style={{
                     textDecoration: 'none',
                     background: 'var(--s2)',
                     border: '1px solid var(--border)',
                     borderRadius: '8px',
-                    padding: '1rem',
+                    padding: '0.875rem 1rem',
                     textAlign: 'center',
+                    color: 'inherit',
                   }}>
-                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Home Team</div>
-                    <div style={{ color: '#fff', fontSize: '1rem', fontWeight: 700, marginTop: '0.25rem' }}>{match.home_team_name} →</div>
+                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>Home</div>
+                    <div style={{ color: '#fff', fontSize: '0.9375rem', fontWeight: 700, marginTop: '0.25rem', overflowWrap: 'anywhere' }}>{match.home_team_name} →</div>
+                  </Link>
+                </div>
+
+                {/* League link as its own row (Arnel 2026-10-14). */}
+                <div style={{ marginTop: '0.75rem' }}>
+                  <Link href="/directory/nhl" style={{
+                    textDecoration: 'none',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    padding: '0.75rem 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    color: 'inherit',
+                  }}>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>League</span>
+                    <span style={{ color: '#fff', fontSize: '0.875rem', fontWeight: 600 }}>NHL →</span>
                   </Link>
                 </div>
               </>
