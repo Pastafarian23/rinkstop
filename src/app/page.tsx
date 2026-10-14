@@ -732,11 +732,15 @@ export default async function Home() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
               {upcomingGames.map((g: any) => {
-                // `g.date` is fixtures.scheduled_at as ISO string.
-                // All NHL times are published in Eastern Time per the NHL.com
-                // public API convention; surface that fact to readers.
-                const timeText = g.date
-                  ? formatGameTime(g.date, 'America/New_York')
+                // 2026-10-13 fix (Arnel feedback): get_home_page_data
+                // returns scheduled_at (the actual field name in the
+                // fixtures table). The previous code read g.date which
+                // was always undefined, so every card showed "Date TBD".
+                // All NHL times are published in Eastern Time per the
+                // NHL.com public API convention; surface that fact to
+                // readers.
+                const timeText = g.scheduled_at
+                  ? formatGameTime(g.scheduled_at, 'America/New_York')
                   : 'Date TBD';
                 return (
                   <Link key={g.id} href={`/directory/games/${g.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', textDecoration: 'none', transition: 'background 0.15s' }}>
