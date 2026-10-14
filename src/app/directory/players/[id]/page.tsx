@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 // 2026-10-12: switched to ISR with 24h revalidation. The page used to
 // be force-dynamic, but it only reads from the public players table via
 // the service-role client (no cookies, no auth() calls) — there's no
@@ -223,6 +224,40 @@ export default async function PlayerPage({ params }: Props) {
     getFollowersCount('player', id),
   ]);
 
+  // 2026-10-14 (Phase 4): recent team games for this player. We
+  // pick the most recent team from hockey_player_team_history and
+  // pull the last 5 completed fixtures. Skipped silently if the
+  // player has no team history (national-team or historic players).
+  let recentTeamGames: Array<{
+    id: string; scheduled_at: string; home_score: number | null; away_score: number | null;
+    home_team: { name: string; slug: string } | null; away_team: { name: string; slug: string } | null;
+  }> = [];
+  let recentTeamName: string | null = null;
+  let recentTeamSlug: string | null = null;
+  try {
+    const { data: hist } = await supabaseAdmin
+      .from('hockey_player_team_history')
+      .select('team_id, team_name_snapshot, end_date, teams(name, slug)')
+      .eq('player_id', seoPlayer.id)
+      .not('end_date', 'is', null)
+      .order('end_date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (hist && (hist as any).team_id) {
+      const teamId = (hist as any).team_id;
+      recentTeamName = (hist as any).teams?.name || (hist as any).team_name_snapshot || null;
+      recentTeamSlug = (hist as any).teams?.slug || null;
+      const { data: games } = await supabaseAdmin
+        .from('fixtures')
+        .select('id, scheduled_at, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+        .or(`home_team_id.eq.${teamId},away_team_id.eq.${teamId}`)
+        .eq('status', 'completed')
+        .order('scheduled_at', { ascending: false })
+        .limit(5);
+      recentTeamGames = (games as any) || [];
+    }
+  } catch {}
+
   let unifiedStats: any[] = [];
   try {
     const { data: passportStats } = await sb
@@ -372,6 +407,45 @@ export default async function PlayerPage({ params }: Props) {
       {playerJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(playerJsonLd) }} />
       )}
+      {/* 2026-10-14 (Phase 4): recent team games for this player.
+          Module is gated: it renders only if we found a team_id in
+          hockey_player_team_history AND at least one completed
+          fixture. Links each game to the game page. */}
+      {recentTeamGames.length > 0 && recentTeamName && (
+        <div style={{ maxWidth: '1100px', margin: '1.5rem auto 0', padding: '0 1.5rem' }}>
+          <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.25rem' }}>
+            <h2 style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: '0 0 0.75rem' }}>
+              Recent {recentTeamName} games
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {recentTeamGames.map((m) => {
+                const isHome = m.home_team?.slug === recentTeamSlug;
+                const myScore = isHome ? m.home_score : m.away_score;
+                const theirScore = isHome ? m.away_score : m.home_score;
+                const opp = isHome ? m.away_team?.name : m.home_team?.name;
+                let res: 'W' | 'L' | 'OTL' | null = null;
+                if (myScore !== null && theirScore !== null) {
+                  if (myScore > theirScore) res = 'W';
+                  else if (myScore < theirScore) res = 'L';
+                }
+                return (
+                  <Link key={m.id} href={`/directory/games/${m.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>{new Date(m.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {res && (
+                        <span style={{ display: 'inline-block', width: '1.5rem', height: '1.5rem', lineHeight: '1.5rem', textAlign: 'center', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, background: res === 'W' ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)', color: res === 'W' ? '#34d399' : '#f87171' }}>{res}</span>
+                      )}
+                      <span style={{ color: 'rgba(255,255,255,0.7)' }}>{isHome ? 'vs' : '@'} {opp || '?'}</span>
+                    </span>
+                    <span style={{ color: '#fff', fontWeight: 700 }}>{myScore ?? '–'}–{theirScore ?? '–'}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <PlayerDetail
         id={id}
         ownerUserId={owner?.userId ?? null}
