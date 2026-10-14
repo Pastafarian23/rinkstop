@@ -1,10 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
-import { headers } from 'next/headers';
 import { ClerkProvider } from '@clerk/nextjs';
-import { auth, currentUser } from '@clerk/nextjs/server';
-import Script from 'next/script';
-import { resolveCanonicalUserId } from '@/lib/admin-auth';
 // WS24 (2026-08-20): first-party cookie consent UI. Restores the
 // `localStorage.cookie_consent` banner that the privacy policy on disk
 // (src/app/privacy/page.tsx + src/app/cookies/page.tsx) describes and
@@ -41,8 +37,6 @@ import FoundersClubPopup from '@/components/FoundersClubPopup';
 import UpgradeNudgePopup from '@/components/UpgradeNudgePopup';
 import OffSeasonTicker from '@/components/OffSeasonTicker';
 import IntentBanner from '@/components/IntentBanner';
-import { supabaseAdmin } from '@/lib/supabase';
-import { getUserTier } from '@/lib/connections';
 import { clerkSignInLocalization, clerkSignUpLocalization } from '@/lib/clerk-appearance';
 import type { Metadata } from 'next';
 import { getDirectoryCountsCached } from '@/lib/directory-counts';
@@ -170,90 +164,16 @@ const NAV: never[] = []; // unused, kept to avoid breaking any external referenc
 
 
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // AdSense policy: ads cannot be served on legal/auth/form pages.
-  // We check the request pathname via the middleware-injected header
-  // and only inject the AdSense script on eligible content routes.
-  // (see src/middleware.ts which sets x-pathname)
-  const h = await headers();
-  const pathname = h.get('x-pathname') || '';
-
-  // Routes where AdSense script must NOT load.
-  // Kept narrow on purpose — every exclusion is a policy-explicit category.
-  const ADSENSE_EXCLUDED_PREFIXES = [
-    '/privacy',
-    '/terms',
-    '/cookies',
-    '/login',
-    '/sign-up',
-    '/forgot-password',
-    '/reset-password',
-    '/sso-callback',
-    '/claim-your-listing',
-    '/dashboard',
-    '/admin',
-    '/onboarding',
-    '/api',
-    // Youth hockey sections: per Privacy Policy, no personalized or
-    // retargeted advertising on pages that may be of interest to minors.
-    // AdSense policy + COPPA + Google's TFAT age-treatment framework (2026-05)
-    // require this exclusion before AdSense is enabled.
-    '/directory/youth-hockey',
-    // Youth guide content (learn-to-play, parent guides, transition paths)
-    // is also 'directed to children' under COPPA / TFAT — same exclusion.
-    '/guides/youth',
-  ];
-  const ADSENSE_EXCLUDED_EXACT = new Set([
-    '/about',
-    '/contact',
-    '/advertise',
-    '/cookies',
-    // Trust/policy pages added in PR #184 — same AdSense-exclusion rationale
-    // as the originals. Editors don't monetize reader complaints, methodology
-    // disclosures, or editorial standards.
-    '/editorial-policy',
-    '/corrections',
-    '/data-methodology',
-  ]);
-  const adsenseEligible = !ADSENSE_EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p)) &&
-                          !ADSENSE_EXCLUDED_EXACT.has(pathname);
-
-  // Fetch user role + tier for the bottom tab bar. This runs once per page
-  // render in the root layout. On pages with `revalidate` (home, /blog etc.),
-  // the result is cached so we don't query Supabase on every anonymous hit.
-  // On dynamic pages (dashboard, /standings/[id]), we re-fetch each render.
-  let userId: string | null = null;
-  let signedIn = false;
-  let accountTypes: Array<{ account_type: string; is_primary: boolean }> = [];
-  let tier = 'free';
-  try {
-    const auth_ = await auth();
-    if (auth_?.userId) {
-      userId = auth_.userId;
-      signedIn = true;
-      // Resolve canonical-user_id for owner emails so the bottom tab bar
-      // reads the canonical profile_account_types row (orphaned Clerk
-      // sessions otherwise produce an empty accountTypes array and the
-      // tab bar falls through to fan/default tabs).
-      const cu = await currentUser();
-      const userEmail = cu?.emailAddresses?.[0]?.emailAddress || '';
-      const canonicalUserId = await resolveCanonicalUserId(userId, userEmail);
-      const { data } = await supabaseAdmin
-        .from('profile_account_types')
-        .select('account_type, is_primary')
-        .eq('user_id', canonicalUserId);
-      accountTypes = (data || []) as Array<{ account_type: string; is_primary: boolean }>;
-      userId = canonicalUserId;
-      try {
-        tier = await getUserTier(canonicalUserId);
-      } catch {
-        tier = 'free';
-      }
-    }
-  } catch {
-    // best-effort: if auth() or Supabase fails, fall through with empty data
-    // and the tab bar will fall back to fan/default tabs (only visible if signed in)
-  }
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // 2026-10-14 (cache fix): stripped the previous `await headers()` and
+  // `await auth()` calls from this layout.  Both opt the entire app
+  // out of Next.js static rendering, which is why /directory/games/[id]
+  // (and every other ISR page) was returning
+  // `cache-control: private, no-cache, no-store` instead of being cached.
+  // Pathname-aware AdSense exclusion moved to AdSenseLoader (client,
+  // usePathname).  Auth state moved to RoleAwareTabBar (client,
+  // useUser).  The layout is now a pure static server component so
+  // children can be ISR-cached.
 
   return (
     <ClerkProvider
@@ -353,12 +273,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               contradicted the design. */}
           {/* Day 4 → Day 7 (Arnel, 2026-07-30): simplified to 4 fixed tabs
               for every signed-in user (Dashboard, Profile, Passport,
-              Notifications). The component now derives everything from
-              the pathname; the userId/signedIn/accountTypes/tier props
-              it used to consume are still fetched above for other
-              downstream consumers (UserMenu, header) but no longer feed
-              the tab bar. */}
-          <RoleAwareTabBar signedIn={signedIn} />
+              Notifications). The component derives auth state from
+              Clerk's useUser() — no signedIn prop needed.
+              2026-10-14: was previously passed signedIn from a server-side
+              auth() call; moved to useUser() to keep the layout static
+              and unblock ISR on /directory/games/[id]. */}
+          <RoleAwareTabBar />
           {/* Global post composer — FAB visible on mobile only (desktop
               gets the inline composer on profile pages). Posts land on
               the signed-in user's personal profile. Hidden on auth pages
@@ -541,11 +461,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             every page. */}
         <ConsentBanner />
         {/* PR #145 (2026-08-21): AdSense script loader. No-op when
-            !adsenseEligible (privacy/terms/cookies/admin/dashboard/youth
-            pages), no-op when the user has not accepted via the banner
-            above. Mounted globally so a single record gates the same
-            publisher ID across all eligible routes. */}
-        <AdSenseLoader enabled={adsenseEligible} />
+            the current pathname is in the exclusion list (privacy/terms/
+            cookies/admin/dashboard/youth pages), no-op when the user
+            has not accepted via the banner above. Mounted globally so
+            a single record gates the same publisher ID across all
+            eligible routes. 2026-10-14: exclusion check moved from
+            server-side (layout, via headers()) to client-side
+            (AdSenseLoader, via usePathname) so the layout stays static
+            and ISR works. */}
+        <AdSenseLoader />
         {/* WS25 (2026-09-14): GA4 gtag.js integration. Renders gtag.js
             + the gtag('config', '<Measurement ID>') snippet into initial
             HTML so the property receives page_views. Measurement ID is

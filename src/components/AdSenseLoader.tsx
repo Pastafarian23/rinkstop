@@ -1,27 +1,35 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
+
 /**
- * AdSenseLoader — server-renders the Google AdSense publisher script.
+ * AdSenseLoader — renders the Google AdSense publisher script.
  *
  * 2026-08-31 (PR #146) — script load vs ad-request gating split.
  *
- * Previously this component only injected the script via useEffect
- * after the user accepted cookies via ConsentBanner. That made the
- * AdSense reviewer (and any curl / crawler) see a site that had
- * ads.txt but no publisher script — which looks like "not running
- * AdSense" — and the resubmit was rejected.
+ * 2026-10-14 — moved pathname-aware exclusion into the client side
+ * (was previously computed server-side in src/app/layout.tsx via
+ * `headers()`).  Reason: the layout's `headers()` call opts the
+ * entire app out of static rendering, so /directory/games/[id] (and
+ * any other ISR page) was returning
+ * `cache-control: private, no-cache, no-store` instead of being
+ * cached.  The fix moves the exclusion check into this client
+ * component using `usePathname()` — the layout no longer needs
+ * `headers()` at all, so it can stay static and ISR works.
  *
  * New behavior (compliant with both AdSense program policy and GDPR):
  *
- *   1. If `enabled=false` (excluded route — /privacy, /terms, /cookies,
- *      /about, /contact, /advertise, /login, /sign-up, /dashboard,
- *      /admin, /api, /claim-your-listing, /onboarding,
- *      /directory/youth-hockey, /guides/youth), the component renders
- *      no script tag. The exclusion list is computed server-side in
- *      src/app/layout.tsx and is the source of truth.
+ *   1. If the current pathname is in the exclusion list
+ *      (/privacy, /terms, /cookies, /about, /contact, /advertise,
+ *      /login, /sign-up, /dashboard, /admin, /api,
+ *      /claim-your-listing, /onboarding, /directory/youth-hockey,
+ *      /guides/youth, /editorial-policy, /corrections,
+ *      /data-methodology), the component renders no script tag.
+ *      The exclusion list is the single source of truth and was
+ *      previously maintained in src/app/layout.tsx.
  *
- *   2. If `enabled=true`, the publisher script tag IS rendered into the
- *      server HTML. This means the script appears in the initial
+ *   2. If eligible, the publisher script tag IS rendered into the
+ *      initial HTML. This means the script appears in the server
  *      document and is visible to:
  *        - AdSense program-policy reviewers (curl / headless browser)
  *        - Mediapartners-Google (Google's AdSense crawler)
@@ -47,8 +55,54 @@
 
 const PUBLISHER_CLIENT = 'ca-pub-3703811522107586';
 
-export default function AdSenseLoader({ enabled }: { enabled: boolean }): React.ReactElement | null {
-  if (!enabled) return null;
+// AdSense policy: ads cannot be served on legal/auth/form/youth pages.
+// Single source of truth (previously in src/app/layout.tsx).
+const ADSENSE_EXCLUDED_PREFIXES = [
+  '/privacy',
+  '/terms',
+  '/cookies',
+  '/login',
+  '/sign-up',
+  '/forgot-password',
+  '/reset-password',
+  '/sso-callback',
+  '/claim-your-listing',
+  '/dashboard',
+  '/admin',
+  '/onboarding',
+  '/api',
+  // Youth hockey sections: per Privacy Policy, no personalized or
+  // retargeted advertising on pages that may be of interest to minors.
+  // AdSense policy + COPPA + Google's TFAT age-treatment framework
+  // (2026-05) require this exclusion before AdSense is enabled.
+  '/directory/youth-hockey',
+  // Youth guide content (learn-to-play, parent guides, transition paths)
+  // is also 'directed to children' under COPPA / TFAT — same exclusion.
+  '/guides/youth',
+];
+const ADSENSE_EXCLUDED_EXACT = new Set([
+  '/about',
+  '/contact',
+  '/advertise',
+  '/cookies',
+  // Trust/policy pages added in PR #184 — same AdSense-exclusion rationale
+  // as the originals. Editors don't monetize reader complaints,
+  // methodology disclosures, or editorial standards.
+  '/editorial-policy',
+  '/corrections',
+  '/data-methodology',
+]);
+
+function isAdsenseEligible(pathname: string): boolean {
+  if (!pathname) return true;
+  if (ADSENSE_EXCLUDED_EXACT.has(pathname)) return false;
+  if (ADSENSE_EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p))) return false;
+  return true;
+}
+
+export default function AdSenseLoader(): React.ReactElement | null {
+  const pathname = usePathname() || '';
+  if (!isAdsenseEligible(pathname)) return null;
 
   return (
     <script

@@ -23,6 +23,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 
 interface Tab {
   href: string;
@@ -38,7 +39,14 @@ const TABS: Tab[] = [
   { href: '/dashboard/notifications', label: 'Notifications', icon: BellIcon,        match: (p) => p.startsWith('/dashboard/notifications') },
 ];
 
-export default function RoleAwareTabBar({ signedIn }: { signedIn: boolean }) {
+export default function RoleAwareTabBar() {
+  // 2026-10-14: derive signedIn from Clerk's useUser() instead of
+  // accepting it as a server-fetched prop.  Previously the layout
+  // fetched auth() server-side and passed signedIn down — that
+  // `auth()` call opted the whole layout (and every page) out of
+  // static rendering.  Moving the check to useUser() in this client
+  // component lets the root layout stay static and ISR work.
+  const { isSignedIn, isLoaded } = useUser();
   const pathname = usePathname() || '/';
   const [pressedHref, setPressedHref] = useState<string | null>(null);
   const [consumerUnread, setConsumerUnread] = useState(0);
@@ -50,9 +58,13 @@ export default function RoleAwareTabBar({ signedIn }: { signedIn: boolean }) {
     pathname === '/onboarding';
   if (hide) return null;
 
-  // Use real auth state instead of pathname heuristics. If the server
-  // says the user is signed out, do not render the tab bar.
-  if (!signedIn) return null;
+  // Wait for Clerk to load so we don't flash a "signed out" state for
+  // signed-in users during hydration.
+  if (!isLoaded) return null;
+
+  // Use real auth state instead of pathname heuristics. If the user
+  // is signed out, do not render the tab bar.
+  if (!isSignedIn) return null;
 
   function tapPressed(href: string) {
     setPressedHref(href);
