@@ -173,30 +173,32 @@ export default async function GamePage({ params }: Props) {
                     {fmtDateLong(match.date)} · {fmtTime(match.date)}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '1.5rem', alignItems: 'center' }}>
-                    {/* Away team */}
-                    <Link href={`/directory/nhl/teams/${parsed.awaySlug}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.75rem', alignItems: 'center' }}>
+                    {/* Away team — 1fr column gets a min-width: 0 so the
+                        name can wrap/truncate instead of pushing the
+                        row off the right edge on mobile. */}
+                    <Link href={`/directory/nhl/teams/${parsed.awaySlug}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0 }}>
                       {match.away_team_logo && (
-                        <img src={match.away_team_logo} alt={match.away_team_name} style={{ width: 80, height: 80, objectFit: 'contain', marginBottom: '0.75rem' }} />
+                        <img src={match.away_team_logo} alt={match.away_team_name} style={{ width: 64, height: 64, objectFit: 'contain', marginBottom: '0.5rem' }} />
                       )}
-                      <div style={{ color: isAwayWinner ? '#34d399' : '#fff', fontSize: '1.125rem', fontWeight: 700 }}>{match.away_team_name}</div>
-                      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '0.25rem' }}>Away</div>
+                      <div style={{ color: isAwayWinner ? '#34d399' : '#fff', fontSize: '1rem', fontWeight: 700, overflowWrap: 'anywhere', lineHeight: 1.2 }}>{match.away_team_name}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.6875rem', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Away</div>
                     </Link>
 
                     {/* Score */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '4.5rem' }}>
                       {isFinished ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <div style={{
                             color: isAwayWinner ? '#34d399' : 'rgba(255,255,255,0.4)',
-                            fontSize: 'clamp(2.5rem, 6vw, 3.5rem)',
+                            fontSize: 'clamp(2rem, 8vw, 3.25rem)',
                             fontWeight: 800,
                             lineHeight: 1,
                           }}>{match.away_score ?? 0}</div>
-                          <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '1.5rem' }}>–</div>
+                          <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '1.25rem' }}>–</div>
                           <div style={{
                             color: isHomeWinner ? '#34d399' : 'rgba(255,255,255,0.4)',
-                            fontSize: 'clamp(2.5rem, 6vw, 3.5rem)',
+                            fontSize: 'clamp(2rem, 8vw, 3.25rem)',
                             fontWeight: 800,
                             lineHeight: 1,
                           }}>{match.home_score ?? 0}</div>
@@ -206,13 +208,15 @@ export default async function GamePage({ params }: Props) {
                       )}
                     </div>
 
-                    {/* Home team */}
-                    <Link href={`/directory/nhl/teams/${parsed.homeSlug}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    {/* Home team — min-width: 0 lets "Philadelphia Flyers"
+                        wrap or truncate on narrow screens instead of
+                        pushing the score off-screen. */}
+                    <Link href={`/directory/nhl/teams/${parsed.homeSlug}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0 }}>
                       {match.home_team_logo && (
-                        <img src={match.home_team_logo} alt={match.home_team_name} style={{ width: 80, height: 80, objectFit: 'contain', marginBottom: '0.75rem' }} />
+                        <img src={match.home_team_logo} alt={match.home_team_name} style={{ width: 64, height: 64, objectFit: 'contain', marginBottom: '0.5rem' }} />
                       )}
-                      <div style={{ color: isHomeWinner ? '#34d399' : '#fff', fontSize: '1.125rem', fontWeight: 700 }}>{match.home_team_name}</div>
-                      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '0.25rem' }}>Home</div>
+                      <div style={{ color: isHomeWinner ? '#34d399' : '#fff', fontSize: '1rem', fontWeight: 700, overflowWrap: 'anywhere', lineHeight: 1.2 }}>{match.home_team_name}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.6875rem', marginTop: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Home</div>
                     </Link>
                   </div>
                 </div>
