@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import ShareButton from '@/components/ShareButton';
@@ -120,9 +119,14 @@ function periodLabel(period: number, periodDescriptor: any): string {
   return String(period);
 }
 
-export default function GamePage() {
-  const params = useParams();
-  const gameId = params.id as string;
+export default function GamePage({ id }: { id: string }) {
+  // 2026-10-14 (cache fix): take id as a prop instead of via
+  // useParams().  useParams() in a client component opts the parent
+  // server component out of ISR (Next.js treats it as dynamic
+  // because the client needs a route-context).  The server already
+  // has id from `params`, so passing it down lets the page stay
+  // ISR-cacheable.
+  const gameId = id;
 
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
