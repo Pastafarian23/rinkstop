@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
@@ -59,6 +60,18 @@ function getSupabase() {
 // status first (cheap — no joins) to pick a revalidate value, then
 // fetch the full row.  The status probe itself is cached for 30s
 // to avoid hammering Supabase on back-to-back requests.
+//
+// 2026-10-15 (Arnel hotfix reapply, corrected): the previous version
+// of this file used a cache key that did NOT include the game id:
+//   ['game-detail-probe-v1']                ← static, all rows shared
+//   `game-detail-fixture-v2-${status}-${tier}`  ← all games in the
+//                                                same tier shared one entry
+// That made the first request after the cache expiry populate the
+// entry for one game, and every subsequent request for any other game
+// in the same tier returned the same row until the next expiry. The
+// fix is to include `id` (and status+tier for the fixture entry) in
+// both keys, and bump the version to invalidate any poisoned entries
+// the previous build is still holding.
 
 type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
 
@@ -78,20 +91,34 @@ interface FixtureRow {
 }
 
 // Probe just the status + scheduled_at — used to pick the cache
-// tier for the full row.
+// tier for the full row. Wrapped in unstable_cache so the top-level
+// page render can stay static. 30s revalidate is fine for the probe —
+// the full-row fetcher has its own per-tier revalidate.
+//
+// Hotfix 2026-10-15: include the id in the cache key so different
+// games don't share one cache entry. Bumped the key to '-v2' so any
+// poisoned entries from the previous static key are invalidated.
+const probeStatusCached = (id: string) => unstable_cache(
+  async (): Promise<{ status: GameStatus; scheduled_at: string } | null> => {
+    try {
+      const sb = getSupabase();
+      const { data } = await sb
+        .from('fixtures')
+        .select('status, scheduled_at')
+        .eq('id', id)
+        .maybeSingle();
+      if (!data) return null;
+      return { status: data.status as GameStatus, scheduled_at: data.scheduled_at };
+    } catch {
+      return null;
+    }
+  },
+  ['game-detail-probe-v2', id],
+  { revalidate: 30, tags: ['game-detail', `game:${id}`] }
+);
+
 async function probeStatus(id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> {
-  try {
-    const sb = getSupabase();
-    const { data } = await sb
-      .from('fixtures')
-      .select('status, scheduled_at')
-      .eq('id', id)
-      .maybeSingle();
-    if (!data) return null;
-    return { status: data.status as GameStatus, scheduled_at: data.scheduled_at };
-  } catch {
-    return null;
-  }
+  return probeStatusCached(id)();
 }
 
 function tierForStatus(status: GameStatus | undefined, scheduledAt: string | undefined): number {
@@ -108,10 +135,13 @@ function tierForStatus(status: GameStatus | undefined, scheduledAt: string | und
   return 3600;
 }
 
-const fetchGameByStatus = (status: GameStatus, scheduledAt: string) => {
+// Hotfix 2026-10-15: include the id (and status+tier for finer
+// invalidation) in the cache key so different games don't share one
+// cache entry. Bumped the key to '-v3' so any poisoned entries from
+// the previous static key are invalidated.
+const fetchGameByStatus = (id: string, status: GameStatus, scheduledAt: string) => {
   const tier = tierForStatus(status, scheduledAt);
-  const cacheKey = `game-detail-fixture-v2-${status}-${tier}`;
-  return (id: string): Promise<FixtureRow | null> => unstable_cache(
+  return unstable_cache(
     async (): Promise<FixtureRow | null> => {
       try {
         const sb = getSupabase();
@@ -131,16 +161,15 @@ const fetchGameByStatus = (status: GameStatus, scheduledAt: string) => {
         return null; // never cache errors/empty
       }
     },
-    [cacheKey],
+    ['game-detail-fixture-v3', id, status, String(tier)],
     { revalidate: tier, tags: ['game-detail', `game:${id}`] }
-  )();
+  );
 };
 
 async function fetchGame(id: string): Promise<FixtureRow | null> {
   const probe = await probeStatus(id);
   if (!probe) return null; // not found — don't cache
-  const fetcher = fetchGameByStatus(probe.status, probe.scheduled_at);
-  return fetcher(id);
+  return fetchGameByStatus(id, probe.status, probe.scheduled_at)();
 }
 
 export async function generateMetadata(
@@ -192,7 +221,7 @@ export default async function GameDetailPage(
   const game = await fetchGame(id);
 
   if (!game) {
-    return <GamePageClient id={id} />;
+    notFound();
   }
 
   const homeName = game.home_team?.name ?? 'Home';
