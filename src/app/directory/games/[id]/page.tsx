@@ -296,11 +296,18 @@ export default async function GameDetailPage(
   );
 
   // Date-aware franchise name resolution: old Phoenix Coyotes games
-  // show "Phoenix Coyotes" not "Utah Hockey Club".
+  // show "Phoenix Coyotes" not "Utah Hockey Club".  When the team
+  // isn't in the canonical list (e.g. AHL / KHL / NCAA), displayNameForGame
+  // falls back to the raw slug, which looks broken in JSON-LD — use
+  // the DB name in that case.
   const homeDisplay = game.home_team?.slug ? displayNameForGame(game.home_team.slug, game.scheduled_at) : null;
   const awayDisplay = game.away_team?.slug ? displayNameForGame(game.away_team.slug, game.scheduled_at) : null;
-  const homeRenderName = homeDisplay?.display || homeName;
-  const awayRenderName = awayDisplay?.display || awayName;
+  const homeRenderName = (homeDisplay && homeDisplay.display && homeDisplay.display !== game.home_team?.slug)
+    ? homeDisplay.display
+    : homeName;
+  const awayRenderName = (awayDisplay && awayDisplay.display && awayDisplay.display !== game.away_team?.slug)
+    ? awayDisplay.display
+    : awayName;
 
   // SportsEvent JSON-LD
   const sportsEvent = {
