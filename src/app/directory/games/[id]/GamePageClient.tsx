@@ -18,6 +18,15 @@ import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
 import { formatGameTime, timezoneForGame, disclaimerText } from '@/lib/game-time';
 import type { TeamForm, H2HRow, NextGame, SameDayGame } from '@/lib/game-modules';
+import type {
+  VenueData,
+  BroadcastData,
+  RecapLinkData,
+  BoxscoreLite,
+  LinkedArticle,
+  LinkedHighlight,
+  HistoricalAlias,
+} from '@/lib/game-detail-modules';
 
 const BASE_URL = 'https://rinkstop.com';
 
@@ -27,8 +36,8 @@ interface FixtureLite {
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
   home_score: number | null;
   away_score: number | null;
-  home_team: { name: string; slug: string } | null;
-  away_team: { name: string; slug: string } | null;
+  home_team: { name: string; slug: string; logo_url: string | null } | null;
+  away_team: { name: string; slug: string; logo_url: string | null } | null;
   league: { name: string; slug: string; country: string | null } | null;
 }
 
@@ -47,10 +56,21 @@ interface Modules {
   isUpcomingWithinWeek: boolean;
 }
 
+interface Detail {
+  venue: VenueData;
+  broadcasts: BroadcastData[];
+  recapLinks: RecapLinkData;
+  boxscore: BoxscoreLite | null;
+  linkedArticles: LinkedArticle[];
+  linkedHighlights: LinkedHighlight[];
+  historicalAliases: HistoricalAlias;
+}
+
 interface Props {
   id: string;
   game: FixtureLite | null;
   modules: Modules | null;
+  detail: Detail | null;
 }
 
 const statusStyle: Record<string, { color: string; label: string }> = {
@@ -65,7 +85,7 @@ function formatDateShort(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function GamePage({ id, game, modules }: Props) {
+export default function GamePage({ id, game, modules, detail }: Props) {
   // 404 / not-found shell
   if (!game) {
     return (
@@ -116,6 +136,13 @@ export default function GamePage({ id, game, modules }: Props) {
             {awaySlug ? (
               <Link href={`/directory/teams/${awaySlug}`} style={{ textDecoration: 'none' }}>
                 <p style={{ fontSize: '1.125rem', fontWeight: 700, color: awayWin ? '#34d399' : '#fff', margin: 0 }}>{m.awayRenderName}</p>
+                {detail?.historicalAliases?.awayAlias && detail?.historicalAliases?.awayChainLink && (
+                  <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                    <Link href={detail.historicalAliases.awayChainLink} style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
+                      {detail.historicalAliases.awayAlias}
+                    </Link>
+                  </p>
+                )}
               </Link>
             ) : (
               <p style={{ fontSize: '1.125rem', fontWeight: 700, color: awayWin ? '#34d399' : '#fff', margin: 0 }}>{m.awayRenderName}</p>
@@ -135,6 +162,13 @@ export default function GamePage({ id, game, modules }: Props) {
             {homeSlug ? (
               <Link href={`/directory/teams/${homeSlug}`} style={{ textDecoration: 'none' }}>
                 <p style={{ fontSize: '1.125rem', fontWeight: 700, color: homeWin ? '#34d399' : '#fff', margin: 0 }}>{m.homeRenderName}</p>
+                {detail?.historicalAliases?.homeAlias && detail?.historicalAliases?.homeChainLink && (
+                  <p style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                    <Link href={detail.historicalAliases.homeChainLink} style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
+                      {detail.historicalAliases.homeAlias}
+                    </Link>
+                  </p>
+                )}
               </Link>
             ) : (
               <p style={{ fontSize: '1.125rem', fontWeight: 700, color: homeWin ? '#34d399' : '#fff', margin: 0 }}>{m.homeRenderName}</p>
@@ -165,6 +199,123 @@ export default function GamePage({ id, game, modules }: Props) {
         <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
           <p style={{ color: '#fff', fontSize: '0.9375rem', margin: 0 }}>{m.recap}</p>
         </div>
+      )}
+
+      {/* Venue (from NHL.com game_data via getVenueAndBoxscore) */}
+      {detail?.venue?.name && (
+        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+          @ {detail.venue.name}
+        </p>
+      )}
+
+      {/* TV Broadcasts */}
+      {detail?.broadcasts && detail.broadcasts.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: '0 0 0.5rem' }}>TV Broadcasts</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {detail.broadcasts.map((b, i) => (
+              <span key={i} style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '0.25rem 0.625rem' }}>
+                {b.network}{b.countryCode ? ` (${b.countryCode})` : ''}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Period Scores */}
+      {detail?.boxscore?.periodScores && detail.boxscore.periodScores.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Period Scores</h3>
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {detail.boxscore.periodScores.map((p, i) => (
+              <div key={i} style={{ background: 'var(--s1)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem 1rem', textAlign: 'center', minWidth: '70px' }}>
+                <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', marginBottom: '0.25rem' }}>{p.period}</p>
+                <p style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{p.home} - {p.away}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Three Stars (NHL) — only when the source supplies names */}
+      {detail?.boxscore?.threeStars && detail.boxscore.threeStars.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Three Stars</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
+            {detail.boxscore.threeStars.map((s, i) => (
+              <div key={i} style={{ background: 'var(--s1)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.875rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem', color: i === 0 ? '#FFB81C' : (i === 1 ? '#C0C0C0' : '#CD7F32') }}>
+                  {i === 0 ? '⭐' : i === 1 ? '★' : '☆'}
+                </div>
+                <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>{s.name}</p>
+                {s.teamAbbrev && <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{s.teamAbbrev}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Goalies (NHL) — only the winning goalie is known from summary */}
+      {detail?.boxscore?.goalies && (detail.boxscore.goalies.home || detail.boxscore.goalies.away) && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Winning Goalie</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Away</p>
+              {detail.boxscore.goalies.away ? (
+                <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>
+                  {detail.boxscore.goalies.away.name}
+                  {detail.boxscore.goalies.away.decision && (
+                    <span style={{ fontSize: '0.75rem', color: '#34d399', marginLeft: '0.5rem' }}>W</span>
+                  )}
+                </p>
+              ) : <p style={{ color: 'rgba(255,255,255,0.4)' }}>—</p>}
+            </div>
+            <div>
+              <p style={{ fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Home</p>
+              {detail.boxscore.goalies.home ? (
+                <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#fff' }}>
+                  {detail.boxscore.goalies.home.name}
+                  {detail.boxscore.goalies.home.decision && (
+                    <span style={{ fontSize: '0.75rem', color: '#34d399', marginLeft: '0.5rem' }}>W</span>
+                  )}
+                </p>
+              ) : <p style={{ color: 'rgba(255,255,255,0.4)' }}>—</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recap links (3-min recap + condensed game on NHL.com) */}
+      {detail?.recapLinks && (detail.recapLinks.threeMinRecap || detail.recapLinks.condensedGame || detail.recapLinks.gameCenterLink) && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: '0 0 0.75rem' }}>Game Recap</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {detail.recapLinks.threeMinRecap && (
+              <a href={detail.recapLinks.threeMinRecap} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 0.875rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '0.8125rem', fontWeight: 600 }}>
+                3-min recap
+              </a>
+            )}
+            {detail.recapLinks.condensedGame && (
+              <a href={detail.recapLinks.condensedGame} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 0.875rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '0.8125rem', fontWeight: 600 }}>
+                Condensed game
+              </a>
+            )}
+            {detail.recapLinks.gameCenterLink && (
+              <a href={`https://www.nhl.com${detail.recapLinks.gameCenterLink}`} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '0.5rem 0.875rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '0.8125rem', fontWeight: 600 }}>
+                NHL Game Center
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Score discrepancy badge (DB score differs from NHL.com summary) */}
+      {detail?.boxscore?.scoreDiscrepancy && (
+        <p style={{ fontSize: '0.6875rem', color: '#FFB81C', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+          DB has {detail.boxscore.scoreDiscrepancy.home.db}-{detail.boxscore.scoreDiscrepancy.away.db};
+          NHL.com has {detail.boxscore.scoreDiscrepancy.home.hl}-{detail.boxscore.scoreDiscrepancy.away.hl}. Showing DB value.
+        </p>
       )}
 
       {/* Upcoming-game modules: countdown + add to calendar (uses Date.now() — must be client) */}
@@ -318,6 +469,87 @@ export default function GamePage({ id, game, modules }: Props) {
               <Link key={sg.id} href={`/directory/games/${sg.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
                 <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>{formatGameTime(sg.scheduled_at, tz)}</span>
                 <span style={{ color: '#fff' }}>{sg.away_team_name} @ {sg.home_team_name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Companion articles (server-rendered from posts.highlight_id) */}
+      {detail?.linkedArticles && detail.linkedArticles.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+            Related Articles
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {detail.linkedArticles.map((a) => (
+              <Link
+                key={a.id}
+                href={a.path}
+                style={{
+                  display: 'block',
+                  padding: '1rem',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', color: '#FFB81C', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem', fontWeight: 700 }}>
+                  {a.category || 'Article'}
+                  {a.reading_time_minutes ? ` · ${a.reading_time_minutes} min read` : ''}
+                </div>
+                <h3 style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 700, lineHeight: 1.3, marginBottom: '0.4rem' }}>
+                  {a.title}
+                </h3>
+                {a.subtitle && (
+                  <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, margin: 0 }}>
+                    {a.subtitle}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Companion highlight videos (server-rendered from highlight_backups) */}
+      {detail?.linkedHighlights && detail.linkedHighlights.length > 0 && (
+        <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+            Game Highlights
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {detail.linkedHighlights.map((h) => (
+              <Link
+                key={h.id}
+                href={h.video_url || h.embed_url || `/highlights/${h.id}`}
+                target={h.video_url || h.embed_url ? '_blank' : undefined}
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.75rem',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                {h.image_url ? (
+                  <img src={h.image_url} alt="" style={{ width: 80, height: 45, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 80, height: 45, background: 'rgba(255,255,255,0.05)', borderRadius: 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.625rem', color: 'rgba(255,255,255,0.4)' }}>▶</div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: '0.9375rem', color: '#fff', fontWeight: 600, margin: 0, lineHeight: 1.3 }}>{h.title}</p>
+                  {h.channel && (
+                    <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', margin: '0.25rem 0 0' }}>{h.channel}</p>
+                  )}
+                </div>
               </Link>
             ))}
           </div>
