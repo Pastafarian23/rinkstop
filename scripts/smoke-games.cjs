@@ -219,11 +219,18 @@ function checkMatch(id, isBogus, expected, got) {
   }
   // jse_name may be rendered as the slug ("bakersfield-condors")
   // when the team is not in NHL_TEAMS_CANONICAL.  Accept either the
-  // proper name or its slugified form.
+  // proper name, the slugified name, or the "slug1 at slug2" form
+  // (which is what JSON-LD actually renders for non-NHL teams).
   const expName = expectedName(expected);
   const expSlug = expName ? nameSlug(expName) : null;
-  if (expName && got.jse_name && got.jse_name !== expName && got.jse_name !== expSlug) {
-    return { pass: false, reason: `jse_name="${got.jse_name}" expected "${expName}" or "${expSlug}"` };
+  const expSlugAt = expected && expected.away_name && expected.home_name
+    ? `${nameSlug(expected.away_name)} at ${nameSlug(expected.home_name)}`
+    : null;
+  if (expName && got.jse_name
+      && got.jse_name !== expName
+      && got.jse_name !== expSlug
+      && got.jse_name !== expSlugAt) {
+    return { pass: false, reason: `jse_name="${got.jse_name}" expected "${expName}" / "${expSlug}" / "${expSlugAt}"` };
   }
   if (got.canonical && !got.canonical.endsWith('/' + id)) {
     return { pass: false, reason: `canonical=${got.canonical} (doesn't end with /${id})` };
