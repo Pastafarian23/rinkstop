@@ -113,10 +113,26 @@ async function pickIds() {
   // Always include the user-required id first.
   const picks = [USER_ID];
 
+  // Cache the league-id lookup so we only hit /leagues once per
+  // league, not once per (status, league) bucket.  PostgREST does
+  // NOT support filtering on an embedded resource without including
+  // it in the select, so we resolve league_slug -> league_id here
+  // and use the id in the fixtures query.
+  const leagueIdBySlug = {};
+  async function leagueId(slug) {
+    if (leagueIdBySlug[slug]) return leagueIdBySlug[slug];
+    const r = await sb(`/rest/v1/leagues?select=id&slug=eq.${slug}&limit=1`);
+    if (r.status !== 200) return null;
+    const rows = JSON.parse(r.body);
+    if (!rows || !rows[0]) return null;
+    leagueIdBySlug[slug] = rows[0].id;
+    return rows[0].id;
+  }
+
   async function pullIds(status, leagueSlug, n) {
-    // Direct league filter via the FK resource syntax.  Returns at
-    // most `n` rows (PostgREST respects the limit).
-    const r = await sb(`/rest/v1/fixtures?select=id&status=eq.${status}&league.slug=eq.${leagueSlug}&order=scheduled_at.desc&limit=${Math.max(n, 50)}`);
+    const lid = await leagueId(leagueSlug);
+    if (!lid) return [];
+    const r = await sb(`/rest/v1/fixtures?select=id&status=eq.${status}&league_id=eq.${lid}&order=scheduled_at.desc&limit=${Math.max(n, 50)}`);
     if (r.status !== 200) return [];
     const rows = JSON.parse(r.body);
     return (rows || [])
@@ -133,6 +149,9 @@ async function pickIds() {
   // addition to NHL.  ECHL/NCAA capped at 2 each since the
   // leagues have fewer recent completed games; bumped to 3 to
   // match AHL.
+  //
+  // 2026-10-15: NCAA's actual slug is 'ncaa-division-1-hockey'
+  // (not 'ncaa' — that's an empty stub).  Use the real slug.
   const buckets = [
     await pullIds('completed', 'nhl', 5),
     await pullIds('scheduled', 'nhl', 3),
@@ -140,10 +159,10 @@ async function pickIds() {
     await pullIds('completed', 'ahl', 3),
     await pullIds('completed', 'echl', 3),
     await pullIds('completed', 'khl', 2),
-    await pullIds('completed', 'ncaa', 3),
+    await pullIds('completed', 'ncaa-division-1-hockey', 3),
     await pullIds('scheduled', 'ahl', 1),
     await pullIds('scheduled', 'echl', 1),
-    await pullIds('scheduled', 'ncaa', 1),
+    await pullIds('scheduled', 'ncaa-division-1-hockey', 1),
   ];
 
   const all = [
