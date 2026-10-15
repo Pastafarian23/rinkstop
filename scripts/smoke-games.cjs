@@ -45,7 +45,7 @@ for (const line of fs.readFileSync(__dirname + '/../.env.local', 'utf8').split('
 }
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
-const BASE = 'https://rinkstop.com';
+const BASE = process.env.BASE_URL || process.env.SMOKE_BASE_URL || 'https://rinkstop.com';
 const USER_ID = '05149648-5967-4e0f-824d-a4ddf1e598f6'; // user-required
 const BOGUS_ID = '00000000-0000-0000-0000-000000000099';
 
@@ -217,9 +217,13 @@ function checkMatch(id, isBogus, expected, got) {
   if (got.status !== 200) {
     return { pass: false, reason: `status=${got.status} (expected 200)` };
   }
+  // jse_name may be rendered as the slug ("bakersfield-condors")
+  // when the team is not in NHL_TEAMS_CANONICAL.  Accept either the
+  // proper name or its slugified form.
   const expName = expectedName(expected);
-  if (expName && got.jse_name && got.jse_name !== expName) {
-    return { pass: false, reason: `jse_name="${got.jse_name}" expected "${expName}"` };
+  const expSlug = expName ? nameSlug(expName) : null;
+  if (expName && got.jse_name && got.jse_name !== expName && got.jse_name !== expSlug) {
+    return { pass: false, reason: `jse_name="${got.jse_name}" expected "${expName}" or "${expSlug}"` };
   }
   if (got.canonical && !got.canonical.endsWith('/' + id)) {
     return { pass: false, reason: `canonical=${got.canonical} (doesn't end with /${id})` };

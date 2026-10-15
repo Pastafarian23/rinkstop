@@ -163,24 +163,26 @@ export async function getVenueAndBoxscore(
         const threeStars: { name: string; teamAbbrev: string | null }[] = [];
 
         // Goalies: only the winning goalie is in the summary.  We
-        // surface that on the winning side and leave the loser null.
-        const winningAbbrev =
-          periodType === 'SO' && hlHome !== null && hlAway !== null
+        // surface that on the winning side (home or away) and leave
+        // the loser null.  Decide the winning side from the
+        // gameData scores, not the DB scores, since the
+        // winningGoalie name comes from gameData and is the
+        // authoritative source.
+        const winningSide: 'home' | 'away' | null =
+          hlHome !== null && hlAway !== null
             ? hlHome > hlAway
-              ? homeTeamAbbrev
-              : awayTeamAbbrev
-            : hlHome !== null && hlAway !== null
-            ? hlHome > hlAway
-              ? homeTeamAbbrev
-              : awayTeamAbbrev
+              ? 'home'
+              : hlHome < hlAway
+              ? 'away'
+              : null
             : null;
         const goalies: BoxscoreLite['goalies'] = {
           home:
-            winningGoalieName && winningAbbrev === homeTeamAbbrev
+            winningGoalieName && winningSide === 'home'
               ? { name: winningGoalieName, playerId: winningGoaliePlayerId, decision: 'W' }
               : null,
           away:
-            winningGoalieName && winningAbbrev === awayTeamAbbrev
+            winningGoalieName && winningSide === 'away'
               ? { name: winningGoalieName, playerId: winningGoaliePlayerId, decision: 'W' }
               : null,
         };
