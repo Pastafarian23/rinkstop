@@ -98,37 +98,57 @@ async function lookupTeamSlugRedirect(slug: string): Promise<string | null> {
 }
 
 // Simple in-memory rate limiter for edge runtime
-// Keyed by IP, uses sliding window (1-minute windows)
+// Keyed by IP, uses sliding window (1-minute windows).
+//
+// 2026-10-15 (Piece C, Arnel 10:54): two-tier limiter.  Normal
+// clients get 100 req/min per IP.  Requests with a well-known
+// crawler User-Agent (Googlebot, bingbot, Slurp, DuckDuckBot,
+// Baiduspider, YandexBot, Applebot) get a separate, higher
+// bucket of 1000 req/min per IP.  Why not unlimited?  UA can be
+// spoofed, and we have scraping traffic.  A real Googlebot crawl
+// on our busiest directory pages is well under 1000 req/min/IP
+// (Google's own published per-IP rate is "a few per second")
+// so the higher cap doesn't help spammers, but it does cap a
+// flooder who is impersonating a bot UA.
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const trustedRateLimitMap = new Map<string, { count: number; windowStart: number }>();
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 100; // requests per window per IP (generous for normal users)
+const RATE_LIMIT_MAX = 100;            // normal clients per window per IP
+const TRUSTED_RATE_LIMIT_MAX = 1000;   // UA-claimed crawlers per window per IP
 
-function isRateLimited(ip: string): boolean {
+type RateLimitResult = { blocked: boolean; limit: number; remaining: number; resetMs: number };
+
+function checkRateLimit(
+  ip: string,
+  map: Map<string, { count: number; windowStart: number }>,
+  max: number,
+): RateLimitResult {
   const now = Date.now();
-  const record = rateLimitMap.get(ip);
+  const record = map.get(ip);
 
   if (!record || now - record.windowStart > RATE_LIMIT_WINDOW_MS) {
-    // Start new window
-    rateLimitMap.set(ip, { count: 1, windowStart: now });
-    return false;
+    map.set(ip, { count: 1, windowStart: now });
+    return { blocked: false, limit: max, remaining: max - 1, resetMs: now + RATE_LIMIT_WINDOW_MS };
   }
 
-  if (record.count >= RATE_LIMIT_MAX) {
-    return true; // blocked
+  if (record.count >= max) {
+    return { blocked: true, limit: max, remaining: 0, resetMs: record.windowStart + RATE_LIMIT_WINDOW_MS };
   }
 
   record.count++;
-  return false;
+  return { blocked: false, limit: max, remaining: max - record.count, resetMs: record.windowStart + RATE_LIMIT_WINDOW_MS };
 }
 
 // Clean up old entries periodically (runs on every request, cleanup every 100 requests)
 let cleanupCounter = 0;
 function cleanupOldEntries() {
   const now = Date.now();
-  for (const [ip, record] of rateLimitMap.entries()) {
-    if (now - record.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
-      rateLimitMap.delete(ip);
+  for (const m of [rateLimitMap, trustedRateLimitMap]) {
+    for (const [ip, record] of m.entries()) {
+      if (now - record.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
+        m.delete(ip);
+      }
     }
   }
 }
@@ -284,35 +304,67 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
                    path.startsWith('/favicon') ||
                    path.includes('.'); // file extensions = static files
 
-  // 2026-10-15 (Piece B, Arnel 10:12 item A): well-known search-engine
-  // user agents bypass the per-IP rate limit.  Googlebot and Bingbot
-  // both identify themselves via the User-Agent header; verifying
-  // the IP via reverse-DNS would be more secure but requires an
-  // outbound DNS lookup in the Edge runtime (not supported).  UA-only
-  // check is the standard middle ground and matches Google's own
-  // docs (https://developers.google.com/search/docs/crawling-indexing/verifying-googlebot).
-  // Crawler-bots that lie about their UA still hit the rate limit,
-  // which is the safe default.
+  // 2026-10-15 (Piece C, Arnel 10:54): two-tier rate limit.
+  //
+  // Tier 1: normal clients (no recognized crawler UA) — 100 req/min/IP.
+  // Tier 2: UA-claimed crawlers (Googlebot, bingbot, Slurp, DuckDuckBot,
+  //   Baiduspider, YandexBot, Applebot) — 1000 req/min/IP.  Why a
+  //   cap and not unlimited?  UA can be spoofed (we have scraping
+  //   traffic), and 1000 req/min/IP is still well above any real
+  //   crawler rate (Google's published per-IP rate is "a few per
+  //   second").  Real crawlers stay under the cap; spammers get
+  //   capped too.
+  //
+  // NOTE: UA alone is not a real verification.  This is an interim
+  // fix until we can implement IP-range verification (see Task 1.2).
+  // UA-claimed requests from IPs OUTSIDE the published crawler
+  // ranges are logged for analysis (Task 1.3) but are still served
+  // at the higher tier.
   const userAgent = request.headers.get('user-agent') || '';
   const isTrustedBot = /\bGooglebot\b|\bbingbot\b|\bSlurp\b|\bDuckDuckBot\b|\bBaiduspider\b|\bYandexBot\b|\bApplebot\b/i.test(userAgent);
 
-  if (!isStatic && !isTrustedBot) {
+  if (!isStatic) {
     // Get client IP (handle proxies)
     const ip = (request as any).ip ||
                request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
                request.headers.get('x-real-ip') ||
                'unknown';
 
-    if (isRateLimited(ip)) {
+    const map = isTrustedBot ? trustedRateLimitMap : rateLimitMap;
+    const max = isTrustedBot ? TRUSTED_RATE_LIMIT_MAX : RATE_LIMIT_MAX;
+    const result = checkRateLimit(ip, map, max);
+
+    if (result.blocked) {
+      // Task 1.3: log crawler-UA requests that exceed the cap.  These
+      // are the requests we want to see in the log to detect spoofing
+      // + floods.  The log line includes the IP, the UA, and the path
+      // so we can correlate against published crawler IP ranges.
+      if (isTrustedBot) {
+        console.warn('[middleware] crawler cap exceeded', JSON.stringify({
+          ip, ua: userAgent, path, limit: result.limit, at: Date.now(),
+        }));
+      }
       return new NextResponse('Too Many Requests', {
         status: 429,
         headers: {
           'Retry-After': '60',
-          'X-RateLimit-Limit': String(RATE_LIMIT_MAX),
+          'X-RateLimit-Limit': String(result.limit),
           'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(Date.now() + RATE_LIMIT_WINDOW_MS),
+          'X-RateLimit-Reset': String(result.resetMs),
         },
       });
+    }
+
+    // Task 1.3: log every crawler-UA request so we can detect
+    // spoofing (UA-claimed requests from IPs that aren't in
+    // published crawler ranges).  We log a structured line on
+    // every crawler request — Vercel Edge logs ship these to
+    // the project's log drain.  Cheap: one console.warn per
+    // request, no extra Supabase / external calls.
+    if (isTrustedBot) {
+      console.log('[middleware] crawler request', JSON.stringify({
+        ip, ua: userAgent, path, at: Date.now(),
+      }));
     }
 
     // Periodic cleanup
