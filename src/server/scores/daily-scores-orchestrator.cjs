@@ -167,9 +167,16 @@ function resolveNhlTeamId(abbrev) {
 async function upsertNhlFixture(g) {
   const ht = g.homeTeam || {};
   const at = g.awayTeam || {};
-  const homeScore = ht.score ?? null;
-  const awayScore = at.score ?? null;
   const status = NHL_STATE_TO_STATUS[g.gameState] || 'scheduled';
+  // 2026-10-15 (Arnel 10:54 Task 2.1): don't write 0 as a placeholder
+  // for scheduled games.  NHL.com returns 0 for unstarted games
+  // (FUT/PRE states), but a 0 score on a scheduled game is
+  // indistinguishable from a game that actually ended 0-0 only
+  // when status=completed.  For scheduled/postponed, write null.
+  const rawHome = ht.score ?? null;
+  const rawAway = at.score ?? null;
+  const homeScore = (status === 'scheduled' || status === 'postponed') ? null : rawHome;
+  const awayScore = (status === 'scheduled' || status === 'postponed') ? null : rawAway;
   if (!ht.id || !at.id) return null;
   const id = `${NHL_LEAGUE_ID.slice(0, 8)}-0000-0000-0000-${String(g.id).padStart(12, '0')}`.slice(0, 36);
   const record = {
@@ -340,14 +347,19 @@ async function upsertHighlightlyGame(g, leagueId, leagueName, leagueUuid) {
   const homeTeamId = await lookupTeamByName(ht.name || ht.displayName || '', leagueUuid);
   const awayTeamId = await lookupTeamByName(at.name || at.displayName || '', leagueUuid);
   if (!homeTeamId || !awayTeamId) return null;
+  const status = hlToStatus(g.state?.description);
+  // 2026-10-15 (Arnel 10:54 Task 2.1): don't write 0-0 as a
+  // placeholder for scheduled games.  HiLightly returns '0-0'
+  // for unstarted games; treat as null.
+  const isUnstarted = status === 'scheduled' || status === 'postponed';
   const record = {
     league_id: leagueUuid,
     scheduled_at: g.date,
     home_team_id: homeTeamId,
     away_team_id: awayTeamId,
-    home_score: score[0],
-    away_score: score[1],
-    status: hlToStatus(g.state?.description),
+    home_score: isUnstarted ? null : score[0],
+    away_score: isUnstarted ? null : score[1],
+    status,
     season: null,
     game_data: {
       hl_match_id: g.id,
