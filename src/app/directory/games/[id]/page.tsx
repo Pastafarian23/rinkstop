@@ -1,49 +1,50 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { ScoresheetQRPanel } from '@/components/ScoresheetQRPanel';
+import FollowGameButton from '@/components/FollowGameButton';
+import { isGameIndexable } from '@/lib/game-indexable';
+import {
+  getTeamForm,
+  getH2H,
+  getNextGame,
+  getSameDayGames,
+  type TeamForm,
+  type H2HRow,
+  type NextGame,
+  type SameDayGame,
+} from '@/lib/game-modules';
+import {
+  getVenueAndBoxscore,
+  getLinkedArticles,
+  getLinkedHighlights,
+  getHistoricalAliases,
+  type VenueData,
+  type BroadcastData,
+  type RecapLinkData,
+  type BoxscoreLite,
+  type LinkedArticle,
+  type LinkedHighlight,
+  type HistoricalAlias,
+} from '@/lib/game-detail-modules';
+import { displayNameForGame } from '@/lib/franchise-name-lookup';
 
-// 2026-10-14 (Arnel cache fix, final): tiered ISR.
+// 2026-10-14 (Arnel 13:38 directive): server-render the data-driven
+// modules (team form, H2H, next games, same-day, recap) in the
+// initial HTML.  Per the user spec, GamePageClient keeps only
+// interactive parts (ShareButton, countdown timer, add-to-calendar
+// ICS download, FollowButton).
 //
-// Why this is structured the way it is:
-//
-// - Next.js 15 requires either `generateStaticParams()` (returning
-//   an array, even empty) OR `export const dynamic = 'force-static'`
-//   for a dynamic route ([id]) to be treated as ISR rather than
-//   server-rendered-on-demand.  We don't know the full set of valid
-//   fixture ids at build time, so we return `[]` and let any id be
-//   prerendered on first request.  Subsequent requests for the same
-//   id are served from the per-id cache entry.
-//
-// - `revalidate` is set to 0 here (segment-level) and revalidation
-//   is delegated to the per-tier `unstable_cache` wrappers below.
-//   Each tier has its own revalidate value matching the freshness
-//   the data needs:
-//
-//     live / today's in-progress games:  30s
-//     upcoming scheduled (within 7 days):  5 min
-//     upcoming scheduled (further out):   1 hour
-//     finished games:                      24 hours
-//
-//   Setting segment revalidate=0 prevents Next.js from revalidating
-//   the whole page on a global timer — the cache wrapper revalidates
-//   the data it cached, which Next.js will pick up on the next
-//   request via the cache tag.
-//
-// - Errors and empty results are NEVER cached.  The unstable_cache
-//   wrappers return `null` on error and the per-id cache key is
-//   skipped (the `if (game)` check below).
+// Tiered ISR revalidation is delegated to per-module unstable_cache
+// wrappers in src/lib/game-modules.ts.  Errors and empty results
+// are never cached.
 
 export const revalidate = 0;
-export const dynamicParams = true; // default; explicit for clarity
+export const dynamicParams = true;
 export async function generateStaticParams(): Promise<Array<{ id: string }>> {
-  // Return empty array — Next.js will prerender on first request
-  // for each [id] and serve subsequent requests from the per-id
-  // unstable_cache entries.
   return [];
 }
 
@@ -52,33 +53,14 @@ const BASE_URL = 'https://rinkstop.com';
 function getSupabase() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 }
-
-// 2026-10-14: tiered caching by game status.  We probe the row's
-// status first (cheap — no joins) to pick a revalidate value, then
-// fetch the full row.  The status probe itself is cached for 30s
-// to avoid hammering Supabase on back-to-back requests.
-//
-// 2026-10-15 (Arnel hotfix reapply, corrected): the previous version
-// of this file used a cache key that did NOT include the game id:
-//   ['game-detail-probe-v1']                ← static, all rows shared
-//   `game-detail-fixture-v2-${status}-${tier}`  ← all games in the
-//                                                same tier shared one entry
-// That made the first request after the cache expiry populate the
-// entry for one game, and every subsequent request for any other game
-// in the same tier returned the same row until the next expiry. The
-// fix is to include `id` (and status+tier for the fixture entry) in
-// both keys, and bump the version to invalidate any poisoned entries
-// the previous build is still holding.
-
-type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
 
 interface FixtureRow {
   id: string;
   scheduled_at: string;
-  status: GameStatus;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
   home_score: number | null;
   away_score: number | null;
   league_id: string;
@@ -90,56 +72,39 @@ interface FixtureRow {
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
 }
 
-// Probe just the status + scheduled_at — used to pick the cache
-// tier for the full row. Wrapped in unstable_cache so the top-level
-// page render can stay static. 30s revalidate is fine for the probe —
-// the full-row fetcher has its own per-tier revalidate.
-//
-// Hotfix 2026-10-15: include the id in the cache key so different
-// games don't share one cache entry. Bumped the key to '-v2' so any
-// poisoned entries from the previous static key are invalidated.
-const probeStatusCached = (id: string) => unstable_cache(
-  async (): Promise<{ status: GameStatus; scheduled_at: string } | null> => {
-    try {
-      const sb = getSupabase();
-      const { data } = await sb
-        .from('fixtures')
-        .select('status, scheduled_at')
-        .eq('id', id)
-        .maybeSingle();
-      if (!data) return null;
-      return { status: data.status as GameStatus, scheduled_at: data.scheduled_at };
-    } catch {
-      return null;
-    }
-  },
-  ['game-detail-probe-v2', id],
-  { revalidate: 30, tags: ['game-detail', `game:${id}`] }
-);
+// 2026-10-15 (Arnel 09:03 step 3): cache key includes id, status, and
+// tier so a game that flips status (scheduled → in_progress → completed)
+// lands on a fresh key.  Old keys age out naturally at their tier TTL.
+const FIXTURE_CACHE_VERSION = 'v3';
 
-async function probeStatus(id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> {
-  return probeStatusCached(id)();
-}
-
-function tierForStatus(status: GameStatus | undefined, scheduledAt: string | undefined): number {
-  if (!status) return 3600; // unknown — be conservative
+function tierForStatus(status: FixtureRow['status'] | undefined, scheduledAt: string | undefined): number {
+  if (!status) return 3600;
   if (status === 'in_progress') return 30;
   if (status === 'completed' || status === 'cancelled') return 86400;
   if (status === 'scheduled' || status === 'postponed') {
     if (!scheduledAt) return 3600;
     const minutesUntil = (new Date(scheduledAt).getTime() - Date.now()) / 60000;
-    if (minutesUntil < 0) return 30; // past but not yet marked completed
-    if (minutesUntil < 60 * 24 * 7) return 300; // within 7 days
-    return 3600; // further out
+    if (minutesUntil < 0) return 30;
+    if (minutesUntil < 60 * 24 * 7) return 300;
+    return 3600;
   }
   return 3600;
 }
 
-// Hotfix 2026-10-15: include the id (and status+tier for finer
-// invalidation) in the cache key so different games don't share one
-// cache entry. Bumped the key to '-v3' so any poisoned entries from
-// the previous static key are invalidated.
-const fetchGameByStatus = (id: string, status: GameStatus, scheduledAt: string) => {
+const probeStatusCached = (id: string) => unstable_cache(
+  async (): Promise<{ status: FixtureRow['status']; scheduled_at: string } | null> => {
+    try {
+      const sb = getSupabase();
+      const { data } = await sb.from('fixtures').select('status, scheduled_at').eq('id', id).maybeSingle();
+      if (!data) return null;
+      return { status: data.status as FixtureRow['status'], scheduled_at: data.scheduled_at };
+    } catch { return null; }
+  },
+  ['game-detail-probe', FIXTURE_CACHE_VERSION, id],
+  { revalidate: 30, tags: ['game-detail', `game:${id}`] }
+);
+
+const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt: string) => {
   const tier = tierForStatus(status, scheduledAt);
   return unstable_cache(
     async (): Promise<FixtureRow | null> => {
@@ -147,29 +112,37 @@ const fetchGameByStatus = (id: string, status: GameStatus, scheduledAt: string) 
         const sb = getSupabase();
         const { data: fixture, error } = await sb
           .from('fixtures')
-          .select(`
-            id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data,
+          .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data,
             home_team:teams!fixtures_home_team_id_fkey(id, name, slug, logo_url),
             away_team:teams!fixtures_away_team_id_fkey(id, name, slug, logo_url),
-            league:leagues(id, name, slug, level, country)
-          `)
+            league:leagues(id, name, slug, level, country)`)
           .eq('id', id)
           .maybeSingle();
-        if (error || !fixture) return null; // never cache errors/empty
+        if (error || !fixture) return null;
         return fixture as unknown as FixtureRow;
-      } catch {
-        return null; // never cache errors/empty
-      }
+      } catch { return null; }
     },
-    ['game-detail-fixture-v3', id, status, String(tier)],
+    // Key includes status + tier so a status flip invalidates cleanly.
+    ['game-detail-fixture', FIXTURE_CACHE_VERSION, id, status, String(tier)],
     { revalidate: tier, tags: ['game-detail', `game:${id}`] }
   );
 };
 
 async function fetchGame(id: string): Promise<FixtureRow | null> {
-  const probe = await probeStatus(id);
-  if (!probe) return null; // not found — don't cache
+  const probe = await probeStatusCached(id)();
+  if (!probe) return null;
   return fetchGameByStatus(id, probe.status, probe.scheduled_at)();
+}
+
+function buildRecap(g: FixtureRow, homeDisplayName: string, awayDisplayName: string): string | null {
+  if (g.status !== 'completed' || g.home_score === null || g.away_score === null) return null;
+  if (g.home_score > g.away_score) {
+    return `${homeDisplayName} won ${g.home_score}–${g.away_score} over ${awayDisplayName}.`;
+  }
+  if (g.away_score > g.home_score) {
+    return `${awayDisplayName} won ${g.away_score}–${g.home_score} at ${homeDisplayName}.`;
+  }
+  return `Final: ${awayDisplayName} ${g.away_score}–${g.home_score} ${homeDisplayName}.`;
 }
 
 export async function generateMetadata(
@@ -192,11 +165,46 @@ export async function generateMetadata(
   const title = `${awayName} at ${homeName} — ${dateStr} | ${leagueName}`;
   const description = `${awayName} vs ${homeName} on ${dateStr} in the ${leagueName}. Live score, boxscore, and game details on RinkStop.`;
   const ogImage = game.home_team?.logo_url || `${BASE_URL}/og-image.png`;
+
+  // Indexability is decided from real data below in the page body
+  // (we fetch the modules in the page itself and pass the
+  // boolean into metadata).  We mirror the same condition here
+  // by calling the same getters with the same status + scheduled_at
+  // — the result is consistent with the page's isGameIndexable().
+  const [homeForm, awayForm, h2h, homeNext, awayNext, sameDay] = await Promise.all([
+    getTeamForm(game.league_id, game.home_team_id, game.status, game.scheduled_at),
+    getTeamForm(game.league_id, game.away_team_id, game.status, game.scheduled_at),
+    getH2H(game.league_id, game.home_team_id, game.away_team_id, game.id, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.home_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.away_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getSameDayGames(
+      game.league_id,
+      `${game.scheduled_at.slice(0, 10)}T00:00:00Z`,
+      `${game.scheduled_at.slice(0, 10)}T23:59:59Z`,
+      game.id,
+      game.status,
+      game.scheduled_at,
+    ),
+  ]);
+  const isUpcomingWithinWeek = game.status === 'scheduled'
+    && (new Date(game.scheduled_at).getTime() - Date.now()) < 7 * 86400000;
+  const isCompletedWithScore = game.status === 'completed'
+    && game.home_score !== null && game.away_score !== null;
+  const indexable = isGameIndexable({
+    status: game.status,
+    bothTeamsHaveForm: !!(homeForm && awayForm),
+    hasH2H: h2h.length > 0,
+    hasHomeNextGame: !!homeNext,
+    hasAwayNextGame: !!awayNext,
+    hasSameDayGames: sameDay.length > 0,
+    isCompletedWithScore,
+    isUpcomingWithinWeek,
+  });
   return {
     title,
     description: description.slice(0, 240),
     alternates: { canonical: `${BASE_URL}/directory/games/${id}` },
-    robots: { index: true, follow: true },
+    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     openGraph: withDefaultOg({
       title: `${awayName} @ ${homeName}`,
       description,
@@ -224,15 +232,88 @@ export default async function GameDetailPage(
     notFound();
   }
 
+  // Fetch all data-driven modules in parallel.  Each is wrapped in
+  // its own unstable_cache with tiered revalidation.
+  const [homeForm, awayForm, h2h, homeNext, awayNext, sameDay] = await Promise.all([
+    getTeamForm(game.league_id, game.home_team_id, game.status, game.scheduled_at),
+    getTeamForm(game.league_id, game.away_team_id, game.status, game.scheduled_at),
+    getH2H(game.league_id, game.home_team_id, game.away_team_id, game.id, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.home_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getNextGame(game.league_id, game.away_team_id, game.scheduled_at, game.status, game.scheduled_at),
+    getSameDayGames(
+      game.league_id,
+      `${game.scheduled_at.slice(0, 10)}T00:00:00Z`,
+      `${game.scheduled_at.slice(0, 10)}T23:59:59Z`,
+      game.id,
+      game.status,
+      game.scheduled_at,
+    ),
+  ]);
+
   const homeName = game.home_team?.name ?? 'Home';
   const awayName = game.away_team?.name ?? 'Away';
   const leagueName = game.league?.name ?? 'Hockey';
 
-  // SportsEvent JSON-LD for Google rich results.
+  // 2026-10-15: server-rendered boxscore / venue / linked / historical.
+  // Each is its own unstable_cache call with the game id (and status +
+  // tier) in the key.  All hide themselves on no-data.
+  const { venue, broadcasts, recap: recapLinks, boxscore } = await getVenueAndBoxscore(
+    game.id,
+    game.game_data,
+    game.status,
+    game.scheduled_at,
+    homeName,
+    awayName,
+    game.home_score,
+    game.away_score,
+    null, // abbrev not in DB
+    null,
+  );
+  const gameDate = game.scheduled_at.slice(0, 10);
+  const [linkedArticles, linkedHighlights] = await Promise.all([
+    getLinkedArticles(
+      game.id,
+      game.game_data,
+      gameDate,
+      game.home_team?.name ?? null,
+      game.away_team?.name ?? null,
+      game.status,
+      game.scheduled_at,
+    ),
+    getLinkedHighlights(
+      game.id,
+      gameDate,
+      game.home_team?.name ?? null,
+      game.away_team?.name ?? null,
+      game.status,
+      game.scheduled_at,
+    ),
+  ]);
+  const historicalAliases = getHistoricalAliases(
+    game.home_team?.slug ?? null,
+    game.away_team?.slug ?? null,
+    game.scheduled_at,
+  );
+
+  // Date-aware franchise name resolution: old Phoenix Coyotes games
+  // show "Phoenix Coyotes" not "Utah Hockey Club".  When the team
+  // isn't in the canonical list (e.g. AHL / KHL / NCAA), displayNameForGame
+  // falls back to the raw slug, which looks broken in JSON-LD — use
+  // the DB name in that case.
+  const homeDisplay = game.home_team?.slug ? displayNameForGame(game.home_team.slug, game.scheduled_at) : null;
+  const awayDisplay = game.away_team?.slug ? displayNameForGame(game.away_team.slug, game.scheduled_at) : null;
+  const homeRenderName = (homeDisplay && homeDisplay.display && homeDisplay.display !== game.home_team?.slug)
+    ? homeDisplay.display
+    : homeName;
+  const awayRenderName = (awayDisplay && awayDisplay.display && awayDisplay.display !== game.away_team?.slug)
+    ? awayDisplay.display
+    : awayName;
+
+  // SportsEvent JSON-LD
   const sportsEvent = {
     '@context': 'https://schema.org',
     '@type': 'SportsEvent',
-    name: `${awayName} at ${homeName}`,
+    name: `${awayRenderName} at ${homeRenderName}`,
     startDate: game.scheduled_at,
     url: `${BASE_URL}/directory/games/${id}`,
     eventStatus:
@@ -242,15 +323,53 @@ export default async function GameDetailPage(
       'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     sport: 'Ice Hockey',
-    homeTeam: game.home_team ? { '@type': 'SportsTeam', name: homeName, url: `${BASE_URL}/directory/teams/${game.home_team.slug}` } : undefined,
-    awayTeam: game.away_team ? { '@type': 'SportsTeam', name: awayName, url: `${BASE_URL}/directory/teams/${game.away_team.slug}` } : undefined,
+    homeTeam: game.home_team ? { '@type': 'SportsTeam', name: homeRenderName, url: `${BASE_URL}/directory/teams/${game.home_team.slug}` } : undefined,
+    awayTeam: game.away_team ? { '@type': 'SportsTeam', name: awayRenderName, url: `${BASE_URL}/directory/teams/${game.away_team.slug}` } : undefined,
+    ...(game.status === 'completed' && game.home_score !== null && game.away_score !== null ? {
+      description: `Final: ${awayRenderName} ${game.away_score}–${game.home_score} ${homeRenderName}.`,
+    } : {}),
   };
 
-  // Phase B2: QR panel enabled for scheduled fixtures.
+  // BreadcrumbList JSON-LD (server-rendered, not behind a client component)
+  const breadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${BASE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Scores', item: `${BASE_URL}/directory/games` },
+      { '@type': 'ListItem', position: 3, name: leagueName, item: game.league?.slug ? `${BASE_URL}/directory/${game.league.slug}` : `${BASE_URL}/directory/games` },
+      { '@type': 'ListItem', position: 4, name: `${awayRenderName} at ${homeRenderName}`, item: `${BASE_URL}/directory/games/${id}` },
+    ],
+  };
+
+  const recap = buildRecap(game, homeRenderName, awayRenderName);
+  const isUpcomingWithinWeek = game.status === 'scheduled'
+    && (new Date(game.scheduled_at).getTime() - Date.now()) < 7 * 86400000;
+
+  // Decide indexable for the page-side decision (the metadata
+  // function already ran with the same data, but we want the
+  // components themselves to be able to read this if needed).
+  const isCompletedWithScore = game.status === 'completed'
+    && game.home_score !== null && game.away_score !== null;
+  const indexable = isGameIndexable({
+    status: game.status,
+    bothTeamsHaveForm: !!(homeForm && awayForm),
+    hasH2H: h2h.length > 0,
+    hasHomeNextGame: !!homeNext,
+    hasAwayNextGame: !!awayNext,
+    hasSameDayGames: sameDay.length > 0,
+    isCompletedWithScore,
+    isUpcomingWithinWeek,
+  });
+
   const qrEnabled = game.status === 'scheduled';
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEvent) }}
@@ -260,9 +379,43 @@ export default async function GameDetailPage(
         status={game.status}
         qrEnabled={qrEnabled}
       />
-      <Suspense fallback={null}>
-        <GamePageClient id={id} />
-      </Suspense>
+      {/* 2026-10-15: server-rendered FollowGameButton client leaf.
+          No auth, no DB — reads/writes the same rs_followed_games
+          localStorage key that the rest of the app uses for
+          follow state. Renders two small buttons (one per team). */}
+      {game.away_team && game.home_team && (
+        <FollowGameButton
+          awayTeam={{ slug: game.away_team.slug, name: awayRenderName }}
+          homeTeam={{ slug: game.home_team.slug, name: homeRenderName }}
+        />
+      )}
+      <GamePageClient
+        id={id}
+        game={game}
+        modules={{
+          homeForm,
+          awayForm,
+          h2h,
+          homeNext,
+          awayNext,
+          sameDay,
+          recap,
+          homeRenderName,
+          awayRenderName,
+          indexable,
+          isCompletedWithScore,
+          isUpcomingWithinWeek,
+        }}
+        detail={{
+          venue,
+          broadcasts,
+          recapLinks,
+          boxscore,
+          linkedArticles,
+          linkedHighlights,
+          historicalAliases,
+        }}
+      />
     </>
   );
 }
