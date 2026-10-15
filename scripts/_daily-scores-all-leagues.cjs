@@ -315,14 +315,19 @@ async function upsertHighlightlyGame(g, leagueId, leagueName, leagueUuid) {
   const homeTeamId = await lookupTeamByName(ht.name || ht.displayName || '', leagueUuid);
   const awayTeamId = await lookupTeamByName(at.name || at.displayName || '', leagueUuid);
   if (!homeTeamId || !awayTeamId) return null;
+  const status = hlToStatus(g.state?.description);
+  // 2026-10-15 (Arnel 10:54 Task 2.1): don't write 0-0 as a
+  // placeholder for scheduled games.  HiLightly returns '0-0'
+  // for unstarted games; treat as null.
+  const isUnstarted = status === 'scheduled' || status === 'postponed';
   const record = {
     league_id: leagueUuid,
     scheduled_at: g.date,
     home_team_id: homeTeamId,
     away_team_id: awayTeamId,
-    home_score: score[0],
-    away_score: score[1],
-    status: hlToStatus(g.state?.description),
+    home_score: isUnstarted ? null : score[0],
+    away_score: isUnstarted ? null : score[1],
+    status,
     season: null,
     game_data: { hl_match_id: g.id, hl_league_name: leagueName, home_team_name: ht.name, away_team_name: at.name, home_team_abbrev: ht.abbreviation, away_team_abbrev: at.abbreviation, source: 'highlightly' },
     updated_at: new Date().toISOString(),
