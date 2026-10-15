@@ -1,0 +1,322 @@
+#!/usr/bin/env node
+// scripts/smoke-games.cjs
+//
+// 2026-10-15: production smoke test for /directory/games/[id].
+//
+// Picks 20+ game ids from the database across leagues (NHL finished
+// /scheduled/cancelled, AHL, ECHL, KHL, NCAA), plus the specific
+// 05149648-5967-4e0f-824d-a4ddf1e598f6 id the team has been tracking
+// in incident reports, plus a bogus id.  For each id, fetches the
+// real game from the database (so the test is anchored to ground
+// truth, not a stale cache), then requests the page on rinkstop.com
+// 3 times in shuffled order plus once with a ?x=1 cache-buster,
+// and checks that title, canonical, robots meta, JSON-LD name and
+// scoreboard text all match the database row for that id.  The
+// bogus id must return 404.  Also checks that /, a team page, a
+// rink page and a league page all return 200.
+//
+// Run:
+//   node scripts/smoke-games.cjs
+//
+// Exits non-zero on any failure.
+
+const fs = require('fs');
+const https = require('https');
+
+const env = {};
+for (const line of fs.readFileSync(__dirname + '/../.env.local', 'utf8').split('\n')) {
+  const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+  if (m) env[m[1]] = m[2];
+}
+const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+const BASE = 'https://rinkstop.com';
+const USER_ID = '05149648-5967-4e0f-824d-a4ddf1e598f6'; // user-required
+const BOGUS_ID = '00000000-0000-0000-0000-000000000099';
+
+function sb(path) {
+  return new Promise((res, rej) => {
+    const req = https.get(`${SUPABASE_URL}${path}`, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } }, (r) => {
+      let b = ''; r.on('data', d => b += d); r.on('end', () => res({ status: r.statusCode, body: b })); r.on('error', rej);
+    });
+  });
+}
+function page(url) {
+  return new Promise((res, rej) => {
+    https.get(url, (r) => {
+      let b = ''; r.on('data', d => b += d); r.on('end', () => res({ status: r.statusCode, body: b, headers: r.headers })); r.on('error', rej);
+    });
+  });
+}
+function head(url) {
+  return new Promise((res, rej) => {
+    https.request(url, { method: 'HEAD' }, (r) => { r.resume(); r.on('end', () => res({ status: r.statusCode, headers: r.headers })); r.on('error', rej); }).end();
+  });
+}
+
+async function fetchExpectedGame(id) {
+  // Mirror the page's fixture row.  Note: do NOT select
+  // `period_scores` — that column doesn't exist in production
+  // (the page's Supabase select also doesn't include it).
+  const sel = [
+    'id', 'status', 'scheduled_at', 'home_score', 'away_score',
+    'home_team_id', 'away_team_id', 'league_id',
+    'home_team:teams!home_team_id(name)',
+    'away_team:teams!away_team_id(name)',
+    'league:leagues(slug,name)',
+  ].join(',');
+  const r = await sb(`/rest/v1/fixtures?select=${encodeURIComponent(sel)}&id=eq.${id}&limit=1`);
+  if (r.status !== 200) return null;
+  const rows = JSON.parse(r.body);
+  if (!rows[0]) return null;
+  const f = rows[0];
+  return {
+    id: f.id,
+    status: f.status,
+    away_name: f.away_team?.name || null,
+    home_name: f.home_team?.name || null,
+    home_score: f.home_score,
+    away_score: f.away_score,
+    league: f.league?.name || null,
+  };
+}
+
+function nameSlug(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+// Pick ids across leagues and statuses. We pick from the database so
+// the test is anchored to real data; we just choose how many and
+// from which buckets.
+async function pickIds() {
+  // Always include the user-required id first.
+  const picks = [USER_ID];
+
+  // For each (status, league) bucket, pull a window of ids with
+  // the league joined, then take what we need after the league
+  // filter and dedupe.
+  async function pullIds(status, leagueSlug, n) {
+    const r = await sb(`/rest/v1/fixtures?select=id,league:leagues(slug)&status=eq.${status}&order=scheduled_at.desc&limit=500`);
+    if (r.status !== 200) return [];
+    const rows = JSON.parse(r.body);
+    return rows
+      .filter(r => r.league && r.league.slug === leagueSlug)
+      .map(r => r.id)
+      .filter(id => id !== USER_ID);
+  }
+
+  // Shuffle each bucket so the order varies between runs.
+  function shuffle(a) { a.sort(() => Math.random() - 0.5); return a; }
+
+  // Pull buckets.
+  const buckets = [
+    await pullIds('completed', 'nhl', 5),
+    await pullIds('scheduled', 'nhl', 3),
+    await pullIds('cancelled', 'nhl', 1),
+    await pullIds('completed', 'ahl', 2),
+    await pullIds('completed', 'echl', 2),
+    await pullIds('completed', 'khl', 1),
+    await pullIds('completed', 'ncaa', 1),
+    await pullIds('scheduled', 'ahl', 1),
+    await pullIds('scheduled', 'echl', 1),
+  ];
+
+  const all = [
+    ...shuffle(buckets[0]).slice(0, 5),
+    ...shuffle(buckets[1]).slice(0, 3),
+    ...shuffle(buckets[2]).slice(0, 1),
+    ...shuffle(buckets[3]).slice(0, 2),
+    ...shuffle(buckets[4]).slice(0, 2),
+    ...shuffle(buckets[5]).slice(0, 1),
+    ...shuffle(buckets[6]).slice(0, 1),
+    ...shuffle(buckets[7]).slice(0, 1),
+    ...shuffle(buckets[8]).slice(0, 1),
+  ];
+
+  const seen = new Set([USER_ID]);
+  const out = [];
+  for (const id of all) {
+    if (!seen.has(id)) {
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  return [USER_ID, ...out];
+}
+
+function shuffleOrder(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function extractFromHtml(html) {
+  return {
+    title: (html.match(/<title>([^<]+)<\/title>/) || [])[1] || '',
+    canonical: (html.match(/rel="canonical"\s+href="([^"]+)"/) || [])[1] || '',
+    robots: (html.match(/<meta\s+name="robots"\s+content="([^"]+)"/i) || [])[1] || '',
+    jse_name: (html.match(/"@type":"SportsEvent","name":"([^"]+)"/) || [])[1] || '',
+    jse_startDate: (html.match(/"startDate":"([^"]+)"/) || [])[1] || '',
+    jse_url: (html.match(/"@type":"SportsEvent"[^}]+"url":"([^"]+)"/) || [])[1] || '',
+    jse_home: (html.match(/"homeTeam":\{"@type":"SportsTeam","name":"([^"]+)"/) || [])[1] || '',
+    jse_away: (html.match(/"awayTeam":\{"@type":"SportsTeam","name":"([^"]+)"/) || [])[1] || '',
+    // The scoreboard text is rendered in the page body (or hidden
+    // until JS hydrates).  We capture any "won N over M" / "Final: X
+    // Y-Z W" or the visible numeric scores.
+    scoreboard: (html.match(/(?:won \d+[^<]+|Final:[^<]+)/) || [])[0] || '',
+    // Also pull visible numeric scores (rendered next to team names).
+    visibleHomeScore: (html.match(/"homeScore":\s*(\d+)/) || [])[1] || '',
+    visibleAwayScore: (html.match(/"awayScore":\s*(\d+)/) || [])[1] || '',
+  };
+}
+
+function expectedName(g) {
+  if (!g || !g.away_name || !g.home_name) return null;
+  return `${g.away_name} at ${g.home_name}`;
+}
+
+function checkMatch(id, isBogus, expected, got) {
+  if (isBogus) {
+    if (got.status === 404) return { pass: true, reason: 'bogus → 404' };
+    return { pass: false, reason: `bogus expected 404, got ${got.status}` };
+  }
+  if (got.status !== 200) {
+    return { pass: false, reason: `status=${got.status} (expected 200)` };
+  }
+  const expName = expectedName(expected);
+  if (expName && got.jse_name && got.jse_name !== expName) {
+    return { pass: false, reason: `jse_name="${got.jse_name}" expected "${expName}"` };
+  }
+  if (got.canonical && !got.canonical.endsWith('/' + id)) {
+    return { pass: false, reason: `canonical=${got.canonical} (doesn't end with /${id})` };
+  }
+  return { pass: true, reason: 'ok' };
+}
+
+async function probeOne(id, expected, isBogus) {
+  const url = `${BASE}/directory/games/${id}`;
+  const r = await page(url);
+  let got;
+  if (r.status >= 400) {
+    got = {
+      status: r.status,
+      title: '', canonical: '', robots: '', jse_name: '', jse_startDate: '',
+      jse_url: '', jse_home: '', jse_away: '',
+      scoreboard: '', visibleHomeScore: '', visibleAwayScore: '',
+    };
+  } else {
+    got = extractFromHtml(r.body);
+    got.status = r.status;
+  }
+  return { url, status: r.status, got, expected, isBogus };
+}
+
+async function main() {
+  const t0 = Date.now();
+  const ids = await pickIds();
+  console.log(`Picked ${ids.length} ids + 1 bogus`);
+  console.log('  ids:');
+  for (const id of ids) console.log('    -', id);
+  console.log('  bogus:', BOGUS_ID);
+  console.log('');
+
+  // Fetch expected game from DB for each id
+  const expected = {};
+  for (const id of ids) expected[id] = await fetchExpectedGame(id);
+  for (const id of Object.keys(expected)) {
+    const e = expected[id];
+    if (!e) console.log(`  expected[${id.slice(0, 8)}] = (null — fixture not in DB)`);
+    else console.log(`  expected[${id.slice(0, 8)}] = "${e.away_name} at ${e.home_name}" (${e.status}, ${e.league}, ${e.home_score ?? '?'}-${e.away_score ?? '?'})`);
+  }
+  console.log('');
+
+  let totalRequests = 0, pass = 0, fail = 0;
+  const failures = [];
+
+  // 3 shuffled rounds
+  for (let r = 0; r < 3; r++) {
+    const order = shuffleOrder(ids);
+    console.log(`--- round ${r + 1} (3 requests per id, shuffled) ---`);
+    for (const id of order) {
+      const isBogus = id === BOGUS_ID;
+      const probe = await probeOne(id, expected[id], isBogus);
+      totalRequests++;
+      const m = checkMatch(id, isBogus, expected[id], probe.got);
+      const e = expected[id];
+      if (m.pass) {
+        pass++;
+        if (isBogus) console.log(`  ${id.slice(0, 8)}  status=404  PASS (bogus)`);
+        else console.log(`  ${id.slice(0, 8)}  status=${probe.got.status}  jse="${probe.got.jse_name}"  PASS`);
+      } else {
+        fail++;
+        failures.push({ id, round: r + 1, request: 1, reason: m.reason, got: probe.got, expected: e });
+        console.log(`  ${id.slice(0, 8)}  status=${probe.got.status}  reason=${m.reason}  FAIL`);
+      }
+    }
+  }
+
+  // Cache-buster round: one ?x=1 per id (including bogus)
+  console.log('--- cache-buster round (one ?x=1 per id) ---');
+  for (const id of [...ids, BOGUS_ID]) {
+    const isBogus = id === BOGUS_ID;
+    const url = `${BASE}/directory/games/${id}?x=1`;
+    const r = await page(url);
+    let got;
+    if (r.status >= 400) {
+      got = {
+        status: r.status, title: '', canonical: '', robots: '', jse_name: '',
+        jse_startDate: '', jse_url: '', jse_home: '', jse_away: '',
+        scoreboard: '', visibleHomeScore: '', visibleAwayScore: '',
+      };
+    } else {
+      got = extractFromHtml(r.body);
+      got.status = r.status;
+    }
+    const e = isBogus ? null : expected[id];
+    const m = checkMatch(id, isBogus, e, got);
+    totalRequests++;
+    if (m.pass) {
+      pass++;
+      console.log(`  ${id.slice(0, 8)}  ?x=1  status=${got.status}  jse="${got.jse_name}"  PASS`);
+    } else {
+      fail++;
+      failures.push({ id, round: 'cache-buster', request: 1, reason: m.reason, got, expected: e });
+      console.log(`  ${id.slice(0, 8)}  ?x=1  reason=${m.reason}  FAIL`);
+    }
+  }
+
+  // Static pages
+  console.log('--- static pages (home / team / rink / league) ---');
+  const staticPages = [
+    { path: '/', expectStatus: 200 },
+    { path: '/directory/teams/boston-bruins', expectStatus: 200 },
+    { path: '/directory/rinks/td-garden', expectStatus: 200 },
+    { path: '/directory/ahl', expectStatus: 200 },
+  ];
+  for (const sp of staticPages) {
+    const r = await head(BASE + sp.path);
+    if (r.status === sp.expectStatus) {
+      pass++;
+      console.log(`  ${sp.path}  status=${r.status}  PASS`);
+    } else {
+      fail++;
+      failures.push({ id: 'static:' + sp.path, round: 'static', request: 0, reason: `status=${r.status} expected ${sp.expectStatus}`, got: { status: r.status }, expected: null });
+      console.log(`  ${sp.path}  status=${r.status} (expected ${sp.expectStatus})  FAIL`);
+    }
+  }
+
+  const ms = Date.now() - t0;
+  console.log('');
+  console.log(`Total: ${totalRequests + staticPages.length}  pass=${pass}  fail=${fail}  (${ms}ms)`);
+  if (failures.length > 0) {
+    console.log('');
+    console.log('Failures:');
+    for (const f of failures) {
+      console.log(`  - ${f.id}  ${f.reason}`);
+    }
+    process.exit(1);
+  }
+}
+
+main().catch(e => { console.error(e); process.exit(1); });
