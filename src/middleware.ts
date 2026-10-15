@@ -284,7 +284,19 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
                    path.startsWith('/favicon') ||
                    path.includes('.'); // file extensions = static files
 
-  if (!isStatic) {
+  // 2026-10-15 (Piece B, Arnel 10:12 item A): well-known search-engine
+  // user agents bypass the per-IP rate limit.  Googlebot and Bingbot
+  // both identify themselves via the User-Agent header; verifying
+  // the IP via reverse-DNS would be more secure but requires an
+  // outbound DNS lookup in the Edge runtime (not supported).  UA-only
+  // check is the standard middle ground and matches Google's own
+  // docs (https://developers.google.com/search/docs/crawling-indexing/verifying-googlebot).
+  // Crawler-bots that lie about their UA still hit the rate limit,
+  // which is the safe default.
+  const userAgent = request.headers.get('user-agent') || '';
+  const isTrustedBot = /\bGooglebot\b|\bbingbot\b|\bSlurp\b|\bDuckDuckBot\b|\bBaiduspider\b|\bYandexBot\b|\bApplebot\b/i.test(userAgent);
+
+  if (!isStatic && !isTrustedBot) {
     // Get client IP (handle proxies)
     const ip = (request as any).ip ||
                request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||

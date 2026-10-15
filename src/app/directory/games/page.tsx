@@ -11,39 +11,81 @@ const BASE_URL = 'https://rinkstop.com';
 // Extraliga/NCAA/CHL/USHL), live/recent/historical time windows, and the
 // always-rendered directory-context baseline.
 const _gamesMetaLong = `Live scores, schedules, and results from hockey games worldwide — NHL, AHL, PWHL, KHL, SHL (Sweden), Liiga (Finland), DEL (Germany), National League (Switzerland), Czech Extraliga, NCAA hockey, CHL (WHL, OHL, QMJHL), and USHL. Filter by team or league, switch between Current (live and recent) and Historical (archived) matchups, and load more games as you scroll. Every score on this page links to the team profile and league directory so you can follow the teams and leagues you care about. RinkStop is the open hockey directory — every team, league, player, and rink in the world has a public profile page.`.trim();
-export const metadata: Metadata = {
-  // PR #150 (2026-08-23) WS25 GSC Bucket-1: previously pos 44.6 with 34
-  // imps / 0 clicks. Title was keyword-rich but the H1 was SCORES &
-  // FIXTURES — mismatch. Also rewrote the meta with current-time hook
-  // (searchers want live scores, not archived) and league-anchored
-  // keyword list to surface for both "hockey scores" and "hockey games
-  // today" type queries.
-  //
-  // 2026-09-12 WS26 GSC CTR pass: added season year + games-today phrase.
-  // Top queries: "what hockey games are on tonight", "hockey games today".
-  // Old title missed the "today/tonight" hook; new version fronts it.
-  title: 'Hockey Games Today (2026-27) — Live Scores, Schedule & Results',
-  description: _gamesMetaLong.slice(0, 240),
-  alternates: {
-    canonical: 'https://rinkstop.com/directory/games',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  openGraph: withDefaultOg({
-    title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+
+// 2026-10-15 (Piece B, Arnel 10:12 step 2): server-side noindex for
+// filter URLs.  The clean URL /directory/games is the canonical and
+// stays indexable.  Any URL with one of the filter params (d, w != 0,
+// q, team, subleague, league != nhl, or time != current) is a thin
+// filtered view and Google should not index it.
+//
+// Why server-side and not runtime meta injection: a static
+// `export const metadata` can't read searchParams, and a client-side
+// `useEffect` that mutates the <head> would race with Next.js's
+// metadata API and could be missed by the crawler.  generateMetadata
+// is the canonical Next.js way to compute per-request metadata and
+// runs before the HTML is sent.
+function isFilteredSearchParams(sp: {
+  league?: string;
+  team?: string;
+  time?: string;
+  subleague?: string;
+  q?: string;
+  d?: string;
+  w?: string;
+}): boolean {
+  if (sp.d) return true;
+  if (sp.w && sp.w !== '0') return true;
+  if (sp.q) return true;
+  if (sp.team) return true;
+  if (sp.subleague) return true;
+  // The page defaults to league='nhl' and time='current' when no
+  // param is given.  Anything else is a filter.
+  if (sp.league && sp.league !== 'nhl') return true;
+  if (sp.time && sp.time !== 'current') return true;
+  return false;
+}
+
+export async function generateMetadata(
+  props: { searchParams: SearchParams }
+): Promise<Metadata> {
+  const sp = await props.searchParams;
+  const filtered = isFilteredSearchParams(sp);
+  // Canonical always points to the clean URL so Google consolidates
+  // ranking signal.  Filtered views: noindex,follow so they don't
+  // dilute the index.  Clean URL: index,follow.
+  return {
+    // PR #150 (2026-08-23) WS25 GSC Bucket-1: previously pos 44.6 with 34
+    // imps / 0 clicks. Title was keyword-rich but the H1 was SCORES &
+    // FIXTURES — mismatch. Also rewrote the meta with current-time hook
+    // (searchers want live scores, not archived) and league-anchored
+    // keyword list to surface for both "hockey scores" and "hockey games
+    // today" type queries.
+    //
+    // 2026-09-12 WS26 GSC CTR pass: added season year + games-today phrase.
+    // Top queries: "what hockey games are on tonight", "hockey games today".
+    // Old title missed the "today/tonight" hook; new version fronts it.
+    title: 'Hockey Games Today (2026-27) — Live Scores, Schedule & Results',
     description: _gamesMetaLong.slice(0, 240),
-    url: 'https://rinkstop.com/directory/games',
-    siteName: 'RinkStop',
-    type: 'website',
-  }),
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
-    description: _gamesMetaLong.slice(0, 240),
-  },
-};
+    alternates: {
+      canonical: 'https://rinkstop.com/directory/games',
+    },
+    robots: filtered
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
+    openGraph: withDefaultOg({
+      title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+      description: _gamesMetaLong.slice(0, 240),
+      url: 'https://rinkstop.com/directory/games',
+      siteName: 'RinkStop',
+      type: 'website',
+    }),
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Hockey Games & Scores — NHL, AHL, PWHL, KHL, NCAA, CHL',
+      description: _gamesMetaLong.slice(0, 240),
+    },
+  };
+}
 
 // ISR-cached for 1 hour (2026-07-22 perf pass).
 export const dynamic = 'force-dynamic';
