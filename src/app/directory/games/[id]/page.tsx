@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
@@ -56,9 +55,9 @@ function getSupabase() {
   );
 }
 
-// 2026-10-14: tiered caching by game status.  We read the row's
+// 2026-10-14: tiered caching by game status.  We probe the row's
 // status first (cheap — no joins) to pick a revalidate value, then
-// fetch the full row.  The status read itself is cached for 30s
+// fetch the full row.  The status probe itself is cached for 30s
 // to avoid hammering Supabase on back-to-back requests.
 
 type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
@@ -78,16 +77,12 @@ interface FixtureRow {
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
 }
 
-// Read the fixture status + scheduled_at — used to pick the cache
+// Probe just the status + scheduled_at — used to pick the cache
 // tier for the full row. Wrapped in unstable_cache so the top-level
-// page render can stay static. 30s revalidate is fine for the status check —
+// page render can stay static. 30s revalidate is fine for the probe —
 // the full-row fetcher has its own per-tier revalidate.
-//
-// Hotfix 2026-10-14: include the id in the cache key so different
-// games don't share one cache entry.  Bumped the key to '-v2' so any
-// poisoned entries from the previous static key are invalidated.
-const getFixtureStatusCached = (id: string) => unstable_cache(
-  async (): Promise<{ status: GameStatus; scheduled_at: string } | null> => {
+const probeStatusCached = unstable_cache(
+  async (id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> => {
     try {
       const sb = getSupabase();
       const { data } = await sb
@@ -101,12 +96,12 @@ const getFixtureStatusCached = (id: string) => unstable_cache(
       return null;
     }
   },
-  ['game-detail-status-v2', id],
-  { revalidate: 30, tags: ['game-detail', `game:${id}`] }
+  ['game-detail-probe-v1'],
+  { revalidate: 30, tags: ['game-detail'] }
 );
 
-async function getFixtureStatus(id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> {
-  return getFixtureStatusCached(id)();
+async function probeStatus(id: string): Promise<{ status: GameStatus; scheduled_at: string } | null> {
+  return probeStatusCached(id);
 }
 
 function tierForStatus(status: GameStatus | undefined, scheduledAt: string | undefined): number {
@@ -123,9 +118,10 @@ function tierForStatus(status: GameStatus | undefined, scheduledAt: string | und
   return 3600;
 }
 
-const fetchGameByStatus = (id: string, status: GameStatus, scheduledAt: string) => {
+const fetchGameByStatus = (status: GameStatus, scheduledAt: string) => {
   const tier = tierForStatus(status, scheduledAt);
-  return unstable_cache(
+  const cacheKey = `game-detail-fixture-v2-${status}-${tier}`;
+  return (id: string): Promise<FixtureRow | null> => unstable_cache(
     async (): Promise<FixtureRow | null> => {
       try {
         const sb = getSupabase();
@@ -145,17 +141,17 @@ const fetchGameByStatus = (id: string, status: GameStatus, scheduledAt: string) 
         return null; // never cache errors/empty
       }
     },
-    ['game-detail-fixture-v4', id, status, String(tier)],
+    [cacheKey],
     { revalidate: tier, tags: ['game-detail', `game:${id}`] }
-  );
+  )();
 };
 
 async function fetchGame(id: string): Promise<FixtureRow | null> {
-  const status = await getFixtureStatus(id);
-  if (!status) return null; // not found — don't cache
-  return fetchGameByStatus(id, status.status, status.scheduled_at)();
+  const probe = await probeStatus(id);
+  if (!probe) return null; // not found — don't cache
+  const fetcher = fetchGameByStatus(probe.status, probe.scheduled_at);
+  return fetcher(id);
 }
-
 
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
@@ -206,7 +202,7 @@ export default async function GameDetailPage(
   const game = await fetchGame(id);
 
   if (!game) {
-    notFound();
+    return <GamePageClient id={id} />;
   }
 
   const homeName = game.home_team?.name ?? 'Home';
