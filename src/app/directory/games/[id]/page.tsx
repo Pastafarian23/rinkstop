@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import GamePageClient from './GamePageClient';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 import { ScoresheetQRPanel } from '@/components/ScoresheetQRPanel';
+import FollowGameButton from '@/components/FollowGameButton';
 import { isGameIndexable } from '@/lib/game-indexable';
 import {
   getTeamForm,
@@ -16,6 +17,19 @@ import {
   type NextGame,
   type SameDayGame,
 } from '@/lib/game-modules';
+import {
+  getVenueAndBoxscore,
+  getLinkedArticles,
+  getLinkedHighlights,
+  getHistoricalAliases,
+  type VenueData,
+  type BroadcastData,
+  type RecapLinkData,
+  type BoxscoreLite,
+  type LinkedArticle,
+  type LinkedHighlight,
+  type HistoricalAlias,
+} from '@/lib/game-detail-modules';
 import { displayNameForGame } from '@/lib/franchise-name-lookup';
 
 // 2026-10-14 (Arnel 13:38 directive): server-render the data-driven
@@ -58,6 +72,25 @@ interface FixtureRow {
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
 }
 
+// 2026-10-15 (Arnel 09:03 step 3): cache key includes id, status, and
+// tier so a game that flips status (scheduled → in_progress → completed)
+// lands on a fresh key.  Old keys age out naturally at their tier TTL.
+const FIXTURE_CACHE_VERSION = 'v3';
+
+function tierForStatus(status: FixtureRow['status'] | undefined, scheduledAt: string | undefined): number {
+  if (!status) return 3600;
+  if (status === 'in_progress') return 30;
+  if (status === 'completed' || status === 'cancelled') return 86400;
+  if (status === 'scheduled' || status === 'postponed') {
+    if (!scheduledAt) return 3600;
+    const minutesUntil = (new Date(scheduledAt).getTime() - Date.now()) / 60000;
+    if (minutesUntil < 0) return 30;
+    if (minutesUntil < 60 * 24 * 7) return 300;
+    return 3600;
+  }
+  return 3600;
+}
+
 const probeStatusCached = (id: string) => unstable_cache(
   async (): Promise<{ status: FixtureRow['status']; scheduled_at: string } | null> => {
     try {
@@ -67,22 +100,12 @@ const probeStatusCached = (id: string) => unstable_cache(
       return { status: data.status as FixtureRow['status'], scheduled_at: data.scheduled_at };
     } catch { return null; }
   },
-  ['game-detail-probe-v2', id],
+  ['game-detail-probe', FIXTURE_CACHE_VERSION, id],
   { revalidate: 30, tags: ['game-detail', `game:${id}`] }
 );
 
 const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt: string) => {
-  const tier = (() => {
-    if (status === 'in_progress') return 30;
-    if (status === 'completed' || status === 'cancelled') return 86400;
-    if (status === 'scheduled' || status === 'postponed') {
-      const minutesUntil = (new Date(scheduledAt).getTime() - Date.now()) / 60000;
-      if (minutesUntil < 0) return 30;
-      if (minutesUntil < 60 * 24 * 7) return 300;
-      return 3600;
-    }
-    return 3600;
-  })();
+  const tier = tierForStatus(status, scheduledAt);
   return unstable_cache(
     async (): Promise<FixtureRow | null> => {
       try {
@@ -99,7 +122,8 @@ const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt
         return fixture as unknown as FixtureRow;
       } catch { return null; }
     },
-    ['game-detail-fixture-v2', id],
+    // Key includes status + tier so a status flip invalidates cleanly.
+    ['game-detail-fixture', FIXTURE_CACHE_VERSION, id, status, String(tier)],
     { revalidate: tier, tags: ['game-detail', `game:${id}`] }
   );
 };
@@ -230,6 +254,47 @@ export default async function GameDetailPage(
   const awayName = game.away_team?.name ?? 'Away';
   const leagueName = game.league?.name ?? 'Hockey';
 
+  // 2026-10-15: server-rendered boxscore / venue / linked / historical.
+  // Each is its own unstable_cache call with the game id (and status +
+  // tier) in the key.  All hide themselves on no-data.
+  const { venue, broadcasts, recap: recapLinks, boxscore } = await getVenueAndBoxscore(
+    game.id,
+    game.game_data,
+    game.status,
+    game.scheduled_at,
+    homeName,
+    awayName,
+    game.home_score,
+    game.away_score,
+    null, // abbrev not in DB
+    null,
+  );
+  const gameDate = game.scheduled_at.slice(0, 10);
+  const [linkedArticles, linkedHighlights] = await Promise.all([
+    getLinkedArticles(
+      game.id,
+      game.game_data,
+      gameDate,
+      game.home_team?.name ?? null,
+      game.away_team?.name ?? null,
+      game.status,
+      game.scheduled_at,
+    ),
+    getLinkedHighlights(
+      game.id,
+      gameDate,
+      game.home_team?.name ?? null,
+      game.away_team?.name ?? null,
+      game.status,
+      game.scheduled_at,
+    ),
+  ]);
+  const historicalAliases = getHistoricalAliases(
+    game.home_team?.slug ?? null,
+    game.away_team?.slug ?? null,
+    game.scheduled_at,
+  );
+
   // Date-aware franchise name resolution: old Phoenix Coyotes games
   // show "Phoenix Coyotes" not "Utah Hockey Club".
   const homeDisplay = game.home_team?.slug ? displayNameForGame(game.home_team.slug, game.scheduled_at) : null;
@@ -307,6 +372,16 @@ export default async function GameDetailPage(
         status={game.status}
         qrEnabled={qrEnabled}
       />
+      {/* 2026-10-15: server-rendered FollowGameButton client leaf.
+          No auth, no DB — reads/writes the same rs_followed_games
+          localStorage key that the rest of the app uses for
+          follow state. Renders two small buttons (one per team). */}
+      {game.away_team && game.home_team && (
+        <FollowGameButton
+          awayTeam={{ slug: game.away_team.slug, name: awayRenderName }}
+          homeTeam={{ slug: game.home_team.slug, name: homeRenderName }}
+        />
+      )}
       <GamePageClient
         id={id}
         game={game}
@@ -323,6 +398,15 @@ export default async function GameDetailPage(
           indexable,
           isCompletedWithScore,
           isUpcomingWithinWeek,
+        }}
+        detail={{
+          venue,
+          broadcasts,
+          recapLinks,
+          boxscore,
+          linkedArticles,
+          linkedHighlights,
+          historicalAliases,
         }}
       />
     </>
