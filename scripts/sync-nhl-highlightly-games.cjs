@@ -252,7 +252,11 @@ async function main() {
 
     const scheduled = new Date(m.date).toISOString();
     const status = hlToStatus(m.state);
-    const { home, away } = parseScore(m.state?.score?.current);
+    const { home: parsedHome, away: parsedAway } = parseScore(m.state?.score?.current);
+    // 2026-10-15 (Arnel 10:54 Task 2.1): don't write 0-0 as a
+    // placeholder for scheduled games.
+    const home = (status === 'scheduled' || status === 'postponed') ? null : parsedHome;
+    const away = (status === 'scheduled' || status === 'postponed') ? null : parsedAway;
     const gameData = { ...m, nhl_game_id: m.id, source: 'highlightly' };
     const season = seasonForDate(new Date(m.date));
 
