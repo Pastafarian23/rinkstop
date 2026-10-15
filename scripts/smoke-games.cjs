@@ -38,6 +38,12 @@
 const fs = require('fs');
 const https = require('https');
 
+// 2026-10-15 (Piece B, Arnel 10:12): 300ms delay between requests
+// to stay under the per-IP in-memory rate limit (100 req/60s) in
+// src/middleware.ts.  Set SMOKE_REQUEST_DELAY_MS=0 to disable.
+const REQUEST_DELAY_MS = parseInt(process.env.SMOKE_REQUEST_DELAY_MS ?? '300', 10) || 0;
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
 const env = {};
 for (const line of fs.readFileSync(__dirname + '/../.env.local', 'utf8').split('\n')) {
   const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
@@ -59,13 +65,13 @@ function sb(path) {
 function page(url) {
   return new Promise((res, rej) => {
     https.get(url, (r) => {
-      let b = ''; r.on('data', d => b += d); r.on('end', () => res({ status: r.statusCode, body: b, headers: r.headers })); r.on('error', rej);
+      let b = ''; r.on('data', d => b += d); r.on('end', async () => { await sleep(REQUEST_DELAY_MS); res({ status: r.statusCode, body: b, headers: r.headers }); }); r.on('error', rej);
     });
   });
 }
 function head(url) {
   return new Promise((res, rej) => {
-    https.request(url, { method: 'HEAD' }, (r) => { r.resume(); r.on('end', () => res({ status: r.statusCode, headers: r.headers })); r.on('error', rej); }).end();
+    https.request(url, { method: 'HEAD' }, (r) => { r.resume(); r.on('end', async () => { await sleep(REQUEST_DELAY_MS); res({ status: r.statusCode, headers: r.headers }); }); r.on('error', rej); }).end();
   });
 }
 
