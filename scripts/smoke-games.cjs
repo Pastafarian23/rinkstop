@@ -101,36 +101,46 @@ function nameSlug(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'
 // Pick ids across leagues and statuses. We pick from the database so
 // the test is anchored to real data; we just choose how many and
 // from which buckets.
+//
+// 2026-10-15 (Arnel 09:38 step 6): the old pullIds() did
+// `order=scheduled_at.desc&limit=500` then filtered by league in
+// JavaScript. That starved ECHL/NCAA buckets because the 500 most
+// recent fixtures are mostly future NHL/AHL games, so the older
+// ECHL/NCAA completed fixtures never made the cut.  Fix: use
+// PostgREST's `league.slug=eq.X` filter so the DB returns only the
+// requested league's rows.  No more 500-row cap problem.
 async function pickIds() {
   // Always include the user-required id first.
   const picks = [USER_ID];
 
-  // For each (status, league) bucket, pull a window of ids with
-  // the league joined, then take what we need after the league
-  // filter and dedupe.
   async function pullIds(status, leagueSlug, n) {
-    const r = await sb(`/rest/v1/fixtures?select=id,league:leagues(slug)&status=eq.${status}&order=scheduled_at.desc&limit=500`);
+    // Direct league filter via the FK resource syntax.  Returns at
+    // most `n` rows (PostgREST respects the limit).
+    const r = await sb(`/rest/v1/fixtures?select=id&status=eq.${status}&league.slug=eq.${leagueSlug}&order=scheduled_at.desc&limit=${Math.max(n, 50)}`);
     if (r.status !== 200) return [];
     const rows = JSON.parse(r.body);
-    return rows
-      .filter(r => r.league && r.league.slug === leagueSlug)
+    return (rows || [])
       .map(r => r.id)
-      .filter(id => id !== USER_ID);
+      .filter(id => id !== USER_ID)
+      .slice(0, n);
   }
 
   // Shuffle each bucket so the order varies between runs.
   function shuffle(a) { a.sort(() => Math.random() - 0.5); return a; }
 
   // Pull buckets. Per Arnel 2026-10-15: at least 20 ids total,
-  // with explicit coverage of AHL, KHL and NCAA in addition to NHL.
+  // with explicit coverage of AHL, KHL, ECHL and NCAA in
+  // addition to NHL.  ECHL/NCAA capped at 2 each since the
+  // leagues have fewer recent completed games; bumped to 3 to
+  // match AHL.
   const buckets = [
     await pullIds('completed', 'nhl', 5),
     await pullIds('scheduled', 'nhl', 3),
     await pullIds('cancelled', 'nhl', 1),
     await pullIds('completed', 'ahl', 3),
-    await pullIds('completed', 'echl', 2),
+    await pullIds('completed', 'echl', 3),
     await pullIds('completed', 'khl', 2),
-    await pullIds('completed', 'ncaa', 2),
+    await pullIds('completed', 'ncaa', 3),
     await pullIds('scheduled', 'ahl', 1),
     await pullIds('scheduled', 'echl', 1),
     await pullIds('scheduled', 'ncaa', 1),
@@ -141,9 +151,9 @@ async function pickIds() {
     ...shuffle(buckets[1]).slice(0, 3),
     ...shuffle(buckets[2]).slice(0, 1),
     ...shuffle(buckets[3]).slice(0, 3),
-    ...shuffle(buckets[4]).slice(0, 2),
+    ...shuffle(buckets[4]).slice(0, 3),
     ...shuffle(buckets[5]).slice(0, 2),
-    ...shuffle(buckets[6]).slice(0, 2),
+    ...shuffle(buckets[6]).slice(0, 3),
     ...shuffle(buckets[7]).slice(0, 1),
     ...shuffle(buckets[8]).slice(0, 1),
     ...shuffle(buckets[9]).slice(0, 1),
