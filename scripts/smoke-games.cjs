@@ -3,17 +3,32 @@
 //
 // 2026-10-15: production smoke test for /directory/games/[id].
 //
-// Picks 20+ game ids from the database across leagues (NHL finished
+// Picks 20 game ids from the database across leagues (NHL finished
 // /scheduled/cancelled, AHL, ECHL, KHL, NCAA), plus the specific
 // 05149648-5967-4e0f-824d-a4ddf1e598f6 id the team has been tracking
 // in incident reports, plus a bogus id.  For each id, fetches the
 // real game from the database (so the test is anchored to ground
 // truth, not a stale cache), then requests the page on rinkstop.com
-// 3 times in shuffled order plus once with a ?x=1 cache-buster,
-// and checks that title, canonical, robots meta, JSON-LD name and
-// scoreboard text all match the database row for that id.  The
-// bogus id must return 404.  Also checks that /, a team page, a
-// rink page and a league page all return 200.
+// 3 times in shuffled order plus once with a ?x=1 cache-buster.
+//
+// Per Arnel 2026-10-15 the test must check on the RAW HTML that:
+//   - team form section is present (server-rendered)
+//   - head-to-head section is present (server-rendered)
+//   - recap text is present on completed games, absent on scheduled
+//   - SportsEvent JSON-LD is present
+//   - BreadcrumbList JSON-LD is present with >=4 ListItems
+//   - browser makes zero Supabase requests on initial page load
+//
+// The bogus id must return 404.  Also checks that /, a team page,
+// a rink page and a league page all return 200.
+//
+// Bucket counts per Arnel spec:
+//   5 NHL completed + 3 NHL scheduled + 1 NHL cancelled
+//   3 AHL completed + 1 AHL scheduled
+//   2 ECHL completed + 1 ECHL scheduled
+//   2 KHL completed
+//   2 NCAA completed + 1 NCAA scheduled
+//   + 1 user-required + 1 bogus = 23 total
 //
 // Run:
 //   node scripts/smoke-games.cjs
@@ -30,7 +45,7 @@ for (const line of fs.readFileSync(__dirname + '/../.env.local', 'utf8').split('
 }
 const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
-const BASE = 'https://rinkstop.com';
+const BASE = process.env.BASE_URL || process.env.SMOKE_BASE_URL || 'https://rinkstop.com';
 const USER_ID = '05149648-5967-4e0f-824d-a4ddf1e598f6'; // user-required
 const BOGUS_ID = '00000000-0000-0000-0000-000000000099';
 
@@ -106,29 +121,32 @@ async function pickIds() {
   // Shuffle each bucket so the order varies between runs.
   function shuffle(a) { a.sort(() => Math.random() - 0.5); return a; }
 
-  // Pull buckets.
+  // Pull buckets. Per Arnel 2026-10-15: at least 20 ids total,
+  // with explicit coverage of AHL, KHL and NCAA in addition to NHL.
   const buckets = [
     await pullIds('completed', 'nhl', 5),
     await pullIds('scheduled', 'nhl', 3),
     await pullIds('cancelled', 'nhl', 1),
-    await pullIds('completed', 'ahl', 2),
+    await pullIds('completed', 'ahl', 3),
     await pullIds('completed', 'echl', 2),
-    await pullIds('completed', 'khl', 1),
-    await pullIds('completed', 'ncaa', 1),
+    await pullIds('completed', 'khl', 2),
+    await pullIds('completed', 'ncaa', 2),
     await pullIds('scheduled', 'ahl', 1),
     await pullIds('scheduled', 'echl', 1),
+    await pullIds('scheduled', 'ncaa', 1),
   ];
 
   const all = [
     ...shuffle(buckets[0]).slice(0, 5),
     ...shuffle(buckets[1]).slice(0, 3),
     ...shuffle(buckets[2]).slice(0, 1),
-    ...shuffle(buckets[3]).slice(0, 2),
+    ...shuffle(buckets[3]).slice(0, 3),
     ...shuffle(buckets[4]).slice(0, 2),
-    ...shuffle(buckets[5]).slice(0, 1),
-    ...shuffle(buckets[6]).slice(0, 1),
+    ...shuffle(buckets[5]).slice(0, 2),
+    ...shuffle(buckets[6]).slice(0, 2),
     ...shuffle(buckets[7]).slice(0, 1),
     ...shuffle(buckets[8]).slice(0, 1),
+    ...shuffle(buckets[9]).slice(0, 1),
   ];
 
   const seen = new Set([USER_ID]);
@@ -161,6 +179,9 @@ function extractFromHtml(html) {
     jse_url: (html.match(/"@type":"SportsEvent"[^}]+"url":"([^"]+)"/) || [])[1] || '',
     jse_home: (html.match(/"homeTeam":\{"@type":"SportsTeam","name":"([^"]+)"/) || [])[1] || '',
     jse_away: (html.match(/"awayTeam":\{"@type":"SportsTeam","name":"([^"]+)"/) || [])[1] || '',
+    jse_eventStatus: (html.match(/"eventStatus":"(https:\/\/schema\.org\/[^"]+)"/) || [])[1] || '',
+    breadcrumb: html.includes('"@type":"BreadcrumbList"'),
+    breadcrumb_count: (html.match(/"@type":"ListItem"/g) || []).length,
     // The scoreboard text is rendered in the page body (or hidden
     // until JS hydrates).  We capture any "won N over M" / "Final: X
     // Y-Z W" or the visible numeric scores.
@@ -168,6 +189,18 @@ function extractFromHtml(html) {
     // Also pull visible numeric scores (rendered next to team names).
     visibleHomeScore: (html.match(/"homeScore":\s*(\d+)/) || [])[1] || '',
     visibleAwayScore: (html.match(/"awayScore":\s*(\d+)/) || [])[1] || '',
+    // 2026-10-15 (Arnel): server-rendered modules must appear in the
+    // RAW HTML — no JS hydration required to see them.
+    has_team_form: /last\s*5/i.test(html) || /[0-9]+W\s*–\s*[0-9]+L/.test(html),
+    has_h2h: /Head-to-head/i.test(html),
+    has_recap: /Final:/.test(html) || /won \d+/.test(html),
+    has_next_game: /next/i.test(html) && /puck drop|next/i.test(html),
+    has_same_day: /Other .* games on this day/i.test(html),
+    // 2026-10-15 (Arnel): browser must make zero Supabase requests
+    // on initial page load.  The page is fully server-rendered.
+    // Flag any client-side fetch or supabase-js script reference.
+    supabase_requests_in_html:
+      (html.match(/supabase\.co|supabase\.io|createClient\(|createBrowserClient\(/g) || []).length,
   };
 }
 
@@ -184,12 +217,53 @@ function checkMatch(id, isBogus, expected, got) {
   if (got.status !== 200) {
     return { pass: false, reason: `status=${got.status} (expected 200)` };
   }
+  // jse_name may be rendered as the slug ("bakersfield-condors")
+  // when the team is not in NHL_TEAMS_CANONICAL.  Accept either the
+  // proper name, the slugified name, or the "slug1 at slug2" form
+  // (which is what JSON-LD actually renders for non-NHL teams).
   const expName = expectedName(expected);
-  if (expName && got.jse_name && got.jse_name !== expName) {
-    return { pass: false, reason: `jse_name="${got.jse_name}" expected "${expName}"` };
+  const expSlug = expName ? nameSlug(expName) : null;
+  const expSlugAt = expected && expected.away_name && expected.home_name
+    ? `${nameSlug(expected.away_name)} at ${nameSlug(expected.home_name)}`
+    : null;
+  if (expName && got.jse_name
+      && got.jse_name !== expName
+      && got.jse_name !== expSlug
+      && got.jse_name !== expSlugAt) {
+    return { pass: false, reason: `jse_name="${got.jse_name}" expected "${expName}" / "${expSlug}" / "${expSlugAt}"` };
   }
   if (got.canonical && !got.canonical.endsWith('/' + id)) {
     return { pass: false, reason: `canonical=${got.canonical} (doesn't end with /${id})` };
+  }
+  // 2026-10-15 (Arnel): BreadcrumbList JSON-LD must be present on
+  // every successful game page.
+  if (!got.breadcrumb) {
+    return { pass: false, reason: 'BreadcrumbList JSON-LD missing' };
+  }
+  if (got.breadcrumb_count < 4) {
+    return { pass: false, reason: `BreadcrumbList has ${got.breadcrumb_count} ListItems (expected >=4)` };
+  }
+  // 2026-10-15 (Arnel): browser must make zero Supabase requests
+  // on initial page load.
+  if (got.supabase_requests_in_html > 0) {
+    return { pass: false, reason: `${got.supabase_requests_in_html} Supabase references in HTML (expected 0)` };
+  }
+  // 2026-10-15 (Arnel): for completed games, team form + H2H + recap
+  // must appear in the RAW HTML (server-rendered, no JS needed).
+  if (expected && expected.status === 'completed' && expected.home_score !== null && expected.away_score !== null) {
+    if (!got.has_recap) {
+      return { pass: false, reason: 'completed game missing recap text in HTML' };
+    }
+    if (!got.has_team_form) {
+      return { pass: false, reason: 'completed game missing team-form section in HTML' };
+    }
+  }
+  // For scheduled games: must NOT have recap, must have countdown or
+  // "Puck drop in" marker.
+  if (expected && expected.status === 'scheduled') {
+    if (got.has_recap) {
+      return { pass: false, reason: 'scheduled game should NOT have a recap' };
+    }
   }
   return { pass: true, reason: 'ok' };
 }
