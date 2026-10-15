@@ -112,6 +112,10 @@ async function lookupTeamSlugRedirect(slug: string): Promise<string | null> {
 // flooder who is impersonating a bot UA.
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const trustedRateLimitMap = new Map<string, { count: number; windowStart: number }>();
+// 2026-10-15 (Piece E, Task 3.3): Set of IPs we've already logged
+// as 'first seen' for crawler requests.  Cleared every cleanup
+// cycle (every 100 requests) so the set doesn't grow unbounded.
+const firstSeenIPs = new Set<string>();
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX = 100;            // normal clients per window per IP
@@ -151,6 +155,12 @@ function cleanupOldEntries() {
       }
     }
   }
+  // Also clear the 'first seen' IP set.  After cleanup, the next
+  // crawler request from any IP will be logged again (and the IP
+  // will be re-added to the set).  This is intentional: after
+  // the rate limit windows expire, we want to log 'new visitor'
+  // again.
+  firstSeenIPs.clear();
 }
 
 export default clerkMiddleware(async (auth, request) => {
@@ -335,10 +345,10 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
     const result = checkRateLimit(ip, map, max);
 
     if (result.blocked) {
-      // Task 1.3: log crawler-UA requests that exceed the cap.  These
-      // are the requests we want to see in the log to detect spoofing
-      // + floods.  The log line includes the IP, the UA, and the path
-      // so we can correlate against published crawler IP ranges.
+      // Always log the 429 (crawler cap exceeded).  This is the
+      // high-signal event: a real crawler is hitting the cap (which
+      // means we should investigate whether our rate limit is too
+      // low for that engine) OR a flooder is impersonating a crawler.
       if (isTrustedBot) {
         console.warn('[middleware] crawler cap exceeded', JSON.stringify({
           ip, ua: userAgent, path, limit: result.limit, at: Date.now(),
@@ -355,16 +365,27 @@ if (path.startsWith('/directory/leagues/') && path.length > '/directory/leagues/
       });
     }
 
-    // Task 1.3: log every crawler-UA request so we can detect
-    // spoofing (UA-claimed requests from IPs that aren't in
-    // published crawler ranges).  We log a structured line on
-    // every crawler request — Vercel Edge logs ship these to
-    // the project's log drain.  Cheap: one console.warn per
-    // request, no extra Supabase / external calls.
+    // 2026-10-15 (Piece E, Arnel 13:55 Task 3.3): cut the crawler
+    // logging.  Logging every request was 1 console.log per
+    // crawler visit (cheap but noisy).  Replace with:
+    //   - Always log when a NEW IP is first seen (so we have
+    //     a record of every crawler that visited today).
+    //   - Otherwise sample 1% (Math.random() < 0.01) for
+    //     baseline traffic visibility.
+    // This keeps the log volume manageable while still letting
+    // Arnel see (a) every new IP claiming to be a bot and (b)
+    // a 1% slice of total bot traffic.  Combined with the 429
+    // log above, the only event we ALWAYS log is the cap
+    // exceeded (the only "anomaly" we currently detect).
     if (isTrustedBot) {
-      console.log('[middleware] crawler request', JSON.stringify({
-        ip, ua: userAgent, path, at: Date.now(),
-      }));
+      // Per-process set of IPs that have logged 'first seen'.
+      // Cleared every cleanup cycle (every 100 requests).
+      if (!firstSeenIPs.has(ip) || Math.random() < 0.01) {
+        firstSeenIPs.add(ip);
+        console.log('[middleware] crawler request', JSON.stringify({
+          ip, ua: userAgent, path, at: Date.now(),
+        }));
+      }
     }
 
     // Periodic cleanup
