@@ -12,7 +12,7 @@
 //   - The 404 / loading shells (rendered when the page is missing
 //     or the game is not in the database)
 //
-// No more useState/useEffect for the data-driven modules.
+import { useState, useEffect } from 'react';
 
 import Link from 'next/link';
 import ShareButton from '@/components/ShareButton';
@@ -103,7 +103,19 @@ export default function GamePage({ id, game, modules, detail }: Props) {
   // At this point modules is guaranteed non-null (we only get here
   // after the server fetched them).  Cast for type safety.
   const m = modules!;
-  const tz = timezoneForGame({ leagueSlug: m ? undefined : undefined, countryCode: game.league?.country });
+    const tz = timezoneForGame({ leagueSlug: m ? undefined : undefined, countryCode: game.league?.country });
+  const [useLocalTime, setUseLocalTime] = useState(false);
+  const [localTz, setLocalTz] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('rs_game_localtime');
+      if (saved === '1') {
+        setUseLocalTime(true);
+        setLocalTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      }
+    } catch {}
+  }, []);
+  const displayTz = useLocalTime && localTz ? localTz : tz;
   // (The page passes homeRenderName/awayRenderName which is what
   // we use in display; tz is still needed for the countdown-only
   // date display which only fires for scheduled games.)
@@ -124,8 +136,39 @@ export default function GamePage({ id, game, modules, detail }: Props) {
       {/* Game header — score, status, teams, share */}
       <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '2rem', textAlign: 'center', marginBottom: '1.5rem' }}>
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.5rem' }}>
-          {formatGameTime(game.scheduled_at, tz)}
-          {disclaimerText(tz, 'compact') && (
+          {formatGameTime(game.scheduled_at, displayTz)}
+          <button
+            onClick={() => {
+              const next = !useLocalTime;
+              setUseLocalTime(next);
+              if (next) {
+                setLocalTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+                try { localStorage.setItem('rs_game_localtime', '1'); } catch {}
+              } else {
+                try { localStorage.removeItem('rs_game_localtime'); } catch {}
+              }
+            }}
+            title="Toggle local time"
+            style={{
+              marginLeft: '0.5rem',
+              background: 'none',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '4px',
+              color: useLocalTime ? '#FFB81C' : 'rgba(255,255,255,0.4)',
+              cursor: 'pointer',
+              fontSize: '0.6875rem',
+              padding: '2px 6px',
+              verticalAlign: 'middle',
+            }}
+          >
+            {useLocalTime ? (localTz ? `📍 ${localTz.split('/').pop()?.replace(/_/g,' ')}` : '📍 local') : '📍 venue'}
+          </button>
+          {useLocalTime && localTz && disclaimerText(localTz, 'compact') && (
+            <span style={{ display: 'block', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.375rem', fontStyle: 'italic' }}>
+              {disclaimerText(localTz, 'compact')}
+            </span>
+          )}
+          {!useLocalTime && disclaimerText(tz, 'compact') && (
             <span style={{ display: 'block', fontSize: '0.6875rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.375rem', fontStyle: 'italic' }}>
               {disclaimerText(tz, 'compact')}
             </span>
@@ -467,7 +510,7 @@ export default function GamePage({ id, game, modules, detail }: Props) {
                   {ng.away_team_name} @ {ng.home_team_name}
                 </p>
                 <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.8125rem', margin: '0.25rem 0 0' }}>
-                  {formatGameTime(ng.scheduled_at, tz)}
+                  {formatGameTime(ng.scheduled_at, displayTz)}
                 </p>
                 {ng.league_name && (
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', margin: '0.25rem 0 0' }}>{ng.league_name}</p>
@@ -485,7 +528,7 @@ export default function GamePage({ id, game, modules, detail }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {m.sameDay.map((sg) => (
               <Link key={sg.id} href={`/directory/games/${sg.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', textDecoration: 'none', color: 'inherit', fontSize: '0.875rem' }}>
-                <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>{formatGameTime(sg.scheduled_at, tz)}</span>
+                <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}>{formatGameTime(sg.scheduled_at, displayTz)}</span>
                 <span style={{ color: '#fff' }}>{sg.away_team_name} @ {sg.home_team_name}</span>
               </Link>
             ))}
