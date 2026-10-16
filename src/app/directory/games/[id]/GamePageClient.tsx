@@ -36,7 +36,7 @@ interface FixtureLite {
   status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | 'postponed';
   home_score: number | null;
   away_score: number | null;
-  home_team: { name: string; slug: string; logo_url: string | null } | null;
+  home_team: { name: string; slug: string; logo_url: string | null; home_rink?: { id: string; name: string; slug: string } | null } | null;
   away_team: { name: string; slug: string; logo_url: string | null } | null;
   league: { name: string; slug: string; country: string | null } | null;
   season: string | null;
@@ -248,7 +248,17 @@ export default function GamePage({ id, game, modules, detail }: Props) {
       {/* Venue (from NHL.com game_data via getVenueAndBoxscore) */}
       {detail?.venue?.name && (
         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.55)', marginTop: '-0.5rem', marginBottom: '1rem' }}>
-          @ {detail.venue.name}
+          @{' '}
+          {game.home_team?.home_rink?.slug ? (
+            <Link
+              href={`/directory/rinks/${game.home_team.home_rink.slug}`}
+              style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.2)' }}
+            >
+              {detail.venue.name}
+            </Link>
+          ) : (
+            <span>{detail.venue.name}</span>
+          )}
         </p>
       )}
 
