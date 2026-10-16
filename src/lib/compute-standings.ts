@@ -280,6 +280,7 @@ export async function computeStandings(
       last10: { w: l10w, l: l10l, otl: l10otl },
       tie: ptsCfg === null ? null : s.tie,
       division: t?.division ?? null,
+      conference: t?.conference ?? null,
     });
   }
 
