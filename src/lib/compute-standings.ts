@@ -1,3 +1,4 @@
+// Standings module — computes live standings from completed fixtures.
 /**
  * compute-standings.ts
  *
