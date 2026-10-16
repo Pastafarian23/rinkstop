@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { computeStandings } from '@/lib/compute-standings';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getSeasonCompleteness } from '@/lib/season-completeness';
+import { getSeasonCompleteness, type SeasonCompleteness } from '@/lib/season-completeness';
 
 const REVALIDATE = 300; // 5 minutes
 
@@ -34,7 +34,7 @@ export async function GET(
         isCurrent: false,
         expectedGp: 0,
         observed: null,
-        reason: `season-completeness lookup failed: ${err?.message ?? err}`,
+        reason: `season-completeness lookup failed: ${err?.message ?? err}` as SeasonCompleteness['reason'],
       })),
     ]);
 
