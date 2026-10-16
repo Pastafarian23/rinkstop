@@ -36,7 +36,7 @@ export interface StandingEntry {
   // null for non-OT leagues
   tie: number | null;
   division: string | null;
-  conference: string | null;
+  conference?: string | null;
 }
 
 export interface StandingsResult {
