@@ -1,0 +1,32 @@
+team_id,team,team_slug,venue,rink_id,rink_name,rink_city,rink_province,matched_alias
+219a6bb2-1103-4e27-931e-5de440e59f84,Anaheim Ducks,anaheim-ducks,Honda Center,7028efb4-16cb-4b33-aeef-2c335f0d7432,Honda Center,Anaheim,CA,Honda Center
+ae6d0878-1ac2-4c13-afc8-890c6647b668,Boston Bruins,boston-bruins,TD Garden,ad4a2fec-4797-42f0-8161-db6f4e4940c9,TD Garden,Boston,MA,TD Garden
+5a510c0e-1058-460d-8237-09855dfa98f4,Buffalo Sabres,buffalo-sabres,KeyBank Center,2c5e1585-ba41-4919-a208-bdcf9078cdeb,KeyBank Center,Buffalo,NY,KeyBank Center
+626458da-d2d4-4a4f-816b-f3796b84cfc4,Calgary Flames,calgary-flames,Scotiabank Saddledome,3ce403a5-90d3-421d-add2-d781aebbb241,Scotiabank Saddledome,Calgary,AB,Scotiabank Saddledome
+e4977c12-28b3-4756-a788-cf86b40fc237,Carolina Hurricanes,carolina-hurricanes,Lenovo Center,fdd04f26-94bf-45f7-a8ca-f20a2dcc12ac,Lenovo Center,Raleigh,NC,Lenovo Center
+553a6b7b-6416-4b74-a9b3-fa15d06d52ab,Chicago Blackhawks,chicago-blackhawks,United Center,7f192426-0ca7-4678-beb7-fab56f90081b,United Center,Chicago,IL,United Center
+f453fd29-12e4-4897-8f8a-ecf23d6a4122,Colorado Avalanche,colorado-avalanche,Ball Arena,f772b088-26fd-4105-b459-30e55c842fa2,Ball Arena,Denver,CO,Ball Arena
+6ca5c5f0-3c27-4cd5-8457-78fc3ba45344,Columbus Blue Jackets,columbus-blue-jackets,Nationwide Arena,0641ddf1-322e-46b0-90e7-eae73268f0f2,Nationwide Arena,Columbus,OH,Nationwide Arena
+4c61f05e-8d34-40be-b0a8-adf37e14435c,Dallas Stars,dallas-stars,American Airlines Center,6f9fe2aa-d05c-4388-8c91-3efed0205c50,American Airlines Center,Dallas,TX,American Airlines Center
+f3fa0794-ee39-4991-af45-961cb3e8f404,Detroit Red Wings,detroit-red-wings,Little Caesars Arena,ced14e55-602a-459d-afdb-6af62ffb67c7,Little Caesars Arena,Detroit,MI,Little Caesars Arena
+5b487d74-5e9c-43c8-b104-35185fc93350,Edmonton Oilers,edmonton-oilers,Rogers Place,ec2baafd-ce21-4263-a35e-efcd076a103f,Rogers Place,Edmonton,AB,Rogers Place
+7772070c-6c9b-4ca0-a442-dfe5b8beabcb,Florida Panthers,florida-panthers,Amerant Bank Arena,f9fd3455-5763-4a1f-95e4-f1708c5028fe,Amerant Bank Arena,Sunrise,FL,Amerant Bank Arena
+df9b5d1e-c5d9-46af-a524-99de500e95bf,Los Angeles Kings,los-angeles-kings,Crypto.com Arena,ba3c1a80-ecfd-48a1-9ad2-821295e0cdb6,Crypto.com Arena,Los Angeles,CA,Crypto.com Arena
+d3947cbf-8b3c-4c16-8ab6-b8f8d0f5a1fe,Minnesota Wild,minnesota-wild,Grand Casino Arena,98c28a32-0d98-4564-9506-1479288ed538,Xcel Energy Center,Saint Paul,MN,Xcel Energy Center
+2d3d8a64-c0d7-4b8e-a327-a1201cc92f72,Nashville Predators,nashville-predators,Bridgestone Arena,48e902cb-49ca-4261-a1a1-6015a7f6318e,Bridgestone Arena,Nashville,TN,Bridgestone Arena
+486e6592-5873-48a0-8cdd-8411c8eb1105,New Jersey Devils,new-jersey-devils,Prudential Center,e6050fe5-f5ce-480e-b709-b2bd6258d7b9,Prudential Center,Newark,NJ,Prudential Center
+acc8b466-ef9b-4d81-8ea5-6f13fc180d9e,New York Islanders,new-york-islanders,UBS Arena,e6e7a16b-695b-4f3b-a621-81d257b2e325,UBS Arena,Elmont,NY,UBS Arena
+2869d1cd-d8f4-4ffb-9726-30bdfdbc14d3,New York Rangers,new-york-rangers,Madison Square Garden,c20df201-5cb9-4417-913c-ef1f1add663f,Madison Square Garden,New York,NY,Madison Square Garden
+a1f8b7f1-f7ea-42ee-9861-0eb0addf437d,Ottawa Senators,ottawa-senators,Canadian Tire Centre,d1c3b550-bab7-4dc4-897e-8056d4d1d314,Canadian Tire Centre,Ottawa,ON,Canadian Tire Centre
+cf53124a-dbb5-4588-9cb2-2f6054918f99,Philadelphia Flyers,philadelphia-flyers,Xfinity Mobile Arena,430b78a6-4e65-4e18-9786-2b3b6196788c,Wells Fargo Center,Philadelphia,PA,Wells Fargo Center
+4b75202e-b11b-4574-8ae6-7447f962cb55,Pittsburgh Penguins,pittsburgh-penguins,PPG Paints Arena,872f4b74-7205-4e0e-b7d2-5eba5e9e1d0a,PPG Paints Arena,Pittsburgh,PA,PPG Paints Arena
+16c9d078-ecc9-4e7c-8bf3-e1b6e9a6ae10,San Jose Sharks,san-jose-sharks,SAP Center at San Jose,98021177-2f13-46bb-876a-0e78eceeb252,SAP Center at San Jose,San Jose,CA,SAP Center at San Jose
+bf324536-424b-4a3d-b486-1347aa735aae,Seattle Kraken,seattle-kraken,Climate Pledge Arena,e4a1305b-d828-4acd-9ecb-4b103d9e152d,Climate Pledge Arena,Seattle,WA,Climate Pledge Arena
+7efc04e6-6a75-4b1f-a0da-3966d6e7359c,St. Louis Blues,st-louis-blues,Enterprise Center,71ecad1a-688b-4764-93b2-a6fae2fee05c,Enterprise Center,St. Louis,MO,Enterprise Center
+2f4c6364-2139-4e57-97ad-e01dc55418fa,Tampa Bay Lightning,tampa-bay-lightning,Benchmark International Arena,09e19173-47c2-4ab5-bfed-0c3c544b9db8,Amalie Arena,Tampa,FL,Amalie Arena
+bac49d62-fd43-48f5-8811-090ec8f4c76d,Toronto Maple Leafs,toronto-maple-leafs,Scotiabank Arena,f5a91f5a-10c5-42fa-92a0-73dd8997749e,Scotiabank Arena,Toronto,ON,Scotiabank Arena
+82a53679-b1e9-4221-b58e-a7b89f45c638,Utah Mammoth,utah-mammoth,Delta Center,1de78776-8bb2-487e-b16e-0cb9a1bbb6ef,Delta Center,Salt Lake City,UT,Delta Center
+dc828fd7-65ae-4c1d-92ea-66975eb38fce,Vancouver Canucks,vancouver-canucks,Rogers Arena,c2c1f5aa-78ea-4ee5-ae88-0455505d97db,Rogers Arena,Vancouver,BC,Rogers Arena
+cf05f5b0-6605-465f-86f3-a6f1710afc20,Vegas Golden Knights,vegas-golden-knights,T-Mobile Arena,fb7f00e3-71dd-4bd6-96d9-0f11c7a00bfe,T-Mobile Arena,Las Vegas,NV,T-Mobile Arena
+2df72ff0-5a54-4663-91eb-13bb2a2830aa,Washington Capitals,washington-capitals,Capital One Arena,0966e204-fc6e-44d0-8958-5abcaefe2116,Capital One Arena,Washington DC,VA,Capital One Arena
+88d85b2b-7a91-4679-b1d4-e45d73e3838f,Winnipeg Jets,winnipeg-jets,Canada Life Centre,981ce0fc-ce44-4eba-b123-4d11d95e0096,Canada Life Centre,Winnipeg,MB,Canada Life Centre

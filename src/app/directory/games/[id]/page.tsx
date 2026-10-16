@@ -67,7 +67,7 @@ interface FixtureRow {
   home_team_id: string;
   away_team_id: string;
   game_data: any;
-  home_team: { id: string; name: string; slug: string; logo_url: string | null } | null;
+  home_team: { id: string; name: string; slug: string; logo_url: string | null; home_rink_id?: string | null; home_rink?: { id: string; name: string; slug: string } | null } | null;
   away_team: { id: string; name: string; slug: string; logo_url: string | null } | null;
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
   season: string | null;
@@ -114,7 +114,7 @@ const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt
         const { data: fixture, error } = await sb
           .from('fixtures')
           .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data,
-            home_team:teams!fixtures_home_team_id_fkey(id, name, slug, logo_url),
+            home_team:teams!fixtures_home_team_id_fkey(id, name, slug, logo_url, home_rink_id, home_rink:rinks!teams_home_rink_id_fkey(id, name, slug)),
             away_team:teams!fixtures_away_team_id_fkey(id, name, slug, logo_url),
             league:leagues(id, name, slug, level, country),
             season`)
