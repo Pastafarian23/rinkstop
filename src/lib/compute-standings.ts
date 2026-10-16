@@ -176,7 +176,7 @@ export async function computeStandings(
   const teamIds = [...new Set([...widToTeamId.values()])];
   const { data: teamsRaw } = teamIds.length
     ? await sb.from('teams').select('id, name, slug, logo_url, division, is_active').in('id', teamIds)
-    : { data: [] };
+    : { data: [] as any[] };
   const teamMap = new Map((teamsRaw ?? []).map((t: any) => [t.id, t]));
 
   // Step 3: build workspace-ID → team row map for the standings loop
