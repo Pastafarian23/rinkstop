@@ -83,3 +83,4 @@ scripts/_part2-readonly.mjs
 scripts/_part2-unique-constraints.mjs
 scripts/_part3-highlightly-verify.mjs
 scripts/_part3-verify-gap.mjs
+scripts/_dry-run-nhl-only.mjs
