@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { computeStandings } from '@/lib/compute-standings';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getSeasonCompleteness } from '@/lib/season-completeness';
 
 const REVALIDATE = 300; // 5 minutes
 
@@ -23,10 +24,30 @@ export async function GET(
       return NextResponse.json({ error: 'League not found' }, { status: 404 });
     }
 
-    const result = await computeStandings(league.id, season);
+    // Compute standings + season completeness in parallel.
+    // `getSeasonCompleteness` may query the same fixtures table; running
+    // them concurrently keeps total request time lower than serial calls.
+    const [result, completeness] = await Promise.all([
+      computeStandings(league.id, season),
+      getSeasonCompleteness(league.slug, season).catch((err) => ({
+        isComplete: false,
+        isCurrent: false,
+        expectedGp: 0,
+        observed: null,
+        reason: `season-completeness lookup failed: ${err?.message ?? err}`,
+      })),
+    ]);
+
     return NextResponse.json(result, {
       headers: {
         'Cache-Control': `public, s-maxage=${REVALIDATE}, stale-while-revalidate=60`,
+        // X-Season-Complete: 'true' iff season is closed AND every team reached
+        // expected regular-season GP (per src/lib/season-completeness.ts).
+        // 'current' for in-progress seasons. Useful for monitoring/headless checks.
+        'X-Season-Complete': completeness.isComplete ? 'true' : (completeness.isCurrent ? 'current' : 'false'),
+        'X-Season-Expected-Gp': String(completeness.expectedGp),
+        'X-Season-Max-Gp': String(completeness.observed?.maxGp ?? 0),
+        'X-Season-Reason': completeness.reason,
       },
     });
   } catch (err) {
