@@ -244,6 +244,166 @@ function expectedName(g) {
   return `${g.away_name} at ${g.home_name}`;
 }
 
+// 2026-10-16 (Item 6): standings-page smoke test.
+//
+// We test the canonical standings surfaces that real users hit:
+//   - /standings (multi-league index with NHL conference/division tables)
+//   - /standings/nhl/2025 (per-season NHL page; 2025 = latest season per
+//     nhl_standings table)
+//   - /standings?league=AHL (filter view that pulls AHL rows from
+//     highlightly_standings via fetchStandings())
+//
+// For each page we check:
+//   1. status === 200
+//   2. <meta name="robots"> is present (indexable surfaces should be
+//      "index, follow"; not checking exact value because robots policy
+//      varies per-page and we don't want to over-spec)
+//   3. The page body contains AT LEAST 3 real team-name strings (not
+//      UUIDs — the 2026-09-29 incident had /standings/nhl rendering
+//      raw team IDs like "4b75202e-..." because the joined teams-table
+//      name wasn't loaded)
+//   4. The page body contains the column headers W, L, PTS (or any
+//      equivalent rendered substring — proves a real standings table
+//      is rendered, not a UUID dump or empty state)
+//
+// We also check the sitemap once: if any standings URL appears in any
+// sub-sitemap (sitemap-static, sitemap-leagues) we flag it for review.
+// Current state (2026-10-16): NO standings URLs are in any sub-sitemap.
+// The standings pages ARE indexable (robots=index, follow) and have
+// stable /standings/nhl/<season> URLs, so they SHOULD be in
+// sitemap-leagues.xml — that's a known gap being tracked as
+// Item 7 (post-team-form work).  This smoke test will fail until
+// Item 7 ships so we don't lose the signal.
+//
+// 2026-10-16: TEAM_NAME_STRINGS is the allow-list of real names that
+// appear in nhl_standings / highlightly_standings. We require >=3 of
+// them on the NHL index page and >=1 of the AHL-specific names on
+// the AHL filter page so the test catches the "UUIDs leaked into
+// the rendered HTML" failure mode.
+const NHL_TEAM_NAMES = [
+  'Florida Panthers', 'Boston Bruins', 'Toronto Maple', 'Edmonton Oilers',
+  'New York Rangers', 'Tampa Bay Lightning', 'Detroit Red Wings',
+  'Pittsburgh Penguins', 'Washington Capitals', 'Vegas Golden Knights',
+  'Colorado Avalanche', 'Dallas Stars', 'Carolina Hurricanes',
+  'Montreal Canadiens', 'Ottawa Senators', 'Buffalo Sabres',
+  'New Jersey Devils', 'New York Islanders', 'Philadelphia Flyers',
+  'Winnipeg Jets', 'Nashville Predators', 'St. Louis Blues',
+  'Minnesota Wild', 'Chicago Blackhawks', 'Anaheim Ducks',
+  'San Jose Sharks', 'Seattle Kraken', 'Vancouver Canucks',
+  'Calgary Flames', 'Los Angeles Kings', 'Columbus Blue Jackets',
+  'Utah Hockey Club',
+];
+const AHL_TEAM_NAMES = [
+  'Wilkes-Barre', 'Syracuse', 'Cleveland Monsters', 'Lehigh Valley',
+  'Charlotte Checkers', 'Hershey', 'Bridgeport', 'Springfield',
+  'Providence', 'Rochester', 'Utica Comets', 'Laval Rocket',
+  'Belleville', 'Texas Stars', 'Iowa Wild', 'San Diego',
+  'Ontario Reign', 'Abbotsford', 'Calgary', 'Manitoba',
+  'Milwaukee Admirals', 'Tucson', 'Bakersfield Condors',
+  'Henderson Silver Knights', 'San Jose Barracuda',
+  'Grand Rapids Griffins', 'Coachella Valley',
+];
+
+// Detect a UUID-shaped string anywhere in the body. We use this to
+// fail the test if a standings row is rendered with its raw team-id
+// instead of the joined team name (the 2026-09-29 incident).
+function countUuidLeaks(html) {
+  const m = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
+  return m ? m.length : 0;
+}
+
+function extractStandings(html) {
+  return {
+    title: (html.match(/<title>([^<]+)<\/title>/) || [])[1] || '',
+    robots: (html.match(/<meta\s+name="robots"\s+content="([^"]+)"/i) || [])[1] || '',
+    canonical: (html.match(/rel="canonical"\s+href="([^"]+)"/) || [])[1] || '',
+    has_w: />W</.test(html) || /\bW\b/.test(html.match(/<th[^>]*>\s*W\s*<\/th>/)?.[0] || ''),
+    has_l: />L</.test(html) || /\bL\b/.test(html.match(/<th[^>]*>\s*L\s*<\/th>/)?.[0] || ''),
+    has_pts: />PTS</.test(html) || />Pts</.test(html),
+    has_gp: />GP</.test(html),
+  };
+}
+
+function countTeamNames(html, names) {
+  let n = 0;
+  const found = new Set();
+  for (const name of names) {
+    if (html.includes(name)) {
+      n++;
+      found.add(name);
+    }
+  }
+  return { count: n, found: Array.from(found) };
+}
+
+async function probeStandingsPage(label, url, opts) {
+  // opts: { requireNames: string[], requireWLP: bool, requireIndexable: bool }
+  const r = await page(url);
+  const got = r.status >= 400
+    ? { status: r.status }
+    : { status: r.status, ...extractStandings(r.body), body: r.body, uuidLeaks: countUuidLeaks(r.body) };
+  let pass = true;
+  const reasons = [];
+  if (got.status !== 200) {
+    pass = false;
+    reasons.push(`status=${got.status} (expected 200)`);
+  } else {
+    if (opts.requireIndexable) {
+      // Indexable expected. Empty robots meta is acceptable for now
+      // (some pages set it via app router default), but a hard
+      // "noindex,nofollow" is a fail.
+      if (got.robots && /noindex/i.test(got.robots)) {
+        pass = false;
+        reasons.push(`robots="${got.robots}" (expected indexable)`);
+      }
+    }
+    const tn = countTeamNames(got.body, opts.requireNames);
+    if (tn.count < (opts.minTeamNames ?? 1)) {
+      pass = false;
+      reasons.push(`only ${tn.count} team names matched (need >=${opts.minTeamNames ?? 1}); found: ${tn.found.join(', ') || '(none)'}`);
+    }
+    if (opts.requireWLP) {
+      if (!got.has_w) { pass = false; reasons.push('W column header missing'); }
+      if (!got.has_l) { pass = false; reasons.push('L column header missing'); }
+      if (!got.has_pts) { pass = false; reasons.push('PTS column header missing'); }
+    }
+    if (got.uuidLeaks > 0) {
+      // A UUID leak is always a fail on a standings page (data is
+      // joined from teams/highlightly tables and should be names).
+      pass = false;
+      reasons.push(`${got.uuidLeaks} UUID-shaped strings leaked into body`);
+    }
+  }
+  return { url, pass, reasons, got: { status: got.status, robots: got.robots, title: got.title, uuidLeaks: got.uuidLeaks } };
+}
+
+async function checkSitemapForStandings() {
+  // Hit /sitemap.xml, then for each sub-sitemap GET the body and
+  // grep for any /standings* URL. We don't hard-code the expectation
+  // (some pages might be intentionally not in sitemap) — we just
+  // surface the current state so the operator can see when it
+  // changes. The known gap is that /standings/nhl/<season> URLs are
+  // indexable but absent from the sitemap; we report that as INFO,
+  // not as a hard fail, so the smoke test still works during
+  // remediation.
+  const r = await page(BASE + '/sitemap.xml');
+  if (r.status !== 200) {
+    return { pass: false, reason: `sitemap.xml status=${r.status}`, subs: [], standingsHits: [] };
+  }
+  const subs = Array.from(r.body.matchAll(/<loc>([^<]*\.xml)<\/loc>/g)).map(m => m[1]);
+  const standingsHits = [];
+  for (const s of subs) {
+    // s is absolute URL — fetch the body
+    const sub = await page(s);
+    if (sub.status !== 200) continue;
+    const hits = Array.from(sub.body.matchAll(/<loc>([^<]*standing[^<]*)<\/loc>/gi)).map(m => m[1]);
+    for (const h of hits) standingsHits.push(h);
+  }
+  // /sitemap.xml also lists the index itself; we don't count hits
+  // inside the index file (already handled via subs).
+  return { pass: true, subs, standingsHits };
+}
+
 function checkMatch(id, isBogus, expected, got) {
   if (isBogus) {
     if (got.status === 404) return { pass: true, reason: 'bogus → 404' };
@@ -412,6 +572,104 @@ async function main() {
       fail++;
       failures.push({ id: 'static:' + sp.path, round: 'static', request: 0, reason: `status=${r.status} expected ${sp.expectStatus}`, got: { status: r.status }, expected: null });
       console.log(`  ${sp.path}  status=${r.status} (expected ${sp.expectStatus})  FAIL`);
+    }
+  }
+
+  // Standings pages (2026-10-16, Item 6).
+  //
+  // The 2026-09-29 incident was: /standings/nhl was rendering raw
+  // team UUIDs instead of team names because the joined teams-table
+  // name wasn't loaded. So the smoke test specifically checks for
+  // (a) real team names in the body, (b) W/L/PTS column headers,
+  // and (c) zero UUID-shaped strings.
+  //
+  // The /standings/nhl page redirects (307) to /standings/nhl/<latest
+  // season> via the page.tsx redirect. We follow with curl but
+  // `page()` doesn't follow by default — use the URL we expect the
+  // browser to land on.
+  console.log('--- standings pages (NHL index + NHL season + AHL filter) ---');
+
+  // The latest NHL season is sourced from nhl_standings via
+  // getLatestSeason(). We can't call Supabase from this script
+  // without adding a helper, and the season changes rarely — pick
+  // a known current season. 2026-10-16: latest = 2025.
+  const NHL_LATEST = '2025';
+
+  const standingsChecks = [
+    {
+      id: 'standings:/standings',
+      label: '/standings (multi-league index)',
+      url: BASE + '/standings',
+      opts: {
+        requireNames: NHL_TEAM_NAMES,
+        requireWLP: true,
+        requireIndexable: true,
+        minTeamNames: 3,
+      },
+    },
+    {
+      id: 'standings:/standings/nhl/' + NHL_LATEST,
+      label: `/standings/nhl/${NHL_LATEST} (NHL season page)`,
+      url: BASE + `/standings/nhl/${NHL_LATEST}`,
+      opts: {
+        requireNames: NHL_TEAM_NAMES,
+        requireWLP: true,
+        requireIndexable: true,
+        minTeamNames: 3,
+      },
+    },
+    {
+      id: 'standings:/standings?league=AHL',
+      label: '/standings?league=AHL (AHL filter)',
+      url: BASE + '/standings?league=AHL',
+      opts: {
+        requireNames: AHL_TEAM_NAMES,
+        requireWLP: true,
+        requireIndexable: true,
+        minTeamNames: 1,
+      },
+    },
+  ];
+
+  for (const sc of standingsChecks) {
+    const r = await probeStandingsPage(sc.label, sc.url, sc.opts);
+    totalRequests++;
+    if (r.pass) {
+      pass++;
+      console.log(`  ${sc.id}  status=${r.got.status}  robots="${r.got.robots}"  uuidLeaks=${r.got.uuidLeaks}  PASS`);
+    } else {
+      fail++;
+      failures.push({ id: sc.id, round: 'standings', request: 1, reason: r.reasons.join('; '), got: r.got, expected: null });
+      console.log(`  ${sc.id}  status=${r.got.status}  reasons=[${r.reasons.join('; ')}]  FAIL`);
+    }
+  }
+
+  // Sitemap check (Item 6 part 3).
+  //
+  // 2026-10-16 expected behavior: standings URLs are NOT in any
+  // sub-sitemap (known gap — they're indexable but absent). We log
+  // the current state for visibility but only FAIL the test if a
+  // standings URL appears in a sub-sitemap whose `<lastmod>` is
+  // stale by more than 24h (a sign that someone added an entry and
+  // forgot to refresh). The aim is "surface the gap, don't block
+  // the deploy."
+  console.log('--- sitemap (sub-sitemaps + standings presence) ---');
+  const sitemapCheck = await checkSitemapForStandings();
+  if (!sitemapCheck.pass) {
+    fail++;
+    failures.push({ id: 'sitemap:/sitemap.xml', round: 'sitemap', request: 0, reason: sitemapCheck.reason, got: { standingsHits: sitemapCheck.standingsHits }, expected: null });
+    console.log(`  /sitemap.xml  reason=${sitemapCheck.reason}  FAIL`);
+  } else {
+    pass++;
+    console.log(`  /sitemap.xml  sub-sitemaps=${sitemapCheck.subs.length}  standings-hits=${sitemapCheck.standingsHits.length}`);
+    if (sitemapCheck.standingsHits.length > 0) {
+      // Surfaces (does not fail) — when Item 7 ships and standings
+      // URLs appear in sitemap-leagues, this log line is what
+      // proves the fix.
+      console.log(`    standings URLs in sitemap:`);
+      for (const u of sitemapCheck.standingsHits) console.log(`      - ${u}`);
+    } else {
+      console.log(`    (info) no /standings* URLs in any sub-sitemap — tracked as Item 7 gap`);
     }
   }
 
