@@ -81,3 +81,5 @@ scripts/_part2-c-reconcile.mjs
 scripts/_part2-mirrored.mjs
 scripts/_part2-readonly.mjs
 scripts/_part2-unique-constraints.mjs
+scripts/_part3-highlightly-verify.mjs
+scripts/_part3-verify-gap.mjs
