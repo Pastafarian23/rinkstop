@@ -19,19 +19,27 @@ export interface NhlTeamRecord {
 
 export interface NhlStanding {
   id: string;
-  league_name: string;
-  season: string;
-  rank: number;
   team_id: string;
-  team_name: string;
-  team_logo: string | null;
-  played: number;
+  season: string;
+  gp: number;
   wins: number;
   losses: number;
-  overtime_losses: number;
+  ot_losses: number;
   points: number;
   goals_for: number;
   goals_against: number;
+  streak: string;
+  l10: string;
+  last_updated: string;
+  source: string;
+  // Joined fields (added by getStandingsForSeason)
+  team_name: string;
+  team_slug?: string | null;
+  // Aliases for component compatibility
+  played?: number;
+  overtime_losses?: number;
+  rank?: number;
+  team_logo?: string | null;
 }
 
 export interface NhlMatch {
@@ -132,32 +140,40 @@ export async function getCurrentStandingForTeam(highlightlyId: string, teamName?
 
 // All standings for a season, paginated
 export async function getStandingsForSeason(season: string): Promise<NhlStanding[]> {
-  let all: NhlStanding[] = [];
-  let from = 0;
-  const batch = 1000;
-  while (true) {
-    const { data, error } = await supabaseAdmin
-      .from('nhl_standings')
-      .select('*')
-      .eq('season', season)
-      .order('rank', { ascending: true })
-      .range(from, from + batch - 1);
-    if (error) {
-      console.error('[nhl-data] getStandingsForSeason error:', error.message);
-      return [];
-    }
-    if (!data || data.length === 0) break;
-    all = all.concat(data as NhlStanding[]);
-    if (data.length < batch) break;
-    from += batch;
+  // nhl_official_standings has team_id (UUID) but no team_name.
+  // Join with teams table to get the team_name for display.
+  const { data, error } = await supabaseAdmin
+    .from('nhl_official_standings')
+    .select(`
+      *,
+      teams(name, slug)
+    `)
+    .eq('season', season)
+    .order('points', { ascending: false });
+  if (error) {
+    console.error('[nhl-data] getStandingsForSeason error:', error.message);
+    return [];
   }
-  return all;
+  // Flatten the joined team name + add rank/aliases/logo for component compatibility
+  const NHL_LOGO_BASE = 'https://assets.nhle.com/logos/nhl/svg/';
+  return ((data as any[]) || []).map((row, idx) => {
+    const slug = (row.teams as any)?.slug ?? null;
+    return {
+      ...row,
+      team_name: (row.teams as any)?.name ?? row.team_id,
+      team_slug: slug,
+      team_logo: slug ? `${NHL_LOGO_BASE}${slug.toUpperCase()}_light.svg` : null,
+      rank: idx + 1,
+      played: row.gp,
+      overtime_losses: row.ot_losses,
+    };
+  }) as unknown as NhlStanding[];
 }
 
 // Get latest available season
 export async function getLatestSeason(): Promise<string | null> {
   const { data, error } = await supabaseAdmin
-    .from('nhl_standings')
+    .from('nhl_official_standings')
     .select('season')
     .order('season', { ascending: false })
     .limit(1)
@@ -169,11 +185,12 @@ export async function getLatestSeason(): Promise<string | null> {
 // Get all seasons
 export async function getAllSeasons(): Promise<string[]> {
   const { data, error } = await supabaseAdmin
-    .from('nhl_standings')
+    .from('nhl_official_standings')
     .select('season');
   if (error) return [];
   const set = new Set<string>();
   for (const r of (data || [])) set.add((r as any).season);
+  // Sort descending (newest first), but put completed seasons first
   return Array.from(set).sort().reverse();
 }
 
