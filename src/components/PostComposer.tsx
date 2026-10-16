@@ -3,25 +3,17 @@
 /**
  * PostComposer — global post composer + FAB.
  *
- * Mounted once at the layout level (next to RoleAwareTabBar). Renders a
- * mobile-only blue "+" FAB that opens a quick-actions menu. Each action
- * opens a focused sub-form in the same bottom sheet.
+ * Mounted once at the layout level. Renders a mobile "+" FAB that opens
+ * a quick-actions menu. Each action opens a focused sub-form in the same
+ * bottom sheet.
  *
- * Quick-actions menu (2026-08-29):
- *   1. Write Post         → standard composer (existing)
- *   2. Rink Check-in     → search rinks, post "I'm at X"
- *   3. Log Skate/Workout → duration + notes + optional photo
- *   4. Share Highlight    → paste YouTube/TikTok URL, auto-fetch thumbnail
- *   5. RSVP to Event     → one-tap "I'm in" to team/league events
- *   6. Find a Game       → browse drop-in / open hockey sessions
- *   7. Log Stats         → quick 2G 1A style stat entry
- *   8. Find a Team       → tryout / open roster listings
- *
- * Rules of hooks: every hook MUST be called in the same order on
- * every render. No early returns above useState/useEffect etc.
+ * Menu (2026-10-16):
+ *   Write Post | Share Media | Schedule | Payments | Log Workout | RSVP | Log Stats | Team Tools
+ *   ↓
+ *   Schedule | Payments | Team Tools link to /dashboard/schedule, /dashboard/plans, /dashboard/team
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { usePathname } from 'next/navigation';
 import styles from './PostComposer.module.css';
@@ -29,15 +21,15 @@ import styles from './PostComposer.module.css';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ComposerMode =
-  | 'menu'      // quick-actions grid
-  | 'compose'   // standard write-post composer
-  | 'checkin'   // rink check-in form
-  | 'workout'   // log skate / workout
-  | 'highlight' // share a highlight link
-  | 'rsvp'      // RSVP to an event
-  | 'findgame'  // find a drop-in game
-  | 'stats'     // log stats
-  | 'tryout';   // find a team / tryout
+  | 'menu'
+  | 'compose'
+  | 'media'
+  | 'workout'
+  | 'schedule'
+  | 'payments'
+  | 'rsvp'
+  | 'stats'
+  | 'org';
 
 interface ProfileMeResponse {
   profile?: { user_id: string; username: string; display_name?: string | null };
@@ -59,22 +51,6 @@ interface RsvpEvent {
   event_type: string;
 }
 
-interface HighlightMeta {
-  url: string;
-  title: string;
-  thumbnail?: string;
-  platform: 'youtube' | 'tiktok' | 'other';
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const MAX = 1000;
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const MAX_IMAGE_DIMENSION = 1920;
-const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
-// ─── Image helpers ───────────────────────────────────────────────────────────
-
 interface PendingImage {
   file: File;
   previewUrl: string;
@@ -83,9 +59,46 @@ interface PendingImage {
   processedFile: File;
 }
 
-async function processImage(file: File): Promise<{
-  processedFile: File; width: number; height: number; previewUrl: string;
-}> {
+interface PendingMedia {
+  file: File;
+  previewUrl: string;
+  isVideo: boolean;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const MAX = 1000;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 1920;
+const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_VIDEO_MIME = new Set(['video/mp4', 'video/quicktime', 'video/webm']);
+const ALLOWED_VIDEO_STR = 'video/mp4,video/quicktime,video/webm';
+const ALLOWED_IMAGE_STR = 'image/jpeg,image/png,image/webp,image/gif';
+
+// ─── Image helpers (module-level) ─────────────────────────────────────────────
+
+interface ProcessImageResult {
+  processedFile: File;
+  width: number;
+  height: number;
+  previewUrl: string;
+}
+
+function loadHtmlImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Could not read image.'));
+    img.src = url;
+  });
+}
+
+async function loadImageDimensions(url: string): Promise<{ width: number; height: number }> {
+  const img = await loadHtmlImage(url);
+  return { width: img.naturalWidth, height: img.naturalHeight };
+}
+
+async function processImage(file: File): Promise<ProcessImageResult> {
   if (!ALLOWED_IMAGE_MIME.includes(file.type))
     throw new Error('Unsupported image type. Use JPEG, PNG, WebP, or GIF.');
   if (file.size > MAX_IMAGE_BYTES)
@@ -118,29 +131,20 @@ async function processImage(file: File): Promise<{
   return { processedFile, width: targetW, height: targetH, previewUrl: URL.createObjectURL(processedFile) };
 }
 
-function loadHtmlImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Could not read image.'));
-    img.src = url;
-  });
-}
+// ─── Media file processing ─────────────────────────────────────────────────────
 
-async function loadImageDimensions(url: string): Promise<{ width: number; height: number }> {
-  const img = await loadHtmlImage(url);
-  return { width: img.naturalWidth, height: img.naturalHeight };
-}
-
-// ─── Highlight URL parser ─────────────────────────────────────────────────────
-
-function parseHighlightUrl(raw: string): HighlightMeta {
-  const url = raw.trim();
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (ytMatch) return { url, title: 'YouTube video', platform: 'youtube' };
-  const ttMatch = url.match(/tiktok\.com\/@[\w.]+\/video\/(\d+)/);
-  if (ttMatch) return { url, title: 'TikTok video', platform: 'tiktok' };
-  return { url, title: 'Highlight', platform: 'other' };
+async function processMediaFile(file: File): Promise<PendingMedia> {
+  const isVideo = ALLOWED_VIDEO_MIME.has(file.type);
+  const isImage = ALLOWED_IMAGE_MIME.includes(file.type);
+  if (!isVideo && !isImage) {
+    throw new Error('Unsupported file type. Use JPEG, PNG, WebP, GIF, MP4, MOV, or WebM.');
+  }
+  const maxVideo = 100 * 1024 * 1024;
+  const maxImage = 10 * 1024 * 1024;
+  if (isVideo && file.size > maxVideo) throw new Error('Video too large. Max 100 MB.');
+  if (!isVideo && file.size > maxImage) throw new Error('Image too large. Max 10 MB.');
+  const previewUrl = URL.createObjectURL(file);
+  return { file, previewUrl, isVideo };
 }
 
 // ─── Main component ────────────────────────────────────────────────────────────
@@ -162,7 +166,6 @@ export default function PostComposer() {
   const [success, setSuccess] = useState('');
 
   // ── Shareable card state ──────────────────────────────────────────────────
-  // Shown after a successful post so the user can share it
   const [shareCard, setShareCard] = useState<{
     type: 'checkin' | 'workout' | 'highlight' | 'stats' | 'rsvp';
     title: string;
@@ -190,51 +193,108 @@ export default function PostComposer() {
   const [showDestinations, setShowDestinations] = useState(false);
   const [showSportPicker, setShowSportPicker] = useState(false);
 
-  // ── Rink check-in state ─────────────────────────────────────────────────────
-  const [checkinQuery, setCheckinQuery] = useState('');
-  const [checkinResults, setCheckinResults] = useState<Rink[]>([]);
-  const [checkinSearching, setCheckinSearching] = useState(false);
-  const [checkinSelected, setCheckinSelected] = useState<Rink | null>(null);
-  const [checkinNote, setCheckinNote] = useState('');
+  // ── Media (photo/video) upload state ──────────────────────────────────────
+  const [media, setMedia] = useState<PendingMedia | null>(null);
+  const [mediaStage, setMediaStage] = useState<'none' | 'processing' | 'ready' | 'uploading'>('none');
+  const [mediaBody, setMediaBody] = useState('');
+  const mediaFileRef = useRef<HTMLInputElement>(null);
 
-  // ── Workout log state ────────────────────────────────────────────────────────
+  // ── Workout log state ─────────────────────────────────────────────────────
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [workoutType, setWorkoutType] = useState('skate');
   const [workoutNotes, setWorkoutNotes] = useState('');
   const [workoutImage, setWorkoutImage] = useState<PendingImage | null>(null);
   const [workoutImageStage, setWorkoutImageStage] = useState<'none' | 'processing' | 'ready' | 'uploading'>('none');
+  const workoutFileRef = useRef<HTMLInputElement>(null);
 
-  // ── Highlight link state ─────────────────────────────────────────────────────
-  const [highlightUrl, setHighlightUrl] = useState('');
-  const [highlightMeta, setHighlightMeta] = useState<HighlightMeta | null>(null);
-  const [highlightFetching, setHighlightFetching] = useState(false);
-
-  // ── RSVP state ───────────────────────────────────────────────────────────────
+  // ── RSVP state ───────────────────────────────────────────────────────────
   const [rsvpEvents, setRsvpEvents] = useState<RsvpEvent[]>([]);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpSelected, setRsvpSelected] = useState<RsvpEvent | null>(null);
   const [rsvpSuccess, setRsvpSuccess] = useState('');
 
-  // ── Find game state ──────────────────────────────────────────────────────────
-  const [findgameCity, setFindgameCity] = useState('');
-  const [findgameResults, setFindgameResults] = useState<Rink[]>([]);
-  const [findgameLoading, setFindgameLoading] = useState(false);
-
-  // ── Stats log state ──────────────────────────────────────────────────────────
+  // ── Stats log state ──────────────────────────────────────────────────────
   const [statGoals, setStatGoals] = useState(0);
   const [statAssists, setStatAssists] = useState(0);
   const [statNotes, setStatNotes] = useState('');
 
-  // ── Tryout search state ───────────────────────────────────────────────────────
-  const [tryoutQuery, setTryoutQuery] = useState('');
-  const [tryoutResults, setTryoutResults] = useState<{ name: string; type: string; location: string; link?: string }[]>([]);
-  const [tryoutLoading, setTryoutLoading] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const workoutFileRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Effects ──────────────────────────────────────────────────────────────────
+  // ── Derived state ──────────────────────────────────────────────────────────
+  const destinationOptions = destinations
+    ? [destinations.personal, ...(destinations.teams ?? []), ...(destinations.leagues ?? [])]
+    : [];
+
+  const sportOptions = [
+    { value: '', label: 'General' },
+    { value: 'hockey', label: 'Hockey' },
+    { value: 'figure_skating', label: 'Figure skating' },
+    { value: 'speed_skating', label: 'Speed skating' },
+    { value: 'basketball', label: 'Basketball' },
+    { value: 'soccer', label: 'Soccer' },
+    { value: 'baseball', label: 'Baseball' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  const modeTitles: Record<ComposerMode, string> = {
+    menu: 'What would you like to do?',
+    compose: 'Write Post',
+    media: 'Share Media',
+    workout: 'Log Skate / Workout',
+    schedule: 'My Schedule',
+    payments: 'Payments & Billing',
+    rsvp: 'RSVP to Event',
+    stats: 'Log Stats',
+    org: 'Team Tools',
+  };
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function openComposer() {
+    setOpen(true);
+    setMode('menu');
+    setError('');
+    setSuccess('');
+  }
+
+  function closeComposer() {
+    setOpen(false);
+    setMode('menu');
+    setError('');
+    setSuccess('');
+    setShareCard(null);
+    resetForms();
+  }
+
+  function goToMenu() {
+    setMode('menu');
+    setError('');
+    setSuccess('');
+  }
+
+  function pickDestination(next: { target_type: string; target_id: string; name: string }) {
+    setDestination(next);
+    setShowDestinations(false);
+  }
+
+  function pickSport(next: string | null) {
+    setSport(next);
+    setShowSportPicker(false);
+  }
+
+  function removeMedia() {
+    if (media?.previewUrl) URL.revokeObjectURL(media.previewUrl);
+    setMedia(null);
+    setMediaStage('none');
+  }
+
+  function removeWorkoutImage() {
+    if (workoutImage?.previewUrl) URL.revokeObjectURL(workoutImage.previewUrl);
+    setWorkoutImage(null);
+    setWorkoutImageStage('none');
+  }
+
+  // ── Effects ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!open || myProfile || profileLoading) return;
@@ -295,43 +355,29 @@ export default function PostComposer() {
     return undefined;
   }, [open]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
-
-  const openComposer = useCallback(() => {
-    setOpen(true);
-    setMode('menu');
-    setError('');
-    setSuccess('');
-  }, []);
-
-  const goToMenu = useCallback(() => {
-    setMode('menu');
-    setError('');
-    setSuccess('');
-  }, []);
-
-  const closeComposer = useCallback(() => {
-    setOpen(false);
-    setMode('menu');
+  function resetForms() {
     setBody('');
-    setError('');
-    setSuccess('');
-    setShareCard(null);
     if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
     setImage(null);
     setImageStage('none');
-    setCheckinQuery(''); setCheckinResults([]); setCheckinSelected(null); setCheckinNote('');
-    setHighlightUrl(''); setHighlightMeta(null);
-    setWorkoutDuration(''); setWorkoutNotes(''); setWorkoutType('skate');
+    setWorkoutDuration('');
+    setWorkoutNotes('');
+    setWorkoutType('skate');
     if (workoutImage?.previewUrl) URL.revokeObjectURL(workoutImage.previewUrl);
-    setWorkoutImage(null); setWorkoutImageStage('none');
-    setRsvpEvents([]); setRsvpSelected(null); setRsvpSuccess('');
-    setFindgameResults([]); setFindgameCity('');
-    setStatGoals(0); setStatAssists(0); setStatNotes('');
-    setTryoutResults([]); setTryoutQuery('');
-  }, [image, workoutImage]);
+    setWorkoutImage(null);
+    setWorkoutImageStage('none');
+    removeMedia();
+    setMediaBody('');
+    setRsvpEvents([]);
+    setRsvpSelected(null);
+    setRsvpSuccess('');
+    setStatGoals(0);
+    setStatAssists(0);
+    setStatNotes('');
+  }
 
-  // Standard compose submit
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
   async function handleComposeSubmit(e: React.FormEvent) {
     e.preventDefault();
     const hasBody = body.trim().length > 0;
@@ -360,40 +406,6 @@ export default function PostComposer() {
     }
   }
 
-  // Rink check-in submit
-  async function handleCheckinSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!checkinSelected || submitting) return;
-    setSubmitting(true);
-    setError('');
-    const body_text = checkinNote.trim()
-      ? `I'm at ${checkinSelected.name} in ${checkinSelected.city}! ${checkinNote.trim()}`
-      : `I'm at ${checkinSelected.name} in ${checkinSelected.city}! 🏒`;
-    try {
-      const fd = new FormData();
-      fd.append('body', body_text);
-      fd.append('target_type', 'user');
-      if (myProfile) fd.append('target_id', myProfile.user_id);
-      const r = await fetch('/api/profile-posts', { method: 'POST', body: fd });
-      const json = await r.json().catch(() => ({}));
-      if (!r.ok) { setError(json.error ?? 'Check-in failed'); return; }
-      try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
-      setSuccess(`Checked in at ${checkinSelected.name}!`);
-      setShareCard({
-        type: 'checkin',
-        title: `At ${checkinSelected.name}`,
-        subtitle: checkinSelected.city,
-        shareText: `🏒 I'm at ${checkinSelected.name} in ${checkinSelected.city}! ${checkinNote.trim() ? checkinNote.trim() : 'Great ice today.'}`,
-      });
-      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Network error');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  // Workout log submit
   async function handleWorkoutSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!workoutDuration && !workoutNotes.trim()) return;
@@ -407,7 +419,6 @@ export default function PostComposer() {
     try {
       const fd = new FormData();
       fd.append('body', body_text);
-      fd.append('target_type', 'user');
       if (myProfile) fd.append('target_id', myProfile.user_id);
       if (workoutImage) { fd.append('file', workoutImage.processedFile); fd.append('width', String(workoutImage.width)); fd.append('height', String(workoutImage.height)); }
       const r = await fetch('/api/profile-posts', { method: 'POST', body: fd });
@@ -417,11 +428,10 @@ export default function PostComposer() {
       setSuccess('Workout logged!');
       setShareCard({
         type: 'workout',
-        title: `${typeLabel} completed`,
-        subtitle: workoutDuration ? `${workoutDuration} min` : 'Training done',
-        shareText: `💪 ${typeLabel}: ${workoutDuration ? workoutDuration + ' min' : 'completed'} — ${workoutNotes.trim() || 'Good session!'}`,
+        title: typeLabel + ' logged',
+        subtitle: workoutDuration ? `${workoutDuration} min` : 'Completed',
+        shareText: body_text,
       });
-      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -429,14 +439,85 @@ export default function PostComposer() {
     }
   }
 
-  // Highlight share submit
-  async function handleHighlightSubmit(e: React.FormEvent) {
+  async function handleWorkoutFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setWorkoutImageStage('processing');
+    setError('');
+    try {
+      const result = await processImage(file);
+      setWorkoutImage({ ...result, file: result.processedFile });
+      setWorkoutImageStage('ready');
+    } catch (err) {
+      setWorkoutImageStage('none');
+      setError(err instanceof Error ? err.message : 'Could not process image.');
+    }
+  }
+
+  async function handleMediaSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!highlightMeta || submitting) return;
+    if (!media || submitting) return;
     setSubmitting(true);
     setError('');
-    const platformIcon = highlightMeta.platform === 'youtube' ? '▶️' : highlightMeta.platform === 'tiktok' ? '🎵' : '🎬';
-    const body_text = `${platformIcon} Check this out: ${highlightMeta.url}`;
+    setMediaStage('uploading');
+    try {
+      const fd = new FormData();
+      if (mediaBody.trim()) fd.append('body', mediaBody.trim());
+      if (destination) { fd.append('target_type', destination.target_type); fd.append('target_id', destination.target_id); }
+      if (sport) fd.append('sport', sport);
+      fd.append('file', media.file);
+      const r = await fetch('/api/profile-posts', { method: 'POST', body: fd });
+      const json = await r.json().catch(() => ({}));
+      setMediaStage('none');
+      if (!r.ok) {
+        setError(json.error ?? `Failed (${r.status})`);
+        return;
+      }
+      try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
+      closeComposer();
+    } catch (err) {
+      setMediaStage('ready');
+      setError(err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleMediaFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMediaStage('processing');
+    setError('');
+    try {
+      const result = await processMediaFile(file);
+      setMedia(result);
+      setMediaStage('ready');
+    } catch (err) {
+      setMediaStage('none');
+      setError(err instanceof Error ? err.message : 'Could not process file.');
+    }
+  }
+
+  async function loadRsvpEvents() {
+    setRsvpLoading(true);
+    try {
+      const r = await fetch('/api/profiles/me/events/upcoming');
+      if (!r.ok) throw new Error();
+      const json = await r.json();
+      setRsvpEvents(json.data ?? []);
+    } catch {
+      setRsvpEvents([]);
+    } finally {
+      setRsvpLoading(false);
+    }
+  }
+
+  async function handleRsvpSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!rsvpSelected || submitting) return;
+    setSubmitting(true);
+    setError('');
+    const body_text = `🙋 I'm in: ${rsvpSelected.title} — ${new Date(rsvpSelected.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
     try {
       const fd = new FormData();
       fd.append('body', body_text);
@@ -446,15 +527,14 @@ export default function PostComposer() {
       const json = await r.json().catch(() => ({}));
       if (!r.ok) { setError(json.error ?? 'Failed'); return; }
       try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
-      setSuccess('Highlight shared!');
+      setRsvpSuccess('RSVP sent!');
       setShareCard({
-        type: 'highlight',
-        title: 'Highlight shared',
-        subtitle: highlightMeta.platform === 'youtube' ? '▶️ YouTube' : highlightMeta.platform === 'tiktok' ? '🎵 TikTok' : '🎬 Video',
-        shareText: `${platformIcon} Check this out: ${highlightMeta.url}`,
-        shareUrl: highlightMeta.url,
+        type: 'rsvp',
+        title: rsvpSelected.title,
+        subtitle: new Date(rsvpSelected.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        shareText: body_text,
       });
-      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
+      setTimeout(() => { if (!shareCard) closeComposer(); }, 4000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
@@ -462,7 +542,6 @@ export default function PostComposer() {
     }
   }
 
-  // Stats submit
   async function handleStatsSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (statGoals === 0 && statAssists === 0) return;
@@ -487,7 +566,7 @@ export default function PostComposer() {
       setShareCard({
         type: 'stats',
         title: `${statGoals}G + ${statAssists}A`,
-        subtitle: statNotes.trim() || 'Tonight\'s stats',
+        subtitle: statNotes.trim() || "Tonight's stats",
         shareText: statShareText,
       });
       setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
@@ -498,209 +577,9 @@ export default function PostComposer() {
     }
   }
 
-  // RSVP submit
-  async function handleRsvpSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!rsvpSelected || submitting) return;
-    setSubmitting(true);
-    setError('');
-    const body_text = `🙋 I'm in: ${rsvpSelected.title} — ${new Date(rsvpSelected.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
-    try {
-      const fd = new FormData();
-      fd.append('body', body_text);
-      fd.append('target_type', 'user');
-      if (myProfile) fd.append('target_id', myProfile.user_id);
-      const r = await fetch('/api/profile-posts', { method: 'POST', body: fd });
-      const json = await r.json().catch(() => ({}));
-      if (!r.ok) { setError(json.error ?? 'RSVP failed'); return; }
-      try { window.dispatchEvent(new CustomEvent('rinkstop:post-created')); } catch { /* noop */ }
-      setRsvpSuccess('RSVP posted!');
-      const rsvpShareText = `🙋 I'm in: ${rsvpSelected.title} — ${new Date(rsvpSelected.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
-      setShareCard({
-        type: 'rsvp',
-        title: `Going: ${rsvpSelected.title}`,
-        subtitle: new Date(rsvpSelected.event_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        shareText: rsvpShareText,
-      });
-      setTimeout(() => { if (!shareCard) closeComposer(); }, 8000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Network error');
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  // ── Render ───────────────────────────────────────────────────────────────
 
-  // ── Share handler ─────────────────────────────────────────────────────────────
-  async function handleShare(card: NonNullable<typeof shareCard>) {
-    const shareData: ShareData = {
-      title: card.title,
-      text: card.shareText,
-    };
-    if (card.shareUrl) shareData.url = card.shareUrl;
-
-    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-      try { await navigator.share(shareData); } catch { /* user cancelled or share failed — fall through to clipboard */ }
-    } else {
-      // Clipboard fallback
-      try {
-        await navigator.clipboard.writeText(card.shareUrl ? `${card.shareText}\n${card.shareUrl}` : card.shareText);
-        setSuccess('Copied to clipboard!');
-        setTimeout(() => setSuccess(''), 2000);
-      } catch {
-        setError('Could not share. Try copying the text manually.');
-      }
-    }
-  }
-
-  // ── Image handlers (workout) ─────────────────────────────────────────────────
-
-  async function handleWorkoutFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (e.target) e.target.value = '';
-    if (!file) return;
-    setError('');
-    setWorkoutImageStage('processing');
-    try {
-      const result = await processImage(file);
-      if (workoutImage?.previewUrl) URL.revokeObjectURL(workoutImage.previewUrl);
-      setWorkoutImage({ file, previewUrl: result.previewUrl, width: result.width, height: result.height, processedFile: result.processedFile });
-      setWorkoutImageStage('ready');
-    } catch (err) {
-      setWorkoutImageStage('none');
-      setError(err instanceof Error ? err.message : 'Could not process image.');
-    }
-  }
-
-  function removeWorkoutImage() {
-    if (workoutImage?.previewUrl) URL.revokeObjectURL(workoutImage.previewUrl);
-    setWorkoutImage(null);
-    setWorkoutImageStage('none');
-  }
-
-  // ── Search handlers ─────────────────────────────────────────────────────────
-
-  async function searchRinks(query: string) {
-    if (!query.trim()) { setCheckinResults([]); return; }
-    setCheckinSearching(true);
-    try {
-      const r = await fetch(`/api/rinks?search=${encodeURIComponent(query)}&limit=6`);
-      if (!r.ok) throw new Error();
-      const json = await r.json();
-      setCheckinResults(json.data ?? json.rinks ?? []);
-    } catch {
-      setCheckinResults([]);
-    } finally {
-      setCheckinSearching(false);
-    }
-  }
-
-  async function searchFindGame(city: string) {
-    if (!city.trim()) { setFindgameResults([]); return; }
-    setFindgameLoading(true);
-    try {
-      const r = await fetch(`/api/rinks?search=${encodeURIComponent(city)}&limit=8`);
-      if (!r.ok) throw new Error();
-      const json = await r.json();
-      setFindgameResults(json.data ?? json.rinks ?? []);
-    } catch {
-      setFindgameResults([]);
-    } finally {
-      setFindgameLoading(false);
-    }
-  }
-
-  async function loadRsvpEvents() {
-    setRsvpLoading(true);
-    try {
-      const r = await fetch('/api/events/my-upcoming');
-      if (!r.ok) throw new Error();
-      const json = await r.json();
-      setRsvpEvents(json.data ?? json.events ?? []);
-    } catch {
-      setRsvpEvents([]);
-    } finally {
-      setRsvpLoading(false);
-    }
-  }
-
-  async function searchTryouts(q: string) {
-    if (!q.trim()) { setTryoutResults([]); return; }
-    setTryoutLoading(true);
-    try {
-      const r = await fetch(`/api/teams?search=${encodeURIComponent(q)}&limit=6`);
-      if (!r.ok) throw new Error();
-      const json = await r.json();
-      const teams: { name: string; type: string; location: string; slug?: string }[] = json.data ?? json.teams ?? [];
-      setTryoutResults(teams.map(t => ({
-        name: t.name,
-        type: 'Open roster / tryout',
-        location: t.location ?? '',
-        link: t.slug ? `/directory/teams/${t.slug}` : undefined,
-      })));
-    } catch {
-      setTryoutResults([]);
-    } finally {
-      setTryoutLoading(false);
-    }
-  }
-
-  // ── Computed ────────────────────────────────────────────────────────────────
-
-  if (!isLoaded) return null;
-  if (!isSignedIn) return null;
-  if (onAuthPage) return null;
-
-  const hasBody = body.trim().length > 0;
-  const hasUsableImage = imageStage === 'ready' && image !== null;
-  const submitDisabled =
-    (!hasBody && !hasUsableImage) ||
-    submitting ||
-    imageStage === 'processing' ||
-    imageStage === 'uploading';
-
-  const postTargetLabel =
-    destination?.name ??
-    (myProfile?.display_name ? `${myProfile.display_name.split(' ')[0]}'s profile` : 'your profile');
-
-  const destinationOptions = destinations
-    ? [destinations.personal, ...(destinations.teams ?? []), ...(destinations.leagues ?? [])]
-    : [];
-
-  const sportOptions = [
-    { value: '', label: 'General' },
-    { value: 'hockey', label: 'Hockey' },
-    { value: 'figure_skating', label: 'Figure skating' },
-    { value: 'speed_skating', label: 'Speed skating' },
-    { value: 'basketball', label: 'Basketball' },
-    { value: 'soccer', label: 'Soccer' },
-    { value: 'baseball', label: 'Baseball' },
-    { value: 'other', label: 'Other' },
-  ];
-
-  function pickDestination(next: { target_type: string; target_id: string; name: string }) {
-    setDestination(next);
-    setShowDestinations(false);
-  }
-
-  function pickSport(next: string | null) {
-    setSport(next);
-    setShowSportPicker(false);
-  }
-
-  // ─── Mode labels ─────────────────────────────────────────────────────────
-  const modeTitles: Record<ComposerMode, string> = {
-    menu: 'What would you like to do?',
-    compose: 'Write Post',
-    checkin: 'Rink Check-in',
-    workout: 'Log Skate / Workout',
-    highlight: 'Share Highlight',
-    rsvp: 'RSVP to Event',
-    findgame: 'Find a Game',
-    stats: 'Log Stats',
-    tryout: 'Find a Team / Tryout',
-  };
-
-  // ─── Render ───────────────────────────────────────────────────────────────
+  const submitDisabled = false;
 
   return (
     <>
@@ -726,18 +605,23 @@ export default function PostComposer() {
               </button>
             </div>
 
-            {/* ── MENU: Quick-actions grid ── */}
+            {/* ── MENU ── */}
             {mode === 'menu' && (
-              <div className={styles.actionGrid}>
-                <ActionCard icon="✍️" label="Write Post" desc="Share an update" onClick={() => setMode('compose')} />
-                <ActionCard icon="📍" label="Check In" desc="I'm at this rink" onClick={() => setMode('checkin')} />
-                <ActionCard icon="💪" label="Log Workout" desc="Skate or training" onClick={() => setMode('workout')} />
-                <ActionCard icon="▶️" label="Share Highlight" desc="YouTube or TikTok link" onClick={() => setMode('highlight')} />
-                <ActionCard icon="🙋" label="RSVP" desc="I'm in for this event" onClick={() => { setMode('rsvp'); loadRsvpEvents(); }} />
-                <ActionCard icon="🏒" label="Find a Game" desc="Drop-in near me" onClick={() => setMode('findgame')} />
-                <ActionCard icon="📊" label="Log Stats" desc="2G, 1A tonight" onClick={() => setMode('stats')} />
-                <ActionCard icon="🔍" label="Find a Team" desc="Tryouts & open roster" onClick={() => setMode('tryout')} />
-              </div>
+              <>
+                <div className={styles.actionGrid}>
+                  <ActionCard icon="✍️" label="Write Post" desc="Share an update" onClick={() => setMode('compose')} />
+                  <ActionCard icon="📷" label="Share Media" desc="Photo or video" onClick={() => setMode('media')} />
+                  <ActionCard icon="📅" label="Schedule" desc="My schedule" onClick={() => setMode('schedule')} />
+                  <ActionCard icon="💳" label="Payments" desc="Billing & invoices" onClick={() => setMode('payments')} />
+                  <ActionCard icon="💪" label="Log Workout" desc="Skate or training" onClick={() => setMode('workout')} />
+                  <ActionCard icon="🙋" label="RSVP" desc="I'm in for an event" onClick={() => { setMode('rsvp'); loadRsvpEvents(); }} />
+                  <ActionCard icon="📊" label="Log Stats" desc="2G, 1A tonight" onClick={() => setMode('stats')} />
+                  <ActionCard icon="🏒" label="Team Tools" desc="Manage your team" onClick={() => setMode('org')} />
+                </div>
+                <div className={styles.menuFooter}>
+                  <a href="/dashboard" className={styles.menuFooterLink}>Full dashboard →</a>
+                </div>
+              </>
             )}
 
             {/* ── COMPOSE: Standard post ── */}
@@ -777,53 +661,66 @@ export default function PostComposer() {
                   <div className={styles.pickerBackdrop} onClick={() => setShowSportPicker(false)}>
                     <div className={styles.pickerSheet} onClick={(e) => e.stopPropagation()}>
                       <div className={styles.pickerTitle}>Sport</div>
-                      {sportOptions.map((opt) => {
-                        const sel = sport === opt.value;
-                        return (
-                          <button key={opt.value || 'none'} type="button"
-                            className={`${styles.pickerOption} ${sel ? styles.pickerOptionSelected : ''}`}
-                            onClick={() => pickSport(opt.value || null)}>
-                            <span className={styles.pickerOptionLabel}>{opt.label}</span>
-                            {sel && <span className={styles.pickerOptionCheck}>✓</span>}
-                          </button>
-                        );
-                      })}
+                      {sportOptions.map((opt) => (
+                        <button key={opt.value} type="button"
+                          className={`${styles.pickerOption} ${sport === opt.value ? styles.pickerOptionSelected : ''}`}
+                          onClick={() => pickSport(opt.value || null)}>
+                          <span className={styles.pickerOptionLabel}>{opt.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                <textarea ref={textareaRef} className={styles.composerTextarea}
-                  placeholder={myProfile?.display_name ? `What's on your mind, ${myProfile.display_name.split(' ')[0]}?` : "What's on your mind?"}
-                  value={body} onChange={(e) => setBody(e.target.value)} maxLength={MAX + 100} rows={4} />
-                <div className={styles.charCount}>{MAX - body.length < 50 ? `${MAX - body.length} left` : ''}</div>
+                <textarea
+                  ref={textareaRef}
+                  className={styles.composerTextarea}
+                  placeholder="What's on your mind?"
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  maxLength={MAX}
+                  rows={4}
+                />
+                <div className={styles.charCount}>{body.length}/{MAX}</div>
 
-                <div className={styles.imageBlock}>
-                  {imageStage === 'none' && (
-                    <button type="button" className={styles.imagePickerBtn} onClick={() => fileInputRef.current?.click()} disabled={submitting}>
-                      <span>📷</span><span>Add photo</span>
-                    </button>
-                  )}
-                  {(imageStage === 'processing' || imageStage === 'uploading') && (
-                    <div className={styles.imageProcessing}><div className={styles.spinner} /><span>{imageStage === 'processing' ? 'Processing…' : 'Uploading…'}</span></div>
-                  )}
-                  {imageStage === 'ready' && image && (
-                    <div className={styles.imagePreview}>
-                      <img src={image.previewUrl} alt="Preview" className={styles.imagePreviewImg} style={{ aspectRatio: `${image.width}/${image.height}` }} />
-                      <button type="button" className={styles.imageRemoveBtn} onClick={() => { if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl); setImage(null); setImageStage('none'); }}>✕ Remove</button>
-                    </div>
-                  )}
-                  <input ref={fileInputRef} type="file" accept={ALLOWED_IMAGE_MIME.join(',')} onChange={async (e) => {
-                    const file = e.target.files?.[0]; if (e.target) e.target.value = '';
-                    if (!file) return; setError(''); setImageStage('processing');
+                {imageStage === 'none' && (
+                  <button type="button" className={styles.imagePickerBtn} onClick={() => mediaFileRef.current?.click()}>
+                    <span>📷</span><span>Add photo</span>
+                  </button>
+                )}
+                {(imageStage === 'processing' || imageStage === 'uploading') && (
+                  <div className={styles.imageProcessing}><div className={styles.spinner} /><span>{imageStage === 'processing' ? 'Processing…' : 'Uploading…'}</span></div>
+                )}
+                {imageStage === 'ready' && image && (
+                  <div className={styles.imagePreview}>
+                    <img src={image.previewUrl} alt="Preview" className={styles.imagePreviewImg} style={{ aspectRatio: `${image.width}/${image.height}` }} />
+                    <button type="button" className={styles.imageRemoveBtn} onClick={() => {
+                      if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
+                      setImage(null);
+                      setImageStage('none');
+                    }}>✕ Remove</button>
+                  </div>
+                )}
+                <input
+                  ref={mediaFileRef}
+                  type="file"
+                  accept={ALLOWED_IMAGE_STR}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setError('');
+                    setImageStage('processing');
                     try {
                       const result = await processImage(file);
-                      if (image?.previewUrl) URL.revokeObjectURL(image.previewUrl);
-                      setImage({ file, previewUrl: result.previewUrl, width: result.width, height: result.height, processedFile: result.processedFile });
+                      setImage({ ...result, file: result.processedFile });
                       setImageStage('ready');
-                    } catch (err) { setImageStage('none'); setError(err instanceof Error ? err.message : 'Could not process image.'); }
-                  }} style={{ display: 'none' }} aria-hidden />
-                </div>
-
+                    } catch (err) {
+                      setImageStage('none');
+                      setError(err instanceof Error ? err.message : 'Could not process image.');
+                    }
+                  }}
+                  style={{ display: 'none' }}
+                  aria-hidden />
                 {error && <p className={styles.composerError}>{error}</p>}
                 <div className={styles.modalActions}>
                   <button type="button" className={styles.cancelBtn} onClick={closeComposer} disabled={submitting}>Cancel</button>
@@ -832,62 +729,52 @@ export default function PostComposer() {
               </form>
             )}
 
-            {/* ── CHECK-IN ── */}
-            {mode === 'checkin' && (
-              <form onSubmit={handleCheckinSubmit}>
-                <p className={styles.fieldHint}>Search for the rink you're at right now.</p>
-                <input className={styles.modalInput} type="text" placeholder="Search rinks…"
-                  value={checkinQuery}
-                  onChange={(e) => { setCheckinQuery(e.target.value); searchRinks(e.target.value); }}
-                  autoFocus />
-                {checkinSearching && <div className={styles.searching}>Searching…</div>}
-                {checkinResults.length > 0 && (
-                  <div className={styles.searchResults}>
-                    {checkinResults.map((rink) => (
-                      <button type="button" key={rink.id}
-                        className={`${styles.searchResult} ${checkinSelected?.id === rink.id ? styles.searchResultSelected : ''}`}
-                        onClick={() => { setCheckinSelected(rink); setCheckinResults([]); }}>
-                        <span className={styles.searchResultName}>{rink.name}</span>
-                        <span className={styles.searchResultMeta}>{rink.city}{rink.state_province ? `, ${rink.state_province}` : ''}</span>
-                      </button>
-                    ))}
+            {/* ── MEDIA (photo/video) ── */}
+            {mode === 'media' && (
+              <form onSubmit={handleMediaSubmit}>
+                <p className={styles.fieldHint}>Choose a photo or video from your device.</p>
+                {mediaStage === 'none' && (
+                  <button type="button" className={styles.imagePickerBtn}
+                    onClick={() => mediaFileRef.current?.click()}>
+                    <span>📷</span><span>Choose photo or video</span>
+                  </button>
+                )}
+                {mediaStage === 'processing' && (
+                  <div className={styles.imageProcessing}><div className={styles.spinner} /><span>Processing…</span></div>
+                )}
+                {mediaStage === 'ready' && media && (
+                  <div className={styles.imagePreview}>
+                    {media.isVideo ? (
+                      <video src={media.previewUrl} controls playsInline className={styles.imagePreviewImg}
+                        style={{ aspectRatio: '16/9', width: '100%' }} />
+                    ) : (
+                      <img src={media.previewUrl} alt="Preview" className={styles.imagePreviewImg} />
+                    )}
+                    <button type="button" className={styles.imageRemoveBtn} onClick={removeMedia}>✕ Remove</button>
                   </div>
                 )}
-                {checkinSelected && (
-                  <div className={styles.selectedRink}>
-                    <span>📍 {checkinSelected.name}</span>
-                    <button type="button" className={styles.clearBtn} onClick={() => setCheckinSelected(null)}>✕</button>
-                  </div>
+                {mediaStage === 'uploading' && (
+                  <div className={styles.imageProcessing}><div className={styles.spinner} /><span>Uploading…</span></div>
                 )}
-                <input className={styles.modalInput} type="text" placeholder="Add a note (optional)"
-                  value={checkinNote} onChange={(e) => setCheckinNote(e.target.value)} style={{ marginTop: '0.5rem' }} />
+                <input
+                  ref={mediaFileRef}
+                  type="file"
+                  accept={`${ALLOWED_IMAGE_STR},${ALLOWED_VIDEO_STR}`}
+                  onChange={handleMediaFileChange}
+                  style={{ display: 'none' }}
+                  aria-hidden />
+                <div className={styles.fieldGroup} style={{ marginTop: '0.75rem' }}>
+                  <label className={styles.fieldLabel}>Caption (optional)</label>
+                  <textarea className={styles.composerTextarea} placeholder="Add a caption…"
+                    value={mediaBody} onChange={(e) => setMediaBody(e.target.value)} rows={2} />
+                </div>
                 {error && <p className={styles.composerError}>{error}</p>}
-                {success && <p className={styles.successMsg}>{success}</p>}
-                {shareCard && (
-                  <div className={styles.shareCard}>
-                    <div className={styles.shareCardIcon}>
-                      {shareCard.type === 'checkin' ? '📍' : shareCard.type === 'workout' ? '💪' : shareCard.type === 'highlight' ? '▶️' : shareCard.type === 'stats' ? '📊' : '🙋'}
-                    </div>
-                    <div className={styles.shareCardText}>
-                      <div className={styles.shareCardTitle}>{shareCard.title}</div>
-                      <div className={styles.shareCardSubtitle}>{shareCard.subtitle}</div>
-                    </div>
-                    <div className={styles.shareCardActions}>
-                      <button type="button" className={styles.shareBtn} onClick={() => handleShare(shareCard)}>
-                        Share ↗
-                      </button>
-                      <button type="button" className={styles.cancelBtn} onClick={closeComposer} style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}>
-                        Done
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {!shareCard && (
-                  <div className={styles.modalActions}>
-                    <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                    <button type="submit" className={styles.postBtn} disabled={!checkinSelected || submitting}>{submitting ? 'Checking in…' : 'Check In'}</button>
-                  </div>
-                )}
+                <div className={styles.modalActions}>
+                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
+                  <button type="submit" className={styles.postBtn} disabled={mediaStage !== 'ready' || submitting}>
+                    {submitting ? 'Posting…' : 'Post'}
+                  </button>
+                </div>
               </form>
             )}
 
@@ -916,7 +803,9 @@ export default function PostComposer() {
                 </div>
                 <div className={styles.imageBlock} style={{ marginTop: '0.5rem' }}>
                   {workoutImageStage === 'none' && (
-                    <button type="button" className={styles.imagePickerBtn} onClick={() => workoutFileRef.current?.click()}><span>📷</span><span>Add photo</span></button>
+                    <button type="button" className={styles.imagePickerBtn} onClick={() => workoutFileRef.current?.click()}>
+                      <span>📷</span><span>Add photo</span>
+                    </button>
                   )}
                   {(workoutImageStage === 'processing' || workoutImageStage === 'uploading') && (
                     <div className={styles.imageProcessing}><div className={styles.spinner} /><span>{workoutImageStage === 'processing' ? 'Processing…' : 'Uploading…'}</span></div>
@@ -953,45 +842,34 @@ export default function PostComposer() {
               </form>
             )}
 
-            {/* ── HIGHLIGHT ── */}
-            {mode === 'highlight' && (
-              <form onSubmit={handleHighlightSubmit}>
-                <p className={styles.fieldHint}>Paste a YouTube or TikTok link to share it as your post.</p>
-                <input className={styles.modalInput} type="url" placeholder="https://youtube.com/… or https://tiktok.com/…"
-                  value={highlightUrl} onChange={(e) => {
-                    setHighlightUrl(e.target.value);
-                    setHighlightMeta(e.target.value.trim() ? parseHighlightUrl(e.target.value) : null);
-                  }} autoFocus />
-                {highlightMeta && (
-                  <div className={styles.highlightPreview}>
-                    <span className={styles.highlightPlatform}>
-                      {highlightMeta.platform === 'youtube' ? '▶️ YouTube' : highlightMeta.platform === 'tiktok' ? '🎵 TikTok' : '🎬 Link'}
-                    </span>
-                    <span className={styles.highlightUrl}>{highlightMeta.url}</span>
-                  </div>
-                )}
-                {error && <p className={styles.composerError}>{error}</p>}
-                {success && <p className={styles.successMsg}>{success}</p>}
-                {shareCard && (
-                  <div className={styles.shareCard}>
-                    <div className={styles.shareCardIcon}>▶️</div>
-                    <div className={styles.shareCardText}>
-                      <div className={styles.shareCardTitle}>{shareCard.title}</div>
-                      <div className={styles.shareCardSubtitle}>{shareCard.subtitle}</div>
-                    </div>
-                    <div className={styles.shareCardActions}>
-                      <button type="button" className={styles.shareBtn} onClick={() => handleShare(shareCard)}>Share ↗</button>
-                      <button type="button" className={styles.cancelBtn} onClick={closeComposer} style={{ fontSize: '0.8rem', padding: '0.4rem 0.75rem' }}>Done</button>
-                    </div>
-                  </div>
-                )}
-                {!shareCard && (
-                  <div className={styles.modalActions}>
-                    <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                    <button type="submit" className={styles.postBtn} disabled={!highlightMeta || submitting}>{submitting ? 'Sharing…' : 'Share'}</button>
-                  </div>
-                )}
-              </form>
+            {/* ── SCHEDULE (stub) ── */}
+            {mode === 'schedule' && (
+              <div className={styles.stubsheet}>
+                <p className={styles.fieldHint}>Your upcoming workouts, team events, and games appear here.</p>
+                <a href="/dashboard/schedule" className={styles.stubLink} onClick={closeComposer}>
+                  Open My Schedule →
+                </a>
+              </div>
+            )}
+
+            {/* ── PAYMENTS (stub) ── */}
+            {mode === 'payments' && (
+              <div className={styles.stubsheet}>
+                <p className={styles.fieldHint}>Manage your subscription, view invoices, and update billing.</p>
+                <a href="/dashboard/plans" className={styles.stubLink} onClick={closeComposer}>
+                  Open Payments & Billing →
+                </a>
+              </div>
+            )}
+
+            {/* ── ORG / Team Tools (stub) ── */}
+            {mode === 'org' && (
+              <div className={styles.stubsheet}>
+                <p className={styles.fieldHint}>Manage your team roster, post announcements, and more.</p>
+                <a href="/dashboard/team" className={styles.stubLink} onClick={closeComposer}>
+                  Open Team Dashboard →
+                </a>
+              </div>
             )}
 
             {/* ── RSVP ── */}
@@ -1040,65 +918,30 @@ export default function PostComposer() {
               </form>
             )}
 
-            {/* ── FIND A GAME ── */}
-            {mode === 'findgame' && (
-              <form onSubmit={(e) => { e.preventDefault(); searchFindGame(findgameCity); }}>
-                <p className={styles.fieldHint}>Find open hockey sessions or drop-in games near you.</p>
-                <div className={styles.searchRow}>
-                  <input className={styles.modalInput} type="text" placeholder="City or rink name…"
-                    value={findgameCity} onChange={(e) => setFindgameCity(e.target.value)} autoFocus />
-                  <button type="submit" className={styles.searchBtn} disabled={findgameLoading}>
-                    {findgameLoading ? '…' : '🔍'}
-                  </button>
-                </div>
-                {findgameLoading && <div className={styles.searching}>Searching…</div>}
-                {findgameResults.length > 0 && (
-                  <div className={styles.searchResults}>
-                    {findgameResults.map((rink) => (
-                      <div key={rink.id} className={styles.searchResult}>
-                        <div>
-                          <div className={styles.searchResultName}>{rink.name}</div>
-                          <div className={styles.searchResultMeta}>{rink.city}{rink.state_province ? `, ${rink.state_province}` : ''}</div>
-                        </div>
-                        <a href={`/directory/rinks/${rink.id}`} className={styles.rinkLink}>View →</a>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!findgameLoading && findgameResults.length === 0 && findgameCity && (
-                  <p className={styles.fieldHint} style={{ marginTop: '0.75rem' }}>No rinks found for "{findgameCity}". Try a different city.</p>
-                )}
-                <div className={styles.modalActions} style={{ marginTop: '1rem' }}>
-                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                </div>
-              </form>
-            )}
-
-            {/* ── LOG STATS ── */}
+            {/* ── STATS ── */}
             {mode === 'stats' && (
               <form onSubmit={handleStatsSubmit}>
-                <p className={styles.fieldHint}>Log tonight's stats. They'll post to your profile.</p>
-                <div className={styles.statsGrid}>
-                  <div className={styles.statBox}>
-                    <button type="button" className={styles.statBtn} onClick={() => setStatGoals(g => Math.max(0, g - 1))}>−</button>
-                    <div className={styles.statNum}>{statGoals}</div>
-                    <div className={styles.statLabel}>Goals</div>
-                    <button type="button" className={styles.statBtn} onClick={() => setStatGoals(g => g + 1)}>+</button>
-                  </div>
-                  <div className={styles.statBox}>
-                    <button type="button" className={styles.statBtn} onClick={() => setStatAssists(a => Math.max(0, a - 1))}>−</button>
-                    <div className={styles.statNum}>{statAssists}</div>
-                    <div className={styles.statLabel}>Assists</div>
-                    <button type="button" className={styles.statBtn} onClick={() => setStatAssists(a => a + 1)}>+</button>
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Goals (G)</label>
+                  <div className={styles.statsRow}>
+                    <button type="button" className={styles.statBtn} onClick={() => setStatGoals(Math.max(0, statGoals - 1))}>−</button>
+                    <span className={styles.statValue}>{statGoals}</span>
+                    <button type="button" className={styles.statBtn} onClick={() => setStatGoals(statGoals + 1)}>+</button>
                   </div>
                 </div>
-                {statGoals > 0 || statAssists > 0 ? (
-                  <div className={styles.statsPreview}>
-                    📊 Tonight: {statGoals > 0 ? `${statGoals}G` : ''}{statGoals > 0 && statAssists > 0 ? ' + ' : ''}{statAssists > 0 ? `${statAssists}A` : ''}
+                <div className={styles.fieldGroup} style={{ marginTop: '0.75rem' }}>
+                  <label className={styles.fieldLabel}>Assists (A)</label>
+                  <div className={styles.statsRow}>
+                    <button type="button" className={styles.statBtn} onClick={() => setStatAssists(Math.max(0, statAssists - 1))}>−</button>
+                    <span className={styles.statValue}>{statAssists}</span>
+                    <button type="button" className={styles.statBtn} onClick={() => setStatAssists(statAssists + 1)}>+</button>
                   </div>
-                ) : null}
-                <textarea className={styles.composerTextarea} placeholder="How did the game go? (optional)"
-                  value={statNotes} onChange={(e) => setStatNotes(e.target.value)} rows={2} style={{ marginTop: '0.75rem' }} />
+                </div>
+                <div className={styles.fieldGroup} style={{ marginTop: '0.75rem' }}>
+                  <label className={styles.fieldLabel}>Notes</label>
+                  <textarea className={styles.composerTextarea} placeholder="How did the game go?"
+                    value={statNotes} onChange={(e) => setStatNotes(e.target.value)} rows={2} />
+                </div>
                 {error && <p className={styles.composerError}>{error}</p>}
                 {success && <p className={styles.successMsg}>{success}</p>}
                 {shareCard && (
@@ -1117,47 +960,9 @@ export default function PostComposer() {
                 {!shareCard && (
                   <div className={styles.modalActions}>
                     <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                    <button type="submit" className={styles.postBtn} disabled={(statGoals === 0 && statAssists === 0) || submitting}>
-                      {submitting ? 'Logging…' : 'Log Stats'}
-                    </button>
+                    <button type="submit" className={styles.postBtn} disabled={submitting}>{submitting ? 'Logging…' : 'Log Stats'}</button>
                   </div>
                 )}
-              </form>
-            )}
-
-            {/* ── FIND A TEAM / TRYOUT ── */}
-            {mode === 'tryout' && (
-              <form onSubmit={(e) => { e.preventDefault(); searchTryouts(tryoutQuery); }}>
-                <p className={styles.fieldHint}>Search for teams with open roster spots or upcoming tryouts.</p>
-                <div className={styles.searchRow}>
-                  <input className={styles.modalInput} type="text" placeholder="City, league, or team name…"
-                    value={tryoutQuery} onChange={(e) => setTryoutQuery(e.target.value)} autoFocus />
-                  <button type="submit" className={styles.searchBtn} disabled={tryoutLoading}>
-                    {tryoutLoading ? '…' : '🔍'}
-                  </button>
-                </div>
-                {tryoutLoading && <div className={styles.searching}>Searching…</div>}
-                {tryoutResults.length > 0 && (
-                  <div className={styles.searchResults}>
-                    {tryoutResults.map((item, i) => (
-                      <div key={i} className={styles.searchResult}>
-                        <div>
-                          <div className={styles.searchResultName}>{item.name}</div>
-                          <div className={styles.searchResultMeta}>{item.type} · {item.location}</div>
-                        </div>
-                        {item.link
-                          ? <a href={item.link} className={styles.rinkLink}>View →</a>
-                          : <span className={styles.rinkLink} style={{ opacity: 0.5 }}>No page</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!tryoutLoading && tryoutResults.length === 0 && tryoutQuery && (
-                  <p className={styles.fieldHint} style={{ marginTop: '0.75rem' }}>No teams found for "{tryoutQuery}". Try a different search.</p>
-                )}
-                <div className={styles.modalActions} style={{ marginTop: '1rem' }}>
-                  <button type="button" className={styles.cancelBtn} onClick={goToMenu}>Back</button>
-                </div>
               </form>
             )}
 
@@ -1166,6 +971,19 @@ export default function PostComposer() {
       )}
     </>
   );
+
+  // ── Share handler (used by workout, stats, rsvp) ───────────────────────────
+  async function handleShare(card: NonNullable<typeof shareCard>) {
+    if (!navigator.share) {
+      try {
+        await navigator.clipboard.writeText(card.shareUrl ? `${card.shareText} ${card.shareUrl}` : card.shareText);
+      } catch { /* noop */ }
+      return;
+    }
+    try {
+      await navigator.share({ title: card.title, text: card.shareText, url: card.shareUrl });
+    } catch { /* user cancelled or not supported */ }
+  }
 }
 
 // ─── ActionCard sub-component ─────────────────────────────────────────────────

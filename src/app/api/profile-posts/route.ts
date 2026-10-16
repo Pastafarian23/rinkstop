@@ -3,10 +3,149 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
+import { execFileSync } from 'child_process';
+import { writeFileSync, unlinkSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { TIER_TO_TRACK } from '@/lib/pricing';
 
-// GET /api/profile-posts?user_id=xxx&target_type=team&target_id=yyy&sport=zzz
-// Public read is allowed; membership-aware feeds should be protected
-// separately in the page/route layer if needed.
+const BUCKET = 'post-media';
+const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const ALLOWED_VIDEO_MIME = new Set(['video/mp4', 'video/quicktime', 'video/webm']);
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+const EXT_FOR_IMAGE_MIME: Record<string, string> = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
+};
+const EXT_FOR_VIDEO_MIME: Record<string, string> = {
+  'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm',
+};
+const ALLOWED_TARGET_TYPES = new Set(['user', 'team', 'league']);
+const ALLOWED_SPORTS = new Set([
+  'hockey', 'figure_skating', 'speed_skating',
+  'basketball', 'soccer', 'baseball', 'other',
+]);
+
+async function getUserTier(userId: string): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from('profiles')
+    .select('tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  return (data?.tier as string) || 'free';
+}
+
+function isVideoTier(tier: string): boolean {
+  const track = TIER_TO_TRACK[tier as keyof typeof TIER_TO_TRACK] ?? 'personal';
+  if (track !== 'personal') return false;
+  const rank: Record<string, number> = { free: 0, verified_identity: 1, identity_plus: 2 };
+  return (rank[tier] ?? 0) >= 2;
+}
+
+function extractVideoThumbnail(videoBuffer: Buffer, storagePath: string): string | null {
+  const tmpDir = '/tmp/rinkstop-thumbs';
+  mkdirSync(tmpDir, { recursive: true });
+  const thumbPath = join(tmpDir, `thumb_${Date.now()}.jpg`);
+  const videoPath = join(tmpDir, `video_${Date.now()}.mp4`);
+  writeFileSync(videoPath, videoBuffer);
+  try {
+    execFileSync('ffmpeg', [
+      '-y', '-i', videoPath,
+      '-ss', '00:00:01',
+      '-vframes', '1',
+      '-vf', 'scale=640:-1',
+      '-q:v', '2',
+      thumbPath,
+    ], { timeout: 30_000 });
+    const thumbBuffer = require('fs').readFileSync(thumbPath);
+    return thumbBuffer.toString('base64');
+  } catch {
+    return null;
+  } finally {
+    try { unlinkSync(videoPath); } catch { /* noop */ }
+    try { unlinkSync(thumbPath); } catch { /* noop */ }
+  }
+}
+
+async function uploadFile(
+  fileBuffer: Buffer,
+  mimeType: string,
+  userId: string,
+  isVideo: boolean,
+): Promise<{ url: string; width: number | null; height: number | null; thumb_base64: string | null }> {
+  const ext = isVideo
+    ? EXT_FOR_VIDEO_MIME[mimeType]
+    : EXT_FOR_IMAGE_MIME[mimeType];
+  const storagePath = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const uploadClient = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { error: uploadError } = await uploadClient.storage
+    .from(BUCKET)
+    .upload(storagePath, fileBuffer, {
+      contentType: mimeType,
+      cacheControl: '31536000',
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(`Storage upload failed: ${uploadError.message}`);
+  }
+
+  const { data: publicUrlData } = uploadClient.storage
+    .from(BUCKET)
+    .getPublicUrl(storagePath);
+
+  const url = publicUrlData.publicUrl;
+  let width: number | null = null;
+  let height: number | null = null;
+  let thumb_base64: string | null = null;
+
+  if (isVideo) {
+    thumb_base64 = extractVideoThumbnail(fileBuffer, storagePath);
+  }
+
+  return { url, width, height, thumb_base64 };
+}
+
+async function resolveAuthorizedTarget(
+  userId: string,
+  targetType: string | null,
+  targetId: string | null,
+): Promise<{ targetType: string; targetId: string }> {
+  const type = targetType ?? 'user';
+  if (!ALLOWED_TARGET_TYPES.has(type)) {
+    throw new Error('Invalid target_type. Use user, team, or league.');
+  }
+  if (type === 'user') {
+    return { targetType: 'user', targetId: userId };
+  }
+  if (!targetId) {
+    throw new Error('target_id is required when target_type is team or league.');
+  }
+  if (type === 'team') {
+    const { data } = await supabaseAdmin
+      .from('team_workspaces')
+      .select('id, claimed_by_user_id')
+      .eq('id', targetId)
+      .maybeSingle();
+    if (!data) throw new Error('Team not found.');
+    if (data.claimed_by_user_id !== userId) throw new Error('You can only post to teams you manage.');
+    return { targetType: 'team', targetId: data.id };
+  }
+  // league
+  const { data } = await supabaseAdmin
+    .from('leagues')
+    .select('id, created_by')
+    .eq('id', targetId)
+    .maybeSingle();
+  if (!data) throw new Error('League not found.');
+  if (data.created_by !== userId) throw new Error('You can only post to leagues you manage.');
+  return { targetType: 'league', targetId: data.id };
+}
+
+// GET /api/profile-posts
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get('user_id');
   const targetType = req.nextUrl.searchParams.get('target_type');
@@ -15,7 +154,7 @@ export async function GET(req: NextRequest) {
 
   const query = supabaseAdmin
     .from('profile_posts')
-    .select('id, body, media_url, created_at, updated_at, target_type, target_id, user_id, sport')
+    .select('id, body, media_url, media_thumb, created_at, updated_at, target_type, target_id, user_id, sport')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -27,115 +166,29 @@ export async function GET(req: NextRequest) {
   } else {
     return NextResponse.json({ error: 'user_id or target_type+target_id required' }, { status: 400 });
   }
-
-  if (sport) {
-    query.eq('sport', sport);
-  }
+  if (sport) query.eq('sport', sport);
 
   const { data, error } = await query;
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data: data ?? [] });
 }
 
 // POST /api/profile-posts
-//
-// Single-shot post creation. Accepts EITHER:
-//
-//   1. application/json with { body, media_url?, target_type?, target_id?, sport? }
-//      — use when the client already has a media_url.
-//   2. multipart/form-data with fields { body?, file?, target_type?, target_id?, sport? }
-//      — use when uploading an image directly. The server uploads to
-//      Supabase Storage and inserts the post in one round-trip.
-
-const BUCKET = 'post-media';
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-const EXT_FOR_MIME: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-};
-
-const ALLOWED_TARGET_TYPES = new Set(['user', 'team', 'league']);
-const ALLOWED_SPORTS = new Set(['hockey', 'figure_skating', 'speed_skating', 'basketball', 'soccer', 'baseball', 'other']);
-
-async function resolveAuthorizedTarget(
-  userId: string,
-  targetType: string | null,
-  targetId: string | null,
-): Promise<{ targetType: string; targetId: string }> {
-  const type = targetType ?? 'user';
-  if (!ALLOWED_TARGET_TYPES.has(type)) {
-    throw new Error('Invalid target_type. Use user, team, or league.');
-  }
-
-  if (type === 'user') {
-    return { targetType: 'user', targetId: userId };
-  }
-
-  if (!targetId) {
-    throw new Error('target_id is required when target_type is team or league.');
-  }
-
-  if (type === 'team') {
-    const { data, error } = await supabaseAdmin
-      .from('team_workspaces')
-      .select('id, claimed_by_user_id, visibility')
-      .eq('id', targetId)
-      .maybeSingle();
-
-    if (error || !data) {
-      throw new Error('Team not found.');
-    }
-
-    const isOwner = data.claimed_by_user_id === userId;
-    if (!isOwner) {
-      throw new Error('You can only post to teams you manage.');
-    }
-
-    return { targetType: 'team', targetId: data.id };
-  }
-
-  if (type === 'league') {
-    const { data, error } = await supabaseAdmin
-      .from('leagues')
-      .select('id, created_by')
-      .eq('id', targetId)
-      .maybeSingle();
-
-    if (error || !data) {
-      throw new Error('League not found.');
-    }
-
-    const isOwner = data.created_by === userId;
-    if (!isOwner) {
-      throw new Error('You can only post to leagues you manage.');
-    }
-
-    return { targetType: 'league', targetId: data.id };
-  }
-
-  throw new Error('Unsupported target_type.');
-}
-
+// Accepts multipart/form-data with optional file (image or video) or JSON for link posts.
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const contentType = req.headers.get('content-type') ?? '';
   let postBody = '';
   let mediaUrl: string | null = null;
+  let mediaThumb: string | null = null;
   let mediaWidth: number | null = null;
   let mediaHeight: number | null = null;
   let targetType: string | null = null;
   let targetId: string | null = null;
   let sport: string | null = null;
+  let linkUrl: string | null = null;
 
   if (contentType.startsWith('multipart/form-data')) {
     let formData: FormData;
@@ -149,61 +202,52 @@ export async function POST(req: NextRequest) {
     targetType = (formData.get('target_type')?.toString() ?? null);
     targetId = (formData.get('target_id')?.toString() ?? null);
     sport = (formData.get('sport')?.toString() ?? null);
+    linkUrl = (formData.get('link_url')?.toString() ?? null) || null;
 
     const file = formData.get('file');
-    if (file instanceof File) {
-      if (!ALLOWED_MIME.has(file.type)) {
+    if (file instanceof File && file.size > 0) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const mimeType = file.type;
+      const isVideo = ALLOWED_VIDEO_MIME.has(mimeType);
+      const isImage = ALLOWED_IMAGE_MIME.has(mimeType);
+
+      if (!isImage && !isVideo) {
         return NextResponse.json(
-          { error: 'Unsupported image type. Use JPEG, PNG, WebP, or GIF.' },
+          { error: 'Unsupported file type. Use JPEG, PNG, WebP, GIF, MP4, MOV, or WebM.' },
           { status: 400 },
         );
       }
-      if (file.size > MAX_BYTES) {
+
+      const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+      if (buffer.length > maxBytes) {
+        const limit = isVideo ? '100 MB' : '10 MB';
         return NextResponse.json(
-          { error: 'Image too large. Max 10 MB.' },
+          { error: `File too large. Max ${limit}.` },
           { status: 400 },
         );
       }
-      if (file.size === 0) {
-        return NextResponse.json({ error: 'Empty file.' }, { status: 400 });
+
+      if (isVideo) {
+        const tier = await getUserTier(userId);
+        if (!isVideoTier(tier)) {
+          return NextResponse.json(
+            { error: 'Video uploads require Hockey Passport Plus. Upgrade at /dashboard/plans.' },
+            { status: 403 },
+          );
+        }
       }
 
-      const widthRaw = formData.get('width');
-      const heightRaw = formData.get('height');
-      mediaWidth = typeof widthRaw === 'string' ? Number.parseInt(widthRaw, 10) || null : null;
-      mediaHeight = typeof heightRaw === 'string' ? Number.parseInt(heightRaw, 10) || null : null;
-
-      const ext = EXT_FOR_MIME[file.type];
-      const storagePath = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-      const uploadClient = createClient(supabaseUrl, supabaseServiceKey);
-
-      const { error: uploadError } = await uploadClient.storage
-        .from(BUCKET)
-        .upload(storagePath, file, {
-          contentType: file.type,
-          cacheControl: '31536000',
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error('[profile-posts POST] storage upload failed:', uploadError.message);
-        return NextResponse.json(
-          { error: `Storage upload failed: ${uploadError.message}` },
-          { status: 500 },
-        );
-      }
-
-      const { data: publicUrlData } = uploadClient.storage
-        .from(BUCKET)
-        .getPublicUrl(storagePath);
-
-      mediaUrl = publicUrlData.publicUrl;
+      const uploaded = await uploadFile(buffer, mimeType, userId, isVideo);
+      mediaUrl = uploaded.url;
+      mediaThumb = uploaded.thumb_base64;
+      mediaWidth = uploaded.width;
+      mediaHeight = uploaded.height;
     }
   } else {
-    let body: { body?: string; media_url?: string; target_type?: string; target_id?: string; sport?: string };
+    let body: {
+      body?: string; media_url?: string; target_type?: string;
+      target_id?: string; sport?: string; link_url?: string;
+    };
     try {
       body = await req.json();
     } catch {
@@ -214,25 +258,23 @@ export async function POST(req: NextRequest) {
     targetType = body.target_type ?? null;
     targetId = body.target_id ?? null;
     sport = body.sport ?? null;
+    linkUrl = body.link_url?.trim() || null;
   }
+
+  // If link_url was passed (for legacy embed posts), prefer it as media_url
+  if (linkUrl && !mediaUrl) mediaUrl = linkUrl;
 
   if (!postBody && !mediaUrl) {
     return NextResponse.json(
-      { error: 'A post needs a body or an image.' },
+      { error: 'A post needs a body or an image/video.' },
       { status: 400 },
     );
   }
   if (postBody.length > 1000) {
-    return NextResponse.json(
-      { error: 'body must be 1000 chars or fewer' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'body must be 1000 chars or fewer' }, { status: 400 });
   }
   if (sport && !ALLOWED_SPORTS.has(sport)) {
-    return NextResponse.json(
-      { error: 'Invalid sport.' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Invalid sport.' }, { status: 400 });
   }
 
   let resolved: { targetType: string; targetId: string };
@@ -244,22 +286,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status });
   }
 
+  const insert: Record<string, unknown> = {
+    user_id: userId,
+    body: postBody,
+    target_type: resolved.targetType,
+    target_id: resolved.targetId,
+  };
+  if (mediaUrl) insert.media_url = mediaUrl;
+  if (sport) insert.sport = sport;
+
   const { data, error } = await supabaseAdmin
     .from('profile_posts')
-    .insert({
-      user_id: userId,
-      body: postBody,
-      media_url: mediaUrl,
-      target_type: resolved.targetType,
-      target_id: resolved.targetId,
-      sport: sport,
-    })
-    .select('id, body, media_url, created_at, updated_at, target_type, target_id, user_id, sport')
+    .insert(insert)
+    .select('id, body, media_url, media_thumb, created_at, updated_at, target_type, target_id, user_id, sport')
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json(
     { data: { ...data, width: mediaWidth, height: mediaHeight } },
