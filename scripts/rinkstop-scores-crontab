@@ -1,0 +1,19 @@
+# /etc/cron.d/rinkstop-scores
+# 2026-10-16 (Piece E Part 1.1 + 1.5, Arnel 01:16): replace the failing
+# AI-agent cron (openclaw 5b6615f2) with a plain system cron. No model
+# involved.
+#
+# 07:00 UTC — daily scores ingest via the existing detached wrapper.
+# 07:30 UTC — stuck-scheduled alert via scripts/check-stuck-scheduled.cjs.
+#
+# Logs:
+#   /var/log/rinkstop-scores.log              (envelope, both jobs)
+#   /root/.openclaw/workspace/logs/scores-ingest.log  (the wrapper's own log)
+#   /tmp/stuck-scheduled-alert.json           (machine-readable alert)
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# m  h  dom mon dow  user  command
+   0  7   *   *   *  root   /bin/bash /root/.openclaw/workspace/rinkstop-platform/scripts/scores-ingest-cron.sh
+  30  7   *   *   *  root   /bin/bash -c "set -a; source /root/.openclaw/workspace/rinkstop-platform/.env; set +a; cd /root/.openclaw/workspace/rinkstop-platform && node scripts/check-stuck-scheduled.cjs" >> /var/log/rinkstop-scores.log 2>&1
