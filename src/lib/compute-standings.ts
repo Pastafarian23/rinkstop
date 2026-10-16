@@ -167,7 +167,7 @@ export async function computeStandings(
 
   // Team metadata — fixtures use team_workspace IDs, NOT teams table IDs
   const { data: teamsRaw } = await sb
-    .from('team_workspaces')
+    .from('teams')
     .select('id, name, slug, logo_url, division, conference, is_active')
     .in('id', Array.from(tids));
   const teamMap = new Map((teamsRaw ?? []).map((t: any) => [t.id, t]));
