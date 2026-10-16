@@ -32,7 +32,7 @@ type ComposerMode =
   | 'org';
 
 interface ProfileMeResponse {
-  profile?: { user_id: string; username: string; display_name?: string | null };
+  profile?: { user_id: string; username: string; display_name?: string | null; tier?: string };
 }
 
 interface Rink {
@@ -195,7 +195,7 @@ export default function PostComposer() {
 
   // ── Media (photo/video) upload state ──────────────────────────────────────
   const [media, setMedia] = useState<PendingMedia | null>(null);
-  const [mediaStage, setMediaStage] = useState<'none' | 'processing' | 'ready' | 'uploading'>('none');
+  const [mediaStage, setMediaStage] = useState<'none' | 'processing' | 'ready' | 'uploading' | 'gated'>('none');
   const [mediaBody, setMediaBody] = useState('');
   const mediaFileRef = useRef<HTMLInputElement>(null);
 
@@ -224,6 +224,18 @@ export default function PostComposer() {
   const destinationOptions = destinations
     ? [destinations.personal, ...(destinations.teams ?? []), ...(destinations.leagues ?? [])]
     : [];
+
+  // 2026-10-16: tier gate for video uploads. Photos are free for all;
+  // video requires Hockey Passport Plus (identity_plus, personal track).
+  const PERSONAL_VIDEO_TIER_RANK: Record<string, number> = {
+    free: 0, verified_identity: 1, identity_plus: 2,
+  };
+  const canUploadVideo = (() => {
+    const tier = (myProfile?.tier ?? 'free') as string;
+    // Block business/org track users entirely (they belong on org tools, not personal posts).
+    if (tier.startsWith('business_') || tier.startsWith('club_') || tier === 'league' || tier === 'federation') return false;
+    return (PERSONAL_VIDEO_TIER_RANK[tier] ?? 0) >= 2;
+  })();
 
   const sportOptions = [
     { value: '', label: 'General' },
@@ -486,8 +498,16 @@ export default function PostComposer() {
   async function handleMediaFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setMediaStage('processing');
     setError('');
+    // 2026-10-16: gate video uploads to Hockey Passport Plus. Photos are free.
+    if (ALLOWED_VIDEO_MIME.has(file.type) && !canUploadVideo) {
+      setMedia(null);
+      setMediaStage('gated');
+      // Clear the input so the user can re-pick a photo after upgrading.
+      e.target.value = '';
+      return;
+    }
+    setMediaStage('processing');
     try {
       const result = await processMediaFile(file);
       setMedia(result);
@@ -733,11 +753,41 @@ export default function PostComposer() {
             {mode === 'media' && (
               <form onSubmit={handleMediaSubmit}>
                 <p className={styles.fieldHint}>Choose a photo or video from your device.</p>
-                {mediaStage === 'none' && (
+                {mediaStage === 'gated' && (
+                  <div style={{
+                    background: 'rgba(200,16,46,0.08)',
+                    border: '1px solid rgba(200,16,46,0.3)',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    marginTop: '0.5rem',
+                    color: '#fff',
+                  }}>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                      🔒 Video uploads are a Hockey Passport Plus feature
+                    </p>
+                    <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.75rem' }}>
+                      Photos are free for everyone. Upgrade to Hockey Passport Plus to share videos, get verified identity, and unlock premium insights.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <a href="/dashboard/plans" className={styles.postBtn} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                        Upgrade to Plus →
+                      </a>
+                      <button type="button" className={styles.cancelBtn} onClick={() => mediaFileRef.current?.click()}>
+                        Pick a photo instead
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {(mediaStage === 'none' || mediaStage === 'gated') && mediaStage !== 'gated' && (
                   <button type="button" className={styles.imagePickerBtn}
                     onClick={() => mediaFileRef.current?.click()}>
                     <span>📷</span><span>Choose photo or video</span>
                   </button>
+                )}
+                {mediaStage === 'none' && canUploadVideo === false && (
+                  <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.5rem' }}>
+                    💡 Video uploads require <a href="/dashboard/plans" style={{ color: '#C8102E' }}>Hockey Passport Plus</a>. Photos are free.
+                  </p>
                 )}
                 {mediaStage === 'processing' && (
                   <div className={styles.imageProcessing}><div className={styles.spinner} /><span>Processing…</span></div>
