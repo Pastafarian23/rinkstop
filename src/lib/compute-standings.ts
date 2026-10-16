@@ -168,7 +168,7 @@ export async function computeStandings(
   // Team metadata — fixtures use team_workspace IDs, NOT teams table IDs
   const { data: teamsRaw } = await sb
     .from('teams')
-    .select('id, name, slug, logo_url, division, conference, is_active')
+    .select('id, name, slug, logo_url, division, is_active')
     .in('id', Array.from(tids));
   const teamMap = new Map((teamsRaw ?? []).map((t: any) => [t.id, t]));
 
@@ -266,7 +266,7 @@ export async function computeStandings(
       last10: { w: l10w, l: l10l, otl: l10otl },
       tie: ptsCfg === null ? null : s.tie,
       division: t?.division ?? null,
-      conference: t?.conference ?? null,
+
     });
   }
 
