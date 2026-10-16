@@ -165,26 +165,11 @@ export async function computeStandings(
     if (f.away_team_id) wids.add(f.away_team_id);
   }
 
-  // Step 1: resolve workspace IDs → team UUIDs via team_workspaces
-  const { data: workspaces } = await sb
-    .from('team_workspaces')
-    .select('id, team_id')
-    .in('id', Array.from(wids));
-  const widToTeamId = new Map((workspaces ?? []).map((w: any) => [w.id, w.team_id]));
-
-  // Step 2: fetch team metadata using resolved UUIDs
-  const teamIds = [...new Set([...widToTeamId.values()])];
-  const { data: teamsRaw } = teamIds.length
-    ? await sb.from('teams').select('id, name, slug, logo_url, division, is_active').in('id', teamIds)
+  // Step 1: fetch team metadata — fixtures use workspace IDs that are team UUIDs
+  const { data: teamsRaw } = wids.size
+    ? await sb.from('teams').select('id, name, slug, logo_url, division, is_active').in('id', Array.from(wids))
     : { data: [] as any[] };
   const teamMap = new Map((teamsRaw ?? []).map((t: any) => [t.id, t]));
-
-  // Step 3: build workspace-ID → team row map for the standings loop
-  const wsTeamMap = new Map<string, any>();
-  for (const [wid, tid] of widToTeamId) {
-    const t = teamMap.get(tid);
-    if (t) wsTeamMap.set(wid, t);
-  }
 
   interface TStats {
     gp: number;
@@ -235,7 +220,7 @@ export async function computeStandings(
   const entries: StandingEntry[] = [];
   for (const [tid, s] of stats) {
     if (s.gp === 0) continue;
-    const t = wsTeamMap.get(tid);
+    const t = teamMap.get(tid);
 
     const last10 = s.last10.slice(-10);
     const l10w = last10.filter(r => r === 'W').length;
