@@ -68,3 +68,16 @@ tsconfig.tsbuildinfo
 _backup_2026-06-18/
 supabase/.temp/
 __pycache__/
+# 2026-10-16 (Piece E Part 1.x) — ad-hoc read-only query scripts that live
+# alongside the main repo but are not part of the production code. Kept out
+# of git to keep the repo clean. Per Arnel 01:16, these don't ship.
+scripts/_reports-2026-10-16-raw.mjs
+scripts/_task-2.3-db.cjs
+scripts/_task-2.3-ingest-audit.mjs
+scripts/_task-2.3-rest.mjs
+scripts/_part2-b-naturalkey.mjs
+scripts/_part2-b-summary.mjs
+scripts/_part2-c-reconcile.mjs
+scripts/_part2-mirrored.mjs
+scripts/_part2-readonly.mjs
+scripts/_part2-unique-constraints.mjs

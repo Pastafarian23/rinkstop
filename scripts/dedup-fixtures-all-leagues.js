@@ -74,15 +74,54 @@ async function processLeague(lg) {
   }
 
   const idsToDelete = [];
+  const auditEntries = [];   // 2026-10-16 Part 1.6 (Arnel 01:16): for each delete,
+                              // record (deleted_row, survivor_row, rule, revert_sql).
   let dupeGroups = 0;
   for (const v of Object.values(groups)) {
     if (v.length === 1) continue;
     dupeGroups++;
     v.sort((a, b) => score(b) - score(a));
-    for (let i = 1; i < v.length; i++) idsToDelete.push(v[i].id);
+    const survivor = v[0];
+    for (let i = 1; i < v.length; i++) {
+      const deleted = v[i];
+      idsToDelete.push(deleted.id);
+      auditEntries.push({
+        deleted_id: deleted.id,
+        deleted_row: deleted,
+        survivor_id: survivor.id,
+        survivor_row: survivor,
+        rule: 'keep_highest_score; latest_created_at_as_tiebreaker',
+        revert_sql: buildRevertSql(deleted),
+      });
+    }
   }
 
-  return { slug: lg.slug, rows: rows.length, groups: Object.keys(groups).length, dupes: dupeGroups, deletes: idsToDelete.length, _ids: idsToDelete };
+  return {
+    slug: lg.slug,
+    rows: rows.length,
+    groups: Object.keys(groups).length,
+    dupes: dupeGroups,
+    deletes: idsToDelete.length,
+    _ids: idsToDelete,
+    _audit: auditEntries,
+  };
+}
+
+// 2026-10-16 Part 1.6: generate a parameterized INSERT statement that re-creates
+// the deleted row from the JSONB snapshot. This is the revert payload.
+function buildRevertSql(row) {
+  function lit(v) {
+    if (v === null || v === undefined) return 'NULL';
+    if (typeof v === 'number') return String(v);
+    if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
+    if (typeof v === 'string') return `'${v.replace(/'/g, "''")}'`;
+    if (typeof v === 'object') return `'${JSON.stringify(v).replace(/'/g, "''")}'::jsonb`;
+    return 'NULL';
+  }
+  const cols = ['id','league_id','scheduled_at','home_team_id','away_team_id',
+    'venue_id','home_score','away_score','status','season'];
+  const vals = cols.map(c => lit(row[c] ?? null)).join(', ');
+  return `INSERT INTO public.fixtures (${cols.join(', ')}) VALUES (${vals});`;
 }
 
 async function main() {
@@ -115,6 +154,27 @@ async function main() {
   console.log(`\nTotals: rows=${totalRows}, distinct matchups=${totalGroups}, dupe groups=${totalDupes}, IDs to delete=${totalDeletes}`);
 
   if (execute && totalIds.length) {
+    // 2026-10-16 Part 1.6: write audit entries BEFORE the delete so even a
+    // crash mid-delete leaves the audit trail intact.
+    const { randomUUID } = require('crypto');
+    const runId = randomUUID();
+    const allAudit = summary.flatMap(s => (s._audit || []).map(a => ({ ...a, league_slug: s.slug, run_id: runId })));
+    console.log(`\nWriting ${allAudit.length} audit rows to public.fixture_dedup_audit (run_id=${runId})…`);
+    let auditWritten = 0;
+    for (let i = 0; i < allAudit.length; i += 500) {
+      const batch = allAudit.slice(i, i + 500);
+      const { error, count } = await sb
+        .from('fixture_dedup_audit')
+        .insert(batch, { count: 'exact' });
+      if (error) {
+        console.error(`  Audit batch ${i/500} failed:`, error.message);
+        console.error('  ABORTING delete to avoid unrecoverable loss. Fix the audit table and re-run.');
+        return;
+      }
+      auditWritten += count ?? batch.length;
+    }
+    console.log(`  ${auditWritten} audit rows written.`);
+
     console.log(`\nDeleting ${totalIds.length} duplicate rows in batches of 500…`);
     let deleted = 0;
     for (let i = 0; i < totalIds.length; i += 500) {
@@ -127,7 +187,12 @@ async function main() {
       deleted += count ?? batch.length;
       console.log(`  Deleted ${deleted}/${totalIds.length}`);
     }
-    console.log(`Done. ${deleted} rows deleted.`);
+    console.log(`Done. ${deleted} rows deleted. Audit run_id: ${runId}`);
+    // Print revert path so it's easy to find later
+    const revertFile = `/tmp/dedup-revert-${runId}.sql`;
+    const revertSql = allAudit.map(a => `-- league=${a.league_slug} deleted=${a.deleted_id} survivor=${a.survivor_id}\n${a.revert_sql}`).join('\n\n');
+    fs.writeFileSync(revertFile, revertSql);
+    console.log(`Revert SQL written to ${revertFile}`);
   } else if (!execute) {
     console.log('\n[DRY RUN] Re-run with --execute to delete.');
   }

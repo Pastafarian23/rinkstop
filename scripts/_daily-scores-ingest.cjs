@@ -163,9 +163,15 @@ async function fetchHighlightlyMatches(dateIso, hlId) {
 async function upsertNhlGame(g) {
   const ht = g.homeTeam || {};
   const at = g.awayTeam || {};
-  const homeScore = ht.score ?? null;
-  const awayScore = at.score ?? null;
   const status = NHL_STATE_TO_STATUS[g.gameState] || 'scheduled';
+  // 2026-10-16 (Piece E Part 1.2, Arnel 01:16): write NULL scores for unstarted
+  // games instead of the 0-0 placeholder NHL.com returns for scheduled games.
+  // Matches the Piece D fix in scripts/ingest-2025-26-nhl-schedule.cjs and
+  // scripts/_daily-scores-all-leagues.cjs. Status `scheduled` and `postponed`
+  // both count as "not yet a real final" — same logic as the HL path below.
+  const isUnstarted = status === 'scheduled' || status === 'postponed';
+  const homeScore = isUnstarted ? null : (ht.score ?? null);
+  const awayScore = isUnstarted ? null : (at.score ?? null);
 
   // Skip games without team assignments
   if (!ht.id || !at.id) return null;
@@ -265,14 +271,19 @@ async function upsertHighlightlyGame(g, hlLeagueId, hlLeagueName) {
                 : (desc === 'postponed' || desc === 'suspended') ? 'postponed'
                 : 'scheduled';
 
+  // 2026-10-16 (Piece E Part 1.2, Arnel 01:16): write NULL scores for unstarted
+  // games (HL returns 0-0 placeholder for scheduled). Mirrors Piece D + the
+  // orchestrator guard at line 354. Real 0-0 finals are only possible with
+  // status=completed.
+  const isUnstarted = status === 'scheduled' || status === 'postponed';
   // HL doesn't give FK to our team_workspaces; we resolve by displayName later.
   return {
     league_id: hlLeagueId,
     scheduled_at: g.date, // ISO string
     home_team_id: null,
     away_team_id: null,
-    home_score: isNaN(homeScore) ? null : homeScore,
-    away_score: isNaN(awayScore) ? null : awayScore,
+    home_score: isUnstarted ? null : (isNaN(homeScore) ? null : homeScore),
+    away_score: isUnstarted ? null : (isNaN(awayScore) ? null : awayScore),
     status,
     season: g.season ? `${g.season - 1}-${String(g.season).slice(2)}` : null,
     // HL-specific data goes into game_data JSONB to avoid schema drift
@@ -281,9 +292,74 @@ async function upsertHighlightlyGame(g, hlLeagueId, hlLeagueName) {
   };
 }
 
+// 2026-10-16 (Piece E Part 1.3, Arnel 01:16): cache league-id→slug lookup so
+// the dry-run classifier doesn't add N round-trips during ingestion.
+const LEAGUE_SLUG_CACHE = new Map();
+async function leagueSlugFromId(leagueId) {
+  if (!leagueId) return 'unknown';
+  if (LEAGUE_SLUG_CACHE.has(leagueId)) return LEAGUE_SLUG_CACHE.get(leagueId);
+  const { data } = await supabase.from('leagues').select('slug').eq('id', leagueId).maybeSingle();
+  const slug = data?.slug || 'unknown';
+  LEAGUE_SLUG_CACHE.set(leagueId, slug);
+  return slug;
+}
+
+// 2026-10-16 (Piece E Part 1.3, Arnel 01:16): per-league dry-run report.
+// Module-scope so upsertFixture() (also module-scope) can mutate it.
+const dryRunReport = {};
+
 async function upsertFixture(record) {
   if (DRY_RUN) {
-    console.log(`  [DRY] would upsert: ${record.id?.slice(0, 8)} → status=${record.status} score=${record.home_score}-${record.away_score}`);
+    // 2026-10-16 (Piece E Part 1.3, Arnel 01:16): classify the dry-run upsert
+    // into insert vs update vs would-create-second-row. We check the natural
+    // key in DB first, then bucket the record. The HL path in main() ALSO
+    // maintains the same counter (because it short-circuits before reaching
+    // here) — those counters are merged into dryRunReport at the end of main().
+    let classification = 'insert';
+    let existingRow = null;
+    try {
+      const k = record.league_id && record.scheduled_at && record.home_team_id && record.away_team_id;
+      let q = supabase.from('fixtures').select('id, home_score, away_score, status').limit(1);
+      if (k) {
+        q = q
+          .eq('league_id', record.league_id)
+          .eq('scheduled_at', record.scheduled_at)
+          .eq('home_team_id', record.home_team_id)
+          .eq('away_team_id', record.away_team_id);
+      } else {
+        // Fallback: match by league + scheduled_at + names in game_data
+        const homeName = record.game_data?.home_team_name || record.game_data?.homeTeam?.name;
+        const awayName = record.game_data?.away_team_name || record.game_data?.awayTeam?.name;
+        if (homeName && awayName) {
+          q = q
+            .eq('league_id', record.league_id)
+            .eq('scheduled_at', record.scheduled_at)
+            .contains('game_data', { home_team_name: homeName, away_team_name: awayName });
+        }
+      }
+      // Count rows that match
+      const { count } = await supabase.from('fixtures').select('id', { count: 'exact', head: true })
+        .match(k ? { league_id: record.league_id, scheduled_at: record.scheduled_at, home_team_id: record.home_team_id, away_team_id: record.away_team_id } : {});
+      if (count > 1) classification = 'would_create_second';
+      else if (count === 1) {
+        classification = 'update';
+        const { data } = await q.maybeSingle();
+        existingRow = data;
+      } else classification = 'insert';
+    } catch (e) {
+      classification = 'would_create_second';  // fail-closed
+    }
+    const slug = await leagueSlugFromId(record.league_id);
+    dryRunReport[slug] = dryRunReport[slug] || { insert: 0, update: 0, would_create_second: 0, score_drift: 0 };
+    dryRunReport[slug][classification]++;
+    if (existingRow && (
+      existingRow.home_score !== record.home_score ||
+      existingRow.away_score !== record.away_score ||
+      existingRow.status !== record.status
+    )) {
+      dryRunReport[slug].score_drift++;
+    }
+    console.log(`  [DRY] ${classification}: ${record.id?.slice(0, 8)} → status=${record.status} score=${record.home_score}-${record.away_score}`);
     return null;
   }
   // Use natural key (league_id, scheduled_at, home_team_id, away_team_id) for
@@ -591,6 +667,10 @@ async function main() {
 
   let totalNhl = 0, totalHl = 0;
   let scoreMismatches = 0;  // cross-source verification counter
+  // 2026-10-16 (Piece E Part 1.3, Arnel 01:16): dryRunReport lives at module
+  // scope so upsertFixture() can mutate it. Reset on each main() invocation
+  // so re-running --dry-run doesn't accumulate from a previous run.
+  for (const k of Object.keys(dryRunReport)) delete dryRunReport[k];
   const today = new Date();
 
   // Cover [today-DAYS_BACK, today+DAYS_FWD]. NHL preseason starts mid-Sep,
@@ -750,6 +830,14 @@ async function main() {
               game_data: record.game_data,
               updated_at: record.updated_at,
             }).eq('id', existing.id);
+          } else {
+            // 2026-10-16 Part 1.3: dry-run counter for HL update path
+            const slug = await leagueSlugFromId(leagueId);
+            dryRunReport[slug] = dryRunReport[slug] || { insert: 0, update: 0, would_create_second: 0, score_drift: 0 };
+            dryRunReport[slug].update++;
+            if (existing.home_score !== record.home_score || existing.away_score !== record.away_score || existing.status !== record.status) {
+              dryRunReport[slug].score_drift++;
+            }
           }
           totalHl++;
         } else {
@@ -757,6 +845,12 @@ async function main() {
           // Format: 8-4-4-4-12 using league_id prefix + match_id padding
           const id = `${leagueId.slice(0, 8)}-0000-0000-0000-${String(g.id).padStart(12, '0')}`.slice(0, 36);
           record.id = id;
+          // 2026-10-16 Part 1.3: dry-run counter for HL insert path
+          if (DRY_RUN) {
+            const slug = await leagueSlugFromId(leagueId);
+            dryRunReport[slug] = dryRunReport[slug] || { insert: 0, update: 0, would_create_second: 0, score_drift: 0 };
+            dryRunReport[slug].insert++;
+          }
           await upsertFixture(record);
           totalHl++;
         }
@@ -769,6 +863,47 @@ async function main() {
   console.log(`NHL upserts: ${totalNhl}`);
   console.log(`Highlightly upserts: ${totalHl}`);
   console.log(`Score verification mismatches: ${scoreMismatches}`);
+  // 2026-10-16 (Piece E Part 1.3, Arnel 01:16): per-league dry-run report.
+  // Bucket per league: insert / update / would_create_second / score_drift.
+  if (DRY_RUN && Object.keys(dryRunReport).length > 0) {
+    console.log('\n=== DRY-RUN PER-LEAGUE BREAKDOWN ===');
+    const leagues = Object.keys(dryRunReport).sort();
+    console.log('league'.padEnd(28) + 'insert'.padStart(8) + 'update'.padStart(8) + '2nd-row'.padStart(10) + 'drift'.padStart(8));
+    console.log('-'.repeat(62));
+    for (const slug of leagues) {
+      const r = dryRunReport[slug];
+      console.log(
+        slug.padEnd(28) +
+        String(r.insert).padStart(8) +
+        String(r.update).padStart(8) +
+        String(r.would_create_second).padStart(10) +
+        String(r.score_drift).padStart(8)
+      );
+    }
+    console.log('-'.repeat(62));
+    const totals = leagues.reduce((a, s) => ({
+      insert: a.insert + dryRunReport[s].insert,
+      update: a.update + dryRunReport[s].update,
+      would_create_second: a.would_create_second + dryRunReport[s].would_create_second,
+      score_drift: a.score_drift + dryRunReport[s].score_drift,
+    }), { insert: 0, update: 0, would_create_second: 0, score_drift: 0 });
+    console.log(
+      'TOTAL'.padEnd(28) +
+      String(totals.insert).padStart(8) +
+      String(totals.update).padStart(8) +
+      String(totals.would_create_second).padStart(10) +
+      String(totals.score_drift).padStart(8)
+    );
+    // Also write JSON for downstream consumption
+    const fs = require('fs');
+    fs.writeFileSync('/tmp/daily-scores-dry-run-report.json', JSON.stringify({
+      generated_at: new Date().toISOString(),
+      days: DAYS,
+      per_league: dryRunReport,
+      totals,
+    }, null, 2));
+    console.log('\nWrote /tmp/daily-scores-dry-run-report.json');
+  }
   if (scoreMismatches > 0) {
     console.log(`  ⚠ ${scoreMismatches} completed games FAILED cross-source verification.`);
     console.log(`    These were NOT written to DB. Run scripts/_audit-highlightly-scores.cjs to investigate.`);
