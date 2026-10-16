@@ -166,7 +166,8 @@ export async function generateMetadata(
   const dateStr = new Date(game.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const title = `${awayName} at ${homeName} — ${dateStr} | ${leagueName}`;
   const description = `${awayName} vs ${homeName} on ${dateStr} in the ${leagueName}. Live score, boxscore, and game details on RinkStop.`;
-  const ogImage = game.home_team?.logo_url || `${BASE_URL}/og-image.png`;
+  // Let opengraph-image.tsx generate the OG image (shows team logos, score, date)
+  // rather than overriding with a static logo.
 
   // Indexability is decided from real data below in the page body
   // (we fetch the modules in the page itself and pass the
@@ -213,13 +214,12 @@ export async function generateMetadata(
       url: `${BASE_URL}/directory/games/${id}`,
       siteName: 'RinkStop',
       type: 'article',
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${awayName} at ${homeName}` }],
+
     }),
     twitter: {
       card: 'summary_large_image',
       title: `${awayName} @ ${homeName}`,
       description,
-      images: [ogImage],
     },
   };
 }
