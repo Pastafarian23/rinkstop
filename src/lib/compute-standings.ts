@@ -102,12 +102,33 @@ function dedupFixtures(fixtures: any[]): any[] {
 /** Detect whether a finished game went to OT or shootout (loser gets 1pt). */
 function hadOt(gameData: any): boolean {
   if (!gameData) return false;
-  // NHL.com: lastPeriodType = 'OT' or 'SO'
-  const lpt = gameData?.gameOutcome?.lastPeriodType;
+
+  // AHL stores game_data as a JSON STRING (not an object). Parse it first.
+  // After parse: { ..., "overtime": true/false, "status": "Final" | "Final OT" | "Final SO" }
+  let gd = gameData;
+  if (typeof gd === 'string') {
+    try { gd = JSON.parse(gd); } catch { return false; }
+    if (!gd || typeof gd !== 'object') return false;
+  }
+
+  // 1. AHL: explicit overtime boolean (covers OT and SO)
+  if (gd.overtime === true) return true;
+  // 1b. AHL: status string fallback ("Final OT" / "Final SO")
+  const ahlStatus = typeof gd.status === 'string' ? gd.status : '';
+  if (ahlStatus === 'Final OT' || ahlStatus === 'Final SO') return true;
+
+  // 2. NHL.com schema: gameOutcome.lastPeriodType = 'OT' or 'SO'
+  const lpt = gd?.gameOutcome?.lastPeriodType;
   if (lpt === 'OT' || lpt === 'SO') return true;
-  // HL: periodDescriptor.number > 3
-  const periods = gameData?.periodDescriptor?.number;
-  if (periods != null && periods > 3) return true;
+
+  // 3. NHL.com schema (periodDescriptor fallback)
+  const pdPeriods = gd?.periodDescriptor?.number;
+  if (pdPeriods != null && pdPeriods > 3) return true;
+
+  // 4. Highlightly schema: state.period > 3 (4=OT, 5=SO)
+  const hlPeriod = gd?.state?.period;
+  if (hlPeriod != null && typeof hlPeriod === 'number' && hlPeriod > 3) return true;
+
   return false;
 }
 
@@ -158,18 +179,17 @@ export async function computeStandings(
     };
   }
 
-  // Collect all team IDs
-  const tids = new Set<string>();
+  // Collect all workspace IDs from fixtures
+  const wids = new Set<string>();
   for (const f of fixtures) {
-    if (f.home_team_id) tids.add(f.home_team_id);
-    if (f.away_team_id) tids.add(f.away_team_id);
+    if (f.home_team_id) wids.add(f.home_team_id);
+    if (f.away_team_id) wids.add(f.away_team_id);
   }
 
-  // Team metadata — fixtures use team_workspace IDs, NOT teams table IDs
-  const { data: teamsRaw } = await sb
-    .from('teams')
-    .select('id, name, slug, logo_url, division, is_active')
-    .in('id', Array.from(tids));
+  // Step 1: fetch team metadata — fixtures use workspace IDs that are team UUIDs
+  const { data: teamsRaw } = wids.size
+    ? await sb.from('teams').select('id, name, slug, logo_url, division, is_active').in('id', Array.from(wids))
+    : { data: [] as any[] };
   const teamMap = new Map((teamsRaw ?? []).map((t: any) => [t.id, t]));
 
   interface TStats {

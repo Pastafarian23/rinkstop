@@ -41,9 +41,22 @@ export async function generateMetadata({
   const { id, season } = await params;
   const league = await getLeague(id);
   const title = league ? `${league.name} ${season} Standings` : `${season} Standings`;
+  // Only index when the source data is complete (every team reached the
+  // expected regular-season GP). See src/lib/season-completeness.ts.
+  let indexable = false;
+  if (league?.slug) {
+    try {
+      const { getSeasonCompleteness } = await import('@/lib/season-completeness');
+      const completeness = await getSeasonCompleteness(league.slug, season);
+      indexable = completeness.isComplete;
+    } catch {
+      indexable = false;
+    }
+  }
   return {
     title: `${title} | RinkStop`,
     description: `Live ${season} standings for ${league?.name ?? 'this league'}, computed from game results on RinkStop.`,
+    robots: { index: indexable, follow: true },
     openGraph: {
       title: `${title} | RinkStop`,
       description: `Live ${season} standings for ${league?.name ?? 'this league'}.`,

@@ -279,3 +279,23 @@ ALTER TABLE public.stamps
 - spatial_ref_sys (PostGIS internal) is the only known false positive — already documented in 2026-09-23 migration
 
 **Post-fix audit:** 174 tables tested, 1 vulnerable (spatial_ref_sys, PostGIS exempt).
+
+---
+
+## 2026-10-16 — `2026-10-16_nhl_official_standings.sql`
+
+**Applied:** 2026-10-16 (subagent task, NHL official standings feed)
+**Applied by:** KiloClaw (subagent, webchat)
+**Trigger:** Item 2 of the Piece G work order — replace compute-standings.ts NHL output with the NHL.com Stats API feed.
+**Method:** `POST /v1/projects/yszheonqyyskkjoxoexk/database/query` with Management API PAT from `/root/.openclaw/credentials/supabase.json`
+**Tooling:** `scripts/apply-nhl-official-standings.mjs` (one-shot, kept for traceability)
+
+**Tables affected:**
+- `nhl_official_standings` (new) — 32 rows × 2 seasons written by `scripts/nhl-ingest/official-standings.cjs` immediately after migration apply
+
+**Pre-flight verified:**
+- `SELECT id, slug, is_active FROM teams WHERE league_id = '<nhl>'` → 31 active, 1 inactive (MTL row exists but is_active=false — flagged in ingest output)
+- Migration SQL itself tested locally; applied via Management API returned 201 + empty result (DDL).
+
+**Caveats:**
+- 1 team (MTL) currently has is_active=false in our `teams` table but is_active in NHL.com. Ingest still writes the standings row (NHL.com data is real); the script logs a WARN. This is a data-fix to address in `teams` table — not in this migration.
