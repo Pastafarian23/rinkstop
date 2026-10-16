@@ -70,6 +70,7 @@ interface FixtureRow {
   home_team: { id: string; name: string; slug: string; logo_url: string | null } | null;
   away_team: { id: string; name: string; slug: string; logo_url: string | null } | null;
   league: { id: string; name: string; slug: string; level: string | null; country: string | null } | null;
+  season: string | null;
 }
 
 // 2026-10-15 (Arnel 09:03 step 3): cache key includes id, status, and
@@ -115,7 +116,8 @@ const fetchGameByStatus = (id: string, status: FixtureRow['status'], scheduledAt
           .select(`id, scheduled_at, status, home_score, away_score, league_id, home_team_id, away_team_id, game_data,
             home_team:teams!fixtures_home_team_id_fkey(id, name, slug, logo_url),
             away_team:teams!fixtures_away_team_id_fkey(id, name, slug, logo_url),
-            league:leagues(id, name, slug, level, country)`)
+            league:leagues(id, name, slug, level, country),
+            season`)
           .eq('id', id)
           .maybeSingle();
         if (error || !fixture) return null;

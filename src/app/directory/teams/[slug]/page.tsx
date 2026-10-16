@@ -12,6 +12,7 @@ import FollowButton from '@/components/FollowButton';
 import PassportStampsBanner from '@/components/PassportStampsBanner';
 import ClaimListingNudge from '@/components/ClaimListingNudge';
 import ClaimedOwnerBanner from '@/components/ClaimedOwnerBanner';
+import TeamStandingsClient from '@/components/TeamStandingsClient';
 
 interface TeamWithLocation {
   country_code: string | null;
@@ -486,7 +487,11 @@ export default async function PublicTeamPage({ params }: PageProps) {
     home_team: { name: string; slug: string } | null;
     away_team: { name: string; slug: string } | null;
     league: { id: string; name: string; slug: string } | null;
+    season: string | null;
   }> = (fixtureRecentRes as any) || [];
+
+  // Derive current season for standings widget from most recent fixture
+  const currentSeason = fixtureRecent[0]?.season ?? `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}`;
 
   const nextGameForCountdown = mergedUpcoming[0] || null;
 
@@ -805,21 +810,14 @@ export default async function PublicTeamPage({ params }: PageProps) {
                 </Link>
               );
             })()}
-            {/* Standings link — only if we know the league */}
-            {team.league?.slug && (() => {
-              const slugsWithStandings = new Set(['nhl', 'ahl', 'pwhl', 'chl', 'whl', 'ohl', 'qmjhl', 'ushl']);
-              const showStandings = slugsWithStandings.has(team.league.slug);
-              if (!showStandings) return null;
-              return (
-                <Link
-                  href={`/directory/${team.league.slug}/standings`}
-                  style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgba(200,16,46,0.08)', border: '1px solid rgba(200,16,46,0.4)', borderRadius: '12px', padding: '1.25rem', textDecoration: 'none', color: 'inherit' }}
-                >
-                  <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, margin: 0 }}>{team.league.name} Standings</p>
-                  <p style={{ color: '#fff', fontSize: '1.125rem', fontWeight: 700, margin: '0.25rem 0 0' }}>View full standings →</p>
-                </Link>
-              );
-            })()}
+            {/* Standings widget — replaces the static link */}
+            <TeamStandingsClient
+              teamId={team.id}
+              teamSlug={team.slug}
+              teamName={team.name}
+              leagueSlug={team.league?.slug ?? null}
+              season={currentSeason}
+            />
           </div>
 
           {/* Recent results (from fixtures) */}
