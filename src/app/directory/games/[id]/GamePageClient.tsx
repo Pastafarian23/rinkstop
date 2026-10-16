@@ -39,6 +39,7 @@ interface FixtureLite {
   home_team: { name: string; slug: string; logo_url: string | null } | null;
   away_team: { name: string; slug: string; logo_url: string | null } | null;
   league: { name: string; slug: string; country: string | null } | null;
+  season: string | null;
 }
 
 interface Modules {
@@ -207,6 +208,23 @@ export default function GamePage({ id, game, modules, detail }: Props) {
           @ {detail.venue.name}
         </p>
       )}
+
+      {/* Standings link — completed games only, leagues with standings */}
+      {isCompleted && (() => {
+        const standingsLeagues = new Set(['nhl', 'ahl', 'pwhl', 'echl', 'khl', 'shl', 'liiga', 'ohl', 'qmjhl', 'ushl', 'whl']);
+        if (!game.league?.slug || !standingsLeagues.has(game.league.slug)) return null;
+        const season = game.season ?? `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}`;
+        return (
+          <div style={{ marginBottom: '1rem' }}>
+            <Link
+              href={`/directory/leagues/${game.league.slug}/${season}/standings`}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '0.4rem 0.875rem', color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.8rem' }}
+            >
+              📊 {game.league.name} Standings
+            </Link>
+          </div>
+        );
+      })()}
 
       {/* TV Broadcasts */}
       {detail?.broadcasts && detail.broadcasts.length > 0 && (

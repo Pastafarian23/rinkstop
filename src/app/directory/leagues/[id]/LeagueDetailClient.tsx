@@ -94,6 +94,21 @@ export default function LeagueDetailClient({
         />
       </div>
       {league.description && <p className="text-slate-300 mb-6">{league.description}</p>}
+
+      {/* Standings link for leagues with automated data */}
+      {(league as any).slug && (() => {
+        const standingsLeagues = new Set(['nhl', 'ahl', 'pwhl', 'echl', 'khl', 'shl', 'liiga', 'ohl', 'qmjhl', 'ushl', 'whl']);
+        if (!standingsLeagues.has((league as any).slug)) return null;
+        const season = `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(2)}`;
+        return (
+          <Link
+            href={`/directory/leagues/${(league as any).slug}/${season}/standings`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(200,16,46,0.1)', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 8, padding: '0.5rem 1rem', color: '#fff', textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem', marginBottom: '1rem' }}
+          >
+            📊 {new Date().getFullYear()}-{String(new Date().getFullYear() + 1).slice(2)} Standings
+          </Link>
+        );
+      })()}
       {league.website_url && (
         <a href={league.website_url} target="_blank" rel="noopener" className="text-teal-400 text-sm mb-6 inline-block hover:underline">
           {league.website_url}
