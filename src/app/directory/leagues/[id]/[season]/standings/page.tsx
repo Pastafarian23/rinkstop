@@ -44,6 +44,7 @@ export async function generateMetadata({
   return {
     title: `${title} | RinkStop`,
     description: `Live ${season} standings for ${league?.name ?? 'this league'}, computed from game results on RinkStop.`,
+    robots: { index: false, follow: true },
     openGraph: {
       title: `${title} | RinkStop`,
       description: `Live ${season} standings for ${league?.name ?? 'this league'}.`,
