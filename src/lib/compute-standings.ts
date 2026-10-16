@@ -158,19 +158,33 @@ export async function computeStandings(
     };
   }
 
-  // Collect all team IDs
-  const tids = new Set<string>();
+  // Collect all workspace IDs from fixtures
+  const wids = new Set<string>();
   for (const f of fixtures) {
-    if (f.home_team_id) tids.add(f.home_team_id);
-    if (f.away_team_id) tids.add(f.away_team_id);
+    if (f.home_team_id) wids.add(f.home_team_id);
+    if (f.away_team_id) wids.add(f.away_team_id);
   }
 
-  // Team metadata — fixtures use team_workspace IDs, NOT teams table IDs
-  const { data: teamsRaw } = await sb
-    .from('teams')
-    .select('id, name, slug, logo_url, division, is_active')
-    .in('id', Array.from(tids));
+  // Step 1: resolve workspace IDs → team UUIDs via team_workspaces
+  const { data: workspaces } = await sb
+    .from('team_workspaces')
+    .select('id, team_id')
+    .in('id', Array.from(wids));
+  const widToTeamId = new Map((workspaces ?? []).map((w: any) => [w.id, w.team_id]));
+
+  // Step 2: fetch team metadata using resolved UUIDs
+  const teamIds = [...new Set([...widToTeamId.values()])];
+  const { data: teamsRaw } = teamIds.length
+    ? await sb.from('teams').select('id, name, slug, logo_url, division, is_active').in('id', teamIds)
+    : { data: [] };
   const teamMap = new Map((teamsRaw ?? []).map((t: any) => [t.id, t]));
+
+  // Step 3: build workspace-ID → team row map for the standings loop
+  const wsTeamMap = new Map<string, any>();
+  for (const [wid, tid] of widToTeamId) {
+    const t = teamMap.get(tid);
+    if (t) wsTeamMap.set(wid, t);
+  }
 
   interface TStats {
     gp: number;
@@ -221,7 +235,7 @@ export async function computeStandings(
   const entries: StandingEntry[] = [];
   for (const [tid, s] of stats) {
     if (s.gp === 0) continue;
-    const t = teamMap.get(tid);
+    const t = wsTeamMap.get(tid);
 
     const last10 = s.last10.slice(-10);
     const l10w = last10.filter(r => r === 'W').length;
@@ -266,6 +280,7 @@ export async function computeStandings(
       last10: { w: l10w, l: l10l, otl: l10otl },
       tie: ptsCfg === null ? null : s.tie,
       division: t?.division ?? null,
+      conference: t?.conference ?? null,
     });
   }
 
