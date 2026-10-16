@@ -40,11 +40,17 @@ const TABS: Tab[] = [
 ];
 
 export default function RoleAwareTabBar() {
-  // 2026-10-14: derive signedIn from Clerk's useUser() instead of
-  // accepting it as a server-fetched prop.  Previously the layout
-  // fetched auth() server-side and passed signedIn down — that
-  // `auth()` call opted the whole layout (and every page) out of
-  // static rendering.  Moving the check to useUser() in this client
+  // 2026-10-15: hooks order fix (Rules of Hooks violation → React #310).
+  // Previously this component called `useState` + `useUser` at the top but
+  // `useEffect` was AFTER two conditional `return null`s. On a render where
+  // hide=true or !isLoaded or !isSignedIn, the effect was never registered;
+  // once the condition flipped, the effect registered. Different hook counts
+  // across renders → "Rendered more hooks than during the previous render".
+  //
+  // 2026-10-14 (cache fix): also derive signedIn from Clerk's useUser() instead
+  // of accepting it as a server-fetched prop. Previously the layout fetched
+  // auth() server-side and passed signedIn down; that opted the whole layout
+  // out of static rendering. Moving the check to useUser() in this client
   // component lets the root layout stay static and ISR work.
   const { isSignedIn, isLoaded } = useUser();
   const pathname = usePathname() || '/';
@@ -56,6 +62,29 @@ export default function RoleAwareTabBar() {
     pathname === '/login' ||
     pathname.startsWith('/sign-') ||
     pathname === '/onboarding';
+
+  // WS14 PR2: fetch consumer_notifications unread count for the badge.
+  // Poll every 60s so the badge stays fresh without constant re-fetches.
+  // MUST be declared before any conditional return so the hook order is
+  // identical across renders.
+  useEffect(() => {
+    if (hide || !isLoaded || !isSignedIn) return;
+    async function loadConsumerUnread() {
+      try {
+        const r = await fetch('/api/consumer-notifications/unread-count');
+        if (r.ok) {
+          const d = await r.json();
+          setConsumerUnread(d.unread ?? 0);
+        }
+      } catch { /* silent — badge is non-critical */ }
+    }
+    loadConsumerUnread();
+    const id = setInterval(loadConsumerUnread, 60_000);
+    return () => clearInterval(id);
+  }, [hide, isLoaded, isSignedIn]);
+
+  // All conditional rendering lives below this line. Hooks above are
+  // unconditional so the order never changes between renders.
   if (hide) return null;
 
   // 2026-10-14 (cache fix): while Clerk is loading OR the user is
@@ -79,23 +108,6 @@ export default function RoleAwareTabBar() {
     setPressedHref(href);
     window.setTimeout(() => setPressedHref(null), 160);
   }
-
-  // WS14 PR2: fetch consumer_notifications unread count for the badge.
-  // Poll every 60s so the badge stays fresh without constant re-fetches.
-  useEffect(() => {
-    async function loadConsumerUnread() {
-      try {
-        const r = await fetch('/api/consumer-notifications/unread-count');
-        if (r.ok) {
-          const d = await r.json();
-          setConsumerUnread(d.unread ?? 0);
-        }
-      } catch { /* silent — badge is non-critical */ }
-    }
-    loadConsumerUnread();
-    const id = setInterval(loadConsumerUnread, 60_000);
-    return () => clearInterval(id);
-  }, []);
 
   function tapHaptic() {
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
