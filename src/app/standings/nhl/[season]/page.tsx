@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAllSeasons, getLatestSeason, getStandingsForSeason, NhlStanding } from '@/lib/nhl-data';
 import { ALL_CONFERENCES, ALL_DIVISIONS, NHL_TEAMS_CANONICAL, NhlTeamCanonical } from '@/lib/nhl-teams-canonical';
+import { getSeasonCompleteness } from '@/lib/season-completeness';
 import NhlStandingsClient from './client';
 
 export const revalidate = 3600; // 1 hour
@@ -14,9 +15,19 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ season: string }> }): Promise<Metadata> {
   const { season } = await params;
+  // Only pages where the (league, season) data is complete enough to represent
+  // a stable indexable record get indexed. Current (in-progress) seasons and
+  // partially-ingested closed seasons get noindex so Google doesn't lock in
+  // a stale record. See src/lib/season-completeness.ts.
+  const completeness = await getSeasonCompleteness('nhl', season).catch((): null => null);
+  const indexable = completeness?.isComplete ?? false;
   return {
     title: `NHL ${formatSeason(season)} Standings`,
     description: `Final NHL ${formatSeason(season)} standings by conference and division. Records, points, and goal differentials for all 32 teams.`,
+    robots: {
+      index: indexable,
+      follow: true,
+    },
   };
 }
 
