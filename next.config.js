@@ -18,6 +18,12 @@ const nextConfig = {
   // type errors, gate 5 catches dynamic-segment collisions. ESLint policy
   // can be added later as a deliberate choice with a real rule set.
   eslint: { ignoreDuringBuilds: true },
+  // OOM fix 2026-10-16: skip TypeScript type errors during build.
+  // Pre-push guard (gate 3: tsc --noEmit) already catches type errors
+  // before push. This just prevents the Next.js build step from
+  // running tsc again and hitting the memory ceiling on the heavy
+  // ISR routes (/federations/[country], /directory/[country]).
+  typescript: { ignoreBuildErrors: true },
   // Fix 3 followup (2026-07-08): skip Next.js's default trailing-slash
   // redirect. Combined with our /index.php/* catch-all sources below, this
   // means /index.php/news/ -> /news in a single 308 hop instead of going
