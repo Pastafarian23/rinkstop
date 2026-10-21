@@ -98,6 +98,25 @@ function loadSecrets() {
   );
 }
 
-loadSecrets();
+// Auto-run on require, but NEVER throw at import time.
+//
+// This module is pulled into the Next.js bundle by API routes (e.g.
+// /api/cron/scores-refresh). Next.js imports route modules during
+// "Collecting page data" at BUILD time, where Vercel has not yet injected
+// runtime env vars. Throwing here fails the entire production build with
+// "Failed to collect page data". On a real request the env vars are present
+// and loadSecrets() short-circuits on the guard above anyway.
+//
+// Scripts that genuinely need secrets call loadSecrets() explicitly and
+// still get the hard failure.
+if (process.env.NEXT_RUNTIME !== undefined || process.env.VERCEL) {
+  try {
+    loadSecrets();
+  } catch (err) {
+    if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV !== 'development') {
+      console.warn('[load-secrets] no secret source at import time; deferring to request time');
+    }
+  }
+}
 
 module.exports = { loadSecrets };
