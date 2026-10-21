@@ -1,23 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Lazy client: this module is imported during `next build`'s "Collecting page
-// data" phase, before Vercel injects runtime env. Calling createClient() at
-// module scope throws "supabaseUrl is required" and fails the production build.
-let _c: ReturnType<typeof createClient> | null = null;
-function getClient() {
-  if (!_c) {
-    _c = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-  }
-  return _c;
-}
-const supabase = new Proxy({} as ReturnType<typeof createClient>, {
-  get(_t, prop) {
-    return (getClient() as unknown as Record<string | symbol, unknown>)[prop];
-  },
-});
+// Module-scope createClient() throws 'supabaseUrl is required' during next
+// build's "Collecting page data" phase (when env is still empty). Fall back
+// to placeholder strings; at request time process.env is populated, and
+// clients held by Next.js are re-read per invocation. At runtime, if the
+// real env vars are missing the request will fail visibly.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.invalid',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+);
 
 // US state abbreviations mapping (slug → abbreviation)
 export const US_STATES: Record<string, string> = {

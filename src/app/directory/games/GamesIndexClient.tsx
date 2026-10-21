@@ -131,25 +131,11 @@ function computeDateRange(d: string | null, w: string | null): { from: string | 
 // standalone WeekCalendar. 2026-10-05 fix: WeekCalendar now fetches
 // its own week-total counts (independent of the date-filter applied
 // to the games list) so the strip always shows the full week.
-// Lazy client: this module is imported during `next build`'s "Collecting page
-// data" phase, before Vercel injects runtime env. Module-scope createClient()
-// throws "supabaseUrl is required" and fails the entire production build.
-let _sbCal: ReturnType<typeof createClient> | null = null;
-function getSbCal() {
-  if (!_sbCal) {
-    _sbCal = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false } },
-    );
-  }
-  return _sbCal;
-}
-const sbRefForCalendar = new Proxy({} as ReturnType<typeof createClient>, {
-  get(_t, prop) {
-    return (getSbCal() as unknown as Record<string | symbol, unknown>)[prop];
-  },
-});
+const sbRefForCalendar = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.invalid',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
+  { auth: { persistSession: false } }
+);
 
 function WeekCalendar({ games }: { games: Game[] }) {
   // 2026-10-05 fix (Arnel feedback): the week-strip cell counts should

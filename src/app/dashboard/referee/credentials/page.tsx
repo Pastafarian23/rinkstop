@@ -13,19 +13,7 @@ import CredentialsFormClient from '@/app/dashboard/coach/credentials/Credentials
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-// Lazy client: this module is imported during `next build`'s "Collecting page
-// data" phase, before Vercel injects runtime env. Module-scope createClient()
-// throws "supabaseUrl is required" and fails the entire production build.
-let _c: ReturnType<typeof createClient> | null = null;
-function getLazyClient() {
-  if (!_c) _c = createClient(supabaseUrl, supabaseServiceKey);
-  return _c;
-}
-const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
-  get(_t, prop) {
-    return (getLazyClient() as unknown as Record<string | symbol, unknown>)[prop];
-  },
-});
+const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.invalid', supabaseServiceKey || 'placeholder');
 
 export const dynamic = 'force-dynamic';
 

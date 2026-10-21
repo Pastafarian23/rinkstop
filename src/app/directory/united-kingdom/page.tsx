@@ -6,24 +6,10 @@ import CountryPageContent from '@/components/CountryPageContent';
 
 const COUNTRY_NAME = 'United Kingdom';
 
-// Lazy client: this module is imported during `next build`'s "Collecting page
-// data" phase, before Vercel injects runtime env. Module-scope createClient()
-// throws "supabaseUrl is required" and fails the entire production build.
-let _sb: ReturnType<typeof createClient> | null = null;
-function getSb() {
-  if (!_sb) {
-    _sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-  }
-  return _sb;
-}
-const supabase = new Proxy({} as ReturnType<typeof createClient>, {
-  get(_t, prop) {
-    return (getSb() as unknown as Record<string | symbol, unknown>)[prop];
-  },
-});
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.invalid',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder'
+);
 
 const BORDER = '#1e1e1e';
 const CARD = '#0f0f0f';
