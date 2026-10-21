@@ -3,10 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { sendEmail } from '@/lib/email';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders } from '@/lib/rateLimit';
 
+// Env validation deferred to first request: module-scope throws break
+// next build's "Collecting page data" phase.
 const MATON_API_KEY = process.env.MATON_API_KEY;
-if (!MATON_API_KEY) {
-  throw new Error('MATON_API_KEY is not set');
-}
 const ZOHO_ACCOUNT_ID = '2958661000000008002';
 // OWASP A05 audit 2026-08-26: chat_id was hardcoded — moved to env var
 // so the Telegram notify target can be rotated without a code change.

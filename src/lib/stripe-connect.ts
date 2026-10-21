@@ -32,11 +32,12 @@ type CheckoutLineItem = {
   metadata?: Record<string, string>;
 };
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set');
-}
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Module-scope guard removed 2026-10-21: it broke `next build` because the
+// module is imported during "Collecting page data" before runtime env is
+// set. The Stripe SDK gracefully handles a placeholder key during build
+// and only connects at first real call. At runtime, a missing
+// STRIPE_SECRET_KEY surfaces via actual Stripe API errors.
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 const PLATFORM_FEE_PERCENT = 5; // 5% platform fee
 
