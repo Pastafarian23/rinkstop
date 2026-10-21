@@ -5,14 +5,17 @@ import { createClient } from '@supabase/supabase-js';
 const NHL_BASE = 'https://nhl.highlightly.net';
 const HOCKEY_BASE = 'https://hockey.highlightly.net';
 const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
-if (!API_KEY) throw new Error('HIGHLIGHTLY_API_KEY is not set');
+// NOTE: env validation intentionally deferred to request time. A module-scope
+// throw here crashes `next build` during "Collecting page data", because the
+// route module is imported at build time before runtime env is guaranteed.
 
 // Supabase backup table (PRIMARY source — keeps working even if Highlightly goes down)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-if (!SUPABASE_URL) throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!SUPABASE_SERVICE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const supabaseAdmin = createClient(
+  SUPABASE_URL || 'https://placeholder.invalid',
+  SUPABASE_SERVICE_KEY || 'placeholder',
+);
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

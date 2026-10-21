@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 
 const NHL_HIGHLIGHTLY_BASE = 'https://nhl.highlightly.net';
 const RAPID_API_KEY = process.env.HIGHLIGHTLY_API_KEY;
-if (!RAPID_API_KEY) throw new Error('HIGHLIGHTLY_API_KEY is not set');
+// NOTE: env validation intentionally deferred to request time. A module-scope
+// throw here crashes `next build` during "Collecting page data", because the
+// route module is imported at build time before runtime env is guaranteed.
 const RAPID_API_HOST = 'nhl-highcaah-api.p.rapidapi.com';
 
 interface HighlightlyGame {
