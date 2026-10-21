@@ -1,9 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy client: this module is imported during `next build`'s "Collecting page
+// data" phase, before Vercel injects runtime env. Calling createClient() at
+// module scope throws "supabaseUrl is required" and fails the production build.
+let _c: ReturnType<typeof createClient> | null = null;
+function getClient() {
+  if (!_c) {
+    _c = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+  return _c;
+}
+const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_t, prop) {
+    return (getClient() as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 // US state abbreviations mapping (slug → abbreviation)
 export const US_STATES: Record<string, string> = {

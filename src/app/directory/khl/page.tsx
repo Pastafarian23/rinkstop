@@ -5,10 +5,24 @@ import { LeagueTeams } from '@/components/LeagueTeams';
 import { KhlScoresBlock } from '@/components/KhlScoresBlock';
 import { withDefaultOg } from '@/lib/metadata-defaults';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy client: this module is imported during `next build`'s "Collecting page
+// data" phase, before Vercel injects runtime env. Module-scope createClient()
+// throws "supabaseUrl is required" and fails the entire production build.
+let _sb: ReturnType<typeof createClient> | null = null;
+function getSb() {
+  if (!_sb) {
+    _sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+  }
+  return _sb;
+}
+const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_t, prop) {
+    return (getSb() as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 export const metadata: Metadata = {
   // 2026-09-03 WS3 + Gap 1: rewrote title to 53 chars + added season year + current team count.
