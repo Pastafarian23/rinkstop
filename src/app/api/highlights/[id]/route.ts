@@ -4,7 +4,9 @@ import { mapTeamForHighlights } from '@/lib/highlights-helpers';
 const NHL_BASE = 'https://nhl.highlightly.net';
 const HOCKEY_BASE = 'https://hockey.highlightly.net';
 const API_KEY = process.env.HIGHLIGHTLY_API_KEY;
-if (!API_KEY) throw new Error('HIGHLIGHTLY_API_KEY is not set');
+// NOTE: env validation intentionally deferred to request time. A module-scope
+// throw here crashes `next build` during "Collecting page data", because the
+// route module is imported at build time before runtime env is guaranteed.
 
 export async function GET(
   request: NextRequest,

@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Direct REST fetch to Supabase - bypassing supabase-js
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-if (!SUPABASE_URL) throw new Error('NEXT_PUBLIC_SUPABASE_URL is not set');
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-if (!SUPABASE_ANON_KEY) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
+// NOTE: env validation intentionally deferred to request time. A module-scope
+// throw here crashes `next build` during "Collecting page data", because the
+// route module is imported at build time before runtime env is guaranteed.
 
 async function supabaseQuery(table: string, params: string) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase env vars are not set');
+  }
   const url = `${SUPABASE_URL}/rest/v1/${table}?${params}`;
   const response = await fetch(url, {
     headers: {
