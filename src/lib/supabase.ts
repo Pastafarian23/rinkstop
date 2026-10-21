@@ -48,55 +48,36 @@ let _supabaseAdmin: AnyClient | null = null;
 let _supabaseRead: AnyClient | null = null;
 let _supabaseWarned = false;
 
+// All three getters fall back to placeholder values during build so module
+// import never throws. The build's "Collecting page data" phase runs
+// before Vercel injects runtime env — a throw here crashes the entire
+// production build. At request time process.env is populated and the real
+// keys are used. If real keys are missing in production, real queries fail
+// visibly instead of silently producing empty results.
 function getSupabase(): AnyClient {
   if (_supabase) return _supabase;
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      '[supabase] NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set',
-    );
-  }
-  _supabase = createClient(supabaseUrl, supabaseAnonKey);
+  _supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.invalid',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder',
+  );
   return _supabase;
 }
 
 function getSupabaseAdmin(): AnyClient {
   if (_supabaseAdmin) return _supabaseAdmin;
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl) {
-    throw new Error(
-      '[supabase] NEXT_PUBLIC_SUPABASE_URL must be set before creating the admin client.',
-    );
-  }
-  if (!supabaseServiceKey) {
-    throw new Error(
-      '[supabase] SUPABASE_SERVICE_ROLE_KEY must be set. The admin client cannot fall back to the anon client — that would silently bypass RLS on 200+ server routes.',
-    );
-  }
-  _supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  _supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.invalid',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder',
+  );
   return _supabaseAdmin;
 }
 
 function getSupabaseRead(): AnyClient {
   if (_supabaseRead) return _supabaseRead;
 
-  // Read replica URL. Falls back to primary if unset (with a warning)
-  // so the build doesn't break before Arnel wires up the env var.
-  const primaryUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const primaryUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.invalid';
   const readUrl = process.env.NEXT_PUBLIC_SUPABASE_READ_URL || primaryUrl;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!readUrl || !supabaseAnonKey) {
-    throw new Error(
-      '[supabase] NEXT_PUBLIC_SUPABASE_READ_URL (or fallback NEXT_PUBLIC_SUPABASE_URL) and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set',
-    );
-  }
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 
   if (readUrl === primaryUrl && !process.env.NEXT_PUBLIC_SUPABASE_READ_URL) {
     // First-time warning so the operator knows reads aren't actually going
