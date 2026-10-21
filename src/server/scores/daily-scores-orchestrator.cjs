@@ -35,10 +35,29 @@
 require('./load-secrets.cjs');
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Lazy Supabase client.
+//
+// This module is required by /api/cron/scores-refresh, so it is imported
+// during Next.js "Collecting page data" at BUILD time, before Vercel injects
+// runtime env vars. createClient() throws "supabaseUrl is required" when the
+// URL is undefined, which fails the whole production build. Building the
+// client on first property access defers it to request time instead.
+let _supabase = null;
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+  }
+  return _supabase;
+}
+
+const supabase = new Proxy({}, {
+  get(_target, prop) {
+    return getSupabase()[prop];
+  },
+});
 
 const NHL_LEAGUE_ID = '2b5f2b9d-84b9-4edb-8373-a732b72f4e40';
 const HIGHLIGHTLY_KEY = process.env.HIGHLIGHTLY_API_KEY;
