@@ -5,10 +5,24 @@ import { checkRateLimit, getClientIP, applyRateLimitHeaders } from '@/lib/rateLi
 const RATE_LIMIT = { maxRequests: 120, windowMs: 60 * 1000 };
 
 const NHL_BASE = 'https://api-web.nhle.com';
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy client: route modules are imported during `next build`'s "Collecting page
+// data" phase, before Vercel injects runtime env. Module-scope createClient()
+// throws "supabaseUrl is required" and fails the entire production build.
+let _admin: ReturnType<typeof createClient> | null = null;
+function getAdmin() {
+  if (!_admin) {
+    _admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+  }
+  return _admin;
+}
+const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_t, prop) {
+    return (getAdmin() as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 const HL_KEY = process.env.HIGHLIGHTLY_API_KEY;
 const HL_HOST = 'hockey-highlights-api.p.rapidapi.com';

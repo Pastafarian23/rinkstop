@@ -10,7 +10,19 @@ import { generateSuggestions, COOLDOWN_DAYS } from './username';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+// Lazy client: imported during `next build`'s "Collecting page data" phase,
+// before runtime env exists. Module-scope createClient() throws
+// "supabaseUrl is required" and fails the production build.
+let _admin: ReturnType<typeof createClient> | null = null;
+function getAdmin() {
+  if (!_admin) _admin = createClient(supabaseUrl, supabaseServiceKey);
+  return _admin;
+}
+const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
+  get(_t, prop) {
+    return (getAdmin() as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 export type UsernameAvailability =
   | { available: true }
