@@ -284,6 +284,56 @@ ALTER TABLE public.stamps
 
 ## 2026-10-16 — `2026-10-16_nhl_official_standings.sql`
 
+## 2026-10-22 — `2026-10-22_profile_posts_target_columns_fix.sql`
+
+**Applied:** 2026-10-22 01:2x CDT
+**Applied by:** KiloClaw (main session, webchat)
+**Approval:** Arnel reported dashboard posting broken (text + media) via screenshots
+**Method:** `POST /v1/projects/yszheonqyyskkjoxoexk/database/query` with Management API PAT
+
+**Why:** ALL dashboard posting was broken — text posts returned
+"Could not find the 'target_id' column of 'profile_posts' in the schema
+cache", media posts returned a bare 500. Root cause: the feature migration
+`2026-08-28_profile_posts_destination.sql` was **written but never applied**
+to production (absent from this ledger; columns confirmed missing from the
+live table). `src/app/api/profile-posts/route.ts` selects and inserts
+`target_type` + `target_id` on every read and write, so PostgREST rejected
+every request against its schema cache.
+
+**IMPORTANT — this supersedes 2026-08-28_profile_posts_destination.sql:**
+that file declares `target_id uuid`, which is WRONG for this codebase. The
+column must be TEXT because a single column holds both Clerk IDs
+(`user_3Etd...`, text) and uuid (team_workspaces.id, leagues.id). Same reason
+`user_id` was forced to TEXT by `2026-08-28_profile_posts_user_id_text.sql`.
+**If 2026-08-28_profile_posts_destination.sql is ever applied fresh, it will
+re-add target_id as uuid and break posting again.** The 2026-10-22 file
+should be applied instead; it is idempotent and will no-op on correct schema.
+
+**No FK on target_id:** column is polymorphic across three parent tables
+(user / team_workspaces / leagues), so an FK is impossible. Team+league
+ownership is enforced in the API layer by `resolveAuthorizedTarget()`.
+
+**Pre-flight verified:**
+- Live columns before: id, user_id, body, media_url, created_at, updated_at,
+  deleted_at, sport, media_thumb — no target_type, no target_id
+- 1 row total, 1 distinct author, 0 rows needing deletion
+- team_workspaces.id = uuid, leagues.id = uuid → confirms TEXT is required
+
+**Post-apply verified:**
+- target_id present, data_type=text, is_nullable=NO
+- target_type present, data_type=text
+- 0 rows with null target_id; total rows still 1 (no data loss)
+- Live PostgREST SELECT with both columns → OK
+- Live PostgREST INSERT with both columns → OK (verification row created,
+  then deleted; final count back to 1, original "Hello world" row intact)
+- `notify pgrst, 'reload schema'` fired at end of migration to clear the
+  stale schema cache that produced the original error
+
+**Lesson:** a migration file existing in `supabase/migrations/` does NOT mean
+it was applied. This one sat unapplied for ~8 weeks while the dependent
+application code shipped and shipped. Verify feature migrations against
+`information_schema` before trusting the file list.
+
 **Applied:** 2026-10-16 (subagent task, NHL official standings feed)
 **Applied by:** KiloClaw (subagent, webchat)
 **Trigger:** Item 2 of the Piece G work order — replace compute-standings.ts NHL output with the NHL.com Stats API feed.
