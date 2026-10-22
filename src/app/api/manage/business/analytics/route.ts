@@ -1,6 +1,6 @@
 // src/app/api/manage/business/analytics/route.ts
 //
-// Business Plus feature: Enhanced Analytics API.
+// Organization Pro feature: Enhanced Analytics API.
 //
 //   GET /api/manage/business/analytics?listing_id=<uuid>&days=30
 //     - Returns per-day rollup + 30-day summary for the listing.

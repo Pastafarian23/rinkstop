@@ -1,6 +1,6 @@
 'use client';
 
-// Business dashboard: Enhanced Analytics card (Business Plus feature).
+// Business dashboard: Enhanced Analytics card (Organization Pro feature).
 // Shows 30-day rolling summary + per-day chart.
 
 import { useEffect, useState } from 'react';
@@ -66,10 +66,10 @@ export default function AnalyticsCard({ listingId, userTier, userOrgTier = 'org_
           </h2>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '0.25rem 0 0.75rem' }}>
-          30-day rolling summary, per-day charts, and conversion tracking. Requires Business Plus.
+          30-day rolling summary, per-day charts, and conversion tracking. Requires Organization Pro.
         </p>
         <Link href="/pricing?for=business" style={{ display: 'inline-block', background: '#C8102E', color: '#fff', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}>
-          Upgrade to Business Plus →
+          Upgrade to Organization Pro →
         </Link>
       </div>
     );

@@ -1,6 +1,6 @@
 // src/app/dashboard/manage/team/[id]/programs/[programId]/edit/page.tsx
 //
-// WS38 - Club Starter team-registration-management.
+// WS38 - Organization Plus team-registration-management.
 //
 // Edit an existing program. Loads the team_events row + claim check, then
 // hands off to the shared ProgramForm.

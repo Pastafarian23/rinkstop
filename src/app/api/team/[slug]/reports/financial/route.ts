@@ -1,7 +1,7 @@
 /**
  * /api/team/[slug]/reports/financial
  *
- * Phase 1c-3 (Financial Reporting — Club Pro).
+ * Phase 1c-3 (Financial Reporting — Organization Pro).
  *
  * GET: returns aggregated financial data for the org.
  *   Query params:
@@ -9,8 +9,8 @@
  *   Returns:
  *     { ok, summary: {...}, by_status: [...], recent_payments: [...] }
  *
- * Tier-gated on Club Pro+ (matches the "Financial reporting" promise on
- * /pricing for Club Pro).
+ * Tier-gated on Organization Pro+ (matches the "Financial reporting" promise on
+ * /pricing for Organization Pro).
  */
 
 import { NextRequest, NextResponse } from 'next/server';

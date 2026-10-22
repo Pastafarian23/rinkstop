@@ -601,7 +601,7 @@ export default function PricingContent({
               {claimEntityType === 'player'
                 ? 'a Verified Hockey Identity (or higher) to claim a player page'
                 : claimEntityType === 'team'
-                  ? 'a Club Starter (or higher) to claim a team page'
+                  ? 'a Organization Plus (or higher) to claim a team page'
                   : 'a RinkStop Pro business plan to claim a rink page'}
               . Operators claim once per listing, then own it for as long as the plan stays active.
             </p>

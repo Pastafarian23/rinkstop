@@ -1,6 +1,6 @@
 // src/app/dashboard/manage/team/[id]/programs/new/page.tsx
 //
-// WS38 - Club Starter team-registration-management.
+// WS38 - Organization Plus team-registration-management.
 //
 // New program page. Loads the workspace + claim check, then renders the
 // shared client form. We don't pre-fill anything — defaults come from the

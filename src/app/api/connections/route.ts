@@ -47,15 +47,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Cannot connect with yourself.' }, { status: 400 });
   }
 
-  // Tier check: caller must be Hockey Passport Plus (personal) or Business Plus (business) to send connection requests.
+  // Tier check: caller must be Hockey Passport Plus (personal) or Organization Pro (business) to send connection requests.
   // DMs are gated so the person on the other end knows they are dealing with a real account.
   const tier = await getUserTier(userId);
   const orgTier = await getUserOrgTier(userId);
-  // Personal: Hockey Passport Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
+  // Personal: Hockey Passport Plus+ (or legacy pro). Business: Organization Plus+ (or legacy business_pro).
   const canInitiate = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!canInitiate) {
     return NextResponse.json(
-      { error: 'Hockey Passport Plus or Business Plus membership required to send connection requests.', currentTier: tier },
+      { error: 'Hockey Passport Plus or Organization Pro membership required to send connection requests.', currentTier: tier },
       { status: 403 }
     );
   }

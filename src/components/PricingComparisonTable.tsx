@@ -358,7 +358,7 @@ export default function PricingComparisonTable() {
 
       <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: '1rem' }}>
         Need business / team plans?{' '}
-        <Link href="/pricing#business" style={{ color: '#FFB81C' }}>See Club Starter, Club Pro, and League →</Link>
+        <Link href="/pricing#business" style={{ color: '#FFB81C' }}>See Organization Plus, Pro, and Elite →</Link>
       </p>
     </div>
   );

@@ -6,7 +6,7 @@
  * GET returns the career stats (from highlightly_career_stats) plus achievement
  * milestones for a single player.
  *
- * Tier gate: Hockey Passport Plus+ OR Business Listing+ (matches the Family Hub gate).
+ * Tier gate: Hockey Passport Plus+ OR Organization Plus+ (matches the Family Hub gate).
  * Ownership: caller must manage this player via managed_profiles.
  */
 

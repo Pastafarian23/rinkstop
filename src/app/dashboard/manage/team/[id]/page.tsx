@@ -104,7 +104,7 @@ export default async function ManageTeamPage({ params }: PageProps) {
         <UpgradePrompt
           forGroup="organization"
           entityLabel="team"
-          requiredTier="Club Starter"
+          requiredTier="Organization Plus"
           userCurrentTier={userTier === 'free' ? undefined : userTier}
         />
       )}
@@ -131,7 +131,7 @@ export default async function ManageTeamPage({ params }: PageProps) {
 }
 
 /**
- * ProgramsCard (WS38 — Club Starter team-registration-management)
+ * ProgramsCard (WS38 — Organization Plus team-registration-management)
  *
  * Summary tile below the team entity editor. Shows program + recent RSVP
  * counts and routes to the programs list. Card style mirrors the rink

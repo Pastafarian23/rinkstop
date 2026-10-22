@@ -68,7 +68,7 @@ export default async function LeadsPage() {
       </div>
 
       {/*
-        Show upgrade nudge to anyone below Business Plus (the top business tier
+        Show upgrade nudge to anyone below Organization Pro (the top business tier
         that has featured placement). tierAtLeast handles legacy aliases too.
       */}
       {!tierAtLeast(claimantOrgTier, 'org_pro') && (

@@ -12,7 +12,7 @@
  *   Body: { recipient_user_id, body }
  *   Returns: { ok: true, thread_id, message }
  *
- * Tier gate: the SENDER must be on Hockey Passport Plus+ or Business Plus+ (matches
+ * Tier gate: the SENDER must be on Hockey Passport Plus+ or Organization Pro+ (matches
  *   the "Advanced messaging" promise on /pricing). Receiving is free.
  */
 
@@ -35,7 +35,7 @@ export const runtime = 'nodejs';
 // Phase 1c-1 tier gate — per Arnel 2026-07-07 correction: ALL paid tiers can
 // send direct messages. Hockey Passport ($24.99/yr) is the floor. The
 // 'advanced' features (group DMs, attachments) are v2 and will gate at
-// Hockey Passport Plus+ / Business Plus+ separately. For now, basic 1:1 DMs are
+// Hockey Passport Plus+ / Organization Pro+ separately. For now, basic 1:1 DMs are
 // available to every tier that has spent money.
 function canDM(tier: string | null | undefined, orgTier?: string | null): boolean {
   return (

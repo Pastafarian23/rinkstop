@@ -1,6 +1,6 @@
 // src/app/api/manage/business/promotions/route.ts
 //
-// Business Plus feature: Promotions API.
+// Organization Pro feature: Promotions API.
 //
 //   GET  /api/manage/business/promotions?listing_id=<uuid>
 //     - List all promotions for the authenticated user's listing.
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Not the listing owner' }, { status: 403 });
   }
 
-  // Tier check: must be Business Plus or higher.
+  // Tier check: must be Organization Pro or higher.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('org_tier')

@@ -1,12 +1,12 @@
 // src/app/api/v1/org/[id]/route.ts
 //
-// Club Elite feature: API access.
+// Organization Elite feature: API access.
 //   GET /api/v1/org/[id]            -> public org profile (requires a valid org key)
 //   GET /api/v1/org/[id]/players    -> org's roster/RSVP data (requires a valid org key)
 //
 // Auth (2026-10-22, fixed): a valid, unrevoked x-api-key issued FOR THIS ORG.
 // Previously this route documented key auth in its header comment but never
-// verified it — it only checked `is_published`, so the Club Elite "API access"
+// verified it — it only checked `is_published`, so the Organization Elite "API access"
 // feature was advertised on a $999 plan and enforced nowhere. Verification now
 // lives in src/lib/api-keys.ts (verifyOrgApiKey) and fails closed on DB error.
 //
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const verification = await verifyOrgApiKey(extractPresentedKey(req), id);
   if (!verification.ok) return apiKeyUnauthorized(verification.reason);
 
-  // Only return fields the org has explicitly published via Club Elite.
+  // Only return fields the org has explicitly published via Organization Elite.
   // Column names: the location columns on team_workspaces are `home_city` /
   // `home_country` — there is no `country` / `city` column. Selecting the
   // wrong names made this route 500 with "column team_workspaces.country

@@ -893,7 +893,7 @@ export default async function Home() {
           equal visual prominence on the homepage. The homepage should sell
           the ecosystem, not force visitors to understand the entire
           pricing architecture." Three entry-tier cards (Free / Hockey
-          Passport / Business Listing) with a single "Compare all 9 plans"
+          Passport / Organization Plus) with a single "Compare all 9 plans"
           link at the bottom. The full grid lives at /pricing. */}
       <section style={{ background: 'linear-gradient(180deg, #0D1117 0%, #041E42 100%)', padding: 'clamp(2.5rem, 6vw, 4rem) 0' }}>
         <div className="container">
@@ -937,7 +937,7 @@ export default async function Home() {
               },
               {
                 tier: 'business_listing',
-                label: 'Business Listing',
+                label: 'Organization Plus',
                 price: '$99',
                 period: '/ year',
                 color: '#14B8A6',

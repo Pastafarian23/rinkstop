@@ -62,7 +62,7 @@ const sections: Array<{
       },
       {
         q: 'What is a "public profile" and where does it live?',
-        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Hockey Passport / Hockey Passport Plus / Club Starter / Club Pro / Club Elite / League / Federation / Business Listing / Business Plus). An identity-verified checkmark - a navy-and-gold mark separate from your tier - means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
+        a: 'Every RinkStop account has a public profile page at /profile/[username]. You choose your own username during sign-up (e.g., /profile/rinkstophelper). Other users can see your display name, avatar, bio, location, and membership tier. Tiers are shown as text pills (Free / Hockey Passport / Hockey Passport Plus / Organization Plus / Organization Pro / Organization Elite / League / Federation / Organization Plus / Organization Pro). An identity-verified checkmark - a navy-and-gold mark separate from your tier - means the account holder has verified their government ID through RinkStop. Founding Members get a special badge. You control what appears in your bio and location; avatar and name are set via the Clerk UserButton.',
       },
       {
         q: 'What are the username rules?',
@@ -101,7 +101,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What membership tiers are available?',
-        a: 'RinkStop has ten tiers across three groups: Individuals (Free, Hockey Passport, Hockey Passport Plus), Organizations (Club Starter, Club Pro, Club Elite, League, Federation), and Businesses (Business Listing, Business Plus). The first 500 paid members get a permanent Founding Member badge. See the full tier table with caps, features, and pricing at /pricing.',
+        a: 'RinkStop has eight tiers across two groups: Individuals (Free, Hockey Passport, Hockey Passport Plus) and Organizations (Free, Plus, Pro, Elite, Enterprise). The first 500 paid members get a permanent Founding Member badge. See the full tier table with caps, features, and pricing at /pricing.',
       },
       {
         q: 'How do I upgrade from Free to a paid tier?',
@@ -152,7 +152,7 @@ const sections: Array<{
       },
       {
         q: 'I run a rink, team, or league. Which tier is right for me?',
-        a: 'Club Starter covers one small club with up to 30 players. Club Pro covers up to 150 players with multiple teams. Club Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing. New rink operators should also read How to Choose a Learn-to-Play Program at /learn/choosing-a-program/.',
+        a: 'Organization Plus covers one small club with up to 30 players. Organization Pro covers up to 150 players with multiple teams. Organization Elite covers unlimited teams with advanced analytics and custom branding. Federation is custom for organizations larger than that. Lead capture is included on every claimed listing regardless of tier. See the full comparison at /pricing. New rink operators should also read How to Choose a Learn-to-Play Program at /learn/choosing-a-program/.',
       },
       {
         q: 'I am a parent. Can I manage my kid\'s profile?',
@@ -253,7 +253,7 @@ const sections: Array<{
     qa: [
       {
         q: 'What is Family Hub?',
-        a: 'Family Hub is a section of your dashboard that lives at /dashboard/family. It is part of Hockey Passport Plus and Business Plus tiers. It lets a parent link unlimited children (managed_profiles), and view per-child data in one place: Hockey Passport, schedule, payments, achievements, career timeline, photos, videos, and secure documents. The hub is built for parents managing multiple youth players — no more logging into each kid separately.',
+        a: 'Family Hub is a section of your dashboard that lives at /dashboard/family. It is part of Hockey Passport Plus and Organization Pro tiers. It lets a parent link unlimited children (managed_profiles), and view per-child data in one place: Hockey Passport, schedule, payments, achievements, career timeline, photos, videos, and secure documents. The hub is built for parents managing multiple youth players — no more logging into each kid separately.',
       },
       {
         q: 'Who is Family Hub for?',
@@ -261,7 +261,7 @@ const sections: Array<{
       },
       {
         q: 'How do I link a child to my Family Hub?',
-        a: 'Sign in with Hockey Passport Plus or Business Plus, go to /dashboard/family, and use the Family Search box to find your child by name. If they don\'t have a RinkStop profile yet, you can create one from the same flow. Linking creates a managed_profiles row tied to your user_id — the child cannot accept or decline the link, but they can see it on their own profile.',
+        a: 'Sign in with Hockey Passport Plus or Organization Pro, go to /dashboard/family, and use the Family Search box to find your child by name. If they don\'t have a RinkStop profile yet, you can create one from the same flow. Linking creates a managed_profiles row tied to your user_id — the child cannot accept or decline the link, but they can see it on their own profile.',
       },
       {
         q: 'Can I unlink a child?',
@@ -277,7 +277,7 @@ const sections: Array<{
       },
       {
         q: 'What is the Family Setup Wizard?',
-        a: 'When you first sign in to Hockey Passport Plus or Business Plus with kids to link, a setup wizard walks you through linking each child and importing any existing data. You can dismiss it and run it again from /dashboard/family if you skipped it the first time.',
+        a: 'When you first sign in to Hockey Passport Plus or Organization Pro with kids to link, a setup wizard walks you through linking each child and importing any existing data. You can dismiss it and run it again from /dashboard/family if you skipped it the first time.',
       },
     ],
   },
@@ -373,11 +373,11 @@ const sections: Array<{
     qa: [
       {
         q: 'How do I send a direct message (DM) to another user?',
-        a: 'Hockey Passport Plus, Business Plus, Club Elite, League, and Federation tier members can DM each other. Free, Hockey Passport, Business Listing, and lower Club tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
+        a: 'Hockey Passport Plus, Organization Pro, Organization Elite, and Organization Enterprise tier members can DM each other. Free, Hockey Passport, Organization Plus, and lower Club tiers can read messages but cannot initiate new conversations. On any user\'s public profile page, click "Send connection request". Once they accept, you can message them from /dashboard/messages.',
       },
       {
         q: 'Why do I need a Pro tier to DM?',
-        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Hockey Passport Plus, Business Plus, Club Elite, League, or Federation) so the person on the other end knows they are dealing with a real account, not a throwaway.',
+        a: 'Identity. Anyone can sign up for Free and browse listings, but DMs require a paid tier (Hockey Passport Plus, Organization Pro, Organization Elite, or Organization Enterprise) so the person on the other end knows they are dealing with a real account, not a throwaway.',
       },
       {
         q: 'How do connection requests work?',
@@ -400,7 +400,7 @@ const sections: Array<{
     qa: [
       {
         q: 'How can my league or team get featured on RinkStop?',
-        a: 'Reach out at /partner or email support@rinkstop.com with your story. Business Plus and Club Elite members get automatic Featured Listing rotation in their city. Non-Premium members can be considered for editorial coverage in /highlights.',
+        a: 'Reach out at /partner or email support@rinkstop.com with your story. Organization Pro and Organization Elite members get automatic Featured Listing rotation in their city. Non-Premium members can be considered for editorial coverage in /highlights.',
       },
       {
         q: 'How do I advertise on RinkStop?',

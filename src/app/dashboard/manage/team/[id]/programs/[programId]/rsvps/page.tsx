@@ -1,6 +1,6 @@
 // src/app/dashboard/manage/team/[id]/programs/[programId]/rsvps/page.tsx
 //
-// WS38 - Club Starter team-registration-management.
+// WS38 - Organization Plus team-registration-management.
 //
 // RSVP list page for a single program. Loads RSVPs + the user profiles that
 // match their user_ids (for display names). Hands off to the client wrapper

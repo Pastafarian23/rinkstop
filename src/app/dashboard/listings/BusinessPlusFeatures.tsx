@@ -1,4 +1,4 @@
-// Business Plus features wrapper — picks the user's primary listing
+// Organization Pro features wrapper — picks the user's primary listing
 // and renders PromotionsCard + AnalyticsCard for it.
 
 import { supabaseAdmin } from '@/lib/supabase';

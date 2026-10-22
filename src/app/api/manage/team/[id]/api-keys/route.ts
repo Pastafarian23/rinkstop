@@ -1,6 +1,6 @@
 // src/app/api/manage/team/[id]/api-keys/route.ts
 //
-// Club Elite feature: API key management.
+// Organization Elite feature: API key management.
 //   GET   /api/manage/team/[id]/api-keys           -> list keys (without secrets)
 //   POST  /api/manage/team/[id]/api-keys           -> create new key (returns plaintext once)
 //   DELETE /api/manage/team/[id]/api-keys/[keyId]  -> revoke

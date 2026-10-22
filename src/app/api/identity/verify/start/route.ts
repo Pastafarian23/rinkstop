@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: 'tier_required',
-          message: 'Identity verification requires Hockey Passport tier (Personal) or Business Listing tier.',
+          message: 'Identity verification requires Hockey Passport tier (Personal) or Organization Plus tier.',
           current_tier: tier,
           upgrade_url: '/pricing',
         },

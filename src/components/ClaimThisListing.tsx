@@ -187,7 +187,7 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={descriptionStyle}>
-              Claim it now — claiming is free. Hockey Passport ({formatTierPrice('verified_identity')}/yr) adds the Hockey Passport, payments, and messaging. Paid tiers like Club Pro (up to 150 players) and Business Plus (multiple listings) add more claims and org tools.
+              Claim it now — claiming is free. Hockey Passport ({formatTierPrice('verified_identity')}/yr) adds the Hockey Passport, payments, and messaging. Paid org tiers like Organization Pro (up to 150 players) and Organization Elite (multiple listings) add more claims and org tools.
             </div>
           </div>
         </div>
