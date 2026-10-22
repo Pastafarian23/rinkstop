@@ -262,12 +262,19 @@ function extractYouTubeId(url) {
   // comparison survives across processes.
   const signature = `${total}:${published}:${flagged}:${unverifiable}:${errors}`;
   const stateFile = process.env.PUBLISH_STATE_FILE || '/tmp/auto-publish-state.json';
+
+  // A --limit=N run only inspects a SUBSET of the drafts, so its counters are
+  // not comparable to a full pass and must never be stored as the steady-state
+  // baseline. Writing a partial signature makes the next full run look
+  // "changed" (false positive) and re-introduces the duplicate-report spam
+  // this change detection was added to eliminate.
+  const isFullRun = !limit;
   let previousSignature = null;
   try {
     previousSignature = JSON.parse(require('fs').readFileSync(stateFile, 'utf8')).signature;
   } catch (e) { /* no prior state */ }
 
-  const countsChanged = previousSignature !== null && previousSignature !== signature;
+  const countsChanged = isFullRun && previousSignature !== null && previousSignature !== signature;
   const changed = published > 0 || errors > 0 || countsChanged;
 
   const result = {
@@ -281,9 +288,11 @@ function extractYouTubeId(url) {
     signature,
   };
 
-  try {
-    require('fs').writeFileSync(stateFile, JSON.stringify({ signature, timestamp: result.timestamp }, null, 2));
-  } catch (e) { /* non-fatal */ }
+  if (isFullRun) {
+    try {
+      require('fs').writeFileSync(stateFile, JSON.stringify({ signature, timestamp: result.timestamp }, null, 2));
+    } catch (e) { /* non-fatal */ }
+  }
 
   // Only emit a notice when something actually happened.
   // Quiet cycles = 0 drafts, 0 errors. Save noise.
