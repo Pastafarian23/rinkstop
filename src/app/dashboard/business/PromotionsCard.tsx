@@ -2,7 +2,7 @@
 
 // Business dashboard: Promotions management card.
 // Lets the user create, pause, and delete promotion codes for a listing.
-// Requires Business Plus tier (gated server-side in the API; if the
+// Requires Organization Pro tier (gated server-side in the API; if the
 // API returns 402, the card shows the upgrade prompt).
 
 import { useEffect, useState } from 'react';
@@ -104,13 +104,13 @@ export default function PromotionsCard({ listingId, userTier, userOrgTier = 'org
           </h2>
         </div>
         <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '0.25rem 0 0.75rem' }}>
-          Create coupon codes for your customers. Requires Business Plus ($299/yr).
+          Create coupon codes for your customers. Requires Organization Pro ($299/yr).
         </p>
         <Link
           href="/pricing?for=business"
           style={{ display: 'inline-block', background: '#C8102E', color: '#fff', padding: '0.5rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
         >
-          Upgrade to Business Plus →
+          Upgrade to Organization Pro →
         </Link>
       </div>
     );

@@ -1,6 +1,6 @@
 // src/app/api/manage/team/[id]/branding/route.ts
 //
-// Club Elite feature: Custom branding.
+// Organization Elite feature: Custom branding.
 //   GET  /api/manage/team/[id]/branding  -> returns the team's branding record
 //   PUT  /api/manage/team/[id]/branding  -> updates branding fields
 //

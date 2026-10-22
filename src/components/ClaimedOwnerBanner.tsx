@@ -7,8 +7,8 @@
  * for the entity type.
  *
  * Tier suggestion logic (per Arnel 2026-10-01 spec):
- *   rink    → Business Listing → Business Plus
- *   team    → Club Starter → Club Pro → Club Elite
+ *   rink    → Organization Plus → Organization Pro
+ *   team    → Organization Plus → Organization Pro → Organization Elite
  *   league  → League plan
  *   player  → Verified Identity → Identity Plus
  *

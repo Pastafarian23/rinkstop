@@ -163,16 +163,16 @@ export async function POST(
     return NextResponse.json({ error: 'Thread not found.' }, { status: 404 });
   }
 
-  // Tier check: Hockey Passport Plus (personal) or Business Plus (business) required to send messages.
+  // Tier check: Hockey Passport Plus (personal) or Organization Pro (business) required to send messages.
   // Connection requests are gated at /api/connections, but we re-check here
   // so users who somehow got into the thread without proper tier are blocked.
   const tier = await getUserTier(userId);
   const orgTier = await getUserOrgTier(userId);
-  // Personal: Hockey Passport Plus+ (or legacy pro). Business: Business Listing+ (or legacy business_pro).
+  // Personal: Hockey Passport Plus+ (or legacy pro). Business: Organization Plus+ (or legacy business_pro).
   const canSendMessage = tierAtLeastSameTrack(tier, 'identity_plus') || tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!canSendMessage) {
     return NextResponse.json(
-      { error: 'Hockey Passport Plus or Business Plus membership required to send messages.', currentTier: tier },
+      { error: 'Hockey Passport Plus or Organization Pro membership required to send messages.', currentTier: tier },
       { status: 403 }
     );
   }

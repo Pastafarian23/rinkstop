@@ -1,6 +1,6 @@
 // src/app/dashboard/manage/team/[id]/programs/page.tsx
 //
-// WS38 - Club Starter team-registration-management.
+// WS38 - Organization Plus team-registration-management.
 //
 // Owner list page for the team's programs. Each row is a team_events row
 // scoped to this team_workspaces.id.

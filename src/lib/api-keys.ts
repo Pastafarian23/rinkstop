@@ -1,6 +1,6 @@
 // src/lib/api-keys.ts
 //
-// Verification for RinkStop's paid public API (Club Elite "API access").
+// Verification for RinkStop's paid public API (Organization Pro "API access").
 //
 // HISTORY / WHY THIS FILE EXISTS
 // Keys could already be ISSUED via /api/manage/team/[id]/api-keys (stored

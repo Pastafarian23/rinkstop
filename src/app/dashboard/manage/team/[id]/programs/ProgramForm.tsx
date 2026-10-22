@@ -1,6 +1,6 @@
 // src/app/dashboard/manage/team/[id]/programs/ProgramForm.tsx
 //
-// WS38 - Club Starter team-registration-management.
+// WS38 - Organization Plus team-registration-management.
 //
 // Shared client form for create + edit of a team_events row.
 // Mirrors the rink-programming new/edit form layout but uses the actual

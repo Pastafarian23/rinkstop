@@ -4,7 +4,7 @@
  * IdentityClient — the actual UI for /dashboard/identity
  *
  * States:
- *   - canVerify=false → upgrade CTA (Hockey Passport or Business Listing+ required)
+ *   - canVerify=false → upgrade CTA (Hockey Passport or Organization Plus+ required)
  *   - status='active'  → "Identity verified" with date + expiry
  *   - status='expired' → "Re-verify" CTA
  *   - status='never_verified' OR 'in_progress' → "Verify" CTA + iframe after start
@@ -239,7 +239,7 @@ export default function IdentityClient({
       <div style={{ maxWidth: 720 }}>
         <h1 style={titleStyle}>Identity verification</h1>
         <p style={bodyStyle}>
-          Identity verification is available on <strong>Hockey Passport</strong> (personal) or <strong>Business Listing</strong> (business). It costs you $0 — the platform absorbs the fee.
+          Identity verification is available on <strong>Hockey Passport</strong> (personal) or <strong>Organization Plus</strong> (business). It costs you $0 — the platform absorbs the fee.
         </p>
         <div style={cardStyle}>
           <p style={{ ...bodyStyle, marginBottom: '1.25rem' }}>

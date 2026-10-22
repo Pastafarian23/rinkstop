@@ -3,7 +3,7 @@
 // Runs every 5 minutes. Exercises supabaseAdmin + supabase + Stripe env vars
 // to catch the class of bugs that broke the dashboard / pricing on 2026-08-26:
 //   - Module imports but throws at runtime (PR #169 fail-loud)
-//   - Env vars pointing to wrong Stripe price IDs (Club Starter -> $1999)
+//   - Env vars pointing to wrong Stripe price IDs (Organization Plus -> $1999)
 // Catches failures within 5 minutes instead of waiting for a user to find them.
 // Alerts via Telegram on any failure.
 

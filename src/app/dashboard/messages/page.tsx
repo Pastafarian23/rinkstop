@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 // Phase 1c-1 tier gate — per Arnel 2026-07-07 correction: ALL paid tiers can
 // send direct messages. Hockey Passport ($24.99/yr) is the personal-track
-// floor; Business Listing ($99/yr) is the business-track floor. Free users
+// floor; Organization Plus ($99/yr) is the business-track floor. Free users
 // see the inbox + receive messages but cannot compose.
 function canDM(tier: string | null | undefined, orgTier?: string | null): boolean {
   return (

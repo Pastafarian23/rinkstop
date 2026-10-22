@@ -683,7 +683,7 @@ function PhotoManager({ listingId, photos, onChange }: { listingId: string | nul
   );
 }
 
-// Phase 1c-2: Featured placement toggle. Tier-gated on Business Plus+.
+// Phase 1c-2: Featured placement toggle. Tier-gated on Organization Pro+.
 // Free feature in v1 (no payment); v2 will gate behind a payment flow.
 function FeatureButton({ listing, userTier, userOrgTier, isFoundingMember, onChange }: { listing: Listing; userTier: string; userOrgTier: string; isFoundingMember: boolean; onChange: () => void }) {
   const [busy, setBusy] = useState(false);

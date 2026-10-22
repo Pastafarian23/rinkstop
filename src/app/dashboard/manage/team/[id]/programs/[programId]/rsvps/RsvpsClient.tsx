@@ -1,6 +1,6 @@
 // src/app/dashboard/manage/team/[id]/programs/[programId]/rsvps/RsvpsClient.tsx
 //
-// WS38 - Club Starter team-registration-management.
+// WS38 - Organization Plus team-registration-management.
 //
 // Client-side wrapper around the RSVP list: approve/reject/waitlist single
 // rows, bulk approve selected rows, and CSV export. The server page above

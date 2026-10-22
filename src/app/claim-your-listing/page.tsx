@@ -74,14 +74,14 @@ type ClaimType = 'rink' | 'team' | 'player';
 const HEADER_COPY: Record<ClaimType, { eyebrow: string; sub: string; placeholder: string; bannerLabel: string; bannerPrice: string }> = {
   rink: {
     eyebrow: 'For Rink Operators',
-    sub: 'Search for your rink below. Claiming is free — verification is also free for every profile type. Upgrade to Business Listing ($99/yr) only if you want lead capture, photos, hours, and other tools.',
+    sub: 'Search for your rink below. Claiming is free — verification is also free for every profile type. Upgrade to Organization Plus ($99/yr) only if you want lead capture, photos, hours, and other tools.',
     placeholder: 'Type your rink name or city…',
     bannerLabel: 'Rink operators',
     bannerPrice: 'a free verified business profile',
   },
   team: {
     eyebrow: 'For Team & Club Administrators',
-    sub: 'Search for your team below. Claiming is free — verification is also free for every profile type. Upgrade to Club Starter ($149/yr) only if you want roster management, dues collection, and other tools.',
+    sub: 'Search for your team below. Claiming is free — verification is also free for every profile type. Upgrade to Organization Plus ($99/yr) only if you want roster management, dues collection, and other tools.',
     placeholder: 'Type your team name or city…',
     bannerLabel: 'Team & club admins',
     bannerPrice: 'a free verified team profile',

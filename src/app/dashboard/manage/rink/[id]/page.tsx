@@ -178,7 +178,7 @@ export default async function ManageRinkPage({ params }: PageProps) {
         <UpgradePrompt
           forGroup="organization"
           entityLabel="rink"
-          requiredTier="Club Starter"
+          requiredTier="Organization Plus"
           userCurrentTier={userTier === 'free' ? undefined : userTier}
         />
       )}

@@ -1,6 +1,6 @@
 // src/app/api/v1/org/[id]/players/route.ts
 //
-// Club Elite feature: API access — org roster / RSVP data.
+// Organization Elite feature: API access — org roster / RSVP data.
 //
 // Auth (2026-10-22, fixed): requires a valid, unrevoked x-api-key issued FOR
 // THIS ORG. Previously this route only checked `is_published`; the documented

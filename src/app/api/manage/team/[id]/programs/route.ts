@@ -1,6 +1,6 @@
 // src/app/api/manage/team/[id]/programs/route.ts
 //
-// WS38 - Club Starter team-registration-management.
+// WS38 - Organization Plus team-registration-management.
 //
 // Owner API for the team's programs list / create.
 //

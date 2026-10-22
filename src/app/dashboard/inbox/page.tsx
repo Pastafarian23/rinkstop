@@ -330,7 +330,7 @@ export default async function InboxPage() {
             </div>
           )}
 
-          {/* Show upgrade nudge to anyone below Business Plus. tierAtLeast handles legacy aliases. */}
+          {/* Show upgrade nudge to anyone below Organization Pro. tierAtLeast handles legacy aliases. */}
           {!tierAtLeast(listing.orgTier, 'org_pro') && (
             <div style={{ background: 'linear-gradient(135deg, rgba(200,16,46,0.12), rgba(255,184,28,0.08))', border: '1px solid rgba(200,16,46,0.3)', borderRadius: 12, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
               <div>

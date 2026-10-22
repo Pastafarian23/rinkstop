@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   // avoid brand-spam flags in SERPs.
   title: { absolute: 'Pricing — RinkStop' },
   description:
-    'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
+    'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Organization Plus, Organization Pro, Organization Elite, Organization Enterprise for organizations. One Verified Hockey Identity per person.',
   alternates: { canonical: 'https://rinkstop.com/pricing' },
   robots: { index: true, follow: true },
   openGraph: withDefaultOg({
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
+      'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Organization Plus, Organization Pro, Organization Elite, Organization Enterprise for organizations. One Verified Hockey Identity per person.',
     url: 'https://rinkstop.com/pricing',
     siteName: 'RinkStop',
     type: 'website',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pricing — RinkStop',
     description:
-      'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Club Starter, Club Pro, Club Elite, League, Federation for organizations; Business Listing, Business Plus for businesses. One Verified Hockey Identity per person.',
+      'RinkStop pricing — Free, Hockey Passport, Hockey Passport Plus for individuals; Organization Plus, Organization Pro, Organization Elite, Organization Enterprise for organizations. One Verified Hockey Identity per person.',
   },
 };
 

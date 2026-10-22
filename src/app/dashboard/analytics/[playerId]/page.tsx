@@ -118,7 +118,7 @@ export default async function PlayerAnalyticsPage({
   const userId = await resolveCanonicalUserId(session.userId, userEmail);
   if (!userId) redirect('/login');
 
-  // Tier gate: Hockey Passport Plus+ OR Business Listing+
+  // Tier gate: Hockey Passport Plus+ OR Organization Plus+
   const tier = await getUserTier(userId);
   const orgTier = await getUserOrgTier(userId);
   if (

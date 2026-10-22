@@ -18,7 +18,7 @@
  * Client component for sendBeacon. Server-side would lose the beacon.
  *
  * Variant 'passport' (default): paid points at $24.99/yr Verified Identity
- * Variant 'club': paid points at $149/yr Club Starter
+ * Variant 'club': paid points at the Organization Plus price
  */
 
 import Link from 'next/link';

@@ -49,28 +49,28 @@ const COMPARISON = [
     category: 'Team & club management',
     rows: [
       {
-        ours: { tier: 'Club Starter', price: '$149/yr' },
+        ours: { tier: 'Organization Plus', price: '$99/yr' },
         them: { name: 'SportsEngine HQ', price: '$696/yr' },
-        delta: '79% cheaper',
+        delta: '86% cheaper',
         note: 'Both products cover the same core workflow: team management, registration, scheduling, attendance, payments, and a team website. SportsEngine HQ adds uniform ordering and background checks — useful for some clubs, irrelevant for most. The 4.7x price difference reflects SportsEngine\'s scale advantage with USA Hockey affiliation, not a feature gap most clubs will notice.',
       },
       {
-        ours: { tier: 'Club Pro', price: '$399/yr' },
+        ours: { tier: 'Organization Pro', price: '$299/yr' },
         them: { name: 'Hudl Silver', price: '$1,000/yr' },
-        delta: '60% cheaper',
-        note: 'Different focus. Hudl Silver is video breakdown and analytics for competitive teams — coaches upload game film, players get clip libraries. Club Pro on RinkStop is operations: coach and volunteer management, equipment tracking, financial reporting, player transfers. If you need video, you need Hudl. If you need to run a club, Club Pro at $399 vs Hudl Silver at $1,000 is a real comparison.',
+        delta: '70% cheaper',
+        note: 'Different focus. Hudl Silver is video breakdown and analytics for competitive teams — coaches upload game film, players get clip libraries. Organization Pro on RinkStop is operations: coach and volunteer management, equipment tracking, financial reporting, player transfers. If you need video, you need Hudl. If you need to run a club, Organization Pro at $299 vs Hudl Silver at $1,000 is a real comparison.',
       },
       {
-        ours: { tier: 'Club Elite', price: '$999/yr' },
+        ours: { tier: 'Organization Elite', price: '$599/yr' },
         them: { name: 'Hudl Gold', price: '$1,600/yr' },
-        delta: '38% cheaper',
-        note: 'Club Elite covers unlimited teams, advanced analytics, custom branding, API access, bulk imports, and multi-location support — built for clubs running 5+ teams or multiple geographic chapters. Hudl Gold adds elite-level video breakdown and recruiting tools. If your club is 5+ teams and you do not need Hudl\'s video ecosystem, Club Elite at $999 is the closest equivalent at 38% less.',
+        delta: '63% cheaper',
+        note: 'Organization Elite covers unlimited teams, advanced analytics, custom branding, API access, bulk imports, and multi-location support — built for clubs running 5+ teams or multiple geographic chapters. Hudl Gold adds elite-level video breakdown and recruiting tools. If your club is 5+ teams and you do not need Hudl\'s video ecosystem, Organization Elite at $599 is the closest equivalent at 63% less.',
       },
       {
-        ours: { tier: 'League', price: '$1,999/yr' },
+        ours: { tier: 'Organization Enterprise', price: 'Custom' },
         them: { name: 'SportsEngine HQ (league plan)', price: 'Custom (typically $2k-$5k)' },
-        delta: 'Below market',
-        note: 'League-wide management with a dedicated success manager, onboarding, and migration support. Custom pricing for the comparable SportsEngine plan makes a direct dollar comparison impossible — but $1,999 lands below the typical league-plan entry, and the dedicated CSM is the same model used by SportsEngine and LeagueApps at higher price points.',
+        delta: 'Custom pricing',
+        note: 'Federation and league-wide management with a dedicated success manager, onboarding, and migration support. Both sides price this one custom, so a direct dollar comparison is impossible — what matters is that the dedicated CSM, onboarding, and migration model is the same one SportsEngine and LeagueApps charge $2k-$5k for.',
       },
     ],
   },
@@ -78,16 +78,16 @@ const COMPARISON = [
     category: 'Business listings (rink / shop / brand)',
     rows: [
       {
-        ours: { tier: 'Business Listing', price: '$99/yr' },
+        ours: { tier: 'Organization Plus', price: '$99/yr' },
         them: { name: 'Yelp basic', price: '$360-$720/yr' },
         delta: '73-86% cheaper',
         note: 'Verified listing with contact information, lead form, photos, and basic analytics. Yelp\'s basic tier is the closest competitor in feature set — but Yelp\'s audience is general consumers looking for restaurants and home services, not hockey players and rink operators. RinkStop\'s audience is the entire hockey ecosystem. For a rink owner, the conversion rate from RinkStop traffic will be 5-10x Yelp traffic for the same listing.',
       },
       {
-        ours: { tier: 'Business Plus', price: '$299/yr' },
+        ours: { tier: 'Organization Pro', price: '$299/yr' },
         them: { name: 'Yelp Enhanced', price: '$1,080-$2,400/yr' },
-        delta: '73-87% cheaper',
-        note: 'Multi-listing support, featured placement, promotions, messaging, enhanced analytics, and booking support. Yelp\'s Enhanced tier covers similar features, plus advertising spend that doesn\'t apply to a niche audience. BBB accreditation runs $500-$1,000/yr for the trust signal alone, with no marketing features. RinkStop Business Plus at $299/yr is the comparison: full feature set, niche audience, lower price.',
+        delta: '72-88% cheaper',
+        note: 'Multi-listing support, featured placement, promotions, messaging, enhanced analytics, and booking support. Yelp\'s Enhanced tier covers similar features, plus advertising spend that doesn\'t apply to a niche audience. BBB accreditation runs $500-$1,000/yr for the trust signal alone, with no marketing features. RinkStop Organization Pro at $299/yr is the comparison: full feature set, niche audience, lower price.',
       },
     ],
   },
@@ -100,7 +100,7 @@ const FAQ = [
   },
   {
     q: 'Does RinkStop replace SportsEngine, Hudl, or my existing tools?',
-    a: 'For most clubs, no — it complements them. If you already run Hudl for video breakdown, keep Hudl. RinkStop\'s value is the directory + claim + identity layer that those tools do not cover. The exception: very small clubs (under 30 players) who have not committed to a paid management tool yet. For them, RinkStop Club Starter at $149/yr replaces the need for SportsEngine HQ at $696/yr.',
+    a: 'For most clubs, no — it complements them. If you already run Hudl for video breakdown, keep Hudl. RinkStop\'s value is the directory + claim + identity layer that those tools do not cover. The exception: very small clubs (under 30 players) who have not committed to a paid management tool yet. For them, RinkStop Organization Plus at $99/yr replaces the need for SportsEngine HQ at $696/yr.',
   },
   {
     q: 'Is RinkStop\'s pricing in USD?',
@@ -421,7 +421,7 @@ export default function RinkStopVsCompetitors() {
             marginBottom: '0.5rem',
           }}
         >
-          Recommended tier: <strong style={{ color: '#fff' }}>Business Listing ($99/yr)</strong>. Upgrade to Business Plus if you run multiple rinks.
+          Recommended tier: <strong style={{ color: '#fff' }}>Organization Plus ($99/yr)</strong>. Upgrade to Organization Pro if you run multiple rinks.
         </p>
         <p
           style={{
@@ -430,7 +430,7 @@ export default function RinkStopVsCompetitors() {
             lineHeight: 1.7,
           }}
         >
-          <strong style={{ color: '#009650' }}>Worth it.</strong> Business Listing includes a lead-capture form on your rink page. If that form gets you 3-5 league or tournament inquiries per year, and each inquiry converts to one booking worth $300-$2,000 in ice-time revenue, the listing pays for itself with the first booking. Compared to Yelp&apos;s $360-$720/yr for a general-audience listing, RinkStop&apos;s $99/yr reaches the audience that actually books ice time.
+          <strong style={{ color: '#009650' }}>Worth it.</strong> Organization Plus includes a lead-capture form on your rink page. If that form gets you 3-5 league or tournament inquiries per year, and each inquiry converts to one booking worth $300-$2,000 in ice-time revenue, the listing pays for itself with the first booking. Compared to Yelp&apos;s $360-$720/yr for a general-audience listing, RinkStop&apos;s $99/yr reaches the audience that actually books ice time.
         </p>
       </section>
 
@@ -462,7 +462,7 @@ export default function RinkStopVsCompetitors() {
             marginBottom: '0.5rem',
           }}
         >
-          Recommended tier: <strong style={{ color: '#fff' }}>Club Starter ($149/yr)</strong> for under 30 players, or Club Pro for 30-150.
+          Recommended tier: <strong style={{ color: '#fff' }}>Organization Plus ($99/yr)</strong> for under 30 players, or Organization Pro for 30-150.
         </p>
         <p
           style={{
@@ -557,7 +557,7 @@ export default function RinkStopVsCompetitors() {
           marginBottom: '2.5rem',
         }}
       >
-        The competitor we name in each row is the closest feature-for-feature alternative, not necessarily the most expensive. For example, Yelp Enhanced is the closest comparator to Business Plus — same feature categories (lead form, photos, enhanced analytics, featured placement) — even though Hudl at $1,600/yr is more expensive. Comparing on price-per-feature, not just dollar-amount, is what makes the comparison useful.
+        The competitor we name in each row is the closest feature-for-feature alternative, not necessarily the most expensive. For example, Yelp Enhanced is the closest comparator to Organization Pro — same feature categories (lead form, photos, enhanced analytics, featured placement) — even though Hudl at $1,600/yr is more expensive. Comparing on price-per-feature, not just dollar-amount, is what makes the comparison useful.
       </p>
 
       <h2
