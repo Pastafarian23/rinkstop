@@ -334,6 +334,72 @@ it was applied. This one sat unapplied for ~8 weeks while the dependent
 application code shipped and shipped. Verify feature migrations against
 `information_schema` before trusting the file list.
 
+## 2026-10-22 — `2026-10-22_fixture_dedup_audit_rls.sql`
+
+**Applied:** 2026-10-22 04:4x CDT
+**Applied by:** KiloClaw (main session, webchat)
+**Approval:** Arnel — "Okay proceed" (after I proposed it as the one definite, low-risk fix)
+**Method:** `POST /v1/projects/yszheonqyyskkjoxoexk/database/query` with Management API PAT
+
+**Why:** Resolves Supabase's `rls_disabled_in_public` CRITICAL alert
+(raised 2026-10-17: "Anyone with your project URL can read, edit, and
+delete all data in this table because Row-Level Security is not
+enabled"). Same defect independently found during the Singapore traffic
+analysis — Supabase's advisor and that review converged on this table.
+
+**Blast radius before the fix:** RLS off AND all 7 grants to `anon`
+(SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER). The
+anon key ships in client JS by design, so this was reachable by anyone
+who loaded rinkstop.com. Table had 0 rows, but
+`scripts/dedup-fixtures-all-leagues.js` populates it with
+`deleted_row` JSONB snapshots of deleted fixtures (team names, scores,
+dates, venue ids) — a free structured dataset, plus DELETE/TRUNCATE would
+have let an anonymous caller destroy the point-in-time recovery trail
+that makes fixture deletions reversible.
+
+**Pre-flight verified:**
+- `select relname, relrowsecurity ... where relrowsecurity = false`
+  → exactly 2 tables: `fixture_dedup_audit` (ours),
+  `spatial_ref_sys` (PostGIS-owned)
+- `spatial_ref_sys` has 7 anon grants, but is PostGIS internals —
+  **deliberately NOT given RLS**, since RLS-ing it risks breaking
+  geospatial queries. The advisor flags it indiscriminately.
+- Confirmed `scripts/dedup-fixtures-all-leagues.js:28` uses
+  `SUPABASE_SERVICE_ROLE_KEY`, which BYPASSES RLS — so the audit
+  pipeline is unaffected by this change.
+- Confirmed no application code reads this table via a user session
+  (only the script references it), so `authenticated` was also revoked.
+
+**Applied:**
+- `enable row level security` (no policies → anon/authenticated get nothing)
+- `revoke all ... from anon` and `from authenticated`
+- `grant select, insert, update, delete ... to service_role` (explicit,
+  so the table survives the Oct 30 auto-grant change)
+- `notify pgrst, 'reload schema'`
+
+**Post-apply verified:**
+- relrowsecurity = true, policies = 0, anon_grants = 0,
+  auth_grants = 0, service_role_grants = 7
+- anon SELECT → `42501 permission denied for table fixture_dedup_audit`
+- anon INSERT → `42501 permission denied` (was the dangerous write path)
+- anon DELETE → `42501 permission denied` (could have wiped recovery trail)
+- service_role INSERT → OK, SELECT → OK, DELETE → OK (regression check:
+  the dedup script's access path still works)
+- Probe row created then deleted; final row count back to 0
+
+**No SEO / AI-visibility impact.** This is a Postgres permission change
+on a script-only audit table. It does not touch robots.txt, sitemaps,
+middleware, crawler policy, or any publicly-readable content.
+
+**Related (not fixed — needs Arnel's decision):**
+- Every future migration that creates a public table must include
+  explicit GRANTs, because Supabase stops auto-granting Data API access
+  to new public tables on 2026-10-30. `2026-10-16-fixture-dedup-audit.sql`
+  was written under the old assumption and has no GRANTs.
+- `conversion_daily_snapshots` has 0 anon and 0 authenticated grants
+  (service_role only). If any feature reads it client-side it is already
+  broken; worth confirming which.
+
 ## 2026-10-22 — `2026-10-22_post_media_bucket_video.sql`
 
 **Applied:** 2026-10-22 02:2x CDT
