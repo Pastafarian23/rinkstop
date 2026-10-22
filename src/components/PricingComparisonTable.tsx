@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
-import { getMediaAllowance, formatBytes } from '@/lib/media-entitlements';
+import { getMediaAllowance, formatBytes, SHARED_MEDIA_STORAGE_COPY } from '@/lib/media-entitlements';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
 /**
@@ -331,6 +331,42 @@ export default function PricingComparisonTable() {
           </div>
         ))}
 
+        {/* Shared media storage explainer — published policy, see
+            SHARED_MEDIA_STORAGE_COPY in src/lib/media-entitlements.ts */}
+        <div
+          data-shared-media-copy
+          style={{
+            padding: '1.5rem 1.25rem',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(0,0,0,0.3)',
+          }}
+        >
+          <h3
+            style={{
+              fontSize: '0.9375rem',
+              fontWeight: 800,
+              color: '#fff',
+              margin: '0 0 0.6rem',
+              letterSpacing: '0.02em',
+            }}
+          >
+            Shared media storage
+          </h3>
+          {SHARED_MEDIA_STORAGE_COPY.split('\n\n').map((para, i) => (
+            <p
+              key={i}
+              style={{
+                fontSize: '0.8125rem',
+                color: 'rgba(255,255,255,0.6)',
+                lineHeight: 1.6,
+                margin: i === 0 ? '0' : '0.6rem 0 0',
+              }}
+            >
+              {para}
+            </p>
+          ))}
+        </div>
+
         {/* CTA footer */}
         <div
           style={{
@@ -342,7 +378,7 @@ export default function PricingComparisonTable() {
           }}
         >
           <div style={{ padding: '0 1rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>
-            All paid plans renew automatically. Cancel anytime in dashboard.
+            All paid plans renew automatically. To cancel or change plans, email support@rinkstop.com — your plan stays active through the end of your paid period.
           </div>
           <div style={{ textAlign: 'center' }}>
             <Link

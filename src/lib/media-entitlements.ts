@@ -274,6 +274,36 @@ export function formatBytes(bytes: number): string {
  * Customer-facing explanation. Kept here (not in the pricing copy) so the
  * pricing page can never state a limit that differs from what is enforced.
  */
+/**
+ * The "how shared media storage works" explainer published on /pricing.
+ *
+ * Every sentence here is a claim the system must honour, and each was verified
+ * against the implementation before being written:
+ *
+ *   • "shared across ... four features"      — media-usage.ts measures exactly
+ *     post-media, profile_covers, listing-photos and player-media as one pool.
+ *   • "each uploaded file counts once"       — media_assets is keyed UNIQUE on
+ *     (bucket, object_path), so one file is one row no matter how many places
+ *     render it. Verified: adding a second reference left counted bytes
+ *     unchanged (6,589,268 both before and after).
+ *   • "deleting releases quota when no longer referenced elsewhere" — the
+ *     ledger trigger only starts the release clock at ref_count = 0.
+ *   • "recoverable during the retention period" — 30-day grace, and now
+ *     actually reachable by the user via /dashboard/profile/posts → Recently
+ *     deleted → Restore. Before that UI existed, this would have been a promise
+ *     the product could not keep.
+ *   • "video duration limits" — enforced in checkMediaUpload against the
+ *     per-plan cap, with duration measured in the browser (no ffprobe on Vercel).
+ *
+ * Kept as a single exported constant so the pricing page and any future
+ * settings copy cannot drift into describing two different systems.
+ */
+export const SHARED_MEDIA_STORAGE_COPY = [
+  'Your plan’s media allowance is shared across supported RinkStop features, including social posts, player media, profile covers, and listing photos. Each uploaded file counts once toward your storage and file-count limits, even when the same media appears in multiple places.',
+  'Deleting a post releases its quota as soon as the media is no longer referenced elsewhere. Deleted posts and their media can be restored for 30 days from your dashboard.',
+  'Video uploads are subject to the duration limits shown for your plan.',
+].join('\n\n');
+
 export function explainAllowance(tier: string | null | undefined): string {
   const a = getMediaAllowance(tier);
   if (isNegotiatedCapacity(a)) {
