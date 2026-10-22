@@ -334,6 +334,52 @@ it was applied. This one sat unapplied for ~8 weeks while the dependent
 application code shipped and shipped. Verify feature migrations against
 `information_schema` before trusting the file list.
 
+## 2026-10-22 — `2026-10-22_post_media_bucket_video.sql`
+
+**Applied:** 2026-10-22 02:2x CDT
+**Applied by:** KiloClaw (main session, webchat)
+**Approval:** Arnel reported video upload returning a bare "Failed (500)"
+**Method:** `POST /v1/projects/yszheonqyyskkjoxoexk/database/query` with Management API PAT
+
+**Why:** Share Media video upload 500'd on every attempt. The `post-media`
+bucket was image-only:
+    allowed_mime_types = {image/jpeg, image/png, image/webp, image/gif}
+    file_size_limit    = 10MB
+Supabase Storage rejected the file with "mime type video/mp4 is not
+supported" — reproduced directly against the live bucket before changing
+anything. The upload died at the storage layer, before the profile_posts
+insert, so the API returned 500 and the composer showed "Failed (500)".
+
+The 10MB cap was a second independent mismatch: MAX_VIDEO_BYTES in
+`src/app/api/profile-posts/route.ts` is 100MB, so a permitted video over
+10MB would still have failed.
+
+**Fix:** allowed_mime_types += video/mp4, video/quicktime, video/webm;
+file_size_limit raised to 104857600 (100MB) to match the route.
+
+**Pre-flight verified:**
+- `select allowed_mime_types, file_size_limit from storage.buckets where name='post-media'`
+  → images only, 10485760 bytes
+- Direct upload of a real 2s H.264 MP4 → FAIL "mime type video/mp4 is not supported"
+
+**Post-apply verified:**
+- Same upload → OK
+- Public GET on the stored object → 206 Partial Content, content-type video/mp4
+- Probe object removed from the bucket afterward (no test artifacts left)
+
+**Note:** `extractVideoThumbnail()` in the route shells out to `ffmpeg`,
+which does NOT exist on the Vercel serverless runtime. It is wrapped in
+try/catch returning `null`, so uploads degrade gracefully and only the
+thumbnail is skipped. The `media_thumb` column will therefore be NULL for
+videos on production; the feed falls back to rendering the video element
+itself. Not treated as a bug here — ffmpeg-on-Vercel would need a static
+binary or an external service, which is a larger decision than this fix.
+
+**Lesson:** app code and the infra behind it must be validated together.
+The Share Media UI shipped 2026-10-16 while the bucket still rejected
+video on 2026-10-22. Same class as the unapplied profile_posts migration
+hours earlier: neither layer validated the other.
+
 **Applied:** 2026-10-16 (subagent task, NHL official standings feed)
 **Applied by:** KiloClaw (subagent, webchat)
 **Trigger:** Item 2 of the Piece G work order — replace compute-standings.ts NHL output with the NHL.com Stats API feed.
