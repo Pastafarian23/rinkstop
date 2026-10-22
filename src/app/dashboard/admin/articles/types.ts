@@ -7,7 +7,6 @@ export interface PostRow {
   subtitle: string | null;
   status: string;
   human_review_status: string | null;
-  audit_status: string | null;
   last_audit_check_at: string | null;
   last_audit_status: string | null;
   reviewed_at: string | null;
