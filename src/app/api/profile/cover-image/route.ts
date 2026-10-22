@@ -33,6 +33,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import {
+  checkMediaUpload,
+  getMediaAllowance,
+} from '@/lib/media-entitlements';
+import { getMediaEntitlementForUser, pickBetterAllowance } from '@/lib/media-usage';
+import { registerAsset } from '@/lib/media-ledger';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +52,62 @@ const EXT_FOR_MIME: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
 };
+
+/**
+ * Unified media allowance check for cover images.
+ *
+ * This route previously enforced only a per-FILE 5 MB cap. The unified
+ * allowance (total bytes + asset count across post-media, profile_covers,
+ * listing-photos and player-media) was never consulted here, even though
+ * profile_covers objects DO count against it. That is the same gap class just
+ * closed for player-media: a feature that spends a shared pool without ever
+ * checking it.
+ *
+ * A cover is a single image so this is rarely the binding constraint, but
+ * without the check a user at their byte ceiling could still add covers
+ * indefinitely, and the quota the settings screen displays would not match
+ * reality.
+ */
+type AllowanceResult =
+  | { ok: true }
+  | { ok: false; error: string; status: number };
+
+async function checkCoverAllowance(
+  userId: string,
+  fileSize: number,
+): Promise<AllowanceResult> {
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('tier, org_tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const tier = (profile?.tier as string) ?? 'free';
+  const orgTier = (profile?.org_tier as string) ?? 'org_free';
+
+  const { usage, allowance, negotiated } = await getMediaEntitlementForUser(
+    userId,
+    tier,
+    pickBetterAllowance(getMediaAllowance(tier), getMediaAllowance(orgTier)),
+  );
+
+  if (negotiated) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'This account is on negotiated capacity. Contact support@rinkstop.com to add media.',
+    };
+  }
+
+  const decision = checkMediaUpload(
+    allowance,
+    { sizeBytes: fileSize, isVideo: false, durationSeconds: null },
+    usage,
+  );
+  if (!decision.allowed) {
+    return { ok: false, status: 413, error: decision.message };
+  }
+  return { ok: true };
+}
 
 // ---------------------------------------------------------------------------
 // POST — upload a new cover image
@@ -88,6 +150,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Empty file.' }, { status: 400 });
   }
 
+  // Unified allowance check (see checkCoverAllowance for why this was added).
+  // Runs after the per-file cap so an oversized file gets the more specific
+  // error, and before the upload so we never store bytes we will reject.
+  const allowance = await checkCoverAllowance(userId, file.size);
+  if (allowance.ok === false) {
+    return NextResponse.json({ error: allowance.error }, { status: allowance.status });
+  }
+
   const ext = EXT_FOR_MIME[file.type];
   const storagePath = `${userId}/${Date.now()}.${ext}`;
 
@@ -109,6 +179,16 @@ export async function POST(request: NextRequest) {
     .from(BUCKET)
     .getPublicUrl(storagePath);
   const publicUrl = publicUrlData.publicUrl;
+
+  // Register in the quota ledger so the new cover is counted. Best-effort:
+  // the bucket-walk fallback still measures it if this fails.
+  await registerAsset({
+    bucket: BUCKET,
+    objectPath: `${BUCKET}/${storagePath}`,
+    ownerUserId: userId,
+    bytes: file.size,
+    mimeType: file.type,
+  });
 
   // 2. Mark the previous "current" row as replaced (best-effort).
   //    If this fails the history strip will show two "current" rows, which
