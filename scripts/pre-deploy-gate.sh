@@ -293,6 +293,27 @@ if should_run 7; then
   fi
 fi
 
+# ------------------------------------------------------------------ Gate 8
+# Cross-track tier comparison check. Catches the bug class where a
+# PERSONAL-track tier is compared against an ORGANIZATION-track tier
+# (e.g. tierAtLeastSameTrack(personalTier, 'business_listing')). After the
+# 2026-10-22 org tier consolidation that comparison is always false, so a
+# user with an org plan but no personal plan gets locked out of features
+# their org plan unlocks. See memory/2026-10-22-org-tier-audit.md §9.
+if should_run 8; then
+  echo "[8/8] cross-track tier comparison check..."
+  CROSS_TRACK=$(grep -rnE "tierAtLeast(SameTrack)?\([A-Za-z_.]+, *'(business_|club_|league|federation|enterprise)" src/ --include='*.ts' --include='*.tsx' 2>/dev/null | grep -v "^src/app/api/listings/\[id\]/feature/route.ts" || true)
+  if [ -n "$CROSS_TRACK" ]; then
+    fail "cross-track tier comparison found"
+    echo "$CROSS_TRACK" | head -20
+    note "A personal-track tier is being compared to an organization-track tier."
+    note "Read BOTH profiles.tier and profiles.org_tier, then compare each on its own track."
+    note "Use tierAtLeastSameTrack(orgTier, 'org_pro') for org-track gates."
+  else
+    ok "no cross-track tier comparisons"
+  fi
+fi
+
 echo ""
 echo "=== summary ==="
 echo "  passed: $PASSED"
