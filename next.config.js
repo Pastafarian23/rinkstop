@@ -84,6 +84,14 @@ const nextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.stripe.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.googletagmanager.com https://*.googletagservices.com https://*.googletag https://*.googleadservices.com https://*.google-analytics.com https://*.doubleclick.net",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https: https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.googleadservices.com",
+              // 2026-10-22: <video> for posted media was blocked. There was no
+              // media-src, so video fell back to default-src 'self' and every
+              // post-media .mp4 failed with "Media load rejected by URL safety
+              // check" (MEDIA_ELEMENT_ERROR: code 4) — images kept working
+              // only because img-src already allowed *.supabase.co.
+              // blob: is required for local previews before upload; the
+              // Supabase host covers stored media.
+              "media-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co",
               "font-src 'self' data: https://*.clerk.accounts.dev https://*.clerk.com https://fonts.gstatic.com",
               "connect-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://*.supabase.co https://api.stripe.com https://*.highlightly.net wss://*.supabase.co https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.googletagmanager.com https://*.google-analytics.com https://*.doubleclick.net https://*.googleadservices.com",
               "frame-src 'self' https://*.clerk.accounts.dev https://clerk.rinkstop.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://verification.didit.me https://verify.didit.me https://didit.me https://app.didit.me https://*.googlesyndication.com https://*.googletag https://*.doubleclick.net https://googleads.g.doubleclick.net",
