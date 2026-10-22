@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { checkMediaUpload, getMediaAllowance } from '@/lib/media-entitlements';
+import { getMediaEntitlementForUser, pickBetterAllowance } from '@/lib/media-usage';
+import { registerAsset, assetRefFromPublicUrl, attachAssetRef } from '@/lib/media-ledger';
 
 // POST /api/listings/photos
 // FormData: { file: File, listing_id: string }
@@ -59,6 +62,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'too_many_photos', max: 12, current: currentCount }, { status: 400 });
   }
 
+  // Unified media allowance check.
+  //
+  // This route enforced only the per-listing 12-photo cap and a 5 MB per-file
+  // cap. listing-photos objects DO count against the shared allowance, but the
+  // allowance was never consulted — so an owner of many listings could fill the
+  // shared pool without any limit ever being checked. Same gap class just closed
+  // for player-media and profile_covers.
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('tier, org_tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const tier = (profile?.tier as string) ?? 'free';
+  const orgTier = (profile?.org_tier as string) ?? 'org_free';
+  const { usage: mediaUsage, allowance: mediaAllowance, negotiated } =
+    await getMediaEntitlementForUser(
+      userId,
+      tier,
+      pickBetterAllowance(getMediaAllowance(tier), getMediaAllowance(orgTier)),
+    );
+  if (negotiated) {
+    return NextResponse.json(
+      { error: 'negotiated_capacity', message: 'This account is on negotiated capacity. Contact support@rinkstop.com to add media.' },
+      { status: 403 },
+    );
+  }
+  const decision = checkMediaUpload(
+    mediaAllowance,
+    { sizeBytes: file.size, isVideo: false, durationSeconds: null },
+    mediaUsage,
+  );
+  if (!decision.allowed) {
+    return NextResponse.json({ error: decision.code, message: decision.message }, { status: 413 });
+  }
+
   // Build the storage path. {user_id} prefix lets us scope future cleanup scripts
   // and (if we add storage RLS later) write a per-user policy.
   const ext = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/png' ? 'png' : 'webp';
@@ -80,6 +118,22 @@ export async function POST(req: NextRequest) {
 
   const { data: pub } = supabaseAdmin.storage.from('listing-photos').getPublicUrl(path);
   const url = pub.publicUrl;
+
+  // Register in the quota ledger. Attached to the listing row immediately —
+  // unlike social posts there is no window where the photo exists unreferenced.
+  await registerAsset({
+    bucket: 'listing-photos',
+    objectPath: `listing-photos/${path}`,
+    ownerUserId: userId,
+    bytes: file.size,
+    mimeType: file.type,
+  });
+  {
+    const asset = assetRefFromPublicUrl(url, 'listing-photos');
+    if (asset) {
+      await attachAssetRef(asset, { refTable: 'listings', refId: listingId });
+    }
+  }
 
   // Append to the listing's photos array. This is a single-statement update
   // to avoid a read-modify-write race with concurrent uploads.
