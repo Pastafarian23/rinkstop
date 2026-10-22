@@ -838,7 +838,7 @@ export default function PostComposer() {
                       Photos are free for everyone. Upgrade to Hockey Passport Plus to share videos, get verified identity, and unlock premium insights.
                     </p>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <a href="/dashboard/plans" className={styles.postBtn} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                      <a href="/pricing" className={styles.postBtn} style={{ textDecoration: 'none', display: 'inline-block' }}>
                         Upgrade to Plus →
                       </a>
                       <button type="button" className={styles.cancelBtn} onClick={() => mediaFileRef.current?.click()}>
@@ -855,7 +855,7 @@ export default function PostComposer() {
                 )}
                 {mediaStage === 'none' && canUploadVideo === false && (
                   <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', marginTop: '0.5rem' }}>
-                    💡 Video uploads require <a href="/dashboard/plans" style={{ color: '#C8102E' }}>Hockey Passport Plus</a>. Photos are free.
+                    💡 Video uploads require <a href="/pricing" style={{ color: '#C8102E' }}>Hockey Passport Plus</a>. Photos are free.
                   </p>
                 )}
                 {mediaStage === 'processing' && (
@@ -982,8 +982,8 @@ export default function PostComposer() {
             {mode === 'payments' && (
               <div className={styles.stubsheet}>
                 <p className={styles.fieldHint}>Manage your subscription, view invoices, and update billing.</p>
-                <a href="/dashboard/plans" className={styles.stubLink} onClick={closeComposer}>
-                  Open Payments & Billing →
+                <a href="/dashboard/subscription" className={styles.stubLink} onClick={closeComposer}>
+                  Manage subscription &amp; billing →
                 </a>
               </div>
             )}

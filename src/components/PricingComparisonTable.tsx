@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { formatTierPrice } from '@/lib/pricing';
+import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
 /**
  * <PricingComparisonTable /> — side-by-side feature comparison for the
@@ -225,16 +227,16 @@ export default function PricingComparisonTable() {
           </div>
           <div style={{ padding: '1rem 0.5rem', textAlign: 'center' }}>
             <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 4 }}>Free</div>
-            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>$0</div>
+            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{formatTierPrice('free')}</div>
           </div>
           <div style={{ padding: '1rem 0.5rem', textAlign: 'center', background: 'rgba(255,184,28,0.04)', position: 'relative' }}>
             <div style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)', fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.18em', color: '#FFB81C', textTransform: 'uppercase' }}>Popular</div>
             <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.18em', color: '#FFB81C', textTransform: 'uppercase', marginBottom: 4, marginTop: 8 }}>Hockey Passport</div>
-            <div style={{ fontSize: '0.8125rem', color: '#FFB81C', fontWeight: 700 }}>$24.99/yr</div>
+            <div style={{ fontSize: '0.8125rem', color: '#FFB81C', fontWeight: 700 }}>{formatTierPrice('verified_identity')}/yr</div>
           </div>
           <div style={{ padding: '1rem 0.5rem', textAlign: 'center' }}>
             <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.18em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 4 }}>Hockey Passport Plus</div>
-            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>$59.99/yr</div>
+            <div style={{ fontSize: '0.8125rem', color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>{formatTierPrice('identity_plus')}/yr</div>
           </div>
         </div>
 
@@ -315,7 +317,7 @@ export default function PricingComparisonTable() {
           </div>
           <div style={{ textAlign: 'center', background: 'rgba(255,184,28,0.03)' }}>
             <Link
-              href="https://buy.stripe.com/00waEW5fh9hR2yz1LMeIw02"
+              href={STRIPE_PAYMENT_LINKS.verified_identity}
               target="_blank"
               rel="noopener"
               style={{
@@ -329,12 +331,12 @@ export default function PricingComparisonTable() {
                 textDecoration: 'none',
               }}
             >
-              $24.99/yr
+              {formatTierPrice('verified_identity')}/yr
             </Link>
           </div>
           <div style={{ textAlign: 'center' }}>
             <Link
-              href="https://buy.stripe.com/6oU8wOazB8dN2yzduueIw03"
+              href={STRIPE_PAYMENT_LINKS.identity_plus}
               target="_blank"
               rel="noopener"
               style={{
@@ -348,7 +350,7 @@ export default function PricingComparisonTable() {
                 textDecoration: 'none',
               }}
             >
-              $59.99/yr
+              {formatTierPrice('identity_plus')}/yr
             </Link>
           </div>
         </div>

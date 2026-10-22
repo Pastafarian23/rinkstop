@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import { formatTierPrice } from '@/lib/pricing';
 
 interface FoundersClubPopupProps {
   frequency?: 'always' | 'once' | 'weekly';
@@ -109,7 +110,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             GET YOUR HOCKEY PASSPORT
           </h2>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.75rem' }}>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.25rem', color: '#FFB81C', lineHeight: 1 }}>{formatTierPrice('verified_identity')}</span>
             <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>/ year</span>
           </div>
           <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', margin: '0 auto', maxWidth: 360, lineHeight: 1.6 }}>
@@ -208,7 +209,7 @@ export default function FoundersClubPopup({ frequency = 'once', entityType, enti
             GET YOUR HOCKEY PASSPORT
           </h2>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, marginBottom: '0.625rem' }}>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1 }}>$24.99</span>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: '#FFB81C', lineHeight: 1 }}>{formatTierPrice('verified_identity')}</span>
             <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>/ year</span>
           </div>
           <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>

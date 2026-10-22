@@ -89,11 +89,70 @@ function anonInsert(table) {
 async function getAllTables() {
   // Use PostgREST introspection via OpenAPI
   const { body } = await postgrest('/rest/v1/', { Accept: 'application/openapi+json' });
-  // OpenAPI spec has `definitions` listing all tables (PostgREST format)
   if (body?.definitions) {
-    return Object.keys(body.definitions).filter(t => !/^pg_|^_/.test(t));
+    const names = Object.keys(body.definitions).filter(t => !/^pg_|^_/.test(t));
+    const views = await getViewNames();
+    return names.filter(t => !views.has(t));
   }
   return [];
+}
+
+/**
+ * Names of non-table relations (views, materialized views) in public.
+ *
+ * RLS does not apply to views, so the audit must not treat them as
+ * unprotected tables. A view is only a real exposure if it is WRITABLE
+ * (auto-updatable) AND its base table is not already anon-readable — the
+ * underlying table's own RLS is what actually governs access.
+ *
+ * Before this filter existed, `players_with_country` (a view) was reported as
+ * "no RLS — NOT NULL blocked insert", failing the pre-deploy gate on every
+ * run. Verified 2026-10-22: the view is not auto-updatable (INSERT through it
+ * is rejected by the base table's RLS), and anon can already read all 6,352
+ * rows of `players` directly, so the view adds no exposure.
+ *
+ * Views are read from pg_class via the Management API — PostgREST does not
+ * expose information_schema, and the OpenAPI spec does not flag views.
+ */
+async function getViewNames() {
+  const views = new Set();
+  const token = process.env.SUPABASE_MANAGEMENT_PAT;
+  if (!token) {
+    console.warn(
+      '[rls-audit] SUPABASE_MANAGEMENT_PAT not set; cannot enumerate views. ' +
+      'Views will be audited as tables (may produce false positives).',
+    );
+    return views;
+  }
+  try {
+    const res = await fetch(
+      `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query:
+            "select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace " +
+            "where n.nspname = 'public' and c.relkind in ('v','m')",
+        }),
+      },
+    );
+    if (!res.ok) {
+      console.warn(`[rls-audit] view enumeration failed (${res.status}).`);
+      return views;
+    }
+    const rows = await res.json();
+    for (const row of rows || []) {
+      if (row?.relname) views.add(row.relname);
+    }
+    console.log(`  (skipped ${views.size} view(s) — RLS does not apply to views)`);
+  } catch (e) {
+    console.warn('[rls-audit] could not enumerate views:', e.message);
+  }
+  return views;
 }
 
 // Tables that are known to NOT need RLS — internal/excluded by design.

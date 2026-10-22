@@ -251,6 +251,10 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Onboarding and migration support',
       'Dedicated success manager',
     ],
+    // NOTE: literal, not derived from formatTierPrice() — this object is
+    // evaluated at module load, so calling formatTierPrice() here would hit
+    // the temporal dead zone on TIERS itself and crash the pricing page.
+    // Keep in sync with `priceUsd` above.
     footnote: 'Starting at $1,999/year — pricing scales with league size.',
   },
   federation: {
@@ -401,8 +405,11 @@ export function formatTierPrice(tier: TierName | string): string {
   const p = t.priceUsd;
   if (p === null || p === undefined) return 'Custom';
   if (p === 0) return '$0';
-  if (p === Math.floor(p)) return `$${p}`;
-  return `$${p.toFixed(2)}`;
+  // Thousands separator, so League reads "$1,999" not "$1999".
+  const whole = Math.floor(p);
+  const grouped = whole.toLocaleString('en-US');
+  if (p === whole) return `$${grouped}`;
+  return `$${grouped}.${Math.round((p - whole) * 100).toString().padStart(2, '0')}`;
 }
 
 /** Format with the "/ year" suffix. */

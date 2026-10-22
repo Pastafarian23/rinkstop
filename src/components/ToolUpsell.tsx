@@ -22,6 +22,7 @@
  */
 
 import Link from 'next/link';
+import { formatTierPricePerYear } from '@/lib/pricing';
 
 export type ToolUpsellVariant = 'passport' | 'club';
 
@@ -51,7 +52,10 @@ export default function ToolUpsell({ variant = 'passport', toolSlug }: ToolUpsel
   const subhead = isClub
     ? 'Claim your club page and put every team, player, and schedule in one place families can find.'
     : 'Verified Hockey Passport — every team, every milestone, every season, in one place anyone can find.';
-  const price = isClub ? '$149/year' : '$24.99/year';
+  // Price comes from src/lib/pricing.ts so this can never drift from the
+  // tier card or from what Stripe actually charges. Was hardcoded as
+  // '$149/year' / '$24.99/year' (drifted 2026-10-22 audit).
+  const price = `${formatTierPricePerYear(plan)}`;
   const cta = isClub ? 'Start your club' : 'Get my Hockey Passport';
   const bullets = isClub ? CLUB_BULLETS : PASSPORT_BULLETS;
 

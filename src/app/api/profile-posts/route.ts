@@ -7,6 +7,8 @@ import { execFileSync } from 'child_process';
 import { writeFileSync, unlinkSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { TIER_TO_TRACK } from '@/lib/pricing';
+import { checkMediaUpload } from '@/lib/media-entitlements';
+import { getMediaEntitlementForUser } from '@/lib/media-usage';
 
 const BUCKET = 'post-media';
 const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -227,14 +229,50 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (isVideo) {
-        const tier = await getUserTier(userId);
-        if (!isVideoTier(tier)) {
-          return NextResponse.json(
-            { error: 'Video uploads require Hockey Passport Plus. Upgrade at /dashboard/plans.' },
-            { status: 403 },
-          );
-        }
+      // Unified media allowance (2026-10-22). Replaces the previous
+      // single-purpose video gate, which only checked tier rank and ignored
+      // how much the account had already stored. Now every media upload —
+      // photo or video — is measured against ONE shared allowance covering
+      // post-media and player-media.
+      //
+      // See src/lib/media-entitlements.ts for the policy and the
+      // PROVISIONAL (not-yet-public) nature of the numbers.
+      const tier = await getUserTier(userId);
+      const { usage: mediaUsage, allowance, negotiated } =
+        await getMediaEntitlementForUser(userId, tier);
+
+      if (negotiated) {
+        return NextResponse.json(
+          { error: 'This account is on negotiated capacity. Contact support@rinkstop.com to add media.' },
+          { status: 403 },
+        );
+      }
+
+      const decision = checkMediaUpload(
+        allowance,
+        {
+          sizeBytes: buffer.length,
+          isVideo,
+          // Duration is not measured server-side yet (no ffprobe on Vercel);
+          // the client sends what it decoded and the bucket size cap is the
+          // hard backstop. Tracked as follow-up.
+          durationSeconds: null,
+        },
+        mediaUsage,
+      );
+
+      if (!decision.allowed) {
+        const code = decision.code;
+        console.warn('[profile-posts] media allowance blocked', JSON.stringify({
+          userId, tier, code,
+          used: mediaUsage, limit: {
+            bytes: allowance.maxTotalBytes, count: allowance.maxAssetCount,
+          },
+        }));
+        return NextResponse.json(
+          { error: decision.message, code },
+          { status: code === 'video_not_allowed' ? 403 : 413 },
+        );
       }
 
       // Wrap so a storage-layer failure returns the real reason instead of

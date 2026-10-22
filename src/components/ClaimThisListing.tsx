@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { trackClient } from '@/lib/client-track';
+import { formatTierPrice } from '@/lib/pricing';
 
 // WS30 conversion overhaul (2026-10-01, Arnel directive): the CTA on
 // every unclaimed listing is the third step in the funnel
@@ -186,7 +187,7 @@ export default function ClaimThisListing({
               Run this {noun}? Claim it on RinkStop.
             </div>
             <div style={descriptionStyle}>
-              Claim it now — claiming is free. Hockey Passport ($24.99/yr) adds the Hockey Passport, payments, and messaging. Paid tiers like Club Pro (up to 150 players) and Business Plus (multiple listings) add more claims and org tools.
+              Claim it now — claiming is free. Hockey Passport ({formatTierPrice('verified_identity')}/yr) adds the Hockey Passport, payments, and messaging. Paid tiers like Club Pro (up to 150 players) and Business Plus (multiple listings) add more claims and org tools.
             </div>
           </div>
         </div>

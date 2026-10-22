@@ -31,6 +31,9 @@ const ALL_KEYS = [
   'VERCEL_TEAM_ID',
   'RINKMAP_IMPORT_TOKEN',
   'IMAGE_PROXY_SECRET',
+  // Management API PAT — used by the live RLS audit to enumerate views
+  // (pg_class) since PostgREST does not expose information_schema.
+  'SUPABASE_MANAGEMENT_PAT',
 ];
 
 function parseDotenv(content) {
