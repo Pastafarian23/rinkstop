@@ -427,11 +427,9 @@ export default function PricingContent({
           {tier.period && (
             <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', marginLeft: 4 }}>{tier.period}</span>
           )}
-          {isCustom && tier.id === 'league' && (
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
-              Starting at $1,999/year
-            </div>
-          )}
+          {/* League renders its own "starting at" note via tier.footnote
+              (src/lib/pricing.ts). No duplicate here — the isCustom branch
+              only applies to tiers with a null priceUsd (federation). */}
         </div>
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', margin: '0 0 1.5rem', minHeight: 40 }}>{tier.tagline}</p>
 

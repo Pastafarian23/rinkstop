@@ -1,13 +1,25 @@
 // src/app/api/v1/org/[id]/players/route.ts
+//
+// Club Elite feature: API access — org roster / RSVP data.
+//
+// Auth (2026-10-22, fixed): requires a valid, unrevoked x-api-key issued FOR
+// THIS ORG. Previously this route only checked `is_published`; the documented
+// key check did not exist. See src/lib/api-keys.ts.
+
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { verifyOrgApiKey, extractPresentedKey, apiKeyUnauthorized } from '@/lib/api-keys';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Confirm the org is published first.
+
+  const verification = await verifyOrgApiKey(extractPresentedKey(req), id);
+  if (!verification.ok) return apiKeyUnauthorized(verification.reason);
+
+  // Confirm the org is published.
   const { data: org } = await supabaseAdmin
     .from('team_workspaces')
     .select('id, is_published')

@@ -1,24 +1,30 @@
 // src/app/api/v1/org/[id]/route.ts
 //
 // Club Elite feature: API access.
-//   GET /api/v1/org/[id]            -> public org profile
-//   GET /api/v1/org/[id]/players    -> org's players
-//   GET /api/v1/org/[id]/events     -> org's upcoming events
-//   GET /api/v1/org/[id]/finances   -> org's financial summary (only for the org owner)
+//   GET /api/v1/org/[id]            -> public org profile (requires a valid org key)
+//   GET /api/v1/org/[id]/players    -> org's roster/RSVP data (requires a valid org key)
 //
-// Auth: any caller with a valid x-api-key tied to the org can read.
-// Public org profile is readable without auth (Club Elite opted in).
+// Auth (2026-10-22, fixed): a valid, unrevoked x-api-key issued FOR THIS ORG.
+// Previously this route documented key auth in its header comment but never
+// verified it — it only checked `is_published`, so the Club Elite "API access"
+// feature was advertised on a $999 plan and enforced nowhere. Verification now
+// lives in src/lib/api-keys.ts (verifyOrgApiKey) and fails closed on DB error.
 //
-// API key management: see /api/manage/team/[id]/api-keys.
+// API key management: /api/manage/team/[id]/api-keys.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { verifyOrgApiKey, extractPresentedKey, apiKeyUnauthorized } from '@/lib/api-keys';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  const verification = await verifyOrgApiKey(extractPresentedKey(req), id);
+  if (!verification.ok) return apiKeyUnauthorized(verification.reason);
+
   // Only return fields the org has explicitly published via Club Elite.
   const { data, error } = await supabaseAdmin
     .from('team_workspaces')

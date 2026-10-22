@@ -16,6 +16,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import Link from 'next/link';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
+import { formatTierPrice } from '@/lib/pricing';
 
 const PASSPORT_GOLD = '#FFB81C';
 const PASSPORT_NAVY = '#0B1E3F';
@@ -272,7 +273,7 @@ export default async function PassportProfileCard({
               boxShadow: '0 4px 12px rgba(255,184,28,0.4)',
             }}
           >
-            $24.99/yr →
+            {formatTierPrice('verified_identity')}/yr →
           </a>
         </div>
       </section>
