@@ -63,6 +63,8 @@ interface PendingMedia {
   file: File;
   previewUrl: string;
   isVideo: boolean;
+  /** Data-URL frame captured from the video, used as the preview poster. */
+  posterUrl?: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -144,42 +146,72 @@ async function processMediaFile(file: File): Promise<PendingMedia> {
   if (isVideo && file.size > maxVideo) throw new Error('Video too large. Max 100 MB.');
   if (!isVideo && file.size > maxImage) throw new Error('Image too large. Max 10 MB.');
   const previewUrl = URL.createObjectURL(file);
+  let posterUrl: string | undefined;
   if (isVideo) {
-    // Capture the first real frame so the preview shows the video's poster
-    // instead of a black 0:00 player. A <video> with no currentTime and no
-    // poster renders as an empty black box on mobile until the user hits
-    // play, which reads as "the preview is broken".
-    await seekVideoPreview(previewUrl).catch(() => { /* preview-only */ });
+    // Render an actual frame of the video to a data URL and hand it to the
+    // <video poster>. A <video> with no poster shows a black 0:00 box on
+    // mobile, which reads as a broken preview (Arnel, 2026-10-22).
+    //
+    // An earlier attempt seeked a throwaway <video> element and discarded it
+    // — that decode was thrown away, so the rendered element still had no
+    // frame. Drawing to a canvas and keeping the bitmap is what actually
+    // survives.
+    posterUrl = await captureVideoPoster(previewUrl).catch((): undefined => undefined);
   }
-  return { file, previewUrl, isVideo };
+  return { file, previewUrl, isVideo, posterUrl };
 }
 
 /**
- * Load enough of a video to decode its first frame, then park the playhead
- * at ~0.1s so the poster frame is visible. Resolves even if seeking fails —
- * a broken poster must never block the upload itself.
+ * Decode the first frame of a video and return it as a data URL for use as
+ * a <video poster>. Resolves to undefined if the browser can't decode the
+ * codec, the file is corrupt, or it takes too long — a missing poster must
+ * never block the upload itself.
  */
-function seekVideoPreview(url: string): Promise<void> {
+function captureVideoPoster(url: string): Promise<string | undefined> {
   return new Promise((resolve) => {
     const video = document.createElement('video');
     let settled = false;
-    const finish = () => {
+    const finish = (result?: string) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       video.removeAttribute('src');
       video.load();
-      resolve();
+      resolve(result);
     };
-    const timer = setTimeout(finish, 4000);
+    const timer = setTimeout(() => finish(undefined), 6000);
+
     video.preload = 'auto';
     video.muted = true;
     video.playsInline = true;
+    // Cross-origin safety; blob: URLs are same-origin so this is a no-op
+    // here, but it keeps the helper correct if reused.
+    video.crossOrigin = 'anonymous';
+
     video.onloadeddata = () => {
-      try { video.currentTime = Math.min(0.1, (video.duration || 1) / 2); } catch { finish(); return; }
-      video.onseeked = finish;
+      // Seek slightly in: frame 0 is often a black slate in phone-recorded
+      // video, which would defeat the whole point.
+      const target = Math.min(0.25, (video.duration || 1) / 2);
+      try { video.currentTime = target; } catch { finish(undefined); }
     };
-    video.onerror = finish;
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const w = video.videoWidth || 640;
+        const h = video.videoHeight || 360;
+        // Cap the poster so we never hold a multi-megapixel data URL in memory.
+        const scale = Math.min(1, 640 / Math.max(1, w));
+        canvas.width = Math.max(1, Math.round(w * scale));
+        canvas.height = Math.max(1, Math.round(h * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { finish(undefined); return; }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        finish(canvas.toDataURL('image/jpeg', 0.7));
+      } catch {
+        finish(undefined);
+      }
+    };
+    video.onerror = () => finish(undefined);
     video.src = url;
   });
 }
@@ -834,16 +866,10 @@ export default function PostComposer() {
                     {media.isVideo ? (
                       <video
                         src={media.previewUrl}
+                        poster={media.posterUrl}
                         controls
                         playsInline
                         preload="metadata"
-                        // Start the preview already parked on a frame so the
-                        // player shows the video's poster, not a black box.
-                        ref={(el) => {
-                          if (el && el.currentTime === 0) {
-                            try { el.currentTime = 0.1; } catch { /* not seekable yet */ }
-                          }
-                        }}
                         className={styles.imagePreviewImg}
                         style={{ aspectRatio: '16/9', width: '100%' }}
                       />
