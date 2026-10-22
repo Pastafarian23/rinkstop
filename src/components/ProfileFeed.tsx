@@ -223,14 +223,38 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
             <article key={post.id} className={styles.postCard}>
               <p className={styles.postBody}>{post.body}</p>
               {post.media_url && (
-                <img
-                  src={post.media_url}
-                  alt="Post image"
-                  className={styles.postImage}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
+                postMediaKind(post.media_url) === 'video' ? (
+                  // Videos must render as <video>, not <img>. An <img> pointed
+                  // at an mp4 fails to decode, fires onError, and gets hidden —
+                  // which is why a posted video appeared as an empty card with
+                  // only the timestamp. (Arnel, 2026-10-22)
+                  <video
+                    src={post.media_url}
+                    poster={post.media_thumb ?? undefined}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    // Park on a frame so the player shows a poster rather than
+                    // a black 0:00 box before the user taps play.
+                    ref={(el) => {
+                      if (el && el.currentTime === 0) {
+                        try { el.currentTime = 0.1; } catch { /* not seekable yet */ }
+                      }
+                    }}
+                    className={styles.postImage}
+                    style={{ aspectRatio: '16 / 9', objectFit: 'contain', background: '#000' }}
+                  />
+                ) : (
+                  <img
+                    src={post.media_url}
+                    alt={post.body ? `Media from post: ${post.body.slice(0, 80)}` : 'Post image'}
+                    className={styles.postImage}
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                )
               )}
               <div className={styles.postFooter}>
                 <time className={styles.postTime}>{timeAgo(post.created_at)}</time>
@@ -355,6 +379,7 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
                     {postMediaKind(post.media_url ?? '') === 'video' ? (
                       <video
                         src={post.media_url ?? undefined}
+                        poster={post.media_thumb ?? undefined}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                         muted
                         playsInline
