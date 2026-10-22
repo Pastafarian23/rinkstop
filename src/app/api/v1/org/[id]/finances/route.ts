@@ -35,8 +35,8 @@
 //     period, summary: { payments_count, total_invoiced, total_paid,
 //                        total_outstanding, overdue_count, paid_count,
 //                        pending_count },
-//     by_status: [ { id, title, invoiced, paid, outstanding, records,
-//                    paid_records } ],
+//     by_payment: [ { id, title, invoiced, paid, outstanding, records,
+//                    paid_records } ],   // one entry per payment plan
 //     recent_payments: [ { id, payment_id, amount_due, amount_paid, status,
 //                          paid_at, created_at } ]
 //   }
@@ -138,7 +138,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   let recordsQuery = supabaseAdmin
     .from('payment_records')
     .select('id, payment_id, player_id, amount_due, amount_paid, status, paid_at, created_at');
-  if (periodStart) recordsQuery = recordsQuery.gte('created_at', periodStart.toISOString());
+  // NOTE: no created_at filter here. The record set is scoped by the
+  // (already period-filtered) paymentIds set. Filtering records by their own
+  // created_at dropped records belonging to an in-period payment, which
+  // undercounted the totals.
   if (paymentIds.length > 0) recordsQuery = recordsQuery.in('payment_id', paymentIds);
 
   const { data: records, error: recErr } = await recordsQuery;
@@ -166,16 +169,40 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     overdue_count: 0,
     paid_count: 0,
     pending_count: 0,
+    waived_count: 0,
+    refunded_count: 0,
   };
+  // Overdue is DERIVED, not read off a status column. `payment_records.status`
+  // is CHECK-constrained to (unpaid|pending_verification|paid|partial|waived|
+  // refunded) — there is no 'overdue' value, so matching on it always
+  // returned 0. Money is overdue when it is still owed on a plan whose
+  // due_date has passed.
+  const nowMs = Date.now();
+  const dueDateByPayment: Record<string, string | null> = {};
+  for (const p of (payments || []) as Array<{ id: string; due_date: string | null }>) {
+    dueDateByPayment[p.id] = p.due_date;
+  }
+
   for (const r of recordsArr) {
     const due = r.amount_due ?? 0;
     const paid = r.amount_paid ?? 0;
+    const outstanding = Math.max(0, due - paid);
+    // A waived record is not owed; a refunded record was collected and
+    // returned, so it is neither collected nor outstanding.
+    if (r.status === 'waived') { summary.waived_count++; continue; }
+    if (r.status === 'refunded') { summary.refunded_count++; continue; }
     summary.total_invoiced += due;
     summary.total_paid += paid;
-    summary.total_outstanding += Math.max(0, due - paid);
-    if (r.status === 'paid' || r.status === 'completed') summary.paid_count++;
-    else if (r.status === 'overdue') summary.overdue_count++;
-    else summary.pending_count++;
+    summary.total_outstanding += outstanding;
+    if (r.status === 'paid') {
+      summary.paid_count++;
+    } else {
+      summary.pending_count++;
+      const dueDate = dueDateByPayment[r.payment_id];
+      if (outstanding > 0 && dueDate && new Date(dueDate).getTime() < nowMs) {
+        summary.overdue_count++;
+      }
+    }
   }
 
   const paymentById: Record<
@@ -197,10 +224,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (r.status === 'paid' || r.status === 'completed') p.paid_records++;
   }
 
-  const byStatus = Object.values(paymentById).sort((a, b) => b.outstanding - a.outstanding);
-  const recent = recordsArr
-    .filter((r) => r.paid_at)
-    .sort((a, b) => (b.paid_at || '').localeCompare(a.paid_at || ''))
+  const byPayment = Object.values(paymentById).sort((a, b) => b.outstanding - a.outstanding);
+  // Recent payment records, most recent first. Previously filtered to
+  // records with a non-null paid_at, which showed an empty list for any org
+  // that had not yet collected a payment.
+  const recent = [...recordsArr]
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
     .slice(0, 10);
 
   return NextResponse.json({
@@ -208,7 +237,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     org: { id: org.id, slug: org.slug, name: org.name },
     period,
     summary,
-    by_status: byStatus,
+    by_payment: byPayment,
     recent_payments: recent,
   });
 }
