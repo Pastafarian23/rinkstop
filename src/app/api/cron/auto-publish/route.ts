@@ -1,122 +1,51 @@
 // /api/cron/auto-publish
 //
-// Vercel cron every 30 minutes. Spawns the auto-publish script via
-// child_process.execFile (with relative paths — works on Vercel
-// where /root/.openclaw paths don't exist). Reads the result JSON
-// from /tmp/auto-publish-result.json, posts a summary to RinkStop
-// Ops Telegram if anything was published/flagged/errored.
+// 2026-10-21: RETIRED — this endpoint is no longer the auto-publish runner.
 //
-// Per Arnel 2026-09-22 12:22 CDT: replaced the OpenClaw agentTurn
-// cron (662b0424) with this Vercel cron. The agentTurn version kept
-// rate-limiting on the LLM call; this Vercel cron has no LLM
-// dependency and runs deterministically.
+// Why it was retired:
+//   1. The audit script (scripts/auto-publish-audit-validated.cjs) reads
+//      its credentials from a local `.env` file in the repo root. `.env` is
+//      gitignored, so it does not exist in a Vercel deployment. The script
+//      could never authenticate on Vercel — it exited before doing any
+//      work, and this route reported the failure as a generic "exited N".
+//   2. `shouldPost` read `summary.total_published` / `total_flagged` /
+//      `total_errors`, but the script writes `published` / `flagged` /
+//      `errors`. Every lookup was undefined -> 0, so shouldPost was always
+//      false. Even if the script had run, this route never posted anything.
+//   3. maxDuration was 300s; the script needs ~600s for a full 272-article
+//      audit pass, so it would have been killed mid-run.
+//   4. It duplicated the OpenClaw agentTurn cron (662b0424-df2d-449d-a2c4-
+//      66dcfba8509d), which runs on the host where `.env` DOES exist and
+//      which has been the effective runner all along.
 //
-// Auth: Vercel sends Authorization: Bearer ${CRON_SECRET}. Internal
-// triggers (x-internal-self-heal) bypass auth for fire-and-forget
-// use by the scores-refresh self-heal flow.
+// The vercel.json entry for this path was removed in the same change.
+// The route is kept in place (returning a clear, explicit status) so that
+// any stale Vercel cron trigger or self-heal caller gets a truthful
+// response instead of a silent no-op.
+//
+// Ownership: the OpenClaw cron 662b0424 runs
+//   bash scripts/auto-publish-detached.sh
+// which writes /tmp/auto-publish-result.json and reports to RinkStop Ops.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import { readFile } from 'fs/promises';
-import { resolve } from 'path';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes — Vercel function timeout
-
-const RESULT_FILE = '/tmp/auto-publish-result.json';
-
-async function runAutoPublishScript(): Promise<{ ok: boolean; error?: string }> {
-  const scriptPath = resolve(process.cwd(), 'scripts/auto-publish-audit-validated.cjs');
-  return new Promise((resolveRun) => {
-    const child = spawn('node', [scriptPath], {
-      cwd: process.cwd(),
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    let stdout = '';
-    let stderr = '';
-    child.stdout?.on('data', (d) => { stdout += d.toString(); });
-    child.stderr?.on('data', (d) => { stderr += d.toString(); });
-    child.on('error', (err) => {
-      resolveRun({ ok: false, error: err.message });
-    });
-    child.on('close', async (code) => {
-      // The script writes its result to RESULT_FILE before exit; read it
-      try {
-        const raw = await readFile(RESULT_FILE, 'utf8');
-        const parsed = JSON.parse(raw);
-        resolveRun({ ok: code === 0, ...(code !== 0 ? { error: `exit ${code}: ${stderr.slice(-500)}` } : {}) });
-      } catch (e) {
-        resolveRun({
-          ok: false,
-          error: `script exited ${code} without producing ${RESULT_FILE}. stderr: ${stderr.slice(-500)}`,
-        });
-      }
-    });
-  });
-}
-
-async function postToTelegram(text: string): Promise<{ ok: boolean; error?: string }> {
-  const chatId = process.env.TELEGRAM_NOTIFY_CHAT_ID;
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!chatId || !token) return { ok: false, error: 'TELEGRAM env vars not set' };
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
-    });
-    return { ok: res.ok };
-  } catch (e) {
-    return { ok: false, error: (e as Error).message };
-  }
-}
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
-  const selfHeal = request.headers.get('x-internal-self-heal') === '1';
-  if (!selfHeal && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const startedAt = new Date().toISOString();
-  const startMs = Date.now();
-
-  let result: { ok: boolean; error?: string } = { ok: true };
-  try {
-    result = await runAutoPublishScript();
-  } catch (e) {
-    result = { ok: false, error: (e as Error).message };
-  }
-
-  let summary: any = null;
-  try {
-    const raw = await readFile(RESULT_FILE, 'utf8');
-    summary = JSON.parse(raw);
-  } catch {}
-
-  // Only post to Telegram when something actually changed
-  const published = summary?.total_published ?? 0;
-  const flagged = summary?.total_flagged ?? 0;
-  const errors = summary?.total_errors ?? 0;
-  const shouldPost = published > 0 || flagged > 0 || errors > 0;
-
-  let telegramStatus: { ok: boolean; error?: string } | null = null;
-  if (shouldPost) {
-    const text =
-      `📝 Auto-publish (${new Date(startedAt).toLocaleString('en-US', { timeZone: 'America/Chicago' })}): ` +
-      `${published} published · ${flagged} flagged · ${errors} errors`;
-    telegramStatus = await postToTelegram(text);
-  }
-
   return NextResponse.json({
-    ok: result.ok,
-    startedAt,
-    finishedAt: new Date().toISOString(),
-    durationMs: Date.now() - startMs,
-    summary,
-    telegramSent: telegramStatus,
-    error: result.error,
+    ok: false,
+    retired: true,
+    error:
+      'This endpoint was retired on 2026-10-21. It could not run the audit ' +
+      'script (no local .env in the Vercel deployment) and it duplicated the ' +
+      'OpenClaw cron 662b0424-df2d-449d-a2c4-66dcfba8509d, which is the ' +
+      'active auto-publish runner.',
+    owner: 'openclaw-cron:662b0424-df2d-449d-a2c4-66dcfba8509d',
   });
 }
 

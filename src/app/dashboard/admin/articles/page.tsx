@@ -49,8 +49,12 @@ export default async function AdminArticlesPage({
   const limit = Math.min(Number(params.limit) || 50, 200);
 
   // Fetch posts based on status filter
+  // 2026-10-21 FIX: this select listed `audit_status`, which does not exist
+  // on the posts table (the column is `last_audit_status`). PostgREST rejected
+  // the whole query, so this page returned ZERO rows and the review queue
+  // was invisible. Removed the phantom column.
   let query = supabaseAdmin.from('posts').select(
-    'id, slug, title, subtitle, status, human_review_status, audit_status, last_audit_check_at, last_audit_status, reviewed_at, reviewed_by, review_note, created_at, published_at, category',
+    'id, slug, title, subtitle, status, human_review_status, last_audit_check_at, last_audit_status, reviewed_at, reviewed_by, review_note, created_at, published_at, category',
   );
 
   if (statusFilter === 'pending') {

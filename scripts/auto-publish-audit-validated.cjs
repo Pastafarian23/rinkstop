@@ -109,15 +109,53 @@ function extractYouTubeId(url) {
       if (criticalUnverified) reasons.push('CRITICAL_UNVERIFIED');
       console.log(`${progress} ${d.title} — ⛔ ${reasons.join('+')} (${passCount}/${claimCount} pass), holding as draft`);
       flagged++;
-      const note = `\n\n*Pre-publish audit (${new Date().toISOString().slice(0,10)}): ⛔ HELD — ${reasons.join('+')}. ${passCount}/${claimCount} claims passed. Critical claims unverified: ${criticalUnverified ? 'YES' : 'no'}. Requires human review before publication.*`;
+      // 2026-10-21 FIX (Arnel-flagged): the audit hold note used to be
+      // APPENDED to posts.content on every run, with no dedupe. Over ~3 weeks
+      // that stacked 76,067 notes into 303 rows (56 of them already published),
+      // bloating drafts to ~90KB and printing "⛔ HELD — Requires human review"
+      // on live rinkstop.com articles.
+      //
+      // Audit state belongs in COLUMNS, not in the article body. The
+      // posts table already has the right columns (unused until now):
+      //   last_audit_status, last_audit_check_at, last_issue_summary,
+      //   quality_issues, human_review_status
+      // last_audit_status has a CHECK constraint allowing:
+      //   PASS_HIGH, PASS_SINGLE, PASS_WIKI, CANNOT_VERIFY, FAIL,
+      //   FAIL_DISAGREE, FAIL_CONFIDENCE
       if (!dryRun) {
-        await sb.from('posts').update({ content: d.content + note, status: 'draft' }).eq('id', d.id);
+        const auditStatus = criticalUnverified && !hasFail && !criticalFail
+          ? 'CANNOT_VERIFY'
+          : 'FAIL';
+        await sb
+          .from('posts')
+          .update({
+            status: 'draft',
+            last_audit_status: auditStatus,
+            last_audit_check_at: new Date().toISOString(),
+            last_issue_summary:
+              `Audit held ${reasons.join('+')} — ${passCount}/${claimCount} claims verified. ` +
+              `Critical claims unverified: ${criticalUnverified ? 'yes' : 'no'}.`,
+            human_review_status: 'pending',
+          })
+          .eq('id', d.id);
       }
       continue;
     } else if (claimCount === 0) {
       // No claims extracted at all — cannot verify anything. Hold.
       console.log(`${progress} ${d.title} — no claims extracted, holding for review`);
       unverifiable++;
+      if (!dryRun) {
+        await sb
+          .from('posts')
+          .update({
+            status: 'draft',
+            last_audit_status: 'CANNOT_VERIFY',
+            last_audit_check_at: new Date().toISOString(),
+            last_issue_summary: 'No verifiable claims extracted from article body.',
+            human_review_status: 'pending',
+          })
+          .eq('id', d.id);
+      }
       continue;
     } else {
       // Audit passes. 2026-09-22: also run the quality rubric (same
@@ -149,10 +187,39 @@ function extractYouTubeId(url) {
       if (qScore < 60) {
         console.log(`${progress} ${d.title} — ⛔ quality_score=${qScore} (slop), holding for review`);
         flagged++;
+        // 2026-10-21: this branch used to increment `flagged` with no DB
+        // write at all, so quality-holds were invisible to the review
+        // dashboard. Record the audit state in columns instead.
+        if (!dryRun) {
+          await sb
+            .from('posts')
+            .update({
+              status: 'draft',
+              last_audit_status: 'FAIL',
+              last_audit_check_at: new Date().toISOString(),
+              last_issue_summary:
+                `Quality rubric hold — score ${qScore}. Issues: ${qIssues.join(', ') || 'none'}.`,
+              quality_score: qScore,
+              quality_issues: qIssues.length > 0 ? qIssues : null,
+              human_review_status: 'pending',
+            })
+            .eq('id', d.id);
+        }
         continue; // skip publish
       }
       console.log(`${progress} ${d.title} — ✓ verified (q=${qScore}), publishing`);
       published++;
+      // Derive the audit verdict tier from how many canonical sources agreed.
+      // The audit pipeline reports the boxscore source as:
+      //   'multi-source (a, b)' → 2+ independent sources agreed → PASS_HIGH
+      //   'single-source (a)'   → only one source → PASS_SINGLE
+      // Anything else is a direct fetch without cross-source agreement.
+      const boxscoreSource = report.boxscore_source || '';
+      const passStatus = boxscoreSource.startsWith('multi-source')
+        ? 'PASS_HIGH'
+        : boxscoreSource.startsWith('single-source')
+          ? 'PASS_SINGLE'
+          : 'PASS_SINGLE';
       if (!dryRun) {
         const { error: pubErr } = await sb
           .from('posts')
@@ -160,9 +227,12 @@ function extractYouTubeId(url) {
             status: 'published',
             published_at: new Date().toISOString(),
             source_data_status: 'has_source',
+            last_audit_status: passStatus,
+            last_audit_check_at: new Date().toISOString(),
             last_issue_summary: `Audit verified ${passCount}/${claimCount} claims at ${new Date().toISOString()}`,
             quality_score: qScore,
             quality_issues: qIssues.length > 0 ? qIssues : null,
+            human_review_status: 'approved',
             regenerated_at: new Date().toISOString(),
           })
           .eq('id', d.id);
@@ -177,12 +247,50 @@ function extractYouTubeId(url) {
   }
 
   const total = drafts.length;
-  const result = { timestamp: new Date().toISOString(), total, published, flagged, unverifiable, errors };
+
+  // 2026-10-21: change detection.
+  // The steady state of this pipeline is "N drafts held, 0 published" — the
+  // same numbers every run. Reporting that line to Ops on every 30-minute
+  // cycle is noise, and it previously caused the identical summary to be
+  // posted to the channel multiple times.
+  //
+  // `changed` is true only when the run actually altered something:
+  //   - published > 0            (an article went live)
+  //   - errors > 0               (something broke)
+  //   - the published/flagged/unverifiable counts differ from the last run
+  // The last-run signature is stored alongside the result file so the
+  // comparison survives across processes.
+  const signature = `${total}:${published}:${flagged}:${unverifiable}:${errors}`;
+  const stateFile = process.env.PUBLISH_STATE_FILE || '/tmp/auto-publish-state.json';
+  let previousSignature = null;
+  try {
+    previousSignature = JSON.parse(require('fs').readFileSync(stateFile, 'utf8')).signature;
+  } catch (e) { /* no prior state */ }
+
+  const countsChanged = previousSignature !== null && previousSignature !== signature;
+  const changed = published > 0 || errors > 0 || countsChanged;
+
+  const result = {
+    timestamp: new Date().toISOString(),
+    total,
+    published,
+    flagged,
+    unverifiable,
+    errors,
+    changed,
+    signature,
+  };
+
+  try {
+    require('fs').writeFileSync(stateFile, JSON.stringify({ signature, timestamp: result.timestamp }, null, 2));
+  } catch (e) { /* non-fatal */ }
+
   // Only emit a notice when something actually happened.
   // Quiet cycles = 0 drafts, 0 errors. Save noise.
   if (total > 0 || published > 0 || flagged > 0 || errors > 0) {
     console.log(`\n=== SUMMARY ===`);
     console.log(`Found ${total} draft(s) | Published: ${published} | Flagged: ${flagged} | Unverifiable: ${unverifiable} | Errors: ${errors}`);
+    console.log(`Changed since last run: ${changed ? 'YES' : 'no (steady state — not reporting)'}`);
     if (dryRun) console.log('(DRY RUN — nothing written to DB)');
   }
   // Always write the JSON result file so the cron wrapper can detect "did anything happen"

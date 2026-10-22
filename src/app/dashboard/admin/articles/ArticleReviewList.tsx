@@ -47,7 +47,10 @@ function ArticleRow({ post }: { post: PostRow }) {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
-  const audit = post.last_audit_status || post.audit_status;
+  // 2026-10-21: `audit_status` does not exist on posts. The column is
+  // `last_audit_status`. Reading a phantom column here made every row
+  // render with a grey (unknown) audit badge.
+  const audit = post.last_audit_status;
   const auditColor = audit ? AUDIT_STATUS_COLOR[audit] || '#6b7280' : '#6b7280';
 
   async function callReview(action: 'approve' | 'reject', note?: string) {
