@@ -261,9 +261,13 @@ export function checkMediaUpload(
 }
 
 export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
   if (bytes >= GB) return `${+(bytes / GB).toFixed(bytes % GB === 0 ? 0 : 1)} GB`;
   if (bytes >= MB) return `${+(bytes / MB).toFixed(bytes % MB === 0 ? 0 : 0)} MB`;
-  return `${bytes} B`;
+  // Previously there was no sub-megabyte tier, so a 5 MB per-file limit
+  // rendered as "5242880 B". Anything under 1 MB is shown in KB so the
+  // per-file cap reads as a normal number to a customer.
+  return `${Math.round(bytes / 1024)} KB`;
 }
 
 /**
