@@ -28,7 +28,18 @@ interface Post {
   id: string;
   body: string;
   media_url: string | null;
+  media_thumb?: string | null;
   created_at: string;
+  sport?: string | null;
+}
+
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|mov)(\?.*)?$/i.test(url) || url.includes('/post-media/');
+}
+
+/** The media type a post carries, used for the badge + render branch. */
+function postMediaKind(url: string): 'video' | 'image' {
+  return /\.(mp4|webm|mov)(\?.*)?$/i.test(url) ? 'video' : 'image';
 }
 
 interface Props {
@@ -130,8 +141,49 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
     return () => document.removeEventListener('click', onDocClick);
   }, [menuPostId]);
 
+  const mediaPosts = posts.filter((p) => p.media_url && isVideoUrl(p.media_url));
+  const textPosts = posts.filter((p) => !p.media_url || !isVideoUrl(p.media_url));
+
   return (
     <section id="posts" className="space-y-4">
+      {/* Section heading — the posts feed had no header at all, which is
+          why it read as unorganized: the About card above it had a visible
+          "About" label but this one did not. */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.75rem',
+          marginBottom: '0.25rem',
+        }}
+      >
+        <h2
+          className="font-sport uppercase"
+          style={{
+            fontSize: '0.75rem',
+            letterSpacing: '0.12em',
+            color: 'rgba(255,255,255,0.5)',
+            margin: 0,
+          }}
+        >
+          Posts
+        </h2>
+        {!loading && posts.length > 0 && (
+          <span
+            style={{
+              fontSize: '0.5625rem',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.3)',
+            }}
+          >
+            {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+          </span>
+        )}
+      </div>
+
       {loading ? (
         <div className={styles.loadingPosts}>
           {[0, 1, 2].map((i) => (
@@ -262,54 +314,117 @@ export default function ProfileFeed({ isOwner, username, userId }: Props) {
             >
               Media
             </h2>
-            <span
-              style={{
-                fontSize: '0.5625rem',
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: 'rgba(255,255,255,0.3)',
-              }}
-            >
-              Coming soon
-            </span>
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '0.5rem',
-            }}
-          >
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
+            {mediaPosts.length > 0 && (
+              <span
                 style={{
-                  aspectRatio: '1 / 1',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px dashed rgba(255,255,255,0.1)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  color: 'rgba(255,255,255,0.15)',
+                  fontSize: '0.5625rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.3)',
                 }}
-                aria-hidden
-              />
-            ))}
+              >
+                {mediaPosts.length} {mediaPosts.length === 1 ? 'item' : 'items'}
+              </span>
+            )}
           </div>
-          <p
-            className="mt-3"
-            style={{
-              fontSize: '0.75rem',
-              color: 'rgba(255,255,255,0.4)',
-              margin: 0,
-              lineHeight: 1.5,
-            }}
-          >
-            Photos and videos uploaded by this profile will appear here.
-          </p>
+          {mediaPosts.length > 0 ? (
+            <>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '0.5rem',
+                }}
+              >
+                {mediaPosts.slice(0, 9).map((post) => (
+                  <a
+                    key={`media-${post.id}`}
+                    href={post.media_url ?? '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      aspectRatio: '1 / 1',
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      display: 'block',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      position: 'relative',
+                    }}
+                  >
+                    {postMediaKind(post.media_url ?? '') === 'video' ? (
+                      <video
+                        src={post.media_url ?? undefined}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={post.media_thumb || post.media_url || undefined}
+                        alt={post.body ? `Media from post: ${post.body.slice(0, 80)}` : 'Post media'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        loading="lazy"
+                      />
+                    )}
+                  </a>
+                ))}
+              </div>
+              <p
+                className="mt-3"
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'rgba(255,255,255,0.4)',
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                Photos and videos shared by this profile. Tap one to open it.
+              </p>
+            </>
+          ) : (
+            <>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '0.5rem',
+                }}
+              >
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      aspectRatio: '1 / 1',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px dashed rgba(255,255,255,0.1)',
+                      borderRadius: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.5rem',
+                      color: 'rgba(255,255,255,0.15)',
+                    }}
+                    aria-hidden
+                  />
+                ))}
+              </div>
+              <p
+                className="mt-3"
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'rgba(255,255,255,0.4)',
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                {isOwner
+                  ? 'Share a photo or video and it will show up here.'
+                  : 'Photos and videos shared by this profile will appear here.'}
+              </p>
+            </>
+          )}
         </div>
       </div>
     </section>
