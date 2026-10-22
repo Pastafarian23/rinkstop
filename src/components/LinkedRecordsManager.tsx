@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { meetsTierGate } from '@/lib/tier-gate';
 
 type ProfileType = 'player' | 'team' | 'league';
 
@@ -30,8 +31,11 @@ interface SearchHit {
 
 interface Props {
   initialManaged: ManagedRow[];
-  /** Tier hint from the server, so the UI can hide team/league adders for non-Pro users. */
+  /** Personal-tier hint from the server, so the UI can hide adders for users without entitlement. */
   tier: string;
+  /** Organization-tier hint from the server. A user may hold an org plan while their
+   *  personal tier is still 'free' — the adders gate on either track. */
+  orgTier?: string;
 }
 
 const TYPE_LABEL: Record<ProfileType, string> = {
@@ -71,7 +75,7 @@ function imgFor(m: ManagedRow): string | null {
  *  - relationship must be parent/guardian/spouse/self (only self is shown
  *    as the default; users editing a child/parent can switch via a dropdown).
  */
-export default function LinkedRecordsManager({ initialManaged, tier }: Props) {
+export default function LinkedRecordsManager({ initialManaged, tier, orgTier = 'org_free' }: Props) {
   const [managed, setManaged] = useState<ManagedRow[]>(initialManaged);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openType, setOpenType] = useState<ProfileType | null>(null);
@@ -80,10 +84,21 @@ export default function LinkedRecordsManager({ initialManaged, tier }: Props) {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 2026-10-22: the old check was two flat legacy lists
+  //   player:  ['roster','roster_plus','pro','premium']
+  //   team:    ['pro','premium','business_starter','business_pro','business_premium','enterprise']
+  // which only ever read the PERSONAL tier column and never matched the
+  // canonical names ('identity_plus' etc.). `meetsTierGate` reads both
+  // columns and canonicalizes legacy names.
   const tierOk = (t: ProfileType): boolean => {
-    if (t === 'player') return ['roster', 'roster_plus', 'pro', 'premium'].includes(tier);
-    // team/league need Pro+ (personal track top tier) or any business tier
-    return ['pro', 'premium', 'business_starter', 'business_pro', 'business_premium', 'enterprise'].includes(tier);
+    // Claiming a player record needs Hockey Passport (verified_identity) on
+    // the personal track, or Organization Plus+ on the organization track.
+    if (t === 'player') {
+      return meetsTierGate(tier, orgTier, 'verified_identity', 'org_plus');
+    }
+    // Team / league linking needs Hockey Passport Plus (personal) or
+    // Organization Plus+ (organization).
+    return meetsTierGate(tier, orgTier, 'identity_plus', 'org_plus');
   };
 
   const search = useCallback(async (type: ProfileType, q: string) => {

@@ -7,8 +7,15 @@
  *   - featured=true: set is_featured=true, featured_at=now, featured_until=now+duration_days
  *   - featured=false: clear is_featured and featured_at/until
  *
- * Tier-gated on Business Plus+ (matches the "Featured placement" promise
- * on /pricing for Business Plus).
+ * Tier-gated on Organization Pro+ (matches the "Promotions and featured
+ * placement" promise on the Organization Pro card at /pricing).
+ *
+ * 2026-10-22: the old gate was `tierAtLeastSameTrack(tier, 'business_listing')`.
+ * After the consolidation 'business_listing' canonicalizes to 'org_plus' on
+ * the ORGANIZATION track, but this route read only `profiles.tier` (the
+ * PERSONAL column) — so the track comparison always failed and featured
+ * placement was locked for every user, including paying org customers.
+ * The gate now reads BOTH columns and requires org_pro on the org track.
  *
  * The owner of the listing (or an admin) can toggle. v1 has no payment
  * integration — the flag is self-service and free. v2 will gate behind
@@ -20,7 +27,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireUserId } from '@/lib/connections';
-import { tierAtLeastSameTrack } from '@/lib/tier-gate';
+import { meetsTierGate } from '@/lib/tier-gate';
 import {
   checkRateLimit,
   getClientIP,
@@ -31,8 +38,17 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-function canFeature(tier: string | null | undefined): boolean {
-  return tierAtLeastSameTrack(tier, 'business_listing');
+/**
+ * Featured placement requires Organization Pro or higher on the organization
+ * track. Founding members are exempt (see the caller).
+ */
+function canFeature(
+  personalTier: string | null | undefined,
+  orgTier: string | null | undefined,
+  isFoundingMember: boolean,
+): boolean {
+  if (isFoundingMember) return true;
+  return meetsTierGate(personalTier, orgTier, null, 'org_pro');
 }
 
 const DEFAULT_DURATION_DAYS = 30;
@@ -82,12 +98,18 @@ export async function POST(
   // Tier gate
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier, is_founding_member')
     .eq('user_id', userId)
     .maybeSingle();
-  if (!canFeature((profile?.tier as string) ?? 'free')) {
+  if (
+    !canFeature(
+      (profile?.tier as string) ?? 'free',
+      (profile?.org_tier as string) ?? 'org_free',
+      profile?.is_founding_member === true,
+    )
+  ) {
     const res = NextResponse.json(
-      { error: 'Featured placement requires Business Plus or higher.', code: 'tier_required' },
+      { error: 'Featured placement requires Organization Pro or higher.', code: 'tier_required' },
       { status: 403 }
     );
     return applyRateLimitHeaders(res, rl);

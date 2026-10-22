@@ -21,7 +21,7 @@ export default async function ListingsPage() {
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier, is_founding_member')
+    .select('tier, org_tier, is_founding_member')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -62,9 +62,17 @@ export default async function ListingsPage() {
         </div>
       </div>
 
-      <ListingsManager userTier={profile?.tier || 'free'} />
+      <ListingsManager
+        userTier={profile?.tier || 'free'}
+        userOrgTier={profile?.org_tier || 'org_free'}
+        isFoundingMember={profile?.is_founding_member === true}
+      />
 
-      <BusinessPlusFeatures userId={userId} userTier={profile?.tier || 'free'} />
+      <BusinessPlusFeatures
+        userId={userId}
+        userTier={profile?.tier || 'free'}
+        userOrgTier={profile?.org_tier || 'org_free'}
+      />
     </div>
   );
 }

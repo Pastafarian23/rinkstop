@@ -16,13 +16,13 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const ORG_TYPES = new Set(['rink', 'club', 'league', 'federation', 'arena', 'other']);
+// Canonical organization tiers (2026-10-22 consolidation). Legacy values
+// are still accepted by the DB constraint, but the form only offers these.
 const TIER_OPTIONS = new Set([
-  'club_starter',
-  'club_pro',
-  'club_elite',
-  'league',
-  'business_listing',
-  'business_plus',
+  'org_plus',
+  'org_pro',
+  'org_elite',
+  'org_enterprise',
 ]);
 
 function escapeHtml(s: string): string {

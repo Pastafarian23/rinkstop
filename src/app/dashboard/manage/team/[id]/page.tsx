@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isIdentityVerified } from '@/lib/identity-verified';
+import { getUserOrgTier } from '@/lib/connections';
 import { countryToCurrency } from '@/lib/currency';
 import EntityEditForm from '../../EntityEditForm';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
@@ -59,10 +60,10 @@ export default async function ManageTeamPage({ params }: PageProps) {
     );
   }
 
-  // Fetch the user's current tier for upgrade prompting.
+  // Fetch the user's current tiers for upgrade prompting.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
   const userTier = profile?.tier || 'free';
@@ -71,10 +72,19 @@ export default async function ManageTeamPage({ params }: PageProps) {
   // verification banner for unverified team owners.
   const ownerVerified = await isIdentityVerified(userId).catch(() => false);
 
-  // Phase 2: if the user is on an identity track (not organization), show an
-  // upgrade prompt pointing them to the organization pricing track. Org plan
-  // users (club_starter+) already have team management.
-  const needsOrgPlan = !['club_starter', 'club_pro', 'club_elite', 'league', 'federation'].includes(userTier);
+  // Phase 2 (2026-10-22): team/rink management lives on the ORGANIZATION
+  // track. org_free manages one team with basic roster/schedule/events;
+  // paid organization rungs unlock the rest. Read profiles.org_tier, not
+  // the personal track.
+  const orgTier = await getUserOrgTier(userId);
+  // org_free may manage ONE team (basic roster/schedule/events). If this
+  // user is already a team admin here, let them in regardless of plan.
+  const { data: adminRow } = await supabaseAdmin.rpc('is_team_admin', {
+    p_team_id: id,
+    p_user_id: userId,
+  });
+  const isTeamAdmin = adminRow === true;
+  const needsOrgPlan = orgTier === 'org_free' && !isTeamAdmin;
 
   return (
     <div style={{ maxWidth: 720, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

@@ -13,6 +13,7 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import FederationFormClient from './FederationFormClient';
+import { hasAnyPaidTier } from '@/lib/tier-gate';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -42,10 +43,10 @@ export default async function FederationPage() {
   // Opened 2026-08-25 per Arnel: federation info should be viewable/displayable on entry-level paid plans.
   const { data: callerProfile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
-  if (!callerProfile?.tier || !['verified_identity', 'identity_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation', 'business_listing', 'business_plus'].includes(callerProfile.tier)) {
+  if (!hasAnyPaidTier(callerProfile?.tier, callerProfile?.org_tier)) {
     return (
       <main className="min-h-screen bg-[#041E42] text-white">
         <nav style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem' }}>

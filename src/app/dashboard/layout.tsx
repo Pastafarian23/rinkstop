@@ -11,6 +11,7 @@ import TeamSwitcher from '@/components/TeamSwitcher';
 import MobileMenu from '@/components/MobileMenu';
 import { getUserTier } from '@/lib/connections';
 import { tierAtLeast } from '@/lib/tier-gate';
+import { getUserOrgTier } from '@/lib/connections';
 import {
   WORKSPACES,
   getWorkspaceAccess,
@@ -113,11 +114,15 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   // 2026-07-22: tier is one of the three parallel top-level lookups now,
   // so it runs concurrently with profile-role + account-types.
   let currentTier = 'free';
+  // Organization track tier (2026-10-22). Independent of the personal tier —
+  // an org purchase never downgrades the personal identity tier.
+  let currentOrgTier = 'org_free';
   let profileRole: string | null = null;
   let accountTypes: Array<{ account_type: string; is_primary: boolean }> = [];
   try {
-    const [tierResult, profResult, typesResult] = await Promise.all([
+    const [tierResult, orgTierResult, profResult, typesResult] = await Promise.all([
       getUserTier(userId),
+      getUserOrgTier(userId),
       supabaseAdmin
         .from('profiles')
         .select('role')
@@ -129,6 +134,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
         .eq('user_id', userId),
     ]);
     currentTier = tierResult;
+    currentOrgTier = orgTierResult;
     profileRole = (profResult as any)?.data?.role || null;
     accountTypes = ((typesResult as any)?.data || []) as Array<{ account_type: string; is_primary: boolean }>;
 
@@ -147,6 +153,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
         .maybeSingle();
       if (byEmail) {
         currentTier = await getUserTier(byEmail.user_id);
+        currentOrgTier = await getUserOrgTier(byEmail.user_id);
       }
     }
   } catch {
@@ -266,6 +273,7 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
     accountTypeNames,
     currentTier,
     tierAtLeast,
+    currentOrgTier,
   );
   const activeWsAccess = wsAccess.find(a => a.workspace.id === activeWorkspace);
   // If user hasn't unlocked the active workspace (cookie stale, or they
@@ -285,7 +293,10 @@ async function renderDashboardLayout(userId: string, children: React.ReactNode) 
   for (const sub of effectiveWs.workspace.subpages) {
     // Skip the subpage if the user's tier is below the gate. The workspace
     // registry has the source of truth for minTier.
-    if (sub.minTier && !tierAtLeast(currentTier, sub.minTier)) {
+    // Compare the sub-page gate against the track the workspace declares.
+    const subTrack = sub.tierTrack ?? effectiveWs.workspace.tierTrack;
+    const subTrackTier = subTrack === 'organization' ? currentOrgTier : currentTier;
+    if (sub.minTier && !tierAtLeast(subTrackTier, sub.minTier)) {
       continue;
     }
     // Some subpages match the dashboard root for badge purposes (e.g. /dashboard

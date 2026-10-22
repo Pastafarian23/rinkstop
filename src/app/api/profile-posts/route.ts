@@ -7,8 +7,8 @@ import { execFileSync } from 'child_process';
 import { writeFileSync, unlinkSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { TIER_TO_TRACK } from '@/lib/pricing';
-import { checkMediaUpload } from '@/lib/media-entitlements';
-import { getMediaEntitlementForUser } from '@/lib/media-usage';
+import { checkMediaUpload, getMediaAllowance } from '@/lib/media-entitlements';
+import { getMediaEntitlementForUser, pickBetterAllowance } from '@/lib/media-usage';
 
 const BUCKET = 'post-media';
 const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -34,6 +34,21 @@ async function getUserTier(userId: string): Promise<string> {
     .eq('user_id', userId)
     .maybeSingle();
   return (data?.tier as string) || 'free';
+}
+
+/**
+ * Resolve the user's ORGANIZATION tier (profiles.org_tier).
+ *
+ * Media is one physical pool per person, so the enforced allowance is the
+ * BETTER of the personal tier and the organization tier — never the sum.
+ */
+async function getUserOrgTier(userId: string): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from('profiles')
+    .select('org_tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  return (data?.org_tier as string) || 'org_free';
 }
 
 function isVideoTier(tier: string): boolean {
@@ -233,13 +248,17 @@ export async function POST(req: NextRequest) {
       // single-purpose video gate, which only checked tier rank and ignored
       // how much the account had already stored. Now every media upload —
       // photo or video — is measured against ONE shared allowance covering
-      // post-media and player-media.
+      // post-media, profile_covers, listing-photos and player-media.
       //
-      // See src/lib/media-entitlements.ts for the policy and the
-      // PROVISIONAL (not-yet-public) nature of the numbers.
+      // See src/lib/media-entitlements.ts for the published policy.
       const tier = await getUserTier(userId);
+      const orgTier = await getUserOrgTier(userId);
       const { usage: mediaUsage, allowance, negotiated } =
-        await getMediaEntitlementForUser(userId, tier);
+        await getMediaEntitlementForUser(
+          userId,
+          tier,
+          pickBetterAllowance(getMediaAllowance(tier), getMediaAllowance(orgTier)),
+        );
 
       if (negotiated) {
         return NextResponse.json(

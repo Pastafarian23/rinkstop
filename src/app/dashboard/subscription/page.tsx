@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
 import ManageSubscriptionClient from './ManageSubscriptionClient';
-import { formatTierPricePerYear } from '@/lib/pricing';
+import { formatTierPricePerYear, canonicalTier, getTierLabel } from '@/lib/pricing';
+import { describeMyMediaAllowance } from '@/lib/media-usage';
+import { formatBytes } from '@/lib/media-entitlements';
 import { OWNER_EMAILS } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
@@ -14,29 +16,16 @@ export const dynamic = 'force-dynamic';
 // names live in lib/pricing.ts. Legacy DB-stored values (roster, pro, etc.)
 // fall through getTierLabel() and surface as "<NewName> (legacy)" so we
 // never silently mislabel paying subscribers.
-const TIER_LABELS: Record<string, string> = {
-  free: 'Free',
-  verified_identity: 'Hockey Passport',
-  identity_plus: 'Hockey Passport Plus',
-  club_starter: 'Club Starter',
-  club_pro: 'Club Pro',
-  club_elite: 'Club Elite',
-  league: 'League',
-  federation: 'Federation',
-  business_listing: 'Business Listing',
-  business_plus: 'Business Plus',
-};
-
+// Labels and prices are derived from lib/pricing.ts so they can never drift
+// from the pricing page. getTierLabel() canonicalizes legacy DB values.
 const TIER_PRICES: Record<string, string> = {
   verified_identity: formatTierPricePerYear('verified_identity'),
   identity_plus: formatTierPricePerYear('identity_plus'),
-  club_starter: formatTierPricePerYear('club_starter'),
-  club_pro: formatTierPricePerYear('club_pro'),
-  club_elite: formatTierPricePerYear('club_elite'),
-  league: formatTierPricePerYear('league'),
-  federation: formatTierPricePerYear('federation'),
-  business_listing: formatTierPricePerYear('business_listing'),
-  business_plus: formatTierPricePerYear('business_plus'),
+  org_free: formatTierPricePerYear('org_free'),
+  org_plus: formatTierPricePerYear('org_plus'),
+  org_pro: formatTierPricePerYear('org_pro'),
+  org_elite: formatTierPricePerYear('org_elite'),
+  org_enterprise: formatTierPricePerYear('org_enterprise'),
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -98,16 +87,24 @@ export default async function SubscriptionPage() {
   // Read profile fields directly for fast first paint
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier, subscription_status, tier_expires_at, is_founding_member, stripe_customer_id, stripe_subscription_id, created_at')
+    .select('tier, org_tier, subscription_status, tier_expires_at, is_founding_member, stripe_customer_id, stripe_subscription_id, created_at')
     .eq('user_id', profileUserId)
     .maybeSingle();
 
-  const tier = profile?.tier || 'free';
+  // Two independent entitlements: the personal track and the organization
+  // track. Neither cancels the other.
+  const tier = canonicalTier(profile?.tier as string);
+  const orgTier = canonicalTier((profile?.org_tier as string) || 'org_free');
   const isFounding = profile?.is_founding_member || false;
   const subStatus = profile?.subscription_status;
   const expiresAt = profile?.tier_expires_at;
   const hasStripeCustomer = !!profile?.stripe_customer_id;
   const hasStripeSubscription = !!profile?.stripe_subscription_id;
+
+  // Live media usage + the allowance it is measured against. The allowance is
+  // the BETTER of the personal and organization allowances — an org plan
+  // grants a shared pool without replacing the personal entitlement.
+  const media = await describeMyMediaAllowance(profileUserId, tier, orgTier);
 
   return (
     <div>
@@ -140,7 +137,7 @@ export default async function SubscriptionPage() {
                 fontFamily: "'Bebas Neue', Impact, sans-serif",
                 fontSize: '2.25rem', color: '#fff', margin: 0, letterSpacing: '0.04em',
               }}>
-                {TIER_LABELS[tier] || 'Free'}
+                {getTierLabel(tier)}
               </h2>
               <TierBadge tier={tier as any} size="sm" />
               {isFounding && <FoundingMemberBadge size="sm" />}
@@ -148,6 +145,11 @@ export default async function SubscriptionPage() {
             {tier !== 'free' && (
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>
                 {TIER_PRICES[tier]}
+              </p>
+            )}
+            {orgTier !== 'org_free' && (
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>
+                Organization: {getTierLabel(orgTier)} — {TIER_PRICES[orgTier]}
               </p>
             )}
           </div>
@@ -208,6 +210,83 @@ export default async function SubscriptionPage() {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Media allowance — published limits, with live usage */}
+      <div style={{
+        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 12, padding: '1.5rem 1.75rem', marginBottom: '1rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+          <h3 style={{ color: '#fff', fontSize: '1rem', fontWeight: 700, margin: 0 }}>
+            Media storage
+          </h3>
+          <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
+            {media.negotiated ? 'Custom agreement' : 'Photos, videos, covers and listing photos'}
+          </span>
+        </div>
+
+        {media.negotiated ? (
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', margin: 0 }}>
+            Your organization plan has <strong style={{ color: '#fff' }}>negotiated storage capacity</strong>.
+            There is no fixed limit — your account manager sets the cap with you.
+          </p>
+        ) : media.allowance ? (
+          <>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: '0.75rem', marginBottom: '1rem',
+            }}>
+              <Field
+                label="Your allowance"
+                value={media.label}
+              />
+              <Field
+                label="Used"
+                value={
+                  media.used
+                    ? `${formatBytes(media.used.totalBytes)} of ${formatBytes(media.allowance.totalBytes)} · ${media.used.assetCount} of ${media.allowance.assetCount} items`
+                    : '0 of ' + formatBytes(media.allowance.totalBytes)
+                }
+              />
+              <Field
+                label="Video"
+                value={
+                  media.allowance.videoAllowed
+                    ? media.allowance.maxVideoSeconds
+                      ? `Up to ${Math.round(media.allowance.maxVideoSeconds / 60)} min per video`
+                      : 'Allowed · no duration cap'
+                    : 'Not included'
+                }
+                valueColor={media.allowance.videoAllowed ? undefined : 'rgba(255,255,255,0.5)'}
+              />
+            </div>
+
+            {media.used && media.allowance.totalBytes > 0 && (
+              <div style={{ marginBottom: '0.75rem' }}>
+                <div style={{
+                  height: 8, borderRadius: 999, overflow: 'hidden',
+                  background: 'rgba(255,255,255,0.08)',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.min(100, Math.round((media.used.totalBytes / media.allowance.totalBytes) * 100))}%`,
+                    background: media.used.totalBytes / media.allowance.totalBytes > 0.9 ? '#C8102E' : '#14B8A6',
+                  }} />
+                </div>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', margin: '0.4rem 0 0' }}>
+                  {Math.min(100, Math.round((media.used.totalBytes / media.allowance.totalBytes) * 100))}% of your storage used.
+                  Deleting a post does not delete its media, so the files keep using space until you remove them.
+                </p>
+              </div>
+            )}
+
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0 }}>
+              Organization plans share one storage pool across every team in the organization.
+              Your personal allowance applies to your own photos and videos.
+            </p>
+          </>
+        ) : null}
       </div>
 
       {/* Live billing details from Stripe (client fetches) */}

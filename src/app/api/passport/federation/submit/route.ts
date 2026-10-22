@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { hasAnyPaidTier } from '@/lib/tier-gate';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
 const RATE_LIMIT = { maxRequests: 10, windowMs: 60 * 1000 };
@@ -41,10 +42,10 @@ export async function POST(request: NextRequest) {
   // renders an upgrade CTA for non-paid users; this API mirrors that.
   const { data: callerProfile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
-  if (!callerProfile?.tier || !['verified_identity', 'identity_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation', 'business_listing', 'business_plus'].includes(callerProfile.tier)) {
+  if (!hasAnyPaidTier(callerProfile?.tier, callerProfile?.org_tier)) {
     return NextResponse.json(
       {
         error:

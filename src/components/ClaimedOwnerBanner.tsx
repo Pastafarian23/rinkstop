@@ -26,8 +26,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import OwnerBannerButtons from './OwnerBannerButtons';
 
 const UPGRADE_HINT: Record<'rink' | 'team' | 'league' | 'player', { label: string; href: string }> = {
-  rink: { label: 'Unlock Business Plus for lead capture & analytics', href: '/pricing?for=rink&plan=business_plus' },
-  team: { label: 'Unlock Club Pro for roster + analytics', href: '/pricing?for=team&plan=club_pro' },
+  rink: { label: 'Unlock Organization Pro for lead capture & analytics', href: '/pricing?for=rink&plan=org_pro' },
+  team: { label: 'Unlock Organization Pro for roster + analytics', href: '/pricing?for=team&plan=org_pro' },
   league: { label: 'Unlock Federation for org-wide tools', href: '/pricing?for=league&plan=federation' },
   player: { label: 'Unlock Identity Plus for Family Hub + analytics', href: '/pricing?for=player&plan=identity_plus' },
 };

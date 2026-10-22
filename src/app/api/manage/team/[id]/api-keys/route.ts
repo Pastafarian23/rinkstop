@@ -16,8 +16,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const TIER_RANK: Record<string, number> = { free: 0, business_listing: 1, business_plus: 2, club_starter: 1, club_pro: 2, club_elite: 3, league: 4, federation: 5 };
-function tierAtLeast(a: string, m: string) { return (TIER_RANK[a] ?? 0) >= (TIER_RANK[m] ?? 0); }
+// Organization-tier gate. Reads profiles.org_tier (the organization ladder),
+// NOT profiles.tier (the personal ladder). API access is an org feature.
+import { tierAtLeast } from '@/lib/tier';
 
 function genKey(): { plaintext: string; prefix: string; hash: string } {
   const rnd = randomBytes(24).toString('base64url'); // 32 chars
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const userId = cu.id;
   const { id } = await params;
 
-  // Verify ownership + Club Elite tier
+  // Verify ownership + Organization Pro tier
   const { data: team, error: tErr } = await supabaseAdmin
     .from('team_workspaces')
     .select('id, owner_user_id')
@@ -58,9 +59,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (team.owner_user_id !== userId) return NextResponse.json({ error: 'Not the team owner' }, { status: 403 });
 
   const { data: profile } = await supabaseAdmin
-    .from('profiles').select('tier').eq('user_id', userId).maybeSingle();
-  if (!tierAtLeast(profile?.tier || 'free', 'club_elite')) {
-    return NextResponse.json({ error: 'API access requires Club Elite', required_tier: 'club_elite' }, { status: 402 });
+    .from('profiles').select('org_tier').eq('user_id', userId).maybeSingle();
+  const orgTier = profile?.org_tier || 'org_free';
+  // API access is advertised on the Organization Pro card
+  // ("API access for team data"), so the gate is org_pro — not org_elite.
+  if (!tierAtLeast(orgTier, 'org_pro')) {
+    return NextResponse.json({ error: 'API access requires Organization Pro', required_tier: 'org_pro', current_tier: orgTier }, { status: 402 });
   }
 
   let body: any;

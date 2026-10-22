@@ -1,61 +1,101 @@
 /**
  * Single source of truth for RinkStop subscription plans.
  *
- * PLAN STRUCTURE (revised 2026-07-02 — identity-first model):
+ * PLAN STRUCTURE (revised 2026-10-22 — two-track, single-ladder org model):
  *
  * Individuals (one Verified Hockey Identity per person, unlimited roles):
- *   - Free                       (free, $0)                 browse only
- *   - Hockey Passport          (verified_identity, $24.99) required for participation
- *   - Hockey Passport Plus              (identity_plus, $59.99)     premium personal features
+ *   - Free                       (free, $0)        browse only
+ *   - Hockey Passport            (verified_identity, $24.99)  participation
+ *   - Hockey Passport Plus       (identity_plus, $59.99)     premium personal
  *
- * Organizations (clubs, leagues, federations, teams, associations):
- *   - Club Starter               (club_starter, $149)       small clubs (≤30 players)
- *   - Club Pro                   (club_pro, $399)           mid clubs (≤150 players)
- *   - Club Elite                 (club_elite, $999)         large clubs (unlimited teams)
- *   - League                     (league, $1,999)           league-wide management
- *   - Federation                 (federation, Custom)       federation governance
+ * Organizations (clubs, leagues, federations, teams, associations, and
+ * commercial businesses — ONE ladder for both):
+ *   - Organization Free          (org_free, $0)     1 team, basic management
+ *   - Organization Plus          (org_plus, $99)    multiple teams, payments
+ *   - Organization Pro           (org_pro, $299)    financial reporting, API
+ *   - Organization Elite         (org_elite, $599)  custom branding, analytics
+ *   - Organization Enterprise    (org_enterprise, Custom)  federation governance
  *
- * Business Listings (commercial businesses, separate from orgs):
- *   - Business Listing           (business_listing, $99)    single business claim
- *   - Business Plus              (business_plus, $299)      multi-listing + features
+ * ── THE TWO-COLUMN MODEL ────────────────────────────────────────────────
+ * `profiles.tier` is PERSONAL only (free | verified_identity | identity_plus).
+ * `profiles.org_tier` is ORGANIZATION only (org_free | org_plus | org_pro |
+ * org_elite | org_enterprise). A person can hold a personal Passport AND be
+ * an org owner at the same time; a single column cannot express that, and
+ * letting an org purchase wipe a personal Passport would be a data-loss bug.
  *
- * Legacy DB-stored tier values from pre-2026-07-02 (roster, pro, business_premium,
- * etc.) are removed from the public pricing surface entirely. The DB column can
- * still hold them for historical rows, but they are NOT exported as TierName values.
- * Code that reads `profiles.tier` should treat unknown values as 'free' and surface
- * a "plan needs to be updated" message — or run a one-time data migration script.
+ * ── LEGACY ALIASES ──────────────────────────────────────────────────────
+ * Pre-2026-10-22 rows can still carry the old names (club_starter,
+ * business_plus, federation, roster, …). Rather than a 565-site rename,
+ * every tier READ is canonicalized through `canonicalTier()`, and the legacy
+ * names stay resolvable in the rank tables so in-flight webhooks and gates
+ * keep working. The legacy names are removed from the PUBLIC pricing surface.
  *
- * Stripe price IDs are stored in Vercel environment variables. New plans will get
- * their Stripe products created on demand; until then, /api/tier/upgrade returns
- * 503 with a clear "tier_not_configured" error so the UI can show "Coming soon".
+ * Stripe price IDs are stored in Vercel environment variables.
  *
- * Tracks: identity plans → 'personal', organization + business plans → 'business'.
- * This matches the existing AccountTrack type and keeps tier-gate.ts working.
- * Cross-track rank comparisons are still blocked.
+ * Tracks: identity plans → 'personal', organization plans → 'organization'.
+ * Cross-track rank comparisons are blocked.
  */
 
 export type TierName =
-  // Identity track
+  // Identity track (profiles.tier)
   | 'free'
   | 'verified_identity'
   | 'identity_plus'
-  // Organization track
-  | 'club_starter'
-  | 'club_pro'
-  | 'club_elite'
-  | 'league'
-  | 'federation'
-  // Business listings track
-  | 'business_listing'
-  | 'business_plus';
+  // Organization track (profiles.org_tier)
+  | 'org_free'
+  | 'org_plus'
+  | 'org_pro'
+  | 'org_elite'
+  | 'org_enterprise';
 
-export type AccountTrack = 'personal' | 'business';
+export type AccountTrack = 'personal' | 'organization';
 
-export type TierGroup = 'identity' | 'organization' | 'business';
+export type TierGroup = 'identity' | 'organization';
+
+/**
+ * Legacy tier name → canonical tier name.
+ *
+ * This is the ONLY place a legacy name is translated. Anything reading a tier
+ * off the database must pass it through `canonicalTier()` first.
+ */
+export const LEGACY_TIER_ALIAS: Record<string, TierName> = {
+  // Pre-2026-07-02 identity aliases
+  roster: 'verified_identity',
+  roster_plus: 'identity_plus',
+  pro: 'identity_plus',
+  premium: 'identity_plus',
+  // Organization ladder (old names)
+  club_starter: 'org_plus',
+  club_pro: 'org_pro',
+  club_elite: 'org_elite',
+  league: 'org_enterprise',
+  federation: 'org_enterprise',
+  enterprise: 'org_enterprise',
+  // Business ladder folded into the organization ladder
+  business_listing: 'org_plus',
+  business_plus: 'org_pro',
+  business_starter: 'org_plus',
+  business_pro: 'org_pro',
+  business_premium: 'org_pro',
+  // Business track also had a "free" rung; map it explicitly.
+  business_free: 'org_free',
+};
+
+/**
+ * Canonicalize any tier name to its current canonical form.
+ * Unknown values fall back to 'free' so a bad row can never grant access.
+ */
+export function canonicalTier(tier: string | null | undefined): TierName {
+  if (!tier) return 'free';
+  const raw = tier.trim();
+  if (raw in TIERS) return raw as TierName;
+  if (raw in LEGACY_TIER_ALIAS) return LEGACY_TIER_ALIAS[raw];
+  return 'free';
+}
 
 /**
  * Tier to track mapping.
- * Identity plans → personal, organization + business plans → business.
+ * Identity plans → personal, organization plans → organization.
  */
 export const TIER_TO_TRACK: Record<TierName, AccountTrack> = {
   // Identity
@@ -63,14 +103,11 @@ export const TIER_TO_TRACK: Record<TierName, AccountTrack> = {
   verified_identity: 'personal',
   identity_plus: 'personal',
   // Organization
-  club_starter: 'business',
-  club_pro: 'business',
-  club_elite: 'business',
-  league: 'business',
-  federation: 'business',
-  // Business listings
-  business_listing: 'business',
-  business_plus: 'business',
+  org_free: 'organization',
+  org_plus: 'organization',
+  org_pro: 'organization',
+  org_elite: 'organization',
+  org_enterprise: 'organization',
 };
 
 export interface TierInfo {
@@ -164,7 +201,7 @@ export const TIERS: Record<TierName, TierInfo> = {
       'Career timeline (auto-built from your data)',
       'Achievement tracking',
       'Advanced player analytics',
-      'Unlimited photos & videos',
+      '5 GB of media storage · 250 items · photos and video',
       'Advanced messaging',
       'Premium insights',
       'Priority support',
@@ -173,153 +210,114 @@ export const TIERS: Record<TierName, TierInfo> = {
   },
 
   // ── Organization track ──────────────────────────────────────────────
-  club_starter: {
-    name: 'club_starter',
-    label: 'Club Starter',
+  org_free: {
+    name: 'org_free',
+    label: 'Organization Free',
     group: 'organization',
-    track: 'business',
-    priceUsd: 149,
-    stripePriceEnv: 'STRIPE_PRICE_CLUB_STARTER',
-    tagline: 'Get your club in front of every coach, scout, and family searching for hockey in your area.',
-    cta: 'Start Your Club',
+    track: 'organization',
+    priceUsd: 0,
+    stripePriceEnv: '',
+    tagline: 'Run one team for free — roster, schedule, events and attendance, with no card on file.',
+    cta: 'Create Your Team',
     features: [
-      'One organization',
-      'Team management',
-      'Registration management',
-      'Scheduling',
-      'Attendance',
-      'Payments',
-      'Website',
-      'Up to 30 players',
+      '1 team workspace',
+      'Roster management',
+      'Schedule and game calendar',
+      'Events and attendance',
+      'Public team directory listing',
+      '100 MB of shared media storage',
     ],
-    footnote: 'Designed for small clubs just getting organized.',
+    footnote: 'Free forever for a single team. Upgrade when you need more teams, payments, or reporting.',
   },
-  club_pro: {
-    name: 'club_pro',
-    label: 'Club Pro',
+  org_plus: {
+    name: 'org_plus',
+    label: 'Organization Plus',
     group: 'organization',
-    track: 'business',
-    priceUsd: 399,
-    stripePriceEnv: 'STRIPE_PRICE_CLUB_PRO',
-    tagline: 'Showcase every team, track every player, and give coaches, scouts, and families one place to find schedules and standings.',
-    cta: 'Upgrade to Club Pro',
+    track: 'organization',
+    priceUsd: 99,
+    stripePriceEnv: 'STRIPE_PRICE_ORG_PLUS',
+    tagline: 'Everything a growing club needs — multiple teams, registrations, payments and practice plans.',
+    cta: 'Upgrade to Organization Plus',
     popular: true,
     features: [
-      'Everything in Club Starter',
-      'Up to 150 players',
-      'Multiple teams',
-      'Coach & volunteer rosters',
+      'Everything in Organization Free',
+      'Up to 3 team workspaces',
+      'Registration management (programs)',
+      'Payments and dues collection',
       'Practice Plans & Drills Library',
-      'Financial reporting (payments, outstanding, overdue)',
-      'Player transfers',
-      'Stamp verification (coach-verified passport rows)',
-      'Advanced organization tools',
+      'Up to 30 players',
+      'Listing claims, leads and reviews',
+      '10 GB of shared media storage',
     ],
-    footnote: 'For mid-sized clubs running multiple teams.',
+    footnote: 'For clubs and small organizations running more than one team.',
   },
-  club_elite: {
-    name: 'club_elite',
-    label: 'Club Elite',
+  org_pro: {
+    name: 'org_pro',
+    label: 'Organization Pro',
     group: 'organization',
-    track: 'business',
-    priceUsd: 999,
-    stripePriceEnv: 'STRIPE_PRICE_CLUB_ELITE',
-    tagline: 'Run a hockey organization at scale — your brand, your data, your members in one place, visible to the whole hockey world.',
-    cta: 'Go Club Elite',
+    track: 'organization',
+    priceUsd: 299,
+    stripePriceEnv: 'STRIPE_PRICE_ORG_PRO',
+    tagline: 'Run your organization with the numbers behind it — financial reporting, API access and promotions.',
+    cta: 'Upgrade to Organization Pro',
     features: [
-      'Everything in Club Pro',
-      'Unlimited teams',
-      'Advanced analytics',
+      'Everything in Organization Plus',
+      'Up to 10 team workspaces',
+      'Financial reporting (payments, outstanding, overdue)',
+      'API access for team data',
+      'Promotions and featured placement',
+      'Multiple listings',
+      'Up to 150 players',
+      '50 GB of shared media storage',
+    ],
+    footnote: 'For mid-sized clubs and organizations that need reporting and integrations.',
+  },
+  org_elite: {
+    name: 'org_elite',
+    label: 'Organization Elite',
+    group: 'organization',
+    track: 'organization',
+    priceUsd: 599,
+    stripePriceEnv: 'STRIPE_PRICE_ORG_ELITE',
+    tagline: 'Your brand, your data, your members — advanced analytics and custom branding at scale.',
+    cta: 'Upgrade to Organization Elite',
+    features: [
+      'Everything in Organization Pro',
+      'Unlimited team workspaces',
       'Custom branding',
-      'API access',
+      'Advanced analytics',
       'Priority support',
+      '200 GB of shared media storage',
     ],
     footnote: 'For large clubs with multi-location or multi-region operations. Multi-location directory support ships in 2026 Q4.',
   },
-  league: {
-    name: 'league',
-    label: 'League',
+  org_enterprise: {
+    name: 'org_enterprise',
+    label: 'Organization Enterprise',
     group: 'organization',
-    track: 'business',
-    priceUsd: 1999,
-    stripePriceEnv: 'STRIPE_PRICE_LEAGUE',
-    tagline: 'Publish standings, schedules, and stats for every team — automatically, visible to every coach and scout.',
-    cta: 'Get Started',
+    track: 'organization',
+    priceUsd: null,
+    stripePriceEnv: '',
+    tagline: 'Govern your sport at scale — member organizations, compliance, and custom integrations.',
+    cta: 'Contact Sales',
     features: [
-      'League-wide management features',
-      'Custom pricing based on scope',
-      'Onboarding and migration support',
-      'Dedicated success manager',
+      'Federation governance and member organizations',
+      'Compliance and regulatory tooling',
+      'Custom integrations',
+      'Dedicated success team',
+      'Negotiated media capacity',
     ],
     // NOTE: literal, not derived from formatTierPrice() — this object is
     // evaluated at module load, so calling formatTierPrice() here would hit
     // the temporal dead zone on TIERS itself and crash the pricing page.
     // Keep in sync with `priceUsd` above.
-    footnote: 'Starting at $1,999/year — pricing scales with league size.',
-  },
-  federation: {
-    name: 'federation',
-    label: 'Federation',
-    group: 'organization',
-    track: 'business',
-    priceUsd: null,
-    stripePriceEnv: '',
-    tagline: 'Govern your sport at the national level — member verification, compliance, and analytics across every member organization.',
-    cta: 'Contact Sales',
-    features: [
-      'Federation governance',
-      'Compliance and regulatory tools',
-      'Enterprise capabilities',
-      'Custom integrations',
-      'Dedicated success team',
-    ],
-    footnote: 'Custom pricing — federations are scoped per engagement.',
-  },
-
-  // ── Business listings track ─────────────────────────────────────────
-  business_listing: {
-    name: 'business_listing',
-    label: 'Business Listing',
-    group: 'business',
-    track: 'business',
-    priceUsd: 99,
-    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_LISTING',
-    tagline: 'Get found by coaches, scouts, and parents searching for hockey services in your city.',
-    cta: 'Claim Listing',
-    features: [
-      'Verified business listing',
-      'Contact information',
-      'Lead form',
-      'Photos',
-      'Analytics',
-    ],
-    footnote: 'For commercial businesses — hockey shops, sharpeners, clinics, trainers, equipment rental, travel, photography.',
-  },
-  business_plus: {
-    name: 'business_plus',
-    label: 'Business Plus',
-    group: 'business',
-    track: 'business',
-    priceUsd: 299,
-    stripePriceEnv: 'STRIPE_PRICE_BUSINESS_PLUS',
-    tagline: 'Multi-location visibility, featured placement, booking, and messaging — turn your hockey business into a lead engine.',
-    cta: 'Upgrade to Business Plus',
-    features: [
-      'Everything in Business Listing',
-      'Multiple listings',
-      'Featured placement',
-      'Promotions',
-      'Messaging',
-      'Enhanced analytics',
-      'Booking support',
-    ],
-    footnote: 'For multi-location businesses and high-volume service providers.',
+    footnote: 'Starting at $1,999/year — pricing scales with league or federation size.',
   },
 };
 
 /**
  * Canonical tier ordering for the public pricing UI.
- * Identity → Organization → Business.
+ * Identity → Organization.
  */
 export const PRICING_DISPLAY_ORDER: TierName[] = [
   // Identity
@@ -327,21 +325,20 @@ export const PRICING_DISPLAY_ORDER: TierName[] = [
   'verified_identity',
   'identity_plus',
   // Organization
-  'club_starter',
-  'club_pro',
-  'club_elite',
-  'league',
-  'federation',
-  // Business
-  'business_listing',
-  'business_plus',
+  'org_free',
+  'org_plus',
+  'org_pro',
+  'org_elite',
+  'org_enterprise',
 ];
 
 /**
- * Max claims per tier. Used by feature gating.
- * Identity plans can claim their own player profile + linked kids/family.
- * Organization plans have player-capacity caps (player slots, not claim slots).
- * Business plans cap the number of business listings one user can claim.
+ * MAX LISTING CLAIMS per tier.
+ *
+ * This counts listings a person/org can CLAIM (rink, team, league, player
+ * profile, business). It is deliberately separate from player capacity and
+ * team capacity — those are in PLAYER_CAPACITY_PER_TIER and
+ * TEAM_LIMIT_PER_TIER.
  */
 export const MAX_CLAIMS_PER_TIER: Record<TierName, number> = {
   // Identity
@@ -351,15 +348,42 @@ export const MAX_CLAIMS_PER_TIER: Record<TierName, number> = {
   free: 1,
   verified_identity: 1, // claim your own player profile
   identity_plus: 5, // unlimited roles + family
-  // Organization (player capacity)
-  club_starter: 30,
-  club_pro: 150,
-  club_elite: Infinity,
-  league: Infinity,
-  federation: Infinity,
-  // Business listings
-  business_listing: 1,
-  business_plus: 25,
+  // Organization
+  org_free: 1,
+  org_plus: 5,
+  org_pro: 25,
+  org_elite: Infinity,
+  org_enterprise: Infinity,
+};
+
+/**
+ * PLAYER CAPACITY per tier — how many players an organization may manage.
+ * Enforced server-side (see src/lib/org-limits.ts).
+ */
+export const PLAYER_CAPACITY_PER_TIER: Record<TierName, number> = {
+  free: Infinity,
+  verified_identity: Infinity,
+  identity_plus: Infinity,
+  org_free: 30,
+  org_plus: 30,
+  org_pro: 150,
+  org_elite: Infinity,
+  org_enterprise: Infinity,
+};
+
+/**
+ * TEAM WORKSPACE CAP per tier — how many teams an organization may create.
+ * Enforced server-side in create_team_workspace + the app layer.
+ */
+export const TEAM_LIMIT_PER_TIER: Record<TierName, number> = {
+  free: 0,
+  verified_identity: 0,
+  identity_plus: 0,
+  org_free: 1,
+  org_plus: 3,
+  org_pro: 10,
+  org_elite: Infinity,
+  org_enterprise: Infinity,
 };
 
 /** Convenience: monthly outbound message cap for a tier, defaulting to 0 for unknown tiers. */
@@ -369,47 +393,53 @@ export function getMonthlyOutboundMessages(tier: TierName | string | null | unde
     free: 0,
     verified_identity: 100,
     identity_plus: 500,
-    club_starter: 500,
-    club_pro: 2000,
-    club_elite: 5000,
-    league: 10000,
-    federation: Infinity,
-    business_listing: 100,
-    business_plus: 1000,
+    org_free: 250,
+    org_plus: 500,
+    org_pro: 2000,
+    org_elite: 5000,
+    org_enterprise: Infinity,
   };
-  return caps[tier] ?? 0;
+  return caps[canonicalTier(tier)] ?? 0;
 }
 
 /** Convenience: max active listings for a tier. */
 export function getMaxListingsForTier(tier: TierName | string | null | undefined): number {
   if (!tier) return 0;
   const limits: Record<string, number> = {
-    free: 0,
-    verified_identity: 0,
-    identity_plus: 0,
-    club_starter: 30,
-    club_pro: 150,
-    club_elite: Infinity,
-    league: Infinity,
-    federation: Infinity,
-    business_listing: 1,
-    business_plus: 25,
+    free: 1,
+    verified_identity: 1,
+    identity_plus: 5,
+    org_free: 1,
+    org_plus: 5,
+    org_pro: 25,
+    org_elite: Infinity,
+    org_enterprise: Infinity,
   };
-  return limits[tier] ?? 0;
+  return limits[canonicalTier(tier)] ?? 0;
 }
 
-/** Format a tier's price for display. '$0' for free, '$24.99' for paid, 'Custom' for federation. */
-export function formatTierPrice(tier: TierName | string): string {
-  const t = TIERS[tier as TierName];
-  if (!t) return 'Contact';
-  const p = t.priceUsd;
-  if (p === null || p === undefined) return 'Custom';
-  if (p === 0) return '$0';
-  // Thousands separator, so League reads "$1,999" not "$1999".
-  const whole = Math.floor(p);
+/**
+ * Format a raw USD amount for display.
+ *
+ * Exported so the thousands-separator behaviour can be unit-tested directly:
+ * the old "League" tier ($1,999) is now Organization Enterprise (Custom, no
+ * price), so no canonical tier exercises the four-figure path any more.
+ */
+export function formatTierPriceAmount(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined) return 'Custom';
+  if (amount === 0) return '$0';
+  // Thousands separator, so four-figure prices read "$1,999" not "$1999".
+  const whole = Math.floor(amount);
   const grouped = whole.toLocaleString('en-US');
-  if (p === whole) return `$${grouped}`;
-  return `$${grouped}.${Math.round((p - whole) * 100).toString().padStart(2, '0')}`;
+  if (amount === whole) return `$${grouped}`;
+  return `$${grouped}.${Math.round((amount - whole) * 100).toString().padStart(2, '0')}`;
+}
+
+/** Format a tier's price for display. '$0' for free, '$24.99' for paid, 'Custom' for enterprise. */
+export function formatTierPrice(tier: TierName | string): string {
+  const t = TIERS[canonicalTier(tier)];
+  if (!t) return 'Contact';
+  return formatTierPriceAmount(t.priceUsd);
 }
 
 /** Format with the "/ year" suffix. */
@@ -423,26 +453,26 @@ export function formatTierPricePerYear(tier: TierName | string): string {
 /** Get track for a tier (for UI routing). */
 export function getTrackForTier(tier: TierName | string | null | undefined): AccountTrack {
   if (!tier) return 'personal';
-  return TIER_TO_TRACK[tier as TierName] ?? 'personal';
+  return TIER_TO_TRACK[canonicalTier(tier)];
 }
 
-/** Get group (identity / organization / business) for a tier. */
+/** Get group (identity / organization) for a tier. */
 export function getGroupForTier(tier: TierName | string | null | undefined): TierGroup {
   if (!tier) return 'identity';
-  return TIERS[tier as TierName]?.group ?? 'identity';
+  return TIERS[canonicalTier(tier)].group;
 }
 
 /**
  * Returns the display label for a tier name, with safe fallback for unknown
- * (legacy DB-stored) values. Used in subscription display, profile tier badges,
- * and any other UI surface where a tier name is shown.
+ * (legacy DB-stored) values. Legacy names are canonicalized first, so
+ * `club_starter` renders as "Organization Plus" rather than the raw string.
  */
 export function getTierLabel(tier: string | null | undefined): string {
   if (!tier) return 'Free';
-  const t = TIERS[tier as TierName];
-  if (t) return t.label;
-  // Unknown tier value — shouldn't happen after the 2026-07-02 data migration
-  // (see supabase/migrations/2026-07-02_remove_old_tier_names.sql). Return the
-  // raw string so we never silently drop information.
-  return tier;
+  const canonical = canonicalTier(tier);
+  if (tier !== canonical && !(tier in TIERS)) {
+    // Legacy name — show the canonical label, never the raw legacy string.
+    return TIERS[canonical].label;
+  }
+  return TIERS[canonical].label;
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { meetsTierGate } from '@/lib/tier-gate';
 
 // Renders a Connect / Pending / Accept/Decline / Connected / Blocked control
 // for a target user. Used on the user profile page (and could be reused elsewhere).
@@ -22,8 +23,9 @@ export default function ConnectButton({
   const { user: clerkUser, isLoaded } = useUser();
   const me = clerkUser?.id;
   const [myTier, setMyTier] = useState<string>('free');
+  const [myOrgTier, setMyOrgTier] = useState<string>('org_free');
 
-  // Fetch the caller's tier from /api/profiles/me (source of truth is profiles table, not Clerk).
+  // Fetch the caller's tiers from /api/profiles/me (source of truth is profiles table, not Clerk).
   useEffect(() => {
     if (!isLoaded || !me) return;
     let cancelled = false;
@@ -32,7 +34,9 @@ export default function ConnectButton({
         const res = await fetch('/api/profiles/me');
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled) setMyTier(data.profile?.tier || 'free');
+        if (cancelled) return;
+        setMyTier(data.profile?.tier || 'free');
+        setMyOrgTier(data.profile?.org_tier || 'org_free');
       } catch {
         // Silently default to 'free'
       }
@@ -192,9 +196,16 @@ export default function ConnectButton({
     );
   }
 
-  // Signed in but not Hockey Passport Plus/Business Plus - DMs require Hockey Passport Plus tier.
-  // Per privilege matrix: DMs need Hockey Passport Plus (personal) or Business Plus (business).
-  const canConnect = ['pro', 'business_pro', 'business_premium', 'enterprise'].includes(myTier);
+  // Signed in but not entitled - DMs require Hockey Passport Plus (personal)
+  // or Organization Pro+ (organization track).
+  //
+  // 2026-10-22: the old check was a flat list
+  // `['pro','business_pro','business_premium','enterprise'].includes(myTier)`,
+  // which only ever looked at the PERSONAL column. A user whose entitlement
+  // lived in profiles.org_tier was locked out, and legacy names in the list
+  // ('business_pro') never matched a canonical tier. `meetsTierGate` checks
+  // both columns and canonicalizes legacy names.
+  const canConnect = meetsTierGate(myTier, myOrgTier, 'identity_plus', 'org_pro');
   if (!canConnect) {
     return (
       <a

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { meetsTierGate } from '@/lib/tier-gate';
 
 // Renders an "I'm this player's parent" button on youth hockey player profile pages.
 // Only shown when the player is under 18 (has birth_date and is less than 18 years old).
@@ -20,6 +21,7 @@ export default function ClaimParentButton({
   const { user: clerkUser, isLoaded } = useUser();
   const me = clerkUser?.id;
   const [myTier, setMyTier] = useState<string>('free');
+  const [myOrgTier, setMyOrgTier] = useState<string>('org_free');
 
   // Fetch the caller's tier from /api/profiles/me (source of truth is profiles table, not Clerk).
   useEffect(() => {
@@ -30,7 +32,9 @@ export default function ClaimParentButton({
         const res = await fetch('/api/profiles/me');
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled) setMyTier(data.profile?.tier || 'free');
+        if (cancelled) return;
+        setMyTier(data.profile?.tier || 'free');
+        setMyOrgTier(data.profile?.org_tier || 'org_free');
       } catch {
         // Silently default to 'free'
       }
@@ -77,12 +81,13 @@ export default function ClaimParentButton({
     );
   }
 
-  // Hockey Passport Plus (personal) OR Business Plus+ (business) required for parent claim.
-  // Parents claim youth players - this is a personal feature, but business users
-  // with higher tiers also get access.
-  const personalTiers = ['roster_plus', 'pro'];
-  const businessTiers = ['business_pro', 'business_premium', 'enterprise'];
-  const canClaimParent = personalTiers.includes(myTier) || businessTiers.includes(myTier);
+  // Hockey Passport Plus (personal) OR Organization Pro+ (organization) required
+  // for parent claim.
+  //
+  // 2026-10-22: the old check used flat legacy lists
+  // (['roster_plus','pro'] and ['business_pro','business_premium','enterprise'])
+  // that only ever read the PERSONAL column. `meetsTierGate` checks both.
+  const canClaimParent = meetsTierGate(myTier, myOrgTier, 'identity_plus', 'org_pro');
   if (!canClaimParent) {
     return (
       <a

@@ -31,8 +31,9 @@ interface UserMenuProps {
   /** Currently active role (drives the tab bar). */
   activeRole?: string | null;
   /**
-   * User tier (drives the workspace switcher — Personal is always available,
-   * Organization requires club_starter, Business requires business_listing).
+   * User organization tier (drives the workspace switcher — Personal is
+   * always available; Organization and Business require an organization
+   * plan). Read from profiles.org_tier.
    */
   userTier?: string | null;
 }
@@ -366,12 +367,14 @@ export default function UserMenu({
                 // Inline tierAtLeast for workspace gating. Mirrors the logic
                 // in getWorkspaceAccess() — duplicated here to avoid a heavy
                 // import of tierAtLeast from lib/connections.
+                // Canonical organization ladder (2026-10-22). Organization
+                // and Business both live on the organization track.
                 const tierRank: Record<string, number> = {
-                  free: 0,
-                  verified_identity: 1,
-                  identity_plus: 2,
-                  business_listing: 1,
-                  business_plus: 2,
+                  org_free: 0,
+                  org_plus: 1,
+                  org_pro: 2,
+                  org_elite: 3,
+                  org_enterprise: 4,
                 };
                 const userRank = tierRank[userTier || 'free'] ?? 0;
                 const meets = (min: string | null) => !min || (tierRank[min] ?? 0) <= userRank;

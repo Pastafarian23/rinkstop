@@ -14,8 +14,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const TIER_RANK: Record<string, number> = { free: 0, business_listing: 1, business_plus: 2, club_starter: 1, club_pro: 2, club_elite: 3, league: 4, federation: 5 };
-function tierAtLeast(a: string, m: string) { return (TIER_RANK[a] ?? 0) >= (TIER_RANK[m] ?? 0); }
+// Organization-tier gate. Reads profiles.org_tier, not profiles.tier.
+// Federation governance is the top rung of the organization ladder.
+import { tierAtLeast } from '@/lib/tier';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ country: string }> }) {
   const { country } = await params;
@@ -40,10 +41,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cou
 
   // Tier check: federation or higher
   const { data: profile } = await supabaseAdmin
-    .from('profiles').select('tier').eq('user_id', userId).maybeSingle();
-  if (!tierAtLeast(profile?.tier || 'free', 'federation')) {
+    .from('profiles').select('org_tier').eq('user_id', userId).maybeSingle();
+  if (!tierAtLeast(profile?.org_tier || 'org_free', 'org_enterprise')) {
     return NextResponse.json(
-      { error: 'Compliance edits require a Federation subscription', required_tier: 'federation' },
+      { error: 'Compliance edits require an Organization Enterprise subscription', required_tier: 'org_enterprise' },
       { status: 402 }
     );
   }

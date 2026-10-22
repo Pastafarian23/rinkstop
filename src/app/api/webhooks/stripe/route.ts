@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logReceived, markProcessed, markFailed } from '@/lib/stripe-webhook-log';
+import { canonicalTier, TIER_TO_TRACK } from '@/lib/pricing';
 
 function getStripe() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -21,18 +22,52 @@ function getSupabase() {
   return _supabase;
 }
 
-async function updateUserTier(clerkUserId: string, tier: string | null, subscriptionId: string | null, customerId: string | null, status: string, expiresAtIso: string | null) {
+/**
+ * Write an entitlement to the right column.
+ *
+ * `profiles.tier` holds the PERSONAL track (free | verified_identity |
+ * identity_plus). `profiles.org_tier` holds the ORGANIZATION track
+ * (org_free | org_plus | org_pro | org_elite | org_enterprise).
+ *
+ * An org purchase MUST NOT overwrite a paid personal Passport — they are
+ * independent entitlements on the same person.
+ */
+async function updateUserTier(
+  clerkUserId: string,
+  tier: string | null,
+  subscriptionId: string | null,
+  customerId: string | null,
+  status: string,
+  expiresAtIso: string | null,
+  trackHint?: 'personal' | 'organization',
+) {
   const supabase = getSupabase() as any;
-  const update: Record<string, any> = {
-    tier,
-    subscription_status: status,
-  };
-  if (subscriptionId) update.stripe_subscription_id = subscriptionId;
+  const canonical = canonicalTier(tier);
+  const isOrg =
+    trackHint === 'organization' ||
+    (trackHint !== 'personal' && TIER_TO_TRACK[canonical] === 'organization');
+
+  const update: Record<string, any> = {};
+  if (isOrg) {
+    // The org ladder's free rung is 'org_free', not 'free'.
+    update.org_tier = canonical === 'free' ? 'org_free' : canonical;
+    update.org_subscription_status = status;
+  } else {
+    update.tier = canonical;
+    update.subscription_status = status;
+  }
+  // Route the subscription ID to the column that owns the track. A person
+  // can hold a personal subscription AND an org subscription; one column
+  // cannot hold both.
+  if (subscriptionId) {
+    if (isOrg) update.stripe_org_subscription_id = subscriptionId;
+    else update.stripe_subscription_id = subscriptionId;
+  }
   if (customerId) update.stripe_customer_id = customerId;
   if (expiresAtIso) update.tier_expires_at = expiresAtIso;
 
   // Founding Member scarcity lever: award is_founding_member=true to the first 500
-  // paying members (Roster or higher), only on the first time they become a paid tier.
+  // paying members, only on the first time they become a paid tier.
   // Once the cap is hit, no more are awarded.
   if (tier && tier !== 'free' && status === 'active') {
     const { data: existing } = await supabase
@@ -60,7 +95,7 @@ async function updateUserTier(clerkUserId: string, tier: string | null, subscrip
     console.error('[Webhook] Failed to update user tier', { clerkUserId, tier, error });
     throw new Error('user_tier_update_failed');
   }
-  console.log(`[Webhook] User ${clerkUserId} -> tier=${tier}, status=${status}, expires=${expiresAtIso}`);
+  console.log(`[Webhook] User ${clerkUserId} -> ${isOrg ? 'org_tier' : 'tier'}=${canonical}, status=${status}, expires=${expiresAtIso}`);
 }
 
 export async function POST(req: NextRequest) {
@@ -204,6 +239,8 @@ export async function POST(req: NextRequest) {
           // safely idempotent. The existing row (if any) keeps its tier if
           // already set; otherwise we set it to the purchased tier.
           const supabase = getSupabase() as any;
+          const guestCanonical = canonicalTier(metadata.tier);
+          const guestIsOrg = TIER_TO_TRACK[guestCanonical] === 'organization';
           const { error: upsertErr } = await supabase
             .from('profiles')
             .upsert(
@@ -211,7 +248,9 @@ export async function POST(req: NextRequest) {
                 email,
                 user_id: null,
                 stripe_session_id: session.id,
-                tier: metadata.tier,
+                ...(guestIsOrg
+                  ? { org_tier: guestCanonical }
+                  : { tier: guestCanonical }),
                 stripe_subscription_id: subscriptionId,
                 stripe_customer_id: customerId,
                 subscription_status: subscription.status === 'active' ? 'active' : subscription.status,
@@ -300,7 +339,6 @@ export async function POST(req: NextRequest) {
               ? (metadata.tier || 'free') // keep tier during dunning — user paid, we just haven't collected yet
               : 'free'; // canceled / unpaid → downgrade
           await updateUserTier(metadata.clerk_user_id, tier, subscription.id, subscription.customer, subscription.status, expiresAt);
-
           // Funnel event: the user's subscription went live (or transitioned).
           // We only count first-time activations for the conversion rate.
           if (isLiveStatus) {
@@ -335,11 +373,25 @@ export async function POST(req: NextRequest) {
         const metadata = subscription.metadata || {};
 
         if (metadata.clerk_user_id) {
-          // Write tier='free' (not null) because profiles.tier is NOT NULL.
+          // Write the FREE tier (not null) because profiles.tier is NOT NULL.
           // A cancelled user is functionally a free user; dropping them to the
           // free tier unlocks the same access tier-gate functions grant to free
           // users, which is what every read path expects.
-          await updateUserTier(metadata.clerk_user_id, 'free', null, null, 'cancelled', null);
+          //
+          // IMPORTANT: only the column that owns the cancelled subscription's
+          // track is reset. Cancelling an org subscription must not wipe a
+          // paid personal Hockey Passport, and vice versa.
+          const cancelledCanonical = canonicalTier(metadata.tier);
+          const cancelledIsOrg = TIER_TO_TRACK[cancelledCanonical] === 'organization';
+          await updateUserTier(
+            metadata.clerk_user_id,
+            'free',
+            null,
+            null,
+            'cancelled',
+            null,
+            cancelledIsOrg ? 'organization' : 'personal',
+          );
           break;
         }
       }

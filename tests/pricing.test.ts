@@ -11,6 +11,7 @@ import {
   TIER_TO_TRACK,
   PRICING_DISPLAY_ORDER,
   formatTierPrice,
+  formatTierPriceAmount,
   formatTierPricePerYear,
   getTierLabel,
   getTrackForTier,
@@ -28,25 +29,36 @@ describe('pricing — formatting', () => {
   });
 
   it('uses a thousands separator for four-figure prices', () => {
-    // Regression: League rendered as "$1999" before this was fixed.
-    expect(formatTierPrice('league')).toBe('$1,999');
+    // Regression: the old League tier rendered as "$1999" before this was
+    // fixed. League is now Organization Enterprise (custom, no price), so
+    // the thousands-separator path is exercised by the formatter directly.
+    expect(formatTierPriceAmount(1999)).toBe('$1,999');
+    expect(formatTierPriceAmount(0)).toBe('$0');
+    expect(formatTierPriceAmount(null)).toBe('Custom');
   });
 
   it('keeps two decimals for cents', () => {
-    expect(formatTierPrice('business_listing')).toBe('$99');
-    expect(formatTierPrice('club_starter')).toBe('$149');
-    expect(formatTierPrice('business_plus')).toBe('$299');
-    expect(formatTierPrice('club_pro')).toBe('$399');
-    expect(formatTierPrice('club_elite')).toBe('$999');
+    expect(formatTierPrice('verified_identity')).toBe('$24.99');
+    expect(formatTierPrice('identity_plus')).toBe('$59.99');
+    expect(formatTierPrice('org_plus')).toBe('$99');
+    expect(formatTierPrice('org_pro')).toBe('$299');
+    expect(formatTierPrice('org_elite')).toBe('$599');
   });
 
   it('renders custom-priced tiers as Custom', () => {
-    expect(formatTierPrice('federation')).toBe('Custom');
+    expect(formatTierPrice('org_enterprise')).toBe('Custom');
+  });
+
+  it('renders legacy names via their canonical price', () => {
+    // Legacy names still resolve, so an old link cannot show a stale price.
+    expect(formatTierPrice('club_starter')).toBe('$99');
+    expect(formatTierPrice('business_plus')).toBe('$299');
+    expect(formatTierPrice('league')).toBe('Custom');
   });
 
   it('per-year helper is friendly for copy', () => {
     expect(formatTierPricePerYear('free')).toBe('Free');
-    expect(formatTierPricePerYear('federation')).toBe('Custom pricing');
+    expect(formatTierPricePerYear('org_enterprise')).toBe('Custom pricing');
     expect(formatTierPricePerYear('verified_identity')).toBe('$24.99 / year');
   });
 });
@@ -80,11 +92,15 @@ describe('pricing — one identity, multiple roles (track mapping)', () => {
     expect(TIER_TO_TRACK.identity_plus).toBe('personal');
   });
 
-  it('keeps organization tiers on the business track', () => {
-    for (const id of ['club_starter', 'club_pro', 'club_elite', 'league', 'federation',
-                      'business_listing', 'business_plus'] as TierName[]) {
-      expect(TIER_TO_TRACK[id], `${id} must be a business track`).toBe('business');
+  it('keeps organization tiers on the organization track', () => {
+    for (const id of ['org_free', 'org_plus', 'org_pro', 'org_elite',
+                      'org_enterprise'] as TierName[]) {
+      expect(TIER_TO_TRACK[id], `${id} must be an organization track`).toBe('organization');
     }
+  });
+
+  it('has no business track left after the consolidation', () => {
+    expect(Object.values(TIER_TO_TRACK)).not.toContain('business');
   });
 
   it('falls back to personal for unknown tiers', () => {
@@ -114,6 +130,12 @@ describe('pricing — module loads without a temporal-dead-zone crash', () => {
   // would throw at import time, failing the whole suite loudly.
   it('imports cleanly', () => {
     expect(TIERS).toBeDefined();
-    expect(TIERS.league.footnote).toContain('$1,999');
+    // Regression: an earlier attempt read TIERS.league.footnote inside the
+    // TIERS object literal. That function reads TIERS, which was still being
+    // constructed -> TDZ ReferenceError -> the entire /pricing page 500s.
+    // Importing the module in this test file would throw at import time,
+    // failing the whole suite loudly.
+    expect(TIERS.org_enterprise.footnote).toContain('$1,999');
+    expect(TIERS.org_pro.footnote).toBeTruthy();
   });
 });

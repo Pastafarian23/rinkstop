@@ -25,10 +25,8 @@ const ALLOWED_FIELDS = new Set([
   'brand_og_image_url',
 ]);
 
-const TIER_RANK: Record<string, number> = {
-  free: 0, business_listing: 1, business_plus: 2, club_starter: 1, club_pro: 2, club_elite: 3, league: 4, federation: 5,
-};
-function tierAtLeast(a: string, m: string) { return (TIER_RANK[a] ?? 0) >= (TIER_RANK[m] ?? 0); }
+// Organization-tier gate. Reads profiles.org_tier, not profiles.tier.
+import { tierAtLeast } from '@/lib/tier';
 
 // Hex color validation: #RGB or #RRGGBB
 function isHexColor(s: string): boolean {
@@ -89,13 +87,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('org_tier')
     .eq('user_id', userId)
     .maybeSingle();
-  const tier = profile?.tier || 'free';
-  if (!tierAtLeast(tier, 'club_elite')) {
+  const tier = profile?.org_tier || 'org_free';
+  if (!tierAtLeast(tier, 'org_elite')) {
     return NextResponse.json(
-      { error: 'Custom branding requires Club Elite', required_tier: 'club_elite', current_tier: tier },
+      { error: 'Custom branding requires Organization Elite', required_tier: 'org_elite', current_tier: tier },
       { status: 402 }
     );
   }

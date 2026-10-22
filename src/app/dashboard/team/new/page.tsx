@@ -3,6 +3,8 @@ import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { redirect } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isIdentityVerified } from '@/lib/identity-verified';
+import { checkTeamLimit, getUserOrgTier } from '@/lib/org-limits';
+import { tierDisplayName } from '@/lib/dashboard/workspaces';
 import NewTeamForm from './NewTeamForm';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +26,14 @@ export default async function NewTeamPage() {
       .eq('user_id', userId)
       .maybeSingle(),
     isIdentityVerified(userId),
+  ]);
+
+  // Organization-tier team quota. The DB RPC (create_team_workspace) is the
+  // authority and rejects the insert; this read lets the UI tell the user
+  // BEFORE they fill in the form, instead of after a failed submit.
+  const [orgTier, teamLimit] = await Promise.all([
+    getUserOrgTier(userId),
+    checkTeamLimit(userId, await getUserOrgTier(userId)),
   ]);
 
   // Fetch all active rinks (limit to 200 for the dropdown — should be enough for v1)
@@ -97,6 +107,39 @@ export default async function NewTeamPage() {
             }}
           >
             Verify identity →
+          </a>
+        </div>
+      ) : !teamLimit.allowed ? (
+        <div
+          style={{
+            background: 'rgba(200,16,46,0.08)',
+            border: '1px solid rgba(200,16,46,0.35)',
+            borderRadius: 12,
+            padding: '1.5rem 1.75rem',
+          }}
+        >
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 0.5rem', color: '#FF6B7A' }}>
+            Team workspace limit reached
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', margin: '0 0 1rem' }}>
+            Your {tierDisplayName(orgTier)} plan includes {teamLimit.limit}{' '}
+            {teamLimit.limit === 1 ? 'team workspace' : 'team workspaces'}, and you already have{' '}
+            {teamLimit.current}. Upgrade your organization plan to create more teams.
+          </p>
+          <a
+            href="/pricing"
+            style={{
+              display: 'inline-block',
+              padding: '0.6rem 1.25rem',
+              background: '#C8102E',
+              color: '#fff',
+              borderRadius: 6,
+              textDecoration: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 700,
+            }}
+          >
+            See organization plans →
           </a>
         </div>
       ) : (

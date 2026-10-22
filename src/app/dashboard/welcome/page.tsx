@@ -4,34 +4,23 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase';
 import { TierBadge, FoundingMemberBadge } from '@/components/TierBadge';
-import { formatTierPricePerYear } from '@/lib/pricing';
+import { formatTierPricePerYear, canonicalTier } from '@/lib/pricing';
+import { tierRank } from '@/lib/tier';
 
 export const dynamic = 'force-dynamic';
 
-type TierId = 'free' | 'verified_identity' | 'identity_plus' | 'club_starter' | 'club_pro' | 'club_elite' | 'league' | 'federation' | 'business_listing' | 'business_plus';
-// Tier rename 2026-06-17: was free/supporter/verified/pro → free/roster/roster_plus/pro/business tiers.
-
-// Lower number = lower tier; 0 is free.
-// Identity track
-const PERSONAL_TIER_RANK: Record<string, number> = {
-  free: 0,
-  verified_identity: 1,
-  identity_plus: 2,
-};
-// Organization track
-const ORG_TIER_RANK: Record<string, number> = {
-  club_starter: 1,
-  club_pro: 2,
-  club_elite: 3,
-  league: 4,
-  federation: 5,
-};
-// Business listings track
-const BUSINESS_TIER_RANK: Record<string, number> = {
-  business_listing: 1,
-  business_plus: 2,
-};
-const TIER_RANK: Record<string, number> = { ...PERSONAL_TIER_RANK, ...ORG_TIER_RANK, ...BUSINESS_TIER_RANK };
+// Canonical tier ids (2026-10-22). Legacy names are canonicalized on read
+// via canonicalTier() and resolved through tierRank(), so old links and
+// in-flight webhook payloads still work.
+type TierId =
+  | 'free'
+  | 'verified_identity'
+  | 'identity_plus'
+  | 'org_free'
+  | 'org_plus'
+  | 'org_pro'
+  | 'org_elite'
+  | 'org_enterprise';
 
 // What each tier just unlocked - kept short and concrete so the user knows
 // exactly what to do with their new membership.
@@ -48,39 +37,29 @@ const NEXT_STEPS: Record<TierId, string[]> = {
     'Set up your Family Hub to track unlimited children.',
   ],
   // Organization
-  club_starter: [
-    'Club Starter is live - manage one organization with up to 30 players.',
-    'Set up your team management and registration workflows.',
+  org_free: [
+    'Organization Free is live - manage one team with roster, schedule, events and attendance.',
+    'Create your team workspace and invite your coaches.',
+    'Upgrade whenever you need more teams, payments, or reporting.',
+  ],
+  org_plus: [
+    'Organization Plus is live - up to 3 teams, registrations, payments, and practice plans.',
+    'Set up your registration programs and dues collection.',
     'Your Founding Member badge is now live on your profile.',
   ],
-  club_pro: [
-    'Club Pro is live - up to 150 players, multiple teams, coach and volunteer management.',
-    'Open the Equipment and Financial Reporting tabs.',
-    'Configure player transfers in /dashboard/team.',
+  org_pro: [
+    'Organization Pro is live - up to 10 teams, up to 150 players, financial reporting and API access.',
+    'Open the Financial Reporting tab.',
+    'Configure promotions and featured placement for your listings.',
   ],
-  club_elite: [
-    'Club Elite is live - unlimited teams, advanced analytics, custom branding.',
+  org_elite: [
+    'Organization Elite is live - unlimited teams, advanced analytics, custom branding.',
     'Open the Analytics dashboard to see your reach.',
     'API access and bulk imports are available - see /dashboard/team.',
   ],
-  league: [
-    'Welcome to League. Your account has been configured for league-wide management.',
-    'Your dedicated success contact has been notified - they will reach out within 24 hours.',
-  ],
-  federation: [
-    'Welcome to Federation. Your account has been configured for governance and compliance.',
+  org_enterprise: [
+    'Welcome to Organization Enterprise. Your account has been configured for governance and compliance.',
     'Your dedicated success team has been notified - they will reach out within 24 hours.',
-  ],
-  // Business listings
-  business_listing: [
-    'Business Listing is live - update your contact, hours, photos, and unlock lead capture.',
-    'Opt in to the weekly digest to get inquiries sent to your email.',
-    'Your Founding Member badge is now live on your profile.',
-  ],
-  business_plus: [
-    'Business Plus is live - claim multiple listings, get featured placement, messaging, and bookings.',
-    'Open the Promotions and Bookings tabs to configure your offerings.',
-    'Enhanced analytics available in the dashboard.',
   ],
   free: [],
 };
@@ -91,14 +70,11 @@ const NEXT_TIER: Record<TierId, { id: TierId | null; label: string; price: strin
   verified_identity: { id: 'identity_plus', label: 'Hockey Passport Plus', price: formatTierPricePerYear('identity_plus'), reason: 'Family Hub, photos, videos, advanced analytics, achievement tracking' },
   identity_plus: { id: null, label: '—', price: '—', reason: 'You have the top individual plan. Switch to an Organization plan to manage a club, league, or federation.' },
   // Organization progression
-  club_starter: { id: 'club_pro', label: 'Club Pro', price: formatTierPricePerYear('club_pro'), reason: 'Up to 150 players, multiple teams, coach management' },
-  club_pro: { id: 'club_elite', label: 'Club Elite', price: formatTierPricePerYear('club_elite'), reason: 'Unlimited teams, advanced analytics, custom branding, API access' },
-  club_elite: { id: 'league', label: 'League', price: formatTierPricePerYear('league'), reason: 'You have the top club plan. League is for league-wide management.' },
-  league: { id: 'federation', label: 'Federation', price: 'Custom', reason: 'League-wide management is the top of the org tier. Federation is for national governance.' },
-  federation: { id: null, label: '—', price: '—', reason: 'You have the top organization plan. Reach out to your success team for anything else.' },
-  // Business listings progression
-  business_listing: { id: 'business_plus', label: 'Business Plus', price: formatTierPricePerYear('business_plus'), reason: 'Multiple listings, featured placement, messaging, bookings' },
-  business_plus: { id: null, label: '—', price: '—', reason: 'You have the top business listing plan.' },
+  org_free: { id: 'org_plus', label: 'Organization Plus', price: formatTierPricePerYear('org_plus'), reason: 'Up to 3 teams, registrations, payments, up to 30 players' },
+  org_plus: { id: 'org_pro', label: 'Organization Pro', price: formatTierPricePerYear('org_pro'), reason: 'Up to 10 teams, up to 150 players, financial reporting, API access' },
+  org_pro: { id: 'org_elite', label: 'Organization Elite', price: formatTierPricePerYear('org_elite'), reason: 'Unlimited teams, advanced analytics, custom branding' },
+  org_elite: { id: 'org_enterprise', label: 'Organization Enterprise', price: 'Custom', reason: 'Organization Elite is the top self-serve plan. Enterprise is for federation governance and compliance.' },
+  org_enterprise: { id: null, label: '—', price: '—', reason: 'You have the top organization plan. Reach out to your success team for anything else.' },
 };
 
 // Tier color (matches TierBadge)
@@ -106,13 +82,11 @@ const TIER_COLOR: Record<TierId, string> = {
   free: '#9CA3AF',
   verified_identity: '#FFB81C',
   identity_plus: '#FFB81C',
-  club_starter: '#C8102E',
-  club_pro: '#C8102E',
-  club_elite: '#C8102E',
-  league: '#C8102E',
-  federation: '#818CF8',
-  business_listing: '#14B8A6',
-  business_plus: '#14B8A6',
+  org_free: '#C8102E',
+  org_plus: '#C8102E',
+  org_pro: '#C8102E',
+  org_elite: '#C8102E',
+  org_enterprise: '#818CF8',
 };
 
 export default async function WelcomePage({
@@ -140,12 +114,18 @@ export default async function WelcomePage({
   if (!userId && sessionId) {
     const { data: guestProfile } = await supabaseAdmin
       .from('profiles')
-      .select('email, tier')
+      .select('email, tier, org_tier')
       .eq('stripe_session_id', sessionId)
       .maybeSingle();
 
     if (guestProfile?.email) {
-      const guestTier = (guestProfile.tier as TierId) || urlTier;
+      // A guest org purchase lands in org_tier; a guest personal purchase
+      // lands in tier. Resolve whichever is actually set.
+      const guestTier = (
+        canonicalTier((guestProfile.org_tier as string) || '') !== 'org_free'
+          ? canonicalTier(guestProfile.org_tier as string)
+          : canonicalTier(guestProfile.tier as string)
+      ) || urlTier;
       const signUpUrl = `/sign-up?email=${encodeURIComponent(guestProfile.email)}&redirect_url=${encodeURIComponent(`/dashboard/welcome?tier=${guestTier}${nextPath ? `&next=${encodeURIComponent(nextPath)}` : ''}`)}`;
 
       return (
@@ -204,8 +184,8 @@ export default async function WelcomePage({
 
   // If the user hasn't actually been upgraded yet (webhook race), still show
   // the page but flag it. The webhook will catch up within a second or two.
-  const actualTier = ((profile?.tier as TierId | undefined) || 'free') as TierId;
-  const upgraded = actualTier !== 'free' && TIER_RANK[actualTier] >= TIER_RANK[urlTier];
+  const actualTier = canonicalTier((profile?.tier as string | undefined) || 'free');
+  const upgraded = actualTier !== 'free' && tierRank(actualTier) >= tierRank(urlTier);
   const tier = upgraded ? actualTier : urlTier;
   const color = TIER_COLOR[tier] || '#FFB81C';
   const isFounding = profile?.is_founding_member || false;
@@ -239,15 +219,13 @@ export default async function WelcomePage({
           {isFounding && <FoundingMemberBadge />}
         </div>
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.9375rem, 2vw, 1rem)', maxWidth: 480, margin: '0 auto' }}>
-          {tier === 'business_plus' && 'Business Plus is unlocked. Multiple listings, featured placement, messaging, bookings - it\'s all live.'}
           {tier === 'verified_identity' && 'You\'re on Hockey Passport. Your profile claim and unlimited roles under one identity are ready.'}
           {tier === 'identity_plus' && 'You\'re on Hockey Passport Plus. Family Hub, photos, videos, and advanced analytics are now available.'}
-          {tier === 'club_starter' && 'You\'re on Club Starter. Your organization and up to 30 players are ready to manage.'}
-          {tier === 'club_pro' && 'You\'re on Club Pro. Up to 150 players, multiple teams, and advanced organization tools are live.'}
-          {tier === 'club_elite' && 'You\'re on Club Elite. Unlimited teams, advanced analytics, and custom branding are unlocked.'}
-          {tier === 'league' && 'You\'re on League. League-wide management features are live. Your success contact will reach out within 24 hours.'}
-          {tier === 'federation' && 'You\'re on Federation. Your success team will reach out within 24 hours to scope governance and compliance.'}
-          {tier === 'business_listing' && 'You\'re on Business Listing. Your verified business claim with contact and lead form is ready.'}
+          {tier === 'org_free' && 'You\'re on Organization Free. One team workspace with roster, schedule, events, and attendance is ready to manage.'}
+          {tier === 'org_plus' && 'You\'re on Organization Plus. Up to 3 teams, registrations, payments, and up to 30 players are live.'}
+          {tier === 'org_pro' && 'You\'re on Organization Pro. Up to 10 teams, up to 150 players, financial reporting, and API access are live.'}
+          {tier === 'org_elite' && 'You\'re on Organization Elite. Unlimited teams, advanced analytics, and custom branding are unlocked.'}
+          {tier === 'org_enterprise' && 'You\'re on Organization Enterprise. Your success team will reach out within 24 hours to scope governance and compliance.'}
         </p>
         {!upgraded && (
           <div style={{ marginTop: 12, fontSize: '0.8125rem', color: '#FFB81C' }}>
@@ -355,7 +333,7 @@ export default async function WelcomePage({
             className="btn"
             style={{ background: '#FFB81C', color: '#041E42' }}
           >
-            {nextTier.id === 'federation' || nextTier.id === 'league' ? `Contact Sales →` : `Upgrade to ${nextTier.label} →`}
+            {nextTier.id === 'org_enterprise' ? `Contact Sales →` : `Upgrade to ${nextTier.label} →`}
           </Link>
         </div>
       ) : (

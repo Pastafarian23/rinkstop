@@ -33,19 +33,38 @@ describe('media allowance — tier resolution', () => {
     expect(getMediaAllowance(undefined)).toBe(getMediaAllowance('free'));
   });
 
-  it('gives every tier a strictly larger storage allowance than free', () => {
+  it('gives every paid tier a strictly larger storage allowance than free', () => {
     const freeBytes = getMediaAllowance('free').maxTotalBytes;
-    for (const tier of ['verified_identity', 'identity_plus', 'business_listing', 'business_plus',
-                        'club_starter', 'club_pro', 'club_elite', 'league'] as const) {
+    for (const tier of ['verified_identity', 'identity_plus',
+                        'org_plus', 'org_pro', 'org_elite'] as const) {
       expect(getMediaAllowance(tier).maxTotalBytes).toBeGreaterThan(freeBytes);
     }
+  });
+
+  it('resolves legacy tier names through the alias map', () => {
+    // The media allowance is keyed by canonical tier. Legacy names must
+    // resolve to the same allowance so an old row cannot slip past the cap.
+    expect(getMediaAllowance('club_starter' as any).maxTotalBytes)
+      .toBe(getMediaAllowance('org_plus').maxTotalBytes);
+    expect(getMediaAllowance('business_plus' as any).maxTotalBytes)
+      .toBe(getMediaAllowance('org_pro').maxTotalBytes);
+    expect(getMediaAllowance('league' as any).maxTotalBytes)
+      .toBe(getMediaAllowance('org_enterprise').maxTotalBytes);
+  });
+
+  it('gives the organization ladder a rising allowance', () => {
+    const plus = getMediaAllowance('org_plus').maxTotalBytes;
+    const pro = getMediaAllowance('org_pro').maxTotalBytes;
+    const elite = getMediaAllowance('org_elite').maxTotalBytes;
+    expect(pro).toBeGreaterThan(plus);
+    expect(elite).toBeGreaterThan(pro);
   });
 
   it('gates video: free and Passport cannot, Plus and above can', () => {
     expect(getMediaAllowance('free').videoAllowed).toBe(false);
     expect(getMediaAllowance('verified_identity').videoAllowed).toBe(false);
     expect(getMediaAllowance('identity_plus').videoAllowed).toBe(true);
-    expect(getMediaAllowance('club_pro').videoAllowed).toBe(true);
+    expect(getMediaAllowance('org_pro').videoAllowed).toBe(true);
   });
 });
 
@@ -154,10 +173,13 @@ describe('media allowance — customer-facing copy', () => {
     expect(explainAllowance('federation').toLowerCase()).toContain('negotiated');
   });
 
-  it('keeps limits provisional until approved', () => {
-    // Guard: flipping this to false is a deliberate product decision, not an
-    // accident. If someone flips it, MEDIA_LIMITS_PROVISIONAL test fails
-    // loudly rather than the numbers silently going public.
-    expect(MEDIA_LIMITS_PROVISIONAL).toBe(true);
+  it('publishes the limits (Arnel approved publication 2026-10-22)', () => {
+    // The limits were provisional while they were being reviewed. Arnel
+    // approved publication on 2026-10-22, so MEDIA_LIMITS_PROVISIONAL is
+    // now false and the numbers are live on the pricing page.
+    //
+    // Flipping this back to true is a deliberate product decision, not an
+    // accident — the allowance values themselves never change silently.
+    expect(MEDIA_LIMITS_PROVISIONAL).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { isVerifiedClaim, isFeaturedClaim } from '@/lib/listingTier';
 import { FilterIcon } from '@/components/icons';
 import CategorySearchBar from '@/components/CategorySearchBar';
 
@@ -12,6 +13,7 @@ interface League {
   level?: string;
   website_url?: string;
   claimed_by_tier?: string | null;
+  claimed_by_org_tier?: string | null;
   claimed_by_user_id?: string | null;
 }
 
@@ -39,20 +41,16 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
   }, []);
 
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  // A listing is "verified" if the claimant has a paid tier in either track.
-  // Personal: identity_plus (or legacy pro/roster_plus). Business: business_listing+ (or legacy business_*).
-  // Federation is always verified (it's a paid org tier).
-  const VERIFIED_TIERS = new Set([
-    'identity_plus',
-    'business_listing', 'business_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation',
-  ]);
-  const verifiedCount = leagues.filter(l => l.claimed_by_tier && VERIFIED_TIERS.has(l.claimed_by_tier)).length;
+  // 2026-10-22: replaced the hardcoded legacy-name set with the shared
+  // helpers. The old set only ever saw the PERSONAL column and only matched
+  // pre-consolidation names, so an org-only claimer was never "verified".
+  const verifiedCount = leagues.filter(l => isVerifiedClaim(l.claimed_by_tier, l.claimed_by_org_tier)).length;
 
   // Client-side filters
   const filtered = leagues.filter(l => {
     const matchSearch = !search || l.name.toLowerCase().includes(search.toLowerCase());
     const matchCountry = !country || (l.country || '').toLowerCase().includes(country.toLowerCase());
-    const matchVerified = !verifiedOnly || (l.claimed_by_tier != null && VERIFIED_TIERS.has(l.claimed_by_tier));
+    const matchVerified = !verifiedOnly || isVerifiedClaim(l.claimed_by_tier, l.claimed_by_org_tier);
     return matchSearch && matchCountry && matchVerified;
   });
 
@@ -140,8 +138,8 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
                 href={`/directory/leagues/${league.id}`}
                 style={{
                   display: 'block', textDecoration: 'none',
-                  background: league.claimed_by_tier && VERIFIED_TIERS.has(league.claimed_by_tier) ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
-                  border: `1px solid ${league.claimed_by_tier && VERIFIED_TIERS.has(league.claimed_by_tier) ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  background: isVerifiedClaim(league.claimed_by_tier, league.claimed_by_org_tier) ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
+                  border: `1px solid ${isVerifiedClaim(league.claimed_by_tier, league.claimed_by_org_tier) ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
                   borderRadius: '6px',
                   padding: '1.125rem',
                   position: 'relative',
@@ -150,11 +148,11 @@ export default function LeaguesIndexClient({ initialLeagues }: Props) {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-h)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
-                {(league.claimed_by_tier === 'business_plus' || league.claimed_by_tier === 'federation') && (                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
+                {isFeaturedClaim(league.claimed_by_tier, league.claimed_by_org_tier) && (                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
                     ⭐ Featured
                   </div>
                 )}
-                {(league.claimed_by_tier && VERIFIED_TIERS.has(league.claimed_by_tier)) && (
+                {(isVerifiedClaim(league.claimed_by_tier, league.claimed_by_org_tier)) && (
                   <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Verified

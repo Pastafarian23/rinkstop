@@ -4,7 +4,7 @@
 import { cache } from 'react';
 import { supabaseAdmin } from '@/lib/supabase';
 import { auth } from '@clerk/nextjs/server';
-import { TierName, TIER_TO_TRACK, AccountTrack } from '@/lib/pricing';
+import { TierName, TIER_TO_TRACK, AccountTrack, canonicalTier } from '@/lib/pricing';
 import { tierAtLeast, TIER_RANK, getTierMaxClaims } from '@/lib/tier-gate';
 
 // Re-export tier utilities from tier-gate so callers can import from one place.
@@ -39,14 +39,14 @@ export function getMaxClaimsForTier(tier: string): number {
  */
 function resolveTrack(tier: string | null | undefined): AccountTrack {
   if (!tier) return 'personal';
-  return TIER_TO_TRACK[tier as TierName] ?? 'personal';
+  return TIER_TO_TRACK[canonicalTier(tier)] ?? 'personal';
 }
 
 /**
- * Get a user's tier track (personal or business).
+ * Get a user's tier track (personal or organization).
  */
 export function getTierTrack(tier: string): AccountTrack {
-  return TIER_TO_TRACK[tier as TierName] ?? 'personal';
+  return TIER_TO_TRACK[canonicalTier(tier)] ?? 'personal';
 }
 
 /**
@@ -107,7 +107,66 @@ export const getUserTier = cache(async (userId: string): Promise<string> => {
     return 'free';
   }
 
-  return (data.tier as string) || 'free';
+  return canonicalTier(data.tier as string);
+});
+
+/**
+ * Get a user's ORGANIZATION tier from profiles.org_tier.
+ *
+ * This is the organization-track counterpart to getUserTier. A person can
+ * hold a personal Passport AND an org plan at the same time — the two live
+ * in separate columns and are resolved separately.
+ *
+ * Wrapped with React `cache()` for the same reason as getUserTier: the
+ * dashboard layout and page both need it, and one round-trip is enough.
+ */
+export const getUserOrgTier = cache(async (userId: string): Promise<string> => {
+  const { data } = await supabaseAdmin
+    .from('profiles')
+    .select('org_tier, tier_expires_at, subscription_status')
+    .eq('user_id', userId)
+    .single();
+
+  if (!data) return 'org_free';
+
+  const now = new Date();
+  if (data.tier_expires_at && new Date(data.tier_expires_at) < now) {
+    return 'org_free';
+  }
+  if (data.subscription_status === 'cancelled') {
+    return 'org_free';
+  }
+
+  return canonicalTier(data.org_tier as string);
+});
+
+/**
+ * Resolve BOTH tracks for a user in one round-trip.
+ *
+ * `personal` is the personal track tier (free | verified_identity |
+ * identity_plus). `organization` is the org track tier (org_free ..
+ * org_enterprise).
+ */
+export const getUserEntitlements = cache(async (
+  userId: string,
+): Promise<{ personal: string; organization: string }> => {
+  const { data } = await supabaseAdmin
+    .from('profiles')
+    .select('tier, org_tier, tier_expires_at, subscription_status')
+    .eq('user_id', userId)
+    .single();
+
+  if (!data) return { personal: 'free', organization: 'org_free' };
+
+  const now = new Date();
+  const expired =
+    (data.tier_expires_at && new Date(data.tier_expires_at) < now) ||
+    data.subscription_status === 'cancelled';
+
+  return {
+    personal: expired ? 'free' : canonicalTier(data.tier as string),
+    organization: expired ? 'org_free' : canonicalTier(data.org_tier as string),
+  };
 });
 
 /**

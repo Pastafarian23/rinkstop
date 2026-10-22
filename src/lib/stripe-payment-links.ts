@@ -11,12 +11,21 @@
  *   plink_1ULHZWCJiUbEZVbn69r9SCM8  identity_plus      $59.99/yr
  *   plink_1ULHZpCJiUbEZVbnHoK3I0zV  verified_identity  $24.99/yr (dup)
  *   plink_1ULHZqCJiUbEZVbnFZEz2y2L  identity_plus      $59.99/yr (dup)
- *   plink_1ULHZqCJiUbEZVbnWXr0nttI  club_starter       $149/yr
- *   plink_1ULHZqCJiUbEZVbnF7c7NdYT  club_pro           $399/yr
- *   plink_1ULHZrCJiUbEZVbn3ugjIbJN  club_elite         $999/yr
- *   plink_1ULHZrCJiUbEZVbnTyaVE7to  league             $1,999/yr
- *   plink_1ULHZrCJiUbEZVbnXZYgZrQM  business_listing   $99/yr
- *   plink_1ULHZsCJiUbEZVbnkGPSw3ho  business_plus      $299/yr
+ *   plink_1ULHZqCJiUbEZVbnWXr0nttI  club_starter       $149/yr  (retired)
+ *   plink_1ULHZqCJiUbEZVbnF7c7NdYT  club_pro           $399/yr  (retired)
+ *   plink_1ULHZrCJiUbEZVbn3ugjIbJN  club_elite         $999/yr  (retired)
+ *   plink_1ULHZrCJiUbEZVbnTyaVE7to  league             $1,999/yr (retired)
+ *   plink_1ULHZrCJiUbEZVbnXZYgZrQM  business_listing   $99/yr   (retired)
+ *   plink_1ULHZsCJiUbEZVbnkGPSw3ho  business_plus      $299/yr  (retired)
+ *
+ * 2026-10-22 tier consolidation — canonical organization links:
+ *   plink_1UTOh2CJiUbEZVbnWMUwAxKC  org_plus           $99/yr
+ *   plink_1UTOh2CJiUbEZVbnS59BW1rO  org_pro            $299/yr
+ *   plink_1UTOh3CJiUbEZVbnh54MSB8R  org_elite          $599/yr
+ *
+ * The retired links are kept in the map (archived products still resolve
+ * old links and historic invoices) but they are NOT offered on the pricing
+ * page — the pricing page only reads the canonical keys.
  *
  * The duplicates are harmless (both work, Stripe will use the most-recent
  * one referenced). For the canonical "verified_identity" use the
@@ -31,6 +40,10 @@
 export type StripePaymentLinkTier =
   | 'verified_identity'
   | 'identity_plus'
+  | 'org_plus'
+  | 'org_pro'
+  | 'org_elite'
+  // Retired tiers — links preserved so old links/invoices still resolve.
   | 'club_starter'
   | 'club_pro'
   | 'club_elite'
@@ -49,6 +62,11 @@ export type StripePaymentLinkTier =
 export const STRIPE_PAYMENT_LINKS: Record<StripePaymentLinkTier, string> = {
   verified_identity: 'https://buy.stripe.com/00waEW5fh9hR2yz1LMeIw02',
   identity_plus: 'https://buy.stripe.com/6oU8wOazB8dN2yzduueIw03',
+  // Canonical organization tiers (2026-10-22).
+  org_plus: 'https://buy.stripe.com/8x2dR8fTVgKjc998aaeIw0b',
+  org_pro: 'https://buy.stripe.com/9B6eVc6jl1Pp8WX4XYeIw0c',
+  org_elite: 'https://buy.stripe.com/00w14m0Z19hRa11bmmeIw0d',
+  // Retired (archived 2026-10-22) — kept for link/invoice resolution only.
   club_starter: 'https://buy.stripe.com/aFacN44bd9hRdddduueIw04',
   club_pro: 'https://buy.stripe.com/cNi7sKgXZ3Xx8WXbmmeIw05',
   club_elite: 'https://buy.stripe.com/cNi14m5fheCbfll0HIeIw06',

@@ -2,9 +2,9 @@ import type { TierName } from '@/lib/pricing';
 import { TIERS, formatTierPricePerYear } from '@/lib/pricing';
 
 const ENTITY_TO_TIER: Record<string, TierName> = {
-  rink: 'business_listing',
-  team: 'club_starter',
-  league: 'club_starter',
+  rink: 'org_plus',
+  team: 'org_plus',
+  league: 'org_plus',
   player: 'verified_identity',
 };
 

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { isVerifiedClaim, isFeaturedClaim } from '@/lib/listingTier';
 import { FilterIcon } from '@/components/icons';
 import ShareButton from '@/components/ShareButton';
 import CategorySearchBar from '@/components/CategorySearchBar';
@@ -26,6 +27,7 @@ interface NHLTeam {
   slug?: string;
   logo_url?: string;
   claimed_by_tier?: string | null;
+  claimed_by_org_tier?: string | null;
   source: 'nhl';
 }
 
@@ -50,6 +52,7 @@ interface UserTeam {
   description?: string | null;
   season_label?: string | null;
   claimed_by_tier?: string | null;
+  claimed_by_org_tier?: string | null;
   source: 'user';
 }
 
@@ -75,13 +78,6 @@ interface Props {
   /** ?q=... from the URL (set when user lands via search). */
   initialQuery?: string | null;
 }
-
-// Verified tiers — same set as before. Personal: identity_plus. Business: business_listing+.
-// Federation is always verified (paid org tier).
-const VERIFIED_TIERS = new Set([
-  'identity_plus',
-  'business_listing', 'business_plus', 'club_starter', 'club_pro', 'club_elite', 'league', 'federation',
-]);
 
 // Level options for the select (single source of truth, sorted).
 const LEVEL_OPTIONS: Array<{ value: Exclude<Level, ''> | ''; label: string }> = [
@@ -333,7 +329,7 @@ export default function TeamsIndexClient({
         if (!haystack.includes(q)) return false;
       }
       if (verifiedOnly) {
-        if (!t.claimed_by_tier || !VERIFIED_TIERS.has(t.claimed_by_tier)) return false;
+        if (!isVerifiedClaim(t.claimed_by_tier, t.claimed_by_org_tier)) return false;
       }
       return true;
     });
@@ -641,8 +637,8 @@ export default function TeamsIndexClient({
                 href={`/directory/teams/${team.slug}`}
                 style={{
                   display: 'block', textDecoration: 'none',
-                  background: team.claimed_by_tier && VERIFIED_TIERS.has(team.claimed_by_tier) ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
-                  border: `1px solid ${team.claimed_by_tier && VERIFIED_TIERS.has(team.claimed_by_tier) ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
+                  background: isVerifiedClaim(team.claimed_by_tier, team.claimed_by_org_tier) ? 'linear-gradient(135deg, rgba(200,16,46,0.08) 0%, var(--s2) 100%)' : 'var(--s2)',
+                  border: `1px solid ${isVerifiedClaim(team.claimed_by_tier, team.claimed_by_org_tier) ? 'rgba(20,184,166,0.4)' : 'var(--border)'}`,
                   borderRadius: '6px',
                   padding: '1.125rem',
                   position: 'relative',
@@ -652,12 +648,12 @@ export default function TeamsIndexClient({
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = ''; (e.currentTarget as HTMLElement).style.transform = ''; }}
               >
                 {/* Tier badge in corner */}
-                {(team.claimed_by_tier && (team.claimed_by_tier === 'business_plus' || team.claimed_by_tier === 'federation')) && (
+                {isFeaturedClaim(team.claimed_by_tier, team.claimed_by_org_tier) && (
                   <div style={{ position: 'absolute', top: 8, left: 8, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'var(--red)', color: '#fff' }}>
                     ⭐ Featured
                   </div>
                 )}
-                {(team.claimed_by_tier === 'identity_plus') && (
+                {isVerifiedClaim(team.claimed_by_tier, team.claimed_by_org_tier) && (
                   <div style={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.5625rem', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '3px', background: 'rgba(20,184,166,0.15)', color: '#14B8A6', border: '1px solid rgba(20,184,166,0.4)' }}>
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                     Verified
