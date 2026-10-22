@@ -26,9 +26,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!verification.ok) return apiKeyUnauthorized(verification.reason);
 
   // Only return fields the org has explicitly published via Club Elite.
+  // Column names: the location columns on team_workspaces are `home_city` /
+  // `home_country` — there is no `country` / `city` column. Selecting the
+  // wrong names made this route 500 with "column team_workspaces.country
+  // does not exist" on every request (pre-existing bug, fixed 2026-10-22).
   const { data, error } = await supabaseAdmin
     .from('team_workspaces')
-    .select('id, name, slug, country, city, brand_primary_color, brand_secondary_color, brand_accent_color, brand_logo_url, brand_tagline, brand_og_image_url, is_published')
+    .select('id, name, slug, home_city, home_country, brand_primary_color, brand_secondary_color, brand_accent_color, brand_logo_url, brand_tagline, brand_og_image_url, is_published')
     .eq('id', id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
