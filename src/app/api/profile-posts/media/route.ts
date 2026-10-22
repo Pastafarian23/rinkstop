@@ -21,6 +21,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { registerAsset } from '@/lib/media-ledger';
+import { checkMediaUpload, getMediaAllowance } from '@/lib/media-entitlements';
+import { getMediaEntitlementForUser, pickBetterAllowance } from '@/lib/media-usage';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -45,6 +47,14 @@ const EXT_FOR_MIME: Record<string, string> = {
   'video/webm': 'webm',
   'video/quicktime': 'mov',
 };
+
+/**
+ * Upper bound on a client-reported video duration we accept.
+ *
+ * Matches the bound in /api/profile-posts. There is no ffprobe in the Vercel
+ * runtime, so duration is measured in the browser and validated here.
+ */
+const MAX_PLAUSIBLE_VIDEO_SECONDS = 4 * 60 * 60;
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -77,6 +87,64 @@ export async function POST(request: NextRequest) {
   }
   if (file.size === 0) {
     return NextResponse.json({ error: 'Empty file.' }, { status: 400 });
+  }
+
+  // UNIFIED MEDIA ALLOWANCE CHECK
+  //
+  // This endpoint was missing it entirely. It validates MIME type and per-file
+  // size, uploads, registers the asset in the ledger — but never consulted the
+  // shared allowance, so it was an unmetered path into a quota-governed bucket.
+  // A user could fill their whole pool (and beyond, by extension) through this
+  // route while the settings screen showed a compliant figure.
+  //
+  // This is the same class of gap just closed for player-media, profile_covers
+  // and listing-photos. It is the FOURTH, which is why it is worth stating
+  // plainly: `post-media` appeared covered because /api/profile-posts enforces
+  // the quota, but this sibling endpoint writes to the SAME bucket and did not.
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('tier, org_tier')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const tier = (profile?.tier as string) ?? 'free';
+  const orgTier = (profile?.org_tier as string) ?? 'org_free';
+  const { usage: mediaUsage, allowance: mediaAllowance, negotiated } =
+    await getMediaEntitlementForUser(
+      userId,
+      tier,
+      pickBetterAllowance(getMediaAllowance(tier), getMediaAllowance(orgTier)),
+    );
+
+  if (negotiated) {
+    return NextResponse.json(
+      { error: 'This account is on negotiated capacity. Contact support@rinkstop.com to add media.', code: 'negotiated_review' },
+      { status: 403 },
+    );
+  }
+
+  const isVideo = file.type.startsWith('video/');
+  const durationRaw = formData.get('durationSeconds');
+  const durationParsed = typeof durationRaw === 'string' ? Number.parseFloat(durationRaw) : NaN;
+  const decision = checkMediaUpload(
+    mediaAllowance,
+    {
+      sizeBytes: file.size,
+      isVideo,
+      durationSeconds:
+        Number.isFinite(durationParsed) && durationParsed > 0 && durationParsed <= MAX_PLAUSIBLE_VIDEO_SECONDS
+          ? durationParsed
+          : null,
+    },
+    mediaUsage,
+  );
+  if (!decision.allowed) {
+    console.warn('[profile-posts/media] allowance blocked', JSON.stringify({
+      userId, tier, orgTier, code: decision.code, used: mediaUsage,
+    }));
+    return NextResponse.json(
+      { error: decision.message, code: decision.code },
+      { status: decision.code === 'video_not_allowed' ? 403 : 413 },
+    );
   }
 
   // Width/height are advisory. The client computes them with a hidden
