@@ -125,7 +125,7 @@ const sections: Array<{
       },
       {
         q: 'Is there a free trial?',
-        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Hockey Passport - it is $24.99/year and you can cancel anytime by emailing support.',
+        a: 'No. There is a permanent Free tier that includes most browsing features. If you want to try a paid feature, sign up for Hockey Passport - it is $24.99/year. To change or cancel a paid plan, email support@rinkstop.com and we respond within 24 hours; your plan stays active through the end of the period you paid for.',
       },
     ],
   },

@@ -115,8 +115,8 @@ const FAQ = [
     a: 'No — the Free tier is the trial. You can browse, save, follow, and explore every feature of the directory at $0. When you upgrade to a paid tier, you can cancel within 14 days for a full refund (no questions asked).',
   },
   {
-    q: 'Can I switch tiers or cancel anytime?',
-    a: 'Yes. Upgrades take effect immediately and the unused portion of your current plan is credited. Downgrades and cancellations take effect at the end of your billing period. There are no annual commitments — all RinkStop tiers are billed annually with monthly cancellation.',
+    q: 'How do I change tier or cancel my plan?',
+    a: 'Upgrades take effect immediately, and you keep both plans if you buy a personal Passport and an organization plan. To change or cancel a plan, email support@rinkstop.com — we respond within 24 hours and your plan stays active through the end of the period you already paid for. Downgrades are handled by us rather than self-serve, so nothing changes without you agreeing to it first.',
   },
 ];
 

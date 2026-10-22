@@ -235,3 +235,98 @@ describe('related copy consistency', () => {
     expect(src).not.toContain('Cancel anytime in dashboard');
   });
 });
+
+describe('cancellation policy is stated the same way everywhere', () => {
+  /**
+   * The Portal cannot cancel or switch plans (subscription_cancel and
+   * subscription_update are both DISABLED, verified against the live default
+   * configuration), and /api/tier/upgrade rejects self-serve downgrades by
+   * design. So every customer-facing surface must say "email support",
+   * not imply a self-serve button.
+   *
+   * This is the third distinct place copy has contradicted the product, after
+   * "Cancel anytime in dashboard" and the unreachably-promised retention. The
+   * common factor is that each was plausible marketing language nobody checked
+   * against the actual capability.
+   */
+  const CANCELLATION_SURFACES = [
+    'src/components/PricingComparisonTable.tsx',
+    'src/app/dashboard/subscription/ManageSubscriptionClient.tsx',
+    'src/app/faq/page.tsx',
+    'src/app/pricing/PricingContent.tsx',
+    'src/app/guides/rinkstop-vs-competitors/page.tsx',
+    'src/components/ToolUpsell.tsx',
+  ];
+
+  it('no surface promises self-serve cancellation or switching', () => {
+    const banned = [
+      /cancel anytime(?! by emailing)/i,
+      /Cancel anytime in dashboard/i,
+      /switch tiers or self-serve/i,
+    ];
+    const offenders: string[] = [];
+    for (const rel of CANCELLATION_SURFACES) {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8');
+      for (const re of banned) {
+        if (re.test(src)) offenders.push(`${rel} :: ${re}`);
+      }
+    }
+    expect(offenders, 'surfaces implying self-serve cancellation').toEqual([]);
+  });
+
+  it('the surfaces that mention cancelling all point at support email', () => {
+    // Each of these tells the customer cancellation exists; they must also say
+    // how. A bare "cancel" with no route is the gap.
+    const mustRoute = [
+      'src/components/PricingComparisonTable.tsx',
+      'src/app/dashboard/subscription/ManageSubscriptionClient.tsx',
+      'src/app/guides/rinkstop-vs-competitors/page.tsx',
+    ];
+    for (const rel of mustRoute) {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8');
+      const mentionsCancel = /cancel/i.test(src);
+      if (!mentionsCancel) continue;
+      expect(src, `${rel} mentions cancellation without a support route`).toContain(
+        'support@rinkstop.com',
+      );
+    }
+  });
+
+  it('the advertised support response time is stated consistently', () => {
+    // "respond within 24 hours" appears in several surfaces. If one drifts to
+    // "48 hours" or drops it, customers get two different promises.
+    const withPromise = CANCELLATION_SURFACES.filter((rel) => {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8');
+      return /respond within/i.test(src);
+    });
+    expect(withPromise.length).toBeGreaterThan(0);
+    for (const rel of withPromise) {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8');
+      const matches = src.match(/respond within (\d+) hours?/gi) ?? [];
+      for (const m of matches) {
+        expect(m.toLowerCase(), `${rel} promises a different response time`).toContain(
+          'within 24 hours',
+        );
+      }
+    }
+  });
+
+  it('does not claim proration or credits the system does not calculate', () => {
+    // The old competitor-guide answer promised "the unused portion of your
+    // current plan is credited". No proration logic exists in the codebase, so
+    // that was an unsupported financial promise.
+    const src = readFileSync(
+      join(process.cwd(), 'src/app/guides/rinkstop-vs-competitors/page.tsx'),
+      'utf8',
+    );
+    expect(src).not.toMatch(/unused portion .{0,40}credited/i);
+  });
+
+  it('the FAQ does not claim the portal can cancel', () => {
+    // The FAQ answer about "Manage billing" is accurate about invoices and
+    // payment methods — those ARE enabled. It must not imply cancellation.
+    const src = readFileSync(join(process.cwd(), 'src/app/faq/page.tsx'), 'utf8');
+    const billingFaq = src.match(/Stripe Customer Portal[^']*/)?.[0] ?? '';
+    expect(billingFaq).not.toMatch(/cancel/i);
+  });
+});
