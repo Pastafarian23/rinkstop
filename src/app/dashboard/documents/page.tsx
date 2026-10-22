@@ -50,13 +50,14 @@ export default async function DocumentsHubPage() {
   // renders anything for under-tier users beyond the upgrade CTA.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
   const tier = (profile?.tier as string) ?? 'free';
+  const orgTier = (profile?.org_tier as string) ?? 'org_free';
   const tierOk =
     tierAtLeastSameTrack(tier, 'verified_identity') ||
-    tierAtLeastSameTrack(tier, 'business_listing');
+    tierAtLeastSameTrack(orgTier, 'org_plus');
   if (!tierOk) {
     return (
       <div style={{ maxWidth: 720, padding: '2rem' }}>

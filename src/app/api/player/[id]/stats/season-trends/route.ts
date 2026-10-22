@@ -15,7 +15,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { resolveCanonicalUserId } from '@/lib/admin-auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { tierAtLeastSameTrack } from '@/lib/tier-gate';
-import { getUserTier } from '@/lib/connections';
+import { getUserTier, getUserOrgTier } from '@/lib/connections';
 import { checkRateLimit, getClientIP, applyRateLimitHeaders, maybeCleanup } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
@@ -43,9 +43,10 @@ export async function GET(
   }
 
   const tier = await getUserTier(userId);
+  const orgTier = await getUserOrgTier(userId);
   if (
     !tierAtLeastSameTrack(tier, 'identity_plus') &&
-    !tierAtLeastSameTrack(tier, 'business_listing')
+    !tierAtLeastSameTrack(orgTier, 'org_plus')
   ) {
     const res = NextResponse.json(
       { error: 'Advanced analytics requires Hockey Passport Plus or higher.', code: 'tier_required' },

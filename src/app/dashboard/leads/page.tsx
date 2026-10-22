@@ -28,10 +28,11 @@ export default async function LeadsPage() {
   // so we encourage non-Pro claimants to upgrade.
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
   const claimantTier = profile?.tier || 'free';
+  const claimantOrgTier = profile?.org_tier || 'org_free';
 
   const list = inquiries || [];
   const unreadCount = list.filter((i: any) => !i.read_at).length;
@@ -70,7 +71,7 @@ export default async function LeadsPage() {
         Show upgrade nudge to anyone below Business Plus (the top business tier
         that has featured placement). tierAtLeast handles legacy aliases too.
       */}
-      {!tierAtLeast(claimantTier, 'business_plus') && (
+      {!tierAtLeast(claimantOrgTier, 'org_pro') && (
         <div style={{
           background: 'linear-gradient(135deg, rgba(200,16,46,0.12), rgba(255,184,28,0.08))',
           border: '1px solid rgba(200,16,46,0.3)',

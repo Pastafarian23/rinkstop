@@ -225,7 +225,7 @@ async function renderDashboard(userId: string) {
   try {
     const { data } = await supabaseAdmin
       .from('profiles')
-      .select('bio, location, tier, is_founding_member, created_at, role, display_name, username, avatar_url, family_setup_completed_at')
+      .select('bio, location, tier, org_tier, is_founding_member, created_at, role, display_name, username, avatar_url, family_setup_completed_at')
       .eq('user_id', profileUserId)
       .maybeSingle();
     profile = data;
@@ -401,7 +401,7 @@ async function renderDashboard(userId: string) {
   // route handling the migration-not-applied 503 error on mark_complete.
   const wizardTierOk =
     tierAtLeastSameTrack(profile?.tier ?? 'free', 'identity_plus') ||
-    tierAtLeastSameTrack(profile?.tier ?? 'free', 'business_listing');
+    tierAtLeastSameTrack(profile?.org_tier ?? 'org_free', 'org_plus');
   const wizardVisible =
     types.length > 0 &&
     wizardTierOk &&

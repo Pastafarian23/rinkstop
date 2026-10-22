@@ -83,10 +83,10 @@ const EXPIRY_ALLOWED = new Set(['waiver', 'medical_form', 'vaccination_record'])
 // Tier gate — match the wizard gate. A user on a paid business tier
 // (business_listing+) is also allowed. Free fans cannot upload player
 // documents.
-function tierOk(tier: string | null | undefined): boolean {
+function tierOk(tier: string | null | undefined, orgTier?: string | null): boolean {
   return (
     tierAtLeastSameTrack(tier, 'identity_plus') ||
-    tierAtLeastSameTrack(tier, 'business_listing')
+    tierAtLeastSameTrack(orgTier, 'org_plus')
   );
 }
 
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
   // ---- Gate: tier + account_type + parental link ----
   const { data: profile, error: profileErr } = await supabaseAdmin
     .from('profiles')
-    .select('tier')
+    .select('tier, org_tier')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -221,7 +221,8 @@ export async function POST(request: NextRequest) {
     return applyRateLimitHeaders(res, rl);
   }
   const tier = (profile?.tier as string) ?? 'free';
-  if (!tierOk(tier)) {
+  const orgTier = (profile?.org_tier as string) ?? 'org_free';
+  if (!tierOk(tier, orgTier)) {
     const res = NextResponse.json(
       { error: 'Uploading player documents requires Hockey Passport Plus or higher.' },
       { status: 403 }
