@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type BadgeTier = 'free' | 'pending_verification' | 'founding' | 'verified' | 'elite';
+export type BadgeTier = 'free' | 'pending_verification' | 'founding' | 'verified' | 'plus' | 'elite';
 
 interface BadgeConfig {
   tier: BadgeTier;
@@ -60,6 +60,16 @@ const BADGE_CONFIGS: Record<BadgeTier, BadgeConfig> = {
     bgColor: 'rgba(20,184,166,0.1)',
     borderColor: 'rgba(20,184,166,0.3)',
     description: 'Verified profile',
+  },
+  // 2026-10-16: Hockey Passport Plus (identity_plus). Premium tier — gets
+  // video uploads, family hub, premium insights. Gold brand accent.
+  plus: {
+    tier: 'plus',
+    label: 'Hockey Passport Plus',
+    color: '#FFD700',
+    bgColor: 'rgba(255,215,0,0.12)',
+    borderColor: 'rgba(255,215,0,0.5)',
+    description: 'Hockey Passport Plus — premium features, video uploads, family hub.',
   },
   elite: {
     tier: 'elite',

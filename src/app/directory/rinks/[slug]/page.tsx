@@ -481,13 +481,22 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
   // + Programming tab) and upcoming events (schema.org event[] + Events tab).
   // We only need schema-relevant columns for the schema builder; the tab
   // components fetch their own full payload below.
-  const [gamesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, visitUsProgrammingRes] = await Promise.all([
+  const [gamesRes, fixturesRes, teamsRes, leaguesRes, cityRinksRes, stateRinksRes, reviewsRes, schemaProgrammingRes, schemaUpcomingEventsRes, visitUsProgrammingRes] = await Promise.all([
     supabase
       .from('games')
       .select('id, date, time, home_team_id, away_team_id, home_team_name, away_team_name, venue_id, venue_name, location, status, home_score, away_score, period, period_time_remaining, broadcast')
       .eq('venue_id', rink.id)
       .gte('date', new Date().toISOString().split('T')[0])
       .order('date', { ascending: true })
+      .limit(20),
+    // 2026-10-16: also pull NHL/fixtures scheduled at this rink via the team's home_rink_id.
+    // This is the source of truth for the 31 NHL teams that now have home_rink_id populated.
+    supabase
+      .from('fixtures')
+      .select('id, scheduled_at, status, home_score, away_score, home_team_id, away_team_id, home_team:teams!fixtures_home_team_id_fkey(name, slug), away_team:teams!fixtures_away_team_id_fkey(name, slug)')
+      .eq('home_team.home_rink_id', rink.id)
+      .gte('scheduled_at', new Date().toISOString())
+      .order('scheduled_at', { ascending: true })
       .limit(20),
     rink.city
       ? supabase
@@ -594,7 +603,32 @@ export default async function RinkDetailPage({ params, searchParams }: { params:
       .limit(40),
   ]);
 
+  // 2026-10-16: merge games (legacy `games` table) with fixtures (new, joined via teams.home_rink_id).
+  // The RinkGames component accepts the legacy Game shape, so we map fixtures rows into it.
   const games = gamesRes.data || [];
+  const fixtureGames = (fixturesRes.data || []).map((f: any) => ({
+    id: f.id,
+    date: f.scheduled_at?.slice(0, 10) ?? null,
+    time: f.scheduled_at?.slice(11, 16) ?? null,
+    home_team_id: f.home_team_id,
+    away_team_id: f.away_team_id,
+    home_team_name: f.home_team?.name ?? null,
+    away_team_name: f.away_team?.name ?? null,
+    venue_id: rink.id,
+    venue_name: rink.name,
+    location: rink.city,
+    status: f.status,
+    home_score: f.home_score,
+    away_score: f.away_score,
+    period: null as string | null,
+    period_time_remaining: null as string | null,
+    broadcast: null as string | null,
+  }));
+  // dedupe by id (in case a fixture also shows in the legacy games table)
+  const seen = new Set(games.map((g: any) => g.id));
+  for (const fg of fixtureGames) if (!seen.has(fg.id)) games.push(fg);
+  // sort combined list by date asc
+  games.sort((a: any, b: any) => String(a.date ?? '').localeCompare(String(b.date ?? '')));
   const localTeams = (teamsRes.data || []) as LocalTeam[];
   const localLeagues = (leaguesRes.data || []) as LocalLeague[];
   // PR1: destructure new nearby-rinks arrays and dedupe state results so
