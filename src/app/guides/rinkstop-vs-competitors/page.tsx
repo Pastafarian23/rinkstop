@@ -471,7 +471,7 @@ export default function RinkStopVsCompetitors() {
             lineHeight: 1.7,
           }}
         >
-          <strong style={{ color: '#009650' }}>Worth it.</strong> At $149/yr vs SportsEngine HQ at $696/yr, you save $547/year for the same core workflow. The catch: if you need USA Hockey affiliation, uniform ordering, or background checks, SportsEngine has those and RinkStop does not (yet). For a club under 30 players that hasn&apos;t committed to either platform, RinkStop is the price-of-entry choice.
+          <strong style={{ color: '#009650' }}>Worth it.</strong> At $99/yr vs SportsEngine HQ at $696/yr, you save $597/year for the same core workflow. The catch: if you need USA Hockey affiliation, uniform ordering, or background checks, SportsEngine has those and RinkStop does not (yet). For a club under 30 players that hasn&apos;t committed to either platform, RinkStop is the price-of-entry choice.
         </p>
       </section>
 
@@ -503,7 +503,7 @@ export default function RinkStopVsCompetitors() {
             marginBottom: '0.5rem',
           }}
         >
-          Recommended tier: <strong style={{ color: '#fff' }}>League ($1,999/yr)</strong> with onboarding + dedicated CSM.
+          Recommended tier: <strong style={{ color: '#fff' }}>Organization Enterprise (custom pricing)</strong> with onboarding + dedicated CSM.
         </p>
         <p
           style={{
@@ -512,7 +512,7 @@ export default function RinkStopVsCompetitors() {
             lineHeight: 1.7,
           }}
         >
-          You already have infrastructure and a budget. RinkStop&apos;s $1,999/yr League tier is competitive with what you&apos;d pay elsewhere — the question is whether adding RinkStop to your stack is worth the integration cost. For most established leagues, this is a sales conversation, not a self-serve decision. Email{' '}
+          You already have infrastructure and a budget. RinkStop&apos;s Organization Enterprise tier is priced competitively with what you&apos;d pay elsewhere — the question is whether adding RinkStop to your stack is worth the integration cost. For most established leagues, this is a sales conversation, not a self-serve decision. Email{' '}
           <a href="mailto:leagues@rinkstop.com" style={{ color: '#FFB81C' }}>
             leagues@rinkstop.com
           </a>{' '}
