@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatTierPrice } from '@/lib/pricing';
+import { getMediaAllowance, formatBytes } from '@/lib/media-entitlements';
 import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe-payment-links';
 
 /**
@@ -153,10 +154,56 @@ const PERSONAL_ROWS: FeatureRow[] = [
   },
 ];
 
+/**
+ * MEDIA ALLOWANCE ROWS — generated from src/lib/media-entitlements.ts.
+ *
+ * These are the REAL enforced limits, read from the same constant the server
+ * uses to decide whether to accept an upload. They are not hand-written copy,
+ * so the pricing page cannot drift from what the code actually permits — the
+ * failure mode that produced the retired $149/$399/$999 prices earlier.
+ *
+ * Wording notes:
+ *   • "items" is the asset count, not posts. One video counts as one item
+ *     whether it appears in a social post or a player highlight — the ledger
+ *     charges a stored object once regardless of how many places render it.
+ *   • Free and Hockey Passport are photos-only by design. That is the
+ *     monetization hook: video is the first thing a paid personal plan unlocks.
+ */
+const MEDIA_ROWS: FeatureRow[] = (
+  [
+    ['free', 'Social post photos + video', 'Storage & media'],
+    ['verified_identity', 'Hockey Passport allowance', 'Storage & media'],
+    ['identity_plus', 'Hockey Passport Plus allowance', 'Storage & media'],
+  ] as const
+).map(([tier, feature, category]) => {
+  const a = getMediaAllowance(tier);
+  const parts = [
+    formatBytes(a.maxTotalBytes),
+    `${a.maxAssetCount.toLocaleString()} item${a.maxAssetCount === 1 ? '' : 's'}`,
+  ];
+  if (a.videoAllowed) {
+    const cap = a.maxVideoSeconds
+      ? a.maxVideoSeconds >= 60
+        ? `video ≤ ${Math.round(a.maxVideoSeconds / 60)} min`
+        : `video ≤ ${a.maxVideoSeconds}s`
+      : 'video';
+    parts.push(cap);
+  } else {
+    parts.push('photos only');
+  }
+  return {
+    category,
+    feature,
+    free: tier === 'free' ? parts.join(' · ') : '—',
+    passport: tier === 'verified_identity' ? parts.join(' · ') : '—',
+    plus: tier === 'identity_plus' ? parts.join(' · ') : '—',
+  };
+});
+
 export default function PricingComparisonTable() {
   // Group by category for visual clarity
   const grouped: Record<string, FeatureRow[]> = {};
-  for (const row of PERSONAL_ROWS) {
+  for (const row of [...PERSONAL_ROWS, ...MEDIA_ROWS]) {
     if (!grouped[row.category]) grouped[row.category] = [];
     grouped[row.category].push(row);
   }

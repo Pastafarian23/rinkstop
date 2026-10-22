@@ -12,21 +12,24 @@ const stripe = process.env.STRIPE_SECRET_KEY
 // names (roster, roster_plus, pro, premium, business_starter, business_pro,
 // business_premium, enterprise) are no longer referenced anywhere — see
 // supabase/migrations/2026-07-02_remove_old_tier_names.sql.
-// 2026-10-22 tier consolidation: organization plans now live under
-// STRIPE_PRICE_ORG_* env names. The legacy CLUB_*/BUSINESS_* env vars are
-// still read so an un-migrated .env keeps working during rollout.
+// Stripe price ID → canonical tier.
+//
+// 2026-10-22 tier consolidation: organization plans live under STRIPE_PRICE_ORG_*.
+// 2026-10-23: the six legacy Club_*/Business_*/LEAGUE price vars have been
+// removed from .env. Their map entries were deleted here at the same time —
+// leaving them would have been a live dependency on variables that no longer
+// exist, silently degrading any legacy revenue to the 'other' bucket.
+//
+// Only canonical prices appear below, so every purchase now maps to a real
+// current tier. Nothing is lost: all six legacy payment links are already
+// inactive (verified in Stripe), and the account has zero subscriptions, so no
+// live revenue is attributed to a retired price.
 const PRICE_TO_TIER: Record<string, string> = {
   [process.env.STRIPE_PRICE_VERIFIED_IDENTITY || '']: 'verified_identity',
   [process.env.STRIPE_PRICE_IDENTITY_PLUS || '']: 'identity_plus',
   [process.env.STRIPE_PRICE_ORG_PLUS || '']: 'org_plus',
   [process.env.STRIPE_PRICE_ORG_PRO || '']: 'org_pro',
   [process.env.STRIPE_PRICE_ORG_ELITE || '']: 'org_elite',
-  [process.env.STRIPE_PRICE_CLUB_STARTER || '']: 'org_plus',
-  [process.env.STRIPE_PRICE_CLUB_PRO || '']: 'org_pro',
-  [process.env.STRIPE_PRICE_CLUB_ELITE || '']: 'org_elite',
-  [process.env.STRIPE_PRICE_LEAGUE || '']: 'org_enterprise',
-  [process.env.STRIPE_PRICE_BUSINESS_LISTING || '']: 'org_plus',
-  [process.env.STRIPE_PRICE_BUSINESS_PLUS || '']: 'org_pro',
 };
 
 /**

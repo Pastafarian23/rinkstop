@@ -28,14 +28,31 @@ const TIER_PRICES: Record<string, string> = {
   org_enterprise: formatTierPricePerYear('org_enterprise'),
 };
 
+/**
+ * Subscription status display.
+ *
+ * Keys MUST match `CANONICAL_SUBSCRIPTION_STATUSES` in
+ * src/lib/subscription-status.ts — the webhook normalizes every raw Stripe
+ * status before writing, so the raw spellings (`canceled` with one L, `unpaid`,
+ * `incomplete`, `incomplete_expired`) can never appear in the database.
+ *
+ * This table previously listed all the RAW Stripe values, which meant it had no
+ * entry for `cancelled` — the value the webhook actually writes — so a
+ * cancelled subscriber rendered a blank status chip. The raw keys are kept here
+ * as a defensive fallback only; if one ever appears the DB has been written
+ * outside the normalizer.
+ */
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  // Canonical values — the only ones the webhook writes.
   active: { label: 'Active', color: '#14B8A6' },
   trialing: { label: 'Trialing', color: '#14B8A6' },
   past_due: { label: 'Past due', color: '#FFB81C' },
-  unpaid: { label: 'Unpaid', color: '#C8102E' },
+  cancelled: { label: 'Canceled', color: 'rgba(255,255,255,0.5)' },
+  // Defensive fallbacks for raw Stripe spellings (should never be reached).
   canceled: { label: 'Canceled', color: 'rgba(255,255,255,0.5)' },
-  incomplete: { label: 'Incomplete', color: '#FFB81C' },
-  incomplete_expired: { label: 'Expired', color: 'rgba(255,255,255,0.5)' },
+  unpaid: { label: 'Canceled', color: 'rgba(255,255,255,0.5)' },
+  incomplete: { label: 'Trialing', color: '#FFB81C' },
+  incomplete_expired: { label: 'Canceled', color: 'rgba(255,255,255,0.5)' },
 };
 
 function formatDate(epoch: number | null | undefined): string {

@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { logReceived, markProcessed, markFailed } from '@/lib/stripe-webhook-log';
 import { canonicalTier, TIER_TO_TRACK } from '@/lib/pricing';
 import { canonicalSubscriptionStatus } from '@/lib/subscription-status';
+import {
+  shouldApplySubscriptionEvent,
+  storedStateFromProfile,
+  describeOrderingDecision,
+} from '@/lib/subscription-event-ordering';
 
 function getStripe() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -51,6 +56,7 @@ async function updateUserTier(
   rawStatus: string,
   expiresAtIso: string | null,
   trackHint?: 'personal' | 'organization',
+  opts?: { isCancellation?: boolean; currentPeriodEnd?: number | null },
 ) {
   const supabase = getSupabase() as any;
   const status = canonicalSubscriptionStatus(rawStatus);
@@ -58,6 +64,66 @@ async function updateUserTier(
   const isOrg =
     trackHint === 'organization' ||
     (trackHint !== 'personal' && TIER_TO_TRACK[canonical] === 'organization');
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // ORDERING GUARD (2026-10-23)
+  //
+  // Stripe does not guarantee delivery order. Without this check, a stale
+  // customer.subscription.updated arriving AFTER a customer.subscription.deleted
+  // writes the paid tier back from stale metadata and resurrects access for a
+  // subscription Stripe already cancelled.
+  //
+  // The decision compares actual SUBSCRIPTION STATE, not event timestamps —
+  // see src/lib/subscription-event-ordering.ts for why "reject if older" is
+  // wrong on its own. The two guards that matter:
+  //
+  //   1. Once this subscription id is recorded as cancelled, no later event may
+  //      restore access on that id. A genuine re-subscribe gets a NEW id and is
+  //      unaffected.
+  //   2. An event whose current_period_end is older than what we already stored
+  //      describes a superseded state and is ignored.
+  //
+  // If the guard skips a write we return WITHOUT throwing: the caller has
+  // already durably recorded the event, so Stripe must not retry it. Throwing
+  // here would cause infinite retries of an event that is correct to ignore.
+  // ────────────────────────────────────────────────────────────────────────────
+  if (subscriptionId) {
+    try {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select(
+          'stripe_subscription_id, stripe_org_subscription_id, subscription_status, org_subscription_status, tier_expires_at'
+        )
+        .eq('user_id', clerkUserId)
+        .maybeSingle();
+
+      if (existing) {
+        const stored = storedStateFromProfile(existing);
+        const decision = shouldApplySubscriptionEvent(
+          {
+            subscriptionId,
+            status: rawStatus,
+            currentPeriodEnd: opts?.currentPeriodEnd ?? null,
+            cancelled: opts?.isCancellation === true,
+          },
+          stored,
+        );
+
+        if (!decision.apply) {
+          console.log(
+            `[Webhook] ordering guard: skipping ${clerkUserId} — ${describeOrderingDecision(decision)}`
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      // A guard failure must NOT block the entitlement write. The guard is a
+      // safety net; failing open is correct here because Stripe will retry a
+      // thrown error anyway, and the ordering risk is far less costly than
+      // dropping a real payment.
+      console.error('[Webhook] ordering guard error, applying anyway', e);
+    }
+  }
 
   const update: Record<string, any> = {};
   if (isOrg) {
@@ -189,7 +255,9 @@ export async function POST(req: NextRequest) {
             throw e;
           }
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
-          await updateUserTier(metadata.clerk_user_id, metadata.tier, subscriptionId, customerId, subscription.status, expiresAt);
+          await updateUserTier(metadata.clerk_user_id, metadata.tier, subscriptionId, customerId, subscription.status, expiresAt, undefined, {
+            currentPeriodEnd: subscription.current_period_end ?? null,
+          });
 
           // Funnel event: the user completed checkout. Correlate to the
           // pricing_viewed + checkout_started events via user_id + session.id.
@@ -359,7 +427,9 @@ export async function POST(req: NextRequest) {
             : isDunning
               ? (metadata.tier || 'free') // keep tier during dunning — user paid, we just haven't collected yet
               : 'free'; // canceled / unpaid → downgrade
-          await updateUserTier(metadata.clerk_user_id, tier, subscription.id, subscription.customer, subscription.status, expiresAt);
+          await updateUserTier(metadata.clerk_user_id, tier, subscription.id, subscription.customer, subscription.status, expiresAt, undefined, {
+            currentPeriodEnd: subscription.current_period_end ?? null,
+          });
           // Funnel event: the user's subscription went live (or transitioned).
           // We only count first-time activations for the conversion rate.
           if (isLiveStatus) {
@@ -404,14 +474,24 @@ export async function POST(req: NextRequest) {
           // paid personal Hockey Passport, and vice versa.
           const cancelledCanonical = canonicalTier(metadata.tier);
           const cancelledIsOrg = TIER_TO_TRACK[cancelledCanonical] === 'organization';
+          // Pass the REAL subscription id (not null) so the ordering guard can
+          // match this event against the one we already recorded.
+          //
+          // This matters for the guard's "terminal absorption" rule: if a stale
+          // updated event for this same subscription arrives later, it is
+          // correctly recognized as belonging to an already-cancelled
+          // subscription and cannot restore access. Passing null would make
+          // stored.subscriptionId !== incoming.subscriptionId, which the guard
+          // treats as "different timeline" and applies — exactly the bug.
           await updateUserTier(
             metadata.clerk_user_id,
             'free',
-            null,
+            subscription.id,
             null,
             'cancelled',
             null,
             cancelledIsOrg ? 'organization' : 'personal',
+            { isCancellation: true, currentPeriodEnd: subscription.current_period_end ?? null },
           );
           break;
         }
